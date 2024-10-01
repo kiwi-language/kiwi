@@ -57,7 +57,10 @@ public class Compiler {
             ),
             new CompileStage(
                     file -> true,
-                    file -> file.accept(new DefaultConstructorCreator())
+                    file -> {
+                        file.accept(new DefaultConstructorCreator());
+                        file.accept(new SuperCallInserter());
+                    }
             ),
             new CompileStage(
                     file -> true,

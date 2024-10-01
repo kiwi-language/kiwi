@@ -55,6 +55,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processArrayUtils();
             processReflectNewArray();
             processStringBuilder();
+            processInnerClassInheritance();
         });
     }
 
@@ -572,6 +573,16 @@ public class BasicCompilingTest extends CompilerTestBase {
                 apiClient.callMethod("stringbuilder.StringBuilderFoo", "build",
                         List.of(List.of("MetaVM", "is", 'a', "masterpiece"))));
         Assert.assertEquals("MetaVM is a masterpiece", s);
+    }
+
+    private void processInnerClassInheritance() {
+        var id = TestUtils.doInTransaction(() ->
+                apiClient.saveInstance("innerclass.InnerClassInheritance", Map.of("value", "MetaVM"))
+        );
+        var value = TestUtils.doInTransaction(() ->
+                apiClient.callMethod(id, "getValue", List.of())
+        );
+        Assert.assertEquals("MetaVM", value);
     }
 
 }

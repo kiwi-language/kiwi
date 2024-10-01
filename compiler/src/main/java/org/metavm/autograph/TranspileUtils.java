@@ -222,6 +222,10 @@ public class TranspileUtils {
         return Object.class.getName().equals(psiClass.getQualifiedName());
     }
 
+    public static boolean isEnumClass(PsiClass psiClass) {
+        return Enum.class.getName().equals(psiClass.getQualifiedName());
+    }
+
     public static @Nullable PsiClassType getSuperClassType(PsiClass psiClass) {
         var superTypes = psiClass.getSuperTypes();
         if (superTypes.length > 0) {
