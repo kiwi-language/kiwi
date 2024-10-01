@@ -81,7 +81,7 @@ public class ReflectDefinerTest extends TestCase {
         if(existing != null)
             return existing;
         var definer = new ReflectDefiner(javaClass, TestUtils.nextKlassTag(), this::getKlass, map::put);
-        var klass =  definer.defineClass();
+        var klass =  definer.defineClass().klass();
         map.put(javaClass, klass);
         return klass;
     }

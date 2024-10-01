@@ -3,7 +3,6 @@ package org.metavm.entity;
 import org.metavm.api.ChildList;
 import org.metavm.api.ValueList;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.ColumnKind;
@@ -630,10 +629,14 @@ public class StandardDefBuilder {
             return defContext.getKlass(Klass.class);
         var klass = (Klass) primTypeFactory.javaType2TypeDef.get(javaClass);
         if(klass == null) {
-            klass = new ReflectDefiner(javaClass, defContext.getTypeTag(javaClass), this::parseKlass, primTypeFactory::putType).defineClass();
+            var r = new ReflectDefiner(javaClass, defContext.getTypeTag(javaClass), this::parseKlass,
+                    primTypeFactory::putType).defineClass();
+            klass = r.klass();
             for (int i = 0; i < javaClass.getTypeParameters().length; i++) {
                 primTypeFactory.putType(javaClass.getTypeParameters()[i], klass.getTypeParameters().get(i));
             }
+            if(r.staticFieldTable() != null)
+                primTypeFactory.putStaticFieldTable(klass, r.staticFieldTable());
         }
         return klass;
     }
@@ -642,6 +645,7 @@ public class StandardDefBuilder {
 
         private final Map<java.lang.reflect.Type, TypeDef> javaType2TypeDef = new HashMap<>();
         private final Map<TypeDef, java.lang.reflect.Type> typeDef2JavaType = new IdentityHashMap<>();
+        private final Map<TypeDef, StaticFieldTable> staticFieldTableMap = new HashMap<>();
 
         @Override
         public void putType(java.lang.reflect.Type javaType, TypeDef typeDef) {
@@ -649,6 +653,10 @@ public class StandardDefBuilder {
             NncUtils.requireFalse(typeDef2JavaType.containsKey(typeDef));
             javaType2TypeDef.put(javaType, typeDef);
             typeDef2JavaType.put(typeDef, javaType);
+        }
+
+        public void putStaticFieldTable(TypeDef typeDef, StaticFieldTable staticFieldTable) {
+            staticFieldTableMap.put(typeDef, staticFieldTable);
         }
 
         public Map<java.lang.reflect.Type, TypeDef> getMap() {
@@ -669,11 +677,12 @@ public class StandardDefBuilder {
                 return defContext.getDef(typeDef);
             }
             var javaType = NncUtils.requireNonNull(typeDef2JavaType.get(typeDef));
+            var sft = staticFieldTableMap.get(typeDef);
             var def = switch (typeDef) {
                 case TypeVariable typeVariable -> new TypeVariableDef(
                         (java.lang.reflect.TypeVariable<?>) javaType, typeVariable
                 );
-                default -> new DirectDef<>(javaType, typeDef);
+                default -> new DirectDef<>(javaType, typeDef, sft);
             };
             defContext.preAddDef(def);
             return def;

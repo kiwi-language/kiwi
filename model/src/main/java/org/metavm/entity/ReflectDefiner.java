@@ -3,16 +3,19 @@ package org.metavm.entity;
 import org.metavm.api.ValueObject;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
+import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -28,6 +31,7 @@ public class ReflectDefiner {
     private final Function<Class<?>, Klass> getKlass;
     private final BiConsumer<? super Class<?>, ? super Klass> addKlass;
     private final Map<java.lang.reflect.TypeVariable<?>, org.metavm.object.type.TypeVariable> typeVariableMap = new HashMap<>();
+    private final Map<org.metavm.object.type.Field, Value> staticInitialValues = new HashMap<>();
     private static final Set<JavaMethodSignature> ignoredFunctionalInterfaceMethods;
 
     static {
@@ -47,7 +51,7 @@ public class ReflectDefiner {
         this.addKlass = addKlass;
     }
 
-    public Klass defineClass() {
+    public ReflectDefineResult defineClass() {
 //        logger.debug("Defining class {}", javaClass.getName());
         var kind = javaClass.isEnum() ? ClassKind.ENUM : (javaClass.isInterface() ? ClassKind.INTERFACE :
                 (ValueObject.class.isAssignableFrom(javaClass) ? ClassKind.VALUE : ClassKind.CLASS));
@@ -98,7 +102,41 @@ public class ReflectDefiner {
             if(!methodSignatures.add(MethodSignature.of(method)))
                 klass.removeMethod(method);
         }
-        return klass;
+        for (Field field : javaClass.getDeclaredFields()) {
+            if (Modifier.isPublic(field.getModifiers()) && Modifier.isStatic(field.getModifiers()))
+                defineField(field, klass);
+        }
+        if(staticInitialValues.isEmpty())
+            return new ReflectDefineResult(klass, null);
+        else {
+            var sft = new StaticFieldTable(klass);
+            staticInitialValues.forEach(sft::set);
+            return new ReflectDefineResult(klass, sft);
+        }
+    }
+
+    public void defineField(Field javaField, Klass klass) {
+        var field = FieldBuilder.newBuilder(javaField.getName(), javaField.getName(), klass, resolveNullableType(javaField.getGenericType()))
+                .isStatic(Modifier.isStatic(javaField.getModifiers()))
+                .readonly(Modifier.isFinal(javaField.getModifiers()))
+                .access(getAccess(javaField.getModifiers()))
+                .build();
+        if(field.isStatic()) {
+            var value = ReflectionUtils.get(null, javaField);
+            if(value instanceof Integer i) {
+                staticInitialValues.put(field, Instances.longInstance(i.longValue()));
+            }
+        }
+    }
+
+    private Access getAccess(int modifiers) {
+        if(Modifier.isPublic(modifiers))
+            return Access.PUBLIC;
+        if(Modifier.isPrivate(modifiers))
+            return Access.PRIVATE;
+        if(Modifier.isProtected(modifiers))
+            return Access.PROTECTED;
+        return Access.PACKAGE;
     }
 
     private List<org.metavm.flow.Method> getOverridden(org.metavm.flow.Method method) {

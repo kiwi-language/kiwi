@@ -1,5 +1,7 @@
 package org.metavm.object.type;
 
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
@@ -16,7 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 @EntityType
-public class StaticFieldTable extends Entity implements LoadAware {
+@Slf4j
+public class StaticFieldTable extends Entity implements LoadAware, GlobalKey {
 
     public static final Logger logger = LoggerFactory.getLogger(StaticFieldTable.class);
 
@@ -80,6 +83,7 @@ public class StaticFieldTable extends Entity implements LoadAware {
         else {
             entry = new StaticFieldTableEntry(field, value);
             entries.addChild(entry);
+            map.put(field, entry);
         }
     }
 
@@ -117,6 +121,11 @@ public class StaticFieldTable extends Entity implements LoadAware {
 
     private EnumConstantRT createEnumConstant(ClassInstance instance) {
         return new EnumConstantRT(instance);
+    }
+
+    @Override
+    public String getGlobalKey(@NotNull BuildKeyContext context) {
+        return klass.getCodeNotNull();
     }
 
 }

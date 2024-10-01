@@ -635,6 +635,10 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     protected void writeInstances(IInstanceContext instanceContext) {
         try (var ignored = getProfiler().enter("writeInstances ")) {
             instanceContext.batchBind(NncUtils.filter(instances(), i -> !instanceContext.containsInstance(i)));
+            for (Instance instance : instances()) {
+                if(instance instanceof ClassInstance clsInst)
+                    instanceContext.updateMemoryIndex(clsInst);
+            }
         }
     }
 

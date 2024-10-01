@@ -56,6 +56,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processReflectNewArray();
             processStringBuilder();
             processInnerClassInheritance();
+            processStdStaticField();
         });
     }
 
@@ -583,6 +584,13 @@ public class BasicCompilingTest extends CompilerTestBase {
                 apiClient.callMethod(id, "getValue", List.of())
         );
         Assert.assertEquals("MetaVM", value);
+    }
+
+    private void processStdStaticField() {
+        var v = TestUtils.doInTransaction(
+                () -> apiClient.callMethod("stdstatic.StdStaticFoo", "get", List.of())
+        );
+        Assert.assertEquals((long) Spliterator.ORDERED, v);
     }
 
 }

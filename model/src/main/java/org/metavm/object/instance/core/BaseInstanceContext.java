@@ -2,14 +2,12 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.ContextAttributeKey;
-import org.metavm.entity.EntityUtils;
-import org.metavm.entity.InstanceIndexQuery;
-import org.metavm.entity.LockMode;
+import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;
 import org.metavm.object.type.RedirectStatusProvider;
+import org.metavm.object.type.StaticFieldTable;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
 import org.metavm.util.*;
@@ -118,7 +116,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public boolean containsUniqueKey(IndexKeyRT key) {
-        return !memIndex.query(key.toQuery()).isEmpty();
+        if(!memIndex.query(key.toQuery()).isEmpty())
+            return true;
+        return parent != null && parent.containsUniqueKey(key);
     }
 
     @Override
