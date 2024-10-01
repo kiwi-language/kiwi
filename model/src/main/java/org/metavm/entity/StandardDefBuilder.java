@@ -164,6 +164,7 @@ public class StandardDefBuilder {
         createExceptionKlass(ConcurrentModificationException.class, runtimeExceptionKlass);
         createExceptionKlass(ClassCastException.class, runtimeExceptionKlass);
         createExceptionKlass(NoSuchElementException.class, runtimeExceptionKlass);
+        createExceptionKlass(IndexOutOfBoundsException.class, runtimeExceptionKlass);
 
         consumerKlass = createConsumerKlass();
         predicateKlass = createPredicateKlass();
