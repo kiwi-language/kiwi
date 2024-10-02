@@ -165,6 +165,9 @@ public class StandardDefBuilder {
         createExceptionKlass(NoSuchElementException.class, runtimeExceptionKlass);
         createExceptionKlass(IndexOutOfBoundsException.class, runtimeExceptionKlass);
         createExceptionKlass(CloneNotSupportedException.class, runtimeExceptionKlass);
+        var errorKlass = createExceptionKlass(Error.class, throwableKlass);
+        var vmErrorKlass = createExceptionKlass(VirtualMachineError.class, errorKlass);
+        createExceptionKlass(InternalError.class, vmErrorKlass);
 
         consumerKlass = createConsumerKlass();
         predicateKlass = createPredicateKlass();

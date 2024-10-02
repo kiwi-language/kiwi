@@ -1371,4 +1371,8 @@ public class TranspileUtils {
                 labeledStatement.getLabelIdentifier().getText() : null;
     }
 
+    public static PsiComment createComment(String comment) {
+        return elementFactory.createCommentFromText(comment, null);
+    }
+
 }

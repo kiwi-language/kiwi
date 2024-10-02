@@ -10,7 +10,7 @@ public class InnerClassTransformFinalizer extends VisitorBase {
     @Override
     public void visitClass(PsiClass aClass) {
         if(TranspileUtils.isDiscarded(aClass))
-            aClass.delete();
+            replace(aClass, TranspileUtils.createComment("// removed class " + aClass.getName()));
         else {
             super.visitClass(aClass);
             var originalName = aClass.getUserData(Keys.ORIGINAL_NAME);
