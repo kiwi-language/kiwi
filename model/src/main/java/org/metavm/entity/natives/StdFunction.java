@@ -675,6 +675,37 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var c = ContextUtil.getEntityContext().getInstance(Objects.requireNonNull(k.getComponentKlass()));
                 return FlowExecResult.of(c.getReference());
             }
+    ),
+    checkIndex(
+            "long checkIndex(long index, long length)",
+            false,
+            List.of(ReflectionUtils.getMethod(Objects.class, "checkIndex", int.class, int.class)),
+            (func, args, callContext) -> {
+                var index = ((LongValue) args.get(0)).getValue().intValue();
+                var length = ((LongValue) args.get(1)).getValue().intValue();
+                if(index >= 0 && index < length)
+                    return FlowExecResult.of(Instances.longInstance(index));
+                else {
+                    var exception = ClassInstance.allocate(StdKlass.indexOutOfBoundsException.type());
+                    var nat = new IndexOutOfBoundsExceptionNative(exception);
+                    nat.IndexOutOfBoundsException(callContext);
+                    return FlowExecResult.ofException(exception);
+                }
+            }
+    ),
+    max(
+            "long max(long v1, long v2)",
+            false,
+            List.of(ReflectionUtils.getMethod(Math.class, "max", int.class, int.class),
+                    ReflectionUtils.getMethod(Math.class, "max", long.class, long.class)),
+            (func, args, callContext) -> {
+                var v1 = ((LongValue) args.get(0)).getValue().intValue();
+                var v2 = ((LongValue) args.get(1)).getValue().intValue();
+                if(v1 >= v2)
+                    return FlowExecResult.of(Instances.longInstance(v1));
+                else
+                    return FlowExecResult.of(Instances.longInstance(v2));
+            }
     )
     ;
 

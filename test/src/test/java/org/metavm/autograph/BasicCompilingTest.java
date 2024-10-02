@@ -57,6 +57,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processStringBuilder();
             processInnerClassInheritance();
             processStdStaticField();
+            processMax();
+            processCheckIndex();
         });
     }
 
@@ -591,6 +593,38 @@ public class BasicCompilingTest extends CompilerTestBase {
                 () -> apiClient.callMethod("stdstatic.StdStaticFoo", "get", List.of())
         );
         Assert.assertEquals((long) Spliterator.ORDERED, v);
+    }
+
+    private void processMax() {
+        var max = (long) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("utils.UtilsFoo", "max", List.of(1,2))
+        );
+        Assert.assertEquals(2L, max);
+    }
+
+    private void processCheckIndex() {
+        var index = (long) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("utils.UtilsFoo", "checkIndex", List.of(0, 1))
+        );
+        Assert.assertEquals(0L, index);
+        try {
+            TestUtils.doInTransaction(() ->
+                    apiClient.callMethod("utils.UtilsFoo", "checkIndex", List.of(-1, 1))
+            );
+            Assert.fail();
+        }
+        catch (BusinessException e) {
+            Assert.assertSame(ErrorCode.FLOW_EXECUTION_FAILURE, e.getErrorCode());
+        }
+        try {
+            TestUtils.doInTransaction(() ->
+                    apiClient.callMethod("utils.UtilsFoo", "checkIndex", List.of(1, 1))
+            );
+            Assert.fail();
+        }
+        catch (BusinessException e) {
+            Assert.assertSame(ErrorCode.FLOW_EXECUTION_FAILURE, e.getErrorCode());
+        }
     }
 
 }
