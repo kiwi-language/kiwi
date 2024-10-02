@@ -193,15 +193,18 @@ public class MethodGenerator {
     void exitCondSection1(MergeNode mergeNode) {
         var condOutputs = exitCondSection(mergeNode);
         var vars = condOutputs.values().iterator().next().keySet();
-        for (var var : vars) {
+        out: for (var var : vars) {
             var branch2value = new HashMap<Branch, org.metavm.flow.Value>();
             for (var entry2 : condOutputs.entrySet()) {
                 var branch = entry2.getKey();
                 if(branch.isDisconnected())
                     continue;
                 var branchOutputs = entry2.getValue();
-                var v = Objects.requireNonNull(branchOutputs.get(var),
-                        () -> "Variable " + var + " is missing from branch " + branch.getIndex());
+                var v = branchOutputs.get(var);
+//                var v = Objects.requireNonNull(,
+//                        () -> "Variable " + var + " is missing from branch " + branch.getIndex());
+                if(v == null)
+                    continue out;
                 branch2value.put(branch, Values.expression(v));
             }
             var memberTypes = new HashSet<Type>();

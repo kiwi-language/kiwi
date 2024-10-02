@@ -719,6 +719,10 @@ public class ExpressionResolver {
                 assignment = new BinaryExpression(BinaryOperator.MULTIPLY, resolvedLeft, resolvedRight);
             } else if (op == JavaTokenType.DIVEQ) {
                 assignment = new BinaryExpression(BinaryOperator.DIVIDE, resolvedLeft, resolvedRight);
+            } else if(op == JavaTokenType.OREQ) {
+                assignment = new BinaryExpression(BinaryOperator.BITWISE_OR, resolvedLeft, resolvedRight);
+            } else if(op == JavaTokenType.ANDEQ) {
+                assignment = new BinaryExpression(BinaryOperator.BITWISE_AND, resolvedLeft, resolvedRight);
             } else {
                 throw new InternalException("Unsupported assignment operator " + op);
             }

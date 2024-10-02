@@ -60,6 +60,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processMax();
             processCheckIndex();
             processClone();
+            processBitSet();
         });
     }
 
@@ -637,6 +638,17 @@ public class BasicCompilingTest extends CompilerTestBase {
         );
         var cloneValue = apiClient.getObject(cloneId).get("value");
         Assert.assertEquals("MetaVM", cloneValue);
+    }
+
+    private void processBitSet() {
+        var id = TestUtils.doInTransaction(() ->
+                apiClient.saveInstance("bitset.BitSet", Map.of("n", 20))
+        );
+        var r1 = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "isClear", List.of(10)));
+        Assert.assertTrue(r1);
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "setBit", List.of(10)));
+        var r2 = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "isClear", List.of(10)));
+        Assert.assertFalse(r2);
     }
 
 }

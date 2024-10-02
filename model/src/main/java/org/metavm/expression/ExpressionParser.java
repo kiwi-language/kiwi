@@ -93,9 +93,26 @@ public class ExpressionParser {
             return parseAs(expression);
         } else if (expression.methodCall() != null) {
             return parseMethodCall(expression.methodCall());
-        } else {
+        } else if(expression.LT().size() == 2 || expression.GT().size() >= 2)
+            return parseShift(expression);
+        else {
             throw new ExpressionParsingException();
         }
+    }
+
+    private Expression parseShift(MetaVMParser.ExpressionContext ctx) {
+        var left = parse(ctx.expression(0));
+        var right = parse(ctx.expression(1));
+        BinaryOperator op;
+        if(ctx.LT().size() == 2)
+            op = BinaryOperator.LEFT_SHIFT;
+        else if(ctx.GT().size() == 2)
+            op = BinaryOperator.RIGHT_SHIFT;
+        else if(ctx.GT().size() == 3)
+            op = BinaryOperator.UNSIGNED_RIGHT_SHIFT;
+        else
+            throw new IllegalStateException("Cannot resolve operator for expression: " + ctx.getText());
+        return new BinaryExpression(op, left, right);
     }
 
     private Expression parseAs(MetaVMParser.ExpressionContext expression) {
