@@ -540,4 +540,9 @@ public void testGeneric() {
     }
 
 
+    public void testInheritance() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/mapping_inheritance.masm",
+                typeManager, schedulerAndWorker);
+    }
+
 }

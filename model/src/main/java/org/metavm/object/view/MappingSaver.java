@@ -523,7 +523,13 @@ public class MappingSaver {
 
     private static List<Accessor> getAccessors(Klass type) {
         var accessors = new ArrayList<Accessor>();
-        for (var method : type.getAllMethods()) {
+        var methods = type.getAllMethods();
+        var overridden = new HashSet<Method>();
+        for (Method method : methods) {
+            overridden.addAll(method.getOverridden());
+        }
+        methods.removeIf(overridden::contains);
+        for (var method : methods) {
             var p = getAccessor(method);
             if (p != null)
                 accessors.add(p);
@@ -567,7 +573,7 @@ public class MappingSaver {
             return new Accessor(getter, setter, null, getter.getName().substring(2), propertyCode);
         else if (getter.getName().startsWith(getterPrefix) && getter.getName().length() > getterPrefix.length())
             return new Accessor(getter, setter, null,
-                    NamingUtils.firstCharToLowerCase(getter.getName().substring(3)), propertyCode);
+                    NamingUtils.firstCharToLowerCase(getter.getName().substring(getterPrefix.length())), propertyCode);
         else
             return new Accessor(getter, setter, null, getter.getName(), propertyCode);
     }
