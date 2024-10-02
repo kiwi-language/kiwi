@@ -706,6 +706,16 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 else
                     return FlowExecResult.of(Instances.longInstance(v2));
             }
+    ),
+    clone(
+            "any clone(any o)",
+            false,
+            List.of(ReflectionUtils.getDeclaredMethod(Object.class, "clone", List.of())),
+            (func, args, callContext) -> {
+                var clone = args.get(0).resolveDurable().copy();
+                ContextUtil.getEntityContext().getInstanceContext().bind(clone);
+                return FlowExecResult.of(clone.getReference());
+            }
     )
     ;
 

@@ -115,6 +115,7 @@ public class ExpressionResolver {
             case PsiAssignmentExpression assignmentExpression -> resolveAssignment(assignmentExpression, context);
             case PsiLiteralExpression literalExpression -> resolveLiteral(literalExpression);
             case PsiThisExpression thisExpression -> resolveThis(thisExpression);
+            case PsiSuperExpression superExpression -> resolveSuper(superExpression);
             case PsiParenthesizedExpression parExpression -> resolveParenthesized(parExpression, context);
             case PsiConditionalExpression conditionalExpression -> resolveConditional(conditionalExpression, context);
             case PsiArrayAccessExpression arrayAccessExpression -> resolveArrayAccess(arrayAccessExpression, context);
@@ -126,6 +127,10 @@ public class ExpressionResolver {
             case PsiArrayInitializerExpression arrayInitializerExpression -> resolveArrayInitialization(arrayInitializerExpression, context);
             default -> throw new IllegalStateException("Unexpected value: " + psiExpression);
         };
+    }
+
+    private Expression resolveSuper(PsiSuperExpression superExpression) {
+        return variableTable.get("this");
     }
 
     private Expression resolveClassObjectAccess(PsiClassObjectAccessExpression classObjectAccessExpression, ResolutionContext context) {

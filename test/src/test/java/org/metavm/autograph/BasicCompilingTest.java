@@ -59,6 +59,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processStdStaticField();
             processMax();
             processCheckIndex();
+            processClone();
         });
     }
 
@@ -625,6 +626,17 @@ public class BasicCompilingTest extends CompilerTestBase {
         catch (BusinessException e) {
             Assert.assertSame(ErrorCode.FLOW_EXECUTION_FAILURE, e.getErrorCode());
         }
+    }
+
+    private void processClone() {
+        var id = TestUtils.doInTransaction(() ->
+                apiClient.saveInstance("clone.CloneFoo", Map.of("value", "MetaVM"))
+        );
+        var cloneId = (String) TestUtils.doInTransaction(() ->
+                apiClient.callMethod(id, "clone", List.of())
+        );
+        var cloneValue = apiClient.getObject(cloneId).get("value");
+        Assert.assertEquals("MetaVM", cloneValue);
     }
 
 }
