@@ -353,8 +353,12 @@ public class AstToCfg extends SkipDiscardedVisitor {
         element.acceptChildren(this);
         if (builder != null) {
             var node = builder.addOrdinaryNode(element);
-            if(element instanceof PsiExpressionStatement stmt) {
-                var expr = stmt.getExpression();
+            PsiExpression expr = switch (element) {
+                case PsiExpressionStatement exprStmt -> exprStmt.getExpression();
+                case PsiExpression expr1 -> expr1;
+                default -> null;
+            };
+            if(expr != null) {
                 if(mayThrow(expr))
                     connectThrowNode(node, Set.of(PsiMethod.class));
             }

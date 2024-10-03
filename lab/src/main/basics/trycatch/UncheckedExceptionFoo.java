@@ -2,14 +2,12 @@ package trycatch;
 
 public class UncheckedExceptionFoo {
 
-    private static Holder holder;
-
     public static int get(int value) {
         int w;
         try {
-            if (value < 0) {
+            if (value < 0 && check(value)) {
                 w = 0;
-                value = holder.value;
+                value++;
             }
         } catch (Throwable ex) {
             return -value;
@@ -17,7 +15,7 @@ public class UncheckedExceptionFoo {
         return 1;
     }
 
-    private static int getValue() {
+    private static boolean check(int value) {
         throw new RuntimeException();
     }
 
