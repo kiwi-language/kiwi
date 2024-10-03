@@ -2,10 +2,12 @@ package org.metavm.autograph;
 
 import com.intellij.psi.PsiCodeBlock;
 import com.intellij.psi.PsiElement;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.util.InternalException;
 
 import java.util.*;
 
+@Slf4j
 public class GraphBuilder {
 
     private final String title;
@@ -24,7 +26,7 @@ public class GraphBuilder {
     private final Map<CfgNode, List<PsiElement>> finallySections = new HashMap<>();
     private final Map<PsiElement, List<CfgNode>> exits = new HashMap<>();
     private final Map<PsiElement, List<CfgNode>> throwNodes = new HashMap<>();
-    private final Map<CfgNode, CfgNode> forwardEdges = new HashMap<>();
+    private final Set<Edge> forwardEdges = new HashSet<>();
     private final Set<PsiElement> errors = new HashSet<>();
     private final Set<PsiElement> defaultCaseFlags = new HashSet<>();
 
@@ -137,7 +139,7 @@ public class GraphBuilder {
 
     private void connectNodes(CfgNode first, CfgNode second, boolean isBackEdge) {
         first.addNext(second, isBackEdge);
-        forwardEdges.put(first, second);
+        forwardEdges.add(new Edge(first, second));
     }
 
     void enterLoopSection(PsiElement sectionId, PsiElement entryNode) {
@@ -187,9 +189,7 @@ public class GraphBuilder {
     }
 
     void enterExceptSection(PsiElement sectionId) {
-        if (throwNodes.containsKey(sectionId)) {
-            leaves.addAll(throwNodes.get(sectionId));
-        }
+        setLeaves(throwNodes.getOrDefault(sectionId, List.of()));
     }
 
     void enterFinallySection(PsiElement sectionId) {
@@ -218,8 +218,8 @@ public class GraphBuilder {
                 stmtNext.computeIfAbsent(stmt, k -> new HashSet<>());
             }
         }
-        for (var _e : forwardEdges.entrySet()) {
-            CfgNode first = _e.getKey(), second = _e.getValue();
+        for (var _e : forwardEdges) {
+            CfgNode first = _e.from, second = _e.to;
             Set<PsiElement> firstOwners = owners.get(first), secondOwners = owners.get(second);
             for (PsiElement stmt : firstOwners) {
                 if (!secondOwners.contains(stmt)) {
@@ -248,5 +248,7 @@ public class GraphBuilder {
         private Set<CfgNode> ends;
         private boolean hasDirectFlow;
     }
+
+    private record Edge(CfgNode from, CfgNode to) {}
 
 }

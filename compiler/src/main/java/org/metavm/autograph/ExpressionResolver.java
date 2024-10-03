@@ -329,6 +329,10 @@ public class ExpressionResolver {
             );
         }
         var resolvedOperand = resolve(requireNonNull(psiPrefixExpression.getOperand()), context);
+        if(op == JavaTokenType.MINUS)
+            return new UnaryExpression(UnaryOperator.NEG, resolvedOperand);
+        if(op == JavaTokenType.PLUS)
+            return resolvedOperand;
         if (op == JavaTokenType.PLUSPLUS) {
             return processAssignment(
                     operand,

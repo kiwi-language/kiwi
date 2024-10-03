@@ -1,12 +1,14 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.PsiElement;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 public class CfgNode {
 
     private final PsiElement element;

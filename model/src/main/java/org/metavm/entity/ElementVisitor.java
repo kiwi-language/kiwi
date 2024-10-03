@@ -443,4 +443,8 @@ public abstract class ElementVisitor<R> {
     public R visitNonNullNode(NonNullNode nonNullNode) {
         return visitNode(nonNullNode);
     }
+
+    public R visitNeverExpression(NeverExpression neverExpression) {
+        return visitExpression(neverExpression);
+    }
 }

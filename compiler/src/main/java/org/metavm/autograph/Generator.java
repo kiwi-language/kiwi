@@ -227,10 +227,10 @@ public class Generator extends CodeGenVisitor {
                             trySectionOutput.keySet(),
                             raiseNode -> new TryEndValue(
                                     raiseNode,
-                                    Values.expression(trySectionOutput.get(raiseNode).get(outputVar.toString()))
+                                    Values.expressionOrNever(trySectionOutput.get(raiseNode).get(outputVar.toString()))
                             )
                     ),
-                    Values.expression(builder().getVariable(outputVar.toString())),
+                    Values.expressionOrNever(builder().getVariable(outputVar.toString())),
                     tryEndNode
             );
             builder().setVariable(outputVar.toString(), Expressions.nodeProperty(tryEndNode, field));

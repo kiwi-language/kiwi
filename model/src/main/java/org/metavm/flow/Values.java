@@ -7,12 +7,17 @@ import org.metavm.expression.ParsingContext;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Property;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 public class Values {
 
     public static Value constantLong(long value) {
         return constant(Expressions.constantLong(value));
+    }
+
+    public static Value never() {
+        return constant(Expressions.never());
     }
 
     public static Value constantString(String string) {
@@ -37,6 +42,10 @@ public class Values {
 
     public static Value expression(Expression expression) {
         return new DynamicValue(ValueKind.EXPRESSION, expression);
+    }
+
+    public static Value expressionOrNever(@Nullable Expression expression) {
+        return expression != null ? new DynamicValue(ValueKind.EXPRESSION, expression) : never();
     }
 
     public static Value expression(String expression, ParsingContext parsingContext) {

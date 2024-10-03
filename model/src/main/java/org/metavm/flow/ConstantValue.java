@@ -6,6 +6,7 @@ import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.TimeValue;
 import org.metavm.object.instance.rest.ArrayFieldValue;
 import org.metavm.object.instance.rest.FieldValue;
+import org.metavm.object.instance.rest.NeverFieldValue;
 import org.metavm.object.instance.rest.PrimitiveFieldValue;
 import org.metavm.object.type.PrimitiveKind;
 import org.metavm.util.NncUtils;
@@ -27,6 +28,7 @@ public class ConstantValue extends Value {
                     when funcExpr.getFunction() == Func.TIME
                     && funcExpr.getArguments().get(0) instanceof ConstantExpression constExpr ->
                     toTimeFieldValue((LongValue) constExpr.getValue());
+            case NeverExpression neverExpr -> new NeverFieldValue();
             default -> throw new IllegalStateException("Unexpected value: " + expression);
         };
     }

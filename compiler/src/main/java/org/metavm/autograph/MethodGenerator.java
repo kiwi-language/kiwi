@@ -123,7 +123,7 @@ public class MethodGenerator {
     }
 
     NonNullNode createNonNull(String name, Expression expression) {
-        return setNodeExprTypes(new NonNullNode(
+        var node = setNodeExprTypes(new NonNullNode(
                         null,
                         nextName(name),
                         null,
@@ -133,6 +133,8 @@ public class MethodGenerator {
                         Values.expression(expression)
                 )
         );
+        variableTable.processRaiseNode(node);
+        return node;
     }
 
     TargetNode createTarget() {
@@ -498,6 +500,7 @@ public class MethodGenerator {
                 NncUtils.get(self, Values::expression), method.getRef(), args);
         node.setCapturedExpressions(capturedExpressions);
         node.setCapturedExpressionTypes(capturedExpressionTypes);
+        variableTable.processRaiseNode(node);
         return setNodeExprTypes(node);
     }
 
@@ -516,12 +519,14 @@ public class MethodGenerator {
                 functionRef.getRawFlow().getParameters(), arguments,
                 (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))
         );
-        return setNodeExprTypes(new FunctionCallNode(
+        var node = setNodeExprTypes(new FunctionCallNode(
                 null,
                 nextName(functionRef.getRawFlow().getName()),
                 null,
                 scope().getLastNode(), scope(),
                 functionRef, args));
+        variableTable.processRaiseNode(node);
+        return node;
     }
 
     LambdaNode createLambda(List<Parameter> parameters, Type returnType, Klass functionalInterface) {
@@ -539,8 +544,10 @@ public class MethodGenerator {
                 methodRef.getRawFlow().getParameters(), arguments,
                 (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))
         );
-        return setNodeExprTypes(new NewObjectNode(null, nextName(methodRef.resolve().getName()), null, methodRef, args,
+        var node = setNodeExprTypes(new NewObjectNode(null, nextName(methodRef.resolve().getName()), null, methodRef, args,
                 scope().getLastNode(), scope(), null, ephemeral, unbound));
+        variableTable.processRaiseNode(node);
+        return node;
     }
 
     ExpressionResolver getExpressionResolver() {

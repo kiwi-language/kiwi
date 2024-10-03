@@ -95,7 +95,7 @@ public class VariableTable {
         return result;
     }
 
-    void processRaiseNode(RaiseNode raiseNode) {
+    void processRaiseNode(NodeRT raiseNode) {
         if(trySections.isEmpty()) {
             return;
         }

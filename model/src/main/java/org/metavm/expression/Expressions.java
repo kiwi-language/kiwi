@@ -337,6 +337,8 @@ public class Expressions {
                 return value.toString();
             }
         }
+        if(fieldValue instanceof NeverFieldValue)
+            return "never";
         if (fieldValue instanceof ReferenceFieldValue refFieldValue) {
             return Constants.ID_PREFIX + refFieldValue.getId();
         }
@@ -355,6 +357,10 @@ public class Expressions {
 
     public static Expression constantBoolean(boolean bool) {
         return new ConstantExpression(Instances.booleanInstance(bool));
+    }
+
+    public static Expression never() {
+        return new NeverExpression();
     }
 
     public InternalException notContextExpression(Expression expression, EvaluationContext context) {

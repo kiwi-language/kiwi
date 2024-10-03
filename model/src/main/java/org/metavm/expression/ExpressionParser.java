@@ -331,7 +331,9 @@ public class ExpressionParser {
             );
         } else if (literal.NULL_LITERAL() != null) {
             return new ConstantExpression(Instances.nullInstance());
-        } else {
+        } else if(literal.NEVER() != null)
+            return new NeverExpression();
+        else {
             throw new ExpressionParsingException();
         }
     }

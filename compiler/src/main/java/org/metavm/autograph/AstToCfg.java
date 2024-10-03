@@ -1,6 +1,8 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -8,6 +10,7 @@ import java.util.*;
 
 import static java.util.Objects.requireNonNull;
 
+@Slf4j
 public class AstToCfg extends SkipDiscardedVisitor {
 
     private final LinkedList<GraphBuilder> builderStack = new LinkedList<>();
@@ -202,10 +205,13 @@ public class AstToCfg extends SkipDiscardedVisitor {
         var tryNode = NncUtils.requireNonNull(nodeAndFinallyBlocks.node);
         var guards = nodeAndFinallyBlocks.blocks;
         var node = builder.addExitNode(statement, tryNode, guards);
-        if (mayExitViaExcept) {
-            var exceptGuards = tryGetCatchScopes(exitsNodesOfType);
-            builder.connectThrowNode(node, exceptGuards);
-        }
+        if (mayExitViaExcept)
+            connectThrowNode(node, exitsNodesOfType);
+    }
+
+    private void connectThrowNode(CfgNode node, Set<Class<? extends PsiElement>> exitsNodesOfType) {
+        var exceptGuards = tryGetCatchScopes(exitsNodesOfType);
+        builder.connectThrowNode(node, exceptGuards);
     }
 
     //    @Override
@@ -226,6 +232,7 @@ public class AstToCfg extends SkipDiscardedVisitor {
                 builder.newCondBranch(representative);
                 builder.beginBlockStatement(catchSection);
                 enterLexicalScope(catchSection);
+                builder.enterExceptSection(catchSection.getCatchBlock());
                 processBasicElement(Objects.requireNonNull(catchSection.getParameter()));
                 Objects.requireNonNull(catchSection.getCatchBlock()).accept(this);
                 exitLexicalScope();
@@ -344,7 +351,44 @@ public class AstToCfg extends SkipDiscardedVisitor {
 
     private void processBasicElement(PsiElement element) {
         element.acceptChildren(this);
-        if (builder != null) builder.addOrdinaryNode(element);
+        if (builder != null) {
+            var node = builder.addOrdinaryNode(element);
+            if(element instanceof PsiExpressionStatement stmt) {
+                var expr = stmt.getExpression();
+                if(mayThrow(expr))
+                    connectThrowNode(node, Set.of(PsiMethod.class));
+            }
+        }
+    }
+
+    private boolean mayThrow(PsiExpression expression) {
+        var visitor = new VisitorBase() {
+
+            boolean mayThrow;
+
+            @Override
+            public void visitElement(@NotNull PsiElement element) {
+                if(mayThrow)
+                    return;
+                super.visitElement(element);
+            }
+
+            @Override
+            public void visitMethodCallExpression(PsiMethodCallExpression expression) {
+                mayThrow = true;
+            }
+
+            @Override
+            public void visitReferenceExpression(PsiReferenceExpression expression) {
+               if(expression.resolve() instanceof PsiField field && !TranspileUtils.isStatic(field)) {
+                   if(expression.getQualifierExpression() != null
+                           && !(expression.getQualifierExpression() instanceof PsiThisExpression))
+                       mayThrow = true;
+               }
+            }
+        };
+        expression.accept(visitor);
+        return visitor.mayThrow;
     }
 
     public Map<PsiParameterListOwner, Graph> getGraphs() {

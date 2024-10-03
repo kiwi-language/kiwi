@@ -61,6 +61,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processCheckIndex();
             processClone();
             processBitSet();
+            processCatchUnchecked();
         });
     }
 
@@ -649,6 +650,15 @@ public class BasicCompilingTest extends CompilerTestBase {
         TestUtils.doInTransaction(() -> apiClient.callMethod(id, "setBit", List.of(10)));
         var r2 = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "isClear", List.of(10)));
         Assert.assertFalse(r2);
+    }
+
+    private void processCatchUnchecked() {
+        var v0 = TestUtils.doInTransaction(() -> apiClient.callMethod("trycatch.UncheckedExceptionFoo", "get",
+                List.of(1)));
+        Assert.assertEquals(1L, v0);
+        var v1 = TestUtils.doInTransaction(() -> apiClient.callMethod("trycatch.UncheckedExceptionFoo", "get",
+                List.of(-1)));
+        Assert.assertEquals(1L, v1);
     }
 
 }
