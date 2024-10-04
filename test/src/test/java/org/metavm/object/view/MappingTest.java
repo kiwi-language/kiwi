@@ -545,4 +545,9 @@ public void testGeneric() {
                 typeManager, schedulerAndWorker);
     }
 
+    public void testExtendsParameterized() {
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/parameterized_super_mapping.masm",
+                typeManager, schedulerAndWorker);
+    }
+
 }

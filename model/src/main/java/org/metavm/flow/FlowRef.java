@@ -13,7 +13,7 @@ import java.util.Objects;
 @EntityType
 public abstract class FlowRef extends CallableRef implements GenericDeclarationRef {
 
-    public static FlowRef create(FlowRefDTO flowRefDTO, IEntityContext context) {
+    public static FlowRef create(FlowRefDTO flowRefDTO, EntityRepository context) {
         if(flowRefDTO instanceof MethodRefDTO methodRefDTO)
             return MethodRef.create(methodRefDTO, context);
         else if(flowRefDTO instanceof FunctionRefDTO functionRefDTO)

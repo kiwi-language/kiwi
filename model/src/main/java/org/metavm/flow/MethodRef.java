@@ -3,10 +3,7 @@ package org.metavm.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.CopyIgnore;
-import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
+import org.metavm.entity.*;
 import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeParser;
@@ -25,10 +22,10 @@ import java.util.function.Function;
 @Slf4j
 public class MethodRef extends FlowRef implements PropertyRef {
 
-    public static MethodRef create(MethodRefDTO methodRefDTO, IEntityContext context) {
+    public static MethodRef create(MethodRefDTO methodRefDTO, EntityRepository context) {
         return new MethodRef(
                 (ClassType) TypeParser.parseType(methodRefDTO.declaringType(), context),
-                context.getMethod(methodRefDTO.rawFlowId()),
+                context.getEntity(Method.class, Id.parse(methodRefDTO.rawFlowId())),
                 NncUtils.map(methodRefDTO.typeArguments(), t -> TypeParser.parseType(t, context))
         );
     }

@@ -127,8 +127,9 @@ public class MappingSaver {
                             sourceField);
                 }
                 case FlowFieldMappingParam flowParam -> {
-                    var getter = sourceType.getMethod(Id.parse(flowParam.getterId()));
-                    var setter = NncUtils.get(flowParam.setterId(), id -> sourceType.getMethod(Id.parse(id)));
+                    var getter = MethodRef.create(flowParam.getterRef(), entityRepository).resolve();
+                    var setter = flowParam.setterRef() != null ?
+                            MethodRef.create(flowParam.setterRef(), entityRepository).resolve() : null;
                     var objectNestedMapping = nestedMapping != null ? new ObjectNestedMapping(nestedMapping.getRef()) : null;
                     yield new FlowFieldMapping(
                             fieldMappingDTO.tmpId(),
@@ -178,10 +179,12 @@ public class MappingSaver {
                         fieldMappingDTO.readonly());
                 case FlowFieldMapping flowFieldMapping -> {
                     var flowParam = (FlowFieldMappingParam) param;
-                    var getter = sourceType.getMethod(Id.parse(flowParam.getterId()));
+                    var getter =  MethodRef.create(flowParam.getterRef(), entityRepository).resolve();
+                    var setter = flowParam.setterRef() != null ?
+                            MethodRef.create(flowParam.setterRef(), entityRepository).resolve() : null;
                     flowFieldMapping.setFlows(
                             getter,
-                            NncUtils.get(flowParam.setterId(), id -> sourceType.getMethod(Id.parse(id))),
+                            setter,
                             getTargetFieldType(getter.getReturnType(), codeGenerator)
                     );
                 }

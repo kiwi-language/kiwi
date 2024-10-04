@@ -1,0 +1,21 @@
+abstract class Base<E> {
+
+    public int length;
+
+    public Base(int length) {
+        this.length = length;
+    }
+
+    public boolean isEmpty() {
+        return this.length == 0;
+    }
+
+}
+
+class Sub extends Base<string> {
+
+    public Sub(int length) {
+        super(length);
+    }
+
+}

@@ -20,9 +20,9 @@ import java.util.function.Supplier;
 @EntityType
 public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericElement {
 
-    private Method getter;
+    private MethodRef getterRef;
     @Nullable
-    private Method setter;
+    private MethodRef setterRef;
     @CopyIgnore
     @Nullable
     private FlowFieldMapping copySource;
@@ -31,13 +31,13 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
                             FieldsObjectMapping containingMapping,
                             @Nullable NestedMapping nestedMapping,
                             FieldRef targetFieldRef,
-                            Method getter,
+                            @NotNull Method getter,
                             @Nullable Method setter,
                             @Nullable FlowFieldMapping copySource) {
         super(tmpId, targetFieldRef, containingMapping, nestedMapping);
         check(getter, setter);
-        this.getter = getter;
-        this.setter = setter;
+        this.getterRef = getter.getRef();
+        this.setterRef = NncUtils.get(setter, Method::getRef);
         this.copySource = copySource;
     }
 
@@ -66,8 +66,8 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     @Override
     public FlowFieldMappingParam getParam(SerializeContext serializeContext) {
         return new FlowFieldMappingParam(
-                serializeContext.getStringId(getter),
-                NncUtils.get(setter, serializeContext::getStringId)
+                getterRef.toDTO(serializeContext),
+                NncUtils.get(setterRef, r -> r.toDTO(serializeContext))
         );
     }
 
@@ -75,12 +75,12 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     public Supplier<Value> generateReadCode0(SelfNode selfNode) {
         var node = new MethodCallNode(
                 null,
-                getter.getName(),
-                getter.getCode(),
+                getGetter().getName(),
+                getGetter().getCode(),
                 selfNode.getScope().getLastNode(),
                 selfNode.getScope(),
                 Values.node(selfNode),
-                getter.getRef(),
+                getterRef,
                 List.of()
         );
         return () -> Values.node(node);
@@ -88,6 +88,7 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
 
     @Override
     protected void generateWriteCode0(SelfNode selfNode, Supplier<Value> fieldValueSupplier) {
+        var setter = getSetter();
         Objects.requireNonNull(setter);
         new MethodCallNode(
                 null,
@@ -96,20 +97,20 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
                 selfNode.getScope().getLastNode(),
                 selfNode.getScope(),
                 Values.node(selfNode),
-                setter.getRef(), List.of(Nodes.argument(setter, 0, fieldValueSupplier.get()))
+                setterRef, List.of(Nodes.argument(setter, 0, fieldValueSupplier.get()))
         );
     }
 
     @Override
     protected Type getTargetFieldType() {
-        return getter.getReturnType();
+        return getGetter().getReturnType();
     }
 
-    public void setFlows(Method getter, @Nullable Method setter, Type fieldType) {
+    public void setFlows(@NotNull Method getter, @Nullable Method setter, Type fieldType) {
         check(getter, setter);
-        this.getter = getter;
-        this.setter = setter;
-        setReadonly(setter == null);
+        this.getterRef = getter.getRef();
+        this.setterRef = NncUtils.get(setter, Method::getRef);
+        setReadonly(setterRef == null);
         getTargetField().setType(fieldType);
     }
 
@@ -125,22 +126,22 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     }
 
     public Flow getGetter() {
-        return getter;
+        return getterRef.resolve();
     }
 
     @Nullable
     public Flow getSetter() {
-        return setter;
+        return NncUtils.get(setterRef, MethodRef::resolve);
     }
 
     @Override
     public boolean isValidLocalKey() {
-        return getter.getCode() != null;
+        return getGetter().getCode() != null;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return getter.getCodeNotNull();
+        return getGetter().getCodeNotNull();
     }
 
 }
