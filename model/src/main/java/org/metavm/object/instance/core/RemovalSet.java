@@ -1,6 +1,7 @@
 package org.metavm.object.instance.core;
 
 import com.google.common.collect.Iterators;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -9,6 +10,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Consumer;
 
+@Slf4j
 class RemovalSet implements Collection<Instance> {
     final Set<Instance> views = new HashSet<>();
     final Set<Instance> instances = new HashSet<>();

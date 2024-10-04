@@ -266,7 +266,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                 else {
                     var parentField = entity.getParentEntityField();
                     // Parent field can be null even if the parent is an non-array object during pre-upgrade
-                    if(parentField != null)
+                    if(parentField != null && ReflectionUtils.get(entity.getParentEntity(), parentField) == entity)
                         ReflectionUtils.set(entity.getParentEntity(), parentField, null);
                 }
             }
