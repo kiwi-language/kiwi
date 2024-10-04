@@ -487,6 +487,11 @@ public class ApiService extends EntityContextFactoryAware {
             return Instances.doubleInstance(((Number) rawValue).doubleValue());
         if (rawValue instanceof Boolean b)
             return Instances.booleanInstance(b);
+        if (rawValue instanceof List<?> list) {
+            var listType = StdKlass.arrayList.get().getParameterized(List.of(Types.getAnyType())).getType();
+            return Instances.createList(listType,
+                    NncUtils.map(list, e -> resolveAny(e, context))).getReference();
+        }
         throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE, NncUtils.toJSONString(rawValue));
     }
 

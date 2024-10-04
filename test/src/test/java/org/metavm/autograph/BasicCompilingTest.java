@@ -62,6 +62,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processClone();
             processBitSet();
             processCatchUnchecked();
+            processCaptureTypeCast();
         });
     }
 
@@ -659,6 +660,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         var v1 = TestUtils.doInTransaction(() -> apiClient.callMethod("trycatch.UncheckedExceptionFoo", "get",
                 List.of(-1)));
         Assert.assertEquals(1L, v1);
+    }
+
+    private void processCaptureTypeCast() {
+        var r = (boolean) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("capturedtypes.CaptureTypeCastFoo", "listEquals",
+                        List.of(List.of(1,true,"MetaVM"), List.of(1,true,"MetaVM")))
+        );
+        Assert.assertTrue(r);
     }
 
 }

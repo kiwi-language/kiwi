@@ -115,7 +115,7 @@ public class UnionType extends CompositeType {
 
     @Override
     public boolean isBinaryNullable() {
-        return members.size() == 2 && isNullable();
+        return members.size() == 2 && (members.get(0).isNull() || members.get(1).isNull());
     }
 
     @Override
@@ -241,4 +241,16 @@ public class UnionType extends CompositeType {
     public int getPrecedence() {
         return 3;
     }
+
+    public UnionType flatten() {
+        var flattenedMembers = new HashSet<Type>();
+        for (Type member : members) {
+            if(member instanceof UnionType u)
+                flattenedMembers.addAll(u.getMembers());
+            else
+                flattenedMembers.add(member);
+        }
+        return new UnionType(flattenedMembers);
+    }
+
 }

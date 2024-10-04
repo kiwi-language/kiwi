@@ -161,4 +161,15 @@ public class IntersectionType extends CompositeType {
         return typeSet;
     }
 
+    public IntersectionType flatten() {
+        var flattenedTypes = new HashSet<Type>();
+        for (Type t : types) {
+            if(t instanceof IntersectionType i)
+                flattenedTypes.addAll(i.getTypes());
+            else
+                flattenedTypes.add(t);
+        }
+        return new IntersectionType(flattenedTypes);
+    }
+
 }

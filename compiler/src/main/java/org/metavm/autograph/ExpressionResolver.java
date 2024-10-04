@@ -95,6 +95,8 @@ public class ExpressionResolver {
         } else {
             resolved = resolveNormal(psiExpression, context);
         }
+        if(!expressionMap.containsKey(psiExpression))
+            expressionMap.put(psiExpression, resolved);
 //        if(resolved != null && resolved.getType().isCaptured())
 //            TranspileUtil.forEachCapturedTypePairs(psiExpression.getType(), resolved.getType(), typeResolver::mapCapturedType);
         return resolved;
@@ -544,7 +546,9 @@ public class ExpressionResolver {
         var capturedTypes = new ArrayList<>(capturedTypeSet);
         var psiCapturedTypes = NncUtils.map(capturedTypes, typeResolver::getPsiCapturedType);
         var capturedPsiExpressions = NncUtils.mapAndFilterByType(psiCapturedTypes, PsiCapturedWildcardType::getContext, PsiExpression.class);
-        var capturedExpressions = NncUtils.map(capturedPsiExpressions, e -> resolve(e, context));
+        var capturedExpressions = NncUtils.map(capturedPsiExpressions,
+                e -> Objects.requireNonNull(expressionMap.get(e),
+                        () -> "Captured expression '" + e.getText() + "' has not yet been resolved"));
         var captureExpressionTypes = NncUtils.map(
                 capturedPsiExpressions, e -> typeResolver.resolveDeclaration(e.getType()));
         node.setCapturedExpressions(capturedExpressions);

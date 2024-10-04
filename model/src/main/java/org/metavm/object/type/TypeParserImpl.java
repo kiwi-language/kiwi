@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import lombok.extern.slf4j.Slf4j;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class TypeParserImpl implements TypeParser {
 
     private final ParserTypeDefProvider typeDefProvider;
@@ -235,11 +237,11 @@ public class TypeParserImpl implements TypeParser {
     }
 
     private UnionType parseUnionType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new UnionType(NncUtils.mapUnique(ctx.type(), this::parseType));
+        return new UnionType(NncUtils.mapUnique(ctx.type(), this::parseType)).flatten();
     }
 
     private IntersectionType parseIntersectionType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new IntersectionType(NncUtils.mapUnique(ctx.type(), this::parseType));
+        return new IntersectionType(NncUtils.mapUnique(ctx.type(), this::parseType)).flatten();
     }
 
     private Type parseClassType(org.metavm.object.type.antlr.TypeParser.ClassTypeContext ctx) {

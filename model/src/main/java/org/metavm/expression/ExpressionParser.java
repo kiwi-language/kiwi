@@ -247,9 +247,9 @@ public class ExpressionParser {
         if (typeType.classOrInterfaceType() != null)
             return parseClassType(typeType.classOrInterfaceType());
         if (!typeType.BITOR().isEmpty())
-            return new UnionType(NncUtils.mapUnique(typeType.typeType(), this::parseTypeType));
+            return new UnionType(NncUtils.mapUnique(typeType.typeType(), this::parseTypeType)).flatten();
         if (!typeType.BITAND().isEmpty())
-            return new IntersectionType(NncUtils.mapUnique(typeType.typeType(), this::parseTypeType));
+            return new IntersectionType(NncUtils.mapUnique(typeType.typeType(), this::parseTypeType)).flatten();
         if(typeType.ARROW() != null) {
             List<Type> paramTypes = typeType.typeList() != null ?
                     NncUtils.map(typeType.typeList().typeType(), this::parseTypeType) : List.of();

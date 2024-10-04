@@ -180,4 +180,18 @@ public class TypeParserImplTest extends TestCase {
         Assert.assertEquals(type, parsedType);
     }
 
+    public void testUnionType() {
+        TypeDefProvider typeDefProvider = (Id id) -> {throw new UnsupportedOperationException();};
+        var parser = new TypeParserImpl(typeDefProvider);
+        var type = (UnionType) parser.parseType("null|string|long");
+        Assert.assertEquals(3, type.getMembers().size());
+    }
+
+    public void testIntersectionType() {
+        TypeDefProvider typeDefProvider = (Id id) -> {throw new UnsupportedOperationException();};
+        var parser = new TypeParserImpl(typeDefProvider);
+        var type = (IntersectionType) parser.parseType("null&string&long");
+        Assert.assertEquals(3, type.getTypes().size());
+    }
+
 }
