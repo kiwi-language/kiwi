@@ -215,6 +215,10 @@ public class ListNative extends IterableNative {
         return array;
     }
 
+    public Reference toArray(CallContext callContext) {
+        return array.copy().getReference();
+    }
+
     @Override
     public void forEach(Value action, CallContext callContext) {
         if(action instanceof Reference r) {

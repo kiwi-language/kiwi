@@ -125,7 +125,10 @@ public class ArrayType extends CompositeType {
 
     @Override
     public String getTypeDesc() {
-        return elementType.getTypeDesc() + kind.getSuffix();
+        if(elementType.getPrecedence() > getPrecedence())
+            return "(" + elementType.getTypeDesc()  + ")" + kind.getSuffix();
+        else
+            return elementType.getTypeDesc()  + kind.getSuffix();
     }
 
     @Nullable

@@ -545,7 +545,7 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     @Override
-    public Instance copy() {
+    public ArrayInstance copy() {
         var copy = new ArrayInstance(getType());
         if(isChildArray()) {
             var copyElements = copy.elements;
