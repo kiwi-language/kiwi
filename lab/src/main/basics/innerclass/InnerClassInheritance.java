@@ -1,6 +1,6 @@
 package innerclass;
 
-public class InnerClassInheritance {
+public class InnerClassInheritance<E> implements java.io.Serializable {
 
     private final String value;
 

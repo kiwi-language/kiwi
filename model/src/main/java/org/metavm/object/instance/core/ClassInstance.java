@@ -394,7 +394,10 @@ public class ClassInstance extends Instance {
 
     public boolean isFieldInitialized(Field field) {
         ensureLoaded();
-        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass));
+        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass),
+                () -> "Field " + field.getName() + " is declared in class " + field.getDeclaringType().getTypeDesc()
+                        + " which is not assignable from instance class "
+                        + klass.getTypeDesc());
         return field(field).isFieldInitialized();
     }
 

@@ -23,6 +23,7 @@ public class InnerClassCopier extends VisitorBase {
             copy = (PsiClass) Objects.requireNonNull(psiClass.getContainingClass()).addAfter(copy, psiClass);
             copies.add(copy);
             copy.putUserData(Keys.ORIGINAL_NAME, psiClass.getName());
+            copy.putUserData(Keys.INNER_CLASS_COPY, true);
             copy.accept(new ClassRefSubstitutor(psiClass, copy));
             recordSubstitution(psiClass, copy);
             psiClass.putUserData(Keys.DISCARDED, true);

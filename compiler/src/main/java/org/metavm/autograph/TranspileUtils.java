@@ -971,6 +971,10 @@ public class TranspileUtils {
                 && !isStatic(psiClass) && !psiClass.isInterface() && !psiClass.isEnum() && !psiClass.isRecord();
     }
 
+    public static boolean isInnerClassCopy(PsiClass psiClass) {
+        return Boolean.TRUE.equals(psiClass.getUserData(Keys.INNER_CLASS_COPY));
+    }
+
     public static String getQualifiedName(PsiMethod psiMethod) {
         return requireNonNull(psiMethod.getContainingClass()).getName() + "." + psiMethod.getName();
     }

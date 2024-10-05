@@ -79,6 +79,8 @@ public class Keys {
 
     public static final Key<String> ORIGINAL_NAME = Key.create("OriginalName");
 
+    public static final Key<Boolean> INNER_CLASS_COPY = Key.create("InnerClassCopy");
+
     public static Set<Key<?>> getKeys() {
         return new HashSet<>(KEYS);
     }

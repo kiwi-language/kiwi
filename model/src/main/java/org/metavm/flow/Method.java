@@ -367,10 +367,10 @@ public class Method extends Flow implements Property, GenericElement {
         try (var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName() + "." + getName())) {
             if (DebugEnv.debugging) {
                 var methodName = getDeclaringType().getName() + "." + getNameWithTypeArguments();
-                debugLogger.info("Method.execute: {}", methodName);
-                debugLogger.info("Arguments: ");
+                logger.debug("Method.execute: {}", methodName);
+                logger.debug("Arguments: ");
                 arguments.forEach(arg -> debugLogger.info(arg.getText()));
-                debugLogger.info(getText());
+                logger.debug(getText());
             }
             if (_static)
                 NncUtils.requireNull(self);

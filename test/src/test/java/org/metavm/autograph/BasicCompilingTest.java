@@ -588,7 +588,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processInnerClassInheritance() {
         var id = TestUtils.doInTransaction(() ->
-                apiClient.saveInstance("innerclass.InnerClassInheritance", Map.of("value", "MetaVM"))
+                apiClient.saveInstance("innerclass.InnerClassInheritance<string>", Map.of("value", "MetaVM"))
         );
         var value = TestUtils.doInTransaction(() ->
                 apiClient.callMethod(id, "getValue", List.of())

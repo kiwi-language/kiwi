@@ -120,7 +120,8 @@ public class InnerClassTransformer extends VisitorBase {
     public void visitMethodCallExpression(PsiMethodCallExpression expression) {
         super.visitMethodCallExpression(expression);
         if(expression.getMethodExpression().resolve() instanceof PsiMethod method) {
-            if (method.isConstructor() && TranspileUtils.isNonStaticInnerClass(Objects.requireNonNull(method.getContainingClass()))) {
+            var declaringKlass = Objects.requireNonNull(method.getContainingClass());
+            if (method.isConstructor() && (TranspileUtils.isNonStaticInnerClass(declaringKlass) || TranspileUtils.isInnerClassCopy(declaringKlass))) {
                 expression.getArgumentList().addAfter(
                         TranspileUtils.createExpressionFromText(PARENT),
                         null
@@ -152,9 +153,14 @@ public class InnerClassTransformer extends VisitorBase {
     }
 
     private boolean shouldTransform(PsiJavaCodeReferenceElement reference) {
-        var context = reference.getContext();
-        return context instanceof PsiTypeElement && !(context.getParent() instanceof PsiClassObjectAccessExpression) ||
-                (context instanceof PsiNewExpression newExpr && newExpr.getClassOrAnonymousClassReference() == reference);
+        if(reference.resolve() instanceof PsiClass klass && TranspileUtils.isNonStaticInnerClass(klass)) {
+            var context = reference.getContext();
+            return context instanceof PsiTypeElement && !(context.getParent() instanceof PsiClassObjectAccessExpression) ||
+                    (context instanceof PsiNewExpression newExpr && newExpr.getClassOrAnonymousClassReference() == reference) ||
+                    context instanceof PsiReferenceList;
+        }
+        else
+            return false;
     }
 
     public void visitReferenceElement(PsiJavaCodeReferenceElement reference) {
