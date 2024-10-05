@@ -66,6 +66,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processString();
             processOverride();
             processCapturedFunctionCall();
+            processCompoundAssignment();
         });
     }
 
@@ -691,6 +692,16 @@ public class BasicCompilingTest extends CompilerTestBase {
         TestUtils.doInTransaction(() ->
                 apiClient.callMethod("capturedtypes.CapturedFunctionCall", "test", List.of())
         );
+    }
+
+    private void processCompoundAssignment() {
+        var id = TestUtils.doInTransaction(() ->
+                apiClient.saveInstance("assignment.CompoundAssignmentFoo", Map.of("size", 4))
+        );
+        var s = (long) TestUtils.doInTransaction(() ->
+                apiClient.callMethod(id, "decrementSize", List.of(1))
+        );
+        Assert.assertEquals(3L, s);
     }
 
 }

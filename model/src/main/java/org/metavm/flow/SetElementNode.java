@@ -89,7 +89,7 @@ public class SetElementNode extends NodeRT {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("add(" + array.getText() + ", " + element.getText() + ")");
+        writer.write(array.getText() + "[" + index.getText() + "] = " + element.getText());
     }
 
     @Override

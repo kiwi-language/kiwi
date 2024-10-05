@@ -735,6 +735,7 @@ public class ExpressionResolver {
                 throw new InternalException("Unsupported assignment operator " + op);
             }
         }
+        assignment = Expressions.node(methodGenerator.createValue("assignment", assignment));
         return processAssignment(
                 expression.getLExpression(), assignment, context
         );
