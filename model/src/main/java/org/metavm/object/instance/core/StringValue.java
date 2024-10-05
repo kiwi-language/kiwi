@@ -34,6 +34,10 @@ public class StringValue extends PrimitiveValue {
         return Instances.createBoolean(value.startsWith(that.value));
     }
 
+    public BooleanValue endsWith(StringValue that) {
+        return Instances.createBoolean(value.endsWith(that.value));
+    }
+
     public StringValue concat(StringValue that) {
         return new StringValue(value + that.value, getType());
     }

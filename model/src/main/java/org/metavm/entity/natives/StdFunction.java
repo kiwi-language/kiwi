@@ -653,6 +653,26 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.longInstance(s.getValue().length()));
             }
     ),
+    stringStartsWith(
+            "long stringStartsWith(string s, string prefix)",
+            false,
+            List.of(ReflectionUtils.getMethod(String.class, "startsWith", String.class)),
+            (func, args, callContext) -> {
+                var s = (StringValue) args.get(0);
+                var prefix = (StringValue) args.get(1);
+                return FlowExecResult.of(s.startsWith(prefix));
+            }
+    ),
+    stringEndsWith(
+            "long stringEndsWith(string s, string suffix)",
+            false,
+            List.of(ReflectionUtils.getMethod(String.class, "endsWith", String.class)),
+            (func, args, callContext) -> {
+                var s = (StringValue) args.get(0);
+                var suffix = (StringValue) args.get(1);
+                return FlowExecResult.of(s.endsWith(suffix));
+            }
+    ),
     newArray(
             "any newArray(org.metavm.object.type.Klass klass, long length)",
             false,

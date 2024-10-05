@@ -35,4 +35,9 @@ public class SubstitutorPipeline {
     public int getDepth() {
         return next == null ? 1 : next.getDepth() + 1;
     }
+
+    @Override
+    public String toString() {
+        return next != null ? substitutor + ", " + next : substitutor.toString();
+    }
 }

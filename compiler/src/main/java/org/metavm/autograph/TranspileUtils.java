@@ -1208,8 +1208,9 @@ public class TranspileUtils {
     }
 
     public static SubstitutorPipeline getSubstitutorPipeline(PsiClassType type, PsiClass ancestor) {
-        return Objects.requireNonNull(findSubstitutorPipeline(type, ancestor),
-                () -> "Class " + ancestor.getQualifiedName() + " is not an ancestor of " + type.getCanonicalText());
+        var pType = type.isRaw() ? createTemplateType(Objects.requireNonNull(type.resolve())) : type;
+        return Objects.requireNonNull(findSubstitutorPipeline(pType, ancestor),
+                () -> "Class " + ancestor.getQualifiedName() + " is not an ancestor of " + pType.getCanonicalText());
     }
 
     public static @Nullable SubstitutorPipeline findSubstitutorPipeline(PsiClassType type, PsiClass ancestor) {

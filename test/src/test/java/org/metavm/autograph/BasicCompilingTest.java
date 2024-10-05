@@ -63,6 +63,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processBitSet();
             processCatchUnchecked();
             processCaptureTypeCast();
+            processString();
+            processOverride();
         });
     }
 
@@ -668,6 +670,20 @@ public class BasicCompilingTest extends CompilerTestBase {
                         List.of(List.of(1,true,"MetaVM"), List.of(1,true,"MetaVM")))
         );
         Assert.assertTrue(r);
+    }
+
+    private void processString() {
+        Assert.assertTrue((boolean) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("str.StringFoo", "startsWithAndEndsWith",
+                        List.of("MetaVM", "Meta", "VM"))
+        ));
+    }
+
+    private void processOverride() {
+        var r = (String) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("override.OverrideFoo", "test", List.of("MetaVM"))
+        );
+        Assert.assertEquals("MetaVM", r);
     }
 
 }
