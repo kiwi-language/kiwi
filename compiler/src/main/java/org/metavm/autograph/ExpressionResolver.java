@@ -537,7 +537,7 @@ public class ExpressionResolver {
         }
     }
 
-    private void setCapturedExpressions(CallNode node, ResolutionContext context) {
+    void setCapturedExpressions(CallNode node, ResolutionContext context) {
         var flow = node.getFlowRef();
         var capturedTypeSet = new HashSet<CapturedType>();
         if (flow instanceof MethodRef methodRef)

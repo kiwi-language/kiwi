@@ -35,7 +35,7 @@ public class FunctionCallNode extends CallNode {
                         ValueFactory.create(argDTO.value(), parsingContext))
         );
         if(node == null) {
-            return new FunctionCallNode(
+            node = new FunctionCallNode(
                     nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
                     prev, scope, functionRef, arguments
             );

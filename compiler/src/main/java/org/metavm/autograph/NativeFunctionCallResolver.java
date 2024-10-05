@@ -53,6 +53,7 @@ public class NativeFunctionCallResolver implements MethodCallResolver {
                 convertedArgs.add(arg);
         });
         var node = methodGenerator.createFunctionCall(function, convertedArgs);
+        expressionResolver.setCapturedExpressions(node, null);
         return function.getReturnType().isVoid() ? null : Expressions.node(node);
     }
 

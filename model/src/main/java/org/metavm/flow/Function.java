@@ -95,10 +95,8 @@ public class Function extends Flow implements GlobalKey {
 
     @Override
     protected Function createParameterized(List<? extends Type> typeArguments) {
-        var name = Types.getParameterizedName(getName(), typeArguments);
-        var code = Types.getParameterizedCode(getCode(), typeArguments);
         var parameterized = FunctionBuilder
-                .newBuilder(name, code)
+                .newBuilder(getName(), getCode())
 //                .tmpId(getCopyTmpId(function))
                 .horizontalTemplate(this)
                 .typeArguments(typeArguments)

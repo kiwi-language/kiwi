@@ -65,6 +65,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processCaptureTypeCast();
             processString();
             processOverride();
+            processCapturedFunctionCall();
         });
     }
 
@@ -684,6 +685,12 @@ public class BasicCompilingTest extends CompilerTestBase {
                 apiClient.callMethod("override.OverrideFoo", "test", List.of("MetaVM"))
         );
         Assert.assertEquals("MetaVM", r);
+    }
+
+    private void processCapturedFunctionCall() {
+        TestUtils.doInTransaction(() ->
+                apiClient.callMethod("capturedtypes.CapturedFunctionCall", "test", List.of())
+        );
     }
 
 }
