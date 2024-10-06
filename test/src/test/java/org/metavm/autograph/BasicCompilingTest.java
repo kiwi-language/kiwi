@@ -68,6 +68,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processCapturedFunctionCall();
             processCompoundAssignment();
             processDynamicOverride();
+            processPrimitiveStaticFields();
         });
     }
 
@@ -708,6 +709,12 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processDynamicOverride() {
         Assert.assertTrue((boolean) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("override.DynamicOverride", "test", List.of())));
+    }
+
+    private void processPrimitiveStaticFields() {
+        var v = (long) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("statics.PrimitiveStaticFieldsFoo", "getMaxInt", List.of()));
+        Assert.assertEquals(Integer.MAX_VALUE, v);
     }
 
 }

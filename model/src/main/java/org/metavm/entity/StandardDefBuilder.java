@@ -168,6 +168,7 @@ public class StandardDefBuilder {
         var errorKlass = createExceptionKlass(Error.class, throwableKlass);
         var vmErrorKlass = createExceptionKlass(VirtualMachineError.class, errorKlass);
         createExceptionKlass(InternalError.class, vmErrorKlass);
+        createExceptionKlass(OutOfMemoryError.class, vmErrorKlass);
 
         consumerKlass = createConsumerKlass();
         predicateKlass = createPredicateKlass();

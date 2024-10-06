@@ -3,7 +3,6 @@ package org.metavm.autograph;
 import com.google.common.collect.Streams;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
-import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.*;
 import org.metavm.flow.*;
@@ -261,6 +260,12 @@ public class ExpressionResolver {
                 PsiClass psiClass = requireNonNull(psiField.getContainingClass());
                 Field field;
                 if (psiField.hasModifierProperty(PsiModifier.STATIC)) {
+                    var className = psiField.getContainingClass().getQualifiedName();
+                    if(className != null && className.startsWith("java.")) {
+                        var javaField = ReflectionUtils.getField(ReflectionUtils.classForName(className), psiField.getName());
+                        if(PrimitiveStaticFields.isConstant(javaField))
+                            return Expressions.constant(Instances.fromConstant(PrimitiveStaticFields.getConstant(javaField)));
+                    }
                     var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass))).resolve();
                     field = Objects.requireNonNull(klass.findStaticFieldByCode(psiField.getName()));
                     return new StaticPropertyExpression(field.getRef());

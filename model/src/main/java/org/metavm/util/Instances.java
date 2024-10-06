@@ -1057,4 +1057,21 @@ public class Instances {
             throw new IllegalArgumentException("Cannot get general klass for instance: " + instance);
     }
 
+    public static Value fromConstant(Object value) {
+        return switch (value) {
+            case Long l -> longInstance(l);
+            case Integer i -> longInstance(i);
+            case Short s -> longInstance(s);
+            case Byte b -> longInstance(b);
+            case Double d -> doubleInstance(d);
+            case Float f -> doubleInstance(f);
+            case Character c -> charInstance(c);
+            case Boolean b -> booleanInstance(b);
+            case String s -> stringInstance(s);
+            case Date t -> timeInstance(t.getTime());
+            case null -> nullInstance();
+            default -> throw new IllegalArgumentException("Cannot create a value for " + value);
+        };
+    }
+
 }

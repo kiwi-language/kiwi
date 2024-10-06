@@ -13,9 +13,9 @@ PASSWORD:           'password';
 STRING:             'string';
 ANY:                'any';
 NEVER:              'never';
-R:                  'r';
-C:                  'c';
-V:                  'v';
+R:                  '[r]';
+C:                  '[c]';
+V:                  '[v]';
 FUNC:               'func';
 
 

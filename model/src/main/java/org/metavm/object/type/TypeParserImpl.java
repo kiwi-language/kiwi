@@ -269,8 +269,8 @@ public class TypeParserImpl implements TypeParser {
         return typeDef;
     }
 
-    private ArrayKind parseArrayKind(@Nullable org.metavm.object.type.antlr.TypeParser.ArrayKindContext ctx) {
-        if (ctx == null)
+    private ArrayKind parseArrayKind(org.metavm.object.type.antlr.TypeParser.ArrayKindContext ctx) {
+        if (ctx.LBRACK() != null)
             return ArrayKind.READ_WRITE;
         if (ctx.R() != null)
             return ArrayKind.READ_ONLY;

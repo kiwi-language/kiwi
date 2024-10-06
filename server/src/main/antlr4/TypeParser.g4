@@ -12,7 +12,7 @@ type
     | '#' qualifiedName
     | classType
     | parType
-    | elementType=type '[' arrayKind? ']'
+    | elementType=type arrayKind
     | type ('|' type)+
     | type ('&' type)+
     | '[' type ',' type ']'
@@ -29,7 +29,7 @@ functionRef: FUNC IDENTIFIER typeArguments?;
 
 simpleMethodRef: IDENTIFIER typeArguments?;
 
-arrayKind: R | C | V;
+arrayKind: R | C | V | '[' ']';
 
 classType: qualifiedName typeArguments? (':' DECIMAL_LITERAL)?;
 
