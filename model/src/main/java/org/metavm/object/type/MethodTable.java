@@ -32,21 +32,23 @@ public class MethodTable {
         var sig2methods = new HashMap<SimpleSignature, List<Method>>();
         classType.forEachSuperClass(s -> {
             for (Method method : s.getMethods()) {
-                if(!method.isStatic() && !method.isAbstract() && !method.isPrivate() && !method.isConstructor())
+                if(method.isVirtual() && !method.isAbstract())
                     sig2methods.computeIfAbsent(SimpleSignature.of(method), k -> new ArrayList<>()).add(method);
             }
         });
         classType.foreachAncestor(s -> {
             if(s.isInterface()) {
                 for (Method method : s.getMethods()) {
-                    if (!method.isStatic() && !method.isAbstract())
+                    if (method.isVirtual() && !method.isAbstract())
                         sig2methods.computeIfAbsent(SimpleSignature.of(method), k -> new ArrayList<>()).add(method);
                 }
             }
         });
         classType.forEachMethod(method -> {
-            var override = NncUtils.find(sig2methods.get(SimpleSignature.of(method)), m -> m.isOverrideOf(method));
-            overriddenIndex.put(method, Objects.requireNonNullElse(override, method));
+            if(method.isVirtual()) {
+                var override = NncUtils.find(sig2methods.get(SimpleSignature.of(method)), m -> m.isOverrideOf(method));
+                overriddenIndex.put(method, Objects.requireNonNullElse(override, method));
+            }
         });
         classType.foreachAncestor(t -> {
             for (Method method : t.getMethods()) {

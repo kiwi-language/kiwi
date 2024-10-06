@@ -158,7 +158,7 @@ public abstract class CallNode extends NodeRT {
         }
         flow = tryUncaptureFlow(flow, frame);
         var self = getSelf(frame);
-        if (flow instanceof Method method && method.isInstanceMethod())
+        if (flow instanceof Method method && method.isVirtual())
             flow = requireNonNull(self).getKlass().resolveMethod(method);
         FlowExecResult result = flow.execute(self, argInstances, frame);
         if (result.exception() != null)

@@ -177,6 +177,10 @@ public class Method extends Flow implements Property, GenericElement {
         return _static;
     }
 
+    public boolean isVirtual() {
+        return !_static && !isConstructor && access != Access.PRIVATE;
+    }
+
     @Override
     public void setStatic(boolean _static) {
         this._static = _static;
