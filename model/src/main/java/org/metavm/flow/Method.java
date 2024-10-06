@@ -564,4 +564,35 @@ public class Method extends Flow implements Property, GenericElement {
     public String getTypeDesc() {
         return getQualifiedName();
     }
+
+    public boolean isOverrideOf(Method method) {
+        if(isConstructor || method.isConstructor
+                || isStatic() || method.isStatic()
+                || isPrivate() || method.isPrivate())
+            return false;
+        if(getName().equals(method.getName())
+                && getParameters().size() == method.getParameters().size()
+                && getTypeParameters().size() == method.getTypeParameters().size()
+        ) {
+            var k1 = getDeclaringType();
+            var k2 = method.getDeclaringType();
+            if(k1 != k2 && (k2.isInterface() || k2.isAssignableFrom(k1))) {
+                var subst = new TypeSubstitutor(
+                        NncUtils.map(getTypeParameters(), TypeVariable::getType),
+                        NncUtils.map(method.getTypeParameters(), TypeVariable::getType)
+                );
+                if (NncUtils.biAllMatch(getParameterTypes(), method.getParameterTypes(),
+                        (t1, t2) -> t1.accept(subst).equals(t2))) {
+//                    NncUtils.requireTrue(method.getReturnType().isAssignableFrom(getReturnType()),
+//                            () -> "Return type of the overriding method " + getQualifiedSignature()
+//                                    + " (" + getReturnType() + ") is not assignable "
+//                                    + " to the return type of the overridden method " + method.getQualifiedSignature()
+//                                    + " (" + method.getReturnType() + ")");
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 }

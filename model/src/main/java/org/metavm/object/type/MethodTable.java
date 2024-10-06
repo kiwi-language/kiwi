@@ -1,14 +1,14 @@
 package org.metavm.object.type;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.flow.Method;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+@Slf4j
 public class MethodTable {
 
     private final Klass classType;
@@ -29,14 +29,27 @@ public class MethodTable {
         toStringMethod = classType.findMethod(m -> "toString".equals(m.getCode()) && m.getParameters().isEmpty());
         verticalTemplateIndex.clear();
         overriddenIndex.clear();
+        var sig2methods = new HashMap<SimpleSignature, List<Method>>();
+        classType.forEachSuperClass(s -> {
+            for (Method method : s.getMethods()) {
+                if(!method.isStatic() && !method.isAbstract() && !method.isPrivate() && !method.isConstructor())
+                    sig2methods.computeIfAbsent(SimpleSignature.of(method), k -> new ArrayList<>()).add(method);
+            }
+        });
+        classType.foreachAncestor(s -> {
+            if(s.isInterface()) {
+                for (Method method : s.getMethods()) {
+                    if (!method.isStatic() && !method.isAbstract())
+                        sig2methods.computeIfAbsent(SimpleSignature.of(method), k -> new ArrayList<>()).add(method);
+                }
+            }
+        });
+        classType.forEachMethod(method -> {
+            var override = NncUtils.find(sig2methods.get(SimpleSignature.of(method)), m -> m.isOverrideOf(method));
+            overriddenIndex.put(method, Objects.requireNonNullElse(override, method));
+        });
         classType.foreachAncestor(t -> {
             for (Method method : t.getMethods()) {
-                var override = overriddenIndex.putIfAbsent(method, method);
-                if(override == null)
-                    override = method;
-                for (Method overridden : method.getOverridden()) {
-                    overriddenIndex.put(overridden, override);
-                }
                 var template = method.getVerticalTemplate();
                 if (template != null)
                     verticalTemplateIndex.put(template, method);
@@ -68,4 +81,21 @@ public class MethodTable {
     public @Nullable Method getToStringMethod() {
         return toStringMethod;
     }
+
+    private record SimpleSignature(
+            String name,
+            int parameterCount,
+            int typeParameterCount
+    ) {
+
+        static SimpleSignature of(Method method) {
+            return new SimpleSignature(
+                    method.getName(),
+                    method.getParameters().size(),
+                    method.getTypeParameters().size()
+            );
+        }
+
+    }
+
 }

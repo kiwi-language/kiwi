@@ -78,7 +78,7 @@ public enum ErrorCode {
     INCORRECT_ELEMENT_TYPE(419, "Array type '{}' does not match element type '{}'"),
     INCORRECT_INDEX_VALUE(419, "Index must be an integer"),
     INDEX_OUT_OF_BOUND(420, "Index out of bounds"),
-    INTERFACE_FLOW_NOT_IMPLEMENTED(421, "'{}' has not implemented the '{}' flow defined by the interface"),
+    INTERFACE_FLOW_NOT_IMPLEMENTED(421, "'{}' has not implemented the '{}' method defined by the interface {}"),
     DEST_NODE_FIELD_MISSING_SOURCE_CONFIG(422, "Target node field must configure all source node values"),
     ILLEGAL_TARGET_BRANCH(423, "Invalid jump target branch"),
     NODE_FIELD_DEF_AND_FIELD_VALUE_MISMATCH(423, "Field value for node '{}' does not match field definition"),

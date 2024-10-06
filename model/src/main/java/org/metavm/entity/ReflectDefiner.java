@@ -102,6 +102,7 @@ public class ReflectDefiner {
             if(!methodSignatures.add(MethodSignature.of(method)))
                 klass.removeMethod(method);
         }
+        klass.rebuildMethodTable();
         for (Field field : javaClass.getDeclaredFields()) {
             if (Modifier.isPublic(field.getModifiers()) && Modifier.isStatic(field.getModifiers()))
                 defineField(field, klass);

@@ -164,7 +164,7 @@ public class InnerClassTransformer extends VisitorBase {
     }
 
     public void visitReferenceElement(PsiJavaCodeReferenceElement reference) {
-        if(shouldTransform(reference)) {
+        if(typeTextMap.containsKey(reference) || shouldTransform(reference)) {
             try {
                 var text = getTypeText(reference);
                 if (!text.isValid())

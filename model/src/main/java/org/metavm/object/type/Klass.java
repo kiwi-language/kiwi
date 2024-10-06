@@ -1664,7 +1664,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 for (Method method : it.resolve().getMethods()) {
                     if (tryResolveNonParameterizedMethod(method) == null) {
                         throw new BusinessException(ErrorCode.INTERFACE_FLOW_NOT_IMPLEMENTED,
-                                getName(), it.getName(), method.getName());
+                                getName(), method.getName(), it.getName());
                     }
                 }
             }

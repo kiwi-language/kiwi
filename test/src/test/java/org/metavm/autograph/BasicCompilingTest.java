@@ -67,6 +67,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processOverride();
             processCapturedFunctionCall();
             processCompoundAssignment();
+            processDynamicOverride();
         });
     }
 
@@ -702,6 +703,11 @@ public class BasicCompilingTest extends CompilerTestBase {
                 apiClient.callMethod(id, "decrementSize", List.of(1))
         );
         Assert.assertEquals(3L, s);
+    }
+
+    private void processDynamicOverride() {
+        Assert.assertTrue((boolean) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("override.DynamicOverride", "test", List.of())));
     }
 
 }
