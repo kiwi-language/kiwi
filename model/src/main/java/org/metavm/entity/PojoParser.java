@@ -354,11 +354,6 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 .returnType(returnType)
                 .isNative(isNative)
                 .build();
-        klass.forEachSuper(s -> {
-            var m = s.findMethodByCodeAndParamTypes(method.getCode(), method.getParameterTypes());
-            if(m != null)
-                method.addOverridden(m);
-        });
         if(isNative)
             method.setJavaMethod(javaMethod);
         NncUtils.biForEach(

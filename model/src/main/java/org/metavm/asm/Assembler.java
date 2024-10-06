@@ -891,9 +891,7 @@ public class Assembler {
                             } else
                                 return false;
                         });
-                        if (overridden != null)
-                            method.addOverridden(overridden);
-                        else
+                        if (overridden == null)
                             supers.addAll(superTypes.getOrDefault(s.getKlass().getName(), List.of()));
                     }
                 }

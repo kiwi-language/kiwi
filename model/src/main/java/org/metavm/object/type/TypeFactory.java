@@ -262,7 +262,6 @@ public abstract class TypeFactory {
             method.setCapturedTypeVariables(NncUtils.map(flowDTO.capturedTypeIds(), batch::getCapturedTypeVariable));
             method.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)));
             method.setReturnType(TypeParser.parseType(flowDTO.returnType(), context));
-            method.setOverridden(NncUtils.map(param.overriddenRefs(), r -> MethodRef.create(r, context).resolve()));
             method.setAbstract(param.isAbstract());
             if (method.getParameters().isEmpty() && !method.isStatic() && method.getName().equals(Constants.RUN_METHOD_NAME))
                 batch.addRunMethod(method);

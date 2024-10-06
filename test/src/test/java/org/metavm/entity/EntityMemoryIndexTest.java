@@ -6,8 +6,6 @@ import org.metavm.object.type.ArrayType;
 import org.metavm.object.view.FieldsObjectMapping;
 import org.metavm.util.TestUtils;
 
-import java.util.List;
-
 public class EntityMemoryIndexTest extends TestCase {
 
     public void test() {
@@ -17,7 +15,7 @@ public class EntityMemoryIndexTest extends TestCase {
         var fooViewArrayType = new ArrayType(fooViewType.getType(), ArrayKind.CHILD);
         var fooMapping = new FieldsObjectMapping(
                 null, "FooBuiltinMapping", "FooBuiltinMapping", fooType,
-                true, fooViewType.getType(), List.of()
+                true, fooViewType.getType()
         );
     }
 

@@ -10,7 +10,6 @@ import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.*;
 import org.metavm.flow.rest.FlowExecutionRequest;
-import org.metavm.flow.rest.MethodParam;
 import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.flow.rest.UpdateFieldDTO;
 import org.metavm.mocks.*;
@@ -20,7 +19,6 @@ import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldRefDTO;
-import org.metavm.object.type.rest.dto.GetTypeRequest;
 import org.metavm.object.view.rest.dto.DirectMappingKey;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -268,9 +266,6 @@ public class InstanceManagerTest extends TestCase {
                         )
                 )
         ));
-        var humanType = typeManager.getType(new GetTypeRequest(typeIds.humanTypeId(), false)).type();
-        var method = TestUtils.getMethodByCode(humanType, "makeSound");
-        logger.info("overridden of Human.makeSound: {}", ((MethodParam) method.param()).overriddenRefs());
         Assert.assertEquals("30", human.getFieldValue(typeIds.livingBeingAgeFieldId()).getDisplayValue());
         Assert.assertEquals("null", human.getFieldValue(typeIds.livingBeingExtraFieldId()).getDisplayValue());
         Assert.assertEquals("180", human.getFieldValue(typeIds.animalIntelligenceFieldId()).getDisplayValue());

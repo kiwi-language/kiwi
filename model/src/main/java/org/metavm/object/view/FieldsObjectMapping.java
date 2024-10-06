@@ -3,7 +3,6 @@ package org.metavm.object.view;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
@@ -13,7 +12,6 @@ import org.metavm.object.type.Klass;
 import org.metavm.object.type.Types;
 import org.metavm.object.view.rest.dto.FieldsObjectMappingParam;
 import org.metavm.object.view.rest.dto.ObjectMappingParam;
-import org.metavm.util.BusinessException;
 import org.metavm.util.NamingUtils;
 import org.metavm.util.NncUtils;
 
@@ -37,19 +35,10 @@ public class FieldsObjectMapping extends ObjectMapping {
     private Method writeMethod;
 
     public FieldsObjectMapping(Long tmpId, String name, @Nullable String code, Klass sourceType, boolean builtin,
-                               @NotNull ClassType targetType, List<ObjectMapping> overridden) {
+                               @NotNull ClassType targetType) {
         super(tmpId, name, code, sourceType, targetType, builtin);
-        overridden.forEach(this::checkOverridden);
-        this.overridden.addAll(overridden);
         sourceType.addMapping(this);
         this.builtinTargetType = addChild(targetType.resolve().getEffectiveTemplate(), "builtinTargetType");
-    }
-
-    private void checkOverridden(ObjectMapping overridden) {
-        if (!overridden.getTargetType().equals(getTargetType())
-                || !overridden.getSourceType().isAssignableFrom(getSourceType())) {
-            throw new BusinessException(ErrorCode.INVALID_OVERRIDDEN_MAPPING);
-        }
     }
 
     public static String getTargetTypeName(Klass sourceType, String mappingName) {
@@ -65,10 +54,6 @@ public class FieldsObjectMapping extends ObjectMapping {
             mappingCode = mappingCode.substring(0, mappingCode.length() - 4);
         return NamingUtils.escapeTypeName(sourceType.getCode())
                 + NamingUtils.firstCharToUpperCase(mappingCode) + "View";
-    }
-
-    public List<ObjectMapping> getOverridden() {
-        return overridden.toList();
     }
 
     public void setCode(@Nullable String code) {
@@ -127,7 +112,6 @@ public class FieldsObjectMapping extends ObjectMapping {
                 .codeSource(this)
                 .returnType(getTargetType())
                 .isSynthetic(true)
-                .overridden(NncUtils.map(overridden, ObjectMapping::getReadMethod))
                 .build();
     }
 
@@ -142,7 +126,6 @@ public class FieldsObjectMapping extends ObjectMapping {
                 .isSynthetic(true)
                 .parameters(writeMethod != null ? writeMethod.getParameter(0) :
                         new Parameter(null, "view", "view", getTargetType()))
-                .overridden(NncUtils.map(overridden, ObjectMapping::getWriteMethod))
                 .build();
     }
 
@@ -175,13 +158,6 @@ public class FieldsObjectMapping extends ObjectMapping {
         super.setName(name);
         if (builtinTargetType != null)
             builtinTargetType.setName(getTargetTypeName(getSourceKlass(), name));
-    }
-
-    public void setOverridden(List<ObjectMapping> overridden) {
-        overridden.forEach(this::checkOverridden);
-        getReadMethod().setOverridden(NncUtils.map(overridden, ObjectMapping::getReadMethod));
-        getWriteMethod().setOverridden(NncUtils.map(overridden, ObjectMapping::getWriteMethod));
-        this.overridden.reset(overridden);
     }
 
     @Override

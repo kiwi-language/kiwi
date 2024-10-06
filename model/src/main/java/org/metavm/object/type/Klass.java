@@ -1915,5 +1915,15 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public Klass getComponentKlass() {
         return componentKlass;
     }
+
+    public boolean isOverridden(Method method) {
+        var override = methodTable.findByOverridden(method);
+        return override != null && override != method;
+    }
+
+    public boolean isOverrideOf(Method override, Method overridden) {
+        return methodTable.findByOverridden(overridden) == override;
+    }
+
 }
 

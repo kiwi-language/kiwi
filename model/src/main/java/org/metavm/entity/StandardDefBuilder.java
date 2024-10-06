@@ -447,7 +447,6 @@ public class StandardDefBuilder {
                 .isChild(true)
                 .build();
         MethodBuilder.newBuilder(klass, "isEmpty", "isEmpty")
-                .overridden(List.of(klass.getMethod(m -> m.getName().equals("isEmpty"))))
                 .returnType(Types.getBooleanType())
                 .isNative(true)
                 .build();

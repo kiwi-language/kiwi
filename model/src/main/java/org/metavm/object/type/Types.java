@@ -312,7 +312,6 @@ public class Types {
         var funcField = FieldBuilder.newBuilder("func", "func", klass, funcType).build();
 
         var flow = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode())
-                .overridden(List.of(sam))
                 .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
                 .returnType(sam.getReturnType())
                 .build();
@@ -363,7 +362,6 @@ public class Types {
         );
         methodStaticType.setEphemeralEntity(true);
         var method = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode())
-                .overridden(List.of(sam))
                 .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
                 .returnType(sam.getReturnType())
                 .type(sam.getType())

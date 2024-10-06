@@ -1,7 +1,6 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
@@ -38,8 +37,6 @@ public class Method extends Flow implements Property, GenericElement {
     private final @NotNull Klass declaringType;
     private boolean _static;
     private Access access;
-    @ChildEntity
-    private final ReadWriteArray<MethodRef> overridden = addChild(new ReadWriteArray<>(MethodRef.class), "overridden");
     private boolean isConstructor;
     private boolean isAbstract;
     /*
@@ -73,7 +70,6 @@ public class Method extends Flow implements Property, GenericElement {
                   boolean isSynthetic,
                   List<Parameter> parameters,
                   Type returnType,
-                  List<MethodRef> overridden,
                   List<TypeVariable> typeParameters,
                   List<? extends Type> typeArguments,
                   boolean isStatic,
@@ -99,12 +95,11 @@ public class Method extends Flow implements Property, GenericElement {
             );
         }
         this.access = access;
-        this.overridden.addAll(overridden);
         parameterized = horizontalTemplate != null;
         this.hidden = hidden;
         if (horizontalTemplate == null)
             declaringType.addMethod(this);
-        checkTypes(overridden, parameters, returnType);
+        checkTypes(parameters, returnType);
     }
 
     @Nullable
@@ -115,31 +110,6 @@ public class Method extends Flow implements Property, GenericElement {
             return template;
         else
             return verticalTemplate;
-    }
-
-    @Override
-    public void onBind(IEntityContext context) {
-        for (var overriddenFlowRef : overridden) {
-            var overriddenFlow = overriddenFlowRef.resolve();
-            NncUtils.requireEquals(getParameters().size(), overriddenFlow.getParameters().size());
-            NncUtils.requireEquals(getTypeParameters().size(), overriddenFlow.getTypeParameters().size());
-            var subst = getSubstitutor(overriddenFlow);
-            for (int i = 0; i < getParameters().size(); i++) {
-                var t1 = getParameter(i).getType();
-                var t2 = overriddenFlow.getParameter(i).getType();
-                if(!t1.equals(t2.accept(subst))) {
-                    throw new IllegalStateException("Method " + getQualifiedName() + " has different parameter types with overridden method " + overriddenFlow.getQualifiedName());
-                }
-            }
-            NncUtils.requireTrue(overriddenFlow.getReturnType().accept(subst).isAssignableFrom(getReturnType()));
-        }
-    }
-
-    private TypeSubstitutor getSubstitutor(Method overridden) {
-        return new TypeSubstitutor(
-                NncUtils.map(overridden.getTypeParameters(), TypeVariable::getType),
-                NncUtils.map(getTypeParameters(), TypeVariable::getType)
-        );
     }
 
     public boolean isConstructor() {
@@ -168,14 +138,6 @@ public class Method extends Flow implements Property, GenericElement {
         return getCode() != null;
     }
 
-    public List<Method> getOverridden() {
-        return NncUtils.map(overridden, MethodRef::resolve);
-    }
-
-    public List<MethodRef> getOverriddenRefs() {
-        return overridden.toList();
-    }
-
     @Override
     protected FlowParam getParam(boolean includeCode, SerializeContext serContext) {
         if (includeCode) {
@@ -186,7 +148,6 @@ public class Method extends Flow implements Property, GenericElement {
                 NncUtils.get(verticalTemplate, serContext::getStringId),
                 serContext.getStringId(declaringType),
                 NncUtils.get(staticType, t -> t.toExpression(serContext)),
-                NncUtils.map(overridden, m -> m.toDTO(serContext)),
                 access.code()
         );
     }
@@ -257,32 +218,6 @@ public class Method extends Flow implements Property, GenericElement {
         this.verticalTemplate = (Method) copySource;
     }
 
-    public void setOverridden(List<Method> overridden) {
-        var overriddenRefs = NncUtils.map(overridden, Method::getRef);
-        checkTypes(overriddenRefs, getParameters(), getReturnType());
-        this.overridden.reset(overriddenRefs);
-        declaringType.rebuildMethodTable();
-    }
-
-    public void removeOverridden(Method overridden) {
-        this.overridden.removeIf(r -> r.resolve() == overridden);
-        declaringType.rebuildMethodTable();
-    }
-
-    public void addOverridden(Method overridden) {
-        var overriddenRef = overridden.getRef();
-        checkTypes(List.of(overriddenRef), getParameters(), getReturnType());
-        this.overridden.add(overriddenRef);
-        declaringType.rebuildMethodTable();
-    }
-
-    public void addOverridden(List<Method> overridden) {
-        var overriddenRefs = NncUtils.map(overridden, Method::getRef);
-        checkTypes(overriddenRefs, getParameters(), getReturnType());
-        this.overridden.addAll(overriddenRefs);
-        declaringType.rebuildMethodTable();
-    }
-
     public String getQualifiedSignature() {
         return declaringType.getTypeDesc() + "." + getSignatureString();
     }
@@ -306,23 +241,8 @@ public class Method extends Flow implements Property, GenericElement {
         return getQualifiedSignature();
     }
 
-    private void checkTypes(List<MethodRef> overridden, List<Parameter> parameters, Type returnType) {
+    private void checkTypes(List<Parameter> parameters, Type returnType) {
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
-        for (var overriddenFlowRef : overridden) {
-            var overriddenFlow = overriddenFlowRef.resolve();
-            if (getTypeParameters().size() != overriddenFlow.getTypeParameters().size()) {
-                logger.error("Method {} has an overridden {} with different number of type parameters. {} != {}",
-                        getQualifiedName(), overriddenFlow.getQualifiedName(), getTypeParameters().size(), overriddenFlow.getTypeParameters().size());
-            }
-            var subst = new TypeSubstitutor(NncUtils.map(getTypeParameters(), TypeVariable::getType), NncUtils.map(overriddenFlow.getTypeParameters(), TypeVariable::getType));
-            if (!NncUtils.biAllMatch(paramTypes, overriddenFlow.getParameterTypes(), (t1, t2) -> t1.accept(subst).equals(t2)))
-                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_CAN_NOT_ALTER_PARAMETER_TYPES, getQualifiedSignature());
-            if (!overriddenFlow.getReturnType().isAssignableFrom(returnType.accept(subst))) {
-                throw new BusinessException(ErrorCode.OVERRIDE_FLOW_RETURN_TYPE_INCORRECT,
-                        getQualifiedSignature(), overriddenFlow.getQualifiedSignature(),
-                        returnType.accept(subst).getTypeDesc(), overriddenFlow.getReturnType().getTypeDesc());
-            }
-        }
         if (isInstanceMethod()) {
             AssertUtils.assertNonNull(staticType, ErrorCode.INSTANCE_METHOD_MISSING_STATIC_TYPE);
             if (!staticType.getParameterTypes().equals(NncUtils.prepend(declaringType.getType(), paramTypes))

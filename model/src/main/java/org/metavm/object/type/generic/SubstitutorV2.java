@@ -229,8 +229,6 @@ public class SubstitutorV2 extends CopyVisitor {
             if(method.isRootScopePresent())
                 addCopy(method.getRootScope(), copy.getRootScope());
             enterElement(copy);
-            for (Method overridden : method.getOverridden())
-                NncUtils.biForEach(NncUtils.map(overridden.getTypeParameters(), TypeVariable::getType), copy.getTypeArguments(), typeSubstitutor::addMapping);
             copy.setParameters(NncUtils.map(method.getParameters(), p -> (Parameter) copy0(p)));
             copy.setReturnType(substituteType(method.getReturnType()));
             processFlowBody(method, copy);

@@ -1,7 +1,6 @@
 package org.metavm.object.view.rest.dto;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 public record ObjectMappingDTO(
         String id,
@@ -11,7 +10,6 @@ public record ObjectMappingDTO(
         String targetType,
         boolean isDefault,
         boolean builtin,
-        List<String> overriddenIds,
         ObjectMappingParam param
 ) implements MappingDTO {
     @Override

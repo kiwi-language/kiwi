@@ -1,9 +1,10 @@
 package org.metavm.object.view;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.BuildKeyContext;
+import org.metavm.entity.LocalKey;
+import org.metavm.entity.SerializeContext;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
@@ -25,9 +26,6 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
 
     public static final Logger logger = LoggerFactory.getLogger(ObjectMapping.class);
 
-    @ChildEntity
-    protected final ReadWriteArray<ObjectMapping> overridden =
-            addChild(new ReadWriteArray<>(ObjectMapping.class), "overridden");
     private final boolean builtin;
     private final Klass sourceKlass;
 
@@ -182,7 +180,6 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                 getTargetType().toExpression(serializeContext, null),
                 isDefault(),
                 isBuiltin(),
-                NncUtils.map(overridden, Entity::getStringId),
                 getParam(serializeContext)
         );
     }

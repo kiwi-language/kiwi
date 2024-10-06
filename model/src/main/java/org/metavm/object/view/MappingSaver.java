@@ -71,12 +71,11 @@ public class MappingSaver {
         if (mapping == null) {
             var targetKlass = createTargetKlass(sourceType, "builtin", "builtin");
             mapping = new FieldsObjectMapping(mappingDTO.tmpId(), mappingDTO.name(), mappingDTO.code(), sourceType, false,
-                    targetKlass.getType(), NncUtils.map(mappingDTO.overriddenIds(), id -> sourceType.getMappingInAncestors(Id.parse(id))));
+                    targetKlass.getType());
             mapping.generateDeclarations();
         } else {
             mapping.setName(mappingDTO.name());
             mapping.setCode(mappingDTO.code());
-            mapping.setOverridden(NncUtils.map(mappingDTO.overriddenIds(), id -> sourceType.getMappingInAncestors(Id.parse(id))));
         }
         if (mappingDTO.isDefault())
             mapping.setDefault();
@@ -218,7 +217,7 @@ public class MappingSaver {
         var mapping = (FieldsObjectMapping) NncUtils.find(klass.getMappings(), ObjectMapping::isBuiltin);
         if (mapping == null) {
             var targetKlass = createTargetKlass(klass, "builtin", "builtin");
-            mapping = new FieldsObjectMapping(null, "builtin", "builtin", klass, true, targetKlass.getType(), List.of());
+            mapping = new FieldsObjectMapping(null, "builtin", "builtin", klass, true, targetKlass.getType());
             mapping.generateDeclarations();
         }
         retransformClassType(klass);
@@ -526,12 +525,7 @@ public class MappingSaver {
 
     private static List<Accessor> getAccessors(Klass type) {
         var accessors = new ArrayList<Accessor>();
-        var methods = type.getAllMethods();
-        var overridden = new HashSet<Method>();
-        for (Method method : methods) {
-            overridden.addAll(method.getOverridden());
-        }
-        methods.removeIf(overridden::contains);
+        var methods = NncUtils.exclude(type.getAllMethods(), type::isOverridden);
         for (var method : methods) {
             var p = getAccessor(method);
             if (p != null)

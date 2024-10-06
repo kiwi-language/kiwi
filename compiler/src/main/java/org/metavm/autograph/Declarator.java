@@ -142,22 +142,7 @@ public class Declarator extends CodeGenVisitor {
         var psiClass = requireNonNull(method.getContainingClass());
         if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null)
             return;
-        List<PsiMethod> overriddenMethods = TranspileUtils.getOverriddenMethods(method);
         var klass = currentClass().klass;
-        List<Method> overridden = new ArrayList<>();
-        for (PsiMethod overriddenMethod : overriddenMethods) {
-            var overriddenMethodCls = NncUtils.requireNonNull(overriddenMethod.getContainingClass());
-            if (Object.class.getName().equals(overriddenMethodCls.getQualifiedName()))
-                continue;
-            var overriddenMethodType = TranspileUtils.createTemplateType(overriddenMethodCls);
-            var k = Types.resolveKlass(typeResolver.resolveDeclaration(overriddenMethodType));
-            var o = TranspileUtils.getMethidByJavaMethod(k, overriddenMethod, typeResolver);
-            var k1 = Objects.requireNonNull(klass.findAncestorByTemplate(k),
-                    () -> "Cannot find ancestor with template " + k.getTypeDesc() + " in class " + klass.getTypeDesc());
-            var o1 = k1.getMethod(m -> m.getEffectiveVerticalTemplate() == o,
-                    () -> "Cannot find method with vertical template " + o.getQualifiedSignature() + " in klass " + k1.getTypeDesc());
-            overridden.add(o1);
-        }
         List<PsiType> implicitTypeArgs = method.isConstructor() && klass.isEnum() ?
                 List.of(TranspileUtils.createType(String.class), TranspileUtils.createPrimitiveType(int.class)) : List.of();
         var internalName = TranspileUtils.getInternalName(method, implicitTypeArgs);
@@ -200,7 +185,6 @@ public class Declarator extends CodeGenVisitor {
             flow.setAttribute(AttributeNames.BEAN_NAME, beanName);
         }
         currentClass().visitedMethods.add(flow);
-        flow.setOverridden(overridden);
     }
 
     private Access resolveAccess(PsiModifierList modifierList) {

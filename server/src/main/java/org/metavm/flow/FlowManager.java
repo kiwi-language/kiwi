@@ -146,7 +146,6 @@ public class FlowManager extends EntityContextFactoryAware {
         var parameters = NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, context));
         Flow flow;
         if (flowDTO.param() instanceof MethodParam methodParam) {
-            List<Method> overridden = NncUtils.map(methodParam.overriddenRefs(), r -> MethodRef.create(r, context).resolve());
             Method method = context.getMethod(flowDTO.id());
             Klass declaringType = method != null ? method.getDeclaringType() :
                     context.getKlass(methodParam.declaringTypeId());
@@ -168,7 +167,6 @@ public class FlowManager extends EntityContextFactoryAware {
             method.setAbstract(declaringType.isInterface() || methodParam.isAbstract());
             method.setParameters(parameters);
             method.setReturnType(returnType);
-            method.setOverridden(NncUtils.map(methodParam.overriddenRefs(), r -> MethodRef.create(r, context).resolve()));
             if (method.isAbstract()) {
                 if (creating) {
                     createOverridingFlows(method, context);
@@ -232,7 +230,6 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     public void recreateOverridingFlows(Method method, IEntityContext context) {
-        detachOverrideMethods(method);
         createOverridingFlows(method, context);
     }
 
@@ -250,14 +247,11 @@ public class FlowManager extends EntityContextFactoryAware {
                         f -> f.getParameterTypes().equals(overridden.getParameterTypes())
                                 && overridden.getReturnType().isAssignableFrom(f.getReturnType())
                 );
-                if (candidate != null) {
-                    candidate.addOverridden(overridden);
-                } else {
+                if (candidate == null) {
                     flow = MethodBuilder.newBuilder(type, overridden.getName(), overridden.getCode())
                             .returnType(overridden.getReturnType())
                             .type(overridden.getType())
                             .access(overridden.getAccess())
-                            .overridden(List.of(overridden))
                             .parameters(NncUtils.map(overridden.getParameters(), Parameter::copy))
                             .typeParameters(NncUtils.map(overridden.getTypeParameters(), TypeVariable::copy))
                             .build();
@@ -369,29 +363,9 @@ public class FlowManager extends EntityContextFactoryAware {
     public void remove(Flow flow, IEntityContext context) {
         removeTransformedFlowsIfRequired(flow, context);
         if (flow instanceof Method method) {
-            for (Klass subType : method.getDeclaringType().getSubKlasses())
-                detachOverrideMethods(method, subType);
             method.getDeclaringType().removeMethod(method);
         } else
             context.remove(flow);
-    }
-
-    private void detachOverrideMethods(Method method) {
-        for (Klass subType : method.getDeclaringType().getSubKlasses()) {
-            detachOverrideMethods(method, subType);
-        }
-    }
-
-    private void detachOverrideMethods(Method method, Klass type) {
-        var override = type.tryResolveNonParameterizedMethod(method);
-        if (override != null) {
-            override.removeOverridden(method);
-            override.addOverridden(method.getOverridden());
-        } else {
-            for (Klass subType : type.getSubKlasses()) {
-                detachOverrideMethods(method, subType);
-            }
-        }
     }
 
     @Transactional

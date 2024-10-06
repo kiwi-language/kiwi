@@ -98,7 +98,6 @@ public class ReflectDefiner {
             method.setTypeParameters(NncUtils.map(javaMethod.getTypeParameters(), tv -> defineTypeVariable(tv, method)));
             method.setParameters(NncUtils.map(javaMethod.getParameters(), this::parseParameter));
             method.setReturnType(resolveNullableType(javaMethod.getGenericReturnType()));
-            method.setOverridden(getOverridden(method));
             if(!methodSignatures.add(MethodSignature.of(method)))
                 klass.removeMethod(method);
         }

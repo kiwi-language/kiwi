@@ -30,7 +30,6 @@ public class MethodBuilder {
     private boolean isAbstract;
     private boolean isNative;
     private boolean isSynthetic;
-    private List<Method> overridden = new ArrayList<>();
     private FlowDTO flowDTO;
     private Access access = Access.PUBLIC;
     private Type returnType;
@@ -66,11 +65,6 @@ public class MethodBuilder {
 
     public MethodBuilder isConstructor(boolean isConstructor) {
         this.isConstructor = isConstructor;
-        return this;
-    }
-
-    public MethodBuilder overridden(List<Method> overridden) {
-        this.overridden = overridden;
         return this;
     }
 
@@ -189,7 +183,6 @@ public class MethodBuilder {
                     isSynthetic,
                     parameters,
                     returnType,
-                    NncUtils.map(overridden, Method::getRef),
                     typeParameters,
                     typeArguments,
                     _static,
@@ -205,7 +198,6 @@ public class MethodBuilder {
             existing.setCode(code);
             existing.setParameters(parameters);
             existing.setReturnType(returnType);
-            existing.setOverridden(overridden);
             existing.setTypeParameters(typeParameters);
             existing.setTypeArguments(typeArguments);
             existing.setStaticType(staticType);

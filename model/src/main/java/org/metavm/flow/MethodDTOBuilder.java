@@ -24,7 +24,6 @@ public class MethodDTOBuilder {
     private boolean synthetic;
     private boolean isNative;
     private boolean isStatic;
-    private List<MethodRefDTO> overriddenRefs = new ArrayList<>();
     private List<NodeDTO> nodes = new ArrayList<>();
     private int access = Access.PUBLIC.code();
     private String returnType;
@@ -66,11 +65,6 @@ public class MethodDTOBuilder {
 
     public MethodDTOBuilder synthetic(boolean synthetic) {
         this.synthetic = synthetic;
-        return this;
-    }
-
-    public MethodDTOBuilder overriddenRefs(List<MethodRefDTO> overriddenRefs) {
-        this.overriddenRefs = overriddenRefs;
         return this;
     }
 
@@ -201,7 +195,6 @@ public class MethodDTOBuilder {
                         null,
                         declaringTypeId,
                         null,
-                        overriddenRefs,
                         access
                 )
         );
