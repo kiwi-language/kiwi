@@ -69,6 +69,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processCompoundAssignment();
             processDynamicOverride();
             processPrimitiveStaticFields();
+            processStaticAnonymousClass();
         });
     }
 
@@ -715,6 +716,13 @@ public class BasicCompilingTest extends CompilerTestBase {
         var v = (long) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("statics.PrimitiveStaticFieldsFoo", "getMaxInt", List.of()));
         Assert.assertEquals(Integer.MAX_VALUE, v);
+    }
+
+    private void processStaticAnonymousClass() {
+        Assert.assertFalse(
+                (boolean) TestUtils.doInTransaction(() ->
+                        apiClient.callMethod("anonymousclass.StaticAnonymousClassFoo", "test", List.of()))
+        );
     }
 
 }

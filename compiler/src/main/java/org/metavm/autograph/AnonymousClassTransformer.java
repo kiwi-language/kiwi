@@ -46,7 +46,11 @@ public class AnonymousClassTransformer extends VisitorBase {
         var enclosingClass = TranspileUtils.getParentNotNull(aClass.getParent(), PsiClass.class);
         var baseClassType = aClass.getBaseClassType();
         var baseKlass = requireNonNull(baseClassType.resolve());
-        var k = TranspileUtils.createClassFromText("class " + info.getSubstitutorName()
+        var parent = TranspileUtils.getParent(aClass, Set.of(PsiField.class, PsiMethod.class));
+        var nonStatic = parent instanceof PsiField field && !TranspileUtils.isStatic(field)
+                || parent instanceof PsiMethod method && !TranspileUtils.isStatic(method);
+        var k = TranspileUtils.createClassFromText((nonStatic ? "private class " : "private static class ")
+                + info.getSubstitutorName()
                 + (baseKlass.isInterface() ? " implements " : " extends ")
                 + baseClassType.getCanonicalText() + "{}");
         for (PsiField field : aClass.getFields()) {
