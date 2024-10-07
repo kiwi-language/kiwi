@@ -741,6 +741,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     }
 
     public void postProcess() {
+        standardDefBuilder.postProcess();
         freezeKlasses();
         StdKlass.initialize(this, false);
         StdMethod.initialize(this, false);

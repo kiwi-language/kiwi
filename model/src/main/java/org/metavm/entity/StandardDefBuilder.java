@@ -10,13 +10,12 @@ import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 
+import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import static org.metavm.object.type.Types.getParameterizedCode;
-import static org.metavm.object.type.Types.getParameterizedName;
 import static org.metavm.util.ReflectionUtils.ENUM_NAME_FIELD;
 import static org.metavm.util.ReflectionUtils.ENUM_ORDINAL_FIELD;
 
@@ -155,6 +154,11 @@ public class StandardDefBuilder {
         );
         defContext.afterDefInitialized(throwableDef);
         var exceptionKlass = createExceptionKlass(Exception.class, throwableKlass);
+        var ioExceptionKlass = createExceptionKlass(IOException.class, exceptionKlass);
+        var objStreamExceptionKlass = createExceptionKlass(ObjectStreamException.class, ioExceptionKlass);
+        createExceptionKlass(InvalidObjectException.class, objStreamExceptionKlass);
+        var reflectiveOpExceptionKlass = createExceptionKlass(ReflectiveOperationException.class, exceptionKlass);
+        createExceptionKlass(ClassNotFoundException.class, reflectiveOpExceptionKlass);
         var runtimeExceptionKlass = createExceptionKlass(RuntimeException.class, exceptionKlass);
         createExceptionKlass(IllegalArgumentException.class, runtimeExceptionKlass);
         createExceptionKlass(IllegalStateException.class, runtimeExceptionKlass);
@@ -190,10 +194,12 @@ public class StandardDefBuilder {
         createStringBuilderKlass();
 
         primTypeFactory.saveDefs(defContext);
-        primTypeFactory.getMap().keySet().forEach(javaType ->
-                defContext.afterDefInitialized(defContext.getDef(javaType))
-        );
+    }
 
+    void postProcess() {
+        createObjectInputStream();
+        createObjectOutputStream();
+        primTypeFactory.saveDefs(defContext);
     }
 
     private Klass createExceptionKlass(Class<?> javaClass, Klass superKlass) {
@@ -231,6 +237,14 @@ public class StandardDefBuilder {
 
     private Klass createComparatorKlass() {
         return parseKlass(Comparator.class);
+    }
+
+    private Klass createObjectInputStream() {
+        return parseKlass(ObjectInputStream.class);
+    }
+
+    private Klass createObjectOutputStream() {
+        return parseKlass(ObjectOutputStream.class);
     }
 
     private void initSystemFunctions() {
@@ -668,18 +682,16 @@ public class StandardDefBuilder {
         }
 
         public void saveDefs(SystemDefContext defContext) {
-            for (var typeDef : javaType2TypeDef.values()) {
+            var newTypeDefs = NncUtils.exclude(javaType2TypeDef.values(), defContext::containsDef);
+            for (var typeDef : newTypeDefs) {
                 createDefIfAbsent(typeDef, defContext);
             }
-            for (var typeDef : javaType2TypeDef.values()) {
+            for (var typeDef : newTypeDefs) {
                 defContext.afterDefInitialized(defContext.getDef(typeDef));
             }
         }
 
         private ModelDef<?> createDefIfAbsent(TypeDef typeDef, SystemDefContext defContext) {
-            if (defContext.containsDef(typeDef)) {
-                return defContext.getDef(typeDef);
-            }
             var javaType = NncUtils.requireNonNull(typeDef2JavaType.get(typeDef));
             var sft = staticFieldTableMap.get(typeDef);
             var def = switch (typeDef) {

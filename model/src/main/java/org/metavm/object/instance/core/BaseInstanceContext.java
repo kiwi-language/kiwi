@@ -433,10 +433,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
         try (var ignored = getProfiler().enter("finish")) {
             finishInternal();
-            for (var instance : this) {
-                if (instance.isNew())
-                    instance.setLoaded(false);
-            }
         }
         if(timeout > 0) {
             var elapsed = System.currentTimeMillis() - startAt;

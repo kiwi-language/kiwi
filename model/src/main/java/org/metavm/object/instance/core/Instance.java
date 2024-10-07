@@ -33,7 +33,7 @@ public abstract class Instance implements Message {
     private Type type;
     private transient boolean marked;
     private transient boolean viewSaved;
-    private transient boolean _new;
+    private transient final boolean _new;
     private transient boolean loaded;
     private transient boolean loadedFromCache;
     private transient boolean removed;
@@ -309,7 +309,6 @@ public abstract class Instance implements Message {
         if (loaded)
             throw new InternalException(String.format("Instance %d is already loaded", getTreeId()));
         loaded = true;
-        _new = false;
         setLoadedFromCache(fromCache);
     }
 
