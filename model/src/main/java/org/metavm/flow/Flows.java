@@ -52,16 +52,16 @@ public class Flows {
 
     public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
         ContextUtil.setEntityContext(context);
-        return execute(flow, self, arguments, context.getInstanceContext());
-    }
-
-    public static FlowExecResult execute(@NotNull Flow flow, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         try {
-            return flow.execute(self, arguments, callContext);
+            return execute(flow, self, arguments, context.getInstanceContext());
         }
         finally {
             ContextUtil.setEntityContext(null);
         }
+    }
+
+    public static FlowExecResult execute(@NotNull Flow flow, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
+        return flow.execute(self, arguments, callContext);
     }
 
     public static @Nullable Value invoke(@NotNull Flow flow, ClassInstance self, List<? extends Value> arguments, IEntityContext context) {

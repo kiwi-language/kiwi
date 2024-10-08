@@ -10,6 +10,9 @@ import org.metavm.flow.Method;
 import org.metavm.util.BiUnion;
 import org.metavm.util.NncUtils;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.*;
 
@@ -27,6 +30,9 @@ public enum StdMethod implements ValueHolderOwner<Method> {
     iteratorHasNext(Iterator.class, "hasNext", List.of()),
     iteratorNext(Iterator.class, "next", List.of()),
     collectionContains(Collection.class, "contains", List.of(Object.class)),
+    outputStreamWrite(OutputStream.class, "write", List.of(int.class)),
+    objectOutputStreamWriteObject(ObjectOutputStream.class, "writeObject", List.of(Object.class)),
+    objectInputStreamReadObject(ObjectInputStream.class, "readObject", List.of()),
 
     ;
 

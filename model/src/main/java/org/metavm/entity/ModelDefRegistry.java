@@ -88,7 +88,7 @@ public class ModelDefRegistry {
         return holder.get().getIndexConstraint(indexDef);
     }
 
-    public static Class<? extends Entity> getEntityType(ClassType type) {
+    public static Class<?> getEntityType(ClassType type) {
         return ((EntityDef<?>) holder.get().getDef(type.resolve())).getEntityClass();
     }
 

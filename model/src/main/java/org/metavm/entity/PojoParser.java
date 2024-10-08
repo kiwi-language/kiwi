@@ -50,8 +50,10 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
     @SuppressWarnings("unchecked")
     private PojoDef<? super T> getSuperDef() {
         var superClass = javaClass.getSuperclass();
-        if (superClass != null && superClass != Object.class)
-            return (PojoDef<? super T>) defContext.getDef(substituteType(javaClass.getGenericSuperclass()), INIT);
+        if (superClass != null && superClass != Object.class) {
+            var superDef = defContext.getDef(substituteType(javaClass.getGenericSuperclass()), INIT);
+            return superDef instanceof PojoDef<?> ? (PojoDef<? super T>) superDef : null;
+        }
         return null;
     }
 
@@ -129,7 +131,8 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
         getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
         if(isNativeClass()) {
             for (Method javaMethod : javaClass.getDeclaredMethods()) {
-                if(Modifier.isPublic(javaMethod.getModifiers()) && !Modifier.isStatic(javaMethod.getModifiers())) {
+                if((Modifier.isPublic(javaMethod.getModifiers()) || Modifier.isProtected(javaMethod.getModifiers()))
+                        && !Modifier.isStatic(javaMethod.getModifiers())) {
                     createMethod(javaMethod, true);
                 }
             }

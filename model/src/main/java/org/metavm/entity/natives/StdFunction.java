@@ -745,6 +745,23 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var v = (LongValue) args.get(0);
                 return FlowExecResult.of(Instances.longInstance(Integer.numberOfTrailingZeros(v.getValue().intValue())));
             }
+    ),
+    checkFromIndexSize(
+            "long checkFromIndexSize(long fromIndex, long size, long length)",
+            false,
+            List.of(ReflectionUtils.getMethod(Objects.class, "checkFromIndexSize", int.class, int.class, int.class)),
+            (func, args, callContext) -> {
+                var from = ((LongValue) args.get(0)).getValue();
+                var size = ((LongValue) args.get(1)).getValue();
+                var len = ((LongValue) args.get(2)).getValue();
+                if(from < 0 || size < 0 || from + size > len || len < 0) {
+                    var e = ClassInstance.allocate(StdKlass.indexOutOfBoundsException.type());
+                    var nat = new IndexOutOfBoundsExceptionNative(e);
+                    nat.IndexOutOfBoundsException(callContext);
+                    return FlowExecResult.ofException(e);
+                }
+                return FlowExecResult.of(Instances.longInstance(from));
+            }
     )
     ;
 

@@ -204,4 +204,8 @@ public abstract class CompilerTestBase extends TestCase  {
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
     }
 
+    protected Object callMethod(String qualifier, String methodName, List<Object> arguments) {
+        return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    }
+
 }

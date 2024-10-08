@@ -34,6 +34,8 @@ record Foo(String value) {
 
 }
 
+9 Klass.addParameterized occasionally raises IllegalStateException complaining that the parameterized already exists.
+
 Issues with compiling java.util.Map
 
 1 New array expressions using raw element types must be handled

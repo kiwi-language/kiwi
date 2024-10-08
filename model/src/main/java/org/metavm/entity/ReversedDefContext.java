@@ -305,7 +305,7 @@ public class ReversedDefContext extends DefContext {
         return new DirectDef<>(prototype.getJavaClass(), (TypeDef) getTypeDef(prototype.getTypeDef().getId()));
     }
 
-    private <T extends Entity> EntityDef<T> createEntityDef(EntityDef<T> prototype) {
+    private <T> EntityDef<T> createEntityDef(EntityDef<T> prototype) {
         var klass = getKlass(prototype.getKlass().getId());
        var def = new EntityDef<>(prototype.getJavaClass(), prototype.getJavaType(), getSuperDef(prototype), klass, this);
        initPojoDef(def, prototype);

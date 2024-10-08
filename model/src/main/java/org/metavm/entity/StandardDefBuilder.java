@@ -192,6 +192,8 @@ public class StandardDefBuilder {
         createTreeSetKlass();
         createHashMapKlass();
         createStringBuilderKlass();
+        parseKlass(InputStream.class);
+        parseKlass(OutputStream.class);
 
         primTypeFactory.saveDefs(defContext);
     }
@@ -638,7 +640,7 @@ public class StandardDefBuilder {
                 .tag(defContext.getTypeTag(javaClass));
     }
 
-    private Klass parseKlass(Class<?> javaClass) {
+    Klass parseKlass(Class<?> javaClass) {
         if(javaClass == Enum.class)
             return enumDef.getKlass();
         if(javaClass == Throwable.class)

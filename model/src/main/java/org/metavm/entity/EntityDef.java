@@ -6,7 +6,7 @@ import org.metavm.object.type.Klass;
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 
-public class EntityDef<T extends Entity> extends PojoDef<T> {
+public class EntityDef<T> extends PojoDef<T> {
 
     public EntityDef(Class<T> javaClass,
                      Type javaType,
@@ -19,7 +19,7 @@ public class EntityDef<T extends Entity> extends PojoDef<T> {
 
     @Override
     protected Id getId(T model) {
-        return model.tryGetId();
+        return model instanceof Identifiable identifiable ? identifiable.tryGetId() : null;
     }
 
     @Override

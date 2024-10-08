@@ -84,7 +84,8 @@ public class ReflectDefiner {
         var isFunctionalInterface = javaClass.isAnnotationPresent(FunctionalInterface.class);
         for (Method javaMethod : javaClass.getDeclaredMethods()) {
             if (javaMethod.isSynthetic()
-                    || Modifier.isStatic(javaMethod.getModifiers()) || !Modifier.isPublic(javaMethod.getModifiers()))
+                    || Modifier.isStatic(javaMethod.getModifiers())
+                    || (!Modifier.isPublic(javaMethod.getModifiers()) && !Modifier.isProtected(javaMethod.getModifiers())))
                 continue;
             if(isFunctionalInterface) {
                 if(javaMethod.isDefault() || ignoredFunctionalInterfaceMethods.contains(JavaMethodSignature.of(javaMethod)))

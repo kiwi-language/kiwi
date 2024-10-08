@@ -70,6 +70,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processDynamicOverride();
             processPrimitiveStaticFields();
             processStaticAnonymousClass();
+            processObjects();
         });
     }
 
@@ -723,6 +724,19 @@ public class BasicCompilingTest extends CompilerTestBase {
                 (boolean) TestUtils.doInTransaction(() ->
                         apiClient.callMethod("anonymousclass.StaticAnonymousClassFoo", "test", List.of()))
         );
+    }
+
+    private void processObjects() {
+        Assert.assertEquals(
+                0L,
+                (long) callMethod("utils.ObjectsFoo", "checkFromIndexSize", List.of(0, 5, 10))
+        );
+        try {
+            callMethod("utils.ObjectsFoo", "checkFromIndexSize", List.of(0, 10, 5));
+        }
+        catch (BusinessException e) {
+            Assert.assertSame(ErrorCode.FLOW_EXECUTION_FAILURE, e.getErrorCode());
+        }
     }
 
 }

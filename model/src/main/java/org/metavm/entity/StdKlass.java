@@ -17,6 +17,9 @@ import org.metavm.util.DummyAny;
 import org.metavm.util.IteratorImpl;
 
 import javax.annotation.Nullable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
@@ -65,6 +68,9 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     klass(Klass.class),
     any(DummyAny.class),
     stringBuilder(StringBuilder.class, false, StringBuilderNative.class),
+    outputStream(OutputStream.class, false, OutputStreamNative.class),
+    objectOutputStream(ObjectOutputStream.class, false, ObjectOutputStreamNative.class),
+    objectInputStream(ObjectInputStream.class, false, ObjectInputStreamNative.class),
     ;
 
     private final Class<?> javaClass;

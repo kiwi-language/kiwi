@@ -256,7 +256,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
                         javaClass.asSubclass(new TypeReference<Enum<?>>() {
                         }.getType()), enumDef,
                         this, this::getEntityId);
-                case CLASS -> new EntityParser<>(javaClass.asSubclass(Entity.class), javaType, this, columnStore);
+                case CLASS -> new EntityParser<>(javaClass, javaType, this, columnStore);
                 case VALUE -> {
                     if (Record.class.isAssignableFrom(javaClass)) {
                         yield new RecordParser<>(
@@ -278,6 +278,15 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     }
 
     private ModelDef<?> parseType(Type javaType, ResolutionStage stage) {
+        if(javaType instanceof Class<?> javaClass && javaClass.getName().startsWith("java.")) {
+            var def = new DirectDef<>(
+                    javaClass,
+                    standardDefBuilder.parseKlass(javaClass)
+            );
+            preAddDef(def);
+            afterDefInitialized(def);
+            return def;
+        }
         var parser = parsers.get(javaType);
         ModelDef<?> def;
         if (parser == null) {

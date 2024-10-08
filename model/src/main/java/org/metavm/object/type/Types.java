@@ -805,6 +805,10 @@ public class Types {
         return new ArrayType(AnyType.instance, ArrayKind.READ_WRITE);
     }
 
+    public static ArrayType getArrayType(Type elementType) {
+        return new ArrayType(elementType, ArrayKind.READ_WRITE);
+    }
+
     public static ArrayType getNeverArrayType() {
         return new ArrayType(NeverType.instance, ArrayKind.READ_WRITE);
     }

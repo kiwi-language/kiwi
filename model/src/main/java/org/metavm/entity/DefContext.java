@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
@@ -17,6 +18,7 @@ import java.util.Objects;
 
 import static org.metavm.object.type.ResolutionStage.*;
 
+@Slf4j
 public abstract class DefContext extends BaseEntityContext implements IEntityContext, TypeRegistry {
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
