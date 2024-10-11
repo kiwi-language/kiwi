@@ -46,7 +46,7 @@ public class InstanceField implements IInstanceField {
 
     @Override
     public boolean shouldSkipWrite() {
-        return value == null || value.shouldSkipWrite();
+        return field.isTransient() || value == null || value.shouldSkipWrite();
     }
 
     @Override
@@ -72,6 +72,10 @@ public class InstanceField implements IInstanceField {
         value = checkValue(value);
         if (field.isChild() && value.isNotNull())
             ((Reference) value).resolve().setParent(this.owner, this.field);
+        this.value = value;
+    }
+
+    void secretlySet(Value value) {
         this.value = value;
     }
 

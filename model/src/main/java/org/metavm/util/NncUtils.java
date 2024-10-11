@@ -774,6 +774,43 @@ public class NncUtils {
         );
     }
 
+    public static <T> List<T> mergeSorted(List<? extends T> list1, List<? extends T> list2, Comparator<T> comparator) {
+        if(list1.isEmpty())
+            return new ArrayList<>(list2);
+        if(list2.isEmpty())
+            return new ArrayList<>(list1);
+        var it1 = list1.iterator();
+        var it2 = list2.iterator();
+        var c1 = it1.next();
+        var c2 = it2.next();
+        var merged = new ArrayList<T>();
+        for(;;) {
+            if(comparator.compare(c1, c2) <= 0) {
+                merged.add(c1);
+                if (it1.hasNext())
+                    c1 = it1.next();
+                else {
+                    merged.add(c2);
+                    while (it2.hasNext())
+                        merged.add(it2.next());
+                    break;
+                }
+            }
+            else {
+                merged.add(c2);
+                if (it2.hasNext())
+                    c2 = it2.next();
+                else {
+                    merged.add(c1);
+                    while (it1.hasNext())
+                        merged.add(it1.next());
+                    break;
+                }
+            }
+        }
+        return merged;
+    }
+
     public static <T, R> List<R> map(Iterable<T> source, Function<T, R> mapping) {
         if (source == null) {
             return List.of();

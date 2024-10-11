@@ -1,6 +1,7 @@
 package org.metavm.object.instance.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ArrayInstanceWrap extends InstanceWrap {
@@ -20,6 +21,10 @@ public class ArrayInstanceWrap extends InstanceWrap {
 
     public ArrayInstanceWrap getArray(int i) {
         return (ArrayInstanceWrap) get(i);
+    }
+
+    public List<Object> toList() {
+        return Collections.unmodifiableList(list);
     }
 
     @Override

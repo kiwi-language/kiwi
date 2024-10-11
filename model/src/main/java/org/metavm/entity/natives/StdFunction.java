@@ -561,7 +561,19 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             (func, args, callContext) -> {
                 var array = args.get(0).resolveArray();
                 var newLength = ((LongValue) args.get(1)).getValue().intValue();
-                return FlowExecResult.of(array.copyOf(0, newLength).getReference());
+                return FlowExecResult.of(array.copyOf(newLength).getReference());
+            }
+    ),
+    copyOfLongArray(
+            "long[] copyOfLongArray(long[] array, long newLength)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Arrays.class, "copyOf", long[].class, int.class)
+            ),
+            (func, args, callContext) -> {
+                var array = args.get(0).resolveArray();
+                var newLength = ((LongValue) args.get(1)).getValue().intValue();
+                return FlowExecResult.of(array.copyOf(newLength).getReference());
             }
     ),
     copyOfArray2(
@@ -574,7 +586,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var array = args.get(0).resolveArray();
                 var newLength = ((LongValue) args.get(1)).getValue().intValue();
                 var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().get(0)), ArrayKind.READ_WRITE);
-                return FlowExecResult.of(array.copyOf(0, newLength, newType).getReference());
+                return FlowExecResult.of(array.copyOf(newLength, newType).getReference());
             }
     ),
     copyOfArrayRange(
@@ -587,7 +599,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var array = args.get(0).resolveArray();
                 var from = ((LongValue) args.get(1)).getValue().intValue();
                 var to = ((LongValue) args.get(2)).getValue().intValue();
-                return FlowExecResult.of(array.copyOf(from, to).getReference());
+                return FlowExecResult.of(array.copyOfRange(from, to).getReference());
             }
     ),
     copyOfArrayRange2(
@@ -601,7 +613,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var from = ((LongValue) args.get(1)).getValue().intValue();
                 var to = ((LongValue) args.get(2)).getValue().intValue();
                 var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().get(0)), ArrayKind.READ_WRITE);
-                return FlowExecResult.of(array.copyOf(from, to, newType).getReference());
+                return FlowExecResult.of(array.copyOfRange(from, to, newType).getReference());
             }
     ),
     arraycopy(
@@ -761,6 +773,37 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     return FlowExecResult.ofException(e);
                 }
                 return FlowExecResult.of(Instances.longInstance(from));
+            }
+    ),
+    parseLong(
+            "long parseLong(string s)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Byte.class, "parseByte", String.class),
+                    ReflectionUtils.getMethod(Short.class, "parseShort", String.class),
+                    ReflectionUtils.getMethod(Integer.class, "parseInt", String.class),
+                    ReflectionUtils.getMethod(Long.class, "parseLong", String.class)
+            ),
+            (func, args, callContext) -> {
+                var s = ((StringValue) args.get(0)).getValue();
+                return FlowExecResult.of(Instances.longInstance(Long.parseLong(s)));
+            }
+    ),
+    stringSplit(
+            "string[] stringSplit(string s, string regex)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(String.class, "split", String.class)
+            ),
+            (func, args, callContext) -> {
+                var s = ((StringValue) args.get(0)).getValue();
+                var regex = ((StringValue) args.get(1)).getValue();
+                return FlowExecResult.of(
+                        new ArrayInstance(
+                                Types.getArrayType(Types.getStringType()),
+                                NncUtils.map(s.split(regex), Instances::stringInstance)
+                        ).getReference()
+                );
             }
     )
     ;

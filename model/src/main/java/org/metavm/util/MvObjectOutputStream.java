@@ -1,13 +1,25 @@
 package org.metavm.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.ClassInstance;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.util.Objects;
 
+@Slf4j
 @EntityType(ephemeral = true, isNative = true)
 public class MvObjectOutputStream extends ObjectOutputStream {
+
+    public static MvObjectOutputStream create(InstanceOutput output, IEntityContext context) {
+        try {
+            return new MvObjectOutputStream(output, context);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private final transient InstanceOutput out;
     private final transient IEntityContext context;
@@ -20,7 +32,48 @@ public class MvObjectOutputStream extends ObjectOutputStream {
 
     @Override
     protected void writeObjectOverride(Object obj) {
-        var inst = context.getInstance(obj);
-        out.writeInstance(inst.getReference());
+        var v = Instances.fromJavaValue(obj, () -> context.getInstance(obj).getReference());
+        out.writeValue(v);
+    }
+
+    @Override
+    public void defaultWriteObject() {
+        var inst = (ClassInstance) Objects.requireNonNull(out.getCurrent());
+        inst.defaultWrite(out);
+    }
+
+    @Override
+    public void writeUTF(String str) {
+        out.writeString(str);
+    }
+
+    @Override
+    public void writeByte(int val) {
+        out.write(val);
+    }
+
+    @Override
+    public void writeShort(int val) {
+        out.writeInt(val);
+    }
+
+    @Override
+    public void writeInt(int val) {
+        out.writeInt(val);
+    }
+
+    @Override
+    public void writeLong(long val) {
+        out.writeLong(val);
+    }
+
+    @Override
+    public void writeFloat(float val) {
+        out.writeDouble(val);
+    }
+
+    @Override
+    public void writeDouble(double val) {
+        out.writeDouble(val);
     }
 }

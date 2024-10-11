@@ -36,6 +36,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     @CopyIgnore
     private Field copySource;
     private boolean readonly;
+    private boolean isTransient;
     private MetadataState state;
     private Type type;
     private int originalTag = -1;
@@ -52,6 +53,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             @NotNull Type type,
             Access access,
             boolean readonly,
+            boolean isTransient,
             Boolean unique,
             Value defaultValue,
             boolean isChild,
@@ -77,6 +79,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         this.tag = tag;
         this.sourceCodeTag = sourceCodeTag;
         this.readonly = readonly;
+        this.isTransient = isTransient;
         this.since = since;
         if (column != null) {
             NncUtils.requireTrue(declaringType.checkColumnAvailable(column));
@@ -298,6 +301,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
                     isChild,
                     isStatic(),
                     readonly,
+                    isTransient,
                     lazy,
                     sourceCodeTag,
                     getState().code()
@@ -355,6 +359,14 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public void setReadonly(boolean readonly) {
         this.readonly = readonly;
+    }
+
+    public boolean isTransient() {
+        return isTransient;
+    }
+
+    public void setTransient(boolean aTransient) {
+        isTransient = aTransient;
     }
 
     @Override

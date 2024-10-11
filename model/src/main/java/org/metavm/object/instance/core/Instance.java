@@ -397,6 +397,11 @@ public abstract class Instance implements Message {
     }
 
     public void writeRecord(InstanceOutput output) {
+        writeHead(output);
+        writeBody(output);
+    }
+
+    protected void writeHead(InstanceOutput output) {
         if (isInlineValue())
             output.write(WireTypes.VALUE_INSTANCE);
         else {
@@ -413,7 +418,6 @@ public abstract class Instance implements Message {
             output.writeLong(id.getNodeId());
         }
         getType().write(output);
-        writeBody(output);
     }
 
     protected abstract void writeBody(InstanceOutput output);
@@ -434,7 +438,12 @@ public abstract class Instance implements Message {
         writeRecord(output);
     }
 
-    public abstract void readFrom(InstanceInput input);
+    public void readRecord(InstanceInput input) {
+        setLoaded(input.isLoadedFromCache());
+        readFrom(input);
+    }
+
+    protected abstract void readFrom(InstanceInput input);
 
     boolean isModified() {
         return modified;

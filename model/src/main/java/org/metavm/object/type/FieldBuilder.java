@@ -31,6 +31,7 @@ public class FieldBuilder {
     private Field template;
     private Field existing;
     private boolean readonly;
+    private boolean isTransient;
     private boolean asTitle;
     private int tag = -1;
     private Integer sourceCodeTag;
@@ -123,6 +124,11 @@ public class FieldBuilder {
         return this;
     }
 
+    public FieldBuilder isTransient(boolean isTransient) {
+        this.isTransient = isTransient;
+        return this;
+    }
+
     public FieldBuilder sourceCodeTag(Integer sourceCodeTag) {
         this.sourceCodeTag = sourceCodeTag;
         return this;
@@ -152,6 +158,7 @@ public class FieldBuilder {
                     type,
                     access,
                     readonly,
+                    isTransient,
                     unique,
                     defaultValue,
                     isChild,
@@ -174,6 +181,7 @@ public class FieldBuilder {
             existing.setUnique(unique);
             existing.setLazy(lazy);
             existing.setReadonly(readonly);
+            existing.setTransient(isTransient);
             if(defaultValue != null)
                 existing.setDefaultValue(defaultValue);
             if (state != null)

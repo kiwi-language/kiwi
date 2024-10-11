@@ -62,6 +62,7 @@ public class DDLManagerTest extends TestCase {
         entityContextFactory = null;
         ddlManager = null;
         schedulerAndWorker = null;
+        GlobalPreUpgradeTask.preUpgradeAction = null;
     }
 
     public void testPreUpgrade() {

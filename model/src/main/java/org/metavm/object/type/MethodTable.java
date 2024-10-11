@@ -17,6 +17,8 @@ public class MethodTable {
     private @Nullable Method hashCodeMethod;
     private @Nullable Method equalsMethod;
     private @Nullable Method toStringMethod;
+    private @Nullable Method writeObjectMethod;
+    private @Nullable Method readObjectMethod;
 
     public MethodTable(Klass classType) {
         this.classType = classType;
@@ -27,6 +29,10 @@ public class MethodTable {
         hashCodeMethod = classType.findMethod(m -> "hashCode".equals(m.getCode()) && m.getParameters().isEmpty());
         equalsMethod = classType.findMethod(m -> "equals".equals(m.getCode()) && m.getParameterTypes().equals(List.of(Types.getNullableAnyType())));
         toStringMethod = classType.findMethod(m -> "toString".equals(m.getCode()) && m.getParameters().isEmpty());
+        writeObjectMethod = classType.findSelfMethod(m -> "writeObject".equals(m.getCode())
+                && m.getParameters().size() == 1);
+        readObjectMethod = classType.findSelfMethod(m -> "readObject".equals(m.getCode())
+                && m.getParameters().size() == 1);
         verticalTemplateIndex.clear();
         overriddenIndex.clear();
         var sig2methods = new HashMap<SimpleSignature, List<Method>>();
@@ -82,6 +88,16 @@ public class MethodTable {
 
     public @Nullable Method getToStringMethod() {
         return toStringMethod;
+    }
+
+    @Nullable
+    public Method getWriteObjectMethod() {
+        return writeObjectMethod;
+    }
+
+    @Nullable
+    public Method getReadObjectMethod() {
+        return readObjectMethod;
     }
 
     private record SimpleSignature(

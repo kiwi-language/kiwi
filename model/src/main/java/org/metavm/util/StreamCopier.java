@@ -136,8 +136,22 @@ public class StreamCopier extends StreamVisitor {
                 output.writeLong(readLong());
                 int numFields = readInt();
                 output.writeInt(numFields);
-                for (int j = 0; j < numFields; j++) {
-                    visitField();
+                if(numFields == -1) {
+                    var numOffsets = readInt();
+                    output.writeInt(numOffsets);
+                    for (int j = 0; j < numOffsets; j++) {
+                        output.writeInt(readInt());
+                    }
+                    int len = readInt();
+                    var buf = new byte[len];
+                    read(buf);
+                    output.writeInt(len);
+                    output.write(buf);
+                }
+                else {
+                    for (int j = 0; j < numFields; j++) {
+                        visitField();
+                    }
                 }
             }
         }

@@ -191,6 +191,7 @@ public abstract class TypeFactory {
                     .defaultValue(defaultValue)
                     .isChild(fieldDTO.isChild())
                     .isStatic(fieldDTO.isStatic())
+                    .isTransient(fieldDTO.isTransient())
                     .staticValue(Instances.nullInstance())
                     .tag(declaringType.nextFieldTag())
                     .sourceCodeTag(fieldDTO.sourceCodeTag() != null ? fieldDTO.sourceCodeTag() : declaringType.nextFieldSourceCodeTag())
@@ -203,6 +204,7 @@ public abstract class TypeFactory {
             field.setName(fieldDTO.name());
             field.setCode(fieldDTO.code());
             field.setUnique(fieldDTO.unique());
+            field.setTransient(fieldDTO.isTransient());
             if(fieldDTO.isChild() != field.isChild()) {
                 field.setChild(fieldDTO.isChild());
                 if(field.isChild())

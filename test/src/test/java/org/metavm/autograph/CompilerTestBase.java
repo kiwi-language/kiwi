@@ -14,6 +14,7 @@ import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
+import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.TypeQuery;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -204,8 +206,16 @@ public abstract class CompilerTestBase extends TestCase  {
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
     }
 
+    protected String saveInstance(String className, Map<String, Object> fields) {
+        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, fields));
+    }
+
     protected Object callMethod(String qualifier, String methodName, List<Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    }
+
+    protected ClassInstanceWrap getObject(String id) {
+        return apiClient.getObject(id);
     }
 
 }

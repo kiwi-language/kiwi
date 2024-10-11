@@ -18,6 +18,7 @@ public record FieldDTO(
         boolean isChild,
         boolean isStatic,
         boolean readonly,
+        boolean isTransient,
         boolean lazy,
         @Nullable Integer sourceCodeTag,
         int state

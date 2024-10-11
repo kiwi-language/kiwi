@@ -78,7 +78,7 @@ public class BytesUtils {
         }
 
         @Override
-        public void readFrom(InstanceInput input) {
+        protected void readFrom(InstanceInput input) {
 
         }
 
@@ -136,7 +136,7 @@ public class BytesUtils {
         }
 
         @Override
-        public void writeBody(InstanceOutput output) {
+        protected void writeBody(InstanceOutput output) {
 
         }
 

@@ -254,13 +254,16 @@ public class Declarator extends CodeGenVisitor {
             field = isStatic ? klass.findSelfStaticField(f -> Objects.equals(f.getSourceCodeTag(), fieldTag))
                     : klass.findSelfField(f -> Objects.equals(f.getSourceCodeTag(), fieldTag));
         }
+        var modList = requireNonNull(psiField.getModifierList());
+        var isTransient = modList.hasModifierProperty(PsiModifier.TRANSIENT);
         if (field == null) {
             field = FieldBuilder
                     .newBuilder(getBizFieldName(psiField), psiField.getName(), klass, type)
                     .access(getAccess(psiField))
                     .unique(TranspileUtils.isUnique(psiField))
                     .isChild(TranspileUtils.isChild(psiField))
-                    .isStatic(requireNonNull(psiField.getModifierList()).hasModifierProperty(PsiModifier.STATIC))
+                    .isStatic(modList.hasModifierProperty(PsiModifier.STATIC))
+                    .isTransient(isTransient)
                     .sourceCodeTag(fieldTag != -1 ? fieldTag : null)
                     .build();
         } else {
@@ -270,6 +273,7 @@ public class Declarator extends CodeGenVisitor {
             field.setAccess(getAccess(psiField));
             field.setUnique(TranspileUtils.isUnique(psiField));
             field.setChild(TranspileUtils.isChild(psiField));
+            field.setTransient(isTransient);
         }
         currentClass().visitedFields.add(field);
         if (TranspileUtils.isTitleField(psiField))

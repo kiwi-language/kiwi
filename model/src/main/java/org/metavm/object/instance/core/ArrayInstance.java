@@ -115,8 +115,7 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
 
     @Override
     @NoProxy
-    public void readFrom(InstanceInput input) {
-        setLoaded(input.isLoadedFromCache());
+    protected void readFrom(InstanceInput input) {
         var parentField = getParentField();
         var elements = this.elements;
         int len = input.readInt();
@@ -564,12 +563,26 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
         Collections.reverse(elements);
     }
 
-    public ArrayInstance copyOf(int from, int to) {
-        return copyOf(from, to, getType());
+    public ArrayInstance copyOfRange(int from, int to) {
+        return copyOfRange(from, to, getType());
     }
 
-    public ArrayInstance copyOf(int from, int to, ArrayType type) {
+    public ArrayInstance copyOfRange(int from, int to, ArrayType type) {
         return new ArrayInstance(type, elements.subList(from, to));
+    }
+
+    public ArrayInstance copyOf(int newLength) {
+        return copyOf(newLength, getType());
+    }
+
+    public ArrayInstance copyOf(int newLength, ArrayType type) {
+        int sz = size();
+        var copy = new ArrayInstance(type, elements.subList(0, Math.min(sz, newLength)));
+        int m = newLength - sz;
+        for (int i = 0; i < m; i++) {
+            copy.addElement(Instances.getDefaultValue(type.getElementType()));
+        }
+        return copy;
     }
 
 }

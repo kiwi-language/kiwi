@@ -51,13 +51,7 @@ public class Flows {
     }
 
     public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
-        ContextUtil.setEntityContext(context);
-        try {
-            return execute(flow, self, arguments, context.getInstanceContext());
-        }
-        finally {
-            ContextUtil.setEntityContext(null);
-        }
+        return execute(flow, self, arguments, context.getInstanceContext());
     }
 
     public static FlowExecResult execute(@NotNull Flow flow, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
@@ -65,7 +59,6 @@ public class Flows {
     }
 
     public static @Nullable Value invoke(@NotNull Flow flow, ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
-        ContextUtil.setEntityContext(context);
         return invoke(flow, self, arguments, context.getInstanceContext());
     }
 

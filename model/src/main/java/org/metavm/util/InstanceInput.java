@@ -60,6 +60,7 @@ public class InstanceInput implements Closeable {
     private Instance parent;
     @Nullable
     private Field parentField;
+    private @Nullable KlassDataSlot currentKlassSlot;
     private boolean loadedFromCache;
 
     public InstanceInput(InputStream inputStream) {
@@ -210,7 +211,7 @@ public class InstanceInput implements Closeable {
         var oldParent = parent;
         var ref = instance.getReference();
         parent = instance;
-        instance.readFrom(this);
+        instance.readRecord(this);
         parent = oldParent;
         addValue.accept(instance);
         return ref;
@@ -220,7 +221,7 @@ public class InstanceInput implements Closeable {
         var type = Type.readType(this, typeDefProvider);
         var instance = type instanceof ArrayType arrayType ?
                 new ArrayInstance(arrayType) : ClassInstance.allocateEmpty((ClassType) type);
-        instance.readFrom(this);
+        instance.readRecord(this);
         addValue.accept(instance);
         return instance.getReference();
     }
@@ -307,6 +308,14 @@ public class InstanceInput implements Closeable {
         }
     }
 
+    public void skip(int len) {
+        try {
+            inputStream.skip(len);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void setParent(@Nullable Instance parent) {
         this.parent = parent;
     }
@@ -374,5 +383,19 @@ public class InstanceInput implements Closeable {
 
     public InstanceLog readInstanceLog(long appId) {
         return new InstanceLog(appId, readId(), ChangeType.values()[readInt()], readLong());
+    }
+
+    @Nullable
+    public Instance getParent() {
+        return parent;
+    }
+
+    @Nullable
+    public KlassDataSlot getCurrentKlassSlot() {
+        return currentKlassSlot;
+    }
+
+    public void setCurrentKlassSlot(@Nullable KlassDataSlot currentKlassSlot) {
+        this.currentKlassSlot = currentKlassSlot;
     }
 }

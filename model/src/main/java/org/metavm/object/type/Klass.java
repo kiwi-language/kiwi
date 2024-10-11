@@ -477,6 +477,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return methods.toList();
     }
 
+    public @Nullable Method getWriteObjectMethod() {
+        return getMethodTable().getWriteObjectMethod();
+    }
+
+    public @Nullable Method getReadObjectMethod() {
+        return getMethodTable().getReadObjectMethod();
+    }
+
     public List<Method> getAllMethods() {
         if (superType != null)
             return NncUtils.union(superType.resolve().getAllMethods(), NncUtils.listOf(methods));

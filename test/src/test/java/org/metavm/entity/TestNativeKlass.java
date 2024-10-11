@@ -7,6 +7,7 @@ import org.metavm.flow.Flows;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.util.BootstrapUtils;
+import org.metavm.util.ContextUtil;
 import org.metavm.util.TestConstants;
 
 import java.util.List;
@@ -32,6 +33,7 @@ public class TestNativeKlass extends TestCase {
 
     public void test() {
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            ContextUtil.setEntityContext(context);
             var request = new HttpRequestImpl(
                     "GET",
                     "/",
@@ -46,6 +48,8 @@ public class TestNativeKlass extends TestCase {
             Assert.assertEquals(stringInstance("GET"), httpMethod);
             var token = Flows.invokeVirtual(httpRequestGetCookie.get(), inst, List.of(stringInstance("token")), context);
             Assert.assertEquals(stringInstance("__token__"), token);
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 

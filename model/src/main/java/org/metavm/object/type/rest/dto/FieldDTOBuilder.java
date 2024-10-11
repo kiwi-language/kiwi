@@ -25,6 +25,7 @@ public class FieldDTOBuilder {
     private boolean isChild;
     private boolean isStatic;
     private boolean readonly;
+    private boolean isTransient;
     private boolean lazy;
     private InstanceDTO staticValue;
     private boolean searchable;
@@ -116,6 +117,11 @@ public class FieldDTOBuilder {
         return this;
     }
 
+    public FieldDTOBuilder isTransient(boolean isTransient) {
+        this.isTransient = isTransient;
+        return this;
+    }
+
     public FieldDTO build() {
         if(id == null && tmpId != null)
            id = TmpId.of(tmpId).toString();
@@ -131,6 +137,7 @@ public class FieldDTOBuilder {
                 isChild,
                 isStatic,
                 readonly,
+                isTransient,
                 lazy,
                 sourceCodeTag,
                 state

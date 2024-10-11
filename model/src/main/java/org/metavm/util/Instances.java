@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class Instances {
 
@@ -1028,7 +1029,8 @@ public class Instances {
         else if(type instanceof PrimitiveType primitiveType)
             defaultValue = primitiveType.getKind().getDefaultValue();
         if(defaultValue == null)
-            throw new InternalException("Cannot get default value for type " + type);
+            defaultValue = nullInstance();
+//            throw new InternalException("Cannot get default value for type " + type);
         return defaultValue;
     }
 
@@ -1058,6 +1060,10 @@ public class Instances {
     }
 
     public static Value fromConstant(Object value) {
+        return fromJavaValue(value, () -> {throw new IllegalArgumentException("Cannot create a value for " + value);});
+    }
+
+    public static Value fromJavaValue(Object value, Supplier<Value> defaultSupplier) {
         return switch (value) {
             case Long l -> longInstance(l);
             case Integer i -> longInstance(i);
@@ -1070,7 +1076,7 @@ public class Instances {
             case String s -> stringInstance(s);
             case Date t -> timeInstance(t.getTime());
             case null -> nullInstance();
-            default -> throw new IllegalArgumentException("Cannot create a value for " + value);
+            default -> defaultSupplier.get();
         };
     }
 

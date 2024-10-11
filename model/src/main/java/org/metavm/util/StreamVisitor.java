@@ -162,6 +162,10 @@ public class StreamVisitor {
         return input.read();
     }
 
+    public void read(byte[] buf) {
+        input.read(buf);
+    }
+
     public String readString() {
         return input.readString();
     }
@@ -184,8 +188,17 @@ public class StreamVisitor {
             for (int i = 0; i < numKlasses; i++) {
                 input.readLong();
                 int numFields = input.readInt();
-                for (int j = 0; j < numFields; j++)
-                    visitField();
+                if(numFields == -1) {
+                    var numOffsets = input.readInt();
+                    for (int j = 0; j < numOffsets; j++) {
+                        input.readInt();
+                    }
+                    input.skip(input.readInt());
+                }
+                else {
+                    for (int j = 0; j < numFields; j++)
+                        visitField();
+                }
             }
         }
     }

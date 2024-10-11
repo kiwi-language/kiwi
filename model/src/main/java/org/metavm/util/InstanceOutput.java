@@ -1,6 +1,7 @@
 package org.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.IndexEntryPO;
@@ -39,6 +40,8 @@ public class InstanceOutput extends OutputStream {
     }
 
     private final OutputStream outputStream;
+    private @Nullable Instance current;
+    private @Nullable KlassDataSlot currentKlassSlot;
 
     public InstanceOutput(OutputStream outputStream) {
         this.outputStream = outputStream;
@@ -163,5 +166,22 @@ public class InstanceOutput extends OutputStream {
 
     public OutputStream getOutputStream() {
         return outputStream;
+    }
+
+    public @javax.annotation.Nullable Instance getCurrent() {
+        return current;
+    }
+
+    public void setCurrent(@javax.annotation.Nullable Instance current) {
+        this.current = current;
+    }
+
+    @javax.annotation.Nullable
+    public KlassDataSlot getCurrentKlassSlot() {
+        return currentKlassSlot;
+    }
+
+    public void setCurrentKlassSlot(@javax.annotation.Nullable KlassDataSlot currentKlassSlot) {
+        this.currentKlassSlot = currentKlassSlot;
     }
 }
