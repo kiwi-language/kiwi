@@ -341,25 +341,21 @@ public class ExpressionResolver {
         if(op == JavaTokenType.PLUS)
             return resolvedOperand;
         if (op == JavaTokenType.PLUSPLUS) {
-            return processAssignment(
-                    operand,
-                    new BinaryExpression(
-                            BinaryOperator.ADD,
-                            resolvedOperand,
-                            new ConstantExpression(Instances.longInstance(1))
-                    ),
-                    context
-            );
+            var assignment = Expressions.node(methodGenerator.createValue("value", new BinaryExpression(
+                    BinaryOperator.ADD,
+                    resolvedOperand,
+                    new ConstantExpression(Instances.longInstance(1))
+            )));
+            processAssignment(operand, assignment, context);
+            return assignment;
         } else if (op == JavaTokenType.MINUSMINUS) {
-            return processAssignment(
-                    operand,
-                    new BinaryExpression(
-                            BinaryOperator.MINUS,
-                            resolvedOperand,
-                            new ConstantExpression(Instances.longInstance(1))
-                    ),
-                    context
-            );
+            var assignment = Expressions.node(methodGenerator.createValue("value", new BinaryExpression(
+                    BinaryOperator.MINUS,
+                    resolvedOperand,
+                    new ConstantExpression(Instances.longInstance(1))
+            )));
+            processAssignment(operand, assignment, context);
+            return assignment;
         } else {
             throw new InternalException("Unsupported prefix operator " + op);
         }
@@ -378,27 +374,29 @@ public class ExpressionResolver {
         var op = psiUnaryExpression.getOperationSign().getTokenType();
         var resolvedOperand = resolve(requireNonNull(psiUnaryExpression.getOperand()), context);
         if (op == JavaTokenType.PLUSPLUS) {
+            var value = Expressions.node(methodGenerator.createValue("value", resolvedOperand));
             processAssignment(
-                    (PsiReferenceExpression) psiUnaryExpression.getOperand(),
+                    psiUnaryExpression.getOperand(),
                     new BinaryExpression(
                             BinaryOperator.ADD,
-                            resolvedOperand,
+                            value,
                             new ConstantExpression(Instances.longInstance(1))
                     ),
                     context
             );
-            return resolvedOperand;
+            return value;
         } else if (op == JavaTokenType.MINUSMINUS) {
+            var value = Expressions.node(methodGenerator.createValue("value", resolvedOperand));
             processAssignment(
-                    (PsiReferenceExpression) psiUnaryExpression.getOperand(),
+                    psiUnaryExpression.getOperand(),
                     new BinaryExpression(
                             BinaryOperator.MINUS,
-                            resolvedOperand,
+                            value,
                             new ConstantExpression(Instances.longInstance(1))
                     ),
                     context
             );
-            return resolvedOperand;
+            return value;
         } else {
             return new UnaryExpression(
                     resolveUnaryOperator(psiUnaryExpression.getOperationSign().getTokenType()),

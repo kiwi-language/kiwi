@@ -72,6 +72,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processStaticAnonymousClass();
             processObjects();
             processCustomObjectIO();
+            processUnaryAndPrefix();
         });
     }
 
@@ -750,4 +751,13 @@ public class BasicCompilingTest extends CompilerTestBase {
         var modCount = foo.get("modCount");
         Assert.assertEquals(0L, modCount);
     }
+
+    private void processUnaryAndPrefix() {
+        var klass = "assignment.UnaryAndPrefixFoo";
+        Assert.assertEquals(0L, callMethod(klass, "getAndIncrement", List.of()));
+        Assert.assertEquals(2L, callMethod(klass, "incrementAndGet", List.of()));
+        Assert.assertEquals(2L, callMethod(klass, "getAndDecrement", List.of()));
+        Assert.assertEquals(0L, callMethod(klass, "decrementAndGet", List.of()));
+    }
+
 }
