@@ -137,16 +137,21 @@ public class StreamCopier extends StreamVisitor {
                 int numFields = readInt();
                 output.writeInt(numFields);
                 if(numFields == -1) {
-                    var numOffsets = readInt();
-                    output.writeInt(numOffsets);
-                    for (int j = 0; j < numOffsets; j++) {
-                        output.writeInt(readInt());
+                    var numSkips = readInt();
+                    output.writeInt(numSkips);
+                    var skips = new int[numSkips];
+                    for (int j = 0; j < numSkips; j++) {
+                        output.writeInt(skips[j] = readInt());
                     }
-                    int len = readInt();
-                    var buf = new byte[len];
-                    read(buf);
-                    output.writeInt(len);
-                    output.write(buf);
+                    int lastSkip = readInt();
+                    output.writeInt(lastSkip);
+                    for (int skip : skips) {
+                        if(skip > 0)
+                            copyBytes(skip);
+                        visitValue();
+                    }
+                    if(lastSkip > 0)
+                        copyBytes(lastSkip);
                 }
                 else {
                     for (int j = 0; j < numFields; j++) {
@@ -155,6 +160,12 @@ public class StreamCopier extends StreamVisitor {
                 }
             }
         }
+    }
+
+    private void copyBytes(int len) {
+        var buf = new byte[len];
+        read(buf);
+        output.write(buf);
     }
 
     @Override

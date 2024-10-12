@@ -9,7 +9,8 @@ import java.util.List;
 
 public class MarkingInstanceOutput extends InstanceOutput {
 
-    private final List<Integer> valueOffsets = new ArrayList<>();
+    private final List<Integer> skips = new ArrayList<>();
+    private int lastValueEnd;
     private final ByteArrayOutputStream bout;
 
     public MarkingInstanceOutput() {
@@ -23,25 +24,36 @@ public class MarkingInstanceOutput extends InstanceOutput {
 
     @Override
     public void writeValue(Value value) {
-        recordValueOffset();
+        recordSkip();
         super.writeValue(value);
+        lastValueEnd = size();
     }
 
     @Override
     public void writeInstance(Value value) {
-        recordValueOffset();
+        recordSkip();
         super.writeInstance(value);
+        lastValueEnd = size();
     }
 
-    private void recordValueOffset() {
-        valueOffsets.add(bout.size());
+    private void recordSkip() {
+        skips.add(size() - lastValueEnd);
     }
 
     public byte[] toByteArray() {
         return bout.toByteArray();
     }
 
-    public List<Integer> getValueOffsets() {
-        return Collections.unmodifiableList(valueOffsets);
+    public List<Integer> getSkips() {
+        return Collections.unmodifiableList(skips);
     }
+
+    public int size() {
+        return bout.size();
+    }
+
+    public int getLastSkip() {
+        return size() - lastValueEnd;
+    }
+
 }

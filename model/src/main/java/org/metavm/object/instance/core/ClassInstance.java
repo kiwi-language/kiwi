@@ -274,10 +274,10 @@ public class ClassInstance extends Instance {
                 ContextUtil.getEntityContext()
         );
         var bytes = tempOutput.toByteArray();
-        var offsets = tempOutput.getValueOffsets();
-        output.writeInt(offsets.size());
-        offsets.forEach(output::writeInt);
-        output.writeInt(bytes.length);
+        var skips = tempOutput.getSkips();
+        output.writeInt(skips.size());
+        skips.forEach(output::writeInt);
+        output.writeInt(tempOutput.getLastSkip());
         output.write(bytes);
     }
 

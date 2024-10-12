@@ -188,19 +188,30 @@ public class StreamVisitor {
             for (int i = 0; i < numKlasses; i++) {
                 input.readLong();
                 int numFields = input.readInt();
-                if(numFields == -1) {
-                    var numOffsets = input.readInt();
-                    for (int j = 0; j < numOffsets; j++) {
-                        input.readInt();
-                    }
-                    input.skip(input.readInt());
-                }
+                if(numFields == -1)
+                    visitCustomData();
                 else {
                     for (int j = 0; j < numFields; j++)
                         visitField();
                 }
             }
         }
+    }
+
+    public void visitCustomData() {
+        var numSkips = input.readInt();
+        var skips = new int[numSkips];
+        for (int i = 0; i < numSkips; i++) {
+            skips[i] = input.readInt();
+        }
+        var lastSkip = readInt();
+        for (int skip : skips) {
+            if(skip > 0)
+                input.skip(skip);
+           visitValue();
+        }
+        if(lastSkip > 0)
+            input.skip(lastSkip);
     }
 
     public TypeKey readTypeKey() {

@@ -64,6 +64,10 @@ public class ApiClient {
         return rs;
     }
 
+    public void deleteInstance(String id) {
+        apiService.deleteInstance(id);
+    }
+
     private HttpRequest makeRequest(String method, String uri) {
         return new HttpRequestImpl(
                 method,

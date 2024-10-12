@@ -218,4 +218,8 @@ public abstract class CompilerTestBase extends TestCase  {
         return apiClient.getObject(id);
     }
 
+    protected void deleteObject(String id) {
+        TestUtils.doInTransactionWithoutResult(() -> apiClient.deleteInstance(id));
+    }
+
 }
