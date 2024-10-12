@@ -8,6 +8,7 @@ import org.metavm.object.instance.core.PrimitiveValue;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
+import org.metavm.object.type.TypeTags;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.ReflectionUtils;
@@ -30,6 +31,8 @@ public class DefaultObjectInstanceMap implements ObjectInstanceMap {
 
     @Override
     public Value getInstance(Object object) {
+        if(object instanceof Value value)
+            return value;
         var primitiveInst = Instances.trySerializePrimitive(object, getDefContext()::getType);
         if (primitiveInst != null)
             return primitiveInst;
@@ -48,9 +51,13 @@ public class DefaultObjectInstanceMap implements ObjectInstanceMap {
         if (instance instanceof PrimitiveValue primitiveValue)
             return klass.cast(Instances.deserializePrimitive(primitiveValue, klass));
         else if(instance instanceof Reference r) {
-            if(r.tryGetId() != null)
-                return entityContext.getEntity(klass, r.getId());
-            else
+            var id = r.tryGetId();
+            if(id != null) {
+                if(TypeTags.isSystemTypeTag(id.getTypeTag(entityContext, entityContext)))
+                    return entityContext.getEntity(klass, id);
+                else
+                    return klass.cast(instance);
+            } else
                 return entityContext.getEntity(klass, r.resolve());
         }
         else

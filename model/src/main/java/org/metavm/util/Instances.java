@@ -1076,6 +1076,7 @@ public class Instances {
             case String s -> stringInstance(s);
             case Date t -> timeInstance(t.getTime());
             case null -> nullInstance();
+            case Value v -> v;
             default -> defaultSupplier.get();
         };
     }

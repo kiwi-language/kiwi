@@ -750,6 +750,10 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(List.of(1L,2L,3L), elements.toList());
         var modCount = foo.get("modCount");
         Assert.assertEquals(0L, modCount);
+        var id2 = saveInstance("objectio.CustomObjectIOFoo",
+                Map.of("id", "002", "elements", List.of()));
+        callMethod(id, "add", List.of(id2));
+        Assert.assertEquals(id2, callMethod(id, "get", List.of(3)));
     }
 
     private void processUnaryAndPrefix() {

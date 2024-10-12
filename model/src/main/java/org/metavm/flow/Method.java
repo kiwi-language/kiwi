@@ -352,6 +352,7 @@ public class Method extends Flow implements Property, GenericElement {
                 return FlowExecResult.of(map.getInstance(r));
         }
         catch (Throwable e) {
+//            logger.debug("Failed to invoke native method {}", ReflectionUtils.getMethodQualifiedName(javaMethod), e);
             var exception = ClassInstance.allocate(StdKlass.runtimeException.type());
             var nat = new RuntimeExceptionNative(exception);
             if(e.getMessage() != null)
