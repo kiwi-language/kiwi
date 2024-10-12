@@ -2,12 +2,11 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.metavm.common.ErrorCode;
 import org.metavm.entity.SerializeContext;
 import org.metavm.object.instance.rest.InstanceFieldDTO;
 import org.metavm.object.type.Field;
-import org.metavm.util.BusinessException;
 import org.metavm.util.InstanceOutput;
+import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +76,11 @@ public class InstanceField implements IInstanceField {
 
     void secretlySet(Value value) {
         this.value = value;
+    }
+
+    void ensureInitialized() {
+        if(value == null)
+            value = Instances.getDefaultValue(field.getType());
     }
 
     @Override

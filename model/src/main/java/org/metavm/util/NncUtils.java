@@ -811,6 +811,110 @@ public class NncUtils {
         return merged;
     }
 
+    public static <T extends Comparable<T>> void forEachMerged(List<? extends T> list1, List<? extends T> list2,
+                                         Consumer<? super T> action) {
+        forEachMerged(list1, list2, Comparable::compareTo, action);
+    }
+
+    public static <T> void forEachMerged(List<? extends T> list1, List<? extends T> list2,
+                                         Comparator<T> comparator,
+                                         Consumer<? super T> action) {
+        if(list2.isEmpty())
+            list1.forEach(action);
+        else if(list1.isEmpty())
+            list2.forEach(action);
+        else {
+            var it1 = list1.iterator();
+            var it2 = list2.iterator();
+            var e1 = it1.next();
+            var e2 = it2.next();
+            for(;;) {
+                if(comparator.compare(e1, e2) <= 0) {
+                    action.accept(e1);
+                    if(it1.hasNext())
+                        e1 = it1.next();
+                    else {
+                        action.accept(e2);
+                        while (it2.hasNext())
+                            action.accept(it2.next());
+                        break;
+                    }
+                }
+                else {
+                    action.accept(e2);
+                    if(it2.hasNext())
+                        e2 = it2.next();
+                    else {
+                        action.accept(e1);
+                        while (it1.hasNext())
+                            action.accept(it1.next());
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private static final Object endMark = new Object();
+
+    public static <T extends Comparable<T>> Iterator<T> mergeIterator(Iterator<? extends T> it1, Iterator<? extends T> it2) {
+        return mergeIterator(it1, it2, Comparable::compareTo);
+    }
+
+    public static <T> Iterator<T> mergeIterator(Iterator<? extends T> it1, Iterator<? extends T> it2, Comparator<T> comparator) {
+        if(!it2.hasNext()) {
+            //noinspection unchecked
+            return (Iterator<T>) it1;
+        }
+        else if(!it1.hasNext()) {
+            //noinspection unchecked
+            return (Iterator<T>) it2;
+        }
+        else {
+            return new Iterator<>() {
+                private T e1 = it1.next();
+                private T e2 = it2.next();
+
+                @Override
+                public boolean hasNext() {
+                    return e1 != endMark || e2 != endMark;
+                }
+
+                @Override
+                public T next() {
+                    if(e1 != endMark && e2 != endMark) {
+                        T r;
+                        if(comparator.compare(e1, e2) <= 0) {
+                            r = e1;
+                            //noinspection unchecked
+                            e1 = it1.hasNext() ? it1.next() : (T) endMark;
+                        }
+                        else {
+                            r = e2;
+                            //noinspection unchecked
+                            e2 = it2.hasNext() ? it2.next() : (T) endMark;
+                        }
+                        return r;
+                    }
+                    else if(e1 != endMark) {
+                        var r =  e1;
+                        //noinspection unchecked
+                        e1 = it1.hasNext() ? it1.next() : (T) endMark;
+                        return r;
+                    }
+                    else if(e2 != endMark) {
+                        var r =  e2;
+                        //noinspection unchecked
+                        e2 = it2.hasNext() ? it2.next() : (T) endMark;
+                        return r;
+                    }
+                    else
+                        throw new NoSuchElementException();
+                }
+            };
+        }
+    }
+
     public static <T, R> List<R> map(Iterable<T> source, Function<T, R> mapping) {
         if (source == null) {
             return List.of();

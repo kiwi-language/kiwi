@@ -71,6 +71,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processPrimitiveStaticFields();
             processStaticAnonymousClass();
             processObjects();
+            processCustomObjectIO();
         });
     }
 
@@ -739,4 +740,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         }
     }
 
+    private void processCustomObjectIO() {
+        var id = saveInstance("objectio.CustomObjectIOFoo",
+                Map.of("id", "001", "elements", List.of(1, 2, 3)));
+        var foo = getObject(id);
+        Assert.assertEquals("001", foo.getString("id"));
+        var elements = foo.getArray("elements");
+        Assert.assertEquals(List.of(1L,2L,3L), elements.toList());
+        var modCount = foo.get("modCount");
+        Assert.assertEquals(0L, modCount);
+    }
 }

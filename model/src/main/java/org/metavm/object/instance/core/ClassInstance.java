@@ -244,25 +244,19 @@ public class ClassInstance extends Instance {
 
     @Override
     protected void writeBody(InstanceOutput output) {
-        var subTables = fieldTable.subTables;
-        int numKlasses = 0;
-        for (FieldSubTable subTable : subTables) {
-            if (subTable.klass != null && subTable.klass.getWriteObjectMethod() != null
-                    || subTable.countFieldsForWriting() > 0)
-                numKlasses++;
-        }
-        output.writeInt(numKlasses);
-        for (FieldSubTable subTable : subTables) {
-            var k = subTable.klass;
+        output.writeInt(fieldTable.countSubTablesForWriting());
+        fieldTable.forEachSubTable(subTable -> {
             int numFields;
-            if(k != null && k.getWriteObjectMethod() != null) {
-                output.writeLong(subTable.klassTag);
-                customWrite(subTable, k.getWriteObjectMethod(), output);
-            } else if((numFields = subTable.countFieldsForWriting()) > 0) {
-                output.writeLong(subTable.klassTag);
+            Method writeObjectMethod;
+            if(subTable instanceof FieldSubTable st && (writeObjectMethod = st.klass.getWriteObjectMethod()) != null) {
+                output.writeLong(st.klassTag);
+                customWrite(st, writeObjectMethod, output);
+            }
+            else if ((numFields = subTable.countFieldsForWriting()) > 0) {
+                output.writeLong(subTable.getKlassTag());
                 defaultWriteFields(subTable, output, numFields);
             }
-        }
+        });
     }
 
     private void customWrite(FieldSubTable subTable, Method writeObjectMethod, InstanceOutput output) {
@@ -292,7 +286,7 @@ public class ClassInstance extends Instance {
         defaultWriteFields(st, output, st.countFieldsForWriting());
     }
 
-    private void defaultWriteFields(FieldSubTable subTable, InstanceOutput output, int numFields) {
+    private void defaultWriteFields(IFieldSubTable subTable, InstanceOutput output, int numFields) {
         output.writeInt(numFields);
         subTable.forEach(field -> {
             if (!field.shouldSkipWrite()) {
@@ -323,38 +317,36 @@ public class ClassInstance extends Instance {
         var sortedKlasses = klass.getSortedKlasses();
         int j = 0;
         int numKlasses = input.readInt();
-        var unknownSubTables = new ArrayList<FieldSubTable>();
         var fieldTable = this.fieldTable;
         fieldTable.initialize();
         var subTables = fieldTable.subTables;
+        var unknownSubTables = fieldTable.unknownSubTables;
+        unknownSubTables.clear();
         var oldSlot = input.getCurrentKlassSlot();
         for (int i = 0; i < numKlasses; i++) {
-            var groupTag = input.readLong();
+            var klassTag = input.readLong();
             int cmp = 1;
-            Klass sk;
-            while (j < sortedKlasses.size() && (cmp = Long.compare((sk = sortedKlasses.get(j)).getTag(), groupTag)) < 0) {
-                for (var field : sk.getSortedFields()) {
-                    var f = fieldTable.get(field);
-                    if(!f.isFieldInitialized())
-                        f.secretlySet(Instances.getDefaultValue(field.getType()));
+            FieldSubTable st;
+            while (j < sortedKlasses.size() && (cmp = Long.compare((st = subTables.get(j)).getKlassTag(), klassTag)) < 0) {
+                for (InstanceField field : st.fields) {
+                    field.ensureInitialized();
                 }
                 j++;
             }
             if(cmp == 0) {
-                sk = sortedKlasses.get(j);
-                var st = subTables.get(j++);
+                st = subTables.get(j++);
                 input.setCurrentKlassSlot(st);
-                var readObjectMethod = sk.getReadObjectMethod();
+                var readObjectMethod = st.klass.getReadObjectMethod();
                 if(readObjectMethod != null)
                     customRead(readObjectMethod, input);
                 else
-                    defaultReadFields(input, sk, st);
+                    defaultReadFields(input, st);
             } else {
-                var subTable = new FieldSubTable(fieldTable, groupTag);
-                unknownSubTables.add(subTable);
+                var ust = new UnknownFieldSubTable(klassTag);
+                unknownSubTables.add(ust);
                 int numFields = input.readInt();
                 for (int k = 0; k < numFields; k++) {
-                    subTable.add(new UnknownField(this, groupTag, input.readInt(), input.readInstanceBytes()));
+                    ust.unknownFields.add(new UnknownField(this, klassTag, input.readInt(), input.readInstanceBytes()));
                 }
             }
         }
@@ -362,14 +354,8 @@ public class ClassInstance extends Instance {
         for (; j < sortedKlasses.size(); j++) {
             var klass = sortedKlasses.get(j);
             for (Field field : klass.getSortedFields()) {
-                var f = fieldTable.get(field);
-                if(!f.isFieldInitialized())
-                    f.secretlySet(Instances.getDefaultValue(field.getType()));
+                fieldTable.get(field).ensureInitialized();
             }
-        }
-        if(!unknownSubTables.isEmpty()) {
-            fieldTable.subTables = NncUtils.mergeSorted(subTables, unknownSubTables,
-                    Comparator.comparingLong(t -> t.klassTag));
         }
     }
 
@@ -394,40 +380,33 @@ public class ClassInstance extends Instance {
     }
 
     public void defaultRead(InstanceInput input) {
-        var st = (FieldSubTable) Objects.requireNonNull(input.getCurrentKlassSlot());
-        defaultReadFields(input, Objects.requireNonNull(st.klass), st);
+        defaultReadFields(input, (FieldSubTable) Objects.requireNonNull(input.getCurrentKlassSlot()));
     }
 
-    private void defaultReadFields(InstanceInput input, Klass klass, FieldSubTable subTable) {
-        var fields = klass.getSortedFields();
+    private void defaultReadFields(InstanceInput input, FieldSubTable subTable) {
+        var klassTag = subTable.klassTag;
+        var fields = subTable.fields;
+        var unknownFields = subTable.unknownFields;
+        unknownFields.clear();
         int m = 0;
         int numFields = input.readInt();
-        var unknownFields = new ArrayList<UnknownField>();
         for (int l = 0; l < numFields; l++) {
             var fieldTag = input.readInt();
-            Field field;
+            InstanceField field;
             while (m < fields.size() && (field = fields.get(m)).getTag() < fieldTag) {
-                if(!isFieldInitialized(field))
-                    fieldTable.get(field).secretlySet(Instances.getDefaultValue(field.getType()));
+                field.ensureInitialized();
                 m++;
             }
             if (m < fields.size() && (field = fields.get(m)).getTag() == fieldTag) {
-                input.setParentField(field);
-                var value = input.readValue();
-                fieldTable.get(field).secretlySet(value);
+                input.setParentField(field.getField());
+                field.secretlySet(input.readValue());
                 m++;
             } else
-                unknownFields.add(new UnknownField(this, klass.getTag(), fieldTag, input.readInstanceBytes()));
+                unknownFields.add(new UnknownField(this, klassTag, fieldTag, input.readInstanceBytes()));
         }
         input.setParentField(getParentField());
         for (; m < fields.size(); m++) {
-            var field = fields.get(m);
-            if(!isFieldInitialized(field))
-                fieldTable.get(field).secretlySet(Instances.getDefaultValue(field.getType()));
-        }
-        if(!unknownFields.isEmpty()) {
-            subTable.fields = NncUtils.mergeSorted(subTable.fields, unknownFields,
-                    Comparator.comparingInt(IInstanceField::getTag));
+            fields.get(m).ensureInitialized();
         }
     }
 
@@ -693,15 +672,12 @@ public class ClassInstance extends Instance {
         var copy = ClassInstanceBuilder.newBuilder(getType()).initFieldTable(false).build();
         copy.fieldTable.initializeFieldsArray();
         for (FieldSubTable subTable : fieldTable.subTables) {
-            var st = copy.fieldTable.addSubTable(subTable.klassTag);
-            st.klass = subTable.klass;
-            for (IInstanceField field : subTable.fields) {
-                if(field instanceof InstanceField f) {
-                    var v = f.getValue();
-                    if(f.getField().isChild() && v instanceof Reference r)
-                        v = r.resolve().copy().getReference();
-                    st.add(new InstanceField(copy, f.getField(), v));
-                }
+            var st = copy.fieldTable.addSubTable(subTable.klass);
+            for (var field : subTable.fields) {
+                var v = field.getValue();
+                if(field.getField().isChild() && v instanceof Reference r)
+                    v = r.resolve().copy().getReference();
+                st.add(new InstanceField(copy, field.getField(), v));
             }
         }
         return copy;
@@ -716,9 +692,9 @@ public class ClassInstance extends Instance {
     }
 
     public void setFieldByTag(long classTag, int fieldTag, Value value) {
-        var st = NncUtils.find(fieldTable.subTables, s -> s.klassTag == classTag);
+        var st = fieldTable.findSubTable(classTag);
         if(st != null) {
-            var ff = NncUtils.find(st.fields, f -> f.getTag() == fieldTag);
+            var ff = NncUtils.find(st, f -> f.getTag() == fieldTag);
             if(ff != null) {
                 ff.set(value);
                 return;
@@ -730,7 +706,8 @@ public class ClassInstance extends Instance {
     private static class FieldTable implements Iterable<IInstanceField> {
 
         private final ClassInstance owner;
-        private List<FieldSubTable> subTables = new ArrayList<>();
+        private final List<FieldSubTable> subTables = new ArrayList<>();
+        private final List<UnknownFieldSubTable> unknownSubTables = new ArrayList<>();
         private InstanceField[] fields;
 
         private FieldTable(ClassInstance owner) {
@@ -744,16 +721,27 @@ public class ClassInstance extends Instance {
         void initialize() {
             initializeFieldsArray();
             for (Klass k : owner.klass.getSortedKlasses()) {
-                var st = addSubTable(k.getTag());
-                st.klass = k;
+                var st = addSubTable(k);
                 st.initialize(owner, k);
             }
         }
 
-        FieldSubTable addSubTable(long klassTag) {
-            var subTable = new FieldSubTable(this, klassTag);
+        FieldSubTable addSubTable(Klass klass) {
+            var subTable = new FieldSubTable(this, klass);
             subTables.add(subTable);
             return subTable;
+        }
+
+        IFieldSubTable findSubTable(long klassTag) {
+            for (FieldSubTable subTable : subTables) {
+                if(subTable.klassTag == klassTag)
+                    return subTable;
+            }
+            for (UnknownFieldSubTable unknownSubTable : unknownSubTables) {
+                if(unknownSubTable.klassTag == klassTag)
+                    return unknownSubTable;
+            }
+            return null;
         }
 
         void onFieldAdded(InstanceField field) {
@@ -767,6 +755,19 @@ public class ClassInstance extends Instance {
                     return;
                 }
             }
+            for (UnknownFieldSubTable unknownSubTable : unknownSubTables) {
+                if(unknownSubTable.klassTag == classTag) {
+                    unknownSubTable.clearUnknown(tag);
+                    return;
+                }
+            }
+        }
+
+        void addUnknownSubTable(UnknownFieldSubTable ust) {
+            var index = Collections.binarySearch(unknownSubTables, ust);
+            if(index >= 0)
+                throw new IllegalStateException("FieldSubTable " + ust.getKlassTag() + " already exists");
+            unknownSubTables.add(-(index + 1), ust);
         }
 
         InstanceField get(Field field) {
@@ -787,15 +788,34 @@ public class ClassInstance extends Instance {
         }
 
         public void forEach(Consumer<? super IInstanceField> action) {
-            for (FieldSubTable subTable : subTables) {
-                subTable.forEach(action);
+            forEachSubTable(st -> st.forEach(action));
+        }
+
+        public Iterator<IFieldSubTable> subTableIterator() {
+            return NncUtils.mergeIterator(subTables.iterator(), unknownSubTables.iterator());
+        }
+
+        public int countSubTablesForWriting() {
+            int count = 0;
+            for (FieldSubTable st : subTables) {
+                if(!st.shouldSkipWrite())
+                    count++;
             }
+            for (UnknownFieldSubTable ust : unknownSubTables) {
+                if(!ust.shouldSkipWrite())
+                    count++;
+            }
+            return count;
+        }
+
+        public void forEachSubTable(Consumer<? super IFieldSubTable> action) {
+            NncUtils.forEachMerged(subTables, unknownSubTables, action);
         }
 
         @NotNull
         @Override
         public Iterator<IInstanceField> iterator() {
-            var tableIt = subTables.iterator();
+            var tableIt = subTableIterator();
             Iterator<IInstanceField> i = null;
             while (tableIt.hasNext()) {
                 var n = tableIt.next().iterator();
@@ -849,21 +869,17 @@ public class ClassInstance extends Instance {
         }
 
         public void addUnknownField(UnknownField unknownField) {
-            var it = subTables.listIterator();
-            while (it.hasNext()) {
-                var st = it.next();
-                if(st.klassTag == unknownField.getKlassTag()) {
-                    st.add(unknownField);
+            for (FieldSubTable st : subTables) {
+                if (st.klassTag == unknownField.getKlassTag()) {
+                    st.addUnknownField(unknownField);
                     return;
-                }
-                else if(st.klassTag > unknownField.getKlassTag()) {
-                    it.previous();
+                } else if (st.klassTag > unknownField.getKlassTag()) {
                     break;
                 }
             }
-            var st = new FieldSubTable(this, unknownField.getKlassTag());
-            it.add(st);
-            st.addUnknownField(unknownField);
+            var ust = new UnknownFieldSubTable(unknownField.getKlassTag());
+            addUnknownSubTable(ust);
+            ust.add(unknownField);
         }
     }
 
@@ -871,16 +887,29 @@ public class ClassInstance extends Instance {
         return klass.isSearchable();
     }
 
-    private static class FieldSubTable implements Iterable<IInstanceField>, KlassDataSlot {
-        private final FieldTable table;
-        private final long klassTag;
-        private @Nullable Klass klass;
-        private List<IInstanceField> fields = new ArrayList<>();
+    private interface IFieldSubTable extends Iterable<IInstanceField>, Comparable<IFieldSubTable> {
 
-        public FieldSubTable(FieldTable table, long klassTag) {
+        long getKlassTag();
+
+        @Override
+        default int compareTo(@NotNull ClassInstance.IFieldSubTable o) {
+            return Long.compare(getKlassTag(), o.getKlassTag());
+        }
+
+        int countFieldsForWriting();
+    }
+
+    private static class FieldSubTable implements IFieldSubTable, KlassDataSlot {
+        private final FieldTable table;
+        private final Klass klass;
+        private final long klassTag;
+        private final List<InstanceField> fields = new ArrayList<>();
+        private final List<UnknownField> unknownFields = new ArrayList<>();
+
+        public FieldSubTable(FieldTable table, Klass klass) {
             this.table = table;
-            this.klassTag = klassTag;
-            this.klass = null;
+            this.klass = klass;
+            this.klassTag = klass.getTag();
         }
 
         void initialize(ClassInstance owner, Klass klass) {
@@ -889,23 +918,26 @@ public class ClassInstance extends Instance {
             }
         }
 
-        void add(IInstanceField field) {
+        void add(InstanceField field) {
             fields.add(field);
-            if (field instanceof InstanceField f)
-                table.onFieldAdded(f);
+            table.onFieldAdded(field);
         }
 
         void addUnknownField(UnknownField unknownField) {
-            var index = Collections.binarySearch(fields, unknownField);
+            var index = Collections.binarySearch(unknownFields, unknownField);
             if(index >= 0)
                 throw new IllegalStateException("Field " + unknownField.getKlassTag() + "." + unknownField.getTag() + " already exists in the field table");
-            fields.add(-(index + 1), unknownField);
+            unknownFields.add(-(index + 1), unknownField);
         }
 
-        int countFieldsForWriting() {
+        public int countFieldsForWriting() {
             int count = 0;
-            for (IInstanceField field : fields) {
-                if (field != null && !field.shouldSkipWrite())
+            for (InstanceField field : fields) {
+                if (!field.shouldSkipWrite())
+                    count++;
+            }
+            for (UnknownField unknownField : unknownFields) {
+                if(!unknownField.shouldSkipWrite())
                     count++;
             }
             return count;
@@ -913,18 +945,74 @@ public class ClassInstance extends Instance {
 
         @Override
         public void forEach(Consumer<? super IInstanceField> action) {
-            fields.forEach(action);
+            NncUtils.forEachMerged(fields, unknownFields, action);
         }
 
         @NotNull
         @Override
         public Iterator<IInstanceField> iterator() {
-            return fields.iterator();
+            return NncUtils.mergeIterator(fields.iterator(), unknownFields.iterator());
+       }
+
+        public boolean clearUnknown(int tag) {
+//            return fields.removeIf(f -> f instanceof UnknownField && f.getTag() == tag);
+            return unknownFields.removeIf(f -> f.getTag() == tag);
+        }
+
+        @Override
+        public long getKlassTag() {
+            return klassTag;
+        }
+
+        private boolean shouldSkipWrite() {
+            return klass.getWriteObjectMethod() == null && countFieldsForWriting() == 0;
+        }
+    }
+
+    private static class UnknownFieldSubTable implements IFieldSubTable, KlassDataSlot {
+
+        private final long klassTag;
+        private final List<UnknownField> unknownFields = new ArrayList<>();
+
+        private UnknownFieldSubTable(long klassTag) {
+            this.klassTag = klassTag;
+        }
+
+        @NotNull
+        @Override
+        public Iterator<IInstanceField> iterator() {
+            //noinspection unchecked,rawtypes
+            return (Iterator) unknownFields.iterator();
+        }
+
+        void add(UnknownField unknownField) {
+            unknownFields.add(unknownField);
+        }
+
+        @Override
+        public long getKlassTag() {
+            return klassTag;
+        }
+
+        private boolean shouldSkipWrite() {
+            return countFieldsForWriting() == 0;
         }
 
         public boolean clearUnknown(int tag) {
-            return fields.removeIf(f -> f instanceof UnknownField && f.getTag() == tag);
+//            return fields.removeIf(f -> f instanceof UnknownField && f.getTag() == tag);
+            return unknownFields.removeIf(f -> f.getTag() == tag);
         }
+
+        public int countFieldsForWriting() {
+            int count = 0;
+            for (UnknownField unknownField : unknownFields) {
+                if(!unknownField.shouldSkipWrite())
+                    count++;
+            }
+            return count;
+        }
+
+
     }
 
 }
