@@ -261,11 +261,11 @@ public class ClassInstance extends Instance {
 
     private void customWrite(FieldSubTable subTable, Method writeObjectMethod, InstanceOutput output) {
         output.writeInt(-1);
-        var tempOutput = new MarkingInstanceOutput();
-        tempOutput.setCurrent(this);
-        tempOutput.setCurrentKlassSlot(subTable);
+        var markingOutput = new MarkingInstanceOutput();
+        markingOutput.setCurrent(this);
+        markingOutput.setCurrentKlassSlot(subTable);
         var ctx = ContextUtil.getEntityContext();
-        var s = ctx.bind(MvObjectOutputStream.create(tempOutput, ctx));
+        var s = ctx.bind(MvObjectOutputStream.create(markingOutput, ctx));
         var si = ctx.getInstance(s);
         Flows.invoke(
                 writeObjectMethod,
@@ -273,12 +273,11 @@ public class ClassInstance extends Instance {
                 List.of(si.getReference()),
                 ContextUtil.getEntityContext()
         );
-        var bytes = tempOutput.toByteArray();
-        var skips = tempOutput.getSkips();
-        output.writeInt(skips.size());
-        skips.forEach(output::writeInt);
-        output.writeInt(tempOutput.getLastSkip());
-        output.write(bytes);
+        markingOutput.insertBytesSectionIfRequired();
+        var blocks = markingOutput.getBlocks();
+        output.writeInt(blocks.size());
+        blocks.forEach(b -> b.write(output));
+        output.write(markingOutput.toByteArray());
     }
 
     public void defaultWrite(InstanceOutput output) {
@@ -362,11 +361,10 @@ public class ClassInstance extends Instance {
     private void customRead(Method readObjectMethod, InstanceInput input) {
         var flag = input.readInt();
         assert flag == -1;
-        var numOffsets = input.readInt();
-        for (int i1 = 0; i1 < numOffsets; i1++) {
-            input.readInt();
+        var numBlocks = input.readInt();
+        for (int i = 0; i < numBlocks; i++) {
+            MarkingInstanceOutput.Block.read(input);
         }
-        input.readInt();
         var ctx = ContextUtil.getEntityContext();
         var s = MvObjectInputStream.create(input, ctx);
         ctx.bind(s);

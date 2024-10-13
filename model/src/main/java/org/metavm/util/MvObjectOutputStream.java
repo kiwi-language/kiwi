@@ -13,7 +13,7 @@ import java.util.Objects;
 @EntityType(ephemeral = true, isNative = true)
 public class MvObjectOutputStream extends ObjectOutputStream {
 
-    public static MvObjectOutputStream create(InstanceOutput output, IEntityContext context) {
+    public static MvObjectOutputStream create(MarkingInstanceOutput output, IEntityContext context) {
         try {
             return new MvObjectOutputStream(output, context);
         } catch (IOException e) {
@@ -21,10 +21,10 @@ public class MvObjectOutputStream extends ObjectOutputStream {
         }
     }
 
-    private final transient InstanceOutput out;
+    private final transient MarkingInstanceOutput out;
     private final transient IEntityContext context;
 
-    public MvObjectOutputStream(InstanceOutput out, IEntityContext context) throws IOException {
+    public MvObjectOutputStream(MarkingInstanceOutput out, IEntityContext context) throws IOException {
         super();
         this.out = out;
         this.context = context;
@@ -39,7 +39,9 @@ public class MvObjectOutputStream extends ObjectOutputStream {
     @Override
     public void defaultWriteObject() {
         var inst = (ClassInstance) Objects.requireNonNull(out.getCurrent());
+        out.enterDefaultWriting();
         inst.defaultWrite(out);
+        out.exitingDefaultWriting();
     }
 
     @Override

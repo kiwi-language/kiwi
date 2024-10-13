@@ -134,35 +134,39 @@ public class StreamCopier extends StreamVisitor {
             output.writeInt(numKlasses);
             for (int i = 0; i < numKlasses; i++) {
                 output.writeLong(readLong());
-                int numFields = readInt();
-                output.writeInt(numFields);
-                if(numFields == -1) {
-                    var numSkips = readInt();
-                    output.writeInt(numSkips);
-                    var skips = new int[numSkips];
-                    for (int j = 0; j < numSkips; j++) {
-                        output.writeInt(skips[j] = readInt());
-                    }
-                    int lastSkip = readInt();
-                    output.writeInt(lastSkip);
-                    for (int skip : skips) {
-                        if(skip > 0)
-                            copyBytes(skip);
-                        visitValue();
-                    }
-                    if(lastSkip > 0)
-                        copyBytes(lastSkip);
-                }
-                else {
-                    for (int j = 0; j < numFields; j++) {
-                        visitField();
-                    }
-                }
+                visitClassBody();
             }
         }
     }
 
-    private void copyBytes(int len) {
+    @Override
+    public void visitClassBody() {
+        int numFields = readInt();
+        output.writeInt(numFields);
+        if(numFields == -1)
+            visitCustomData();
+        else {
+            for (int j = 0; j < numFields; j++) {
+                visitField();
+            }
+        }
+    }
+
+    @Override
+    public void visitCustomData() {
+        var numBlocks = readInt();
+        output.writeInt(numBlocks);
+        var blocks = new MarkingInstanceOutput.Block[numBlocks];
+        for (int i = 0; i < numBlocks; i++) {
+            (blocks[i] = readBlock()).write(output);
+        }
+        for (var block : blocks) {
+            block.visitBody(this);
+        }
+    }
+
+    @Override
+    public void visitBytes(int len) {
         var buf = new byte[len];
         read(buf);
         output.write(buf);

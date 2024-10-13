@@ -30,20 +30,21 @@ public class MvObjectIOTest extends TestCase {
     }
 
     public void test() throws IOException, ClassNotFoundException {
-        var bout = new ByteArrayOutputStream();
+        var ref = new Object() { byte[] bytes;};
         TestUtils.doInTransactionWithoutResult( () -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                 ContextUtil.setEntityContext(context);
                 var foo = context.bind(new Foo("foo", new Bar("bar001")));
                 context.initIds();
-                var output = new InstanceOutput(bout);
+                var output = new MarkingInstanceOutput();
                 var objOut = context.bind( MvObjectOutputStream.create(output, context));
                 var objOutInst = (ClassInstance) context.getInstance(objOut);
                 Flows.invoke(StdMethod.objectOutputStreamWriteObject.get(),
                         objOutInst,
                         List.of(context.getInstance(foo).getReference()),
                         context);
-                Assert.assertTrue(bout.size() > 0);
+                Assert.assertTrue(output.size() > 0);
+                ref.bytes = output.toByteArray();
                 context.finish();
             } finally {
                 ContextUtil.setEntityContext(null);
@@ -51,12 +52,12 @@ public class MvObjectIOTest extends TestCase {
         });
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             ContextUtil.setEntityContext(context);
-            var input = context.getInstanceContext().createInstanceInput(new ByteArrayInputStream(bout.toByteArray()));
+            var input = context.getInstanceContext().createInstanceInput(new ByteArrayInputStream(ref.bytes));
             var objInput = context.bind(new MvObjectInputStream(input, context));
             var objInputInst = (ClassInstance) context.getInstance(objInput);
             var readObjectMethod = StdMethod.objectInputStreamReadObject.get();
-            var ref = Objects.requireNonNull(Flows.invoke(readObjectMethod, objInputInst, List.of(), context));
-            var inst = ref.resolveObject();
+            var r = Objects.requireNonNull(Flows.invoke(readObjectMethod, objInputInst, List.of(), context));
+            var inst = r.resolveObject();
             Assert.assertEquals(Instances.stringInstance("foo"), inst.getField("name"));
         } finally {
             ContextUtil.setEntityContext(null);

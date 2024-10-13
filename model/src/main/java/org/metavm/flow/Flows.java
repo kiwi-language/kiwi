@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.IEntityContext;
@@ -12,7 +13,6 @@ import org.metavm.object.instance.core.FunctionValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
-import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 public class Flows {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");

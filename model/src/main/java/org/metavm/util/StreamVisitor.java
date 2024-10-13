@@ -142,6 +142,10 @@ public class StreamVisitor {
         return input.readInt();
     }
 
+    public MarkingInstanceOutput.Block readBlock() {
+        return MarkingInstanceOutput.Block.read(input);
+    }
+
     public double readDouble() {
         return input.readDouble();
     }
@@ -187,31 +191,30 @@ public class StreamVisitor {
             int numKlasses = input.readInt();
             for (int i = 0; i < numKlasses; i++) {
                 input.readLong();
-                int numFields = input.readInt();
-                if(numFields == -1)
-                    visitCustomData();
-                else {
-                    for (int j = 0; j < numFields; j++)
-                        visitField();
-                }
+                visitClassBody();
             }
         }
     }
 
+    public void visitClassBody() {
+        int numFields = input.readInt();
+        if(numFields == -1)
+            visitCustomData();
+        else {
+            for (int j = 0; j < numFields; j++)
+                visitField();
+        }
+    }
+
     public void visitCustomData() {
-        var numSkips = input.readInt();
-        var skips = new int[numSkips];
-        for (int i = 0; i < numSkips; i++) {
-            skips[i] = input.readInt();
+        var numBlocks = input.readInt();
+        var blocks = new MarkingInstanceOutput.Block[numBlocks];
+        for (int i = 0; i < numBlocks; i++) {
+            blocks[i] = MarkingInstanceOutput.Block.read(input);
         }
-        var lastSkip = readInt();
-        for (int skip : skips) {
-            if(skip > 0)
-                input.skip(skip);
-           visitValue();
+        for (var block : blocks) {
+           block.visitBody(this);
         }
-        if(lastSkip > 0)
-            input.skip(lastSkip);
     }
 
     public TypeKey readTypeKey() {
@@ -261,4 +264,7 @@ public class StreamVisitor {
         return input.getTreeId();
     }
 
+    public void visitBytes(int length) {
+        input.skip(length);
+    }
 }
