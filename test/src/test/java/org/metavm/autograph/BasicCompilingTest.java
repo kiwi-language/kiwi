@@ -73,6 +73,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processObjects();
             processCustomObjectIO();
             processUnaryAndPrefix();
+            processFieldAssignment();
         });
     }
 
@@ -769,6 +770,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(2L, callMethod(klass, "incrementAndGet", List.of()));
         Assert.assertEquals(2L, callMethod(klass, "getAndDecrement", List.of()));
         Assert.assertEquals(0L, callMethod(klass, "decrementAndGet", List.of()));
+    }
+
+    private void processFieldAssignment() {
+        var className = "assignment.FieldAssignmentFoo";
+        var id = saveInstance(className, Map.of());
+        callMethod(className, "setValue", List.of(id, 1));
+        var foo = getObject(id);
+        Assert.assertEquals(1L, foo.get("value"));
     }
 
 }

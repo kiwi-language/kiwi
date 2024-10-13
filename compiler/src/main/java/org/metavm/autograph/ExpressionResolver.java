@@ -757,6 +757,8 @@ public class ExpressionResolver {
                         Expression self;
                         if (refExpr.getQualifierExpression() != null) {
                             self = resolve(refExpr.getQualifierExpression(), context);
+                            if(methodGenerator.getExpressionType(self).isNullable())
+                                self = Expressions.node(methodGenerator.createNonNull("nonNull", self));
                         } else {
                             self = variableTable.get("this");
                         }
