@@ -13,8 +13,18 @@ import static java.util.Objects.requireNonNull;
 public class AnonymousClassTransformer extends VisitorBase {
 
     private final Map<PsiClass, AnonymousClassInfo> map = new HashMap<>();
+    private final Set<PsiClass> syntheticClasses = new HashSet<>();
     private final LinkedList<AnonymousClassInfo> anonymousClasses = new LinkedList<>();
+    private final LinkedList<ExecutableInfo> executables = new LinkedList<>();
     private int nextId = 1;
+
+    @Override
+    public void visitJavaFile(PsiJavaFile file) {
+        var maxCount = file.getUserData(Keys.MAX_SYNTHETIC_CLASS_SEQ);
+        if(maxCount != null)
+            nextId = Math.max(1, maxCount);
+        super.visitJavaFile(file);
+    }
 
     @Override
     public void visitNewExpression(PsiNewExpression expression) {
@@ -51,11 +61,12 @@ public class AnonymousClassTransformer extends VisitorBase {
 
     @Override
     public void visitClass(PsiClass aClass) {
+        if(syntheticClasses.contains(aClass))
+            return;
         if(TranspileUtils.isLocalClass(aClass)) {
             enterAnonymousClass(aClass);
             super.visitClass(aClass);
             processLocalClass(exitAnonymousClass());
-            replace(aClass, TranspileUtils.createComment("// Removed"));
         }
         else
             super.visitClass(aClass);
@@ -112,7 +123,9 @@ public class AnonymousClassTransformer extends VisitorBase {
             k.addBefore(innerClass.copy(), null);
         }
         k = (PsiClass) enclosingClass.addBefore(k, null);
-        map.put(klass instanceof PsiAnonymousClass ? klass : k, info);
+        map.put(klass, info);
+        syntheticClasses.add(k);
+        currentExecutable().localClasses.add(klass);
     }
 
     private void transformLocalClassConstructor(PsiMethod method, AnonymousClassInfo info) {
@@ -243,6 +256,27 @@ public class AnonymousClassTransformer extends VisitorBase {
     }
 
     @Override
+    public void visitMethod(PsiMethod method) {
+        enterExecutable();
+        super.visitMethod(method);
+        exitExecutable();
+    }
+
+    @Override
+    public void visitLambdaExpression(PsiLambdaExpression expression) {
+        enterExecutable();
+        super.visitLambdaExpression(expression);
+        exitExecutable();
+    }
+
+    @Override
+    public void visitClassInitializer(PsiClassInitializer initializer) {
+        enterExecutable();
+        super.visitClassInitializer(initializer);
+        exitExecutable();
+    }
+
+    @Override
     public void visitReferenceExpression(PsiReferenceExpression expression) {
         super.visitReferenceExpression(expression);
         if(expression.resolve() instanceof PsiVariable variable && !(variable instanceof PsiField)) {
@@ -278,8 +312,7 @@ public class AnonymousClassTransformer extends VisitorBase {
     }
 
     private void enterAnonymousClass(PsiClass klass) {
-        var substName = klass instanceof PsiAnonymousClass ? "$" + nextId++ : klass.getName();
-        anonymousClasses.push(new AnonymousClassInfo(klass, substName));
+        anonymousClasses.push(new AnonymousClassInfo(klass, "$" + nextId++));
     }
 
     private AnonymousClassInfo exitAnonymousClass() {
@@ -288,6 +321,19 @@ public class AnonymousClassTransformer extends VisitorBase {
 
     private @Nullable AnonymousClassInfo currentAnonymousClass() {
         return anonymousClasses.peek();
+    }
+
+    private void enterExecutable() {
+        executables.push(new ExecutableInfo());
+    }
+
+    private void exitExecutable() {
+        var info = Objects.requireNonNull(executables.pop());
+        info.localClasses.forEach(PsiElement::delete);
+    }
+
+    private ExecutableInfo currentExecutable() {
+        return Objects.requireNonNull(executables.peek());
     }
 
     private static class AnonymousClassInfo {
@@ -309,6 +355,10 @@ public class AnonymousClassTransformer extends VisitorBase {
             return substitutorName;
         }
 
+    }
+
+    private static class ExecutableInfo {
+        private final List<PsiClass> localClasses = new ArrayList<>();
     }
 
 }

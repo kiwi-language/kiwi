@@ -81,8 +81,10 @@ public class Keys {
 
     public static final Key<Boolean> INNER_CLASS_COPY = Key.create("InnerClassCopy");
 
+    public static final Key<Integer> MAX_SYNTHETIC_CLASS_SEQ = Keys.createKey("MaxSyntheticClassSeq");
+
     public static Set<Key<?>> getKeys() {
         return new HashSet<>(KEYS);
     }
-    
+
 }

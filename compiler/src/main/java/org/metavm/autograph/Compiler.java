@@ -55,6 +55,7 @@ public class Compiler {
                         file.accept(new ObjectSuperCallRemover());
                         file.accept(new QnResolver());
                         file.accept(new ActivityAnalyzer());
+                        file.accept(new SyntheticClassNameTracker());
                         file.accept(new AnonymousClassTransformer());
                     }
             ),

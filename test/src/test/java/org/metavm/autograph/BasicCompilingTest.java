@@ -75,6 +75,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processUnaryAndPrefix();
             processFieldAssignment();
             processLocalClass();
+            processLocalClassNameConflict();
         });
     }
 
@@ -787,6 +788,11 @@ public class BasicCompilingTest extends CompilerTestBase {
                 "MetaVM is the future",
                 callMethod(klassName, "concatenate", List.of(List.of("MetaVM", "is", "the", "future")))
         );
+    }
+
+    private void processLocalClassNameConflict() {
+        var className = "localclass.LocalClassNameConflictFoo";
+        graphql.Assert.assertNotNull(callMethod(className, "test", List.of()));
     }
 
 }
