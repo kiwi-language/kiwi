@@ -50,16 +50,12 @@ public class Compiler {
             new CompileStage(
                     file -> true,
                     file -> {
+                        file.accept(new DefaultConstructorCreator());
+                        file.accept(new SuperCallInserter());
+                        file.accept(new ObjectSuperCallRemover());
                         file.accept(new QnResolver());
                         file.accept(new ActivityAnalyzer());
                         file.accept(new AnonymousClassTransformer());
-                    }
-            ),
-            new CompileStage(
-                    file -> true,
-                    file -> {
-                        file.accept(new DefaultConstructorCreator());
-                        file.accept(new SuperCallInserter());
                     }
             ),
             new CompileStage(

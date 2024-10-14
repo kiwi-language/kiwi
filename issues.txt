@@ -37,6 +37,7 @@ record Foo(String value) {
 9 Klass.addParameterized occasionally raises IllegalStateException complaining that the parameterized already exists.
 10 Incorrect values get resolved for prefix and postfix expressions when the operand is a field
 11 Memory leaks in compiler test cases through ThreadLocalDefContextHolder
+12 Strings are not assignable CharSequence in MetaVM
 
 Issues with compiling java.util.Map
 

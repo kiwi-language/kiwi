@@ -24,6 +24,12 @@ public class StringBuilderNative extends NativeBase {
         return StringBuilder();
     }
 
+    public Value StringBuilder(Value value, CallContext callContext) {
+        var sb = StringBuilder();
+        append(value, callContext);
+        return sb;
+    }
+
     public Value StringBuilder() {
         array = new ArrayInstance((ArrayType) arrayField.getType());
         instance.initField(arrayField, array.getReference());

@@ -552,6 +552,15 @@ public class TranspileUtils {
         return body.get(body.size() - 1);
     }
 
+    public static @Nullable PsiClass getNewExpressionClass(PsiNewExpression newExpression) {
+        if(newExpression.getAnonymousClass() != null)
+            return newExpression.getAnonymousClass();
+        else if(newExpression.getClassReference() != null)
+            return (PsiClass) Objects.requireNonNull(newExpression.getClassReference().resolve());
+        else
+            return null;
+    }
+
     private static class UpwardsClassVisitor extends JavaElementVisitor {
 
         @Override
@@ -753,6 +762,20 @@ public class TranspileUtils {
                 parentClass.cast(getParent(element, Set.of(parentClass))),
                 () -> "Cannot find parent of type " + parentClass.getName() + " of element " + element.getText()
         );
+    }
+
+    public static boolean isLocalClass(PsiClass klass) {
+        if(klass instanceof PsiAnonymousClass || klass instanceof PsiTypeParameter)
+            return false;
+        var parent = klass.getParent();
+        while (parent != null) {
+            if(parent instanceof PsiClass)
+                return false;
+            if(parent instanceof PsiMethod || parent instanceof PsiClassInitializer || parent instanceof PsiLambdaExpression)
+                return true;
+            parent = parent.getParent();
+        }
+        return false;
     }
 
     public static @Nullable PsiElement getParent(PsiElement element, Set<Class<?>> parentClasses) {
@@ -1378,6 +1401,26 @@ public class TranspileUtils {
 
     public static PsiComment createComment(String comment) {
         return elementFactory.createCommentFromText(comment, null);
+    }
+
+    public static boolean isSuperCall(PsiStatement statement) {
+        return statement instanceof PsiExpressionStatement exprStmt
+                && exprStmt.getExpression() instanceof PsiMethodCallExpression callExpr
+                && "super".equals(callExpr.getMethodExpression().getReferenceName());
+    }
+
+
+    public static boolean isObjectSuperCall(PsiStatement statement) {
+        return statement instanceof PsiExpressionStatement exprStmt
+                && exprStmt.getExpression() instanceof PsiMethodCallExpression callExpr
+                && "super".equals(callExpr.getMethodExpression().getReferenceName())
+                && isObjectClass(requireNonNull(requireNonNull(callExpr.resolveMethod()).getContainingClass()));
+    }
+
+    public static boolean isThisCall(PsiStatement statement) {
+        return statement instanceof PsiExpressionStatement exprStmt
+                && exprStmt.getExpression() instanceof PsiMethodCallExpression callExpr
+                && "this".equals(callExpr.getMethodExpression().getReferenceName());
     }
 
 }

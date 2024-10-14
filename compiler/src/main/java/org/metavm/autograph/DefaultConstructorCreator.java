@@ -1,5 +1,6 @@
 package org.metavm.autograph;
 
+import com.intellij.psi.PsiAnonymousClass;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiTypeParameter;
@@ -11,7 +12,7 @@ public class DefaultConstructorCreator extends VisitorBase {
 
     @Override
     public void visitClass(PsiClass psiClass) {
-        if(TranspileUtils.isDiscarded(psiClass))
+        if(TranspileUtils.isDiscarded(psiClass) || psiClass instanceof PsiAnonymousClass)
             return;
         super.visitClass(psiClass);
         if(psiClass instanceof PsiTypeParameter || psiClass.isInterface())

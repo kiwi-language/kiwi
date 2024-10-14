@@ -338,8 +338,10 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     @Override
     public void visitDeclarationStatement(PsiDeclarationStatement statement) {
         for (PsiElement declaredElement : statement.getDeclaredElements()) {
-            var qnAndMode = NncUtils.requireNonNull(declaredElement.getUserData(QN_AND_MODE));
-            scope.addIsolatedName(qnAndMode.qualifiedName());
+            if(!(declaredElement instanceof PsiClass)) {
+                var qnAndMode = NncUtils.requireNonNull(declaredElement.getUserData(QN_AND_MODE));
+                scope.addIsolatedName(qnAndMode.qualifiedName());
+            }
         }
         processStatement(statement);
     }

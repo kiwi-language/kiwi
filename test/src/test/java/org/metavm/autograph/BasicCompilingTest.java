@@ -74,6 +74,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processCustomObjectIO();
             processUnaryAndPrefix();
             processFieldAssignment();
+            processLocalClass();
         });
     }
 
@@ -778,6 +779,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         callMethod(className, "setValue", List.of(id, 1));
         var foo = getObject(id);
         Assert.assertEquals(1L, foo.get("value"));
+    }
+
+    private void processLocalClass() {
+        var klassName = "localclass.LocalClassFoo";
+        Assert.assertEquals(
+                "MetaVM is the future",
+                callMethod(klassName, "concatenate", List.of(List.of("MetaVM", "is", "the", "future")))
+        );
     }
 
 }
