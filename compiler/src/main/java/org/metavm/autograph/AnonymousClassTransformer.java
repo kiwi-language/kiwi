@@ -148,12 +148,46 @@ public class AnonymousClassTransformer extends VisitorBase {
                 );
             }
             for (PsiField field : info.klass.getFields()) {
-                if(field.getInitializer() != null)
+                if(!TranspileUtils.isStatic(field) && field.getInitializer() != null) {
+                    var initializer = transformFieldInitializer(field.getInitializer(), info);
                     body.add(TranspileUtils.createStatementFromText(
-                            "this." + field.getName() + "=" + field.getInitializer().getText() + ";"
+                            "this." + field.getName() + "="
+                                    + initializer.getText() + ";"
                     ));
+                }
             }
         }
+    }
+
+    private PsiExpression transformFieldInitializer(PsiExpression initializer, AnonymousClassInfo info) {
+        var copy = (PsiExpression) initializer.copy();
+        copy.accept(new VisitorBase() {
+
+            @Override
+            public void visitReferenceExpression(PsiReferenceExpression expression) {
+                super.visitReferenceExpression(expression);
+                var target = expression.resolve();
+                if(target instanceof PsiVariable v && info.capturedVariables.contains(v))
+                    expression.setQualifierExpression(TranspileUtils.createExpressionFromText("this"));
+                else if(target instanceof PsiField field) {
+                    if(TranspileUtils.isStatic(field)) {
+                        expression.setQualifierExpression(TranspileUtils.createExpressionFromText(
+                                Objects.requireNonNull(field.getContainingClass()).getQualifiedName()
+                        ));
+                    }
+                    else {
+                        if (field.getContainingClass() == info.klass)
+                            expression.setQualifierExpression(TranspileUtils.createExpressionFromText("this"));
+                        else
+                            expression.setQualifierExpression(TranspileUtils.createExpressionFromText(
+                                    Objects.requireNonNull(field.getContainingClass()).getName() + ".this"
+                            ));
+                    }
+                }
+            }
+
+        });
+        return copy;
     }
 
     private PsiMethod createConstructor(AnonymousClassInfo anonymousClassInfo) {
@@ -191,8 +225,9 @@ public class AnonymousClassTransformer extends VisitorBase {
         );
         for (PsiField field : anonymousClassInfo.getKlass().getFields()) {
             if(!TranspileUtils.isStatic(field) && field.getInitializer() != null) {
+                var initializer = transformFieldInitializer(field.getInitializer(), anonymousClassInfo);
                 sb.append("this.").append(field.getName()).append('=')
-                        .append(field.getInitializer().getText()).append(';');
+                        .append(initializer.getText()).append(';');
             }
         }
         sb.append('}');

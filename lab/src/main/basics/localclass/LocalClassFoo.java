@@ -5,11 +5,17 @@ import java.util.List;
 
 public class LocalClassFoo {
 
-    public static <T> Iterator<T> adapt(Iterator<? extends T> iterator) {
+    private int count;
+    public static final int limit = 16;
+
+    public <T> Iterator<T> adapt(Iterator<? extends T> iterator) {
         class Adapter implements Iterator<T> {
 
             private boolean empty = !iterator.hasNext();
             private int index;
+            private int c = count + 1;
+            private int l = limit + 1;
+            private int m = l + 1;
 
             Adapter() {
                 this(0);
@@ -18,6 +24,9 @@ public class LocalClassFoo {
             Adapter(int index) {
                 super();
                 this.index = index;
+            }
+
+            Adapter(Object iterator, Object count, Object limit) {
             }
 
             @Override
@@ -34,9 +43,10 @@ public class LocalClassFoo {
     }
 
     public static String concatenate(List<? extends String> sequences) {
-        if(sequences.isEmpty())
+        var foo = new LocalClassFoo();
+        if (sequences.isEmpty())
             return "";
-        var it = adapt(sequences.iterator());
+        var it = foo.adapt(sequences.iterator());
         var sb = new StringBuilder(it.next());
         while (it.hasNext()) {
             sb.append(' ');
