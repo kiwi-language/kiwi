@@ -648,10 +648,14 @@ public class Generator extends CodeGenVisitor {
             condField = builder().newTemproryField(node.getKlass(), "condition", Types.getBooleanType());
         }
         var bodyScope = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
+        var modified = new HashSet<>(bodyScope.getModified());
+        var condScope = statement.getUserData(Keys.COND_SCOPE);
+        if(condScope != null)
+            modified.addAll(condScope.getModified());
         Set<QualifiedName> liveIn = requireNonNull(statement.getUserData(Keys.LIVE_VARS_IN));
         Set<QualifiedName> liveOut = requireNonNull(statement.getUserData(Keys.LIVE_VARS_OUT));
         List<QualifiedName> loopVars = NncUtils.filter(
-                bodyScope.getModified(), qn -> liveIn.contains(qn) || liveOut.contains(qn)
+                modified, qn -> liveIn.contains(qn) || liveOut.contains(qn)
         );
         Map<Field, Expression> initialValues = new HashMap<>();
         Map<QualifiedName, Field> loopVar2Field = new HashMap<>();

@@ -81,6 +81,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processBitwiseComplement();
             processPrefixOnParenthesized();
             processArrayIndexOutOfBounds();
+            processModifyVariableInWhileCondition();
         });
     }
 
@@ -833,6 +834,11 @@ public class BasicCompilingTest extends CompilerTestBase {
             Assert.assertSame(ErrorCode.FLOW_EXECUTION_FAILURE, e.getErrorCode());
             Assert.assertEquals("Array index out of range: 1", e.getMessage());
         }
+    }
+
+    private void processModifyVariableInWhileCondition() {
+        var klassName = "loops.ModifyVariableInWhileCondition";
+        Assert.assertEquals(100L, (long) callMethod(klassName, "test", List.of(200)));
     }
 
 }
