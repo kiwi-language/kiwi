@@ -67,6 +67,10 @@ public class LongValue extends NumberValue {
         return new LongValue(value | that.value, getType());
     }
 
+    public LongValue bitwiseComplement() {
+        return new LongValue(~value, getType());
+    }
+
     public LongValue mul(LongValue that) {
         return new LongValue(value * that.value, getType());
     }

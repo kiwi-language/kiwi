@@ -58,6 +58,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     illegalArgumentException(IllegalArgumentException.class, false, IllegalArgumentExceptionNative.class),
     illegalStateException(IllegalStateException.class, false, IllegalStateExceptionNative.class),
     indexOutOfBoundsException(IndexOutOfBoundsException.class, false, IndexOutOfBoundsExceptionNative.class),
+    arrayIndexOutOfBoundsException(ArrayIndexOutOfBoundsException.class, false, ArrayIndexOutOfBoundsExceptionNative.class),
     consumer(Consumer.class),
     predicate(Predicate.class),
     supplier(Supplier.class, true, null),

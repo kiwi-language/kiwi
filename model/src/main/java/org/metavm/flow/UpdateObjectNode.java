@@ -104,7 +104,7 @@ public class UpdateObjectNode extends NodeRT {
     }
 
     private void setFields(List<UpdateField> fields) {
-        var selfType = object.getType();
+        var selfType = getExpressionTypes().getType(object.getExpression());
         for (UpdateField field : fields) {
             if (!field.getFieldRef().getDeclaringType().isAssignableFrom(selfType))
                 throw new InternalException("Field " + field.getFieldRef().resolve() + " is not defined in klass " + selfType);

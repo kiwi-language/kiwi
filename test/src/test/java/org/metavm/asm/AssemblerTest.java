@@ -90,6 +90,10 @@ public class AssemblerTest extends TestCase {
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/instanceof.masm");
     }
 
+    public void testUpdateField() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/update_field.masm");
+    }
+
     public void testTreeSet() {
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/tree_set.masm");
         var id = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("TreeSetLab", "create", List.of()));

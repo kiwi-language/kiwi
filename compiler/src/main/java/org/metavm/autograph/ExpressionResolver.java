@@ -27,7 +27,8 @@ public class ExpressionResolver {
     public static final Map<IElementType, UnaryOperator> UNARY_OPERATOR_MAP = Map.ofEntries(
             Map.entry(JavaTokenType.PLUS, UnaryOperator.POS),
             Map.entry(JavaTokenType.MINUS, UnaryOperator.NEG),
-            Map.entry(JavaTokenType.EXCL, UnaryOperator.NOT)
+            Map.entry(JavaTokenType.EXCL, UnaryOperator.NOT),
+            Map.entry(JavaTokenType.TILDE, UnaryOperator.BITWISE_COMPLEMENT)
     );
 
     private static final Map<IElementType, BinaryOperator> OPERATOR_MAP = Map.ofEntries(
@@ -326,7 +327,7 @@ public class ExpressionResolver {
     }
 
     private Expression resolvePrefix(PsiPrefixExpression psiPrefixExpression, ResolutionContext context) {
-        var operand = (PsiReferenceExpression) NncUtils.requireNonNull(psiPrefixExpression.getOperand());
+        var operand = NncUtils.requireNonNull(psiPrefixExpression.getOperand());
         var op = psiPrefixExpression.getOperationSign().getTokenType();
         if (op == JavaTokenType.EXCL) {
             return new BinaryExpression(
@@ -340,6 +341,8 @@ public class ExpressionResolver {
             return new UnaryExpression(UnaryOperator.NEG, resolvedOperand);
         if(op == JavaTokenType.PLUS)
             return resolvedOperand;
+        if(op == JavaTokenType.TILDE)
+            return new UnaryExpression(UnaryOperator.BITWISE_COMPLEMENT, resolvedOperand);
         if (op == JavaTokenType.PLUSPLUS) {
             var assignment = Expressions.node(methodGenerator.createValue("value", new BinaryExpression(
                     BinaryOperator.ADD,

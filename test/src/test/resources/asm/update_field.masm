@@ -1,0 +1,15 @@
+class UpdateFieldFoo {
+
+    private int value;
+
+    public UpdateFieldFoo() {
+        this.value = 0;
+    }
+
+    public static void update(UpdateFieldFoo|null foo, int value) {
+        if(foo != null) {
+            foo.value = value;
+        }
+    }
+
+}

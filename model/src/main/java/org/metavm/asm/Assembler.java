@@ -1034,7 +1034,7 @@ public class Assembler {
                     }
                     else {
                         var object = parseValue(qualifier, parsingContext);
-                        var objectType = (ClassType) object.getType();
+                        var objectType = (ClassType) getExpressionType(object.getExpression(), scope);
                         var field = objectType.resolve().getFieldByCode(fieldName);
                         return new UpdateObjectNode(
                                 NncUtils.randomNonNegative(),
@@ -1381,6 +1381,12 @@ public class Assembler {
             } catch (Exception e) {
                 throw new InternalException("Fail to process statement: " + statement.getText(), e);
             }
+        }
+
+        private Type getExpressionType(Expression expression, ScopeRT scope) {
+            var exprTypes = scope.getLastNode() != null ? scope.getLastNode().getExpressionTypes() :
+                    scope.getExpressionTypes();
+            return exprTypes.getType(expression);
         }
 
         private UpdateOp parseUpdateOp(String bop) {

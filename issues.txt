@@ -38,6 +38,7 @@ record Foo(String value) {
 10 Incorrect values get resolved for prefix and postfix expressions when the operand is a field
 11 Memory leaks in compiler test cases through ThreadLocalDefContextHolder
 12 Strings are not assignable CharSequence in MetaVM
+13 Add support for byte, short and int types
 
 Issues with compiling java.util.Map
 

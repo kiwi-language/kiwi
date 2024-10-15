@@ -167,8 +167,11 @@ public class StandardDefBuilder {
         createExceptionKlass(ConcurrentModificationException.class, runtimeExceptionKlass);
         createExceptionKlass(ClassCastException.class, runtimeExceptionKlass);
         createExceptionKlass(NoSuchElementException.class, runtimeExceptionKlass);
-        createExceptionKlass(IndexOutOfBoundsException.class, runtimeExceptionKlass);
+        var indexOutOfBoundExceptiopnKlass = createExceptionKlass(IndexOutOfBoundsException.class, runtimeExceptionKlass);
         createExceptionKlass(CloneNotSupportedException.class, runtimeExceptionKlass);
+        var arrayIndexOutOfBoundsExceptionKlass =
+                createExceptionKlass(ArrayIndexOutOfBoundsException.class, indexOutOfBoundExceptiopnKlass);
+        createArrayIndexOutOfBoundsExceptionFlows(arrayIndexOutOfBoundsExceptionKlass);
         var errorKlass = createExceptionKlass(Error.class, throwableKlass);
         var vmErrorKlass = createExceptionKlass(VirtualMachineError.class, errorKlass);
         createExceptionKlass(InternalError.class, vmErrorKlass);
@@ -601,6 +604,15 @@ public class StandardDefBuilder {
 
     private void createExceptionFlows(Klass exceptionType) {
         createExceptionFlows(exceptionType.getName(), exceptionType.getName(), exceptionType);
+    }
+
+    private void createArrayIndexOutOfBoundsExceptionFlows(Klass klass) {
+        MethodBuilder.newBuilder(klass, klass.getName(), klass.getName())
+                .isConstructor(true)
+                .isNative(true)
+                .parameters(Parameter.create("index", Types.getLongType()))
+                .returnType(klass.getType())
+                .build();
     }
 
     private void createExceptionFlows(String name, String code, Klass runtimeExceptionType) {

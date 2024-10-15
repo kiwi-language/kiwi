@@ -7,6 +7,7 @@ import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
+import org.metavm.util.NncUtils;
 import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
@@ -77,6 +78,9 @@ public class BasicCompilingTest extends CompilerTestBase {
             processLocalClass();
             processLocalClassNameConflict();
             processAnonymousClassSuperclassField();
+            processBitwiseComplement();
+            processPrefixOnParenthesized();
+            processArrayIndexOutOfBounds();
         });
     }
 
@@ -799,6 +803,36 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processAnonymousClassSuperclassField() {
         var className = "anonymousclass.SuperclassFieldFoo";
         Assert.assertEquals(0L, callMethod(className, "test", List.of()));
+    }
+
+    private void processBitwiseComplement() {
+        var klassName = "operators.BitwiseComplementFoo";
+        long v = NncUtils.random();
+        Assert.assertEquals(
+                ~v,
+                callMethod(klassName, "bitwiseComplement", List.of(v))
+        );
+    }
+
+    private void processPrefixOnParenthesized() {
+        var klassName = "operators.PrefixOnParenthesizedFoo";
+        long v = NncUtils.random();
+        Assert.assertEquals(
+                v & ~(Spliterator.SIZED | Spliterator.SUBSIZED),
+                callMethod(klassName, "test", List.of(v))
+        );
+    }
+
+    private void processArrayIndexOutOfBounds() {
+        var klassName = "exceptions.ArrayIndexOutOfBoundsFoo";
+        try {
+            callMethod(klassName, "test", List.of(1));
+            Assert.fail();
+        }
+        catch (BusinessException e) {
+            Assert.assertSame(ErrorCode.FLOW_EXECUTION_FAILURE, e.getErrorCode());
+            Assert.assertEquals("Array index out of range: 1", e.getMessage());
+        }
     }
 
 }

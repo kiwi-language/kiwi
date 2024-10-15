@@ -3,6 +3,7 @@ package org.metavm.expression;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.core.BooleanValue;
+import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.NumberValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
@@ -40,6 +41,12 @@ public enum UnaryOperator {
         @Override
         public UnaryOperator complement() {
             return POS;
+        }
+    },
+    BITWISE_COMPLEMENT(37, "~", 1 , true, Long.class) {
+        @Override
+        public Value evaluate(Value operand) {
+            return ((LongValue) operand).bitwiseComplement();
         }
     },
     IS_NULL(16, "is null", 6, false, Boolean.class) {

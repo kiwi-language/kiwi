@@ -151,6 +151,7 @@ public class ExpressionParser {
             case MetaVMParser.ADD -> UnaryOperator.POS;
             case MetaVMParser.SUB -> UnaryOperator.NEG;
             case MetaVMParser.BANG -> UnaryOperator.NOT;
+            case MetaVMParser.TILDE -> UnaryOperator.BITWISE_COMPLEMENT;
             default -> throw new IllegalStateException("Unexpected prefix: " + expression.prefix.getTokenIndex());
         };
         return new UnaryExpression(operator, parse(expression.expression(0)));
