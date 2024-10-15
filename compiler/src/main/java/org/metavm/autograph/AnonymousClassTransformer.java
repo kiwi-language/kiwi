@@ -191,10 +191,16 @@ public class AnonymousClassTransformer extends VisitorBase {
                     else {
                         if (field.getContainingClass() == info.klass)
                             expression.setQualifierExpression(TranspileUtils.createExpressionFromText("this"));
-                        else
+                        else {
+                            var k = info.klass;
+                            var targetKlass = Objects.requireNonNull(field.getContainingClass());
+                            while (!TranspileUtils.isAssignable(targetKlass, Objects.requireNonNull(k))) {
+                                k = TranspileUtils.getParent(k.getParent(), PsiClass.class);
+                            }
                             expression.setQualifierExpression(TranspileUtils.createExpressionFromText(
-                                    Objects.requireNonNull(field.getContainingClass()).getName() + ".this"
+                                    k.getName() + ".this"
                             ));
+                        }
                     }
                 }
             }

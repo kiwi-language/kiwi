@@ -76,6 +76,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processFieldAssignment();
             processLocalClass();
             processLocalClassNameConflict();
+            processAnonymousClassSuperclassField();
         });
     }
 
@@ -793,6 +794,11 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processLocalClassNameConflict() {
         var className = "localclass.LocalClassNameConflictFoo";
         graphql.Assert.assertNotNull(callMethod(className, "test", List.of()));
+    }
+
+    private void processAnonymousClassSuperclassField() {
+        var className = "anonymousclass.SuperclassFieldFoo";
+        Assert.assertEquals(0L, callMethod(className, "test", List.of()));
     }
 
 }

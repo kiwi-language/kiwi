@@ -26,6 +26,11 @@ public class AnonymousClassTransformerTest extends TestCase {
         process(src);
     }
 
+    public void testAnonymous2() {
+        var src = "/Users/leen/workspace/object/lab/src/main/basics/anonymousclass/SuperclassFieldFoo.java";
+        process(src);
+    }
+
     private void process(String source) {
         var m = PTN.matcher(source);
         if(m.find()) {
