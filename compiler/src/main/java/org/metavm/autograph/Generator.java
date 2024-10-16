@@ -663,7 +663,7 @@ public class Generator extends CodeGenVisitor {
             var field = builder().newTemproryField(
                     node.getKlass(),
                     loopVar.toString(),
-                    resolveType(loopVar.type())
+                    Types.getNullableType(resolveType(loopVar.type()))
             );
             loopVar2Field.put(loopVar, field);
             initialValues.put(field, builder().getVariable(loopVar.toString()));

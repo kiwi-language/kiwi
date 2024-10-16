@@ -82,6 +82,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processPrefixOnParenthesized();
             processArrayIndexOutOfBounds();
             processModifyVariableInWhileCondition();
+            processNullableLoopField();
         });
     }
 
@@ -839,6 +840,11 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processModifyVariableInWhileCondition() {
         var klassName = "loops.ModifyVariableInWhileCondition";
         Assert.assertEquals(100L, (long) callMethod(klassName, "test", List.of(200)));
+    }
+
+    private void processNullableLoopField() {
+        var id = saveInstance("loops.NullableLoopField", Map.of("values", List.of(1,2,3)));
+        Assert.assertEquals(6L, callMethod(id, "sum", List.of()));
     }
 
 }
