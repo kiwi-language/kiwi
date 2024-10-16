@@ -322,15 +322,23 @@ public class ClassInstance extends Instance {
         var unknownSubTables = fieldTable.unknownSubTables;
         unknownSubTables.clear();
         var oldSlot = input.getCurrentKlassSlot();
+        var tag2lev = klass.getTag2level();
         for (int i = 0; i < numKlasses; i++) {
             var klassTag = input.readLong();
+            var lev = tag2lev.get(klassTag);
             int cmp = 1;
             FieldSubTable st;
-            while (j < sortedKlasses.size() && (cmp = Long.compare((st = subTables.get(j)).getKlassTag(), klassTag)) < 0) {
-                for (InstanceField field : st.fields) {
-                    field.ensureInitialized();
+            if(lev != null) {
+                while (j < sortedKlasses.size()) {
+                    st = subTables.get(j);
+                    cmp = Integer.compare(st.klass.getLevel(), lev);
+                    if (cmp >= 0)
+                        break;
+                    for (InstanceField field : st.fields) {
+                        field.ensureInitialized();
+                    }
+                    j++;
                 }
-                j++;
             }
             if(cmp == 0) {
                 st = subTables.get(j++);

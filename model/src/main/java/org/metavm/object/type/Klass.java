@@ -135,6 +135,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private transient int level;
 
+    private transient Map<Long,Integer> tag2level = new HashMap<>();
+
     private transient List<Klass> extensions = new ArrayList<>();
 
     private transient List<Klass> implementations = new ArrayList<>();
@@ -225,8 +227,16 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     void resetSortedClasses() {
         sortedKlasses.clear();
         forEachSuperClass(sortedKlasses::add);
-        sortedKlasses.sort(Comparator.comparingLong(Klass::getTag));
         level = sortedKlasses.size() - 1;
+        sortedKlasses.sort(Comparator.comparingInt(Klass::getLevel));
+        tag2level.clear();
+        for (Klass k : sortedKlasses) {
+            tag2level.put(k.getTag(), k.getLevel());
+        }
+    }
+
+    public Map<Long, Integer> getTag2level() {
+        return Collections.unmodifiableMap(tag2level);
     }
 
     private void removeImplementation(Klass klass) {
@@ -669,6 +679,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         sortedFields = new ArrayList<>();
         resetSortedFields();
         sortedKlasses = new ArrayList<>();
+        tag2level = new HashMap<>();
         resetSortedClasses();
         if (superType != null)
             superType.resolve().addExtension(this);

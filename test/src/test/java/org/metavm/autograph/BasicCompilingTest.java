@@ -83,6 +83,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processArrayIndexOutOfBounds();
             processModifyVariableInWhileCondition();
             processNullableLoopField();
+            processMultiLevelInheritance();
         });
     }
 
@@ -845,6 +846,12 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processNullableLoopField() {
         var id = saveInstance("loops.NullableLoopField", Map.of("values", List.of(1,2,3)));
         Assert.assertEquals(6L, callMethod(id, "sum", List.of()));
+    }
+
+    private void processMultiLevelInheritance() {
+        var klassName = "objectio.MultiLevelInheritance";
+        var id = saveInstance(klassName, Map.of());
+        Assert.assertEquals(1L, (long) callMethod(id, "getModCount", List.of()));
     }
 
 }
