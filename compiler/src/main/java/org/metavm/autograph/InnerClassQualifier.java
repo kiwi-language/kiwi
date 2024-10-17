@@ -58,6 +58,26 @@ public class InnerClassQualifier extends VisitorBase {
         }
     }
 
+    @Override
+    public void visitMethodCallExpression(PsiMethodCallExpression expression) {
+        super.visitMethodCallExpression(expression);
+        var method = Objects.requireNonNull(expression.resolveMethod());
+        if(!TranspileUtils.isStatic(method)) {
+            var declaringClass = Objects.requireNonNull(method.getContainingClass());
+            if (expression.getMethodExpression().getQualifierExpression() == null) {
+                var currentKlass = currentClass();
+                if (!TranspileUtils.isAssignable(declaringClass, currentKlass)) {
+                    var k = Objects.requireNonNull(currentKlass.getContainingClass());
+                    while (!TranspileUtils.isAssignable(declaringClass, k))
+                        k = Objects.requireNonNull(k.getContainingClass());
+                    expression.getMethodExpression().setQualifierExpression(
+                            TranspileUtils.createExpressionFromText(k.getName() + ".this")
+                    );
+                }
+            }
+        }
+    }
+
     private PsiClass currentClass() {
         return Objects.requireNonNull(classes.peek());
     }

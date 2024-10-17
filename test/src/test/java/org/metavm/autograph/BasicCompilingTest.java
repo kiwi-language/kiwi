@@ -84,6 +84,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processModifyVariableInWhileCondition();
             processNullableLoopField();
             processMultiLevelInheritance();
+            processInnerCallsExternal();
         });
     }
 
@@ -852,6 +853,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         var klassName = "objectio.MultiLevelInheritance";
         var id = saveInstance(klassName, Map.of());
         Assert.assertEquals(1L, (long) callMethod(id, "getModCount", List.of()));
+    }
+
+    private void processInnerCallsExternal() {
+        var klassName = "innerclass.InnerCallsExternal";
+        Assert.assertEquals(
+                1L,
+                callMethod(klassName, "test", List.of(1))
+        );
     }
 
 }

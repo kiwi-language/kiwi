@@ -118,13 +118,19 @@ public class AssemblerTest extends TestCase {
         var id = saveInstance("Derived", Map.of(
                 "value1", 1, "value2", 2, "value3", 3
         ));
-        DebugEnv.id = Id.parse(id);
-        DebugEnv.flag = true;
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/swap_super_after.masm");
         Assert.assertEquals(
                 2L,
                 callMethod(id, "getValue2", List.of())
         );
+    }
+
+    public void testCircularReference() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/circular_ref.masm");
+        var id = saveInstance("Foo", Map.of());
+        DebugEnv.flag = true;
+        DebugEnv.id = Id.parse(id);
+        getObject(id);
     }
 
     private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {

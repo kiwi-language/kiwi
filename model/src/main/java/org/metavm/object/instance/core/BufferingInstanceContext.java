@@ -11,10 +11,7 @@ import org.metavm.object.instance.TreeSource;
 import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.view.MappingProvider;
-import org.metavm.util.BusinessException;
-import org.metavm.util.ForwardingPointer;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -62,10 +59,13 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     @Override
     protected void initializeInstance(Id id) {
         var instances = initializeInstance0(id);
+        var visited = new IdentitySet<Instance>();
         for (Instance instance : instances) {
             instance.accept(new InstanceVisitor() {
                 @Override
                 public void visitInstance(Instance instance) {
+                    if (!visited.add(instance))
+                       return;
                     if(instance instanceof ClassInstance clsInst)
                         updateMemoryIndex(clsInst);
                     instance.forEachReference((r, isChild) -> {

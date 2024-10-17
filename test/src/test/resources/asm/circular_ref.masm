@@ -1,0 +1,39 @@
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
+
+class Foo {
+
+    private child Bar bar;
+
+    public Foo() {
+        bar: new Bar(this);
+        this.bar = bar;
+    }
+
+    public Bar getBar() {
+        return this.bar;
+    }
+
+    private void writeObject(ObjectOutputStream s) {
+    }
+
+    private void readObject(ObjectInputStream s) {
+         bar: new Bar(this);
+         this.bar = bar;
+    }
+
+}
+
+class Bar {
+
+    private Foo foo;
+
+    public Bar(Foo foo) {
+        this.foo = foo;
+    }
+
+    public Foo getFoo() {
+        return this.foo;
+    }
+
+}
