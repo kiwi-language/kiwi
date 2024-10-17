@@ -88,6 +88,12 @@ public abstract class TypeFactory {
                 klass.setName(klassDTO.name());
                 klass.setDesc(klassDTO.desc());
                 klass.setSearchable(klassDTO.searchable());
+                if(!klass.isEnum()) {
+                    if(klass.getOldSuperType() == null)
+                        klass.setOldSuperType(klass.getSuperType());
+                    klass.setSuperType(null);
+                }
+                klass.setInterfaces(List.of());
                 if(kind != klass.getKind()) {
                     if(!context.isNewEntity(klass)) {
                         if(kind == ClassKind.VALUE)
@@ -126,7 +132,7 @@ public abstract class TypeFactory {
                 } else {
                     var superType = NncUtils.get(klassDTO.superType(), t -> (ClassType) TypeParser.parseType(t, batch));
                     if(!Objects.equals(superType, klass.getSuperType())) {
-                        if (!context.isNewEntity(klass) && superType != null)
+                        if (!context.isNewEntity(klass) && superType != null && !superType.equals(klass.getOldSuperType()))
                             batch.addChangingSuperKlass(klass);
                         klass.setSuperType(superType);
                     }

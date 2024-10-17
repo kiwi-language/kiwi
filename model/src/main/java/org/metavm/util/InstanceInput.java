@@ -398,4 +398,18 @@ public class InstanceInput implements Closeable {
     public void setCurrentKlassSlot(@Nullable KlassDataSlot currentKlassSlot) {
         this.currentKlassSlot = currentKlassSlot;
     }
+
+    public InstanceInput copy(InputStream in) {
+        var copy = new InstanceInput(in, resolver, addValue, typeDefProvider, redirectStatusProvider);
+        copy.parent = parent;
+        copy.parentField = parentField;
+        copy.treeId = treeId;
+        copy.currentKlassSlot = currentKlassSlot;
+        copy.loadedFromCache = loadedFromCache;
+        return copy;
+    }
+
+    public InputStream getInputStream() {
+        return inputStream;
+    }
 }

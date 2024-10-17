@@ -159,6 +159,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private transient Klass componentKlass;
 
+    private transient ClassType oldSuperType;
+
     public Klass(
             Long tmpId,
             String name,
@@ -1944,5 +1946,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return methodTable.findByOverridden(overridden) == override;
     }
 
+    public ClassType getOldSuperType() {
+        return oldSuperType;
+    }
+
+    public void setOldSuperType(ClassType oldSuperType) {
+        this.oldSuperType = oldSuperType;
+    }
 }
 

@@ -811,9 +811,11 @@ public class Instances {
         else {
             var superKlass = Objects.requireNonNull(klass.getSuperType()).resolve();
             superKlass.forEachField(field -> {
-                instance.setFieldForce(field,
-                        Objects.requireNonNull(Instances.getDefaultValue(field, context),
-                                () -> "Default value is missing for field: " + field.getQualifiedName()));
+                if(!instance.isFieldInitialized(field) || instance.getField(field).isNull()) {
+                    instance.setFieldForce(field,
+                            Objects.requireNonNull(Instances.getDefaultValue(field, context),
+                                    () -> "Default value is missing for field: " + field.getQualifiedName()));
+                }
             });
         }
     }

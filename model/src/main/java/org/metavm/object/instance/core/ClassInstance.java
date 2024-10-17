@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -314,7 +315,6 @@ public class ClassInstance extends Instance {
     @NoProxy
     protected void readFrom(InstanceInput input) {
         var sortedKlasses = klass.getSortedKlasses();
-        int j = 0;
         int numKlasses = input.readInt();
         var fieldTable = this.fieldTable;
         fieldTable.initialize();
@@ -323,31 +323,15 @@ public class ClassInstance extends Instance {
         unknownSubTables.clear();
         var oldSlot = input.getCurrentKlassSlot();
         var tag2lev = klass.getTag2level();
+        var slots = new InstanceInput[sortedKlasses.size()];
         for (int i = 0; i < numKlasses; i++) {
             var klassTag = input.readLong();
             var lev = tag2lev.get(klassTag);
-            int cmp = 1;
             FieldSubTable st;
             if(lev != null) {
-                while (j < sortedKlasses.size()) {
-                    st = subTables.get(j);
-                    cmp = Integer.compare(st.klass.getLevel(), lev);
-                    if (cmp >= 0)
-                        break;
-                    for (InstanceField field : st.fields) {
-                        field.ensureInitialized();
-                    }
-                    j++;
-                }
-            }
-            if(cmp == 0) {
-                st = subTables.get(j++);
+                st = subTables.get(lev);
                 input.setCurrentKlassSlot(st);
-                var readObjectMethod = st.klass.getReadObjectMethod();
-                if(readObjectMethod != null)
-                    customRead(readObjectMethod, input);
-                else
-                    defaultReadFields(input, st);
+                slots[lev] = input.copy(new ByteArrayInputStream(readSlot(input)));
             } else {
                 var ust = new UnknownFieldSubTable(klassTag);
                 unknownSubTables.add(ust);
@@ -358,12 +342,28 @@ public class ClassInstance extends Instance {
             }
         }
         input.setCurrentKlassSlot(oldSlot);
-        for (; j < sortedKlasses.size(); j++) {
-            var klass = sortedKlasses.get(j);
-            for (Field field : klass.getSortedFields()) {
-                fieldTable.get(field).ensureInitialized();
+        for (int i = 0; i < slots.length; i++) {
+            var slot = slots[i];
+            var st = subTables.get(i);
+            if(slot == null) {
+                for (InstanceField field : st.fields) {
+                    field.ensureInitialized();
+                }
+            } else {
+                var readObjectMethod = st.klass.getReadObjectMethod();
+                if (readObjectMethod != null)
+                    customRead(readObjectMethod, slot);
+                else
+                    defaultReadFields(slot, st);
             }
         }
+    }
+
+    private byte[] readSlot(InstanceInput input) {
+        var bout = new ByteArrayOutputStream();
+        var copier = new StreamCopier(input.getInputStream(), bout);
+        copier.visitClassBody();
+        return bout.toByteArray();
     }
 
     private void customRead(Method readObjectMethod, InstanceInput input) {

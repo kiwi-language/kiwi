@@ -8,6 +8,7 @@ import org.metavm.util.NncUtils;
 import org.metavm.util.TestUtils;
 
 import java.util.List;
+import java.util.Map;
 
 public class DDLCompilingTest extends CompilerTestBase {
 
@@ -21,11 +22,14 @@ public class DDLCompilingTest extends CompilerTestBase {
         var ref = new Object() {
           String stateFieldId;
           String stateKlassId;
+          String derivedInstanceId;
         };
         submit(() -> {
             ref.stateKlassId = getClassTypeByCode("ProductState").id();
             var productKlass = getClassTypeByCode("Product");
             ref.stateFieldId = TestUtils.getFieldIdByCode(productKlass, "state");
+            ref.derivedInstanceId = saveInstance("swapsuper.Derived",
+                    Map.of("value1", 1, "value2", 2, "value3", 3));
         });
 //        try {
 //            compile(DDL2_SOURCE_ROOT);
@@ -49,6 +53,7 @@ public class DDLCompilingTest extends CompilerTestBase {
             Assert.assertEquals(0.14, rate);
             var errors = productKlass.errors();
             Assert.assertEquals(0, errors.size());
+            Assert.assertEquals(2L, callMethod(ref.derivedInstanceId, "getValue2", List.of()));
         });
         compile(DDL4_SOURCE_ROOT);
 //        compile(DDL3_SOURCE_ROOT);

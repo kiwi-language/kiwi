@@ -6,6 +6,8 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeManager;
@@ -15,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class AssemblerTest extends TestCase {
@@ -110,11 +113,37 @@ public class AssemblerTest extends TestCase {
         Assert.assertEquals(3, size);
     }
 
+    public void testSwapSuper() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/swap_super_before.masm");
+        var id = saveInstance("Derived", Map.of(
+                "value1", 1, "value2", 2, "value3", 3
+        ));
+        DebugEnv.id = Id.parse(id);
+        DebugEnv.flag = true;
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/swap_super_after.masm");
+        Assert.assertEquals(
+                2L,
+                callMethod(id, "getValue2", List.of())
+        );
+    }
+
     private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {
         assembler.assemble(sources);
         var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
         TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
         return request;
+    }
+
+    private String saveInstance(String className, Map<String, Object> fields) {
+        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, fields));
+    }
+
+    private Object callMethod(String qualifier, String methodName,List<Object> arguments) {
+        return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    }
+
+    private ClassInstanceWrap getObject(String id) {
+        return apiClient.getObject(id);
     }
 
     private void deploy(String source) {

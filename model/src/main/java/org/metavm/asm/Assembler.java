@@ -466,6 +466,8 @@ public class Assembler {
                 if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)
                     klass.clearEnumConstantDefs();
                 klass.setKind(kind);
+                if(!klass.isEnum())
+                    klass.setSuperType(null);
             }
             if(isBean) {
                 klass.setAttribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT);
