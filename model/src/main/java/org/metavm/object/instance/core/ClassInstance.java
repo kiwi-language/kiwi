@@ -331,7 +331,12 @@ public class ClassInstance extends Instance {
             if(lev != null) {
                 st = subTables.get(lev);
                 input.setCurrentKlassSlot(st);
-                slots[lev] = input.copy(new ByteArrayInputStream(readSlot(input)));
+                if(st.klass.getReadObjectMethod() == null) {
+                    defaultReadFields(input, st);
+                    slots[lev] = input;
+                }
+                else
+                    slots[lev] = input.copy(new ByteArrayInputStream(readSlot(input)));
             } else {
                 var ust = new UnknownFieldSubTable(klassTag);
                 unknownSubTables.add(ust);
@@ -344,18 +349,15 @@ public class ClassInstance extends Instance {
         input.setCurrentKlassSlot(oldSlot);
         for (int i = 0; i < slots.length; i++) {
             var slot = slots[i];
+            if(slot == input)
+                continue;
             var st = subTables.get(i);
             if(slot == null) {
                 for (InstanceField field : st.fields) {
                     field.ensureInitialized();
                 }
-            } else {
-                var readObjectMethod = st.klass.getReadObjectMethod();
-                if (readObjectMethod != null)
-                    customRead(readObjectMethod, slot);
-                else
-                    defaultReadFields(slot, st);
-            }
+            } else
+                customRead(Objects.requireNonNull(st.klass.getReadObjectMethod()), slot);
         }
     }
 
