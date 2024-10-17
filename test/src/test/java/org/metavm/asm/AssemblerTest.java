@@ -128,8 +128,6 @@ public class AssemblerTest extends TestCase {
     public void testCircularReference() {
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/circular_ref.masm");
         var id = saveInstance("Foo", Map.of());
-        DebugEnv.flag = true;
-        DebugEnv.id = Id.parse(id);
         getObject(id);
     }
 

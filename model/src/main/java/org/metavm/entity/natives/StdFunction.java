@@ -749,6 +749,17 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(clone.getReference());
             }
     ),
+    intNumberOfLeadingZeros(
+            "long intNumberOfLeadingZeros(long l)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Integer.class, "numberOfLeadingZeros", int.class)
+            ),
+            (func, args, callContext) -> {
+                var l = ((LongValue) args.get(0)).getValue().intValue();
+                return FlowExecResult.of(Instances.longInstance(Integer.numberOfLeadingZeros(l)));
+            }
+    ),
     intNumberOfTrailingZeros(
             "long intNumberOfTrailingZeros(long v)",
             false,
@@ -805,7 +816,51 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                         ).getReference()
                 );
             }
-    )
+    ),
+    numberOfLeadingZeros(
+            "long numberOfLeadingZeros(long l)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Long.class, "numberOfLeadingZeros", long.class)
+            ),
+            (func, args, callContext) -> {
+                var l = ((LongValue) args.get(0)).getValue();
+                return FlowExecResult.of(Instances.longInstance(Long.numberOfLeadingZeros(l)));
+            }
+    ),
+    numberOfTrailingZeros(
+            "long numberOfTrailingZeros(long l)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Long.class, "numberOfTrailingZeros", long.class)
+            ),
+            (func, args, callContext) -> {
+                var l = ((LongValue) args.get(0)).getValue();
+                return FlowExecResult.of(Instances.longInstance(Long.numberOfTrailingZeros(l)));
+            }
+    ),
+    floatToRawIntBits(
+            "long floatToRawIntBits(double f)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Float.class, "floatToRawIntBits", float.class)
+            ),
+            (func, args, callContext) -> {
+                var f = ((DoubleValue) args.get(0)).getValue().floatValue();
+                return FlowExecResult.of(Instances.longInstance(Float.floatToRawIntBits(f)));
+            }
+    ),
+    doubleToRawLongBits(
+            "long doubleToRawLongBits(double d)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Double.class, "doubleToRawLongBits", double.class)
+            ),
+            (func, args, callContext) -> {
+                var d = ((DoubleValue) args.get(0)).getValue();
+                return FlowExecResult.of(Instances.longInstance(Double.doubleToRawLongBits(d)));
+            }
+    ),
     ;
 
     private final String name;

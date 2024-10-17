@@ -735,7 +735,7 @@ public class Types {
                 return getCharType();
             if (javaClass == Boolean.class || javaClass == boolean.class)
                 return getBooleanType();
-            if (javaClass == Double.class || javaClass == double.class)
+            if (javaClass == Double.class || javaClass == double.class || javaClass == Float.class || javaClass == float.class)
                 return getDoubleType();
             if (javaClass == Void.class || javaClass == void.class)
                 return getVoidType();

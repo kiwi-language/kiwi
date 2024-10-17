@@ -85,6 +85,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processNullableLoopField();
             processMultiLevelInheritance();
             processInnerCallsExternal();
+            processPrimitiveUtilMethods();
         });
     }
 
@@ -860,6 +861,38 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(
                 1L,
                 callMethod(klassName, "test", List.of(1))
+        );
+    }
+
+    private void processPrimitiveUtilMethods() {
+        var klassName = "utils.PrimitiveUtilMethods";
+        var l = NncUtils.random();
+        Assert.assertEquals(
+                (long) Long.numberOfLeadingZeros(l),
+                callMethod(klassName, "numberOfLeadingZeros", List.of(l))
+        );
+        Assert.assertEquals(
+                (long) Long.numberOfTrailingZeros(l),
+                callMethod(klassName, "numberOfTrailingZeros", List.of(l))
+        );
+        var i = NncUtils.randomInt(Integer.MAX_VALUE);
+        Assert.assertEquals(
+                (long) Integer.numberOfLeadingZeros(i),
+                callMethod(klassName, "intNumberOfLeadingZeros", List.of(i))
+        );
+        Assert.assertEquals(
+                (long) Integer.numberOfTrailingZeros(i),
+                callMethod(klassName, "intNumberOfTrailingZeros", List.of(i))
+        );
+        var f = (float) i;
+        Assert.assertEquals(
+                (long) Float.floatToRawIntBits(f),
+                callMethod(klassName, "floatToRawIntBits", List.of(f))
+        );
+        var d = (double) l;
+        Assert.assertEquals(
+                Double.doubleToRawLongBits(d),
+                callMethod(klassName, "doubleToRawLongBits", List.of(d))
         );
     }
 
