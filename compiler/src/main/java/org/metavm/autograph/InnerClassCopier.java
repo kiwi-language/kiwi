@@ -43,6 +43,7 @@ public class InnerClassCopier extends VisitorBase {
 
         @Override
         public void visitReferenceElement(PsiJavaCodeReferenceElement reference) {
+            super.visitReferenceElement(reference);
             if (reference.resolve() instanceof PsiClass k && k == sourceClass)
                 replace(
                         Objects.requireNonNull(reference.getReferenceNameElement()),

@@ -313,7 +313,7 @@ public class AstToCfg extends SkipDiscardedVisitor {
         if (statement.getReturnValue() != null) {
             statement.getReturnValue().accept(this);
         }
-        processExitStatement(statement, Set.of(PsiMethod.class), false, null);
+        processExitStatement(statement, Set.of(PsiMethod.class, PsiLambdaExpression.class), false, null);
     }
 
     @Override

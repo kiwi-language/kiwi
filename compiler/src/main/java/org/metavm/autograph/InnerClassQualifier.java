@@ -29,9 +29,13 @@ public class InnerClassQualifier extends VisitorBase {
                     && classRef.resolve() instanceof PsiClass klass
                     && TranspileUtils.isNonStaticInnerClass(klass)
             ) {
+                var k = currentClass();
+                var targetKlass = Objects.requireNonNull(klass.getContainingClass());
+                while (!TranspileUtils.isAssignable(targetKlass, k)) {
+                    k = Objects.requireNonNull(Objects.requireNonNull(k).getContainingClass());
+                }
                 var replacement = TranspileUtils.createExpressionFromText(
-                        Objects.requireNonNull(klass.getContainingClass()).getName() + ".this."
-                                + expression.getText()
+                        k.getName() + ".this." + expression.getText()
                 );
                 replace(expression, replacement);
             }

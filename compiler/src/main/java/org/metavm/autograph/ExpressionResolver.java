@@ -737,7 +737,13 @@ public class ExpressionResolver {
                 assignment = new BinaryExpression(BinaryOperator.BITWISE_OR, resolvedLeft, resolvedRight);
             } else if(op == JavaTokenType.ANDEQ) {
                 assignment = new BinaryExpression(BinaryOperator.BITWISE_AND, resolvedLeft, resolvedRight);
-            } else {
+            } else if(op == JavaTokenType.GTGTGTEQ)
+                assignment = new BinaryExpression(BinaryOperator.UNSIGNED_RIGHT_SHIFT, resolvedLeft, resolvedRight);
+            else if(op == JavaTokenType.GTGTEQ)
+                assignment = new BinaryExpression(BinaryOperator.RIGHT_SHIFT, resolvedLeft, resolvedRight);
+            else if(op == JavaTokenType.LTLTEQ)
+                assignment = new BinaryExpression(BinaryOperator.LEFT_SHIFT, resolvedLeft, resolvedRight);
+            else {
                 throw new InternalException("Unsupported assignment operator " + op);
             }
         }

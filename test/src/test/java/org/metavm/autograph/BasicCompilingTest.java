@@ -86,6 +86,9 @@ public class BasicCompilingTest extends CompilerTestBase {
             processMultiLevelInheritance();
             processInnerCallsExternal();
             processPrimitiveUtilMethods();
+            processMultiLevelInnerClass();
+            processReturnInLambda();
+            processShiftAssignment();
         });
     }
 
@@ -893,6 +896,39 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(
                 Double.doubleToRawLongBits(d),
                 callMethod(klassName, "doubleToRawLongBits", List.of(d))
+        );
+    }
+
+    private void processMultiLevelInnerClass() {
+        var className = "innerclass.MultiLevelInnerFoo";
+        Assert.assertEquals(
+                1L,
+                callMethod(className, "test", List.of(1))
+        );
+    }
+
+    private void processReturnInLambda() {
+        var className = "lambda.ReturnInLambda";
+        Assert.assertEquals(
+                -1L,
+                callMethod(className, "test", List.of("a", "b"))
+        );
+    }
+
+    private void processShiftAssignment() {
+        var className = "operators.ShiftAssignmentFoo";
+        var id = saveInstance(className, Map.of("value", 1L << 8));
+        Assert.assertEquals(
+                1L << 4,
+                callMethod(id, "rightShiftAssign", List.of(4))
+        );
+        Assert.assertEquals(
+                1L << 63,
+                callMethod(id, "leftShiftAssign", List.of(59))
+        );
+        Assert.assertEquals(
+                1L,
+                callMethod(id, "unsignedRightShiftAssign", List.of(63))
         );
     }
 

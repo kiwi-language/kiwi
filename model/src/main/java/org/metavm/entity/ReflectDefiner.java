@@ -69,7 +69,8 @@ public class ReflectDefiner {
         klass.setInterfaces(NncUtils.map(javaClass.getGenericInterfaces(), it -> (ClassType) resolveType(it)));
         var methodSignatures = new HashSet<MethodSignature>();
         for (Constructor<?> javaConstructor : javaClass.getDeclaredConstructors()) {
-            if (!Modifier.isPublic(javaConstructor.getModifiers()) || javaConstructor.isSynthetic())
+            var mod = javaConstructor.getModifiers();
+            if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod) || javaConstructor.isSynthetic())
                 continue;
             var constructor = MethodBuilder.newBuilder(klass, javaClass.getSimpleName(), javaClass.getSimpleName())
                     .returnType(klass.getType())
