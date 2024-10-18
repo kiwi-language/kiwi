@@ -1,10 +1,7 @@
 package org.metavm.util;
 
 import org.metavm.entity.*;
-import org.metavm.entity.natives.HybridValueHolder;
-import org.metavm.entity.natives.StdFunction;
-import org.metavm.entity.natives.ThreadLocalValueHolder;
-import org.metavm.entity.natives.ValueHolderOwner;
+import org.metavm.entity.natives.*;
 
 import java.util.List;
 
@@ -20,6 +17,9 @@ public class SystemConfig {
             for (Enum<? extends ValueHolderOwner<?>> ec : valueHolderEnum.getEnumConstants()) {
                 ((ValueHolderOwner<?>) ec).setValueHolder(new ThreadLocalValueHolder<>());
             }
+        }
+        for (StandardStaticMethods.FunctionDef def : StandardStaticMethods.getDefs()) {
+            def.setValueHolder(new ThreadLocalValueHolder<>());
         }
     }
 
@@ -39,6 +39,9 @@ public class SystemConfig {
                 ((ValueHolderOwner<?>) ec).setValueHolder(new HybridValueHolder<>());
             }
         }
+        for (StandardStaticMethods.FunctionDef def : StandardStaticMethods.getDefs()) {
+            def.setValueHolder(new HybridValueHolder<>());
+        }
     }
 
     public static void clearLocal() {
@@ -47,6 +50,9 @@ public class SystemConfig {
             for (Enum<? extends ValueHolderOwner<?>> ec : valueHolderEnum.getEnumConstants()) {
                 ((ValueHolderOwner<?>) ec).getValueHolder().clearLocal();
             }
+        }
+        for (StandardStaticMethods.FunctionDef def : StandardStaticMethods.getDefs()) {
+            def.getValueHolder().clearLocal();
         }
     }
 

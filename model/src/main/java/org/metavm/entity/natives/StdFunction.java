@@ -159,15 +159,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             "string toString(any|null instance)",
             true,
             List.of(ReflectionUtils.getMethod(Object.class, "toString"),
-                    ReflectionUtils.getMethod(Objects.class, "toString", Object.class),
-                    ReflectionUtils.getMethod(Byte.class, "toString", byte.class),
-                    ReflectionUtils.getMethod(Short.class, "toString", short.class),
-                    ReflectionUtils.getMethod(Integer.class, "toString", int.class),
-                    ReflectionUtils.getMethod(Long.class, "toString", long.class),
-                    ReflectionUtils.getMethod(Float.class, "toString", float.class),
-                    ReflectionUtils.getMethod(Double.class, "toString", double.class),
-                    ReflectionUtils.getMethod(Boolean.class, "toString", boolean.class),
-                    ReflectionUtils.getMethod(Character.class, "toString", char.class)
+                    ReflectionUtils.getMethod(Objects.class, "toString", Object.class)
             ),
             (func, args, callContext) -> FlowExecResult.of(
                     Instances.stringInstance(Instances.toString(args.get(0), callContext)))
@@ -175,16 +167,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
     hashCode(
             "long hashCode(any instance)",
             true,
-            List.of(ReflectionUtils.getMethod(Object.class, "hashCode"),
-                    ReflectionUtils.getMethod(Byte.class, "hashCode"),
-                    ReflectionUtils.getMethod(Short.class, "hashCode"),
-                    ReflectionUtils.getMethod(Integer.class, "hashCode"),
-                    ReflectionUtils.getMethod(Long.class, "hashCode"),
-                    ReflectionUtils.getMethod(Float.class, "hashCode"),
-                    ReflectionUtils.getMethod(Double.class, "hashCode"),
-                    ReflectionUtils.getMethod(Boolean.class, "hashCode"),
-                    ReflectionUtils.getMethod(String.class, "hashCode"),
-                    ReflectionUtils.getMethod(Character.class, "hashCode")
+            List.of(ReflectionUtils.getMethod(Object.class, "hashCode")
             ),
             (func, args, callContext) -> {
                 var value = args.get(0);
@@ -277,15 +260,6 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var date2 = (TimeValue) args.get(1);
                 return FlowExecResult.of(date1.after(date2));
             }),
-    concat(
-            "string concat(string str1, string str2)",
-            true,
-            List.of(ReflectionUtils.getMethod(String.class, "concat", String.class)),
-            (func, args, ctx) -> {
-                var str1 = (StringValue) args.get(0);
-                var str2 = (StringValue) args.get(1);
-                return FlowExecResult.of(Instances.stringInstance(str1.getValue() + str2.getValue()));
-            }),
     replace(
             "string replace(string str, string target, string replacement)",
             true,
@@ -295,16 +269,6 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var target = (StringValue) args.get(1);
                 var replacement = (StringValue) args.get(2);
                 return FlowExecResult.of(Instances.stringInstance(str.getValue().replace(target.getValue(), replacement.getValue())));
-            }),
-    replaceFirst(
-            "string replaceFirst(string str, string regex, string replacement)",
-            true,
-            List.of(ReflectionUtils.getMethod(String.class, "replaceFirst", String.class, String.class)),
-            (func, args, ctx) -> {
-                var str = (StringValue) args.get(0);
-                var regex = (StringValue) args.get(1);
-                var replacement = (StringValue) args.get(2);
-                return FlowExecResult.of(Instances.stringInstance(str.getValue().replaceFirst(regex.getValue(), replacement.getValue())));
             }),
     randomUUID(
             "string randomUUID()",
@@ -374,40 +338,6 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var number = (LongValue) args.get(1);
                 return FlowExecResult.of(Instances.stringInstance(new DecimalFormat(format.getValue()).format(number.getValue())));
             }),
-    format(
-            "string format(string format, (any|null)[] values)",
-            true,
-            List.of(ReflectionUtils.getMethod(String.class, "format", String.class, Object[].class)),
-            (func, args, ctx) -> {
-                var format = (StringValue) args.get(0);
-                var values = args.get(1).resolveArray();
-                var argsArray = new Object[values.size()];
-                for (int i = 0; i < values.size(); i++) {
-                    argsArray[i] = values.get(i).getTitle();
-                }
-                return FlowExecResult.of(Instances.stringInstance(String.format(format.getValue(), argsArray)));
-            }),
-    substring(
-            "string substring(string s, long beginIndex)",
-            true,
-            List.of(ReflectionUtils.getMethod(String.class, "substring", int.class)),
-            (func, args, ctx) -> {
-                var str = (StringValue) args.get(0);
-                var beginIndex = (LongValue) args.get(1);
-                return FlowExecResult.of(Instances.stringInstance(str.getValue().substring(beginIndex.getValue().intValue())));
-            }
-    ),
-    substring1(
-            "string substring1(string s, long beginIndex, long endIndex)",
-            true,
-            List.of(ReflectionUtils.getMethod(String.class, "substring", int.class, int.class)),
-            (func, args, ctx) -> {
-                var str = (StringValue) args.get(0);
-                var beginIndex = ((LongValue) args.get(1)).getValue().intValue();
-                var endIndex = ((LongValue) args.get(2)).getValue().intValue();
-                return FlowExecResult.of(Instances.stringInstance(str.getValue().substring(beginIndex, endIndex)));
-            }
-    ),
     getId(
             "string getId(any obj)",
             true,
@@ -472,48 +402,6 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             (func, args, callContext) -> {
                 var obj = args.get(0).resolveDurable();
                 return FlowExecResult.of(obj.getRoot().getReference());
-            }
-    ),
-    compareLong(
-            "long compareLong(long l1, long l2) ",
-            true,
-            List.of(
-                    ReflectionUtils.getMethod(Byte.class, "compareTo", Byte.class),
-                    ReflectionUtils.getMethod(Short.class, "compareTo", Short.class),
-                    ReflectionUtils.getMethod(Integer.class, "compareTo", Integer.class),
-                    ReflectionUtils.getMethod(Long.class, "compareTo", Long.class),
-                    ReflectionUtils.getMethod(Byte.class, "compare", byte.class, byte.class),
-                    ReflectionUtils.getMethod(Short.class, "compare", short.class, short.class),
-                    ReflectionUtils.getMethod(Integer.class, "compare", int.class, int.class),
-                    ReflectionUtils.getMethod(Long.class, "compare", long.class, long.class)
-            ),
-            (func, args, callContext) -> {
-                var v1 = (LongValue) args.get(0);
-                var v2 = (LongValue) args.get(1);
-                return FlowExecResult.of(Instances.longInstance(Long.compare(v1.getValue(), v2.getValue())));
-            }
-    ),
-    compareString(
-            "long compareString(string s1, string s2) ",
-            true,
-            List.of(
-                    ReflectionUtils.getMethod(String.class, "compareTo", String.class)
-            ),
-            (func, args, callContext) -> {
-                var s1 = (StringValue) args.get(0);
-                var s2 = (StringValue) args.get(1);
-                return FlowExecResult.of(Instances.longInstance(s1.getValue().compareTo(s2.getValue())));
-            }
-    ),
-    isEmptyString(
-            "boolean isEmptyString(string s)",
-            true,
-            List.of(
-                    ReflectionUtils.getMethod(String.class, "isEmpty")
-            ),
-            (func, args, callContext) -> {
-                var s = (StringValue) args.get(0);
-                return FlowExecResult.of(Instances.booleanInstance(s.getValue().isEmpty()));
             }
     ),
     sortList(
@@ -656,35 +544,6 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 );
             }
     ),
-    stringLength(
-            "long stringLength(string s)",
-            false,
-            List.of(ReflectionUtils.getMethod(String.class, "length")),
-            (func, args, callContext) -> {
-                var s = (StringValue) args.get(0);
-                return FlowExecResult.of(Instances.longInstance(s.getValue().length()));
-            }
-    ),
-    stringStartsWith(
-            "long stringStartsWith(string s, string prefix)",
-            false,
-            List.of(ReflectionUtils.getMethod(String.class, "startsWith", String.class)),
-            (func, args, callContext) -> {
-                var s = (StringValue) args.get(0);
-                var prefix = (StringValue) args.get(1);
-                return FlowExecResult.of(s.startsWith(prefix));
-            }
-    ),
-    stringEndsWith(
-            "long stringEndsWith(string s, string suffix)",
-            false,
-            List.of(ReflectionUtils.getMethod(String.class, "endsWith", String.class)),
-            (func, args, callContext) -> {
-                var s = (StringValue) args.get(0);
-                var suffix = (StringValue) args.get(1);
-                return FlowExecResult.of(s.endsWith(suffix));
-            }
-    ),
     newArray(
             "any newArray(org.metavm.object.type.Klass klass, long length)",
             false,
@@ -749,26 +608,6 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(clone.getReference());
             }
     ),
-    intNumberOfLeadingZeros(
-            "long intNumberOfLeadingZeros(long l)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(Integer.class, "numberOfLeadingZeros", int.class)
-            ),
-            (func, args, callContext) -> {
-                var l = ((LongValue) args.get(0)).getValue().intValue();
-                return FlowExecResult.of(Instances.longInstance(Integer.numberOfLeadingZeros(l)));
-            }
-    ),
-    intNumberOfTrailingZeros(
-            "long intNumberOfTrailingZeros(long v)",
-            false,
-            List.of(ReflectionUtils.getMethod(Integer.class, "numberOfTrailingZeros", int.class)),
-            (func, args, callContext) -> {
-                var v = (LongValue) args.get(0);
-                return FlowExecResult.of(Instances.longInstance(Integer.numberOfTrailingZeros(v.getValue().intValue())));
-            }
-    ),
     checkFromIndexSize(
             "long checkFromIndexSize(long fromIndex, long size, long length)",
             false,
@@ -784,81 +623,6 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     return FlowExecResult.ofException(e);
                 }
                 return FlowExecResult.of(Instances.longInstance(from));
-            }
-    ),
-    parseLong(
-            "long parseLong(string s)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(Byte.class, "parseByte", String.class),
-                    ReflectionUtils.getMethod(Short.class, "parseShort", String.class),
-                    ReflectionUtils.getMethod(Integer.class, "parseInt", String.class),
-                    ReflectionUtils.getMethod(Long.class, "parseLong", String.class)
-            ),
-            (func, args, callContext) -> {
-                var s = ((StringValue) args.get(0)).getValue();
-                return FlowExecResult.of(Instances.longInstance(Long.parseLong(s)));
-            }
-    ),
-    stringSplit(
-            "string[] stringSplit(string s, string regex)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(String.class, "split", String.class)
-            ),
-            (func, args, callContext) -> {
-                var s = ((StringValue) args.get(0)).getValue();
-                var regex = ((StringValue) args.get(1)).getValue();
-                return FlowExecResult.of(
-                        new ArrayInstance(
-                                Types.getArrayType(Types.getStringType()),
-                                NncUtils.map(s.split(regex), Instances::stringInstance)
-                        ).getReference()
-                );
-            }
-    ),
-    numberOfLeadingZeros(
-            "long numberOfLeadingZeros(long l)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(Long.class, "numberOfLeadingZeros", long.class)
-            ),
-            (func, args, callContext) -> {
-                var l = ((LongValue) args.get(0)).getValue();
-                return FlowExecResult.of(Instances.longInstance(Long.numberOfLeadingZeros(l)));
-            }
-    ),
-    numberOfTrailingZeros(
-            "long numberOfTrailingZeros(long l)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(Long.class, "numberOfTrailingZeros", long.class)
-            ),
-            (func, args, callContext) -> {
-                var l = ((LongValue) args.get(0)).getValue();
-                return FlowExecResult.of(Instances.longInstance(Long.numberOfTrailingZeros(l)));
-            }
-    ),
-    floatToRawIntBits(
-            "long floatToRawIntBits(double f)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(Float.class, "floatToRawIntBits", float.class)
-            ),
-            (func, args, callContext) -> {
-                var f = ((DoubleValue) args.get(0)).getValue().floatValue();
-                return FlowExecResult.of(Instances.longInstance(Float.floatToRawIntBits(f)));
-            }
-    ),
-    doubleToRawLongBits(
-            "long doubleToRawLongBits(double d)",
-            false,
-            List.of(
-                    ReflectionUtils.getMethod(Double.class, "doubleToRawLongBits", double.class)
-            ),
-            (func, args, callContext) -> {
-                var d = ((DoubleValue) args.get(0)).getValue();
-                return FlowExecResult.of(Instances.longInstance(Double.doubleToRawLongBits(d)));
             }
     ),
     ;

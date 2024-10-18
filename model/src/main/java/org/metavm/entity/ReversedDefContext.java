@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.ColumnKind;
@@ -83,7 +84,7 @@ public class ReversedDefContext extends DefContext {
         if (!(javaType instanceof TypeVariable<?>)) {
             javaType = EntityUtils.getEntityType(javaType);
             if (javaType instanceof Class<?> klass) {
-                if (ReflectionUtils.isBoxingClass(klass))
+                if (ReflectionUtils.isPrimitiveWrapper(klass))
                     javaType = BOX_CLASS_MAP.getOrDefault(klass, klass);
                 else
                     javaType = EntityUtils.getRealType(klass);
@@ -127,6 +128,7 @@ public class ReversedDefContext extends DefContext {
         StdKlass.initialize(this, true);
         StdMethod.initialize(this, true);
         StdField.initialize(this, true);
+        StandardStaticMethods.initialize(this, true);
     }
 
     private void freezeKlasses() {

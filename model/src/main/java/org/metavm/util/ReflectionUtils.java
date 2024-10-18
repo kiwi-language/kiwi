@@ -345,7 +345,7 @@ public class ReflectionUtils {
         );
     }
 
-    public static boolean isBoxingClass(Class<?> klass) {
+    public static boolean isPrimitiveWrapper(Class<?> klass) {
         return PRIMITIVE_UNBOXING_MAP.containsKey(klass);
     }
 
@@ -1016,7 +1016,7 @@ public class ReflectionUtils {
         try {
             return method.invoke(object, arguments);
         } catch (Exception e) {
-            throw new RuntimeException("Fail to invoke method: " + method.getName(), e);
+            throw new RuntimeException("Fail to invoke method: " + getMethodQualifiedName(method), e);
         }
     }
 

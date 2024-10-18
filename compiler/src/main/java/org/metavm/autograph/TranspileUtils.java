@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.*;
 import org.metavm.api.builtin.IndexDef;
 import org.metavm.entity.FlowParam;
+import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.*;
@@ -111,7 +112,7 @@ public class TranspileUtils {
     }
 
     public static String getMethodQualifiedName(PsiMethod method) {
-        return Objects.requireNonNull(method.getContainingClass()).getName() + "." + method.getName();
+        return Objects.requireNonNull(method.getContainingClass()).getQualifiedName() + "." + method.getName();
     }
 
     public static PsiType createType(java.lang.reflect.Type javaType) {
@@ -613,6 +614,9 @@ public class TranspileUtils {
             for (Method javaMethod : def.getJavaMethods()) {
                 nativeFunctionCallResolvers.add(new NativeFunctionCallResolver(getMethodSignature(javaMethod), def.get()));
             }
+        }
+        for (var def : StandardStaticMethods.getDefs()) {
+            nativeFunctionCallResolvers.add(new NativeFunctionCallResolver(getMethodSignature(def.getMethod()), def.get()));
         }
     }
 

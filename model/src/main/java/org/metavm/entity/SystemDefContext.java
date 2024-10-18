@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.api.ValueObject;
+import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Function;
 import org.metavm.flow.ScopeRT;
@@ -98,7 +99,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
         if (!(javaType instanceof TypeVariable<?>)) {
             javaType = EntityUtils.getEntityType(javaType);
             if (javaType instanceof Class<?> klass) {
-                if (ReflectionUtils.isBoxingClass(klass))
+                if (ReflectionUtils.isPrimitiveWrapper(klass))
                     javaType = BOX_CLASS_MAP.getOrDefault(klass, klass);
                 else
                     javaType = EntityUtils.getRealType(klass);
@@ -755,6 +756,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
         StdKlass.initialize(this, false);
         StdMethod.initialize(this, false);
         StdField.initialize(this, false);
+        StandardStaticMethods.initialize(this, false);
         standardDefBuilder.initUserFunctions();
         for (TypeDef typeDef : typeDef2Def.keySet()) {
             if(typeDef instanceof Klass klass)

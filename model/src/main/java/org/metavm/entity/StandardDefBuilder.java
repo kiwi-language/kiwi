@@ -2,6 +2,7 @@ package org.metavm.entity;
 
 import org.metavm.api.ChildList;
 import org.metavm.api.ValueList;
+import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
@@ -254,6 +255,7 @@ public class StandardDefBuilder {
 
     private void initSystemFunctions() {
         StdFunction.defineSystemFunctions().forEach(defContext::writeEntity);
+        StandardStaticMethods.defineFunctions().forEach(defContext::writeEntity);
     }
 
     public void initUserFunctions() {

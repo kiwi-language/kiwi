@@ -633,7 +633,7 @@ public class Types {
                 if (klass.isPrimitive()) {
                     klass = ReflectionUtils.getBoxedClass(klass);
                 }
-                if (ReflectionUtils.isBoxingClass(klass)) {
+                if (ReflectionUtils.isPrimitiveWrapper(klass)) {
                     yield PrimitiveKind.getByJavaClass(klass).getName();
                 } else if (klass.isArray()) {
                     yield getTypeName(klass.getComponentType()) + "[]";
@@ -715,6 +715,31 @@ public class Types {
             return Object.class;
         if (type instanceof NeverType)
             return Never.class;
+        return null;
+    }
+
+    public static Type fromJavaType(java.lang.reflect.Type javaType) {
+        var type = tryFromJavaType(javaType);
+        if(type == null)
+            throw new IllegalArgumentException("Cannot get type for java type: " + javaType);
+        return type;
+    }
+
+    public static Type tryFromJavaType(java.lang.reflect.Type javaType) {
+        if(javaType instanceof Class<?> klass) {
+            if(klass == Object.class)
+                return getNullableAnyType();
+            if(klass == String.class)
+                return getNullableStringType();
+            if(klass.isPrimitive() || ReflectionUtils.isPrimitiveWrapper(klass)) {
+                var type = Objects.requireNonNull(getPrimitiveType(klass));
+                return klass.isPrimitive() ? type : getNullableType(type);
+            }
+            if(klass.isArray())
+                return getNullableType(getArrayType(fromJavaType(klass.getComponentType())));
+        }
+        else if(javaType instanceof GenericArrayType genericArrayType)
+            return getNullableType(getArrayType(fromJavaType(genericArrayType.getGenericComponentType())));
         return null;
     }
 
