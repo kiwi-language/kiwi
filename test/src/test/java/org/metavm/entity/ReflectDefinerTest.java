@@ -54,7 +54,7 @@ public class ReflectDefinerTest extends TestCase {
         Assert.assertTrue(ReflectDefiner.isOverride(sortMethod1, sortMethod));
 
         var comparatorKlass = getKlass(Comparator.class);
-        Assert.assertEquals(1, comparatorKlass.getMethods().size());
+        Assert.assertEquals(10, comparatorKlass.getMethods().size());
 
         var toArray = arrayListKlass.getMethodByCode("toArray");
 //        var overridden = toArray.getOverridden();

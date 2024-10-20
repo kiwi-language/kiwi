@@ -1804,13 +1804,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public boolean isSAMInterface() {
-        return isInterface() && getMethods().size() == 1;
+        return isInterface() && NncUtils.count(methods, m -> m.isAbstract() && !m.isStatic()) == 1;
     }
 
     public Method getSingleAbstractMethod() {
         if (!isSAMInterface())
             throw new InternalException("Type " + getName() + " is not a SAM interface");
-        return getMethods().get(0);
+        return getMethod(m -> m.isAbstract() && !m.isStatic());
     }
 
     public boolean isStruct() {

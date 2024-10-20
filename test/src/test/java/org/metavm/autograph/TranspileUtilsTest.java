@@ -76,7 +76,8 @@ public class TranspileUtilsTest extends TestCase {
         addMethod.setParameters(List.of(
                 new Parameter(null, "list", "list",
                         Types.getNullableType(
-                                StdKlass.list.get().getParameterized(List.of(UncertainType.createLowerBounded(typeVar.getType()))).getType()
+                                StdKlass.list.get().getParameterized(List.of(
+                                        new UncertainType(typeVar.getType(), Types.getAnyType()))).getType()
                         )
                 ),
                 new Parameter(null, "element", "element", Types.getNullableType(typeVar.getType()))

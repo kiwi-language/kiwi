@@ -55,7 +55,8 @@ public class ReflectDefiner {
 //        logger.debug("Defining class {}", javaClass.getName());
         var kind = javaClass.isEnum() ? ClassKind.ENUM : (javaClass.isInterface() ? ClassKind.INTERFACE :
                 (ValueObject.class.isAssignableFrom(javaClass) ? ClassKind.VALUE : ClassKind.CLASS));
-        klass = KlassBuilder.newBuilder(javaClass.getSimpleName(), javaClass.getName())
+        var code = javaClass.getName().replace('$', '.');
+        klass = KlassBuilder.newBuilder(javaClass.getSimpleName(), code)
                 .tag(tag)
                 .source(ClassSource.BUILTIN)
                 .kind(kind)
@@ -85,7 +86,6 @@ public class ReflectDefiner {
         var isFunctionalInterface = javaClass.isAnnotationPresent(FunctionalInterface.class);
         for (Method javaMethod : javaClass.getDeclaredMethods()) {
             if (javaMethod.isSynthetic()
-                    || Modifier.isStatic(javaMethod.getModifiers())
                     || (!Modifier.isPublic(javaMethod.getModifiers()) && !Modifier.isProtected(javaMethod.getModifiers())))
                 continue;
             if(isFunctionalInterface) {
@@ -95,6 +95,7 @@ public class ReflectDefiner {
             var abs = Modifier.isAbstract(javaMethod.getModifiers());
             var method = MethodBuilder.newBuilder(klass, javaMethod.getName(), javaMethod.getName())
                     .isAbstract(abs)
+                    .isStatic(Modifier.isStatic(javaMethod.getModifiers()))
                     .isNative(!abs && kind != ClassKind.INTERFACE)
                     .build();
             method.setTypeParameters(NncUtils.map(javaMethod.getTypeParameters(), tv -> defineTypeVariable(tv, method)));

@@ -761,6 +761,11 @@ public class TranspileUtils {
         return parentClass.cast(getParent(element, Set.of(parentClass)));
     }
 
+    public static @Nullable <T extends PsiElement> T getProperParent(PsiElement element, Class<T> parentClass) {
+        var p = element.getParent();
+        return p != null ? parentClass.cast(getParent(p, Set.of(parentClass))) : null;
+    }
+
     public static @NotNull <T extends PsiElement> T getParentNotNull(PsiElement element, Class<T> parentClass) {
         return Objects.requireNonNull(
                 parentClass.cast(getParent(element, Set.of(parentClass))),
@@ -1203,7 +1208,7 @@ public class TranspileUtils {
         }
         if (type instanceof PsiWildcardType wildcardType) {
             if (wildcardType.isSuper())
-                return "[" + getInternalName(wildcardType.getBound(), current) + ",Any|Null]";
+                return "[" + getInternalName(wildcardType.getBound(), current) + ",Any]";
             else if(wildcardType.getBound() != null)
                 return "[Never," + getInternalName(wildcardType.getBound(), current) + "]";
             else

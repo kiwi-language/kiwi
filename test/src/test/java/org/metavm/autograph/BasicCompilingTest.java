@@ -89,6 +89,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processMultiLevelInnerClass();
             processReturnInLambda();
             processShiftAssignment();
+            processCapturedTypesInFieldInitializer();
         });
     }
 
@@ -929,6 +930,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(
                 1L,
                 callMethod(id, "unsignedRightShiftAssign", List.of(63))
+        );
+    }
+
+    private void processCapturedTypesInFieldInitializer() {
+        var klassName = "capturedtypes.CapturedTypesInFieldInitializer";
+        Assert.assertEquals(
+                -1L,
+                callMethod(klassName, "test", List.of("a", "b"))
         );
     }
 

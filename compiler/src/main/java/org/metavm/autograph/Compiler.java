@@ -76,7 +76,10 @@ public class Compiler {
             ),
             new CompileStage(
                     file -> true,
-                    file -> file.accept(new InnerClassTransformFinalizer())
+                    file -> {
+                        file.accept(new InnerClassTransformFinalizer());
+                        file.accept(new FieldInitializerMover());
+                    }
             )
     );
 
