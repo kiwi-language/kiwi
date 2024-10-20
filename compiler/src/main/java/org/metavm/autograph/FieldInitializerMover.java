@@ -33,7 +33,7 @@ public class FieldInitializerMover extends VisitorBase {
                     int i = TranspileUtils.isSuperCall(statements[0]) ? 1 : 0;
                     //noinspection StatementWithEmptyBody
                     for (; i < statements.length && movedInitializers.contains(statements[i]); i++);
-                    anchor = statements[i-1];
+                    anchor = i > 0 ? statements[i-1] : null;
                 }
                 else
                     anchor = null;

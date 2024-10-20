@@ -90,6 +90,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processReturnInLambda();
             processShiftAssignment();
             processCapturedTypesInFieldInitializer();
+            processNewObject();
         });
     }
 
@@ -939,6 +940,13 @@ public class BasicCompilingTest extends CompilerTestBase {
                 -1L,
                 callMethod(klassName, "test", List.of("a", "b"))
         );
+    }
+
+    private void processNewObject() {
+        var klassName = "std.NewObjectFoo";
+        Assert.assertNotNull(callMethod(klassName, "newObject", List.of()));
+        Assert.assertEquals(0L, callMethod(klassName, "testNewObjectArray", List.of()));
+        Assert.assertEquals(1L, callMethod(klassName, "testNewAnonymous", List.of()));
     }
 
 }

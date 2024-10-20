@@ -1,7 +1,5 @@
 package fieldinitializer;
 
-import java.util.function.IntSupplier;
-
 public class MoveFieldInitializerFoo {
 
     public static int defaultValue = 0;
@@ -17,27 +15,12 @@ public class MoveFieldInitializerFoo {
         super();
     }
 
+    public MoveFieldInitializerFoo(Object value) {
+        value.hashCode();
+    }
+
     public int getValue1() {
         return value1;
     }
 
-    public IntSupplier getSupplier() {
-        return new IntSupplier() {
-
-            private final int v = value;
-
-            @Override
-            public int getAsInt() {
-                return v;
-            }
-        };
-    }
-
-    class Inner {
-        private final int v = value;
-        private final int v1 = getValue1();
-
-        public Inner(Object value) {
-        }
-    }
 }

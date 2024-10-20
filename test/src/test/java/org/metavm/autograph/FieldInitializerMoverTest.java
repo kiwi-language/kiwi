@@ -15,7 +15,7 @@ public class FieldInitializerMoverTest extends TestCase {
         var dest = "/Users/leen/workspace/object/lab/src/main/tmp2/fieldinitializer2/MoveFieldInitializerFoo.java";
         NncUtils.writeFile(
                 dest,
-                file.getText().replace("package fieldinitializer;", "package fieldinitializer2;")
+                file.getText().replace("fieldinitializer", "fieldinitializer2")
         );
     }
 

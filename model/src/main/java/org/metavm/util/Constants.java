@@ -42,7 +42,7 @@ public class Constants {
 
     public final static long DEFAULT_SESSION_TIMEOUT = 2000L;
     public static long SESSION_TIMEOUT = DEFAULT_SESSION_TIMEOUT;
-    public static long DDL_SESSION_TIMEOUT = 16000;
+    public static long DDL_SESSION_TIMEOUT = 64000;
 
     public static final String RUN_METHOD_NAME = "__run__";
 

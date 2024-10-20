@@ -2,10 +2,13 @@ package org.metavm.entity;
 
 import org.metavm.api.ChildList;
 import org.metavm.api.ValueList;
+import org.metavm.api.entity.MvObject;
 import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Nodes;
 import org.metavm.flow.Parameter;
+import org.metavm.flow.Values;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.type.*;
@@ -177,6 +180,7 @@ public class StandardDefBuilder {
         var vmErrorKlass = createExceptionKlass(VirtualMachineError.class, errorKlass);
         createExceptionKlass(InternalError.class, vmErrorKlass);
         createExceptionKlass(OutOfMemoryError.class, vmErrorKlass);
+        createMvObjectKlass();
 
         consumerKlass = createConsumerKlass();
         predicateKlass = createPredicateKlass();
@@ -536,6 +540,19 @@ public class StandardDefBuilder {
                 .isChild(kind != ClassKind.VALUE)
                 .build();
         return mapImplKlass;
+    }
+
+    private Klass createMvObjectKlass() {
+        var klass = newKlassBuilder(MvObject.class)
+                .source(ClassSource.BUILTIN)
+                .build();
+        var c = MethodBuilder.newBuilder(klass, "MvObject", "MvObject")
+                .isConstructor(true)
+                .build();
+        var self = Nodes.self("self", klass, c.getRootScope());
+        Nodes.ret("ret", c.getRootScope(), Values.node(self));
+        defContext.addDef(new DirectDef<>(MvObject.class, klass));
+        return klass;
     }
 
     private void createMapFlows(Klass mapType, Type keyType, Type valueType) {

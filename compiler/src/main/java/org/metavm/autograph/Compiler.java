@@ -79,6 +79,7 @@ public class Compiler {
                     file -> {
                         file.accept(new InnerClassTransformFinalizer());
                         file.accept(new FieldInitializerMover());
+                        file.accept(new NewObjectTransformer());
                     }
             )
     );
