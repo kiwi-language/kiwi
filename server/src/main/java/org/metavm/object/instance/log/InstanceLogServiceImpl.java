@@ -14,6 +14,7 @@ import org.metavm.object.version.Versions;
 import org.metavm.object.view.Mapping;
 import org.metavm.task.PublishMetadataEventTask;
 import org.metavm.task.SynchronizeSearchTask;
+import org.metavm.util.ContextUtil;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,15 +52,18 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
     public void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, List<Id> migrated, @Nullable String clientId, DefContext defContext) {
         if (NncUtils.isEmpty(logs) && migrated.isEmpty())
             return;
-        var newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
-        handleDDL(appId, newInstanceIds);
-        handleMetaChanges(appId, logs, clientId);
+        try (var ignored = ContextUtil.getProfiler().enter("InstanceLogServiceImpl.process")) {
+            var newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
+            handleDDL(appId, newInstanceIds);
+            handleMetaChanges(appId, logs, clientId);
+        }
     }
 
     @Transactional
     @Override
     public void createSearchSyncTask(long appId, List<Id> changedIds, List<Id> removedIds, DefContext defContext) {
-        try(var context = newContext(appId)) {
+        try(var context = newContext(appId);
+            var ignored = ContextUtil.getProfiler().enter("createSearchSyncTask")) {
             WAL wal = instanceStore instanceof CachingInstanceStore cachingInstanceStore ?
                     cachingInstanceStore.getWal().copy() : null;
             WAL defWal = defContext instanceof ReversedDefContext reversedDefContext ?
@@ -74,100 +78,104 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
     }
 
     private void handleMetaChanges(long appId, List<InstanceLog> logs, @Nullable String clientId) {
-        var changedTypeDefIds = new HashSet<String>();
-        var changedMappingIds = new HashSet<String>();
-        var changedFunctionIds = new HashSet<String>();
-        var removedTypeDefIds = new HashSet<String>();
-        var removedMappingIds = new HashSet<String>();
-        var removedFunctionIds = new HashSet<String>();
-        for (InstanceLog log : logs) {
-            var id = log.getId();
-            if (id instanceof TaggedPhysicalId tpId && tpId.getTypeTag() > 4) {
-                var defContext = ModelDefRegistry.getDefContext();
-                var mapper = defContext.tryGetMapper(tpId.getTypeTag());
-                if(mapper != null) {
-                    var javaClass = mapper.getEntityClass();
-                    if (TypeDef.class.isAssignableFrom(javaClass)) {
-                        if (log.isDelete())
-                            removedTypeDefIds.add(id.toString());
-                        else
-                            changedTypeDefIds.add(id.toString());
-                    } else if (Mapping.class.isAssignableFrom(javaClass)) {
-                        if (log.isDelete())
-                            removedMappingIds.add(id.toString());
-                        else
-                            changedMappingIds.add(id.toString());
-                    } else if (Function.class.isAssignableFrom(javaClass)) {
-                        if (log.isDelete())
-                            removedFunctionIds.add(id.toString());
-                        else
-                            changedFunctionIds.add(id.toString());
+        try (var ignored = ContextUtil.getProfiler().enter("handleMetaChanges")){
+            var changedTypeDefIds = new HashSet<String>();
+            var changedMappingIds = new HashSet<String>();
+            var changedFunctionIds = new HashSet<String>();
+            var removedTypeDefIds = new HashSet<String>();
+            var removedMappingIds = new HashSet<String>();
+            var removedFunctionIds = new HashSet<String>();
+            for (InstanceLog log : logs) {
+                var id = log.getId();
+                if (id instanceof TaggedPhysicalId tpId && tpId.getTypeTag() > 4) {
+                    var defContext = ModelDefRegistry.getDefContext();
+                    var mapper = defContext.tryGetMapper(tpId.getTypeTag());
+                    if (mapper != null) {
+                        var javaClass = mapper.getEntityClass();
+                        if (TypeDef.class.isAssignableFrom(javaClass)) {
+                            if (log.isDelete())
+                                removedTypeDefIds.add(id.toString());
+                            else
+                                changedTypeDefIds.add(id.toString());
+                        } else if (Mapping.class.isAssignableFrom(javaClass)) {
+                            if (log.isDelete())
+                                removedMappingIds.add(id.toString());
+                            else
+                                changedMappingIds.add(id.toString());
+                        } else if (Function.class.isAssignableFrom(javaClass)) {
+                            if (log.isDelete())
+                                removedFunctionIds.add(id.toString());
+                            else
+                                changedFunctionIds.add(id.toString());
+                        }
                     }
                 }
             }
-        }
-        if (!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty()
-                || !changedMappingIds.isEmpty() || !removedMappingIds.isEmpty()
-                || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
-            transactionOperations.executeWithoutResult(s -> {
-                try (var context = newContext(appId, builder -> builder.timeout(0))) {
-                    context.getInstanceContext().setDescription("MetaChange");
-                    var v = Versions.create(
-                            changedTypeDefIds,
-                            removedTypeDefIds,
-                            changedMappingIds,
-                            removedMappingIds,
-                            changedFunctionIds,
-                            removedFunctionIds,
-                            new VersionRepository() {
-                                @Nullable
-                                @Override
-                                public Version getLastVersion() {
-                                    return NncUtils.first(
-                                            context.query(Version.IDX_VERSION.newQueryBuilder().limit(1).desc(true).build())
-                                    );
-                                }
+            if (!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty()
+                    || !changedMappingIds.isEmpty() || !removedMappingIds.isEmpty()
+                    || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
+                transactionOperations.executeWithoutResult(s -> {
+                    try (var context = newContext(appId, builder -> builder.timeout(0))) {
+                        context.getInstanceContext().setDescription("MetaChange");
+                        var v = Versions.create(
+                                changedTypeDefIds,
+                                removedTypeDefIds,
+                                changedMappingIds,
+                                removedMappingIds,
+                                changedFunctionIds,
+                                removedFunctionIds,
+                                new VersionRepository() {
+                                    @Nullable
+                                    @Override
+                                    public Version getLastVersion() {
+                                        return NncUtils.first(
+                                                context.query(Version.IDX_VERSION.newQueryBuilder().limit(1).desc(true).build())
+                                        );
+                                    }
 
-                                @Override
-                                public void save(Version version) {
-                                    context.bind(version);
-                                }
-                            });
-                    if(!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty() || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
-                        context.bind(new PublishMetadataEventTask(changedTypeDefIds, removedTypeDefIds, changedFunctionIds, removedFunctionIds, v.getVersion(), clientId));
+                                    @Override
+                                    public void save(Version version) {
+                                        context.bind(version);
+                                    }
+                                });
+                        if (!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty() || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
+                            context.bind(new PublishMetadataEventTask(changedTypeDefIds, removedTypeDefIds, changedFunctionIds, removedFunctionIds, v.getVersion(), clientId));
+                        }
+                        context.finish();
                     }
-                    context.finish();
-                }
-            });
+                });
+            }
         }
     }
 
     private void handleDDL(long appId, Collection<Id> instanceIds) {
-        if (instanceIds.isEmpty())
+        if (instanceIds.isEmpty() || ContextUtil.isDDL())
             return;
-        transactionOperations.executeWithoutResult(s -> {
-            try (var context = newContext(appId, builder -> builder.timeout(0))) {
-                var commit = context.selectFirstByKey(Commit.IDX_RUNNING, true);
-                if (commit != null) {
-                    var commitState = commit.getState();
-                    var wal = commitState.isPreparing() ? commit.getWal() : null;
-                    try (var loadedContext = newContext(appId,
-                            metaContextCache.get(appId, wal != null? wal.getId() : null),
-                            builder -> builder
-                            .readWAL(wal)
-                            .relocationEnabled(commitState.isRelocationEnabled())
-                            .timeout(0)
-                    )
-                    ) {
-                        loadedContext.getInstanceContext().setDescription("DDLHandler");
-                        Iterable<Instance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
-                                .iterator();
-                        commit.getState().process(instances, commit, loadedContext);
-                        loadedContext.finish();
+        try (var ignored = ContextUtil.getProfiler().enter("handleDDL")) {
+            transactionOperations.executeWithoutResult(s -> {
+                try (var context = newContext(appId, builder -> builder.timeout(0))) {
+                    var commit = context.selectFirstByKey(Commit.IDX_RUNNING, true);
+                    if (commit != null) {
+                        var commitState = commit.getState();
+                        var wal = commitState.isPreparing() ? commit.getWal() : null;
+                        try (var loadedContext = newContext(appId,
+                                metaContextCache.get(appId, wal != null ? wal.getId() : null),
+                                builder -> builder
+                                        .readWAL(wal)
+                                        .relocationEnabled(commitState.isRelocationEnabled())
+                                        .timeout(0)
+                        )
+                        ) {
+                            loadedContext.getInstanceContext().setDescription("DDLHandler");
+                            Iterable<Instance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
+                                    .iterator();
+                            commit.getState().process(instances, commit, loadedContext);
+                            loadedContext.finish();
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
     private <T extends Entity> boolean invokeHandler(List<ClassInstance> instances, LogHandler<T> handler,

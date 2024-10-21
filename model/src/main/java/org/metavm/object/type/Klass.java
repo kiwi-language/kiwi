@@ -1699,6 +1699,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public void saveMapping(IEntityContext context) {
+        if(Constants.mappingDisabled)
+            return;
         if (!(context instanceof SystemDefContext)) {
             if(shouldGenerateBuiltinMapping() && !context.isFlagSet(ContextFlag.SKIP_SAVING_MAPPINGS))
                 MappingSaver.create(context).saveBuiltinMapping(this, true);

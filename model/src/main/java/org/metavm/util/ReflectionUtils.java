@@ -8,6 +8,7 @@ import sun.misc.Unsafe;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
@@ -19,6 +20,10 @@ public class ReflectionUtils {
     public static final Unsafe UNSAFE;
 
     public static final String META_VM_PKG = "org.metavm";
+
+    private static final Map<FieldKey, Field> fieldMap = new ConcurrentHashMap<>();
+
+    private record FieldKey(Class<?> klass, String name) {}
 
     public static final Field ENUM_NAME_FIELD = getField(Enum.class, "name");
 
@@ -628,9 +633,15 @@ public class ReflectionUtils {
     }
 
     public static Field getField(Class<?> klass, String name) {
+        var key = new FieldKey(klass, name);
+        var existing = fieldMap.get(key);
+        if(existing != null)
+            return existing;
         try {
             Field field = klass.getDeclaredField(name);
-            return trySetAccessible(field);
+            trySetAccessible(field);
+            fieldMap.put(key, field);
+            return field;
         } catch (NoSuchFieldException e) {
             if (klass.getSuperclass() != null) {
                 return getField(klass.getSuperclass(), name);

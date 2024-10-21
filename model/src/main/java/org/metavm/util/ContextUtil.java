@@ -25,6 +25,7 @@ public class ContextUtil {
         private IEntityContext entityContext;
         private int contextFinishCount;
         private final List<String> finishedContexts = new ArrayList<>();
+        private boolean isDDL;
 
         long nextTmpId() {
             return nextTmpId++;
@@ -54,6 +55,14 @@ public class ContextUtil {
 
         void incrementContextFinishCount() {
             contextFinishCount++;
+        }
+
+        public boolean isDDL() {
+            return isDDL;
+        }
+
+        public void setDDL(boolean DDL) {
+            isDDL = DDL;
         }
 
         void setUserData(String key, Value value) {
@@ -206,6 +215,14 @@ public class ContextUtil {
 
     public static List<String> getFinishedContexts() {
         return getContextInfo().getFinishedContexts();
+    }
+
+    public static void setDDL(boolean isDDL) {
+        getContextInfo().setDDL(isDDL);
+    }
+
+    public static boolean isDDL() {
+        return getContextInfo().isDDL();
     }
 
 }

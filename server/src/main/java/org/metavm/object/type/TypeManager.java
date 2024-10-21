@@ -24,10 +24,7 @@ import org.metavm.object.version.Versions;
 import org.metavm.task.AddFieldTaskGroup;
 import org.metavm.task.DDLTask;
 import org.metavm.task.TaskManager;
-import org.metavm.util.BusinessException;
-import org.metavm.util.DebugEnv;
-import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.LinkedList;
 
 import static org.metavm.util.Constants.DDL_SESSION_TIMEOUT;
 
@@ -282,6 +280,7 @@ public class TypeManager extends EntityContextFactoryAware {
         FlowSavingContext.skipPreprocessing(request.skipFlowPreprocess());
         SaveTypeBatch batch;
         try (var context = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT))) {
+            ContextUtil.setDDL(true);
             var wal = context.bind(new WAL(context.getAppId()));
             try (var bufferingContext = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT).writeWAL(wal))) {
                 var runningCommit = bufferingContext.selectFirstByKey(Commit.IDX_RUNNING, true);
@@ -297,6 +296,8 @@ public class TypeManager extends EntityContextFactoryAware {
                 context.bind(CommitState.PREPARING0.createTask(commit));
             context.finish();
             return commit.getStringId();
+        } finally {
+            ContextUtil.setDDL(false);
         }
     }
 

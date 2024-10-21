@@ -13,7 +13,9 @@ import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeDef;
 import org.metavm.object.view.ObjectMappingRef;
+import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
 import org.metavm.util.ParameterizedStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,18 +69,19 @@ public class MetaContextCache extends EntityContextFactoryAware {
     }
 
     private IEntityContext createMetaContext(CacheKey key) {
-        IEntityContext context;
-        if(key.walId != null) {
-            try(var outerContext = newContext(key.appId)) {
-                var wal = outerContext.getEntity(WAL.class, key.walId);
-                context = newContext(key.appId, builder -> builder.readWAL(wal));
-            }
+        try(var ignored = ContextUtil.getProfiler().enter("createMetaContext")) {
+            IEntityContext context;
+            if (key.walId != null) {
+                try (var outerContext = newContext(key.appId)) {
+                    var wal = outerContext.getEntity(WAL.class, key.walId);
+                    context = newContext(key.appId, builder -> builder.readWAL(wal));
+                }
+            } else
+                context = newContext(key.appId);
+            loadAllTypeDefs(context);
+            context.setParameterizedMap(ParameterizedStore.getMap());
+            return context;
         }
-        else
-            context = newContext(key.appId);
-        loadAllTypeDefs(context);
-        context.setParameterizedMap(ParameterizedStore.getMap());
-        return context;
     }
 
     private void loadAllTypeDefs(IEntityContext context) {

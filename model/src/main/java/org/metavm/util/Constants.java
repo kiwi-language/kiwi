@@ -46,6 +46,8 @@ public class Constants {
 
     public static final String RUN_METHOD_NAME = "__run__";
 
+    public static volatile boolean mappingDisabled = false;
+
     private Constants() {}
 
     public static Id getRootAppId() {

@@ -5,6 +5,7 @@ import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.util.Constants;
+import org.metavm.util.ContextUtil;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +61,8 @@ public class TaskManager extends EntityContextFactoryAware {
 
     @Transactional
     public void createShadowTasks(long appId, List<Task> created) {
-        try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID, builder -> builder.skipPostProcessing(true))) {
+        try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID, builder -> builder.skipPostProcessing(true));
+        var ignored = ContextUtil.getProfiler().enter("createShadowTasks")) {
             platformContext.getInstanceContext().setDescription("ShadowTask");
             for (Task task : created) {
                 var defWal = task.getDefWalId() != null ? platformContext.getEntity(WAL.class, task.getDefWalId().toId()) : null;
