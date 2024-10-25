@@ -36,10 +36,10 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     private NodeRT entry;
     private final InstanceRepository instanceRepository;
     private FrameState state = FrameState.RUNNING;
-    private final LinkedList<TryNode> tryNodes = new LinkedList<>();
+    private final LinkedList<TryEnterNode> tryEnterNodes = new LinkedList<>();
     private ClassInstance exception;
 
-    private final Map<TryNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
+    private final Map<TryEnterNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
     private NodeRT lastNode;
 
     public MetaFrame(@NotNull NodeRT entry, @Nullable Klass owner, @Nullable ClassInstance self, List<? extends Value> arguments,
@@ -75,26 +75,26 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         instanceRepository.bind(instance);
     }
 
-    public void enterTrySection(TryNode tryNode) {
-        tryNodes.push(tryNode);
+    public void enterTrySection(TryEnterNode tryEnterNode) {
+        tryEnterNodes.push(tryEnterNode);
     }
 
-    public TryNode exitTrySection() {
-        return tryNodes.pop();
+    public TryEnterNode exitTrySection() {
+        return tryEnterNodes.pop();
     }
 
     @SuppressWarnings("unused")
     public boolean inTrySection() {
-        return !tryNodes.isEmpty();
+        return !tryEnterNodes.isEmpty();
     }
 
     @SuppressWarnings("unused")
-    public TryNode currentTrySection() {
-        return NncUtils.requireNonNull(tryNodes.peek());
+    public TryEnterNode currentTrySection() {
+        return NncUtils.requireNonNull(tryEnterNodes.peek());
     }
 
     public NodeExecResult catchException(@NotNull NodeRT raiseNode, @NotNull ClassInstance exception) {
-        var tryNode = tryNodes.peek();
+        var tryNode = tryEnterNodes.peek();
         if(tryNode != null) {
             exceptions.put(tryNode, new ExceptionInfo(raiseNode, exception));
             return NodeExecResult.jump(tryNode.getSuccessor());
@@ -105,8 +105,8 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
 
     @SuppressWarnings("unused")
     private void exception(ClassInstance exception, boolean fromResume) {
-        if(!tryNodes.isEmpty()) {
-            var tryNode = tryNodes.peek();
+        if(!tryEnterNodes.isEmpty()) {
+            var tryNode = tryEnterNodes.peek();
             exceptions.put(tryNode, new ExceptionInfo(entry, exception));
             if(fromResume) {
                 entry = tryNode.getSuccessor();
@@ -121,8 +121,8 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         }
     }
 
-    public @Nullable ExceptionInfo getExceptionInfo(TryNode tryNode) {
-        return exceptions.get(tryNode);
+    public @Nullable ExceptionInfo getExceptionInfo(TryEnterNode tryEnterNode) {
+        return exceptions.get(tryEnterNode);
     }
 
     public void deleteInstance(Reference instance) {

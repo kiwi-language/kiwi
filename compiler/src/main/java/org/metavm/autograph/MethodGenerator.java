@@ -83,8 +83,8 @@ public class MethodGenerator {
         ));
     }
 
-    TryNode createTry() {
-        return onNodeCreated(new TryNode(null, nextName("try"), null, scope().getLastNode(), scope()));
+    TryEnterNode createTry() {
+        return onNodeCreated(new TryEnterNode(null, nextName("try"), null, scope().getLastNode(), scope()));
     }
 
     String nextVarName(String name) {
@@ -93,12 +93,12 @@ public class MethodGenerator {
         return varName + count;
     }
 
-    TryEndNode createTryEnd() {
-        var node = onNodeCreated(new TryEndNode(
+    TryExitNode createTryEnd() {
+        var node = onNodeCreated(new TryExitNode(
                 null, nextName("TryEnd"), null,
                 KlassBuilder.newBuilder("TryEndOutput", null)
                         .temporary().build(),
-                (TryNode) scope().getLastNode(),
+                (TryEnterNode) scope().getLastNode(),
                 scope()
         ));
         FieldBuilder.newBuilder("exception", "exception", node.getKlass(),
@@ -162,14 +162,14 @@ public class MethodGenerator {
         ));
     }
 
-    void enterTrySection(TryNode tryNode) {
-        variableTable.enterTrySection(tryNode);
-        enterScope(tryNode.getBodyScope());
+    void enterTrySection(TryEnterNode tryEnterNode) {
+        variableTable.enterTrySection(tryEnterNode);
+        enterScope(tryEnterNode.getBodyScope());
     }
 
-    Map<NodeRT, Map<String, Expression>> exitTrySection(TryNode tryNode, List<String> outputVars) {
+    Map<NodeRT, Map<String, Expression>> exitTrySection(TryEnterNode tryEnterNode, List<String> outputVars) {
         exitScope();
-        return variableTable.exitTrySection(tryNode, outputVars);
+        return variableTable.exitTrySection(tryEnterNode, outputVars);
     }
 
     void enterCondSection(NodeRT sectionId) {

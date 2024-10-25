@@ -6,17 +6,17 @@ import org.metavm.object.type.rest.dto.FieldDTOBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
-public record TryEndFieldDTO(
+public record TryExitFieldDTO(
         String name,
         String fieldId,
         String type,
-        List<TryEndValueDTO> values,
+        List<TryExitValueDTO> values,
         ValueDTO defaultValue
-) implements FieldReferringDTO<TryEndFieldDTO> {
+) implements FieldReferringDTO<TryExitFieldDTO> {
 
     @Override
-    public TryEndFieldDTO copyWithFieldId(String fieldId) {
-        return new TryEndFieldDTO(
+    public TryExitFieldDTO copyWithFieldId(String fieldId) {
+        return new TryExitFieldDTO(
                 name,
                 fieldId,
                 type,

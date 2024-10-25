@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
-import org.metavm.flow.rest.TryEndFieldDTO;
+import org.metavm.flow.rest.TryExitFieldDTO;
 import org.metavm.object.type.Field;
 import org.metavm.util.NncUtils;
 
@@ -13,23 +13,23 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType
-public class TryEndField extends Entity implements LocalKey {
+public class TryExitField extends Entity implements LocalKey {
 
     private final Field field;
 
     @ChildEntity
-    private final ChildArray<TryEndValue> values = addChild(new ChildArray<>(TryEndValue.class), "values");
+    private final ChildArray<TryExitValue> values = addChild(new ChildArray<>(TryExitValue.class), "values");
 
     private Value defaultValue;
 
-    public TryEndField(Field field, List<TryEndValue> values, Value defaultValue, TryEndNode tryEndNode) {
+    public TryExitField(Field field, List<TryExitValue> values, Value defaultValue, TryExitNode tryExitNode) {
         this.field = field;
         this.values.addChildren(values);
         this.defaultValue = defaultValue;
-        tryEndNode.addField(this);
+        tryExitNode.addField(this);
     }
 
-    public List<TryEndValue> getValues() {
+    public List<TryExitValue> getValues() {
         return values.toList();
     }
 
@@ -50,19 +50,19 @@ public class TryEndField extends Entity implements LocalKey {
             return defaultValue;
         } else {
             return NncUtils.requireNonNull(
-                    values.get(TryEndValue::getRaiseNode, raiseNode),
+                    values.get(TryExitValue::getRaiseNode, raiseNode),
                     "Can not find merge value of field " + field + " for raise node: " + raiseNode
             ).getValue();
         }
     }
 
-    public TryEndFieldDTO toDTO() {
+    public TryExitFieldDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
-            return new TryEndFieldDTO(
+            return new TryExitFieldDTO(
                     field.getName(),
                     serContext.getStringId(field),
                     field.getType().toExpression(serContext),
-                    NncUtils.map(values, TryEndValue::toDTO),
+                    NncUtils.map(values, TryExitValue::toDTO),
                     defaultValue.toDTO()
             );
         }
@@ -79,6 +79,6 @@ public class TryEndField extends Entity implements LocalKey {
     }
 
     public String getText() {
-        return field.getName() + ": {" + NncUtils.join(values, TryEndValue::getText, ", ") + "}";
+        return field.getName() + ": {" + NncUtils.join(values, TryExitValue::getText, ", ") + "}";
     }
 }

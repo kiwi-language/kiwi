@@ -6,7 +6,7 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.flow.rest.TryNodeParam;
+import org.metavm.flow.rest.TryEnterNodeParam;
 import org.metavm.object.instance.core.Id;
 
 import javax.annotation.Nullable;
@@ -14,28 +14,28 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType
-public class TryNode extends ScopeNode {
+public class TryEnterNode extends ScopeNode {
 
-    public static TryNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        var node = (TryNode) context.getNode(Id.parse(nodeDTO.id()));
+    public static TryEnterNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+        var node = (TryEnterNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new TryNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope);
+            node = new TryEnterNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope);
         return node;
     }
 
-    public TryNode(Long tmpId, String name, @Nullable String code,  NodeRT previous, ScopeRT scope) {
+    public TryEnterNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope) {
         super(tmpId, name, code, null, previous, scope, false);
     }
 
     @Override
-    protected TryNodeParam getParam(SerializeContext serializeContext) {
-        return new TryNodeParam(bodyScope.toDTO(true, serializeContext));
+    protected TryEnterNodeParam getParam(SerializeContext serializeContext) {
+        return new TryEnterNodeParam(bodyScope.toDTO(true, serializeContext));
     }
 
     @NotNull
     @Override
-    public TryEndNode getSuccessor() {
-        return (TryEndNode) Objects.requireNonNull(super.getSuccessor());
+    public TryExitNode getSuccessor() {
+        return (TryExitNode) Objects.requireNonNull(super.getSuccessor());
     }
 
     @Override
@@ -56,8 +56,8 @@ public class TryNode extends ScopeNode {
 
     @Override
     protected List<Object> nodeBeforeRemove() {
-        if(super.getSuccessor() instanceof TryEndNode tryEndNode)
-            return List.of(tryEndNode);
+        if(super.getSuccessor() instanceof TryExitNode tryExitNode)
+            return List.of(tryExitNode);
         else
             return List.of();
     }

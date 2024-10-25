@@ -3,15 +3,15 @@ package org.metavm.flow;
 import org.metavm.entity.Entity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.SerializeContext;
-import org.metavm.flow.rest.TryEndValueDTO;
+import org.metavm.flow.rest.TryExitValueDTO;
 
 @EntityType
-public class TryEndValue extends Entity {
+public class TryExitValue extends Entity {
 
     private NodeRT raiseNode;
     private Value value;
 
-    public TryEndValue(NodeRT raiseNode, Value value) {
+    public TryExitValue(NodeRT raiseNode, Value value) {
         this.raiseNode = raiseNode;
         this.value = value;
     }
@@ -32,9 +32,9 @@ public class TryEndValue extends Entity {
         this.value = value;
     }
 
-    public TryEndValueDTO toDTO() {
+    public TryExitValueDTO toDTO() {
         try (var serContext = SerializeContext.enter()) {
-            return new TryEndValueDTO(serContext.getStringId(raiseNode), value.toDTO());
+            return new TryExitValueDTO(serContext.getStringId(raiseNode), value.toDTO());
         }
     }
 

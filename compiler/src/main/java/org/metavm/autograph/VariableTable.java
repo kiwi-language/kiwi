@@ -3,7 +3,7 @@ package org.metavm.autograph;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.expression.*;
 import org.metavm.flow.NodeRT;
-import org.metavm.flow.TryNode;
+import org.metavm.flow.TryEnterNode;
 import org.metavm.flow.Value;
 import org.metavm.util.NncUtils;
 
@@ -74,13 +74,13 @@ public class VariableTable {
         return !branchNodes.isEmpty();
     }
 
-    void enterTrySection(TryNode tryNode) {
-        trySections.push(new TrySection(tryNode));
+    void enterTrySection(TryEnterNode tryEnterNode) {
+        trySections.push(new TrySection(tryEnterNode));
     }
 
-    Map<NodeRT, Map<String, Expression>> exitTrySection(TryNode tryNode, List<String> outputVars) {
+    Map<NodeRT, Map<String, Expression>> exitTrySection(TryEnterNode tryEnterNode, List<String> outputVars) {
         var trySection = trySections.pop();
-        NncUtils.requireTrue(trySection.tryNode == tryNode);
+        NncUtils.requireTrue(trySection.tryEnterNode == tryEnterNode);
         Map<NodeRT, Map<String, Expression>> result = new HashMap<>();
         trySection.raiseVariables.forEach((raiseNode, variableMap) ->
             result.put(
@@ -209,11 +209,11 @@ public class VariableTable {
     }
 
     private static class TrySection {
-        private final TryNode tryNode;
+        private final TryEnterNode tryEnterNode;
         private final Map<NodeRT, VariableMap> raiseVariables = new HashMap<>();
 
-        private TrySection(TryNode tryNode) {
-            this.tryNode = tryNode;
+        private TrySection(TryEnterNode tryEnterNode) {
+            this.tryEnterNode = tryEnterNode;
         }
     }
 

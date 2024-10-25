@@ -124,11 +124,11 @@ public abstract class ElementVisitor<R> {
         return visitScopeNode(node);
     }
 
-    public R visitTryEndNode(TryEndNode node) {
+    public R visitTryEndNode(TryExitNode node) {
         return visitNode(node);
     }
 
-    public R visitTryNode(TryNode node) {
+    public R visitTryNode(TryEnterNode node) {
         return visitScopeNode(node);
     }
 

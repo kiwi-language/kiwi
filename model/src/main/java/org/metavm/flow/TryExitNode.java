@@ -11,9 +11,9 @@ import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.flow.rest.TryEndFieldDTO;
-import org.metavm.flow.rest.TryEndNodeParam;
-import org.metavm.flow.rest.TryEndValueDTO;
+import org.metavm.flow.rest.TryExitFieldDTO;
+import org.metavm.flow.rest.TryExitNodeParam;
+import org.metavm.flow.rest.TryExitValueDTO;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
@@ -29,34 +29,34 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 @EntityType
-public class TryEndNode extends ChildTypeNode {
+public class TryExitNode extends ChildTypeNode {
 
-    public static TryEndNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        var node = (TryEndNode) context.getNode(Id.parse(nodeDTO.id()));
+    public static TryExitNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+        var node = (TryExitNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var outputKlass = ((ClassType) TypeParser.parseType(nodeDTO.outputType(), context)).resolve();
-            node = new TryEndNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputKlass, (TryNode) prev, scope);
+            node = new TryExitNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputKlass, (TryEnterNode) prev, scope);
         }
-        var param = (TryEndNodeParam) nodeDTO.getParam();
+        var param = (TryExitNodeParam) nodeDTO.getParam();
         if (param.fields().size() != node.getKlass().getReadyFields().size() - 1)
             throw new BusinessException(ErrorCode.NODE_FIELD_DEF_AND_FIELD_VALUE_MISMATCH, node.getName());
         var mergeFieldDTOs = param.fields();
-        var tryNode = (TryNode) Objects.requireNonNull(prev);
+        var tryNode = (TryEnterNode) Objects.requireNonNull(prev);
         var defaultParsingContext = FlowParsingContext.create(tryNode.getBodyScope(), tryNode.getBodyScope().getLastNode(),
                 context);
-        var fields = new ArrayList<TryEndField>();
+        var fields = new ArrayList<TryExitField>();
         Map<NodeRT, ParsingContext> raiseParsingContexts = new HashMap<>();
-        for (TryEndFieldDTO fieldDTO : mergeFieldDTOs) {
-            List<TryEndValue> values = new ArrayList<>();
-            for (TryEndValueDTO valueDTO : fieldDTO.values()) {
+        for (TryExitFieldDTO fieldDTO : mergeFieldDTOs) {
+            List<TryExitValue> values = new ArrayList<>();
+            for (TryExitValueDTO valueDTO : fieldDTO.values()) {
                 var raiseNode = context.getNode(Id.parse(valueDTO.raiseNodeId()));
                 var raiseParsingContext = raiseParsingContexts.computeIfAbsent(raiseNode, k ->
                         FlowParsingContext.create(raiseNode.getScope(), raiseNode, context));
                 values.add(
-                        new TryEndValue(raiseNode, ValueFactory.create(valueDTO.value(), raiseParsingContext))
+                        new TryExitValue(raiseNode, ValueFactory.create(valueDTO.value(), raiseParsingContext))
                 );
             }
-            fields.add(new TryEndField(
+            fields.add(new TryExitField(
                     context.getField(Id.parse(fieldDTO.fieldId())),
                     values,
                     ValueFactory.create(fieldDTO.defaultValue(), defaultParsingContext),
@@ -68,32 +68,32 @@ public class TryEndNode extends ChildTypeNode {
     }
 
     @ChildEntity
-    private final ChildArray<TryEndField> fields = addChild(new ChildArray<>(TryEndField.class), "fields");
+    private final ChildArray<TryExitField> fields = addChild(new ChildArray<>(TryExitField.class), "fields");
 
-    public TryEndNode(Long tmpId, String name, @Nullable String code, Klass outputType, TryNode previous, ScopeRT scope) {
+    public TryExitNode(Long tmpId, String name, @Nullable String code, Klass outputType, TryEnterNode previous, ScopeRT scope) {
         super(tmpId, name, code, outputType, previous, scope);
     }
 
     @Override
-    protected TryEndNodeParam getParam(SerializeContext serializeContext) {
-        return new TryEndNodeParam(NncUtils.map(fields, TryEndField::toDTO));
+    protected TryExitNodeParam getParam(SerializeContext serializeContext) {
+        return new TryExitNodeParam(NncUtils.map(fields, TryExitField::toDTO));
     }
 
     @Override
     @NotNull
-    public TryNode getPredecessor() {
-        return (TryNode) NncUtils.requireNonNull(super.getPredecessor());
+    public TryEnterNode getPredecessor() {
+        return (TryEnterNode) NncUtils.requireNonNull(super.getPredecessor());
     }
 
-    public void addField(TryEndField field) {
+    public void addField(TryExitField field) {
         this.fields.addChild(field);
     }
 
-    public List<TryEndField> getFields() {
+    public List<TryExitField> getFields() {
         return fields.toList();
     }
 
-    public void setFields(ArrayList<TryEndField> fields) {
+    public void setFields(ArrayList<TryExitField> fields) {
         this.fields.resetChildren(fields);
     }
 
@@ -113,7 +113,7 @@ public class TryEndNode extends ChildTypeNode {
             raiseNode = null;
         }
         Map<Field, Value> fieldValues = new HashMap<>(NncUtils.toMap(
-                fields, TryEndField::getField,
+                fields, TryExitField::getField,
                 f -> f.getValue(raiseNode).evaluate(frame)
         ));
         fieldValues.put(exceptionField, exception);
@@ -122,7 +122,7 @@ public class TryEndNode extends ChildTypeNode {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("tryEnd {" + NncUtils.join(fields, TryEndField::getText, ", ") + "}");
+        writer.write("tryEnd {" + NncUtils.join(fields, TryExitField::getText, ", ") + "}");
     }
 
     @Override

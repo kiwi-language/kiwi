@@ -221,11 +221,11 @@ public class Generator extends CodeGenVisitor {
             var field = FieldBuilder.newBuilder(outputVar.toString(), outputVar.toString(),
                             tryEndNode.getKlass(), resolveType(outputVar.type()))
                     .build();
-            new TryEndField(
+            new TryExitField(
                     field,
                     NncUtils.map(
                             trySectionOutput.keySet(),
-                            raiseNode -> new TryEndValue(
+                            raiseNode -> new TryExitValue(
                                     raiseNode,
                                     Values.expressionOrNever(trySectionOutput.get(raiseNode).get(outputVar.toString()))
                             )
