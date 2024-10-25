@@ -15,7 +15,7 @@ import java.util.Objects;
 @EntityType
 public class SelfNode extends NodeRT {
 
-    public static SelfNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static SelfNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var node = (SelfNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var method = (Method) scope.getFlow();

@@ -30,7 +30,7 @@ public class NewObjectNode extends CallNode implements NewNode {
 
     public static final Logger logger = LoggerFactory.getLogger(NewObjectNode.class);
 
-    public static NewObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static NewObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         NewObjectNodeParam param = nodeDTO.getParam();
         if (param.isResolved()) {
             var declaringType = (ClassType) TypeParser.parseType(Objects.requireNonNull(param.getType()), context);

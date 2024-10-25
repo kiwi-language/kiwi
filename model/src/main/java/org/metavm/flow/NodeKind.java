@@ -13,19 +13,14 @@ public enum NodeKind {
     ADD_OBJECT(NodeKindCodes.ADD_OBJECT, AddObjectNode.class, AddObjectNodeParam.class),
     UPDATE_OBJECT(NodeKindCodes.UPDATE_OBJECT, UpdateObjectNode.class, UpdateObjectNodeParam.class),
     DELETE_OBJECT(NodeKindCodes.DELETE_OBJECT, DeleteObjectNode.class, DeleteObjectNodeParam.class),
-    BRANCH(NodeKindCodes.BRANCH, BranchNode.class, BranchNodeParam.class),
     RETURN(NodeKindCodes.RETURN, ReturnNode.class, ReturnNodeParam.class),
     EXCEPTION(NodeKindCodes.EXCEPTION, RaiseNode.class, RaiseNodeParam.class),
     METHOD_CALL(NodeKindCodes.METHOD_CALL, MethodCallNode.class, MethodCallNodeParam.class),
     GET_UNIQUE(NodeKindCodes.GET_UNIQUE, GetUniqueNode.class, GetUniqueNodeParam.class),
-    MERGE(NodeKindCodes.MERGE, MergeNode.class, MergeNodeParam.class, true),
     NEW(NodeKindCodes.NEW, NewObjectNode.class, NewObjectNodeParam.class),
     VALUE(NodeKindCodes.VALUE, ValueNode.class, ValueNodeParam.class),
     UPDATE_STATIC(NodeKindCodes.UPDATE_STATIC, UpdateStaticNode.class, UpdateStaticNodeParam.class),
-    FOREACH(NodeKindCodes.FOREACH, ForeachNode.class, ForeachNodeNodeParam.class, true),
-    WHILE(NodeKindCodes.WHILE, WhileNode.class, WhileNodeNodeParam.class, true),
     NEW_ARRAY(NodeKindCodes.NEW_ARRAY, NewArrayNode.class, NewArrayNodeParam.class),
-    CHECK(NodeKindCodes.CHECK, CheckNode.class, CheckNodeParam.class),
     TRY(NodeKindCodes.TRY, TryNode.class, TryNodeParam.class),
     TRY_END(NodeKindCodes.TRY_END, TryEndNode.class, TryEndNodeParam.class, true),
     FUNC(NodeKindCodes.FUNC, FunctionNode.class, FunctionNodeParam.class),
@@ -43,10 +38,13 @@ public enum NodeKind {
     INDEX_COUNT(NodeKindCodes.INDEX_COUNT, IndexCountNode.class, IndexCountNodeParam.class),
     INDEX_SELECT(NodeKindCodes.INDEX_SELECT, IndexSelectNode.class, IndexSelectNodeParam.class),
     INDEX_SELECT_FIRST(NodeKindCodes.INDEX_SELECT_FIRST, IndexSelectFirstNode.class, IndexSelectFirstNodeParam.class),
-    GOTO(NodeKindCodes.GOTO, GotoNode.class, GotoNodeParam.class),
-    TARGET(NodeKindCodes.TARGET, TargetNode.class, TargetNodeParam.class),
+    GOTO(NodeKindCodes.GOTO, GotoNode.class, GotoNodeParam.class, false),
+    TARGET(NodeKindCodes.TARGET, TargetNode.class, TargetNodeParam.class, false),
     NON_NULL(NodeKindCodes.NON_NULL, NonNullNode.class, NonNullNodeParam.class),
-    SET_ELEMENT(NodeKindCodes.SET_ELEMENT, SetElementNode.class, SetElementNodeParam.class)
+    SET_ELEMENT(NodeKindCodes.SET_ELEMENT, SetElementNode.class, SetElementNodeParam.class),
+    IF(NodeKindCodes.IF, IfNode.class, IfNodeParam.class, false),
+    JOIN(NodeKindCodes.JOIN, JoinNode.class, JoinNodeParam.class, true),
+    NOOP(NodeKindCodes.NOOP, NoopNode.class, NoopNodeParam.class)
     ;
 
     private final int code;

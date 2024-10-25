@@ -19,7 +19,7 @@ import org.metavm.util.AssertUtils;
 @EntityType
 public class MapNode extends NodeRT {
 
-    public static MapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static MapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var node = (MapNode) context.getNode(Id.parse(nodeDTO.id()));
         var param = (MapNodeParam) nodeDTO.param();
         var mappingRef = ObjectMappingRef.create(param.mappingRef(), context);

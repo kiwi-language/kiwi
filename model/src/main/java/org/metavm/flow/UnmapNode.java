@@ -19,7 +19,7 @@ import org.metavm.util.AssertUtils;
 @EntityType
 public class UnmapNode extends NodeRT {
 
-    public static UnmapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static UnmapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var node = (UnmapNode) context.getNode(Id.parse(nodeDTO.id()));
         var param = (UnmapNodeParam) nodeDTO.param();
         var mappingRef = ObjectMappingRef.create(param.mappingRef(), context);

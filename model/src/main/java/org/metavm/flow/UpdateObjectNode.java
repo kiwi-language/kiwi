@@ -26,7 +26,7 @@ import java.util.Objects;
 @EntityType
 public class UpdateObjectNode extends NodeRT {
 
-    public static UpdateObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext entityContext) {
+    public static UpdateObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext entityContext) {
         UpdateObjectNodeParam param = nodeDTO.getParam();
         ParsingContext parsingContext = FlowParsingContext.create(scope, prev, entityContext);
         var node = (UpdateObjectNode) entityContext.getNode(Id.parse(nodeDTO.id()));

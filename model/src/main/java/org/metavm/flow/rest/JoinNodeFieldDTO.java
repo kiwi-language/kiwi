@@ -5,15 +5,15 @@ import org.metavm.object.type.rest.dto.FieldDTOBuilder;
 
 import java.util.List;
 
-public record MergeFieldDTO(
+public record JoinNodeFieldDTO(
         String name,
         String fieldId,
         String typeId,
-        List<ConditionalValueDTO> values
-) implements FieldReferringDTO<MergeFieldDTO> {
+        List<JoinedValueDTO> values
+) implements FieldReferringDTO<JoinNodeFieldDTO> {
 
-    public MergeFieldDTO copyWithFieldId(String fieldId) {
-        return new MergeFieldDTO(name, fieldId, typeId, values);
+    public JoinNodeFieldDTO copyWithFieldId(String fieldId) {
+        return new JoinNodeFieldDTO(name, fieldId, typeId, values);
     }
 
     public FieldDTO toFieldDTO() {

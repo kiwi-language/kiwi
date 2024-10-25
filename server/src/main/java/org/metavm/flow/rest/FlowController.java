@@ -1,6 +1,5 @@
 package org.metavm.flow.rest;
 
-import org.springframework.web.bind.annotation.*;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
 import org.metavm.common.Result;
@@ -9,6 +8,7 @@ import org.metavm.flow.FlowManager;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.type.rest.dto.MovePropertyRequest;
 import org.metavm.util.FlowExecutionException;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -77,11 +77,6 @@ public class FlowController {
         return Result.success(flowManager.createTryNode(node));
     }
 
-    @PostMapping("/branch-node")
-    public Result<List<NodeDTO>> createBranchNode(@RequestBody NodeDTO node) {
-        return Result.success(flowManager.createBranchNode(node));
-    }
-
     @GetMapping("/node/{id}")
     public Result<NodeDTO> getNode(@PathVariable("id") String nodeId) {
         return Result.success(flowManager.getNode(nodeId));
@@ -90,23 +85,6 @@ public class FlowController {
     @DeleteMapping("/node/{id}")
     public Result<Void> deleteNode(@PathVariable("id") String nodeId) {
         flowManager.deleteNode(nodeId);
-        return Result.success(null);
-    }
-
-    @PostMapping("/node/branch")
-    public Result<BranchDTO> saveBranch(@RequestBody BranchDTO branchDTO) {
-        if(branchDTO.index() == null || branchDTO.index() == 0L) {
-            return Result.success(flowManager.createBranch(branchDTO));
-        }
-        else {
-            return Result.success(flowManager.updateBranch(branchDTO));
-        }
-    }
-
-    @DeleteMapping("/node/branch/{ownerId}/{id}")
-    public Result<Void> deleteBranch(@PathVariable("ownerId") String ownerId,
-                                     @PathVariable("id") long id) {
-        flowManager.deleteBranch(ownerId, id);
         return Result.success(null);
     }
 

@@ -1,7 +1,6 @@
 package org.metavm.flow;
 
 import org.metavm.entity.IEntityContext;
-import org.metavm.expression.ExpressionTypeMap;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
@@ -18,12 +17,14 @@ public class NodeFactory {
 
     public static final Logger logger = LoggerFactory.getLogger(NodeFactory.class);
 
-    public static NodeRT save(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
+    public static NodeRT save(NodeDTO nodeDTO, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         try (var ignored = context.getProfiler().enter("NodeFactory.save")) {
             NodeKind nodeType = NodeKind.fromCode(nodeDTO.kind());
             Class<? extends NodeRT> klass = nodeType.getNodeClass();
             Method createMethod = tryGetStaticMethod(
-                    klass, "save", NodeDTO.class, NodeRT.class, ScopeRT.class, IEntityContext.class);
+                    klass, "save", NodeDTO.class, NodeRT.class, ScopeRT.class, NodeSavingStage.class, IEntityContext.class);
+            if(createMethod == null)
+                throw new NullPointerException("Failed to find save method for class: " + klass.getName());
             NodeRT prev = nodeDTO.prevId() != null ? context.getNode(nodeDTO.prevId()) : scope.getLastNode();
             NodeRT node = context.getNode(nodeDTO.id());
             boolean isCreate = node == null;
@@ -32,9 +33,9 @@ public class NodeFactory {
                 node.setCode(nodeDTO.code());
             }
             try {
-                node = (NodeRT) ReflectionUtils.invoke(null, createMethod, nodeDTO, prev, scope, context);
-                var prevExprTypes = prev != null ? prev.getExpressionTypes() : ExpressionTypeMap.EMPTY;
-                node.mergeExpressionTypes(prevExprTypes);
+                node = (NodeRT) ReflectionUtils.invoke(null, createMethod, nodeDTO, prev, scope, stage, context);
+                if(prev != null && prev.isSequential())
+                    node.mergeExpressionTypes(prev.getExpressionTypes());
                 if (isCreate)
                     context.bind(node);
                 return node;

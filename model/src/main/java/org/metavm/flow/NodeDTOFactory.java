@@ -79,22 +79,6 @@ public class NodeDTOFactory {
         );
     }
 
-    public static NodeDTO createWhileNode(Long tmpId, String name, ValueDTO condition, List<NodeDTO> nodes, List<LoopFieldDTO> fields) {
-        return new NodeDTO(
-                getStringTmpId(tmpId),
-                null,
-                name,
-                null,
-                NodeKind.WHILE.code(),
-                null,
-                TmpId.of(NncUtils.randomNonNegative()).toString(),
-                new WhileNodeNodeParam(condition, new ScopeDTO(null, setPrevId(nodes)), fields),
-                null,
-                null,
-                null
-        );
-    }
-
     public static NodeDTO createLambda(Long tmpId, String name, List<ParameterDTO> parameters, String returnTypeId, List<NodeDTO> nodes) {
         return new NodeDTO(
                 getStringTmpId(tmpId),
@@ -350,22 +334,6 @@ public class NodeDTOFactory {
         );
     }
 
-    public static NodeDTO createBranchNode(Long tmpId, String name, List<BranchDTO> branches) {
-        return new NodeDTO(
-                getStringTmpId(tmpId),
-                null,
-                name,
-                null,
-                NodeKind.BRANCH.code(),
-                null,
-                null,
-                new BranchNodeParam(false, branches),
-                null,
-                null,
-                null
-        );
-    }
-
     // set the prevId of nodes
     private static List<NodeDTO> setPrevId(List<NodeDTO> nodeDTOs) {
         NodeDTO prev = null;
@@ -376,18 +344,6 @@ public class NodeDTOFactory {
             prev = node;
         }
         return processedNodes;
-    }
-
-    public static BranchDTO createBranch(Long tmpId, long index, ValueDTO condition, boolean preselected, List<NodeDTO> nodes) {
-        return new BranchDTO(
-                getStringTmpId(tmpId),
-                index,
-                null,
-                condition,
-                new ScopeDTO(null, setPrevId(nodes)),
-                preselected,
-                false
-        );
     }
 
     public static NodeDTO createRaiseNodeWithException(Long tmpId, String name, ValueDTO exception) {

@@ -46,36 +46,36 @@ public class Nodes {
             Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>,
             Supplier<Value>> action,
             ScopeRT scope) {
-        var whileOutputType = KlassBuilder.newBuilder("WhileOutput", null)
-                .temporary()
+        var entry = noop(scope.nextNodeName("noop"), scope);
+        var join = join(scope.nextNodeName(name), scope);
+        var indexField = FieldBuilder.newBuilder("index", "index", join.getKlass(), Types.getLongType())
                 .build();
-        var indexField = FieldBuilder.newBuilder("index", "index", whileOutputType, Types.getLongType())
-                .build();
-        var node = new WhileNode(
-                null, name, null, whileOutputType, scope.getLastNode(), scope,
-                Values.constant(Expressions.trueExpression())
+        var ifNode = if_(scope.nextNodeName("if"),
+                Values.expression(Expressions.ge(
+                        Expressions.nodeProperty(join, indexField),
+                        Expressions.arrayLength(getArray.get().getExpression())
+                )), null, scope);
+        var element = new GetElementNode(
+                null, scope.nextNodeName("element"), null, scope.getLastNode(), scope,
+                getArray.get(), Values.nodeProperty(join, indexField)
         );
-        node.setField(indexField, Values.constantLong(0L),
-                Values.expression(
-                        Expressions.add(
-                                Expressions.nodeProperty(node, indexField),
-                                Expressions.constantLong(1L)
+        action.accept(scope, () -> Values.node(element), () -> Values.nodeProperty(join, indexField));
+        var g = goto_(scope.nextNodeName("goto"), scope);
+        g.setTarget(join);
+        new JoinNodeField(
+                indexField, join,
+                Map.of(entry, Values.constantLong(0L), g,
+                        Values.expression(
+                                Expressions.add(
+                                        Expressions.nodeProperty(join, indexField),
+                                        Expressions.constantLong(1L)
+                                )
                         )
                 )
         );
-        node.setCondition(Values.expression(
-                Expressions.lt(
-                        Expressions.nodeProperty(node, indexField),
-                        Expressions.arrayLength(getArray.get().getExpression())
-                )
-        ));
-        var bodyScope = node.getBodyScope();
-        var element = new GetElementNode(
-                null, scope.nextNodeName("Element"), null, bodyScope.getLastNode(), bodyScope,
-                getArray.get(), Values.nodeProperty(node, indexField)
-        );
-        action.accept(bodyScope, () -> Values.node(element), () -> Values.nodeProperty(node, indexField));
-        return node;
+        var exit = noop(scope.nextNodeName("noop"), scope);
+        ifNode.setTarget(exit);
+        return exit;
     }
 
     public static NodeRT listForEach(
@@ -83,11 +83,6 @@ public class Nodes {
             Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>,
             Supplier<Value>> action,
             ScopeRT scope) {
-        var whileOutputType = KlassBuilder.newBuilder("WhileOutput", null)
-                .temporary()
-                .build();
-        var indexField = FieldBuilder.newBuilder("index", "index", whileOutputType, Types.getLongType())
-                .build();
         var list = getArray.get();
         var listClass = ((ClassType) list.getType()).resolve();
         var methodRef = listClass.getMethodByCodeAndParamTypes("size", List.of()).getRef();
@@ -101,34 +96,40 @@ public class Nodes {
                 methodRef,
                 List.of()
         );
-        var node = new WhileNode(
-                null, name, null, whileOutputType, scope.getLastNode(), scope,
-                Values.constant(Expressions.trueExpression())
-        );
-        node.setField(indexField, Values.constantLong(0L),
-                Values.expression(
-                        Expressions.add(
-                                Expressions.nodeProperty(node, indexField),
-                                Expressions.constantLong(1L)
-                        )
-                )
-        );
-        node.setCondition(Values.expression(
-                Expressions.lt(
-                        Expressions.nodeProperty(node, indexField),
+        var entry = noop(scope.nextNodeName("entry"), scope);
+        var join = join(name, scope);
+        var indexField = FieldBuilder.newBuilder("index", "index", join.getKlass(), Types.getLongType())
+                .build();
+        var ifNode = if_(scope.nextNodeName("if"),
+                Values.expression(Expressions.ge(
+                        Expressions.nodeProperty(join, indexField),
                         Expressions.node(size)
-                )
-        ));
-        var bodyScope = node.getBodyScope();
+                )),
+                null,
+                scope
+        );
         var getMethod = listClass.getMethodByCodeAndParamTypes("get", List.of(Types.getLongType()));
         var element = new MethodCallNode(
                 null, scope.nextNodeName("getElement"), null,
-                bodyScope.getLastNode(), bodyScope,
+                scope.getLastNode(), scope,
                 getArray.get(), getMethod.getRef(),
-                List.of(Nodes.argument(getMethod, 0, Values.nodeProperty(node, indexField)))
+                List.of(Nodes.argument(getMethod, 0, Values.nodeProperty(join, indexField)))
         );
-        action.accept(bodyScope, () -> Values.node(element), () -> Values.nodeProperty(node, indexField));
-        return node;
+        action.accept(scope, () -> Values.node(element), () -> Values.nodeProperty(join, indexField));
+        var g = goto_(scope.nextNodeName("goto"), scope);
+        g.setTarget(join);
+        new JoinNodeField(indexField, join, Map.of(
+                entry, Values.constantLong(0L),
+                g, Values.expression(
+                        Expressions.add(
+                                Expressions.nodeProperty(join, indexField),
+                                Expressions.constantLong(1L)
+                        )
+                )
+        ));
+        var exit = noop(scope.nextNodeName("noop"), scope);
+        ifNode.setTarget(exit);
+        return exit;
     }
 
     public static MapNode map(String name, ScopeRT scope, Value source, ObjectMapping mapping) {
@@ -137,32 +138,6 @@ public class Nodes {
 
     public static UnmapNode unmap(String name, ScopeRT scope, Value view, ObjectMapping mapping) {
         return new UnmapNode(null, name, null, scope.getLastNode(), scope, view, mapping.getRef());
-    }
-
-    public static BranchNode branch(String name, @Nullable String code, ScopeRT scope,
-                                    Value condition, Consumer<Branch> thenGenerator, Consumer<Branch> elseGenerator,
-                                    Consumer<MergeNode> processMerge) {
-        return branch(name, code, scope, List.of(condition), List.of(thenGenerator), elseGenerator, processMerge);
-    }
-
-    public static BranchNode branch(String name, @Nullable String code, ScopeRT scope,
-                                    List<Value> conditions, List<Consumer<Branch>> branchGenerators,
-                                    Consumer<Branch> defaultBranchGenerator,
-                                    Consumer<MergeNode> processMerge) {
-        var node = new BranchNode(null, name, code, false, scope.getLastNode(), scope);
-        NncUtils.biForEach(conditions, branchGenerators, (cond, generator) -> {
-            var thenBranch = node.addBranch(cond);
-            generator.accept(thenBranch);
-        });
-        var elseBranch = node.addDefaultBranch();
-        defaultBranchGenerator.accept(elseBranch);
-        var mergeOutput = KlassBuilder.newBuilder("MergeOutput", null).temporary().build();
-        var mergeNode = new MergeNode(
-                null, scope.nextNodeName("merge"), null,
-                node, mergeOutput, scope
-        );
-        processMerge.accept(mergeNode);
-        return node;
     }
 
     public static CastNode castNode(String name, Type type, ScopeRT scope, Value value) {
@@ -193,6 +168,34 @@ public class Nodes {
 
     public static InputNode input(Flow flow) {
         return input(flow, "input", null);
+    }
+
+    public static IfNode if_(String name, Value condition, @Nullable NodeRT target, ScopeRT scope) {
+        return new IfNode(
+                null,
+                name,
+                null,
+                scope.getLastNode(),
+                scope,
+                condition,
+                target
+        );
+    }
+
+    public static JoinNode join(String name, ScopeRT scope) {
+        var klass = KlassBuilder.newBuilder("MergeOutput", null).temporary().build();
+        return new JoinNode(
+                null,
+                name,
+                null,
+                klass,
+                scope.getLastNode(),
+                scope
+        );
+    }
+
+    public static GotoNode goto_(String name, ScopeRT scope) {
+        return new GotoNode(null, name, null, scope.getLastNode(), scope);
     }
 
     public static InputNode input(Flow flow, String name, String code) {
@@ -260,22 +263,14 @@ public class Nodes {
         );
     }
 
-    public static CheckNode check(String name, Value condition, BranchNode exit, ScopeRT scope) {
-        return new CheckNode(
-                null,
-                name,
-                null,
-                scope.getLastNode(),
-                scope,
-                condition,
-                exit
-        );
-    }
-
     public static NonNullNode nonNull(String name, Value value, ScopeRT scope) {
         return new NonNullNode(
                 null, name, null, Types.getNonNullType(value.getType()), scope.getLastNode(), scope, value
         );
+    }
+
+    public static NoopNode noop(String name, ScopeRT scope) {
+        return new NoopNode(null, name,null, scope.getLastNode(), scope);
     }
 
 }

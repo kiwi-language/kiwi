@@ -22,7 +22,7 @@ import java.util.Objects;
 @EntityType
 public class CastNode extends NodeRT {
 
-    public static CastNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static CastNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var param = (CastNodeParam) nodeDTO.param();
         var node = (CastNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);

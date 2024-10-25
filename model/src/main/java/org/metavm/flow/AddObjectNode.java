@@ -23,7 +23,7 @@ import java.util.function.Function;
 @EntityType
 public class AddObjectNode extends ScopeNode implements NewNode {
 
-    public static AddObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static AddObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         AddObjectNodeParam param = nodeDTO.getParam();
         var klass = ((ClassType) TypeParser.parseType(param.getType(), context)).resolve();
         var parsingContext = FlowParsingContext.create(scope, prev, context);

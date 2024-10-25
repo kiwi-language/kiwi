@@ -16,7 +16,7 @@ import javax.annotation.Nullable;
 @EntityType
 public class CopyNode extends NodeRT {
 
-    public static CopyNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static CopyNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         CopyNodeParam param = nodeDTO.getParam();
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var source = ValueFactory.create(param.source(), parsingContext);

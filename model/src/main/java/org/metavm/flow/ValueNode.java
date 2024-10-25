@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 @EntityType
 public class ValueNode extends NodeRT {
 
-    public static ValueNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static ValueNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         ValueNodeParam param = nodeDTO.getParam();
         var node = (ValueNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);

@@ -22,7 +22,7 @@ import java.util.Objects;
 @EntityType
 public class FunctionCallNode extends CallNode {
 
-    public static FunctionCallNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static FunctionCallNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var param = (FunctionCallNodeParam) nodeDTO.param();
         var node = (FunctionCallNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);
@@ -83,6 +83,7 @@ public class FunctionCallNode extends CallNode {
     public void setFlowRef(FlowRef flowRef) {
         if(flowRef instanceof FunctionRef)
             super.setFlowRef(flowRef);
-        throw new InternalException("Invalid sub flow for function call node: " + flowRef);
+        else
+            throw new InternalException("Invalid sub flow for function call node: " + flowRef);
     }
 }

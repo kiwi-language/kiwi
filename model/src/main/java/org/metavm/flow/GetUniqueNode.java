@@ -24,7 +24,7 @@ import java.util.List;
 @EntityType
 public class GetUniqueNode extends NodeRT {
 
-    public static GetUniqueNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static GetUniqueNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         GetUniqueNodeParam param = nodeDTO.getParam();
         Index index = context.getEntity(Index.class, Id.parse(param.indexId()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);

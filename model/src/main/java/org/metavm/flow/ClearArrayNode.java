@@ -17,7 +17,7 @@ import javax.annotation.Nullable;
 @EntityType
 public class ClearArrayNode extends NodeRT {
 
-    public static ClearArrayNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static ClearArrayNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var param = (ClearArrayNodeParam) nodeDTO.param();
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var array = ValueFactory.create(param.array(), parsingContext);

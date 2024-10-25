@@ -36,6 +36,10 @@ public class Values {
         return constant(Expressions.trueExpression());
     }
 
+    public static Value constantFalse() {
+        return constant(Expressions.falseExpression());
+    }
+
     public static Value reference(Expression expression) {
         return new DynamicValue(ValueKind.REFERENCE, expression);
     }

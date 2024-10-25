@@ -1,18 +1,16 @@
 package org.metavm.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.NodeExpression;
 import org.metavm.flow.rest.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
-import org.metavm.object.instance.rest.ExpressionFieldValue;
-import org.metavm.object.instance.rest.PrimitiveFieldValue;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
@@ -26,9 +24,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @Component
+@Slf4j
 public class FlowManager extends EntityContextFactoryAware {
 
     private TypeManager typeManager;
@@ -62,7 +63,7 @@ public class FlowManager extends EntityContextFactoryAware {
     public List<NodeDTO> createTryNode(NodeDTO nodeDTO) {
         try (var context = newContext(); var serContext = SerializeContext.enter()) {
             var scope = context.getScope(nodeDTO.scopeId());
-            TryNode tryNode = (TryNode) createNode(nodeDTO, scope, context);
+            TryNode tryNode = (TryNode) createNode(nodeDTO, scope, NodeSavingStage.INIT, context);
             TryEndNode tryEndNode = new TryEndNode(null, tryNode.getName() + " end", null,
                     KlassBuilder.newBuilder("TryEndOutput", "TryEndOutput").temporary().build(),
                     tryNode, scope);
@@ -74,23 +75,6 @@ public class FlowManager extends EntityContextFactoryAware {
             context.finish();
             try (var ignored = SerializeContext.enter()) {
                 return List.of(tryNode.toDTO(serContext), tryEndNode.toDTO(serContext));
-            }
-        }
-    }
-
-    @Transactional
-    public List<NodeDTO> createBranchNode(NodeDTO nodeDTO) {
-        try (var context = newContext(); var serContext = SerializeContext.enter()) {
-            var scope = context.getScope(nodeDTO.scopeId());
-            BranchNode branchNode = (BranchNode) createNode(nodeDTO, scope, context);
-            MergeNode mergeNode = new MergeNode(null, branchNode.getName() + "mege", null,
-                    branchNode, KlassBuilder.newBuilder("MergeOutput", "MergeOutput").temporary().build(),
-                    scope);
-            context.bind(mergeNode);
-            afterFlowChange(scope.getFlow(), context);
-            context.finish();
-            try (var ignored = SerializeContext.enter()) {
-                return List.of(branchNode.toDTO(serContext), mergeNode.toDTO(serContext));
             }
         }
     }
@@ -274,15 +258,18 @@ public class FlowManager extends EntityContextFactoryAware {
         }
         flow.clearNodes();
         for (NodeDTO nodeDTO : flowDTO.rootScope().nodes()) {
-            saveNode(nodeDTO, flow.getRootScope(), context);
+            saveNode(nodeDTO, flow.getRootScope(), NodeSavingStage.INIT, context);
+        }
+        for (NodeDTO nodeDTO : flowDTO.rootScope().nodes()) {
+            saveNode(nodeDTO, flow.getRootScope(), NodeSavingStage.FINALIZE, context);
         }
     }
 
-    private NodeRT saveNode(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
+    private NodeRT saveNode(NodeDTO nodeDTO, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         if (nodeDTO.id() == null || Id.parse(nodeDTO.id()).tryGetTreeId() == null) {
-            return createNode(nodeDTO, scope, context);
+            return createNode(nodeDTO, scope, stage, context);
         } else {
-            return updateNode(nodeDTO, context);
+            return updateNode(nodeDTO, stage, context);
         }
     }
 
@@ -301,6 +288,7 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     public void saveContent(FlowDTO flowDTO, Flow flow, IEntityContext context) {
+//        log.debug("Saving content of flow: {}", flow.getQualifiedName());
         try (var ignored = context.getProfiler().enter("FlowManager.saveContent")) {
             if (DebugEnv.debugging)
                 DebugEnv.logger.info("FlowManager.saveContent flow: {}", flow.getQualifiedName());
@@ -384,7 +372,7 @@ public class FlowManager extends EntityContextFactoryAware {
             if (flow == null) {
                 throw BusinessException.flowNotFound(nodeDTO.flowId());
             }
-            var node = createNode(nodeDTO, context.getScope(Id.parse(nodeDTO.scopeId())), context);
+            var node = createNode(nodeDTO, context.getScope(Id.parse(nodeDTO.scopeId())), NodeSavingStage.INIT, context);
             afterFlowChange(flow, context);
             context.finish();
             return node.toDTO(serContext);
@@ -398,43 +386,20 @@ public class FlowManager extends EntityContextFactoryAware {
         }
     }
 
-    private NodeRT createNode(NodeDTO nodeDTO, ScopeRT scope, IEntityContext context) {
+    private NodeRT createNode(NodeDTO nodeDTO, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         try (var ignored = context.getProfiler().enter("createNode")) {
             nodeDTO = beforeNodeChange(nodeDTO, null, scope, context);
             try (var ignored1 = context.getProfiler().enter("Flow.analyze", true)) {
                 scope.getFlow().analyze();
             }
-            var node = NodeFactory.save(nodeDTO, scope, context);
-            afterNodeChange(nodeDTO, node, context);
+            var node = NodeFactory.save(nodeDTO, scope, stage, context);
+            afterNodeChange(nodeDTO, node, stage, context);
 //            Flows.retransformFlowIfRequired(scope.getFlow(), context);
 //            try (var ignored1 = context.getProfiler().enter("Flow.check")) {
 //                node.getFlow().analyze();
 //                node.getFlow().check();
 //            }
             return node;
-        }
-    }
-
-    private void saveBranchNodeContent(NodeDTO nodeDTO, BranchNode branchNode, IEntityContext context) {
-        BranchNodeParam param = nodeDTO.getParam();
-        if (param.branches() != null) {
-            for (BranchDTO branchDTO : param.branches()) {
-                var branch = branchNode.getBranchByIndex(branchDTO.index());
-                if (branchDTO.scope() != null && branchDTO.scope().nodes() != null) {
-                    Set<String> nodeIds = new HashSet<>();
-                    for (NodeDTO n : branchDTO.scope().nodes()) {
-                        saveNode(n, branch.getScope(), context);
-                        if (n.id() != null) {
-                            nodeIds.add(n.id());
-                        }
-                    }
-                    for (NodeRT node : branch.getScope().getNodes()) {
-                        if (node.tryGetId() != null && !nodeIds.contains(node.getStringId())) {
-                            deleteNode(node, context);
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -449,7 +414,7 @@ public class FlowManager extends EntityContextFactoryAware {
             var bodyScope = node.getBodyScope();
             bodyScope.clearNodes();
             NncUtils.map(param.getBodyScope().nodes(),
-                    childNodeDTO -> saveNode(childNodeDTO, bodyScope, context));
+                    childNodeDTO -> saveNode(childNodeDTO, bodyScope, NodeSavingStage.INIT, context));
         }
     }
 
@@ -463,14 +428,14 @@ public class FlowManager extends EntityContextFactoryAware {
     @Transactional
     public NodeDTO updateNode(NodeDTO nodeDTO) {
         try (var context = newContext(); var serContext = SerializeContext.enter()) {
-            var node = updateNode(nodeDTO, context);
+            var node = updateNode(nodeDTO, NodeSavingStage.INIT, context);
             afterFlowChange(node.getFlow(), context);
             context.finish();
             return node.toDTO(serContext);
         }
     }
 
-    NodeRT updateNode(NodeDTO nodeDTO, IEntityContext context) {
+    NodeRT updateNode(NodeDTO nodeDTO, NodeSavingStage stage, IEntityContext context) {
         nodeDTO.ensureIdSet();
         NodeRT node = context.getEntity(NodeRT.class, Id.parse(nodeDTO.id()));
         if (node == null) {
@@ -479,8 +444,8 @@ public class FlowManager extends EntityContextFactoryAware {
         var scope = context.getScope(Id.parse(nodeDTO.scopeId()));
         scope.getFlow().analyze();
         nodeDTO = beforeNodeChange(nodeDTO, node, scope, context);
-        NodeFactory.save(nodeDTO, scope, context);
-        afterNodeChange(nodeDTO, node, context);
+        NodeFactory.save(nodeDTO, scope, stage, context);
+        afterNodeChange(nodeDTO, node, stage, context);
 //        Flows.retransformFlowIfRequired(scope.getFlow(), context);
 //        try (var ignored = context.getProfiler().enter("Flow.check")) {
 //            node.getFlow().check();
@@ -503,52 +468,11 @@ public class FlowManager extends EntityContextFactoryAware {
     private NodeDTO preprocess(NodeDTO nodeDTO, NodeRT node, ScopeRT scope, IEntityContext context) {
         if (nodeDTO.kind() == NodeKind.INPUT.code())
             return preprocessInputNode(nodeDTO, (InputNode) node);
-        if (nodeDTO.kind() == NodeKind.FOREACH.code())
-            return preprocessForeachNode(nodeDTO, node, scope, context);
-        if (nodeDTO.kind() == NodeKind.BRANCH.code())
-            return preprocessBranchNode(nodeDTO, node);
-        if (nodeDTO.kind() == NodeKind.WHILE.code())
-            return preprocessWhileNode(nodeDTO, (WhileNode) node);
-        if (nodeDTO.kind() == NodeKind.MERGE.code())
-            return preprocessMergeNode(nodeDTO, (MergeNode) node);
+        if (nodeDTO.kind() == NodeKind.JOIN.code())
+            return preprocessJoinNode(nodeDTO, (JoinNode) node);
         if (nodeDTO.kind() == NodeKind.TRY_END.code())
             return preprocessTryEndNode(nodeDTO, (TryEndNode) node);
         return nodeDTO;
-    }
-
-    private NodeDTO preprocessBranchNode(NodeDTO nodeDTO, NodeRT node) {
-        BranchNodeParam param = nodeDTO.getParam();
-        if (node == null && NncUtils.isEmpty(param.branches())) {
-            List<BranchDTO> branches = List.of(
-                    new BranchDTO(
-                            null, 1L, null,
-                            new ValueDTO(
-                                    ValueKind.CONSTANT.code(),
-                                    new PrimitiveFieldValue(
-                                            null,
-                                            PrimitiveKind.BOOLEAN.code(),
-                                            true
-                                    )
-                            ),
-                            null, false, false
-                    ),
-                    new BranchDTO(
-                            null, 10000L, null,
-                            new ValueDTO(
-                                    ValueKind.CONSTANT.code(),
-                                    new PrimitiveFieldValue(
-                                            null,
-                                            PrimitiveKind.BOOLEAN.code(),
-                                            true
-                                    )
-                            ),
-                            null, true, false
-                    )
-            );
-            return nodeDTO.copyWithParam(new BranchNodeParam(param.inclusive(), branches));
-        } else {
-            return nodeDTO;
-        }
     }
 
     private NodeDTO preprocessInputNode(NodeDTO nodeDTO, @Nullable InputNode node) {
@@ -569,13 +493,13 @@ public class FlowManager extends EntityContextFactoryAware {
                 klassDTO);
     }
 
-    private NodeDTO preprocessMergeNode(NodeDTO nodeDTO, MergeNode node) {
-        MergeNodeParam param = nodeDTO.getParam();
-        var mergeFields = initializeFieldRefs(param.fields());
-        List<FieldDTO> fields = NncUtils.map(mergeFields, MergeFieldDTO::toFieldDTO);
-        var outputType = createNodeTypeDTO("MergeOutput",
-                NncUtils.get(node, MergeNode::getKlass), fields);
-        return nodeDTO.copyWithParamAndType(new MergeNodeParam(mergeFields), outputType);
+    private NodeDTO preprocessJoinNode(NodeDTO nodeDTO, JoinNode node) {
+        JoinNodeParam param = nodeDTO.getParam();
+        var joinFields = initializeFieldRefs(param.fields());
+        List<FieldDTO> fields = NncUtils.map(joinFields, JoinNodeFieldDTO::toFieldDTO);
+        var outputType = createNodeTypeDTO("JoinOutput",
+                NncUtils.get(node, JoinNode::getKlass), fields);
+        return nodeDTO.copyWithParamAndType(new JoinNodeParam(param.sourceIds(), joinFields), outputType);
     }
 
     private NodeDTO preprocessTryEndNode(NodeDTO nodeDTO, TryEndNode node) {
@@ -597,17 +521,6 @@ public class FlowManager extends EntityContextFactoryAware {
         var outputTypeDTO = createNodeTypeDTO("TryEndOutput",
                 NncUtils.get(node, TryEndNode::getKlass), fieldDTOs);
         return nodeDTO.copyWithParamAndType(new TryEndNodeParam(tryEndFields), outputTypeDTO);
-    }
-
-    private NodeDTO preprocessWhileNode(NodeDTO nodeDTO, WhileNode node) {
-        WhileNodeNodeParam param = nodeDTO.getParam();
-        var loopFields = initializeFieldRefs(param.getFields());
-        List<FieldDTO> fields = new ArrayList<>(NncUtils.map(loopFields, LoopFieldDTO::toFieldDTO));
-        var outputType = createNodeTypeDTO("WhileOutput",
-                NncUtils.get(node, WhileNode::getKlass), fields);
-        return nodeDTO.copyWithParamAndType(
-                new WhileNodeNodeParam(param.getCondition(), param.getBodyScope(), loopFields),
-                outputType);
     }
 
     private <T extends FieldReferringDTO<T>> List<T> initializeFieldRefs(List<T> fields) {
@@ -650,81 +563,12 @@ public class FlowManager extends EntityContextFactoryAware {
         }
     }
 
-    private NodeDTO preprocessForeachNode(NodeDTO nodeDTO, @Nullable NodeRT node, ScopeRT scope, IEntityContext context) {
-        ForeachNodeNodeParam param = nodeDTO.getParam();
-        @Nullable var currentType = (ClassType) NncUtils.get(node, NodeRT::getType);
-        var currentKlass = NncUtils.get(currentType, ClassType::resolve);
-        var loopFields = initializeFieldRefs(param.getFields());
-        List<FieldDTO> fields = new ArrayList<>(NncUtils.map(loopFields, LoopFieldDTO::toFieldDTO));
-        NodeRT prev = NncUtils.get(nodeDTO.prevId(), id -> context.getNode(Id.parse(id)));
-        var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var arrayValue = ValueFactory.create(param.getArray(), parsingContext);
-        Field arrayField, indexField;
-        if (currentKlass != null && (arrayField = currentKlass.findFieldByCode("array")) != null) {
-            fields.add(arrayField.toDTO());
-        } else {
-            fields.add(
-                    FieldDTOBuilder.newBuilder("array", arrayValue.getType().toExpression())
-                            .code("array")
-                            .readonly(true)
-                            .id(TmpId.of(NncUtils.randomNonNegative()).toString())
-                            .build()
-            );
-        }
-        if (currentKlass != null && (indexField = currentKlass.findFieldByCode("index")) != null) {
-            fields.add(indexField.toDTO());
-        } else {
-            fields.add(
-                    FieldDTOBuilder
-                            .newBuilder("index", "long")
-                            .code("index")
-                            .id(TmpId.of(NncUtils.randomNonNegative()).toString())
-                            .build()
-            );
-        }
-        KlassDTO type = createNodeTypeDTO("ForeachOutput", currentKlass, fields);
-        ScopeDTO loopScope;
-        if (param.getBodyScope() == null) {
-            var elementType = ((ArrayType) context.getType(arrayValue.getType().getId())).getElementType();
-            NodeDTO elementNode = new NodeDTO(
-                    null,
-                    null,
-                    "element" + NncUtils.randomNonNegative(),
-                    null,
-                    NodeKind.VALUE.code(),
-                    null,
-                    elementType.getStringId(),
-                    new ValueNodeParam(
-                            new ValueDTO(
-                                    ValueKind.EXPRESSION.code(),
-                                    new ExpressionFieldValue(
-                                            nodeDTO.name() + ".array[" + nodeDTO.name() + ".index]"
-                                    )
-                            )
-                    ),
-                    null,
-                    null,
-                    null
-            );
-            loopScope = new ScopeDTO(TmpId.random().toString(), List.of(elementNode));
-        } else {
-            loopScope = param.getBodyScope();
-        }
-
-        return nodeDTO.copyWithParamAndType(
-                new ForeachNodeNodeParam(param.getArray(), param.getCondition(), loopFields, loopScope),
-                type
-        );
-    }
-
-    private void afterNodeChange(NodeDTO nodeDTO, NodeRT node, IEntityContext context) {
+    private void afterNodeChange(NodeDTO nodeDTO, NodeRT node, NodeSavingStage stage, IEntityContext context) {
         try (var ignored = context.getProfiler().enter("afterNodeChange")) {
             if (node instanceof InputNode inputNode)
                 updateParameters(inputNode, context);
-            if (node instanceof BranchNode branchNode)
-                saveBranchNodeContent(nodeDTO, branchNode, context);
             if (node instanceof ScopeNode scopeNode)
-                saveScopeNodeContent(nodeDTO, scopeNode, context);
+                saveScopeNodeContent(nodeDTO, scopeNode, stage, context);
             if (node instanceof LoopNode loopNode)
                 updateLoopFields(nodeDTO, loopNode, context);
             if (node instanceof AddObjectNode addObjectNode)
@@ -770,13 +614,13 @@ public class FlowManager extends EntityContextFactoryAware {
         }
     }
 
-    private void saveScopeNodeContent(NodeDTO nodeDTO, ScopeNode scopeNode, IEntityContext context) {
+    private void saveScopeNodeContent(NodeDTO nodeDTO, ScopeNode scopeNode, NodeSavingStage stage, IEntityContext context) {
         ScopeNodeParam param = nodeDTO.getParam();
         if (param.getBodyScope() != null && param.getBodyScope().nodes() != null) {
             scopeNode.getBodyScope().setNodes(
                     NncUtils.map(
                             param.getBodyScope().nodes(),
-                            node -> saveNode(node, scopeNode.getBodyScope(), context)
+                            node -> saveNode(node, scopeNode.getBodyScope(), stage, context)
                     )
             );
         }
@@ -827,59 +671,6 @@ public class FlowManager extends EntityContextFactoryAware {
                     NncUtils.map(flowPage.data(), Method::toSummaryDTO),
                     flowPage.total()
             );
-        }
-    }
-
-    @Transactional
-    public BranchDTO createBranch(BranchDTO branchDTO) {
-        try (var context = newContext(); var serContext = SerializeContext.enter()) {
-            NodeRT nodeRT = context.getEntity(NodeRT.class, Id.parse(branchDTO.ownerId()));
-            if (nodeRT instanceof BranchNode branchNode) {
-                Branch branch = branchNode.addBranch(branchDTO, context);
-                context.finish();
-                return branch.toDTO(true, serContext);
-            } else {
-                throw BusinessException.invalidParams("node " + branchDTO.ownerId() + " is not a branch node");
-            }
-        }
-    }
-
-    @Transactional
-    public BranchDTO updateBranch(BranchDTO branchDTO) {
-        NncUtils.requireNonNull(branchDTO.index(), "branch index required");
-        try (var context = newContext(); var serContext = SerializeContext.enter()) {
-            NodeRT owner = context.getEntity(NodeRT.class, branchDTO.ownerId());
-            if (owner == null) {
-                throw BusinessException.nodeNotFound(branchDTO.ownerId());
-            }
-            if (owner instanceof BranchNode branchNode) {
-                Branch branch = branchNode.getBranchByIndex(branchDTO.index());
-                if (branch == null) {
-                    throw BusinessException.branchNotFound(branchDTO.index());
-                }
-                branch.update(branchDTO, context);
-                context.finish();
-                return branch.toDTO(true, serContext);
-            } else {
-                throw BusinessException.invalidParams("object " + branchDTO.ownerId() + " is not a branch");
-            }
-        }
-    }
-
-    @Transactional
-    public void deleteBranch(String ownerId, long branchId) {
-        try (var context = newContext()) {
-            NodeRT owner = context.getEntity(NodeRT.class, ownerId);
-            if (owner instanceof BranchNode branchNode) {
-                Branch branch = branchNode.getBranchByIndex(branchId);
-                if (branch == null) {
-                    throw BusinessException.branchNotFound(branchId);
-                }
-                context.remove(branch);
-                context.finish();
-            } else {
-                throw BusinessException.invalidParams("Object " + ownerId + " is not a branch node");
-            }
         }
     }
 

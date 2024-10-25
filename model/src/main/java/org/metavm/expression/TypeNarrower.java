@@ -1,5 +1,6 @@
 package org.metavm.expression;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.type.NeverType;
 import org.metavm.object.type.Type;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+@Slf4j
 public class TypeNarrower {
 
     private final Function<Expression,Type> getTypeFunc;

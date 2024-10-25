@@ -105,6 +105,13 @@ public class Assembler {
         );
     }
 
+    private Expression parseExpression(AssemblyParser.ExpressionContext expression, ParsingContext parsingContext) {
+        return parseExpression(
+                tokenStream.getText(expression.getSourceInterval()),
+                parsingContext
+        );
+    }
+
     private Expression parseExpression(String expression, ParsingContext parsingContext) {
         var replaced = expression.replace("==", "=")
                 .replace("&&", "and")
@@ -1182,22 +1189,26 @@ public class Assembler {
                     );
                 }
                 if (statement.IF() != null) {
-                    var branchNode = new BranchNode(
-                            NncUtils.randomNonNegative(),
-                            name,
+                    var ifNode = Nodes.if_(
+                            nextNodeName("if"),
+                            Values.expression(
+                                    Expressions.not(parseExpression(statement.parExpression().expression(), parsingContext))
+                            ),
                             null,
-                            false,
-                            prevNode,
                             scope
                     );
-                    var thenBranch = branchNode.addBranch(parseValue(statement.parExpression().expression(), parsingContext));
-                    parseBlockNodes(statement.block(0), thenBranch.getScope());
-                    var elseBranch = branchNode.addDefaultBranch();
+                    parseBlockNodes(statement.block(0), scope);
+                    var g = Nodes.goto_(nextNodeName("goto"), scope);
+                    var join1 = Nodes.join(nextNodeName("join"), scope);
+                    ifNode.setTarget(join1);
                     if (statement.ELSE() != null)
-                        parseBlockNodes(statement.block(1), elseBranch.getScope());
-                    return branchNode;
+                        parseBlockNodes(statement.block(1), scope);
+                    var join2 = Nodes.join(nextNodeName(name), scope);
+                    g.setTarget(join2);
+                    return join2;
                 }
                 if (statement.FOR() != null) {
+                    var entryNode = Objects.requireNonNullElseGet(prevNode, () -> Objects.requireNonNull(scope.getOwner()));
                     var fieldTypes = new HashMap<String, Type>();
                     var initialValues = new HashMap<String, Value>();
                     var updatedValues = new HashMap<String, Value>();
@@ -1210,48 +1221,46 @@ public class Assembler {
                             initialValues.put(fieldName, parseValue(decl.expression(), parsingContext));
                         }
                     }
-                    var loopKlass = KlassBuilder.newBuilder("loop" + NncUtils.randomNonNegative(), null)
-                            .tmpId(NncUtils.randomNonNegative())
-                            .temporary()
-                            .build();
+                    var joinNode = Nodes.join(name, scope);
+                    var loopKlass = joinNode.getKlass();
                     fieldTypes.forEach((fieldName, fieldType) ->
                             FieldBuilder.newBuilder(fieldName, fieldName, loopKlass, fieldType).build()
                     );
-                    var whileNode = new WhileNode(
-                            NncUtils.randomNonNegative(),
-                            name,
-                            null,
-                            loopKlass,
-                            prevNode,
-                            scope,
-                            Values.constantBoolean(true)
-                    );
-                    parseBlockNodes(statement.block(0), whileNode.getBodyScope());
+                    var ifNode = Nodes.if_(nextNodeName("if"), Values.constantTrue(), null, scope);
+                    parseBlockNodes(statement.block(0), scope);
+                    var g = Nodes.goto_(nextNodeName("goto"), scope);
+                    g.setTarget(joinNode);
+                    var exit = Nodes.noop(nextNodeName("exit"), scope);
+                    ifNode.setTarget(exit);
                     var loopParsingContext = new FlowParsingContext(
                             id -> {
                                 throw new UnsupportedOperationException();
                             },
                             new AsmTypeDefProvider(getCompilationUnit()),
-                            whileNode.getBodyScope(),
-                            whileNode.getBodyScope().getLastNode()
+                            scope,
+                            scope.getLastNode()
                     );
-                    whileNode.setCondition(parseValue(forCtl.expression(), loopParsingContext));
+                    ifNode.setCondition(
+                            Values.expression(Expressions.not(parseExpression(forCtl.expression(), loopParsingContext)))
+                    );
                     if (loopVarDecls != null) {
                         for (var update : forCtl.loopVariableUpdates().loopVariableUpdate()) {
                             updatedValues.put(update.IDENTIFIER().getText(), parseValue(update.expression(), loopParsingContext));
                         }
                     }
-                    fieldTypes.keySet().forEach(fieldName -> whileNode.setField(
+                    fieldTypes.keySet().forEach(fieldName -> new JoinNodeField(
                             loopKlass.getFieldByCode(fieldName),
-                            requireNonNull(initialValues.get(fieldName)),
-                            requireNonNull(updatedValues.get(fieldName))
+                            joinNode,
+                            Map.of(
+                               entryNode, requireNonNull(initialValues.get(fieldName)),
+                                    g, requireNonNull(updatedValues.get(fieldName))
+                            )
                     ));
                     if (DebugEnv.debugging) {
-                        DebugEnv.logger.info("loopFields: {}", NncUtils.toJSONString(whileNode.getFields()));
+                        DebugEnv.logger.info("loopFields: {}", NncUtils.toJSONString(joinNode.getFields()));
                         DebugEnv.logger.info("loopCond: {}", NncUtils.toJSONString(parseValue(forCtl.expression(), parsingContext)));
                     }
-
-                    return whileNode;
+                    return exit;
                 }
                 if (statement.lambda() != null) {
                     var lambda = statement.lambda();
@@ -1386,7 +1395,7 @@ public class Assembler {
         }
 
         private Type getExpressionType(Expression expression, ScopeRT scope) {
-            var exprTypes = scope.getLastNode() != null ? scope.getLastNode().getExpressionTypes() :
+            var exprTypes = scope.getLastNode() != null ? scope.getLastNode().getNextExpressionTypes() :
                     scope.getExpressionTypes();
             return exprTypes.getType(expression);
         }

@@ -26,6 +26,11 @@ public class ExpressionParserTest extends TestCase {
         var expr = parser.parse(Types.getAnyType());
     }
 
+    public void testNotInstanceOf() {
+        var parser = new ExpressionParser("!($13aed34c instanceof $$028ea80100c002:115)", new MyParsingContext());
+        var expr = parser.parse(Types.getAnyType());
+    }
+
     public void testTypeLiteral() {
         var parser = new ExpressionParser("(any|null)[].class", new MyParsingContext());
         var expr = (TypeLiteralExpression) parser.parse(Types.getAnyType());

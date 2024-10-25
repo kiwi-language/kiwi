@@ -12,12 +12,12 @@ import org.metavm.object.type.generic.CompositeTypeListener;
 import org.metavm.util.CompilerConfig;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
+import org.metavm.util.TriConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.BiConsumer;
 
 import static java.util.Objects.requireNonNull;
 
@@ -244,65 +244,65 @@ public class Generator extends CodeGenVisitor {
         if (statement.getCatchSections().length > 0) {
             Set<QualifiedName> catchModified = new HashSet<>();
             Set<QualifiedName> catchLiveOut = null;
-            var branchNode = builder().createBranchNode(false);
-            builder().enterCondSection(branchNode);
+            var entryNode = builder().createNoop();
+            builder().enterCondSection(entryNode);
+            IfNode lastIfNode = null;
+            long branchIdx = 0;
+            var exits = new HashMap<Long, NodeRT>();
             for (PsiCatchSection catchSection : statement.getCatchSections()) {
                 var catchBlock = NncUtils.requireNonNull(catchSection.getCatchBlock());
                 catchModified.addAll(requireNonNull(catchSection.getUserData(Keys.BODY_SCOPE)).getModified());
                 if (catchLiveOut == null) {
                     catchLiveOut = getBlockLiveOut(catchBlock);
                 }
-                var branch = branchNode.addBranch(
-                        Values.expression(
-                                createExceptionCheck(exceptionExpr, catchSection.getCatchType())
-                        )
-                );
+                var cond = createExceptionCheck(exceptionExpr, catchSection.getCatchType());
+                builder().enterBranch(entryNode, branchIdx, Values.expression(cond));
+                var ifNode = builder().createIf(Expressions.not(cond), null);
+                if(lastIfNode != null)
+                    lastIfNode.setTarget(ifNode);
+                lastIfNode = ifNode;
                 var param = requireNonNull(catchSection.getParameter());
                 builder().defineVariable(param.getName());
                 builder().setVariable(param.getName(), exceptionExpr);
-                builder().enterBranch(branch);
                 catchBlock.accept(this);
-                builder().exitBranch();
+                exits.put(branchIdx++, builder().createGoto(null));
             }
-            var defaultBranch = branchNode.addDefaultBranch();
-            builder().enterBranch(defaultBranch);
-            builder().exitBranch();
+            builder().enterBranch(entryNode, branchIdx, Values.constantTrue());
+            var defaultExit = builder().createNoop();
+            Objects.requireNonNull(lastIfNode).setTarget(defaultExit);
+            exits.put(branchIdx, defaultExit);
             List<QualifiedName> catchOutputVars = catchLiveOut == null ? List.of()
                     : new ArrayList<>(NncUtils.intersect(catchModified, catchLiveOut));
-            var mergeNode = builder().createMerge();
-            exitCondSection(mergeNode, catchOutputVars);
-
+            var joinNode = builder().createJoin();
+            for (NodeRT exit : exits.values()) {
+                if(exit instanceof GotoNode g)
+                    g.setTarget(joinNode);
+            }
+            exitCondSection(entryNode, joinNode, exits, catchOutputVars);
             var exceptionField = FieldBuilder.newBuilder("exception", "exception",
-                    mergeNode.getKlass(), Types.getNullableThrowableType()).build();
+                    joinNode.getKlass(), Types.getNullableThrowableType()).build();
 
             final var exceptionExprFinal = exceptionExpr;
-            new MergeNodeField(
+            new JoinNodeField(
                     exceptionField,
-                    mergeNode,
+                    joinNode,
                     NncUtils.toMap(
-                            branchNode.getBranches(),
+                            exits.values(),
                             java.util.function.Function.identity(),
-                            branch ->
+                            exit ->
                                     Values.expression(
-                                            branch.isPreselected() ? exceptionExprFinal : Expressions.nullExpression()
+                                            exit == defaultExit ? exceptionExprFinal : Expressions.nullExpression()
                                     )
                     )
             );
-            exceptionExpr = new PropertyExpression(new NodeExpression(mergeNode), exceptionField.getRef());
+            exceptionExpr = new PropertyExpression(new NodeExpression(joinNode), exceptionField.getRef());
         }
         if (statement.getFinallyBlock() != null) {
             statement.getFinallyBlock().accept(this);
         }
-        var exceptBranchNode = builder().createBranchNode(false);
-        var exceptionBranch = exceptBranchNode.addBranch(
-                Values.expression(new UnaryExpression(UnaryOperator.IS_NOT_NULL, exceptionExpr))
-        );
-        exceptBranchNode.addDefaultBranch();
-        builder().enterCondSection(exceptBranchNode);
-        builder().enterBranch(exceptionBranch);
+        var ifNode = builder().createIf(Expressions.eq(exceptionExpr, Expressions.nullExpression()), null);
         builder().createRaise(exceptionExpr);
-        builder().exitBranch();
-        builder().createMerge();
+        ifNode.setTarget(builder().createNoop());
     }
 
     @Nullable
@@ -454,76 +454,90 @@ public class Generator extends CodeGenVisitor {
     }
 
     private void processLabeledRuleSwitch(PsiSwitchStatement statement) {
-        var switchExpr = new NodeExpression(
-                builder().createValue("switchValue", resolveExpression(statement.getExpression()))
-        );
+        var entryNode = builder().createValue("switchValue", resolveExpression(statement.getExpression()));
+        var switchExpr = new NodeExpression(entryNode);
         var stmts = NncUtils.requireNonNull(statement.getBody()).getStatements();
-        var branchNode = builder().createBranchNode(false);
-        builder().enterCondSection(branchNode);
-//        boolean hasResult = statement.getType() != null;
-//        Map<Branch, Value> yieldMap = new HashMap<>();
+        builder().enterCondSection(entryNode);
         var modified = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE)).getModified();
         var liveVarOut = NncUtils.requireNonNull(statement.getUserData(Keys.LIVE_VARS_OUT));
         var outputVars = NncUtils.intersect(modified, liveVarOut);
-
+        var exits = new HashMap<Long, NodeRT>();
+        IfNode lastIfNode = null;
+        var branchIdx = 0L;
         for (PsiStatement stmt : stmts) {
             var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) stmt;
             var caseLabelElementList = labeledRuleStmt.getCaseLabelElementList();
-            Branch branch;
+            if (caseLabelElementList == null || caseLabelElementList.getElementCount() == 0)
+                continue;
             String castVar = null;
-            if (caseLabelElementList != null && caseLabelElementList.getElementCount() > 0) {
-                Expression cond;
-                if (isTypePatternCase(caseLabelElementList)) {
-                    PsiTypeTestPattern typeTestPattern = (PsiTypeTestPattern) caseLabelElementList.getElements()[0];
-                    var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
-                    builder().setVariable(
-                            requireNonNull(typeTestPattern.getPatternVariable()).getName(),
-                            switchExpr
-                    );
-                    cond = new InstanceOfExpression(
-                            switchExpr,
-                            typeResolver.resolveDeclaration(checkType)
-                    );
-                    castVar = requireNonNull(typeTestPattern.getPatternVariable()).getName();
-                } else {
-                    var expressions = NncUtils.map(caseLabelElementList.getElements(),
-                            e -> resolveExpression((PsiExpression) e));
-                    cond = null;
-                    for (Expression expression : expressions) {
-                        var expr = new BinaryExpression(BinaryOperator.EQ, switchExpr, expression);
-                        if (cond == null)
-                            cond = expr;
-                        else
-                            cond = new BinaryExpression(BinaryOperator.OR, cond, expr);
-                    }
-                    requireNonNull(cond);
-                }
-                branch = branchNode.addBranch(Values.expression(cond));
+            Expression cond;
+            if (isTypePatternCase(caseLabelElementList)) {
+                PsiTypeTestPattern typeTestPattern = (PsiTypeTestPattern) caseLabelElementList.getElements()[0];
+                var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
+                builder().setVariable(
+                        requireNonNull(typeTestPattern.getPatternVariable()).getName(),
+                        switchExpr
+                );
+                cond = new InstanceOfExpression(
+                        switchExpr,
+                        typeResolver.resolveDeclaration(checkType)
+                );
+                castVar = requireNonNull(typeTestPattern.getPatternVariable()).getName();
             } else {
-                branch = branchNode.addDefaultBranch();
+                var expressions = NncUtils.map(caseLabelElementList.getElements(),
+                        e -> resolveExpression((PsiExpression) e));
+                cond = null;
+                for (Expression expression : expressions) {
+                    var expr = new BinaryExpression(BinaryOperator.EQ, switchExpr, expression);
+                    if (cond == null)
+                        cond = expr;
+                    else
+                        cond = new BinaryExpression(BinaryOperator.OR, cond, expr);
+                }
+                requireNonNull(cond);
             }
-            builder().enterBranch(branch);
+            builder().enterBranch(entryNode, branchIdx, Values.expression(cond));
+            var ifNode = builder().createIf(Expressions.not(cond), null);
+            if(lastIfNode != null)
+                lastIfNode.setTarget(ifNode);
+            lastIfNode = ifNode;
             if (castVar != null) {
                 builder().setVariable(castVar, switchExpr);
             }
-            if (labeledRuleStmt.getBody() != null) {
-                labeledRuleStmt.getBody().accept(this);
-                if (labeledRuleStmt.getBody() instanceof PsiExpression bodyExpression) {
-                    builder().setYield(resolveExpression(bodyExpression));
-                }
-            }
-            builder().exitBranch();
+            processSwitchCaseBody(labeledRuleStmt.getBody());
+            exits.put(branchIdx++, builder().createGoto(null));
         }
-        var mergeNode = builder().createMerge();
-        var condOutputs = builder().exitCondSection(mergeNode);
+        var defaultStmt = (PsiSwitchLabeledRuleStatement)
+                NncUtils.findRequired(stmts, stmt -> ((PsiSwitchLabeledRuleStatement) stmt).isDefaultCase());
+        builder().enterBranch(entryNode, branchIdx, Values.constantTrue());
+        var noop = builder().createNoop();
+        if(lastIfNode != null)
+            lastIfNode.setTarget(noop);
+        processSwitchCaseBody(defaultStmt.getBody());
+        exits.put(branchIdx, requireNonNull(builder().scope().getLastNode()));
+        var joinNode = builder().createJoin();
+        exits.values().forEach(exit -> {
+            if(exit instanceof GotoNode g)
+                g.setTarget(joinNode);
+        });
+        var condOutputs = builder().exitCondSection(entryNode, joinNode, exits, true);
         for (QualifiedName outputVar : outputVars) {
-            var field = FieldBuilder.newBuilder(outputVar.toString(), outputVar.toString(), mergeNode.getKlass(),
+            var field = FieldBuilder.newBuilder(outputVar.toString(), outputVar.toString(), joinNode.getKlass(),
                             typeResolver.resolveDeclaration(outputVar.type()))
                     .build();
-            var mergeField = new MergeNodeField(field, mergeNode);
-            condOutputs.forEach((branch, values) ->
-                    mergeField.setValue(branch, Values.expression(values.get(outputVar.toString())))
+            var joinField = new JoinNodeField(field, joinNode);
+            condOutputs.forEach((idx, values) ->
+                    joinField.setValue(requireNonNull(exits.get(idx)), Values.expression(values.get(outputVar.toString())))
             );
+        }
+    }
+
+    private void processSwitchCaseBody(PsiElement element) {
+        if (element != null) {
+            element.accept(this);
+            if (element instanceof PsiExpression bodyExpression) {
+                builder().setYield(resolveExpression(bodyExpression));
+            }
         }
     }
 
@@ -578,7 +592,7 @@ public class Generator extends CodeGenVisitor {
         Set<QualifiedName> modified = NncUtils.union(bodyScope.getModified(), elseScope.getModified());
         Set<QualifiedName> outputVars = getBlockOutputVariables(statement, modified);
         List<String> outputVariables = NncUtils.map(outputVars, Object::toString);
-        builder().getExpressionResolver().constructBool(
+        builder().getExpressionResolver().constructIf(
                 requireNonNull(statement.getCondition()),
                 () -> {
                     if (statement.getThenBranch() != null) {
@@ -593,25 +607,15 @@ public class Generator extends CodeGenVisitor {
         );
     }
 
-    private void enterCondSection(BranchNode branchNode) {
-        builder().enterCondSection(branchNode);
-    }
-
-    private void newCondBranch(PsiElement sectionId, Branch branch, @Nullable PsiStatement body) {
-        builder().enterBranch(branch);
-        if (body != null) body.accept(this);
-        builder().exitBranch();
-    }
-
-    private void exitCondSection(MergeNode mergeNode, List<QualifiedName> outputVariables) {
+    private void exitCondSection(NodeRT sectionId, JoinNode joinNode, Map<Long, NodeRT> exits, List<QualifiedName> outputVariables) {
         var outputVars = NncUtils.map(outputVariables, Objects::toString);
-        var condOutputs = builder().exitCondSection(mergeNode);
+        var condOutputs = builder().exitCondSection(sectionId, joinNode, exits, false);
         for (var qn : outputVariables) {
-            var branch2value = new HashMap<Branch, Value>();
+            var branch2value = new HashMap<NodeRT, Value>();
             for (var entry2 : condOutputs.entrySet()) {
-                var branch = entry2.getKey();
+                var branchIdx = entry2.getKey();
                 var branchOutputs = entry2.getValue();
-                branch2value.put(branch, Values.expression(branchOutputs.get(qn.toString())));
+                branch2value.put(exits.get(branchIdx), Values.expression(branchOutputs.get(qn.toString())));
             }
             var memberTypes = new HashSet<Type>();
             for (var value : branch2value.values()) {
@@ -620,9 +624,9 @@ public class Generator extends CodeGenVisitor {
             }
             var fieldType =
                     memberTypes.size() == 1 ? memberTypes.iterator().next() : new UnionType(memberTypes);
-            var field = FieldBuilder.newBuilder(qn.toString(), qn.toString(), mergeNode.getKlass(), fieldType).build();
-            var mergeField = new MergeNodeField(field, mergeNode, branch2value);
-            builder().setVariable(qn.toString(), new PropertyExpression(new NodeExpression(mergeNode), mergeField.getField().getRef()));
+            var field = FieldBuilder.newBuilder(qn.toString(), qn.toString(), joinNode.getKlass(), fieldType).build();
+            var mergeField = new JoinNodeField(field, joinNode, branch2value);
+            builder().setVariable(qn.toString(), new PropertyExpression(new NodeExpression(joinNode), mergeField.getField().getRef()));
         }
     }
 
@@ -637,16 +641,12 @@ public class Generator extends CodeGenVisitor {
 
     private void processLoop(PsiLoopStatement statement,
                              PsiExpression condition,
-                             @Nullable BiConsumer<WhileNode, Map<QualifiedName, Field>> preprocessor) {
-        Expression condInitialValue = null;
-        if (condition != null) {
-            condInitialValue = resolveExpression(condition);
-        }
-        var node = builder().createWhile();
-        Field condField = null;
-        if (condition != null) {
-            condField = builder().newTemproryField(node.getKlass(), "condition", Types.getBooleanType());
-        }
+                             @Nullable TriConsumer<JoinNode, IfNode, Map<QualifiedName, Field>> preprocessor,
+                             @Nullable TriConsumer<JoinNode, NodeRT, NodeRT> postProcessor
+                             ) {
+        var entryNode = Objects.requireNonNullElseGet(builder().scope().getLastNode(),
+                () -> Objects.requireNonNull(builder().scope().getOwner()));
+        var joinNode = builder().createJoin();
         var bodyScope = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
         var modified = new HashSet<>(bodyScope.getModified());
         var condScope = statement.getUserData(Keys.COND_SCOPE);
@@ -660,8 +660,8 @@ public class Generator extends CodeGenVisitor {
         Map<Field, Expression> initialValues = new HashMap<>();
         Map<QualifiedName, Field> loopVar2Field = new HashMap<>();
         for (QualifiedName loopVar : loopVars) {
-            var field = builder().newTemproryField(
-                    node.getKlass(),
+            var field = builder().newTemporaryField(
+                    joinNode.getKlass(),
                     loopVar.toString(),
                     Types.getNullableType(resolveType(loopVar.type()))
             );
@@ -670,39 +670,33 @@ public class Generator extends CodeGenVisitor {
         }
         for (QualifiedName loopVar : loopVar2Field.keySet()) {
             var field = loopVar2Field.get(loopVar);
-            builder().setVariable(loopVar.toString(), new PropertyExpression(new NodeExpression(node), field.getRef()));
+            builder().setVariable(loopVar.toString(), Expressions.nodeProperty(joinNode, field));
         }
-        var narrower = new TypeNarrower(node.getExpressionTypes()::getType);
-        node.getBodyScope().setExpressionTypes(narrower.narrowType(node.getCondition().getExpression()));
-        builder().enterScope(node.getBodyScope());
+        var cond = condition != null ? Expressions.not(resolveExpression(condition)) : Expressions.falseExpression();
+        var ifNode = builder().createIf(cond, null);
+        var exitValues = new HashMap<Field, Expression>();
+        for (QualifiedName loopVar : loopVars) {
+            var field = loopVar2Field.get(loopVar);
+            exitValues.put(field, builder().getVariable(loopVar.toString()));
+        }
         if (preprocessor != null) {
-            preprocessor.accept(node, loopVar2Field);
+            preprocessor.accept(joinNode, ifNode, loopVar2Field);
         }
         if (statement.getBody() != null) {
             statement.getBody().accept(this);
         }
-        Expression condUpdatedValue = null;
-        if (condition != null) {
-            condUpdatedValue = resolveExpression(condition);
-        }
-        builder().exitScope();
+        var goBack = builder().createGoto(joinNode);
+        ifNode.setTarget(builder().createNoop());
         for (QualifiedName loopVar : loopVars) {
             var field = loopVar2Field.get(loopVar);
             var initialValue = initialValues.get(field);
             var updatedValue = builder().getVariable(loopVar.toString());
-            node.setField(field, Values.expression(initialValue), Values.expression(updatedValue));
-            builder().setVariable(loopVar.toString(), new PropertyExpression(new NodeExpression(node), field.getRef()));
+            new JoinNodeField(field, joinNode, Map.of(entryNode, Values.expression(initialValue),
+                    goBack, Values.expression(updatedValue)));
+            builder().setVariable(loopVar.toString(), Objects.requireNonNull(exitValues.get(field)));
         }
-        if (condition != null) {
-            node.setField(requireNonNull(condField),
-                    Values.expression(requireNonNull(condInitialValue)),
-                    Values.expression(requireNonNull(condUpdatedValue))
-            );
-            var extraCond = new PropertyExpression(new NodeExpression(node), condField.getRef());
-            var finalCond = node.getCondition() == null ? extraCond :
-                    Expressions.and(node.getCondition().getExpression(), extraCond);
-            node.setCondition(Values.expression(finalCond));
-        }
+        if(postProcessor != null)
+            postProcessor.accept(joinNode, entryNode, goBack);
     }
 
     @Override
@@ -712,7 +706,7 @@ public class Generator extends CodeGenVisitor {
 
     @Override
     public void visitWhileStatement(PsiWhileStatement statement) {
-        processLoop(statement, statement.getCondition(), null
+        processLoop(statement, statement.getCondition(), null, null
 //                loopVar2Field ->
 //                        node.setCondition(Value.expression(resolveExpression(statement.getCondition())))
         );
@@ -729,32 +723,42 @@ public class Generator extends CodeGenVisitor {
         var type = builder().getExpressionType(iteratedExpr);
         if (type instanceof ArrayType) {
             processLoop(statement, getExtraLoopTest(statement),
-                    (whileNode, loopVar2Field) -> {
+                    (joinNode, ifNode, loopVar2Field) -> {
                         var indexField = FieldBuilder
-                                .newBuilder("index", "index", whileNode.getKlass(), Types.getLongType())
+                                .newBuilder("index", "index", joinNode.getKlass(), Types.getLongType())
                                 .build();
-                        whileNode.setCondition(
+                        ifNode.setCondition(
                                 Values.expression(
-                                        Expressions.lt(
-                                                Expressions.nodeProperty(whileNode, indexField),
-                                                new FunctionExpression(Func.LEN, iteratedExpr)
-                                        )
-                                )
-                        );
-                        whileNode.setField(indexField,
-                                Values.expression(Expressions.constantLong(0L)),
-                                Values.expression(
-                                        Expressions.add(
-                                                Expressions.nodeProperty(whileNode, indexField),
-                                                Expressions.constantLong(1L)
+                                        Expressions.or(
+                                            ifNode.getCondition().getExpression(),
+                                            Expressions.ge(
+                                                    Expressions.nodeProperty(joinNode, indexField),
+                                                    new FunctionExpression(Func.LEN, iteratedExpr)
+                                            )
                                         )
                                 )
                         );
                         builder().setVariable(statement.getIterationParameter().getName(),
                                 Expressions.arrayAccess(iteratedExpr,
-                                        Expressions.nodeProperty(whileNode, indexField))
+                                        Expressions.nodeProperty(joinNode, indexField))
                         );
-                    });
+                    },
+                    (joinNode, entryNode, exitNode) -> {
+                        var indexField = joinNode.getKlass().getFieldByCode("index");
+                        new JoinNodeField(
+                            indexField, joinNode, Map.of(
+                                entryNode, Values.constantLong(0L),
+                                exitNode,
+                                Values.expression(
+                                    Expressions.add(
+                                            Expressions.nodeProperty(joinNode, indexField),
+                                            Expressions.constantLong(1L)
+                                    )
+                                )
+                            )
+                        );
+                    }
+                );
         } else {
             var collType = Types.resolveKlass(type);
             typeResolver.ensureDeclared(collType);
@@ -764,9 +768,14 @@ public class Generator extends CodeGenVisitor {
                         List.of()))
             );
             var itType = Types.resolveKlass(NncUtils.requireNonNull(itNode.getType()));
-            processLoop(statement, getExtraLoopTest(statement), (node, loopVar2Field) -> {
-                node.setCondition(
-                        Values.expression(new FunctionExpression(Func.HAS_NEXT, new NodeExpression(itNode)))
+            processLoop(statement, getExtraLoopTest(statement), (joinNode, ifNode, loopVar2Field) -> {
+                ifNode.setCondition(
+                    Values.expression(
+                        Expressions.or(
+                                ifNode.getCondition().getExpression(),
+                                Expressions.not(new FunctionExpression(Func.HAS_NEXT, new NodeExpression(itNode)))
+                        )
+                    )
                 );
                 var elementNode = builder().createMethodCall(
                         new NodeExpression(itNode),
@@ -774,7 +783,7 @@ public class Generator extends CodeGenVisitor {
                         List.of()
                 );
                 builder().setVariable(statement.getIterationParameter().getName(), new NodeExpression(elementNode));
-            });
+            }, null);
         }
     }
 

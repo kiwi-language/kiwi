@@ -5,9 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
-import org.metavm.expression.ExpressionTypeMap;
-import org.metavm.expression.FlowParsingContext;
-import org.metavm.expression.ParsingContext;
+import org.metavm.expression.*;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
@@ -37,7 +35,7 @@ public abstract class NodeRT extends Element implements LocalKey {
     @Nullable
     private String error;
 
-    private transient ExpressionTypeMap expressionTypes = ExpressionTypeMap.EMPTY;
+    private transient ExpressionTypeMap expressionTypes;
 
     protected NodeRT(
             Long tmpId,
@@ -53,12 +51,10 @@ public abstract class NodeRT extends Element implements LocalKey {
         this.scope = scope;
         this.outputType = outputType;
         this.kind = NodeKind.fromNodeClass(this.getClass());
-        if (previous != null) {
+        if (previous != null)
             previous.insertAfter(this);
-            setExpressionTypes(previous.getExpressionTypes());
-        } else {
-            setExpressionTypes(scope.getExpressionTypes());
-        }
+        if (previous != null && previous.isSequential())
+            setExpressionTypes(previous.getNextExpressionTypes());
         this.scope.addNode(this);
     }
 
@@ -220,6 +216,10 @@ public abstract class NodeRT extends Element implements LocalKey {
         return false;
     }
 
+    public boolean isSequential() {
+        return !isExit() && !isUnconditionalJump();
+    }
+
     protected abstract Object getParam(SerializeContext serializeContext);
 
     public final void check() {
@@ -262,7 +262,17 @@ public abstract class NodeRT extends Element implements LocalKey {
     }
 
     public void mergeExpressionTypes(ExpressionTypeMap expressionTypes) {
-        this.expressionTypes = getExpressionTypes().merge(expressionTypes);
+        if (this.expressionTypes == null)
+            this.expressionTypes = expressionTypes;
+        else
+            this.expressionTypes = this.expressionTypes.merge(expressionTypes);
+    }
+
+    public void unionExpressionTypes(ExpressionTypeMap expressionTypes) {
+        if (this.expressionTypes == null)
+            this.expressionTypes = expressionTypes;
+        else
+            this.expressionTypes = this.expressionTypes.union(expressionTypes);
     }
 
     @Override
@@ -281,6 +291,10 @@ public abstract class NodeRT extends Element implements LocalKey {
         CodeWriter writer = new CodeWriter();
         write(writer);
         return writer.toString();
+    }
+
+    public ExpressionTypeMap getNextExpressionTypes() {
+        return getExpressionTypes();
     }
 
 }

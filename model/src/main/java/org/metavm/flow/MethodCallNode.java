@@ -22,7 +22,7 @@ import java.util.Objects;
 @EntityType
 public class MethodCallNode extends CallNode {
 
-    public static MethodCallNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static MethodCallNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         MethodCallNodeParam param = nodeDTO.getParam();
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         if (param.isResolved()) {

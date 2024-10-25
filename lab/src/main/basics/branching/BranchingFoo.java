@@ -18,4 +18,14 @@ public class BranchingFoo {
         return result;
     }
 
+    public static boolean isNameNotNull(Foo foo) {
+        return foo != null && foo.name != null;
+    }
+
+    public static boolean testIsNameNotNull() {
+        return isNameNotNull(new Foo("foo"));
+    }
+
+    public record Foo(String name) {}
+
 }

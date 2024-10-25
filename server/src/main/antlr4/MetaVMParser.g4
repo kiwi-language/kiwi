@@ -242,7 +242,7 @@ typeArguments
     ;
 
 classOrInterfaceType
-    : qualifiedName typeArguments?
+    : qualifiedName typeArguments? (':' DECIMAL_LITERAL)?
     ;
 
 typeType

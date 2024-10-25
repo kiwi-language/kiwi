@@ -2,10 +2,11 @@ package org.metavm.autograph;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.expression.*;
-import org.metavm.flow.*;
+import org.metavm.flow.NodeRT;
+import org.metavm.flow.TryNode;
+import org.metavm.flow.Value;
 import org.metavm.util.NncUtils;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 
@@ -14,9 +15,9 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public class VariableTable {
 
-    private final LinkedList<BranchNode> branchNodes = new LinkedList<>();
+    private final LinkedList<NodeRT> branchNodes = new LinkedList<>();
     private VariableMap variableMap = new VariableMap();
-    private final Map<BranchNode, CondSection> condSections = new HashMap<>();
+    private final Map<NodeRT, CondSection> condSections = new HashMap<>();
 
     private final LinkedList<TrySection> trySections = new LinkedList<>();
 
@@ -32,22 +33,17 @@ public class VariableTable {
         variableMap.logVariables();
     }
 
-    void enterCondSection(BranchNode branchNode) {
+    void enterCondSection(NodeRT branchNode) {
         branchNodes.push(branchNode);
         condSections.put(branchNode, new CondSection(branchNode, variableMap));
     }
 
-    void addBranchEntry(ExpressionTypeMap entry, BranchNode branchNode) {
-        var section = NncUtils.requireNonNull(condSections.get(branchNode));
-        section.nextBranchEntries.add(entry);
-    }
-
-    ExpressionTypeMap nextBranch(BranchNode sectionId, Branch branch) {
+    ExpressionTypeMap nextBranch(NodeRT sectionId, long branchIndex, Value condition) {
         var section = condSections.get(sectionId);
-        section.currentBranch = branch;
+        section.currentBranch = branchIndex;
         variableMap = section.entryMap.copy();
-        section.putBranchMap(branch, variableMap);
-        return section.nextBranch(branch);
+        section.putBranchMap(branchIndex, variableMap);
+        return section.nextBranch(condition);
     }
 
     void setYield(Expression yield) {
@@ -55,9 +51,9 @@ public class VariableTable {
         condSections.get(branchNode).setYield(yield);
     }
 
-    Map<Branch, BranchInfo> exitCondSection(BranchNode sectionId) {
+    Map<Long, BranchInfo> exitCondSection(NodeRT sectionId) {
         var section = condSections.remove(sectionId);
-        Map<Branch, BranchInfo> result = new HashMap<>();
+        Map<Long, BranchInfo> result = new HashMap<>();
         var outputVars = new HashSet<String>();
         section.branchMaps.values().forEach(varMap -> outputVars.addAll(varMap.getVisibleModified()));
         for (var entry : section.branchMaps.entrySet()) {
@@ -161,25 +157,25 @@ public class VariableTable {
     }
 
     private static class CondSection {
-        final BranchNode branchNode;
-        Branch currentBranch;
+        final NodeRT branchNode;
+        Long currentBranch;
         Expression nextBranchCond;
         final VariableMap entryMap;
-        final Map<Branch, VariableMap> branchMaps = new HashMap<>();
-        final Map<Branch, Expression> yields = new HashMap<>();
+        final Map<Long, VariableMap> branchMaps = new HashMap<>();
+        final Map<Long, Expression> yields = new HashMap<>();
 
         private final List<ExpressionTypeMap> nextBranchEntries = new ArrayList<>();
 
-        private CondSection(BranchNode branchNode, VariableMap entryMap) {
+        private CondSection(NodeRT branchNode, VariableMap entryMap) {
             this.branchNode = branchNode;
             this.entryMap = entryMap;
         }
 
-        void putBranchMap(Branch branch, VariableMap map) {
-            branchMaps.put(branch, map);
+        void putBranchMap(long branchIndex, VariableMap map) {
+            branchMaps.put(branchIndex, map);
         }
 
-        ExpressionTypeMap nextBranch(Branch branch) {
+        ExpressionTypeMap nextBranch(Value condition) {
             var narrower = new TypeNarrower(branchNode.getExpressionTypes()::getType);
             ExpressionTypeMap extraExprTypeMap = null;
             if(nextBranchCond != null && !Expressions.isConstantFalse(nextBranchCond)) {
@@ -193,11 +189,11 @@ public class VariableTable {
                     extraExprTypeMap = entry.union(extraExprTypeMap);
                 }
             }
-            var exprTypeMap = narrower.narrowType(branch.getCondition().getExpression());
+            var exprTypeMap = narrower.narrowType(condition.getExpression());
             nextBranchEntries.clear();
             nextBranchCond = nextBranchCond == null ?
-                    Expressions.not(branch.getCondition().getExpression()) :
-                    Expressions.and(nextBranchCond, Expressions.not(branch.getCondition().getExpression()));
+                    Expressions.not(condition.getExpression()) :
+                    Expressions.and(nextBranchCond, Expressions.not(condition.getExpression()));
             return extraExprTypeMap != null ? exprTypeMap.merge(extraExprTypeMap) : exprTypeMap;
         }
 
@@ -206,7 +202,7 @@ public class VariableTable {
             yields.put(currentBranch, yield);
         }
 
-        Map<Branch, Expression> getYields() {
+        Map<Long, Expression> getYields() {
             return Collections.unmodifiableMap(yields);
         }
 

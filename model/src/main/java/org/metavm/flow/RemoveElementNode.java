@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 @EntityType
 public class RemoveElementNode extends NodeRT {
 
-    public static RemoveElementNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static RemoveElementNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         RemoveElementNodeParam param = nodeDTO.getParam();
         var node = (RemoveElementNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);

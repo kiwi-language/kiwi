@@ -264,6 +264,9 @@ public class ExpressionParser {
     private ClassType parseClassType(MetaVMParser.ClassOrInterfaceTypeContext ctx) {
         var identifier = ctx.qualifiedName();
         String name = identifier.getText();
+        var colonIdx = name.indexOf(':');
+        if(colonIdx >= 0)
+            name = name.substring(0, colonIdx);
         Klass klass;
         if (name.startsWith(Constants.ID_PREFIX))
             klass = context.getTypeDefProvider().getKlass(Id.parse(Constants.removeIdPrefix(name)));

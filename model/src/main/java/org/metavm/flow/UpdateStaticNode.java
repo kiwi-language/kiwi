@@ -22,7 +22,7 @@ public class UpdateStaticNode extends NodeRT {
 
     public static final Logger logger = LoggerFactory.getLogger(UpdateStaticNode.class);
 
-    public static UpdateStaticNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static UpdateStaticNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         UpdateStaticNodeParam param = nodeDTO.getParam();
         var node = (UpdateStaticNode) context.getNode(Id.parse(nodeDTO.id()));
         var type = context.getKlass(Id.parse(param.typeId()));

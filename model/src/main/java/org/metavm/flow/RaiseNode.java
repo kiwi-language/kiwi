@@ -20,7 +20,7 @@ import javax.annotation.Nullable;
 @EntityType
 public class RaiseNode extends NodeRT {
 
-    public static RaiseNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext entityContext) {
+    public static RaiseNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext entityContext) {
         var parsingContext = FlowParsingContext.create(scope, prev, entityContext);
         RaiseNodeParam param = nodeDTO.getParam();
         var paramKind = RaiseParameterKind.getByCode(param.parameterKind());

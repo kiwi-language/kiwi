@@ -1,7 +1,6 @@
 package org.metavm.expression;
 
 import org.metavm.entity.IEntityContext;
-import org.metavm.flow.LoopNode;
 import org.metavm.flow.NodeRT;
 import org.metavm.flow.ScopeRT;
 import org.metavm.object.instance.core.Id;
@@ -35,6 +34,7 @@ public class FlowParsingContext extends BaseParsingContext {
     private final Map<Id, NodeRT> id2node = new HashMap<>();
     private final Map<String, NodeRT> name2node = new HashMap<>();
     private final Map<NodeRT, NodeExpression> node2expression = new HashMap<>();
+    private final ExpressionTypeMap expressionTypes;
 
     public FlowParsingContext(
             InstanceProvider instanceProvider, IndexedTypeDefProvider typeDefProvider,
@@ -43,18 +43,7 @@ public class FlowParsingContext extends BaseParsingContext {
         this.scope = scope;
         this.prev = prev;
         this.lastNode = prev != null ? prev : scope.getOwner();
-    }
-
-    private @javax.annotation.Nullable Expression getScopeCondition(ScopeRT scope) {
-        if(scope.getBranch() != null) {
-            return scope.getBranch().getCondition().getExpression();
-        }
-        else if(scope.getOwner() instanceof LoopNode loopNode) {
-            return loopNode.getCondition().getExpression();
-        }
-        else {
-            return null;
-        }
+        this.expressionTypes = prev != null ? prev.getNextExpressionTypes() : ExpressionTypeMap.EMPTY;
     }
 
     @Override
@@ -79,8 +68,7 @@ public class FlowParsingContext extends BaseParsingContext {
 
     @Override
     public Type getExpressionType(Expression expression) {
-        return prev != null ? prev.getExpressionTypes().getType(expression) :
-                scope.getExpressionTypes().getType(expression);
+        return expressionTypes.getType(expression);
     }
 
     @Override

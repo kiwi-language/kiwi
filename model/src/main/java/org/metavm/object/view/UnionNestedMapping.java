@@ -4,9 +4,12 @@ import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ChildArray;
 import org.metavm.entity.LoadAware;
+import org.metavm.expression.Expressions;
 import org.metavm.expression.InstanceOfExpression;
 import org.metavm.flow.*;
-import org.metavm.object.type.*;
+import org.metavm.object.type.FieldBuilder;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.UnionType;
 import org.metavm.util.NncUtils;
 
 import java.util.*;
@@ -48,76 +51,62 @@ public class UnionNestedMapping extends NestedMapping implements LoadAware {
 
     @Override
     public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
-        var values = new HashMap<Branch, Value>();
-        var valueFieldRef = new Object() {
-            Field valueField;
-        };
+        Map<GotoNode, Value> exit2value = new HashMap<>();
         var source = Nodes.value(scope.nextNodeName("source"), getSource.get(), scope);
-        Nodes.branch(
-                scope.nextNodeName("checkType"),
-                null,
-                scope,
-                NncUtils.map(
-                        memberMappings,
-                        t -> Values.expression(
-                                new InstanceOfExpression(getSource.get().getExpression(), t.sourceType())
-                        )
-                ),
-                NncUtils.map(
-                        memberMappings,
-                        t -> branch -> {
-                            var castSource = Nodes.castNode(scope.nextNodeName("castSource"),
-                                    t.sourceType(), branch.getScope(), Values.node(source));
-                            values.put(
-                                    branch,
-                                    t.nestedMapping().generateMappingCode(() -> Values.node(castSource), branch.getScope()).get()
-                            );
-                        }
-                ),
-                branch -> Nodes.raise(scope.nextNodeName("invalidTypeError"), branch.getScope(), Values.constantString("Invalid type")),
-                mergeNode -> {
-                    valueFieldRef.valueField = FieldBuilder.newBuilder("value", null, mergeNode.getType().resolve(), targetType).build();
-                    new MergeNodeField(valueFieldRef.valueField, mergeNode, values);
-                }
+        IfNode lastIfNode = null;
+        for (var memberMapping : memberMappings) {
+            var ifNode = Nodes.if_(scope.nextNodeName("if"),
+                     Values.expression(Expressions.not(
+                             new InstanceOfExpression(getSource.get().getExpression(), memberMapping.sourceType())
+                     )),
+                    null,
+                    scope
+            );
+            if(lastIfNode != null)
+                lastIfNode.setTarget(ifNode);
+            lastIfNode = ifNode;
+            var castSource = Nodes.castNode(scope.nextNodeName("castSource"),
+                    memberMapping.sourceType(), scope, Values.node(source));
+            var value = memberMapping.nestedMapping().generateMappingCode(() -> Values.node(castSource), scope).get();
+            exit2value.put(Nodes.goto_(scope.nextNodeName("goto"), scope), value);
+        }
+        Objects.requireNonNull(lastIfNode).setTarget(
+                Nodes.raise(scope.nextNodeName("invalidTypeError"), scope, Values.constantString("Invalid type"))
         );
-        return () -> Values.nodeProperty(scope.getLastNode(), valueFieldRef.valueField);
+        var join = Nodes.join(scope.nextNodeName("join"), scope);
+        exit2value.keySet().forEach(g -> g.setTarget(join));
+        var valueField = FieldBuilder.newBuilder("value", null, join.getKlass(), targetType).build();
+        new JoinNodeField(valueField, join, exit2value);
+        return () -> Values.nodeProperty(join, valueField);
     }
 
     @Override
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
-        var values = new HashMap<Branch, Value>();
-        var valueFieldRef = new Object() {
-            Field valueField;
-        };
+        var exit2value = new HashMap<GotoNode, Value>();
         var view = Nodes.value(scope.nextNodeName("view"), getView.get(), scope);
-        Nodes.branch(
-                scope.nextNodeName("checkType"),
-                null,
-                scope,
-                NncUtils.map(
-                        memberMappings,
-                        t -> Values.expression(
-                                new InstanceOfExpression(getView.get().getExpression(), t.targetType())
-                        )
-                ),
-                NncUtils.map(
-                        memberMappings,
-                        t -> branch -> {
-                            var castView =  Nodes.cast(scope.nextNodeName("castView"), t.targetType(), Values.node(view), branch.getScope());
-                            values.put(
-                                    branch,
-                                    t.nestedMapping().generateUnmappingCode(() -> Values.node(castView), branch.getScope()).get()
-                            );
-                        }
-                ),
-                branch -> Nodes.raise(scope.nextNodeName("invalidTypeError"), branch.getScope(), Values.constantString("invalid type")),
-                mergeNode -> {
-                    valueFieldRef.valueField = FieldBuilder.newBuilder("value", null, mergeNode.getType().resolve(), sourceType).build();
-                    new MergeNodeField(valueFieldRef.valueField, mergeNode, values);
-                }
+        IfNode lastIfNode = null;
+        for (var memberMapping : memberMappings) {
+            var ifNode = Nodes.if_(scope.nextNodeName("if"),
+                    Values.expression(
+                            Expressions.not(new InstanceOfExpression(getView.get().getExpression(), memberMapping.targetType()))
+                    ),
+                    null, scope
+            );
+            if(lastIfNode != null)
+                lastIfNode.setTarget(ifNode);
+            lastIfNode = ifNode;
+            var castView =  Nodes.cast(scope.nextNodeName("castView"), memberMapping.targetType(), Values.node(view), scope);
+            var value = memberMapping.nestedMapping().generateUnmappingCode(() -> Values.node(castView), scope).get();
+            exit2value.put(Nodes.goto_(scope.nextNodeName("goto"), scope), value);
+        }
+        Objects.requireNonNull(lastIfNode).setTarget(
+            Nodes.raise(scope.nextNodeName("invalidTypeError"), scope, Values.constantString("invalid type"))
         );
-        var mergeNode = scope.getLastNode();
-        return () -> Values.nodeProperty(mergeNode, valueFieldRef.valueField);
+        var join = Nodes.join(scope.nextNodeName("join"), scope);
+        exit2value.keySet().forEach(g -> g.setTarget(join));
+        var valueField = FieldBuilder.newBuilder("value", null, join.getType().resolve(), sourceType).build();
+        new JoinNodeField(valueField, join, exit2value);
+        return () -> Values.nodeProperty(join, valueField);
     }
 
     @Override

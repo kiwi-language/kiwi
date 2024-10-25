@@ -1,7 +1,7 @@
 package org.metavm.flow.rest;
 
-public record CheckNodeParam(
+public record IfNodeParam(
         ValueDTO condition,
-        String exitId
+        String targetId
 ) {
 }

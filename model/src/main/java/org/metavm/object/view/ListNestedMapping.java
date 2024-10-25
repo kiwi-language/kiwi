@@ -10,6 +10,7 @@ import org.metavm.object.type.*;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -83,48 +84,39 @@ public class ListNestedMapping extends NestedMapping {
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
         var isSourcePresent = Nodes.functionCall(scope.nextNodeName("isSourcePresent"), scope, StdFunction.isSourcePresent.get(),
                 List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, getView.get())));
-        var branch2sourceNode = new HashMap<Branch, Value>();
         var sourceKlass = sourceType.resolve();
-        var sourceFieldRef = new Object() {
-            Field sourceField;
-        };
-        Nodes.branch(
-                scope.nextNodeName("branch"),
+        Map<NodeRT, Value> exit2value = new HashMap<>();
+        var ifNode = Nodes.if_(scope.nextNodeName("if"),
+                Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.falseExpression())),
                 null,
-                scope,
-                Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.trueExpression())),
-                trueBranch -> {
-                    var source = Nodes.functionCall(scope.nextNodeName("source"), trueBranch.getScope(),
-                            StdFunction.getSource.get(),
-                            List.of(Nodes.argument(StdFunction.getSource.get(), 0, getView.get())));
-                    branch2sourceNode.put(trueBranch, Values.node(source));
-                },
-                falseBranch -> {
-                    var source = Nodes.newObject(
-                            scope.nextNodeName("newSource"),
-                            falseBranch.getScope(),
-                            sourceType.isChildList() ?
-                                    sourceKlass.getDefaultConstructor() :
-                                    StdKlass.arrayList.get().getParameterized(List.of(sourceKlass.getFirstTypeArgument())).getDefaultConstructor(),
-                            List.of(),
-                            false,
-                            true
-                    );
-                    branch2sourceNode.put(falseBranch, Values.node(source));
-                },
-                mergeNode -> {
-                    sourceFieldRef.sourceField = FieldBuilder.newBuilder(scope.nextNodeName("source"), null, mergeNode.getType().resolve(), sourceType)
-                            .build();
-                    new MergeNodeField(sourceFieldRef.sourceField, mergeNode, branch2sourceNode);
-                }
+                scope
         );
-        var mergeNode = scope.getLastNode();
-        var sourceField = sourceFieldRef.sourceField;
+        var existingSource = Nodes.functionCall(scope.nextNodeName("source"), scope,
+                StdFunction.getSource.get(),
+                List.of(Nodes.argument(StdFunction.getSource.get(), 0, getView.get())));
+        var g = Nodes.goto_(scope.nextNodeName("goto"), scope);
+        exit2value.put(g, Values.node(existingSource));
+        var newSource = Nodes.newObject(
+                scope.nextNodeName("newSource"),
+                scope,
+                sourceType.isChildList() ?
+                        sourceKlass.getDefaultConstructor() :
+                        StdKlass.arrayList.get().getParameterized(List.of(sourceKlass.getFirstTypeArgument())).getDefaultConstructor(),
+                List.of(),
+                false,
+                true
+        );
+        ifNode.setTarget(newSource);
+        exit2value.put(newSource, Values.node(newSource));
+        var join = Nodes.join(scope.nextNodeName("join"), scope);
+        g.setTarget(join);
+        var sourceField = FieldBuilder.newBuilder("source", null, join.getKlass(), sourceType).build();
+        new JoinNodeField(sourceField, join, exit2value);
         var clearMethod = sourceKlass.getMethodByCodeAndParamTypes("clear", List.of());
         Nodes.methodCall(
                 scope.nextNodeName("clear"),
                 scope,
-                Values.nodeProperty(mergeNode, sourceField),
+                Values.nodeProperty(join, sourceField),
                 clearMethod,
                 List.of()
         );
@@ -137,7 +129,7 @@ public class ListNestedMapping extends NestedMapping {
                     Nodes.methodCall(
                             scope.nextNodeName("addElement"),
                             bodyScope,
-                            Values.nodeProperty(mergeNode, sourceField),
+                            Values.nodeProperty(join, sourceField),
                             addMethod,
                             List.of(
                                     Nodes.argument(
@@ -150,7 +142,7 @@ public class ListNestedMapping extends NestedMapping {
                 },
                 scope
         );
-        return () -> Values.nodeProperty(mergeNode, sourceField);
+        return () -> Values.nodeProperty(join, sourceField);
     }
 
     @Override

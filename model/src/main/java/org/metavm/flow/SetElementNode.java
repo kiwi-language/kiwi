@@ -20,7 +20,7 @@ import javax.annotation.Nullable;
 @EntityType
 public class SetElementNode extends NodeRT {
 
-    public static SetElementNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static SetElementNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         SetElementNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.array(), parsingContext);

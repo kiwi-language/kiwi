@@ -16,7 +16,7 @@ import java.util.Objects;
 @EntityType
 public class TryNode extends ScopeNode {
 
-    public static TryNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static TryNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var node = (TryNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
             node = new TryNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope);

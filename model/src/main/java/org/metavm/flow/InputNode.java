@@ -29,7 +29,7 @@ public class InputNode extends ChildTypeNode {
 
     public static final Logger logger = LoggerFactory.getLogger(InputNode.class);
 
-    public static InputNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static InputNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var node = (InputNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var klass = ((ClassType) TypeParser.parseType(nodeDTO.outputType(), context)).resolve();

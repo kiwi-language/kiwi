@@ -6,7 +6,6 @@ import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
 import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.Field;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Type;
 
@@ -73,46 +72,37 @@ public class ArrayNestedMapping extends NestedMapping {
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
         var isSourcePresent = Nodes.functionCall(scope.nextNodeName("isSourcePresent"), scope, StdFunction.isSourcePresent.get(),
                 List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, getView.get())));
-        Map<Branch, Value> branch2sourceNode = new HashMap<>();
-        var sourceFieldRef = new Object() {
-            Field sourceField;
-        };
-        Nodes.branch(
-                scope.nextNodeName("branch"),
+        Map<NodeRT, Value> exit2value = new HashMap<>();
+        var ifNode = Nodes.if_(scope.nextNodeName("if"),
+                Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.falseExpression())),
                 null,
-                scope,
-                Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.trueExpression())),
-                trueBranch -> {
-                    var source = Nodes.functionCall(scope.nextNodeName("source"), trueBranch.getScope(),
-                            StdFunction.getSource.get(),
-                            List.of(Nodes.argument(StdFunction.getSource.get(), 0, getView.get())));
-                    branch2sourceNode.put(trueBranch, Values.node(source));
-                },
-                falseBranch -> {
-                    var source = Nodes.newArray(scope.nextNodeName("newSource"), null,
-                            sourceType, null, null, falseBranch.getScope());
-                    branch2sourceNode.put(falseBranch, Values.node(source));
-                },
-                mergeNode -> {
-                    sourceFieldRef.sourceField = FieldBuilder.newBuilder("source", null, mergeNode.getType().resolve(), sourceType)
-                            .build();
-                    new MergeNodeField(sourceFieldRef.sourceField, mergeNode, branch2sourceNode);
-                }
+                scope
         );
-        var mergeNode = scope.getLastNode();
-        var sourceField = sourceFieldRef.sourceField;
-        Nodes.clearArray(scope.nextNodeName("clearArray"), null, Values.nodeProperty(mergeNode, sourceField),
+        var existingSource = Nodes.functionCall(scope.nextNodeName("source"), scope,
+                StdFunction.getSource.get(),
+                List.of(Nodes.argument(StdFunction.getSource.get(), 0, getView.get())));
+        var g = Nodes.goto_(scope.nextNodeName("goto"), scope);
+        exit2value.put(g, Values.node(existingSource));
+        var newSource = Nodes.newArray(scope.nextNodeName("newSource"), null,
+                sourceType, null, null, scope);
+        ifNode.setTarget(newSource);
+        exit2value.put(newSource, Values.node(newSource));
+        var join = Nodes.join(scope.nextNodeName("join"), scope);
+        g.setTarget(join);
+        var sourceField = FieldBuilder.newBuilder("source", null, join.getKlass(), sourceType).build();
+        new JoinNodeField(sourceField, join, exit2value);
+        Nodes.clearArray(scope.nextNodeName("clearArray"), null, Values.nodeProperty(join, sourceField),
                 scope);
         Nodes.forEach(
                 scope.nextNodeName("iterate"), getView,
                 (bodyScope, getElement, getIndex) -> {
                     var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
                     Nodes.addElement(scope.nextNodeName("addElement"), null,
-                            Values.nodeProperty(mergeNode, sourceField), getSourceElement.get(), bodyScope);
+                            Values.nodeProperty(join, sourceField), getSourceElement.get(), bodyScope);
                 },
                 scope
         );
-        return () -> Values.nodeProperty(mergeNode, sourceField);
+        return () -> Values.nodeProperty(join, sourceField);
     }
 
     @Override

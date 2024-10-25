@@ -18,7 +18,7 @@ import javax.annotation.Nullable;
 
 public class NonNullNode extends NodeRT {
 
-    public static NonNullNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static NonNullNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         NonNullNodeParam param = nodeDTO.getParam();
         var node = (NonNullNode) context.getNode(Id.parse(nodeDTO.id()));
         var parsingContext = FlowParsingContext.create(scope, prev, context);

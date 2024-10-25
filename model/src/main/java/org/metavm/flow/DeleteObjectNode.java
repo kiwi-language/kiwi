@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 @EntityType
 public class DeleteObjectNode extends NodeRT {
 
-    public static DeleteObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static DeleteObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         DeleteObjectNodeParam param = nodeDTO.getParam();
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var objectId = ValueFactory.create(param.objectId(), parsingContext);

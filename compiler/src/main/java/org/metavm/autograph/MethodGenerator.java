@@ -2,20 +2,19 @@ package org.metavm.autograph;
 
 import com.intellij.psi.PsiMethod;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.expression.*;
+import org.metavm.expression.Expression;
+import org.metavm.expression.ExpressionTypeMap;
+import org.metavm.expression.Expressions;
+import org.metavm.expression.TypeNarrower;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
-import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static java.util.Objects.requireNonNull;
 
 @Slf4j
 public class MethodGenerator {
@@ -27,7 +26,7 @@ public class MethodGenerator {
     private final ExpressionResolver expressionResolver;
     private final Set<String> generatedNames = new HashSet<>();
     private final TypeNarrower typeNarrower = new TypeNarrower(this::getExpressionType);
-    private final Map<BranchNode, LinkedList<ScopeInfo>> condScopes = new IdentityHashMap<>();
+    private final Map<NodeRT, LinkedList<ScopeInfo>> condScopes = new IdentityHashMap<>();
     private final Map<String, Integer> varNames = new HashMap<>();
 
     public MethodGenerator(Method method, TypeResolver typeResolver, VisitorBase visitor) {
@@ -41,51 +40,51 @@ public class MethodGenerator {
         return method;
     }
 
-    BranchNode createBranchNode(boolean inclusive) {
-        return setNodeExprTypes(new BranchNode(null, nextName("Branch"), null, inclusive, scope().getLastNode(), scope()));
+    IfNode createIf(Expression condition, @Nullable NodeRT target) {
+        return onNodeCreated(new IfNode(null,
+                nextName("if"),
+                null,
+                scope().getLastNode(),
+                scope(),
+                Values.expression(condition),
+                target
+        ));
     }
 
-    MergeNode createMerge() {
-        scope().getLastNode();
-        if ((scope().getLastNode() instanceof BranchNode branchNode)) {
-            var mergeNode = setNodeExprTypes(new MergeNode(
-                    null,
-                    nextName("Merge"),
-                    null,
-                    branchNode,
-                    KlassBuilder.newBuilder("MergeOutput", null).temporary().build(),
-                    scope()
-            ));
-            mergeNode.mergeExpressionTypes(MergeNode.getExpressionTypeMap(branchNode));
-            return mergeNode;
-        } else {
-            throw new InternalException("MergeNode must directly follow a BranchNode");
-        }
+    JoinNode createJoin() {
+        return onNodeCreated(new JoinNode(
+                null,
+                nextName("join"),
+                null,
+                KlassBuilder.newBuilder("JoinOutput", null).temporary().build(),
+                scope().getLastNode(),
+                scope()
+        ));
     }
 
     GotoNode createGoto(NodeRT target) {
-        return new GotoNode(
+        return onNodeCreated(new GotoNode(
                 null,
-                 nextName("Goto"),
+                 nextName("goto"),
                 null,
                 scope().getLastNode(),
                 scope(),
                 target
-        );
+        ));
     }
 
     GotoNode createIncompleteGoto() {
-        return new GotoNode(
+        return onNodeCreated(new GotoNode(
                 null,
-                nextName("Goto"),
+                nextName("goto"),
                 null,
                 scope().getLastNode(),
                 scope()
-        );
+        ));
     }
 
     TryNode createTry() {
-        return new TryNode(null, nextName("Try"), null, scope().getLastNode(), scope());
+        return onNodeCreated(new TryNode(null, nextName("try"), null, scope().getLastNode(), scope()));
     }
 
     String nextVarName(String name) {
@@ -95,13 +94,13 @@ public class MethodGenerator {
     }
 
     TryEndNode createTryEnd() {
-        var node = new TryEndNode(
+        var node = onNodeCreated(new TryEndNode(
                 null, nextName("TryEnd"), null,
                 KlassBuilder.newBuilder("TryEndOutput", null)
                         .temporary().build(),
                 (TryNode) scope().getLastNode(),
                 scope()
-        );
+        ));
         FieldBuilder.newBuilder("exception", "exception", node.getKlass(),
                         Types.getNullableThrowableType())
                 .build();
@@ -110,7 +109,7 @@ public class MethodGenerator {
 
 
     ValueNode createValue(String name, Expression expression) {
-        return setNodeExprTypes(new ValueNode(
+        return onNodeCreated(new ValueNode(
                         null,
                         nextName(name),
                         null,
@@ -123,7 +122,7 @@ public class MethodGenerator {
     }
 
     NonNullNode createNonNull(String name, Expression expression) {
-        var node = setNodeExprTypes(new NonNullNode(
+        var node = onNodeCreated(new NonNullNode(
                         null,
                         nextName(name),
                         null,
@@ -138,11 +137,11 @@ public class MethodGenerator {
     }
 
     TargetNode createTarget() {
-        return new TargetNode(null, nextName("target"), null, scope().getLastNode(), scope());
+        return onNodeCreated(new TargetNode(null, nextName("target"), null, scope().getLastNode(), scope()));
     }
 
     NewArrayNode createNewArray(ArrayType type, @Nullable Expression initialValue) {
-        return setNodeExprTypes(new NewArrayNode(
+        return onNodeCreated(new NewArrayNode(
                 null, nextName("NewArray"), null,
                 type,
                 NncUtils.get(initialValue, Values::expression),
@@ -153,7 +152,7 @@ public class MethodGenerator {
     }
 
     NewArrayNode createNewArrayWithDimensions(ArrayType type, List<Expression> dimensions) {
-        return setNodeExprTypes(new NewArrayNode(
+        return onNodeCreated(new NewArrayNode(
                 null, nextName("NewArray"), null,
                 type,
                 null,
@@ -173,63 +172,25 @@ public class MethodGenerator {
         return variableTable.exitTrySection(tryNode, outputVars);
     }
 
-    void enterCondSection(BranchNode sectionId) {
+    void enterCondSection(NodeRT sectionId) {
         variableTable.enterCondSection(sectionId);
         condScopes.put(sectionId, new LinkedList<>());
     }
 
-    void enterBranch(Branch branch) {
-        var exprTypeMap = variableTable.nextBranch(branch.getOwner(), branch);
-        var scopeInfo = enterScope(branch.getScope(), exprTypeMap);
-        condScopes.get(branch.getOwner()).add(scopeInfo);
-    }
-
-    void exitBranch() {
-        exitScope();
+    ExpressionTypeMap enterBranch(NodeRT sectionId, long branchIndex, Value condition) {
+        return variableTable.nextBranch(sectionId, branchIndex, condition);
     }
 
     void setYield(Expression yield) {
         variableTable.setYield(yield);
     }
 
-    void exitCondSection1(MergeNode mergeNode) {
-        var condOutputs = exitCondSection(mergeNode);
-        var vars = condOutputs.values().iterator().next().keySet();
-        out: for (var var : vars) {
-            var branch2value = new HashMap<Branch, org.metavm.flow.Value>();
-            for (var entry2 : condOutputs.entrySet()) {
-                var branch = entry2.getKey();
-                if(branch.isDisconnected())
-                    continue;
-                var branchOutputs = entry2.getValue();
-                var v = branchOutputs.get(var);
-//                var v = Objects.requireNonNull(,
-//                        () -> "Variable " + var + " is missing from branch " + branch.getIndex());
-                if(v == null)
-                    continue out;
-                branch2value.put(branch, Values.expression(v));
-            }
-            var memberTypes = new HashSet<Type>();
-            for (var value : branch2value.values()) {
-                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType())))
-                    memberTypes.add(value.getType());
-            }
-            var fieldType =
-                    memberTypes.size() == 1 ? memberTypes.iterator().next() : Types.getUnionType(memberTypes);
-            var field = FieldBuilder.newBuilder(var, var, mergeNode.getKlass(), fieldType).build();
-            var mergeField = new MergeNodeField(field, mergeNode, branch2value);
-            setVariable(var, new PropertyExpression(new NodeExpression(mergeNode), mergeField.getField().getRef()));
-        }
-    }
-
-    Map<Branch, Map<String, Expression>> exitCondSection(MergeNode mergeNode) {
-        return exitCondSection(mergeNode, false);
-    }
-
-    Map<Branch, Map<String, Expression>> exitCondSection(MergeNode mergeNode, boolean isSwitchExpression) {
-        var branchNode = mergeNode.getBranchNode();
+    Map<Long, Map<String, Expression>> exitCondSection(NodeRT sectionId,
+                         JoinNode joinNode,
+                         Map<Long, NodeRT> exits,
+                         boolean isSwitchExpression) {
         ExpressionTypeMap exprTypes = null;
-        for (ScopeInfo scope : condScopes.remove(branchNode)) {
+        for (ScopeInfo scope : condScopes.remove(sectionId)) {
             var lastNode = scope.scope.getLastNode();
             if (lastNode == null || !lastNode.isExit()) {
                 var newExprTypes = lastNode == null ? scope.scope.getExpressionTypes() : lastNode.getExpressionTypes();
@@ -241,9 +202,9 @@ public class MethodGenerator {
             }
         }
         if (exprTypes != null) {
-            mergeNode.mergeExpressionTypes(exprTypes);
+            joinNode.mergeExpressionTypes(exprTypes);
         }
-        var result = variableTable.exitCondSection(branchNode);
+        var result = variableTable.exitCondSection(sectionId);
         var hasYield = result.values().stream().anyMatch(b -> b.yield() != null);
         if (hasYield) {
             var yields = result.values().stream().map(BranchInfo::yield)
@@ -252,29 +213,53 @@ public class MethodGenerator {
             var yieldType = Types.getUnionType(
                     yields.stream().map(Expression::getType).collect(Collectors.toSet())
             );
-            var yieldField = FieldBuilder.newBuilder("yield", "yield", mergeNode.getKlass(), yieldType).build();
-            new MergeNodeField(
-                    yieldField, mergeNode,
-                    branchNode.getBranches()
-                            .stream()
-                            .filter(b -> !b.isDisconnected())
-                            .collect(Collectors.toMap(
-                                    java.util.function.Function.identity(),
-                                    b -> Values.expression(
-                                            requireNonNull(result.get(b).yield(),
-                                                    "Yield must be present in all non-terminating branches " +
-                                                            "but absent in branch " + b.getIndex())
-                                    )
-                            ))
-            );
+            var yieldField = FieldBuilder.newBuilder("yield", "yield", joinNode.getKlass(), yieldType).build();
+            var values = new HashMap<NodeRT, Value>();
+            exits.forEach((branchIdx, exit) -> {
+                if(exit.isSequential() || exit instanceof GotoNode g && g.getTarget() == joinNode) {
+                    values.put(exit, Values.expression(result.get(branchIdx).yield()));
+                }
+            });
+            new JoinNodeField(yieldField, joinNode, values);
             if (isInsideBranch() && !isSwitchExpression) {
-                setYield(Expressions.nodeProperty(mergeNode, yieldField));
+                setYield(Expressions.nodeProperty(joinNode, yieldField));
             }
         }
         return result.keySet().stream().collect(Collectors.toMap(
                 java.util.function.Function.identity(),
                 b -> result.get(b).variables()
         ));
+    }
+
+    void exitCondSection1(NodeRT sectionId, JoinNode joinNode, Map<Long, NodeRT> exits, boolean isSwitchExpression) {
+        var condOutputs = exitCondSection(sectionId, joinNode, exits, isSwitchExpression);
+        var vars = condOutputs.values().iterator().next().keySet();
+        out: for (var var : vars) {
+            var branch2value = new HashMap<NodeRT, org.metavm.flow.Value>();
+            for (var entry2 : condOutputs.entrySet()) {
+                var branchIdx = entry2.getKey();
+                var exit = Objects.requireNonNull(exits.get(branchIdx));
+                if(exit.isExit() || (exit instanceof GotoNode g && g.getTarget() != joinNode))
+                    continue;
+                var branchOutputs = entry2.getValue();
+                var v = branchOutputs.get(var);
+//                var v = Objects.requireNonNull(,
+//                        () -> "Variable " + var + " is missing from branch " + branch.getIndex());
+                if(v == null)
+                    continue out;
+                branch2value.put(Objects.requireNonNull(exits.get(branchIdx)), Values.expression(v));
+            }
+            var memberTypes = new HashSet<Type>();
+            for (var value : branch2value.values()) {
+                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType())))
+                    memberTypes.add(value.getType());
+            }
+            var fieldType =
+                    memberTypes.size() == 1 ? memberTypes.iterator().next() : Types.getUnionType(memberTypes);
+            var field = FieldBuilder.newBuilder(var, var, joinNode.getKlass(), fieldType).build();
+            var joinField = new JoinNodeField(field, joinNode, branch2value);
+            setVariable(var, Expressions.nodeProperty(joinNode, joinField.getField()));
+        }
     }
 
     boolean isInsideBranch() {
@@ -327,49 +312,37 @@ public class MethodGenerator {
         }
     }
 
-    CheckNode createCheck(Expression condition, BranchNode exit) {
-        var checkNode = setNodeExprTypes(
-                new CheckNode(null, nextName("Check"), null, scope().getLastNode(), scope(),
-                        Values.expression(condition), exit)
-        );
-        var narrower = new TypeNarrower(checkNode.getExpressionTypes()::getType);
-        checkNode.mergeExpressionTypes(narrower.narrowType(condition));
-        var exitExprTypes = checkNode.getExpressionTypes().merge(narrower.narrowType(Expressions.not(condition)));
-        variableTable.addBranchEntry(exitExprTypes, exit);
-        return checkNode;
-    }
-
-    private ScopeRT scope() {
+    ScopeRT scope() {
         return currentScope().scope;
     }
 
     UpdateObjectNode createUpdateObject(Expression objectId) {
-        return setNodeExprTypes(new UpdateObjectNode(null, nextName("Update"), null, scope().getLastNode(), scope(), Values.expression(objectId), List.of()));
+        return onNodeCreated(new UpdateObjectNode(null, nextName("Update"), null, scope().getLastNode(), scope(), Values.expression(objectId), List.of()));
     }
 
     UpdateObjectNode createUpdate(Expression self, Map<Field, Expression> fields) {
         var node = createUpdateObject(self);
         fields.forEach((field, value) -> node.setUpdateField(field, UpdateOp.SET, Values.expression(value)));
-        return setNodeExprTypes(node);
+        return node;
     }
 
     UpdateStaticNode createUpdateStatic(Klass klass, Map<Field, Expression> fields) {
-        var node = new UpdateStaticNode(
+        var node = onNodeCreated(new UpdateStaticNode(
                 null, nextName("UpdateStatic"), null,
                 scope().getLastNode(), scope(), klass,
-                List.of());
+                List.of()));
         fields.forEach((field, expr) -> node.setUpdateField(field, UpdateOp.SET, Values.expression(expr)));
-        return setNodeExprTypes(node);
+        return node;
     }
 
     AddObjectNode createAddObject(Klass klass) {
-        return setNodeExprTypes(new AddObjectNode(null, nextName("Add"),
+        return onNodeCreated(new AddObjectNode(null, nextName("Add"),
                 null, false, false, klass.getType(),
                 scope().getLastNode(), scope()));
     }
 
     AddElementNode createAddElement(Expression array, Expression value) {
-        return setNodeExprTypes(
+        return onNodeCreated(
                 new AddElementNode(
                         null,
                         nextName("AddElement"),
@@ -383,7 +356,7 @@ public class MethodGenerator {
     }
 
     RemoveElementNode createRemoveElement(Expression array, Expression element) {
-        return setNodeExprTypes(
+        return onNodeCreated(
                 new RemoveElementNode(
                         null,
                         nextName("RemoveElement"),
@@ -397,7 +370,7 @@ public class MethodGenerator {
     }
 
     GetElementNode createGetElement(Expression array, Expression index) {
-        return setNodeExprTypes(
+        return onNodeCreated(
                 new GetElementNode(
                         null,
                         nextName("GetElement"),
@@ -416,29 +389,17 @@ public class MethodGenerator {
     }
 
     ReturnNode createReturn(Expression value) {
-        var node = new ReturnNode(null,
+        return onNodeCreated(new ReturnNode(null,
                 nextName("Exit"),
                 null,
                 scope().getLastNode(),
                 scope(),
                 NncUtils.get(value, Values::expression)
-        );
-        return setNodeExprTypes(node);
-    }
-
-    ForeachNode createForEach(Expression array) {
-        var loopType = newTemporaryType("ForeachOutput");
-        newTemproryField(loopType, "array", array.getType());
-        newTemproryField(loopType, "index", ModelDefRegistry.getType(Long.class));
-        return setNodeExprTypes(new ForeachNode(
-                null, nextName("Foreach"), null, loopType,
-                scope().getLastNode(), scope(), Values.expression(array),
-                Values.expression(Expressions.trueExpression())
         ));
     }
 
     IndexCountNode createIndexCount(Index index, IndexQueryKey from, IndexQueryKey to) {
-        return setNodeExprTypes(new IndexCountNode(
+        return onNodeCreated(new IndexCountNode(
                 null, nextName("IndexCount"), null, scope().getLastNode(), scope(),
                 index, from, to
         ));
@@ -446,7 +407,7 @@ public class MethodGenerator {
 
     IndexScanNode createIndexScan(Index index, IndexQueryKey from, IndexQueryKey to) {
         var arrayType = new ArrayType(index.getDeclaringType().getType(), ArrayKind.READ_ONLY);
-        return setNodeExprTypes(new IndexScanNode(
+        return onNodeCreated(new IndexScanNode(
                 null, nextName("IndexScan"), null, arrayType, scope().getLastNode(),
                 scope(), index, from, to
         ));
@@ -454,29 +415,21 @@ public class MethodGenerator {
 
     public IndexSelectNode createIndexSelect(Index index, IndexQueryKey key) {
         var listType = StdKlass.arrayList.get().getParameterized(List.of(index.getDeclaringType().getType()));
-        return setNodeExprTypes(new IndexSelectNode(
+        return onNodeCreated(new IndexSelectNode(
                 null, nextName("IndexSelect"), null, listType.getType(),
                 scope().getLastNode(), scope(), index, key
         ));
     }
 
     public IndexSelectFirstNode createIndexSelectFirst(Index index, IndexQueryKey key) {
-        return setNodeExprTypes(new IndexSelectFirstNode(
+        return onNodeCreated(new IndexSelectFirstNode(
                 null, nextName("IndexSelectFirst"), null,
                 scope().getLastNode(), scope(), index, key
         ));
     }
 
-    public Field newTemproryField(Klass klass, String name, Type type) {
+    public Field newTemporaryField(Klass klass, String name, Type type) {
         return FieldBuilder.newBuilder(name, null, klass, type).build();
-    }
-
-    public Klass newTemporaryType(String namePrefix) {
-        String name = namePrefix + "_" + NncUtils.randomNonNegative();
-        return KlassBuilder.newBuilder(name, null)
-                .anonymous(true)
-                .ephemeral(true)
-                .build();
     }
 
     MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments) {
@@ -501,7 +454,7 @@ public class MethodGenerator {
         node.setCapturedExpressions(capturedExpressions);
         node.setCapturedExpressionTypes(capturedExpressionTypes);
         variableTable.processRaiseNode(node);
-        return setNodeExprTypes(node);
+        return onNodeCreated(node);
     }
 
     NodeRT createTypeCast(Expression operand, Type targetType) {
@@ -519,7 +472,7 @@ public class MethodGenerator {
                 functionRef.getRawFlow().getParameters(), arguments,
                 (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))
         );
-        var node = setNodeExprTypes(new FunctionCallNode(
+        var node = onNodeCreated(new FunctionCallNode(
                 null,
                 nextName(functionRef.getRawFlow().getName()),
                 null,
@@ -530,10 +483,10 @@ public class MethodGenerator {
     }
 
     LambdaNode createLambda(List<Parameter> parameters, Type returnType, Klass functionalInterface) {
-        var node = new LambdaNode(
+        var node = onNodeCreated(new LambdaNode(
                 null, nextName("Lambda"), null, scope().getLastNode(), scope(),
                 parameters, returnType, functionalInterface.getType()
-        );
+        ));
         node.createSAMImpl();
         return node;
     }
@@ -544,7 +497,7 @@ public class MethodGenerator {
                 methodRef.getRawFlow().getParameters(), arguments,
                 (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))
         );
-        var node = setNodeExprTypes(new NewObjectNode(null, nextName(methodRef.resolve().getName()), null, methodRef, args,
+        var node = onNodeCreated(new NewObjectNode(null, nextName(methodRef.resolve().getName()), null, methodRef, args,
                 scope().getLastNode(), scope(), null, ephemeral, unbound));
         variableTable.processRaiseNode(node);
         return node;
@@ -560,23 +513,20 @@ public class MethodGenerator {
 
     public InputNode createInput() {
         var type = KlassBuilder.newBuilder("Input", null).temporary().build();
-        return setNodeExprTypes(new InputNode(null, nextName("input"), null, type, scope().getLastNode(), scope()));
+        return onNodeCreated(new InputNode(null, nextName("input"), null, type, scope().getLastNode(), scope()));
     }
 
     public SelfNode createSelf() {
-        return setNodeExprTypes(new SelfNode(null, nextName("self"), null,
+        return onNodeCreated(new SelfNode(null, nextName("self"), null,
                 ((Method) scope().getFlow()).getDeclaringType().getType(),
                 scope().getLastNode(), scope()));
     }
 
-    public <T extends NodeRT> T setNodeExprTypes(T node) {
+    public <T extends NodeRT> T onNodeCreated(T node) {
         var scope = scope();
         var lastNode = scope.getLastNode();
-        if (lastNode == null) {
-            node.mergeExpressionTypes(scope.getExpressionTypes());
-        } else {
-            node.mergeExpressionTypes(lastNode.getExpressionTypes());
-        }
+        if (lastNode != null && lastNode.isSequential())
+            node.mergeExpressionTypes(lastNode.getNextExpressionTypes());
         return node;
     }
 
@@ -599,7 +549,7 @@ public class MethodGenerator {
 
     @SuppressWarnings("UnusedReturnValue")
     public RaiseNode createRaise(Expression exception) {
-        var node = setNodeExprTypes(new RaiseNode(
+        var node = onNodeCreated(new RaiseNode(
                 null,
                 nextName("Error"),
                 null,
@@ -611,35 +561,25 @@ public class MethodGenerator {
         return node;
     }
 
-    public WhileNode createWhile() {
-        return createWhile(Expressions.trueExpression());
-    }
-
-    public WhileNode createWhile(Expression condition) {
-        return setNodeExprTypes(new WhileNode(
-                null, nextName("While"), null,
-                newTemporaryType("WhileOutput"),
-                scope().getLastNode(),
-                scope(),
-                Values.expression(condition)
-        ));
-    }
-
     public PsiMethod getJavaMethod() {
         return null;
     }
 
     public ClearArrayNode createClearArray(Expression array) {
-        return setNodeExprTypes(new ClearArrayNode(
+        return onNodeCreated(new ClearArrayNode(
                 null, nextName("ClearArray"), null,
                 scope().getLastNode(), scope(), Values.expression(array)
         ));
     }
 
     public SetElementNode createSetElement(Expression array, Expression index, Expression value) {
-        return new SetElementNode(null, nextName("SetElement"), null,
+        return onNodeCreated(new SetElementNode(null, nextName("SetElement"), null,
                 scope().getLastNode(), scope(), Values.expression(array),
-                Values.expression(index), Values.expression(value));
+                Values.expression(index), Values.expression(value)));
+    }
+
+    NoopNode createNoop() {
+        return new NoopNode(null, nextName("noop"), null, scope().getLastNode(), scope());
     }
 
     private static final class ScopeInfo {
@@ -652,6 +592,5 @@ public class MethodGenerator {
         }
 
     }
-
 
 }

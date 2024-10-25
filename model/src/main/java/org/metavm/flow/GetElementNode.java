@@ -20,7 +20,7 @@ import javax.annotation.Nullable;
 @EntityType
 public class GetElementNode extends NodeRT {
 
-    public static GetElementNode save(NodeDTO nodeDTO, @Nullable NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static GetElementNode save(NodeDTO nodeDTO, @Nullable NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         GetElementNodeParam param = nodeDTO.getParam();
         var array = ValueFactory.create(param.array(), parsingContext);

@@ -88,10 +88,6 @@ public abstract class ElementVisitor<R> {
         return visitElement(scope);
     }
 
-    public R visitBranch(Branch branch) {
-        return visitElement(branch);
-    }
-
     public R visitNode(NodeRT node) {
         return visitElement(node);
     }
@@ -136,10 +132,6 @@ public abstract class ElementVisitor<R> {
         return visitScopeNode(node);
     }
 
-    public R visitCheckNode(CheckNode node) {
-        return visitNode(node);
-    }
-
     public R visitNewArrayNode(NewArrayNode node) {
         return visitNode(node);
     }
@@ -156,20 +148,8 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitBranchNode(BranchNode node) {
-        return visitNode(node);
-    }
-
     public R visitLoopNode(LoopNode node) {
         return visitScopeNode(node);
-    }
-
-    public R visitForeachNode(ForeachNode node) {
-        return visitLoopNode(node);
-    }
-
-    public R visitWhileNode(WhileNode node) {
-        return visitLoopNode(node);
     }
 
     public R visitCallNode(CallNode node) {
@@ -193,10 +173,6 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitDeleteObjectNode(DeleteObjectNode node) {
-        return visitNode(node);
-    }
-
-    public R visitMergeNode(MergeNode node) {
         return visitNode(node);
     }
 
@@ -447,4 +423,17 @@ public abstract class ElementVisitor<R> {
     public R visitNeverExpression(NeverExpression neverExpression) {
         return visitExpression(neverExpression);
     }
+
+    public R visitIfNode(IfNode node) {
+        return visitNode(node);
+    }
+
+    public R visitJoinNode(JoinNode node) {
+        return visitNode(node);
+    }
+
+    public R visitNoopNode(NoopNode node) {
+        return visitNode(node);
+    }
+
 }

@@ -35,14 +35,12 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     private final Set<LoopNode> loopingNodes = new IdentitySet<>();
     private NodeRT entry;
     private final InstanceRepository instanceRepository;
-    private final Map<BranchNode, Branch> selectedBranches = new IdentityHashMap<>();
-    private final Map<BranchNode, Branch> exitBranches = new IdentityHashMap<>();
-    private final LinkedList<Branch> branches = new LinkedList<>();
     private FrameState state = FrameState.RUNNING;
     private final LinkedList<TryNode> tryNodes = new LinkedList<>();
     private ClassInstance exception;
 
     private final Map<TryNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
+    private NodeRT lastNode;
 
     public MetaFrame(@NotNull NodeRT entry, @Nullable Klass owner, @Nullable ClassInstance self, List<? extends Value> arguments,
                      InstanceRepository instanceRepository) {
@@ -162,6 +160,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
                 return new FlowExecResult(output, null);
             if(output != null)
                 outputs.put(pc, output);
+            lastNode = pc;
             pc = result.next();
         }
         throw new FlowExecutionException(String.format("Flow execution steps exceed the limit: %d", MAX_STEPS));
@@ -208,25 +207,8 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         this.entry = node;
     }
 
-    public Branch getSelectedBranch(BranchNode branchNode) {
-        return selectedBranches.get(branchNode);
-    }
-
-    @SuppressWarnings("unused")
-    public Branch currentBranch() {
-        return NncUtils.requireNonNull(branches.peek());
-    }
-
-    public void setSelectedBranch(BranchNode branchNode, Branch branch) {
-        selectedBranches.put(branchNode, branch);
-    }
-
-    public void setExitBranch(BranchNode branchNode, Branch branch) {
-        exitBranches.put(branchNode, branch);
-    }
-
-    public @Nullable Branch removeExitBranch(BranchNode branchNode) {
-        return exitBranches.remove(branchNode);
+    public NodeRT getLastNode() {
+        return lastNode;
     }
 
     public FrameState getState() {

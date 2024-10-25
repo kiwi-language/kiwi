@@ -29,8 +29,6 @@ public class ScopeRT extends Element {
     private final ChildArray<NodeRT> nodes = addChild(new ChildArray<>(new TypeReference<>() {
     }), "nodes");
     private final boolean withBackEdge;
-    @Nullable
-    private Branch branch;
 
     private transient ExpressionTypeMap expressionTypes = ExpressionTypeMap.EMPTY;
 
@@ -92,16 +90,6 @@ public class ScopeRT extends Element {
         this.nodes.resetChildren(nodes);
     }
 
-    public void setBranch(@Nullable Branch branch) {
-        this.branch = branch;
-        if (branch != null) {
-            var typeNarrower = new TypeNarrower(
-                    expr -> owner != null ? owner.getExpressionTypes().getType(expr) : expr.getType()
-            );
-            expressionTypes = expressionTypes.merge(typeNarrower.narrowType(branch.getCondition().getExpression()));
-        }
-    }
-
     public NodeRT getPredecessor() {
         return owner;
 //        if (withBackEdge) {
@@ -111,11 +99,6 @@ public class ScopeRT extends Element {
 //            return owner.getPredecessor();
 //        }
 //        return null;
-    }
-
-    @Nullable
-    public Branch getBranch() {
-        return branch;
     }
 
     public @Nullable NodeRT getSuccessor() {

@@ -11,30 +11,26 @@ import org.metavm.object.instance.core.Id;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public class GotoNode extends NodeRT {
+public class GotoNode extends JumpNode {
 
-    public static GotoNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static GotoNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var param = (GotoNodeParam) nodeDTO.getParam();
         var node = (GotoNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new GotoNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, null);
-        var target = context.getEntity(NodeRT.class, param.targetId());
-        if(target != null)
-            node.setTarget(target);
+            node = new GotoNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope);
+        if(stage == NodeSavingStage.FINALIZE)
+            node.setTarget(Objects.requireNonNull(context.getNode(param.targetId())));
         return node;
     }
-
-    private @NotNull NodeRT target;
 
     public GotoNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope,
                     @Nullable NodeRT target) {
         super(tmpId, name, code, null, previous, scope);
-        this.target = Objects.requireNonNullElse(target, this);
+        setTarget(Objects.requireNonNullElse(target, this));
     }
 
     public GotoNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope) {
         super(tmpId, name, code, null, previous, scope);
-        this.target = this;
     }
 
     @Override
@@ -44,31 +40,29 @@ public class GotoNode extends NodeRT {
 
     @Override
     protected GotoNodeParam getParam(SerializeContext serializeContext) {
-        return new GotoNodeParam(serializeContext.getStringId(target));
+        return new GotoNodeParam(serializeContext.getStringId(getTarget()));
     }
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var s = target.getScope();
+        var s = getTarget().getScope();
         while (s != null) {
-            if(s.getBranch() != null)
-                frame.setSelectedBranch(s.getBranch().getOwner(), s.getBranch());
             var owner = s.getOwner();
             if(owner != null && !(owner instanceof LambdaNode))
                 s = owner.getScope();
             else
                 s = null;
         }
-        return NodeExecResult.jump(target);
+        return NodeExecResult.jump(getTarget());
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.writeNewLine("goto " + target.getName());
+        writer.write("goto " + getTarget().getName());
     }
 
     public void setTarget(@NotNull NodeRT target) {
-        this.target = target;
+        super.setTarget(target);
         if (target instanceof TargetNode labelNode)
             labelNode.addSource(this);
     }

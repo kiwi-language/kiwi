@@ -25,7 +25,7 @@ import java.util.List;
 @EntityType
 public class NewArrayNode extends NodeRT implements NewNode {
 
-    public static NewArrayNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static NewArrayNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         NewArrayNodeParam param = nodeDTO.getParam();
         var type = (ArrayType) TypeParser.parseType(nodeDTO.outputType(), context);

@@ -63,40 +63,37 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                 StdFunction.isSourcePresent.get(),
                 List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, Values.inputValue(input, 0)))
         );
-        Nodes.branch(
-                scope.nextNodeName("branch"), null, scope,
-                Values.node(isSourcePresent),
-                trueBranch -> {
-                    var bodyScope = trueBranch.getScope();
-                    var source = Nodes.functionCall(
-                            scope.nextNodeName("source"), bodyScope,
-                            StdFunction.getSource.get(),
-                            List.of(Nodes.argument(StdFunction.getSource.get(), 0, Values.inputValue(input, 0)))
-                    );
-                    var castedSource = Nodes.cast(scope.nextNodeName("castedSource"), getSourceType(), Values.node(source), bodyScope);
-                    Nodes.methodCall(
-                            scope.nextNodeName("saveView"), bodyScope, Values.node(castedSource),
-                            writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.inputValue(input, 0)))
-                    );
-                    Nodes.ret(scope.nextNodeName("return"), bodyScope, Values.node(castedSource));
-                },
-                falseBranch -> {
-                    var bodyScope = falseBranch.getScope();
-                    if (fromViewMethod != null) {
-                        var fromView = Nodes.methodCall(
-                                scope.nextNodeName("fromView"), bodyScope,
-                                null, fromViewMethod,
-                                List.of(
-                                        Nodes.argument(fromViewMethod, 0, Values.inputValue(input, 0))
-                                )
-                        );
-                        Nodes.ret(scope.nextNodeName("return"), bodyScope, Values.node(fromView));
-                    } else
-                        Nodes.raise(scope.nextNodeName("fromViewNotSupported"), bodyScope, Values.constant(Expressions.constantString("fromView not supported")));
-                },
-                mergeNode -> {
-                }
+        var ifNode = Nodes.if_(scope.nextNodeName("if"),
+                Values.expression(Expressions.not(Expressions.node(isSourcePresent))), null, scope
         );
+        var source = Nodes.functionCall(
+                scope.nextNodeName("source"), scope,
+                StdFunction.getSource.get(),
+                List.of(Nodes.argument(StdFunction.getSource.get(), 0, Values.inputValue(input, 0)))
+        );
+        var castedSource = Nodes.cast(scope.nextNodeName("castedSource"), getSourceType(), Values.node(source), scope);
+        Nodes.methodCall(
+                scope.nextNodeName("saveView"), scope, Values.node(castedSource),
+                writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.inputValue(input, 0)))
+        );
+        Nodes.ret(scope.nextNodeName("return"), scope, Values.node(castedSource));
+        if (fromViewMethod != null) {
+            var fromView = Nodes.methodCall(
+                    scope.nextNodeName("fromView"), scope,
+                    null, fromViewMethod,
+                    List.of(
+                            Nodes.argument(fromViewMethod, 0, Values.inputValue(input, 0))
+                    )
+            );
+            ifNode.setTarget(fromView);
+            Nodes.ret(scope.nextNodeName("return"), scope, Values.node(fromView));
+        } else {
+            ifNode.setTarget(Nodes.raise(
+                    scope.nextNodeName("fromViewNotSupported"),
+                    scope,
+                    Values.constant(Expressions.constantString("fromView not supported"))
+            ));
+        }
         return unmapper;
     }
 

@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.IEntityContext;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Component
+@Slf4j
 public class FlowExecutionService extends EntityContextFactoryAware {
 
     public FlowExecutionService(EntityContextFactory entityContextFactory) {

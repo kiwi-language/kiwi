@@ -103,11 +103,6 @@ public class StandardStaticMethods {
                     var javaArgs = new Object[paramTypes.length];
                     while(it.hasNext())
                         javaArgs[i] = Instances.toJavaValue(it.next(), paramTypes[i++]);
-                    if(DebugEnv.flag) {
-                        log.debug("Invoking method {} with self {} and arguments {}. MetaVM arguments: {}",
-                                ReflectionUtils.getMethodQualifiedName(method), self, Arrays.toString(javaArgs),
-                                arguments);
-                    }
                     var r = ReflectionUtils.invoke(self, method, javaArgs);
                     return FlowExecResult.of(Instances.fromJavaValue(r, Instances::nullInstance));
                 };

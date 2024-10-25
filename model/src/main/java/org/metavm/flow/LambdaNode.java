@@ -19,23 +19,22 @@ import java.util.Map;
 @EntityType
 public class LambdaNode extends ScopeNode implements Callable, LoadAware {
 
-    public static LambdaNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
-        LambdaNodeParam param = nodeDTO.getParam();
-        var parameters = NncUtils.map(
-                param.getParameters(),
-                paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
-                        TypeParser.parseType(paramDTO.type(), context))
-        );
-        var returnType = TypeParser.parseType(param.getReturnType(), context);
-        var funcInterface = (ClassType) NncUtils.get(param.getFunctionalInterface(), t -> TypeParser.parseType(t, new ContextTypeDefRepository(context)));
+    public static LambdaNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var node = (LambdaNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
+            LambdaNodeParam param = nodeDTO.getParam();
+            var parameters = NncUtils.map(
+                    param.getParameters(),
+                    paramDTO -> new Parameter(paramDTO.tmpId(), paramDTO.name(), paramDTO.code(),
+                            TypeParser.parseType(paramDTO.type(), context))
+            );
+            var returnType = TypeParser.parseType(param.getReturnType(), context);
+            var funcInterface = (ClassType) NncUtils.get(param.getFunctionalInterface(), t -> TypeParser.parseType(t, new ContextTypeDefRepository(context)));
             node = new LambdaNode(
                     nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, parameters, returnType, funcInterface
             );
             node.createSAMImpl();
-        } else
-            node.update(parameters, returnType, funcInterface);
+        }
         return node;
     }
 

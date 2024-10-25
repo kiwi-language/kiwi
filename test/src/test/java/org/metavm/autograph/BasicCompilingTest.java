@@ -6,10 +6,7 @@ import org.metavm.common.rest.dto.ErrorDTO;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.type.*;
-import org.metavm.util.BusinessException;
-import org.metavm.util.NncUtils;
-import org.metavm.util.TestConstants;
-import org.metavm.util.TestUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,6 +88,10 @@ public class BasicCompilingTest extends CompilerTestBase {
             processShiftAssignment();
             processCapturedTypesInFieldInitializer();
             processNewObject();
+            processLoopWithinTry();
+            processBooleanConditional();
+            processElseTypeNarrowing();
+            processSwitchExpression();
         });
     }
 
@@ -399,6 +400,9 @@ public class BasicCompilingTest extends CompilerTestBase {
                 () -> apiClient.callMethod("branching.BranchingFoo", "getOrDefault2", Arrays.asList(0, 2))
         );
         Assert.assertEquals(2L, result1);
+        Assert.assertTrue(
+                (boolean) callMethod("branching.BranchingFoo", "testIsNameNotNull", List.of())
+        );
     }
 
     private void processTryCatch() {
@@ -947,6 +951,32 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertNotNull(callMethod(klassName, "newObject", List.of()));
         Assert.assertEquals(0L, callMethod(klassName, "testNewObjectArray", List.of()));
         Assert.assertEquals(1L, callMethod(klassName, "testNewAnonymous", List.of()));
+    }
+
+    private void processLoopWithinTry() {
+        var className = "loops.LoopWithinTry";
+        Assert.assertEquals(15L, callMethod(className, "sum", List.of(5)));
+    }
+
+    private void processBooleanConditional() {
+        var className = "conditional.BooleanConditionalFoo";
+        Assert.assertTrue((boolean) callMethod(className, "test", List.of(10)));
+    }
+
+    private void processElseTypeNarrowing() {
+        var className = "branching.ElseTypeNarrowingFoo";
+        var fooClassName = className + ".Foo";
+        var foo = saveInstance(fooClassName, Map.of("value", 1));
+        Assert.assertEquals(
+                1L, callMethod(className, "test", List.of(foo))
+        );
+    }
+
+    private void processSwitchExpression() {
+        var klassName = "switchexpr.SwitchExpressionFoo";
+        var currencyKlassName = klassName + ".Currency";
+        var yuanId = (String) getStatic(currencyKlassName, "YUAN");
+        Assert.assertEquals(0.14, callMethod(klassName, "getRate", List.of(yuanId)));
     }
 
 }

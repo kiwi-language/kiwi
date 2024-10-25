@@ -20,7 +20,7 @@ import static java.util.Objects.requireNonNull;
 @EntityType
 public class IndexScanNode extends NodeRT {
 
-    public static IndexScanNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static IndexScanNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var param = (IndexScanNodeParam) nodeDTO.param();
         var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
         var parsingContext = FlowParsingContext.create(scope, prev, context);

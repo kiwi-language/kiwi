@@ -13,19 +13,22 @@ import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 public class TargetNode extends NodeRT {
 
-    public static TargetNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static TargetNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var param = (TargetNodeParam) nodeDTO.getParam();
         var node = (TargetNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
             node = new TargetNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope);
-        node.setSources(List.of());
-        for (String sourceId : param.sourceIds()) {
-            var source = context.getEntity(GotoNode.class, sourceId);
-            if(source != null)
-                source.setTarget(node);
+        if(stage == NodeSavingStage.FINALIZE) {
+            node.setSources(
+                    NncUtils.map(
+                            param.sourceIds(),
+                            sourceId -> Objects.requireNonNull(context.getEntity(GotoNode.class, sourceId))
+                    )
+            );
         }
         return node;
     }

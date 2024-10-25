@@ -1,41 +1,42 @@
 package org.metavm.flow;
 
 import junit.framework.TestCase;
-import org.metavm.entity.EntityQueryService;
-import org.metavm.flow.rest.*;
-import org.metavm.object.instance.InstanceQueryService;
-import org.metavm.object.instance.core.TmpId;
-import org.metavm.object.type.BeanManager;
+import org.junit.Assert;
+import org.metavm.entity.EntityContextFactory;
+import org.metavm.object.instance.InstanceManager;
+import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.TypeManager;
-import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
-import org.metavm.object.type.rest.dto.FieldDTOBuilder;
-import org.metavm.task.TaskManager;
+import org.metavm.object.type.Types;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 public class FlowManagerTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(FlowManagerTest.class);
 
+    private EntityContextFactory entityContextFactory;
+
     private FlowManager flowManager;
 
     private TypeManager typeManager;
 
+    private InstanceManager instanceManager;
+
+    private FlowExecutionService flowExecutionService;
+
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
-        var entityContextFactory = bootResult.entityContextFactory();
-        var instanceSearchService = bootResult.instanceSearchService();
-        var entityQueryService =
-                new EntityQueryService(new InstanceQueryService(instanceSearchService));
-        var jobManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
-        typeManager =
-                new TypeManager(entityContextFactory, entityQueryService, jobManager, new BeanManager());
-        flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
-        flowManager.setTypeManager(typeManager);
+        entityContextFactory = bootResult.entityContextFactory();
+        var managers = TestUtils.createCommonManagers(bootResult);
+        instanceManager = managers.instanceManager();
+        flowManager = managers.flowManager();
+        typeManager = managers.typeManager();
+        flowExecutionService = managers.flowExecutionService();
         FlowSavingContext.initConfig();
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
@@ -44,90 +45,41 @@ public class FlowManagerTest extends TestCase {
     protected void tearDown() {
         flowManager = null;
         typeManager = null;
+        instanceManager = null;
+        entityContextFactory = null;
+        flowExecutionService = null;
         FlowSavingContext.clearConfig();
     }
 
-    public void testDecreaseQuantity() {
-        var type = TestUtils.doInTransaction(() -> typeManager.saveType(ClassTypeDTOBuilder.newBuilder("Product")
-                .tmpId(NncUtils.randomNonNegative())
-                .addField(FieldDTOBuilder.newBuilder("title", "string").build())
-                .addField(FieldDTOBuilder.newBuilder("price", "double").build())
-                .addField(FieldDTOBuilder.newBuilder("quantity", "long").build())
-                .build()));
-
-        var flow = TestUtils.doInTransaction(() -> flowManager.save(MethodDTOBuilder.newBuilder(type.id(), "decreaseQuantity")
-                .tmpId(NncUtils.randomNonNegative())
-                .parameters(List.of(ParameterDTO.create(null, "quantity", "long")))
-                .returnType("void")
-                .skipRootScope(true)
-                .build()));
-
-        var inputNode = flow.getRootScope().getNodeByIndex(1);
-
-        var branchNode = TestUtils.doInTransaction(() -> flowManager.createBranchNode(
-                new NodeDTO(
-                        null,
-                        flow.getStringId(),
-                        "Branch",
-                        null,
-                        NodeKind.BRANCH.code(),
-                        inputNode.getStringId(),
-                        null,
-                        new BranchNodeParam(false,
-                                List.of(
-                                        new BranchDTO(
-                                                null, 0L, null,
-                                                ValueDTOFactory.createExpression("true"),
-                                                new ScopeDTO(null, List.of()), false, false
-                                        ),
-                                        new BranchDTO(
-                                                null, 10000L, null,
-                                                ValueDTOFactory.createExpression("true"),
-                                                new ScopeDTO(null, List.of()), true, false
-                                        )
-                                )
-                        ),
-                        null,
-                        flow.getRootScope().getStringId(),
-                        null
-                )
-        )).get(0);
-
-        var branch = ((BranchNodeParam) branchNode.param()).branches().get(0);
-
-        TestUtils.doInTransaction(() -> flowManager.updateBranch(
-                new BranchDTO(
-                        branch.id(),
-                        branch.index(),
-                        branchNode.id(),
-                        ValueDTOFactory.createExpression("input.quantity > self.quantity"),
-                        new ScopeDTO(null, List.of()),
-                        false,
-                        false
-                )
-        ));
-
-        TestUtils.doInTransaction(() -> flowManager.saveNode(
-                new NodeDTO(
-                        TmpId.random().toString(),
-                        flow.getStringId(),
-                        "Error",
-                        null,
-                        NodeKind.EXCEPTION.code(),
-                        null,
-                        null,
-                        new RaiseNodeParam(
-                                RaiseParameterKind.MESSAGE.getCode(),
-                                ValueDTOFactory.createConstant("Quantity not enough"),
-                                null
-                        ),
-                        null,
-                        branch.scope().id(),
-                        null
-                )
-        ));
-
+    public void testSimpleGraph() {
+        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var klass = TestUtils.newKlassBuilder("Foo").build();
+            var method = MethodBuilder.newBuilder(klass, "test", "test")
+                    .parameters(Parameter.create("value", Types.getBooleanType()))
+                    .returnType(Types.getBooleanType())
+                    .isStatic(true)
+                    .build();
+            var scope = method.getRootScope();
+            var input = Nodes.input(method);
+            var inputValueField = input.getKlass().getFieldByCode("value");
+            var if_ = Nodes.if_("if",
+                    Values.nodeProperty(input, inputValueField),
+                    null,
+                    scope
+            );
+            var noop = Nodes.value("noop", Values.constantBoolean(true), scope);
+            var join = Nodes.join("join", scope);
+            if_.setTarget(join);
+            var f = FieldBuilder.newBuilder("value", null, join.getKlass(), Types.getBooleanType())
+                            .build();
+            join.addField(new JoinNodeField(f, join, Map.of(noop, Values.constantFalse(), if_, Values.constantTrue())));
+            Nodes.ret("ret", scope, Values.nodeProperty(join, f));
+            context.bind(klass);
+            klass.accept(new FlowAnalyzer());
+            var r = Flows.execute(method, null, List.of(Instances.trueInstance()), context).ret();
+            Assert.assertNotNull(r);
+            Assert.assertEquals(Instances.trueInstance(), r);
+        }
     }
-
 
 }

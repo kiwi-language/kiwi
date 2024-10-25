@@ -21,7 +21,7 @@ import java.util.List;
 @EntityType
 public class FunctionNode extends NodeRT {
 
-    public static FunctionNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static FunctionNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         FunctionNodeParam param = nodeDTO.getParam();
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         var func = ValueFactory.create(param.func(), parsingContext);

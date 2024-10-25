@@ -31,7 +31,7 @@ import java.util.*;
 @EntityType
 public class TryEndNode extends ChildTypeNode {
 
-    public static TryEndNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, IEntityContext context) {
+    public static TryEndNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var node = (TryEndNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var outputKlass = ((ClassType) TypeParser.parseType(nodeDTO.outputType(), context)).resolve();
