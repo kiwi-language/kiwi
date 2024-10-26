@@ -35,7 +35,7 @@ public class NodeFactory {
             try {
                 node = (NodeRT) ReflectionUtils.invoke(null, createMethod, nodeDTO, prev, scope, stage, context);
                 if(prev != null && prev.isSequential())
-                    node.mergeExpressionTypes(prev.getExpressionTypes());
+                    node.mergeExpressionTypes(prev.getNextExpressionTypes());
                 if (isCreate)
                     context.bind(node);
                 return node;

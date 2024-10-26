@@ -3,16 +3,14 @@ package org.metavm.flow;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.metavm.entity.*;
-import org.metavm.expression.ExpressionTypeMap;
-import org.metavm.expression.TypeNarrower;
 import org.metavm.flow.rest.ScopeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.NncUtils;
 import org.metavm.util.TypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -23,32 +21,17 @@ public class ScopeRT extends Element {
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private final Flow flow;
-    @Nullable
-    private final NodeRT owner;
     @ChildEntity
     private final ChildArray<NodeRT> nodes = addChild(new ChildArray<>(new TypeReference<>() {
     }), "nodes");
-    private final boolean withBackEdge;
-
-    private transient ExpressionTypeMap expressionTypes = ExpressionTypeMap.EMPTY;
 
     public ScopeRT(Flow flow) {
-        this(flow, null, false, false);
+        this(flow, false);
     }
 
-    public ScopeRT(Flow flow, @Nullable NodeRT owner) {
-        this(flow, owner, false, false);
-    }
-
-    public ScopeRT(Flow flow, @Nullable NodeRT owner, boolean withBackEdge) {
-        this(flow, owner, withBackEdge, false);
-    }
-
-    public ScopeRT(Flow flow, @Nullable NodeRT owner, boolean withBackEdge, boolean ephemeral) {
+    public ScopeRT(Flow flow, boolean ephemeral) {
         super(null, null, ephemeral);
         this.flow = flow;
-        this.owner = owner;
-        this.withBackEdge = withBackEdge;
     }
 
     public ScopeDTO toDTO(boolean withNodes, SerializeContext serializeContext) {
@@ -90,28 +73,6 @@ public class ScopeRT extends Element {
         this.nodes.resetChildren(nodes);
     }
 
-    public NodeRT getPredecessor() {
-        return owner;
-//        if (withBackEdge) {
-//            return owner;
-//        }
-//        if (owner != null) {
-//            return owner.getPredecessor();
-//        }
-//        return null;
-    }
-
-    public @Nullable NodeRT getSuccessor() {
-        if (withBackEdge) {
-            return owner;
-        }
-        if (owner != null) {
-            return owner.getSuccessor();
-        }
-        return null;
-    }
-
-
     public NodeRT getNode(long id) {
         return nodes.get(Entity::tryGetId, id);
     }
@@ -140,14 +101,6 @@ public class ScopeRT extends Element {
         return nodes.isEmpty() ? null : nodes.get(0);
     }
 
-    public @Nullable NodeRT getOwner() {
-        return owner;
-    }
-
-    public @Nullable ScopeRT getParentScope() {
-        return NncUtils.get(owner, NodeRT::getScope);
-    }
-
     public void removeNode(NodeRT node) {
         onNodeChange();
         nodes.remove(node);
@@ -167,25 +120,9 @@ public class ScopeRT extends Element {
         return !nodes.isEmpty();
     }
 
-    public boolean isWithBackEdge() {
-        return withBackEdge;
-    }
-
     @Nullable
     public NodeRT getLastNode() {
         return nodes.isEmpty() ? null : nodes.get(nodes.size() - 1);
-    }
-
-    public ExpressionTypeMap getExpressionTypes() {
-        return NncUtils.orElse(expressionTypes, () -> ExpressionTypeMap.EMPTY);
-    }
-
-    public void setExpressionTypes(ExpressionTypeMap expressionTypes) {
-        this.expressionTypes = expressionTypes;
-    }
-
-    public void mergeExpressionTypes(ExpressionTypeMap expressionTypes) {
-        this.expressionTypes = getExpressionTypes().merge(expressionTypes);
     }
 
     private void onNodeChange() {

@@ -644,8 +644,7 @@ public class Generator extends CodeGenVisitor {
                              @Nullable TriConsumer<JoinNode, IfNode, Map<QualifiedName, Field>> preprocessor,
                              @Nullable TriConsumer<JoinNode, NodeRT, NodeRT> postProcessor
                              ) {
-        var entryNode = Objects.requireNonNullElseGet(builder().scope().getLastNode(),
-                () -> Objects.requireNonNull(builder().scope().getOwner()));
+        var entryNode = builder().createNoop();
         var joinNode = builder().createJoin();
         var bodyScope = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
         var modified = new HashSet<>(bodyScope.getModified());

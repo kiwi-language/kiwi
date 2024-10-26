@@ -191,7 +191,7 @@ public class MethodGenerator {
         for (ScopeInfo scope : condScopes.remove(sectionId)) {
             var lastNode = scope.scope.getLastNode();
             if (lastNode == null || !lastNode.isExit()) {
-                var newExprTypes = lastNode == null ? scope.scope.getExpressionTypes() : lastNode.getExpressionTypes();
+                var newExprTypes = lastNode == null ? ExpressionTypeMap.EMPTY : lastNode.getNextExpressionTypes();
                 if (exprTypes == null) {
                     exprTypes = newExprTypes;
                 } else {
@@ -281,13 +281,6 @@ public class MethodGenerator {
     }
 
     ScopeInfo enterScope(ScopeRT scope) {
-        return enterScope(scope, NncUtils.get(scope.getOwner(), NodeRT::getExpressionTypes));
-    }
-
-    ScopeInfo enterScope(ScopeRT scope, ExpressionTypeMap expressionTypeMap) {
-        if (expressionTypeMap != null) {
-            scope.setExpressionTypes(expressionTypeMap);
-        }
         var scopeInfo = new ScopeInfo(scope);
         scopes.push(scopeInfo);
         return scopeInfo;
@@ -303,9 +296,9 @@ public class MethodGenerator {
         } else {
             var lastNode = scope().getLastNode();
             if (lastNode == null) {
-                return scope().getExpressionTypes().getType(expression);
+                return expression.getType();
             } else {
-                return lastNode.getExpressionTypes().getType(expression);
+                return lastNode.getNextExpressionTypes().getType(expression);
             }
         }
     }

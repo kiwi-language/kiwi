@@ -176,7 +176,7 @@ public class VariableTable {
         }
 
         ExpressionTypeMap nextBranch(Value condition) {
-            var narrower = new TypeNarrower(branchNode.getExpressionTypes()::getType);
+            var narrower = new TypeNarrower(branchNode.getNextExpressionTypes()::getType);
             ExpressionTypeMap extraExprTypeMap = null;
             if(nextBranchCond != null && !Expressions.isConstantFalse(nextBranchCond)) {
                 extraExprTypeMap = narrower.narrowType(nextBranchCond);

@@ -83,14 +83,6 @@ public abstract class NodeRT extends Element implements LocalKey {
         return successor;
     }
 
-    public NodeRT getDominator() {
-        return predecessor != null ? predecessor : scope.getPredecessor();
-    }
-
-    public NodeRT getNext() {
-        return successor != null ? successor : scope.getSuccessor();
-    }
-
     public @Nullable NodeRT getPredecessor() {
         return predecessor;
     }
@@ -228,11 +220,11 @@ public abstract class NodeRT extends Element implements LocalKey {
     public abstract NodeExecResult execute(MetaFrame frame);
 
     public NodeExecResult next(Value output) {
-        return new NodeExecResult(output, null, getNext());
+        return new NodeExecResult(output, null, getSuccessor());
     }
 
     public NodeExecResult next() {
-        return new NodeExecResult(null, null, getNext());
+        return new NodeExecResult(null, null, getSuccessor());
     }
 
     public ExpressionTypeMap getExpressionTypes() {

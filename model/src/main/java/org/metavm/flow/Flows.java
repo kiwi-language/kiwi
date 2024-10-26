@@ -7,6 +7,7 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.expression.Expression;
+import org.metavm.expression.ExpressionTypeMap;
 import org.metavm.expression.StaticPropertyExpression;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.FunctionValue;
@@ -26,8 +27,8 @@ public class Flows {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    public static Type getExpressionType(Expression expression, @Nullable NodeRT prev, ScopeRT scope) {
-        var exprTypeMap = prev != null ? prev.getExpressionTypes() : scope.getExpressionTypes();
+    public static Type getExpressionType(Expression expression, @Nullable NodeRT prev) {
+        var exprTypeMap = prev != null ? prev.getNextExpressionTypes() : ExpressionTypeMap.EMPTY;
         return exprTypeMap.getType(expression);
     }
 

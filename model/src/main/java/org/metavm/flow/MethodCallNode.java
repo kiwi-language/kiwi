@@ -5,6 +5,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.expression.ExpressionParser;
+import org.metavm.expression.ExpressionTypeMap;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.expression.VarType;
 import org.metavm.flow.rest.MethodCallNodeParam;
@@ -43,8 +44,9 @@ public class MethodCallNode extends CallNode {
             var self = NncUtils.get(param.getSelf(), s -> ValueFactory.create(s, parsingContext));
             ClassType declaringType;
             if (self != null) {
-                var exprTypes = prev != null ? prev.getExpressionTypes() : scope.getExpressionTypes();
-                declaringType = (ClassType) exprTypes.getType(self.getExpression());
+                declaringType = (ClassType) (
+                        prev != null ? prev.getNextExpressionTypes().getType(self.getExpression()) :
+                                self.getExpression().getType());
             } else
                 declaringType = (ClassType) TypeParser.parseType(Objects.requireNonNull(param.getType()), context);
             var argumentValues = NncUtils.map(

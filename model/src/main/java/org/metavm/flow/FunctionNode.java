@@ -40,7 +40,7 @@ public class FunctionNode extends NodeRT {
 
     public FunctionNode(Long tmpId, String name, @Nullable String code,  NodeRT previous, ScopeRT scope, Value func, List<Value> arguments) {
         super(tmpId, name, code,
-                ((FunctionType) Flows.getExpressionType(func.getExpression(), previous, scope)).getReturnType(), previous, scope);
+                ((FunctionType) Flows.getExpressionType(func.getExpression(), previous)).getReturnType(), previous, scope);
         check(func, arguments);
         this.func = func;
         this.arguments.addAll(arguments);
@@ -61,7 +61,7 @@ public class FunctionNode extends NodeRT {
     }
 
     private void check(Value func, List<Value> arguments) throws BusinessException {
-        var funcType = ((FunctionType) Flows.getExpressionType(func.getExpression(), getPredecessor(), getScope()));
+        var funcType = ((FunctionType) Flows.getExpressionType(func.getExpression(), getPredecessor()));
         if (funcType instanceof FunctionType functionType) {
             if (arguments.size() != functionType.getParameterTypes().size()) {
                 throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT1,

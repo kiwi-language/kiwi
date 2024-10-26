@@ -24,25 +24,20 @@ public class FlowParsingContext extends BaseParsingContext {
         return new FlowParsingContext(
                 entityContext.getInstanceContext(),
                 new ContextTypeDefRepository(entityContext),
-                scope, prev);
+                prev);
     }
 
-    private final ScopeRT scope;
     private final NodeRT prev;
-    private final NodeRT lastNode;
     private long lastBuiltVersion = -1L;
     private final Map<Id, NodeRT> id2node = new HashMap<>();
     private final Map<String, NodeRT> name2node = new HashMap<>();
-    private final Map<NodeRT, NodeExpression> node2expression = new HashMap<>();
     private final ExpressionTypeMap expressionTypes;
 
     public FlowParsingContext(
             InstanceProvider instanceProvider, IndexedTypeDefProvider typeDefProvider,
-            ScopeRT scope, NodeRT prev) {
+            NodeRT prev) {
         super(instanceProvider, typeDefProvider);
-        this.scope = scope;
         this.prev = prev;
-        this.lastNode = prev != null ? prev : scope.getOwner();
         this.expressionTypes = prev != null ? prev.getNextExpressionTypes() : ExpressionTypeMap.EMPTY;
     }
 
@@ -77,18 +72,18 @@ public class FlowParsingContext extends BaseParsingContext {
     }
 
     private void rebuildIfOutdated() {
-        if (lastNode == null)
+        if (prev == null)
             return;
-        if (lastBuiltVersion < lastNode.getFlow().getVersion())
+        if (lastBuiltVersion < prev.getFlow().getVersion())
             rebuild();
     }
 
     private void rebuild() {
-        if (lastNode == null) return;
+        if (prev == null) return;
         id2node.clear();
         name2node.clear();
         Queue<NodeRT> queue = new LinkedList<>();
-        queue.offer(lastNode);
+        queue.offer(prev);
         Set<NodeRT> visited = new IdentitySet<>();
         while (!queue.isEmpty()) {
             var node = queue.poll();
@@ -97,12 +92,12 @@ public class FlowParsingContext extends BaseParsingContext {
                 id2node.put(node.tryGetId(), node);
             }
             name2node.put(node.getName(), node);
-            var dom = node.getDominator();
-            if (dom != null && !visited.contains(dom)) {
-                queue.offer(dom);
+            var prev = node.getPredecessor();
+            if (prev != null && !visited.contains(prev)) {
+                queue.offer(prev);
             }
         }
-        lastBuiltVersion = lastNode.getFlow().getVersion();
+        lastBuiltVersion = prev.getFlow().getVersion();
     }
 
     private NodeRT getNode(Var var) {

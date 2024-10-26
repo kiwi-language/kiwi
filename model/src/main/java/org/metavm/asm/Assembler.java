@@ -1021,7 +1021,6 @@ public class Assembler {
                             throw new UnsupportedOperationException();
                         },
                         new AsmTypeDefProvider(getCompilationUnit()),
-                        scope,
                         scope.getLastNode()
                 );
                 if (statement.bop != null) {
@@ -1208,7 +1207,7 @@ public class Assembler {
                     return join2;
                 }
                 if (statement.FOR() != null) {
-                    var entryNode = Objects.requireNonNullElseGet(prevNode, () -> Objects.requireNonNull(scope.getOwner()));
+                    var entryNode = Nodes.noop(scope.nextNodeName("noop"), scope);
                     var fieldTypes = new HashMap<String, Type>();
                     var initialValues = new HashMap<String, Value>();
                     var updatedValues = new HashMap<String, Value>();
@@ -1237,7 +1236,6 @@ public class Assembler {
                                 throw new UnsupportedOperationException();
                             },
                             new AsmTypeDefProvider(getCompilationUnit()),
-                            scope,
                             scope.getLastNode()
                     );
                     ifNode.setCondition(
@@ -1395,9 +1393,8 @@ public class Assembler {
         }
 
         private Type getExpressionType(Expression expression, ScopeRT scope) {
-            var exprTypes = scope.getLastNode() != null ? scope.getLastNode().getNextExpressionTypes() :
-                    scope.getExpressionTypes();
-            return exprTypes.getType(expression);
+            var lastNode = scope.getLastNode();
+            return lastNode != null ? lastNode.getNextExpressionTypes().getType(expression) : expression.getType();
         }
 
         private UpdateOp parseUpdateOp(String bop) {

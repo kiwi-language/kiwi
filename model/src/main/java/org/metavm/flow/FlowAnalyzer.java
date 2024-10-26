@@ -26,8 +26,6 @@ public class FlowAnalyzer extends VoidStructuralVisitor {
 
     @Override
     public Void visitScope(ScopeRT scope) {
-        if(scope.getOwner() != null)
-            scope.mergeExpressionTypes(scope.getOwner().getExpressionTypes());
         return super.visitScope(scope);
     }
 

@@ -303,7 +303,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public ScopeRT newEphemeralRootScope() {
         NncUtils.requireTrue(codeSource != null);
-        return rootScope = addChild(new ScopeRT(this, null, false, true), "rootScope");
+        return rootScope = addChild(new ScopeRT(this, true), "rootScope");
     }
 
     @SuppressWarnings("unused")
