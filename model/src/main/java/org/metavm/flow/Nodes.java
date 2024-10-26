@@ -11,7 +11,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class Nodes {
@@ -271,6 +270,16 @@ public class Nodes {
 
     public static NoopNode noop(String name, ScopeRT scope) {
         return new NoopNode(null, name,null, scope.getLastNode(), scope);
+    }
+
+    public static LambdaExitNode lambdaExit(ScopeRT scope) {
+        return new LambdaExitNode(
+                null,
+                scope.nextNodeName("lambdaExit"),
+                null,
+                scope.getLastNode(),
+                scope
+        );
     }
 
 }

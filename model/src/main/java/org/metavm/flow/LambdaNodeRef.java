@@ -10,22 +10,22 @@ import java.util.Objects;
 @EntityType
 public class LambdaNodeRef extends CallableRef  {
 
-    private final LambdaNode lambdaNode;
+    private final LambdaEnterNode lambdaEnterNode;
 
-    public LambdaNodeRef(LambdaNode lambdaNode) {
-        this.lambdaNode = lambdaNode;
+    public LambdaNodeRef(LambdaEnterNode lambdaEnterNode) {
+        this.lambdaEnterNode = lambdaEnterNode;
     }
 
     @Override
     protected boolean equals0(Object obj) {
         if (this == obj) return true;
         if (!(obj instanceof LambdaNodeRef that)) return false;
-        return Objects.equals(lambdaNode, that.lambdaNode);
+        return Objects.equals(lambdaEnterNode, that.lambdaEnterNode);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(lambdaNode);
+        return Objects.hash(lambdaEnterNode);
     }
 
     @Override
@@ -35,12 +35,12 @@ public class LambdaNodeRef extends CallableRef  {
 
     @Override
     public LambdaNodeRefDTO toDTO(SerializeContext serializeContext) {
-        return new LambdaNodeRefDTO(serializeContext.getStringId(lambdaNode));
+        return new LambdaNodeRefDTO(serializeContext.getStringId(lambdaEnterNode));
     }
 
     @Override
     public Callable resolve() {
-        return lambdaNode;
+        return lambdaEnterNode;
     }
 
 }

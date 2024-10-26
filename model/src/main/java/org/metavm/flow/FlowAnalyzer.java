@@ -25,13 +25,6 @@ public class FlowAnalyzer extends VoidStructuralVisitor {
     }
 
     @Override
-    public Void visitLoopNode(LoopNode node) {
-        TypeNarrower narrower = new TypeNarrower(node.getExpressionTypes()::getType);
-        node.getScope().setExpressionTypes(narrower.narrowType(node.getCondition().getExpression()));
-        return super.visitLoopNode(node);
-    }
-
-    @Override
     public Void visitScope(ScopeRT scope) {
         if(scope.getOwner() != null)
             scope.mergeExpressionTypes(scope.getOwner().getExpressionTypes());

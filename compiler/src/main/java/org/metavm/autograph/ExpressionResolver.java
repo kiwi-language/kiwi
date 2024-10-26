@@ -965,13 +965,11 @@ public class ExpressionResolver {
         return Expressions.nodeProperty(joinNode, valueField);
     }
 
-
     public Expression resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
         var returnType = typeResolver.resolveNullable(TranspileUtils.getLambdaReturnType(expression), ResolutionStage.DECLARATION);
         var parameters = resolveParameterList(expression.getParameterList());
         var funcInterface = Types.resolveKlass(typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType()));
-        var lambdaNode = methodGenerator.createLambda(parameters, returnType, funcInterface);
-        methodGenerator.enterScope(lambdaNode.getBodyScope());
+        var lambdaEnter = methodGenerator.createLambdaEnter(parameters, returnType, funcInterface);
         var inputNode = methodGenerator.createInput();
         for (Parameter parameter : parameters) {
             var field = FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getKlass(), parameter.getType())
@@ -984,16 +982,15 @@ public class ExpressionResolver {
             methodGenerator.createReturn(resolve(bodyExpr, context));
         } else {
             requireNonNull(expression.getBody()).accept(visitor);
-            if (lambdaNode.getReturnType().isVoid()) {
-                var lastNode = lambdaNode.getBodyScope().getLastNode();
+            if (lambdaEnter.getReturnType().isVoid()) {
+                var lastNode = methodGenerator.scope().getLastNode();
                 if (lastNode == null || !lastNode.isExit())
                     methodGenerator.createReturn();
             }
         }
-        methodGenerator.exitScope();
-        return new NodeExpression(lambdaNode);
+        methodGenerator.createLambdaExit();
+        return new NodeExpression(lambdaEnter);
     }
-
 
     private Expression resolveSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
         var switchExpr = resolve(psiSwitchExpression.getExpression(), context);

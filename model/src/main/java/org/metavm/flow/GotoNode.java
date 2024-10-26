@@ -45,14 +45,6 @@ public class GotoNode extends JumpNode {
 
     @Override
     public NodeExecResult execute(MetaFrame frame) {
-        var s = getTarget().getScope();
-        while (s != null) {
-            var owner = s.getOwner();
-            if(owner != null && !(owner instanceof LambdaNode))
-                s = owner.getScope();
-            else
-                s = null;
-        }
         return NodeExecResult.jump(getTarget());
     }
 

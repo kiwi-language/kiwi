@@ -28,7 +28,6 @@ public class NodeDTOTest extends TestCase {
                         "1",
                         true,
                         false, List.of(),
-                        null,
                         null
                 ),
                 null,

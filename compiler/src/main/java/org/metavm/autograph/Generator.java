@@ -212,14 +212,14 @@ public class Generator extends CodeGenVisitor {
         var tryScope = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
         Set<QualifiedName> liveOut = getBlockLiveOut(tryBlock);
         Set<QualifiedName> outputVars = liveOut == null ? Set.of() : NncUtils.intersect(tryScope.getModified(), liveOut);
-        var tryNode = builder().createTry();
-        builder().enterTrySection(tryNode);
+        var tryEnter = builder().createTryEnter();
+        builder().enterTrySection(tryEnter);
         tryBlock.accept(this);
-        var trySectionOutput = builder().exitTrySection(tryNode, NncUtils.map(outputVars, Objects::toString));
-        var tryEndNode = builder().createTryEnd();
+        var trySectionOutput = builder().exitTrySection(tryEnter, NncUtils.map(outputVars, Objects::toString));
+        var tryExit = builder().createTryExit();
         for (QualifiedName outputVar : outputVars) {
             var field = FieldBuilder.newBuilder(outputVar.toString(), outputVar.toString(),
-                            tryEndNode.getKlass(), resolveType(outputVar.type()))
+                            tryExit.getKlass(), resolveType(outputVar.type()))
                     .build();
             new TryExitField(
                     field,
@@ -231,14 +231,14 @@ public class Generator extends CodeGenVisitor {
                             )
                     ),
                     Values.expressionOrNever(builder().getVariable(outputVar.toString())),
-                    tryEndNode
+                    tryExit
             );
-            builder().setVariable(outputVar.toString(), Expressions.nodeProperty(tryEndNode, field));
+            builder().setVariable(outputVar.toString(), Expressions.nodeProperty(tryExit, field));
         }
 
         var exceptionExpr = new PropertyExpression(
-                new NodeExpression(tryEndNode),
-                tryEndNode.getKlass().getFieldByCode("exception").getRef()
+                new NodeExpression(tryExit),
+                tryExit.getKlass().getFieldByCode("exception").getRef()
         );
 
         if (statement.getCatchSections().length > 0) {

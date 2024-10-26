@@ -32,7 +32,6 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     @Nullable
     private final Klass owner;
     private final Map<NodeRT, Value> outputs = new HashMap<>();
-    private final Set<LoopNode> loopingNodes = new IdentitySet<>();
     private NodeRT entry;
     private final InstanceRepository instanceRepository;
     private FrameState state = FrameState.RUNNING;
@@ -57,18 +56,6 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
 
     public void setOutput(NodeRT node, Value output) {
         this.outputs.put(node, output);
-    }
-
-    public boolean isLooping(LoopNode loopNode) {
-        return loopingNodes.contains(loopNode);
-    }
-
-    public void enterLoop(LoopNode loopNode) {
-        loopingNodes.add(loopNode);
-    }
-
-    public void exitLoop(LoopNode loopNode) {
-        loopingNodes.remove(loopNode);
     }
 
     public void addInstance(Instance instance) {
@@ -97,7 +84,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         var tryNode = tryEnterNodes.peek();
         if(tryNode != null) {
             exceptions.put(tryNode, new ExceptionInfo(raiseNode, exception));
-            return NodeExecResult.jump(tryNode.getSuccessor());
+            return NodeExecResult.jump(tryNode.getExit());
         }
         else
             return NodeExecResult.exception(exception);

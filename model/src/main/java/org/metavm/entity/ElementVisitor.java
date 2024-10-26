@@ -92,10 +92,6 @@ public abstract class ElementVisitor<R> {
         return visitElement(node);
     }
 
-    public R visitScopeNode(ScopeNode node) {
-        return visitNode(node);
-    }
-
     public R visitGetElementNode(GetElementNode node) {
         return visitNode(node);
     }
@@ -116,20 +112,24 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitLambdaNode(LambdaNode node) {
+    public R visitLambdaEnterNode(LambdaEnterNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLambdaExitNode(LambdaExitNode node) {
         return visitNode(node);
     }
 
     public R visitAddObjectNode(AddObjectNode node) {
-        return visitScopeNode(node);
-    }
-
-    public R visitTryEndNode(TryExitNode node) {
         return visitNode(node);
     }
 
-    public R visitTryNode(TryEnterNode node) {
-        return visitScopeNode(node);
+    public R visitTryExitNode(TryExitNode node) {
+        return visitNode(node);
+    }
+
+    public R visitTryEnterNode(TryEnterNode node) {
+        return visitNode(node);
     }
 
     public R visitNewArrayNode(NewArrayNode node) {
@@ -146,10 +146,6 @@ public abstract class ElementVisitor<R> {
 
     public R visitReturnNode(ReturnNode node) {
         return visitNode(node);
-    }
-
-    public R visitLoopNode(LoopNode node) {
-        return visitScopeNode(node);
     }
 
     public R visitCallNode(CallNode node) {

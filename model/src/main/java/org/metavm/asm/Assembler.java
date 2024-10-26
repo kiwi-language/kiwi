@@ -1265,7 +1265,7 @@ public class Assembler {
                 if (statement.lambda() != null) {
                     var lambda = statement.lambda();
                     var params = parseParameterList(lambda.lambdaParameters().formalParameterList(), null, this.scope, getCompilationUnit());
-                    var lambdaNode = new LambdaNode(
+                    var lambdaNode = new LambdaEnterNode(
                             NncUtils.randomNonNegative(),
                             name,
                             null,
@@ -1275,7 +1275,6 @@ public class Assembler {
                             parseType(lambda.typeTypeOrVoid(), this.scope, getCompilationUnit()),
                             null
                     );
-                    var bodyScope = lambdaNode.getBodyScope();
                     var inputKlass = KlassBuilder.newBuilder("Input" + NncUtils.randomNonNegative(), null)
                             .tmpId(NncUtils.randomNonNegative())
                             .temporary()
@@ -1286,8 +1285,8 @@ public class Assembler {
                             inputName,
                             null,
                             inputKlass,
-                            null,
-                            bodyScope
+                            scope.getLastNode(),
+                            scope
                     );
                     params.forEach(p -> {
                         var inputField = FieldBuilder.newBuilder(p.getName(), p.getCode(), inputKlass, p.getType()).build();
@@ -1295,20 +1294,21 @@ public class Assembler {
                                 p.getName(),
                                 p.getCode(),
                                 p.getType(),
-                                bodyScope.getLastNode(),
-                                bodyScope,
+                                scope.getLastNode(),
+                                scope,
                                 Values.nodeProperty(inputNode, inputField)
                         );
                     });
-                    parseBlockNodes(lambda.lambdaBody().block(), lambdaNode.getBodyScope());
+                    parseBlockNodes(lambda.lambdaBody().block(), scope);
                     if (lambda.typeTypeOrVoid().VOID() != null) {
                         new ReturnNode(NncUtils.randomNonNegative(),
                                 nextNodeName(),
                                 null,
-                                bodyScope.getLastNode(),
-                                bodyScope,
+                                scope.getLastNode(),
+                                scope,
                                 null);
                     }
+                    Nodes.lambdaExit(scope);
                     return lambdaNode;
                 }
                 if (statement.select() != null) {

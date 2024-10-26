@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
+import org.metavm.entity.LoadAware;
 import org.metavm.entity.SerializeContext;
 import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.NodeDTO;
@@ -17,7 +18,7 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 @EntityType
-public class ReturnNode extends NodeRT {
+public class ReturnNode extends NodeRT implements LoadAware {
 
     public static ReturnNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext entityContext) {
         ReturnNode node = (ReturnNode) entityContext.getNode(Id.parse(nodeDTO.id()));
@@ -33,9 +34,29 @@ public class ReturnNode extends NodeRT {
 
     private @Nullable Value value;
 
+    private transient Callable enclosingCallable;
+
     public ReturnNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, @Nullable Value value) {
         super(tmpId, name, code, null, prev, scope);
         this.value = value;
+        findEnclosingCallable();
+    }
+
+    private void findEnclosingCallable() {
+        int numExits = 0;
+        for(var n = getPredecessor(); n != null; n = n.getPredecessor()) {
+            if(n instanceof LambdaEnterNode l) {
+                if(numExits == 0) {
+                    enclosingCallable = l;
+                    return;
+                }
+                else
+                    numExits--;
+            }
+            else if (n instanceof LambdaExitNode)
+                numExits++;
+        }
+        enclosingCallable = getFlow();
     }
 
     public void setValue(@Nullable Value value) {
@@ -69,7 +90,7 @@ public class ReturnNode extends NodeRT {
 
     @Override
     protected String check0() {
-        var callable = getEnclosingCallable();
+        var callable = enclosingCallable;
         var returnType = callable.getReturnType();
         if (!returnType.isVoid()) {
             if (value == null)
@@ -84,7 +105,7 @@ public class ReturnNode extends NodeRT {
     @Override
     @NotNull
     public Type getType() {
-        return getEnclosingCallable().getReturnType();
+        return enclosingCallable.getReturnType();
     }
 
     @Override
@@ -95,5 +116,10 @@ public class ReturnNode extends NodeRT {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitReturnNode(this);
+    }
+
+    @Override
+    public void onLoad() {
+        findEnclosingCallable();
     }
 }

@@ -21,10 +21,10 @@ public enum NodeKind {
     VALUE(NodeKindCodes.VALUE, ValueNode.class, ValueNodeParam.class),
     UPDATE_STATIC(NodeKindCodes.UPDATE_STATIC, UpdateStaticNode.class, UpdateStaticNodeParam.class),
     NEW_ARRAY(NodeKindCodes.NEW_ARRAY, NewArrayNode.class, NewArrayNodeParam.class),
-    TRY(NodeKindCodes.TRY, TryEnterNode.class, TryEnterNodeParam.class),
-    TRY_END(NodeKindCodes.TRY_END, TryExitNode.class, TryExitNodeParam.class, true),
+    TRY_ENTER(NodeKindCodes.TRY_ENTER, TryEnterNode.class, TryEnterNodeParam.class),
+    TRY_EXIT(NodeKindCodes.TRY_EXIT, TryExitNode.class, TryExitNodeParam.class, true),
     FUNC(NodeKindCodes.FUNC, FunctionNode.class, FunctionNodeParam.class),
-    LAMBDA(NodeKindCodes.LAMBDA, LambdaNode.class, LambdaNodeParam.class),
+    LAMBDA_ENTER(NodeKindCodes.LAMBDA_ENTER, LambdaEnterNode.class, LambdaEnterNodeParam.class),
     ADD_ELEMENT(NodeKindCodes.ADD_ELEMENT, AddElementNode.class, AddElementNodeParam.class),
     DELETE_ELEMENT(NodeKindCodes.DELETE_ELEMENT, RemoveElementNode.class, RemoveElementNodeParam.class),
     GET_ELEMENT(NodeKindCodes.GET_ELEMENT, GetElementNode.class, GetElementNodeParam.class),
@@ -44,7 +44,8 @@ public enum NodeKind {
     SET_ELEMENT(NodeKindCodes.SET_ELEMENT, SetElementNode.class, SetElementNodeParam.class),
     IF(NodeKindCodes.IF, IfNode.class, IfNodeParam.class, false),
     JOIN(NodeKindCodes.JOIN, JoinNode.class, JoinNodeParam.class, true),
-    NOOP(NodeKindCodes.NOOP, NoopNode.class, NoopNodeParam.class)
+    NOOP(NodeKindCodes.NOOP, NoopNode.class, NoopNodeParam.class),
+    LAMBDA_EXIT(NodeKindCodes.LAMBDA_EXIT, LambdaExitNode.class, LambdaExitNodeParam.class)
     ;
 
     private final int code;

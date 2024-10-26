@@ -3,7 +3,7 @@ package org.metavm.object.instance.core;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Flows;
-import org.metavm.flow.LambdaNode;
+import org.metavm.flow.LambdaEnterNode;
 import org.metavm.flow.MetaFrame;
 import org.metavm.object.instance.LambdaFrame;
 import org.metavm.util.InstanceOutput;
@@ -13,19 +13,19 @@ import java.util.Objects;
 
 public class Lambda extends FunctionValue {
 
-    private final LambdaNode lambdaNode;
+    private final LambdaEnterNode lambdaEnterNode;
     private final MetaFrame containingFrame;
 
-    public Lambda(LambdaNode lambdaNode, MetaFrame containingFrame) {
-        super(lambdaNode.getFunctionType());
-        this.lambdaNode = lambdaNode;
+    public Lambda(LambdaEnterNode lambdaEnterNode, MetaFrame containingFrame) {
+        super(lambdaEnterNode.getFunctionType());
+        this.lambdaEnterNode = lambdaEnterNode;
         this.containingFrame = containingFrame;
     }
 
     private MetaFrame createFrame(List<? extends Value> arguments, InstanceRepository instanceRepository) {
         return new LambdaFrame(
-                Objects.requireNonNull(lambdaNode.getBodyScope().tryGetFirstNode()),
-                Flows.getDeclaringType(lambdaNode.getFlow()),
+                Objects.requireNonNull(lambdaEnterNode.getSuccessor()),
+                Flows.getDeclaringType(lambdaEnterNode.getFlow()),
                 arguments, instanceRepository, containingFrame
         );
     }

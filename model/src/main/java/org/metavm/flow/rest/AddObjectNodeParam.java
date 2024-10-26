@@ -3,7 +3,7 @@ package org.metavm.flow.rest;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public final class AddObjectNodeParam extends ScopeNodeParam implements NewParam<AddObjectNodeParam> {
+public final class AddObjectNodeParam implements NewParam<AddObjectNodeParam> {
     private final String type;
     private final Boolean initializeArrayChildren;
     private final List<FieldParamDTO> fieldParams;
@@ -16,10 +16,8 @@ public final class AddObjectNodeParam extends ScopeNodeParam implements NewParam
             Boolean initializeArrayChildren,
             boolean ephemeral,
             List<FieldParamDTO> fieldParams,
-            @Nullable ParentRefDTO parentRef,
-            ScopeDTO bodyScope
+            @Nullable ParentRefDTO parentRef
     ) {
-        super(bodyScope);
         this.type = typeId;
         this.initializeArrayChildren = initializeArrayChildren;
         this.ephemeral = ephemeral;
@@ -50,7 +48,7 @@ public final class AddObjectNodeParam extends ScopeNodeParam implements NewParam
 
     @Override
     public AddObjectNodeParam copyWithParentRef(ParentRefDTO parentRef) {
-        return new AddObjectNodeParam(type, initializeArrayChildren, ephemeral, fieldParams, parentRef, getBodyScope());
+        return new AddObjectNodeParam(type, initializeArrayChildren, ephemeral, fieldParams, parentRef);
     }
 
 }

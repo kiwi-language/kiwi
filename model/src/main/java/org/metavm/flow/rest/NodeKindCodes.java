@@ -14,13 +14,11 @@ public class NodeKindCodes {
     public static final int NEW = 15;
     public static final int VALUE = 16;
     public static final int UPDATE_STATIC = 17;
-    public static final int FOREACH = 19;
-    public static final int WHILE = 20;
     public static final int NEW_ARRAY = 21;
-    public static final int TRY = 23;
-    public static final int TRY_END = 24;
+    public static final int TRY_ENTER = 23;
+    public static final int TRY_EXIT = 24;
     public static final int FUNC = 25;
-    public static final int LAMBDA = 26;
+    public static final int LAMBDA_ENTER = 26;
     public static final int ADD_ELEMENT = 27;
     public static final int DELETE_ELEMENT = 28;
     public static final int GET_ELEMENT = 29;
@@ -41,4 +39,5 @@ public class NodeKindCodes {
     public static final int IF = 44;
     public static final int JOIN = 45;
     public static final int NOOP = 46;
+    public static final int LAMBDA_EXIT = 47;
 }

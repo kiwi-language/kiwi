@@ -149,24 +149,6 @@ public abstract class NodeRT extends Element implements LocalKey {
         return cascade;
     }
 
-    public Callable getEnclosingCallable() {
-        return accept(new EnclosingNodesVisitor<>() {
-
-            @Override
-            public Callable defaultValue() {
-                return getFlow();
-            }
-
-            @Override
-            public Callable visitNode(NodeRT node) {
-                if (node instanceof Callable c)
-                    return c;
-                else
-                    return super.visitNode(node);
-            }
-        });
-    }
-
     protected List<Object> nodeBeforeRemove() {
         return List.of();
     }

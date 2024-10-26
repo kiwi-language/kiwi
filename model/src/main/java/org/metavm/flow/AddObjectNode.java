@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 @EntityType
-public class AddObjectNode extends ScopeNode implements NewNode {
+public class AddObjectNode extends NodeRT implements NewNode {
 
     public static AddObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         AddObjectNodeParam param = nodeDTO.getParam();
@@ -59,7 +59,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
 
     public AddObjectNode(Long tmpId, String name, @Nullable String code, boolean initializeArrayChildren, boolean ephemeral, ClassType type, NodeRT prev,
                          ScopeRT scope) {
-        super(tmpId, name, code, type, prev, scope, false);
+        super(tmpId, name, code, type, prev, scope);
         this.initializeArrayChildren = initializeArrayChildren;
         this.ephemeral = ephemeral;
     }
@@ -80,8 +80,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
                 getType().toExpression(serializeContext),
                 initializeArrayChildren,
                 ephemeral, NncUtils.map(fields, FieldParam::toDTO),
-                NncUtils.get(parentRef, ParentRef::toDTO),
-                bodyScope.toDTO(true, serializeContext)
+                NncUtils.get(parentRef, ParentRef::toDTO)
         );
     }
 
@@ -154,8 +153,7 @@ public class AddObjectNode extends ScopeNode implements NewNode {
         }
         if (!instance.isEphemeral())
             frame.addInstance(instance);
-        return bodyScope.isNotEmpty() ?
-                NodeExecResult.jump(instance.getReference(), bodyScope.tryGetFirstNode()) : next(instance.getReference());
+        return next(instance.getReference());
     }
 
     @Override

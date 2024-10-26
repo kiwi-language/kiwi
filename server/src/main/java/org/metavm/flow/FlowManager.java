@@ -1,7 +1,6 @@
 package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
@@ -11,20 +10,21 @@ import org.metavm.expression.NodeExpression;
 import org.metavm.flow.rest.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
-import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
 import org.metavm.object.type.rest.dto.FieldDTO;
 import org.metavm.object.type.rest.dto.FieldDTOBuilder;
 import org.metavm.object.type.rest.dto.KlassDTO;
-import org.metavm.util.*;
+import org.metavm.util.BusinessException;
+import org.metavm.util.DebugEnv;
+import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -403,21 +403,6 @@ public class FlowManager extends EntityContextFactoryAware {
         }
     }
 
-    private void saveAddObjectChildren(NodeDTO nodeDTO, AddObjectNode node, IEntityContext context) {
-        AddObjectNodeParam param = nodeDTO.getParam();
-        if (param.getBodyScope() != null) {
-            for (NodeDTO childNodeDTO : param.getBodyScope().nodes()) {
-                NodeKind kind = NodeKind.fromCode(childNodeDTO.kind());
-                AssertUtils.assertTrue(NodeKind.CREATING_KINDS.contains(kind),
-                        ErrorCode.INVALID_ADD_OBJECT_CHILD, childNodeDTO.name());
-            }
-            var bodyScope = node.getBodyScope();
-            bodyScope.clearNodes();
-            NncUtils.map(param.getBodyScope().nodes(),
-                    childNodeDTO -> saveNode(childNodeDTO, bodyScope, NodeSavingStage.INIT, context));
-        }
-    }
-
     public NodeDTO getNode(String id) {
         try (var context = newContext(); var serContext = SerializeContext.enter()) {
             NodeRT node = context.getEntity(NodeRT.class, Id.parse(id));
@@ -470,7 +455,7 @@ public class FlowManager extends EntityContextFactoryAware {
             return preprocessInputNode(nodeDTO, (InputNode) node);
         if (nodeDTO.kind() == NodeKind.JOIN.code())
             return preprocessJoinNode(nodeDTO, (JoinNode) node);
-        if (nodeDTO.kind() == NodeKind.TRY_END.code())
+        if (nodeDTO.kind() == NodeKind.TRY_EXIT.code())
             return preprocessTryEndNode(nodeDTO, (TryExitNode) node);
         return nodeDTO;
     }
@@ -565,69 +550,7 @@ public class FlowManager extends EntityContextFactoryAware {
 
     private void afterNodeChange(NodeDTO nodeDTO, NodeRT node, NodeSavingStage stage, IEntityContext context) {
         try (var ignored = context.getProfiler().enter("afterNodeChange")) {
-            if (node instanceof InputNode inputNode)
-                updateParameters(inputNode, context);
-            if (node instanceof ScopeNode scopeNode)
-                saveScopeNodeContent(nodeDTO, scopeNode, stage, context);
-            if (node instanceof LoopNode loopNode)
-                updateLoopFields(nodeDTO, loopNode, context);
-            if (node instanceof AddObjectNode addObjectNode)
-                saveAddObjectChildren(nodeDTO, addObjectNode, context);
         }
-    }
-
-    private void updateParameters(InputNode inputNode, IEntityContext context) {
-        var callable = inputNode.getScope().getOwner() == null ? inputNode.getFlow() :
-                (Callable) inputNode.getScope().getOwner();
-        List<Parameter> parameters = new ArrayList<>();
-        for (var field : inputNode.getType().resolve().getReadyFields()) {
-            var cond = inputNode.getFieldCondition(field);
-            var parameter = callable.getParameterByName(field.getName());
-            if (parameter == null) {
-                parameters.add(
-                        new Parameter(
-                                null,
-                                field.getName(),
-                                field.getCode(),
-                                Types.tryUncapture(field.getType()),
-                                cond,
-                                null,
-                                callable
-                        )
-                );
-            } else {
-                parameters.add(parameter);
-                parameter.setName(field.getName());
-                parameter.setType(Types.tryUncapture(field.getType()));
-                parameter.setCondition(cond);
-            }
-        }
-        if (callable instanceof Flow flow) {
-            var oldFuncType = flow.getFunctionType();
-            flow.setParameters(parameters);
-            if (flow instanceof Method method) {
-                if (method.isAbstract() && !oldFuncType.equals(flow.getFunctionType()))
-                    recreateOverridingFlows(method, context);
-            }
-        } else {
-            callable.setParameters(parameters);
-        }
-    }
-
-    private void saveScopeNodeContent(NodeDTO nodeDTO, ScopeNode scopeNode, NodeSavingStage stage, IEntityContext context) {
-        ScopeNodeParam param = nodeDTO.getParam();
-        if (param.getBodyScope() != null && param.getBodyScope().nodes() != null) {
-            scopeNode.getBodyScope().setNodes(
-                    NncUtils.map(
-                            param.getBodyScope().nodes(),
-                            node -> saveNode(node, scopeNode.getBodyScope(), stage, context)
-                    )
-            );
-        }
-    }
-
-    private void updateLoopFields(NodeDTO nodeDTO, LoopNode loopNode, IEntityContext context) {
-        loopNode.setLoopParam(nodeDTO.getParam(), context);
     }
 
     @Transactional

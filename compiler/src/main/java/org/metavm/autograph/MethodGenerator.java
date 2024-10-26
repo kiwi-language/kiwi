@@ -83,8 +83,8 @@ public class MethodGenerator {
         ));
     }
 
-    TryEnterNode createTry() {
-        return onNodeCreated(new TryEnterNode(null, nextName("try"), null, scope().getLastNode(), scope()));
+    TryEnterNode createTryEnter() {
+        return onNodeCreated(new TryEnterNode(null, nextName("tryEnter"), null, scope().getLastNode(), scope()));
     }
 
     String nextVarName(String name) {
@@ -93,12 +93,12 @@ public class MethodGenerator {
         return varName + count;
     }
 
-    TryExitNode createTryEnd() {
+    TryExitNode createTryExit() {
         var node = onNodeCreated(new TryExitNode(
-                null, nextName("TryEnd"), null,
-                KlassBuilder.newBuilder("TryEndOutput", null)
+                null, nextName("tryExit"), null,
+                KlassBuilder.newBuilder("TryExitOutput", null)
                         .temporary().build(),
-                (TryEnterNode) scope().getLastNode(),
+                scope().getLastNode(),
                 scope()
         ));
         FieldBuilder.newBuilder("exception", "exception", node.getKlass(),
@@ -164,11 +164,9 @@ public class MethodGenerator {
 
     void enterTrySection(TryEnterNode tryEnterNode) {
         variableTable.enterTrySection(tryEnterNode);
-        enterScope(tryEnterNode.getBodyScope());
     }
 
     Map<NodeRT, Map<String, Expression>> exitTrySection(TryEnterNode tryEnterNode, List<String> outputVars) {
-        exitScope();
         return variableTable.exitTrySection(tryEnterNode, outputVars);
     }
 
@@ -482,13 +480,17 @@ public class MethodGenerator {
         return node;
     }
 
-    LambdaNode createLambda(List<Parameter> parameters, Type returnType, Klass functionalInterface) {
-        var node = onNodeCreated(new LambdaNode(
-                null, nextName("Lambda"), null, scope().getLastNode(), scope(),
+    LambdaEnterNode createLambdaEnter(List<Parameter> parameters, Type returnType, Klass functionalInterface) {
+        var node = onNodeCreated(new LambdaEnterNode(
+                null, nextName("lambdaEnter"), null, scope().getLastNode(), scope(),
                 parameters, returnType, functionalInterface.getType()
         ));
         node.createSAMImpl();
         return node;
+    }
+
+    LambdaExitNode createLambdaExit() {
+        return new LambdaExitNode(null, nextName("lambdaExit"), null, scope().getLastNode(), scope());
     }
 
     NewObjectNode createNew(Method method, List<Expression> arguments, boolean ephemeral, boolean unbound) {

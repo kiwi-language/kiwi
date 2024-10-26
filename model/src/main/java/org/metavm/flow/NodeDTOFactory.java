@@ -85,11 +85,10 @@ public class NodeDTOFactory {
                 null,
                 name,
                 null,
-                NodeKind.LAMBDA.code(),
+                NodeKind.LAMBDA_ENTER.code(),
                 null,
                 null,
-                new LambdaNodeParam(
-                        new ScopeDTO(null, setPrevId(nodes)),
+                new LambdaEnterNodeParam(
                         parameters,
                         returnTypeId,
                         null
@@ -179,11 +178,7 @@ public class NodeDTOFactory {
                         true,
                         false,
                         fields,
-                        null,
-                        new ScopeDTO(
-                                null,
-                                List.of()
-                        )
+                        null
                 ),
                 null,
                 null,
