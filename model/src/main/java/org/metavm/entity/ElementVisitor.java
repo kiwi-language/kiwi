@@ -424,6 +424,10 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
+    public R visitIfNotNode(IfNotNode node) {
+        return visitNode(node);
+    }
+
     public R visitJoinNode(JoinNode node) {
         return visitNode(node);
     }
@@ -432,4 +436,107 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
+    public R visitAddNode(AddNode node) {
+        return visitNode(node);
+    }
+
+    public R visitAndNode(AndNode node) {
+        return visitNode(node);
+    }
+
+    public R visitOrNode(OrNode node) {
+        return visitNode(node);
+    }
+
+    public R visitSubNode(SubNode node) {
+        return visitNode(node);
+    }
+
+    public R visitMultiplyNode(MultiplyNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDivideNode(DivideNode node) {
+        return visitNode(node);
+    }
+
+    public R visitRemainderNode(RemainderNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLeftShiftNode(LeftShiftNode node) {
+        return visitNode(node);
+    }
+
+    public R visitRightShiftNode(RightShiftNode node) {
+        return visitNode(node);
+    }
+
+    public R visitUnsignedRightShift(UnsignedRightShiftNode node) {
+        return visitNode(node);
+    }
+
+    public R visitBitwiseAndNode(BitwiseAndNode node) {
+        return visitNode(node);
+    }
+
+    public R visitBitwiseOrNode(BitwiseOrNode node) {
+        return visitNode(node);
+    }
+
+    public R visitBitwiseXorNode(BitwiseXorNode node) {
+        return visitNode(node);
+    }
+
+    public R visitNegateNode(NegateNode node) {
+        return visitNode(node);
+    }
+
+    public R visitBitwiseComplementNode(BitwiseComplementNode node) {
+        return visitNode(node);
+    }
+
+    public R visitEqNode(EqNode node) {
+        return visitNode(node);
+    }
+
+    public R visitNeNode(NeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitGtNode(GtNode node) {
+        return visitNode(node);
+    }
+
+    public R visitGeNode(GeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLtNode(LtNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLeNode(LeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitInstanceOfNode(InstanceOfNode node) {
+        return visitNode(node);
+    }
+
+    public R visitGetFieldNode(GetPropertyNode node) {
+        return visitNode(node);
+    }
+
+    public R visitGetStaticNode(GetStaticNode node) {
+        return visitNode(node);
+    }
+
+    public R visitNodeNode(NotNode node) {
+        return visitNode(node);
+    }
+
+    public R visitArrayLengthNode(ArrayLengthNode node) {
+        return visitNode(node);
+    }
 }

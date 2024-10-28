@@ -186,7 +186,7 @@ public class FunctionMethods {
     public static Type IF$_TYPE_RESOLVER(List<Type> argumentCLasses) {
         NncUtils.requireTrue(argumentCLasses.size() == 2,
                 "Incorrect number of arguments for function IF");
-        return ValueUtils.getCompatibleType(argumentCLasses.get(0), argumentCLasses.get(1));
+        return Types.getCompatibleType(argumentCLasses.get(0), argumentCLasses.get(1));
     }
 
     public static boolean isAssignable(Type from, Type to) {

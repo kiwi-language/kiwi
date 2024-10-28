@@ -268,16 +268,16 @@ public class MappingSaver {
             fromView.clearContent();
             var scope = fromView.getRootScope();
             var inputNode = Nodes.input(fromView);
-            var view = Nodes.value(scope.nextNodeName("view"), Values.nodeProperty(inputNode, inputNode.getType().resolve().getFieldByCode("view")), scope);
-
+            var view = Nodes.nodeProperty(inputNode, inputNode.getType().resolve().getFieldByCode("view"), scope);
             var fieldValues = new HashMap<String, Supplier<Value>>();
             for (FieldMapping fieldMapping : mapping.getFieldMappings()) {
                 var nestedMapping = fieldMapping.getNestedMapping();
+                var target = Nodes.nodeProperty(view, fieldMapping.getTargetField(), scope);
                 if (nestedMapping == null)
-                    fieldValues.put(fieldMapping.getTargetField().getCode(), () -> Values.nodeProperty(view, fieldMapping.getTargetField()));
+                    fieldValues.put(fieldMapping.getTargetField().getCode(), () -> Values.node(target));
                 else {
                     var fieldValue = nestedMapping.generateUnmappingCode(
-                            () -> Values.nodeProperty(view, fieldMapping.getTargetField()),
+                            () -> Values.node(target),
                             scope
                     );
                     fieldValues.put(fieldMapping.getTargetField().getCode(), fieldValue);

@@ -75,4 +75,6 @@ public interface Property extends ClassMember, LocalKey {
     }
 
     Property getUltimateTemplate();
+
+    String getQualifiedName();
 }

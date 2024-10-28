@@ -375,11 +375,12 @@ public class Types {
             var paramType = paramTypeIt.next();
             if(field.getType().isNullable() && paramType.isNotNull()) {
                 args.add(Values.node(
-                        Nodes.nonNull(field.getName() + "_nonNull", Values.nodeProperty(input, field), scope))
-                );
+                        Nodes.nonNull(field.getName() + "_nonNull",
+                                Values.node(Nodes.nodeProperty(input, field, scope)), scope)
+                ));
             }
             else
-                args.add(Values.nodeProperty(input, field));
+                args.add(Values.node(Nodes.nodeProperty(input, field, scope)));
         }
         var func = Nodes.function(
                 "function",
@@ -909,4 +910,39 @@ public class Types {
         };
     }
 
+    public static Type getCompatibleType(List<Type> types) {
+        NncUtils.requireMinimumSize(types, 1);
+        Iterator<Type> it = types.iterator();
+        Type compatibleType = it.next();
+        while (it.hasNext()) {
+            Type t = it.next();
+            if (!t.equals(compatibleType) && !ValueUtils.isAssignable(t, compatibleType)) {
+                if (ValueUtils.isAssignable(compatibleType, t)) {
+                    compatibleType = t;
+                } else {
+                    throw new InternalException("Types are not compatible: " + types);
+                }
+            }
+        }
+        return compatibleType;
+    }
+
+    public static Type getCompatibleType(Type type1, Type type2) {
+        if (type1.equals(type2)) {
+            return type1;
+        }
+        if (ValueUtils.isAssignable(type1, type2)) {
+            return type2;
+        }
+        if (ValueUtils.isAssignable(type2, type1)) {
+            return type1;
+        }
+        if (ValueUtils.isConvertible(type1, type2)) {
+            return type2;
+        }
+        if (ValueUtils.isConvertible(type2, type1)) {
+            return type1;
+        }
+        throw new InternalException("category " + type1 + " and category " + type2 + " are incompatible");
+    }
 }

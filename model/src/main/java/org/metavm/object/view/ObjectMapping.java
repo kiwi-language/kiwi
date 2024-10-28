@@ -41,11 +41,12 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var input = Nodes.input(mapper);
         var actualSourceType = (ClassType) mapper.getParameter(0).getType();
         var readMethod = getSourceMethod(actualSourceType.resolve(), getReadMethod());
-        var view = new MethodCallNode(
-                null, scope.nextNodeName("view"), null,
-                scope.getLastNode(), scope,
-                Values.inputValue(input, 0),
-                readMethod.getRef(), List.of()
+        var view = Nodes.methodCall(
+                scope.nextNodeName("view"),
+                scope,
+                Values.node(Nodes.inputField(input, 0, scope)),
+                readMethod,
+                List.of()
         );
         new ReturnNode(null, scope.nextNodeName("return"), null, scope.getLastNode(), scope, Values.node(view));
         return mapper;
@@ -61,20 +62,21 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var isSourcePresent = Nodes.functionCall(
                 scope.nextNodeName("isSourcePresent"), scope,
                 StdFunction.isSourcePresent.get(),
-                List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, Values.inputValue(input, 0)))
+                List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, Values.node(Nodes.inputField(input, 0, scope))))
         );
-        var ifNode = Nodes.if_(scope.nextNodeName("if"),
-                Values.expression(Expressions.not(Expressions.node(isSourcePresent))), null, scope
+        var view = Nodes.inputField(input, 0, scope);
+        var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
+                Values.expression(Expressions.node(isSourcePresent)), null, scope
         );
         var source = Nodes.functionCall(
                 scope.nextNodeName("source"), scope,
                 StdFunction.getSource.get(),
-                List.of(Nodes.argument(StdFunction.getSource.get(), 0, Values.inputValue(input, 0)))
+                List.of(Nodes.argument(StdFunction.getSource.get(), 0, Values.node(view)))
         );
         var castedSource = Nodes.cast(scope.nextNodeName("castedSource"), getSourceType(), Values.node(source), scope);
         Nodes.methodCall(
                 scope.nextNodeName("saveView"), scope, Values.node(castedSource),
-                writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.inputValue(input, 0)))
+                writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.node(view)))
         );
         Nodes.ret(scope.nextNodeName("return"), scope, Values.node(castedSource));
         if (fromViewMethod != null) {
@@ -82,7 +84,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                     scope.nextNodeName("fromView"), scope,
                     null, fromViewMethod,
                     List.of(
-                            Nodes.argument(fromViewMethod, 0, Values.inputValue(input, 0))
+                            Nodes.argument(fromViewMethod, 0, Values.node(view))
                     )
             );
             ifNode.setTarget(fromView);

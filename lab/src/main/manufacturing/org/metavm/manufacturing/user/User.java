@@ -25,13 +25,12 @@ public class User {
         return password;
     }
 
-    @EntityIndex(unique = true)
     public record NameIndex(String name) implements Index<User> {
+    }
 
-        public NameIndex(User user) {
-            this(user.name);
-        }
-
+    @EntityIndex(unique = true)
+    private NameIndex nameIndex() {
+        return new NameIndex(name);
     }
 
 }

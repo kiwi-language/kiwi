@@ -990,6 +990,10 @@ public class TranspileUtils {
         return modifierListOwner.hasModifierProperty(PsiModifier.STATIC);
     }
 
+    public static boolean isTransient(PsiModifierListOwner modifierListOwner) {
+        return modifierListOwner.hasModifierProperty(PsiModifier.TRANSIENT);
+    }
+
     public static boolean isAbstract(PsiModifierListOwner modifierListOwner) {
         return modifierListOwner.hasModifierProperty(PsiModifier.ABSTRACT);
     }
@@ -1021,7 +1025,12 @@ public class TranspileUtils {
         return bizName != null ? bizName : klass.getName();
     }
 
-    public static boolean isUniqueIndex(PsiClass klass) {
+    public static String getIndexName(PsiMethod method) {
+        String bizName = tryGetNameFromAnnotation(method, EntityIndex.class);
+        return bizName != null ? bizName : method.getName();
+    }
+
+    public static boolean isUniqueIndex(PsiModifierListOwner klass) {
         var unique = getAnnotationAttribute(klass, EntityIndex.class, "unique");
         return unique != null ? (Boolean) unique : false;
     }

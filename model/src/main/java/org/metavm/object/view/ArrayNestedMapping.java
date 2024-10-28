@@ -74,7 +74,7 @@ public class ArrayNestedMapping extends NestedMapping {
                 List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, getView.get())));
         Map<NodeRT, Value> exit2value = new HashMap<>();
         var ifNode = Nodes.if_(scope.nextNodeName("if"),
-                Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.falseExpression())),
+                Values.node(Nodes.eq(Expressions.node(isSourcePresent), Expressions.falseExpression(), scope)),
                 null,
                 scope
         );
@@ -91,18 +91,19 @@ public class ArrayNestedMapping extends NestedMapping {
         g.setTarget(join);
         var sourceField = FieldBuilder.newBuilder("source", null, join.getKlass(), sourceType).build();
         new JoinNodeField(sourceField, join, exit2value);
-        Nodes.clearArray(scope.nextNodeName("clearArray"), null, Values.nodeProperty(join, sourceField),
+        Nodes.clearArray(scope.nextNodeName("clearArray"), null, Values.node(Nodes.nodeProperty(join, sourceField, scope)),
                 scope);
         Nodes.forEach(
                 scope.nextNodeName("iterate"), getView,
                 (bodyScope, getElement, getIndex) -> {
                     var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
                     Nodes.addElement(scope.nextNodeName("addElement"), null,
-                            Values.nodeProperty(join, sourceField), getSourceElement.get(), bodyScope);
+                            Values.node(Nodes.nodeProperty(join, sourceField, scope)), getSourceElement.get(), bodyScope);
                 },
                 scope
         );
-        return () -> Values.nodeProperty(join, sourceField);
+        var source = Nodes.nodeProperty(join, sourceField, scope);
+        return () -> Values.node(source);
     }
 
     @Override

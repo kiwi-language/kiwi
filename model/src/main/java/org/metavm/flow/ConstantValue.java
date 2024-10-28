@@ -24,10 +24,6 @@ public class ConstantValue extends Value {
         return switch (expression) {
             case ConstantExpression constantExpression -> constantExpression.getValue().toFieldValueDTO();
             case ArrayExpression arrayExpression -> toArrayFieldValue(arrayExpression);
-            case FunctionExpression funcExpr
-                    when funcExpr.getFunction() == Func.TIME
-                    && funcExpr.getArguments().get(0) instanceof ConstantExpression constExpr ->
-                    toTimeFieldValue((LongValue) constExpr.getValue());
             case NeverExpression neverExpr -> new NeverFieldValue();
             default -> throw new IllegalStateException("Unexpected value: " + expression);
         };

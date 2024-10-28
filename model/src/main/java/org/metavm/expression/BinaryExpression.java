@@ -5,8 +5,8 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
+import org.metavm.object.type.Types;
 import org.metavm.util.NncUtils;
-import org.metavm.util.ValueUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -52,7 +52,7 @@ public class BinaryExpression extends Expression {
         if(operator.resultType() != null) {
             return operator.resultType();
         }
-        return ValueUtils.getCompatibleType(left.getType(), right.getType());
+        return Types.getCompatibleType(left.getType(), right.getType());
     }
 
     @Override

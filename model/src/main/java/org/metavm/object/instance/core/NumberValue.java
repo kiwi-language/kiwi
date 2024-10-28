@@ -16,13 +16,13 @@ public abstract class NumberValue extends PrimitiveValue/* implements Comparable
 
     public abstract NumberValue add(NumberValue that);
 
-    public abstract NumberValue minus(NumberValue that);
+    public abstract NumberValue sub(NumberValue that);
 
     public abstract NumberValue mul(NumberValue that);
 
     public abstract NumberValue div(NumberValue that);
 
-    public abstract NumberValue mod(NumberValue that);
+    public abstract NumberValue rem(NumberValue that);
 
     public abstract BooleanValue lt(NumberValue that);
 

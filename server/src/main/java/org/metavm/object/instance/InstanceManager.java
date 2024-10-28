@@ -48,16 +48,20 @@ public class InstanceManager extends EntityContextFactoryAware {
 
     @Transactional(readOnly = true)
     public GetInstanceResponse get(String id, int depth) {
-        try (var context = newInstanceContext()) {
+        try (var context = newContext()) {
+            ContextUtil.setEntityContext(context);
             var instanceId = Id.parse(id);
-            var instance = context.get(instanceId).getReference();
+            var instance = context.getInstanceContext().get(instanceId).getReference();
             var instanceDTO = InstanceDTOBuilder.buildDTO(instance, depth);
             return new GetInstanceResponse(instanceDTO);
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
     public Page<InstanceDTO[]> select(SelectRequest request) {
         try (var entityContext = newContext()) {
+            ContextUtil.setEntityContext(entityContext);
             var context = entityContext.getInstanceContext();
             var klass = ((ClassType) TypeParser.parseType(request.type(), context.getTypeDefProvider())).resolve();
             var dataPage = instanceQueryService.query(InstanceQueryBuilder.newBuilder(klass)
@@ -73,15 +77,18 @@ public class InstanceManager extends EntityContextFactoryAware {
                     graphQueryExecutor.execute(klass, NncUtils.map(roots, Reference::resolve), selects),
                     dataPage.total()
             );
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
     public List<TreeDTO> getTrees(List<Long> ids) {
-        try (var context = newInstanceContext()) {
+        try (var context = newContext()) {
+            ContextUtil.setEntityContext(context);
             var systemIds = NncUtils.filter(ids, RegionConstants::isSystemId);
             var nonSystemIds = NncUtils.exclude(ids, RegionConstants::isSystemId);
             var systemInstances = instanceStore.loadForest(systemIds, ModelDefRegistry.getDefContext().getInstanceContext());
-            var nonSystemInstances = instanceStore.loadForest(nonSystemIds, context);
+            var nonSystemInstances = instanceStore.loadForest(nonSystemIds, context.getInstanceContext());
             var instanceMap = new HashMap<Long, InstancePO>();
             systemInstances.forEach(i -> instanceMap.put(i.getId(), i));
             nonSystemInstances.forEach(i -> instanceMap.put(i.getId(), i));
@@ -89,39 +96,50 @@ public class InstanceManager extends EntityContextFactoryAware {
                     .map(instanceMap::get)
                     .map(i -> new TreeDTO(i.getId(), i.getVersion(), i.getNextNodeId(), i.getData()))
                     .collect(Collectors.toList());
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
     public List<TreeVersion> getVersions(List<Long> ids) {
-        try (var context = newInstanceContext()) {
-            return instanceStore.getVersions(ids, context);
+        try (var context = newContext()) {
+            ContextUtil.setEntityContext(context);
+            return instanceStore.getVersions(ids, context.getInstanceContext());
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
     @Transactional(readOnly = true)
     public GetInstanceResponse getDefaultView(String id) {
-        try (var context = newInstanceContext()) {
+        try (var context = newContext()) {
+            ContextUtil.setEntityContext(context);
             var instanceId = Id.parse(id);
-            var instance = context.get(instanceId);
+            var instance = context.getInstanceContext().get(instanceId);
             if (instance instanceof ClassInstance classInstance) {
                 if (instanceId instanceof PhysicalId/* && !classInstance.getType().isStruct()*/) {
                     var defaultMapping = classInstance.getType().resolve().getDefaultMapping();
                     if (defaultMapping != null) {
                         var viewId = new DefaultViewId(false, defaultMapping.toKey(), instanceId);
-                        var view = context.get(viewId);
+                        var view = context.getInstanceContext().get(viewId);
                         return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(view.getReference(), 1));
                     }
                 }
                 return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(instance.getReference(), 1));
             } else
                 throw new BusinessException(ErrorCode.NOT_A_CLASS_INSTANCE, id);
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
     @Transactional(readOnly = true)
     public GetInstancesResponse batchGet(List<String> ids, int depth) {
-        try (var context = newInstanceContext()) {
-            return batchGet(ids, depth, context);
+        try (var context = newContext()) {
+            ContextUtil.setEntityContext(context);
+            return batchGet(ids, depth, context.getInstanceContext());
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
@@ -140,11 +158,14 @@ public class InstanceManager extends EntityContextFactoryAware {
     @Transactional
     public void update(InstanceDTO instanceDTO) {
         try (var context = newContext()) {
+            ContextUtil.setEntityContext(context);
             if (instanceDTO.isNew()) {
                 throw BusinessException.invalidParams("Instance is new");
             }
             update(instanceDTO, context.getInstanceContext());
             context.finish();
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
@@ -164,12 +185,15 @@ public class InstanceManager extends EntityContextFactoryAware {
     @Transactional
     public String create(InstanceDTO instanceDTO) {
         try (var context = newContext()) {
+            ContextUtil.setEntityContext(context);
             var instance = create(instanceDTO, context.getInstanceContext());
             context.finish();
             if (instance.tryGetSource() != null) {
                 logger.info("source id: {}", instance.getSource().tryGetId());
             }
             return Objects.requireNonNull(instance.tryGetId()).toString();
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
@@ -179,20 +203,26 @@ public class InstanceManager extends EntityContextFactoryAware {
 
     @Transactional
     public void batchDelete(List<String> ids) {
-        try (var context = newInstanceContext()) {
-            context.batchRemove(NncUtils.mapAndFilter(ids, id -> context.get(Id.parse(id)), Objects::nonNull));
+        try (var context = newContext()) {
+            ContextUtil.setEntityContext(context);
+            context.batchRemove(NncUtils.mapAndFilter(ids, id -> context.getInstanceContext().get(Id.parse(id)), Objects::nonNull));
             context.finish();
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
     @Transactional
     public void delete(String id) {
-        try (var context = newInstanceContext()) {
-            var instance = context.get(Id.parse(id));
+        try (var context = newContext()) {
+            ContextUtil.setEntityContext(context);
+            var instance = context.getInstanceContext().get(Id.parse(id));
             if (instance != null) {
-                context.remove(instance);
+                context.getInstanceContext().remove(instance);
                 context.finish();
             }
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
@@ -211,9 +241,10 @@ public class InstanceManager extends EntityContextFactoryAware {
     }
 
     public List<String> getReferenceChain(String stringId, int rootMode) {
-        try (var context = newInstanceContext()) {
+        try (var context = newContext()) {
+            ContextUtil.setEntityContext(context);
             var id = Id.parse(stringId);
-            ReferenceTree root = new ReferenceTree(context.get(id), rootMode);
+            ReferenceTree root = new ReferenceTree(context.getInstanceContext().get(id), rootMode);
             Set<Long> visited = new HashSet<>();
             Map<Id, ReferenceTree> trees = new HashMap<>();
             trees.put(id, root);
@@ -227,7 +258,7 @@ public class InstanceManager extends EntityContextFactoryAware {
                     var sourceId = ref.getSourceTreeId();
                     if (visited.contains(sourceId)) continue;
                     visited.add(sourceId);
-                    var inst = context.getRoot(sourceId);
+                    var inst = context.getInstanceContext().getRoot(sourceId);
                     var parent = trees.get(ref.getTargetInstanceId());
                     var tree = new ReferenceTree(inst, rootMode);
                     parent.addChild(tree);
@@ -239,11 +270,14 @@ public class InstanceManager extends EntityContextFactoryAware {
             }
 //            context.batchGet(visited);
             return root.getPaths();
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
     public QueryInstancesResponse query(InstanceQueryDTO query) {
         try (var entityContext = newContext()) {
+            ContextUtil.setEntityContext(entityContext);
             var context = entityContext.getInstanceContext();
             var mappingProvider = context.getMappingProvider();
             Type type = TypeParser.parseType(query.type(), context.getTypeDefProvider());
@@ -268,13 +302,16 @@ public class InstanceManager extends EntityContextFactoryAware {
             } else {
                 return new QueryInstancesResponse(new Page<>(List.of(), 0L), List.of());
             }
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 
     public List<InstanceDTO> loadByPaths(LoadInstancesByPathsRequest request) {
-        try (var context = newInstanceContext()) {
+        try (var context = newContext()) {
+            ContextUtil.setEntityContext(context);
             List<Path> paths = NncUtils.map(request.paths(), Path::create);
-            Map<Value, InstanceNode<?>> instance2node = buildObjectTree(paths, context);
+            Map<Value, InstanceNode<?>> instance2node = buildObjectTree(paths, context.getInstanceContext());
             GraphQueryExecutor graphQueryExecutor = new GraphQueryExecutor();
             graphQueryExecutor.loadTree(instance2node);
 
@@ -282,7 +319,7 @@ public class InstanceManager extends EntityContextFactoryAware {
             List<InstanceDTO> result = new ArrayList<>();
             for (Path path : paths) {
                 var instanceId = Id.parse(path.firstItem().substring(Constants.ID_PREFIX.length()));
-                Value instance = context.get(instanceId).getReference();
+                Value instance = context.getInstanceContext().get(instanceId).getReference();
                 InstanceNode<?> node = Objects.requireNonNull(instance2node.get(instance),
                         () -> "Can not find node for instance " + instance);
                 List<Value> values = node.getFetchResults(instance, path.subPath());
@@ -294,6 +331,8 @@ public class InstanceManager extends EntityContextFactoryAware {
                 }
             }
             return result;
+        } finally {
+            ContextUtil.setEntityContext(null);
         }
     }
 

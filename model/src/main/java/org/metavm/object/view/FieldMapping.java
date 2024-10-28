@@ -114,14 +114,15 @@ public abstract class FieldMapping extends Element {
 
     protected abstract Supplier<Value> generateReadCode0(SelfNode selfNode);
 
-    public void generateWriteCode(SelfNode selfNode, ValueNode viewNode) {
+    public void generateWriteCode(SelfNode selfNode, NodeRT viewNode) {
+        var scope = selfNode.getScope();
+        var target = Nodes.nodeProperty(viewNode, getTargetField(), scope);
         if (nestedMapping != null) {
-            var scope = selfNode.getScope();
             var nestedFieldSource = nestedMapping.generateUnmappingCode(
-                    () -> Values.nodeProperty(viewNode, getTargetField()), scope);
+                    () -> Values.node(target), scope);
             generateWriteCode0(selfNode, nestedFieldSource);
         } else
-            generateWriteCode0(selfNode, () -> Values.nodeProperty(viewNode, targetFieldRef.resolve()));
+            generateWriteCode0(selfNode, () -> Values.node(target));
     }
 
     protected abstract void generateWriteCode0(SelfNode selfNode, Supplier<Value> fieldValueSupplier);

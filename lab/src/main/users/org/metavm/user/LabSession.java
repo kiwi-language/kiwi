@@ -26,18 +26,26 @@ public class LabSession {
         this.autoCloseAt = autoCloseAt;
     }
 
-    @EntityIndex
     public record UserStateIndex(LabUser user, LabSessionState state) implements Index<LabSession> {
         public UserStateIndex(LabSession session) {
             this(session.user, session.state);
         }
     }
 
-    @EntityIndex
     public record TokenIndex(String token) implements Index<LabSession> {
         public TokenIndex(LabSession session) {
             this(session.token);
         }
+    }
+
+    @EntityIndex
+    private UserStateIndex userStateIndex() {
+        return new UserStateIndex(user, state);
+    }
+
+    @EntityIndex
+    private TokenIndex tokenIndex() {
+        return new TokenIndex(token);
     }
 
     public String getToken() {

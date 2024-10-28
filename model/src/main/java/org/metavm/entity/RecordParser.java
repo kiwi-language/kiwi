@@ -68,7 +68,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                 var input = Nodes.input(constructor);
                 var fieldMap = new HashMap<org.metavm.object.type.Field, Value>();
                 klass.getFields().forEach(f ->
-                        fieldMap.put(f, Values.nodeProperty(input, f.getCodeNotNull()))
+                        fieldMap.put(f, Values.node(Nodes.nodeProperty(input, f, scope)))
                 );
                 Nodes.update("initFields", Values.node(self), fieldMap, scope);
                 Nodes.ret("return", scope, Values.node(self));
@@ -78,7 +78,9 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                 var scope = accessor.getRootScope();
                 scope.setStrictEphemeral(true);
                 var self = Nodes.self("self", klass, scope);
-                Nodes.ret("return", scope, Values.nodeProperty(self, field));
+                Nodes.ret("return", scope,
+                        Values.node(Nodes.nodeProperty(self, field, scope))
+                );
             }
         }
     }

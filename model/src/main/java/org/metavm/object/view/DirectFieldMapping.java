@@ -60,7 +60,8 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
 
     @Override
     public Supplier<Value> generateReadCode0(SelfNode selfNode) {
-        return () -> Values.nodeProperty(selfNode, getSourceField());
+        var source = Nodes.nodeProperty(selfNode, getSourceField(), selfNode.getScope());
+        return () -> Values.node(source);
     }
 
     @Override

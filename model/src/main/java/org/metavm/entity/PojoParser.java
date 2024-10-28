@@ -214,7 +214,8 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
         IndexDef<?> indexDef = (IndexDef<?>) ReflectionUtils.get(null, indexDefField);
         var uniqueConstraint = new Index(
                 declaringTypeDef.getKlass(),
-                EntityUtils.getMetaConstraintName(indexDefField), indexDefField.getName(), null, indexDef.isUnique(), NncUtils.map(indexDef.getFieldNames(), this::getFiled)
+                EntityUtils.getMetaConstraintName(indexDefField), indexDefField.getName(), null, indexDef.isUnique(), NncUtils.map(indexDef.getFieldNames(), this::getFiled),
+                null
         );
         new IndexConstraintDef(
                 uniqueConstraint,

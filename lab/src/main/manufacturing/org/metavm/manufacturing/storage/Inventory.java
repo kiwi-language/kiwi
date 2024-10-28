@@ -3,6 +3,7 @@ package org.metavm.manufacturing.storage;
 import org.metavm.api.EntityIndex;
 import org.metavm.api.EntityType;
 import org.metavm.api.Index;
+import org.metavm.api.ValueType;
 import org.metavm.api.lang.Indices;
 import org.metavm.api.lang.Lang;
 import org.metavm.manufacturing.material.*;
@@ -26,40 +27,6 @@ public class Inventory {
     private final @Nullable Date arrivalDate;
     private final @Nullable Date productionDate;
     private final @Nullable Date expirationDate;
-
-    @EntityIndex
-    public record Key(
-            Material material,
-            Position position,
-            Batch batch,
-            String qrCode,
-            Supplier supplier,
-            String supplierBatchNo,
-            Client client,
-            Date arrivalDate,
-            Date productionDate,
-            Date expirationDate,
-            QualityInspectionState qualityInspectionState,
-            InventoryBizState bizState
-    ) implements Index<Inventory> {
-
-        public Key(Inventory inventory) {
-            this(
-                    inventory.material,
-                    inventory.position,
-                    inventory.batch,
-                    inventory.qrCode,
-                    inventory.supplier,
-                    inventory.supplierBatchNo,
-                    inventory.client,
-                    inventory.arrivalDate,
-                    inventory.productionDate,
-                    inventory.expirationDate,
-                    inventory.qualityInspectionState,
-                    inventory.bizState
-            );
-        }
-    }
 
     public Inventory(Material material, Position position, QualityInspectionState qualityInspectionState, InventoryBizState bizState, @Nullable Batch batch, @Nullable String qrCode, @Nullable Supplier supplier, @Nullable String supplierBatchNo, @Nullable Client client, @Nullable Date arrivalDate, @Nullable Date productionDate, @Nullable Date expirationDate, long quantity) {
         arrivalDate = Utils.toDaysNullable(arrivalDate);
@@ -295,5 +262,40 @@ public class Inventory {
         }
     }
 
+
+    @ValueType
+    public record Key(
+            Material material,
+            Position position,
+            Batch batch,
+            String qrCode,
+            Supplier supplier,
+            String supplierBatchNo,
+            Client client,
+            Date arrivalDate,
+            Date productionDate,
+            Date expirationDate,
+            QualityInspectionState qualityInspectionState,
+            InventoryBizState bizState
+    ) implements Index<Inventory> {
+    }
+
+    @EntityIndex
+    private Key key() {
+        return new Key(
+                material,
+                position,
+                batch,
+                qrCode,
+                supplier,
+                supplierBatchNo,
+                client,
+                arrivalDate,
+                productionDate,
+                expirationDate,
+                qualityInspectionState,
+                bizState
+        );
+    }
 
 }

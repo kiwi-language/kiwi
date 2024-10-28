@@ -48,25 +48,6 @@ public class Declarator extends CodeGenVisitor {
     public void visitClass(PsiClass psiClass) {
         if(TranspileUtils.isDiscarded(psiClass))
             return;
-        if (TranspileUtils.hasAnnotation(psiClass, EntityIndex.class)) {
-            var klass = currentClass().klass;
-            Index index = NncUtils.find(klass.getIndices(), idx -> Objects.equals(idx.getCode(), psiClass.getName()));
-            if (index == null) {
-                index = new Index(
-                        klass,
-                        TranspileUtils.getIndexName(psiClass),
-                        psiClass.getName(),
-                        "",
-                        TranspileUtils.isUniqueIndex(psiClass)
-                );
-            } else {
-                index.setName(TranspileUtils.getIndexName(psiClass));
-            }
-            currentIndex = index;
-            psiClass.putUserData(Keys.INDEX, index);
-            super.visitClass(psiClass);
-            return;
-        }
         if (psiClass != this.psiClass)
             return;
         var klass = typeResolver.getKlass(psiClass);
@@ -185,6 +166,31 @@ public class Declarator extends CodeGenVisitor {
             flow.setAttribute(AttributeNames.BEAN_NAME, beanName);
         }
         currentClass().visitedMethods.add(flow);
+        if (TranspileUtils.hasAnnotation(method, EntityIndex.class)) {
+            Index index = NncUtils.find(klass.getIndices(), idx -> Objects.equals(idx.getCode(), method.getName()));
+            if (index == null) {
+                index = new Index(
+                        klass,
+                        TranspileUtils.getIndexName(method),
+                        method.getName(),
+                        "",
+                        TranspileUtils.isUniqueIndex(method),
+                        List.of(),
+                        flow
+                );
+            } else {
+                index.setName(TranspileUtils.getIndexName(method));
+            }
+            var indexKlass =  TranspileUtils.resolvePsiClass((PsiClassType) requireNonNull(method.getReturnType()));
+            for (PsiField field : indexKlass.getFields()) {
+                if(!TranspileUtils.isStatic(field) && !TranspileUtils.isTransient(field)) {
+                    var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), field.getName()));
+                    if (indexField == null)
+                        new IndexField(index, getBizFieldName(field), field.getName(), Values.nullValue());
+                }
+            }
+            indexKlass.putUserData(Keys.INDEX, index);
+        }
     }
 
     private Access resolveAccess(PsiModifierList modifierList) {

@@ -87,7 +87,7 @@ public class ListNestedMapping extends NestedMapping {
         var sourceKlass = sourceType.resolve();
         Map<NodeRT, Value> exit2value = new HashMap<>();
         var ifNode = Nodes.if_(scope.nextNodeName("if"),
-                Values.expression(Expressions.eq(Expressions.node(isSourcePresent), Expressions.falseExpression())),
+                Values.node(Nodes.eq(Expressions.node(isSourcePresent), Expressions.falseExpression(), scope)),
                 null,
                 scope
         );
@@ -116,7 +116,7 @@ public class ListNestedMapping extends NestedMapping {
         Nodes.methodCall(
                 scope.nextNodeName("clear"),
                 scope,
-                Values.nodeProperty(join, sourceField),
+                Values.node(Nodes.nodeProperty(join, sourceField, scope)),
                 clearMethod,
                 List.of()
         );
@@ -129,7 +129,7 @@ public class ListNestedMapping extends NestedMapping {
                     Nodes.methodCall(
                             scope.nextNodeName("addElement"),
                             bodyScope,
-                            Values.nodeProperty(join, sourceField),
+                            Values.node(Nodes.nodeProperty(join, sourceField, scope)),
                             addMethod,
                             List.of(
                                     Nodes.argument(
@@ -142,7 +142,8 @@ public class ListNestedMapping extends NestedMapping {
                 },
                 scope
         );
-        return () -> Values.nodeProperty(join, sourceField);
+        var source = Nodes.nodeProperty(join, sourceField, scope);
+        return () -> Values.node(source);
     }
 
     @Override

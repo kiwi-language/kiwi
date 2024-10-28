@@ -60,6 +60,10 @@ public class NonNullNode extends NodeRT {
             return next(inst);
     }
 
+    public Value getValue() {
+        return value;
+    }
+
     @NotNull
     @Override
     public Type getType() {

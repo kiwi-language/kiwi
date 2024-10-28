@@ -98,12 +98,12 @@ public class DoubleValue extends NumberValue {
         return add(that.toDouble());
     }
 
-    public DoubleValue mod(NumberValue that) {
+    public DoubleValue rem(NumberValue that) {
         return mod(that.toDouble());
     }
 
     @Override
-    public NumberValue minus(NumberValue that) {
+    public NumberValue sub(NumberValue that) {
         return minus(that.toDouble());
     }
 

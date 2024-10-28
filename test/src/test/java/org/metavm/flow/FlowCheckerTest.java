@@ -22,11 +22,11 @@ public class FlowCheckerTest extends TestCase {
         var input = Nodes.input(method);
         var field = input.getKlass().getFieldByCode("value");
         var scope = method.getRootScope();
-        var ifNode = Nodes.if_("if", Values.expression(Expressions.ne(
-                Expressions.nodeProperty(input, field), Expressions.nullExpression()
-        )), null, scope);
+        var value = Expressions.node(Nodes.nodeProperty(input, field, scope));
+        var ifNode = Nodes.if_("if", Values.node(
+                Nodes.ne(value, Expressions.nullExpression(), scope)), null, scope);
         Nodes.raise("NPE", scope, Values.constantString("Value required"));
-        var ret = Nodes.ret("return", scope, Values.nodeProperty(input, field));
+        var ret = Nodes.ret("return", scope, Values.expression(value));
         ifNode.setTarget(ret);
         klass.accept(new FlowAnalyzer());
         klass.accept(new FlowChecker());
@@ -43,10 +43,11 @@ public class FlowCheckerTest extends TestCase {
         var input = Nodes.input(method);
         var field = input.getKlass().getFieldByCode("value");
         var scope = method.getRootScope();
-        var ifNode = Nodes.if_("if", Values.expression(Expressions.eq(
-                Expressions.nodeProperty(input, field), Expressions.nullExpression()
+        var value = Expressions.node(Nodes.nodeProperty(input, field, scope));
+        var ifNode = Nodes.if_("if", Values.node(Nodes.eq(
+                value, Expressions.nullExpression(), scope
         )), null, scope);
-        Nodes.ret("return", scope, Values.nodeProperty(input, field));
+        Nodes.ret("return", scope, Values.expression(value));
         ifNode.setTarget(Nodes.raise("NPE", scope, Values.constantString("Value required")));
         klass.accept(new FlowChecker());
         Assert.assertEquals(0, klass.getErrors().size());

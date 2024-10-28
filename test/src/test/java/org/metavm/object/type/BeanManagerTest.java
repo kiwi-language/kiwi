@@ -56,7 +56,8 @@ public class BeanManagerTest extends TestCase {
                 var self = Nodes.self("self", barServiceKlass, constructor.getRootScope());
                 var input = Nodes.input(constructor);
                 Nodes.updateField("setFooService", Values.node(self),
-                        field, Values.nodeProperty(input, input.getKlass().getFieldByName("fooService")),
+                        field, Values.node(Nodes.nodeProperty(input, input.getKlass().getFieldByName("fooService"),
+                                constructor.getRootScope())),
                         constructor.getRootScope()
                 );
                 Nodes.ret("return", constructor.getRootScope(), Values.node(self));
@@ -76,9 +77,10 @@ public class BeanManagerTest extends TestCase {
                                 new Argument(
                                         null,
                                         constructor.getParameter(0).getRef(),
-                                        Values.nodeProperty(
-                                                input,
-                                                input.getKlass().getFieldByName("fooService")
+                                        Values.node(
+                                                Nodes.nodeProperty(input,
+                                                input.getKlass().getFieldByName("fooService"),
+                                                        factoryMethod.getRootScope())
                                         )
                                 )
                         ),

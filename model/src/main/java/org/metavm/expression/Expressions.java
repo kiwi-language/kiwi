@@ -154,10 +154,6 @@ public class Expressions {
         return property(new NodeExpression(node), property);
     }
 
-    public static Expression arrayLength(Expression array) {
-        return new FunctionExpression(Func.LEN, array);
-    }
-
     public static Expression property(Expression self, Property property) {
         return new PropertyExpression(self, property.getRef());
     }

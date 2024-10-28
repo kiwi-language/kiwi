@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.expression.Expressions;
 import org.metavm.expression.TypeNarrower;
 import org.metavm.expression.VoidStructuralVisitor;
 
@@ -22,6 +23,15 @@ public class FlowAnalyzer extends VoidStructuralVisitor {
         var targetExprTypes = node.getExpressionTypes().merge(narrower.narrowType(condition));
         node.getTarget().unionExpressionTypes(targetExprTypes);
         return super.visitIfNode(node);
+    }
+
+    @Override
+    public Void visitIfNotNode(IfNotNode node) {
+        var narrower = new TypeNarrower(node.getExpressionTypes()::getType);
+        var condition = node.getCondition().getExpression();
+        var targetExprTypes = node.getExpressionTypes().merge(narrower.narrowType(Expressions.not(condition)));
+        node.getTarget().unionExpressionTypes(targetExprTypes);
+        return super.visitIfNotNode(node);
     }
 
     @Override

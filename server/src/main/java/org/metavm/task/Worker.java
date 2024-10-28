@@ -128,10 +128,12 @@ public class Worker extends EntityContextFactoryAware {
                                 metaContextCache.get(shadowTask.getAppId(), appTask.getMetaWAL() != null ? appTask.getMetaWAL().getId() : null) :
                                             ModelDefRegistry.getDefContext()
                             );
+                    IEntityContext oldContext = ContextUtil.getEntityContext();
                     try (var walContext = entityContextFactory.newContext(shadowTask.getAppId(), parentContext,
                             builder -> builder.readWAL(appTask.getWAL())
                                     .relocationEnabled(appTask.isRelocationEnabled())
                                     .timeout(appTask.getTimeout()))) {
+                        ContextUtil.setEntityContext(walContext);
                         terminated = runTask0(appTask, walContext, appContext);
                         if(!appTask.isFailed())
                             walContext.finish();
@@ -139,6 +141,7 @@ public class Worker extends EntityContextFactoryAware {
                             logger.info("Task {}-{} completed successfully", shadowTask.getAppId(), appTask.getTitle());
                     }
                     finally {
+                        ContextUtil.setEntityContext(oldContext);
                         if(parentContext instanceof ReversedDefContext reversedDefContext)
                             SystemConfig.clearLocal();
                     }

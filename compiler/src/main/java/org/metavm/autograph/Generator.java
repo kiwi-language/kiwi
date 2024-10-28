@@ -12,12 +12,12 @@ import org.metavm.object.type.generic.CompositeTypeListener;
 import org.metavm.util.CompilerConfig;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
-import org.metavm.util.TriConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.BiFunction;
 
 import static java.util.Objects.requireNonNull;
 
@@ -150,7 +150,7 @@ public class Generator extends CodeGenVisitor {
             var index = (Index) NncUtils.find(type.getConstraints(), c -> c instanceof Index idx &&
                     Objects.equals(idx.getCode(), psiField.getName()));
             if (index == null)
-                index = new Index(type, psiField.getName(), psiField.getName(), "", unique, fields);
+                index = new Index(type, psiField.getName(), psiField.getName(), "", unique, fields, null);
             var code2IndexField = new HashMap<String, IndexField>();
             index.getFields().forEach(f -> code2IndexField.put(f.getCode(), f));
             var indexFields = new ArrayList<IndexField>();
@@ -233,7 +233,8 @@ public class Generator extends CodeGenVisitor {
                     Values.expressionOrNever(builder().getVariable(outputVar.toString())),
                     tryExit
             );
-            builder().setVariable(outputVar.toString(), Expressions.nodeProperty(tryExit, field));
+            builder().setVariable(outputVar.toString(),
+                    Expressions.node(builder().createNodeProperty(tryExit, field)));
         }
 
         var exceptionExpr = new PropertyExpression(
@@ -246,7 +247,7 @@ public class Generator extends CodeGenVisitor {
             Set<QualifiedName> catchLiveOut = null;
             var entryNode = builder().createNoop();
             builder().enterCondSection(entryNode);
-            IfNode lastIfNode = null;
+            JumpNode lastIfNode = null;
             long branchIdx = 0;
             var exits = new HashMap<Long, NodeRT>();
             for (PsiCatchSection catchSection : statement.getCatchSections()) {
@@ -256,8 +257,8 @@ public class Generator extends CodeGenVisitor {
                     catchLiveOut = getBlockLiveOut(catchBlock);
                 }
                 var cond = createExceptionCheck(exceptionExpr, catchSection.getCatchType());
-                builder().enterBranch(entryNode, branchIdx, Values.expression(cond));
-                var ifNode = builder().createIf(Expressions.not(cond), null);
+                builder().enterBranch(entryNode, branchIdx);
+                var ifNode = builder().createIfNot(cond, null);
                 if(lastIfNode != null)
                     lastIfNode.setTarget(ifNode);
                 lastIfNode = ifNode;
@@ -267,7 +268,7 @@ public class Generator extends CodeGenVisitor {
                 catchBlock.accept(this);
                 exits.put(branchIdx++, builder().createGoto(null));
             }
-            builder().enterBranch(entryNode, branchIdx, Values.constantTrue());
+            builder().enterBranch(entryNode, branchIdx);
             var defaultExit = builder().createNoop();
             Objects.requireNonNull(lastIfNode).setTarget(defaultExit);
             exits.put(branchIdx, defaultExit);
@@ -300,7 +301,9 @@ public class Generator extends CodeGenVisitor {
         if (statement.getFinallyBlock() != null) {
             statement.getFinallyBlock().accept(this);
         }
-        var ifNode = builder().createIf(Expressions.eq(exceptionExpr, Expressions.nullExpression()), null);
+        var ifNode = builder().createIf(
+                Expressions.node(builder().createEq(exceptionExpr, Expressions.nullExpression())),
+                null);
         builder().createRaise(exceptionExpr);
         ifNode.setTarget(builder().createNoop());
     }
@@ -462,7 +465,7 @@ public class Generator extends CodeGenVisitor {
         var liveVarOut = NncUtils.requireNonNull(statement.getUserData(Keys.LIVE_VARS_OUT));
         var outputVars = NncUtils.intersect(modified, liveVarOut);
         var exits = new HashMap<Long, NodeRT>();
-        IfNode lastIfNode = null;
+        JumpNode lastIfNode = null;
         var branchIdx = 0L;
         for (PsiStatement stmt : stmts) {
             var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) stmt;
@@ -496,8 +499,8 @@ public class Generator extends CodeGenVisitor {
                 }
                 requireNonNull(cond);
             }
-            builder().enterBranch(entryNode, branchIdx, Values.expression(cond));
-            var ifNode = builder().createIf(Expressions.not(cond), null);
+            builder().enterBranch(entryNode, branchIdx);
+            var ifNode = builder().createIfNot(cond, null);
             if(lastIfNode != null)
                 lastIfNode.setTarget(ifNode);
             lastIfNode = ifNode;
@@ -509,7 +512,7 @@ public class Generator extends CodeGenVisitor {
         }
         var defaultStmt = (PsiSwitchLabeledRuleStatement)
                 NncUtils.findRequired(stmts, stmt -> ((PsiSwitchLabeledRuleStatement) stmt).isDefaultCase());
-        builder().enterBranch(entryNode, branchIdx, Values.constantTrue());
+        builder().enterBranch(entryNode, branchIdx);
         var noop = builder().createNoop();
         if(lastIfNode != null)
             lastIfNode.setTarget(noop);
@@ -641,8 +644,8 @@ public class Generator extends CodeGenVisitor {
 
     private void processLoop(PsiLoopStatement statement,
                              PsiExpression condition,
-                             @Nullable TriConsumer<JoinNode, IfNode, Map<QualifiedName, Field>> preprocessor,
-                             @Nullable TriConsumer<JoinNode, NodeRT, NodeRT> postProcessor
+                             @Nullable BiFunction<JoinNode, Map<QualifiedName, Field>, JumpNode> preprocessor,
+                             @Nullable java.util.function.Function<JoinNode, LoopField> postProcessor
                              ) {
         var entryNode = builder().createNoop();
         var joinNode = builder().createJoin();
@@ -669,23 +672,36 @@ public class Generator extends CodeGenVisitor {
         }
         for (QualifiedName loopVar : loopVar2Field.keySet()) {
             var field = loopVar2Field.get(loopVar);
-            builder().setVariable(loopVar.toString(), Expressions.nodeProperty(joinNode, field));
+            builder().setVariable(loopVar.toString(),
+                    Expressions.node(builder().createNodeProperty(joinNode, field)));
         }
-        var cond = condition != null ? Expressions.not(resolveExpression(condition)) : Expressions.falseExpression();
-        var ifNode = builder().createIf(cond, null);
+        var cond = condition != null ? resolveExpression(condition) : Expressions.trueExpression();
+        var ifNode = builder().createIfNot(cond, null);
+        JumpNode extraIfNode = null;
+        if (preprocessor != null)
+            extraIfNode = preprocessor.apply(joinNode, loopVar2Field);
         var exitValues = new HashMap<Field, Expression>();
         for (QualifiedName loopVar : loopVars) {
             var field = loopVar2Field.get(loopVar);
             exitValues.put(field, builder().getVariable(loopVar.toString()));
         }
-        if (preprocessor != null) {
-            preprocessor.accept(joinNode, ifNode, loopVar2Field);
-        }
         if (statement.getBody() != null) {
             statement.getBody().accept(this);
         }
+        LoopField extraLoopField = null;
+        if(postProcessor != null)
+            extraLoopField = postProcessor.apply(joinNode);
         var goBack = builder().createGoto(joinNode);
-        ifNode.setTarget(builder().createNoop());
+        var exit = builder().createNoop();
+        ifNode.setTarget(exit);
+        if(extraIfNode != null)
+            extraIfNode.setTarget(exit);
+        if(extraLoopField != null) {
+            new JoinNodeField(extraLoopField.field(), joinNode, Map.of(
+                            entryNode, extraLoopField.initialValue,
+                            goBack, extraLoopField.updatedValue
+            ));
+        }
         for (QualifiedName loopVar : loopVars) {
             var field = loopVar2Field.get(loopVar);
             var initialValue = initialValues.get(field);
@@ -694,8 +710,9 @@ public class Generator extends CodeGenVisitor {
                     goBack, Values.expression(updatedValue)));
             builder().setVariable(loopVar.toString(), Objects.requireNonNull(exitValues.get(field)));
         }
-        if(postProcessor != null)
-            postProcessor.accept(joinNode, entryNode, goBack);
+    }
+
+    private record LoopField(Field field, Value initialValue, Value updatedValue) {
     }
 
     @Override
@@ -722,39 +739,32 @@ public class Generator extends CodeGenVisitor {
         var type = builder().getExpressionType(iteratedExpr);
         if (type instanceof ArrayType) {
             processLoop(statement, getExtraLoopTest(statement),
-                    (joinNode, ifNode, loopVar2Field) -> {
+                    (joinNode, loopVar2Field) -> {
                         var indexField = FieldBuilder
                                 .newBuilder("index", "index", joinNode.getKlass(), Types.getLongType())
                                 .build();
-                        ifNode.setCondition(
-                                Values.expression(
-                                        Expressions.or(
-                                            ifNode.getCondition().getExpression(),
-                                            Expressions.ge(
-                                                    Expressions.nodeProperty(joinNode, indexField),
-                                                    new FunctionExpression(Func.LEN, iteratedExpr)
-                                            )
+                        var index = builder().createNodeProperty(joinNode, indexField);
+                        var ifNode = builder().createIf(Expressions.node(builder().createGe(
+                                Expressions.node(index),
+                                Expressions.node(builder().createArrayLength(iteratedExpr))
+                        )), null);
+                        builder().setVariable(statement.getIterationParameter().getName(),
+                                Expressions.node(builder().createGetElement(iteratedExpr, Expressions.node(index))));
+                        return ifNode;
+                    },
+                    joinNode -> {
+                        var indexField = joinNode.getKlass().getFieldByCode("index");
+                        return new LoopField(
+                            indexField,
+                                Values.constantLong(0L),
+                                Values.node(
+                                        builder().createAdd(
+                                                Expressions.node(
+                                                        builder().createNodeProperty(joinNode, indexField)
+                                                ),
+                                                Expressions.constantLong(1L)
                                         )
                                 )
-                        );
-                        builder().setVariable(statement.getIterationParameter().getName(),
-                                Expressions.arrayAccess(iteratedExpr,
-                                        Expressions.nodeProperty(joinNode, indexField))
-                        );
-                    },
-                    (joinNode, entryNode, exitNode) -> {
-                        var indexField = joinNode.getKlass().getFieldByCode("index");
-                        new JoinNodeField(
-                            indexField, joinNode, Map.of(
-                                entryNode, Values.constantLong(0L),
-                                exitNode,
-                                Values.expression(
-                                    Expressions.add(
-                                            Expressions.nodeProperty(joinNode, indexField),
-                                            Expressions.constantLong(1L)
-                                    )
-                                )
-                            )
                         );
                     }
                 );
@@ -767,21 +777,23 @@ public class Generator extends CodeGenVisitor {
                         List.of()))
             );
             var itType = Types.resolveKlass(NncUtils.requireNonNull(itNode.getType()));
-            processLoop(statement, getExtraLoopTest(statement), (joinNode, ifNode, loopVar2Field) -> {
-                ifNode.setCondition(
-                    Values.expression(
-                        Expressions.or(
-                                ifNode.getCondition().getExpression(),
-                                Expressions.not(new FunctionExpression(Func.HAS_NEXT, new NodeExpression(itNode)))
-                        )
-                    )
+            processLoop(statement, getExtraLoopTest(statement), (joinNode, loopVar2Field) -> {
+                var hashNext = builder().createMethodCall(
+                        Expressions.node(itNode),
+                        itType.getMethod("hasNext", List.of()),
+                        List.of()
+                );
+                var ifNode = builder().createIfNot(
+                        Expressions.node(hashNext),
+                        null
                 );
                 var elementNode = builder().createMethodCall(
                         new NodeExpression(itNode),
-                        Objects.requireNonNull(itType.findMethodByCode("next")),
+                        itType.getMethod("next", List.of()),
                         List.of()
                 );
                 builder().setVariable(statement.getIterationParameter().getName(), new NodeExpression(elementNode));
+                return ifNode;
             }, null);
         }
     }

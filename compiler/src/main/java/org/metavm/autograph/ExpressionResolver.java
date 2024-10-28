@@ -147,11 +147,11 @@ public class ExpressionResolver {
     }
 
     private Expression resolvePolyadic(PsiPolyadicExpression psiExpression, ResolutionContext context) {
-        var operator = resolveOperator(psiExpression.getOperationTokenType());
-        var operands = NncUtils.map(psiExpression.getOperands(), expr -> resolve(expr, context));
-        var current = operands.get(0);
-        for (int i = 1; i < operands.size(); i++) {
-            current = new BinaryExpression(operator, current, operands.get(i));
+        var op = psiExpression.getOperationTokenType();
+        var operands = psiExpression.getOperands();
+        var current = resolve(operands[0], context);
+        for (int i = 1; i < operands.length; i++) {
+            current = resolveBinary(op, current, resolve(operands[i], context));
         }
         return current;
     }
@@ -167,10 +167,10 @@ public class ExpressionResolver {
         } else {
             operand = resolve(instanceOfExpression.getOperand(), context);
         }
-        return new InstanceOfExpression(
+        return Expressions.node(methodGenerator.createInstanceOf(
                 operand,
                 typeResolver.resolveDeclaration(requireNonNull(instanceOfExpression.getCheckType()).getType())
-        );
+        ));
     }
 
     private Expression resolveArrayAccess(PsiArrayAccessExpression arrayAccessExpression, ResolutionContext context) {
@@ -215,7 +215,7 @@ public class ExpressionResolver {
                 thenExit, Values.expression(ref.thenExpr),
                 elseExit, Values.expression(ref.elseExpr))
         );
-        return Expressions.nodeProperty(joinNode, valueField);
+        return Expressions.node(methodGenerator.createNodeProperty(joinNode, valueField));
     }
 
     private Expression resolveParenthesized(PsiParenthesizedExpression psiExpression, ResolutionContext context) {
@@ -255,7 +255,7 @@ public class ExpressionResolver {
         if (target instanceof PsiField psiField) {
             if (isArrayLength(psiField)) {
                 var arrayExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
-                return new FunctionExpression(Func.LEN, arrayExpr);
+                return Expressions.node(methodGenerator.createArrayLength(arrayExpr));
             } else {
                 PsiClass psiClass = requireNonNull(psiField.getContainingClass());
                 Field field;
@@ -268,7 +268,7 @@ public class ExpressionResolver {
                     }
                     var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass))).resolve();
                     field = Objects.requireNonNull(klass.findStaticFieldByCode(psiField.getName()));
-                    return new StaticPropertyExpression(field.getRef());
+                    return Expressions.node(methodGenerator.createGetStatic(field));
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
                     if(methodGenerator.getExpressionType(qualifierExpr).isNullable())
@@ -276,7 +276,7 @@ public class ExpressionResolver {
                     Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr));
                     typeResolver.ensureDeclared(klass);
                     field = klass.getFieldByCode(psiField.getName());
-                    return new PropertyExpression(qualifierExpr, field.getRef());
+                    return Expressions.node(methodGenerator.createGetProperty(qualifierExpr, field));
                 }
             }
         } else if (target instanceof PsiMethod psiMethod) {
@@ -291,13 +291,13 @@ public class ExpressionResolver {
                         refExpr.resolve() instanceof PsiClass) {
                     var klass = Types.resolveKlass(typeResolver.resolve(TranspileUtils.createType(psiClass)));
                     method = klass.getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
-                    return new StaticPropertyExpression(method.getRef());
+                    return Expressions.node(methodGenerator.createGetStatic(method));
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
                     Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr));
                     typeResolver.ensureDeclared(klass);
                     method = klass.getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
-                    return new PropertyExpression(qualifierExpr, method.getRef());
+                    return Expressions.node(methodGenerator.createGetProperty(qualifierExpr, method));
                 }
             }
         } else if (target instanceof PsiVariable variable) {
@@ -409,19 +409,54 @@ public class ExpressionResolver {
 
     private Expression resolveBinary(PsiBinaryExpression psiExpression, ResolutionContext context) {
         var op = psiExpression.getOperationSign().getTokenType();
-        if (BOOL_OPS.contains(op)) {
-            return new BinaryExpression(
-                    resolveOperator(psiExpression.getOperationSign()),
-                    resolve(psiExpression.getLOperand(), context),
-                    resolve(Objects.requireNonNull(psiExpression.getROperand()), context)
-            );
-        } else {
-            return new BinaryExpression(
-                    resolveOperator(psiExpression.getOperationSign()),
-                    resolve(psiExpression.getLOperand(), context),
-                    resolve(Objects.requireNonNull(psiExpression.getROperand()), context)
-            );
-        }
+        var first = resolve(psiExpression.getLOperand(), context);
+        var second = resolve(psiExpression.getROperand(), context);
+        return resolveBinary(op, first, second);
+    }
+
+    private Expression resolveBinary(IElementType op, Expression first, Expression second) {
+        NodeRT node;
+        if(op.equals(JavaTokenType.PLUS))
+            node = methodGenerator.createAdd(first, second);
+        else if(op.equals(JavaTokenType.MINUS))
+            node = methodGenerator.createSub(first, second);
+        else if(op.equals(JavaTokenType.ASTERISK))
+            node = methodGenerator.createMul(first, second);
+        else if(op.equals(JavaTokenType.DIV))
+            node = methodGenerator.createDiv(first, second);
+        else if(op.equals(JavaTokenType.LTLT))
+            node = methodGenerator.createLeftShift(first, second);
+        else if(op.equals(JavaTokenType.GTGT))
+            node = methodGenerator.createRightShift(first, second);
+        else if(op.equals(JavaTokenType.GTGTGT))
+            node = methodGenerator.createUnsignedRightShift(first, second);
+        else if(op.equals(JavaTokenType.OR))
+            node = methodGenerator.createBitwiseOr(first, second);
+        else if(op.equals(JavaTokenType.AND))
+            node = methodGenerator.createBitwiseAnd(first, second);
+        else if(op.equals(JavaTokenType.XOR))
+            node = methodGenerator.createBitwiseXor(first, second);
+        else if(op.equals(JavaTokenType.ANDAND))
+            node = methodGenerator.createAnd(first, second);
+        else if(op.equals(JavaTokenType.OROR))
+            node = methodGenerator.createOr(first, second);
+        else if(op.equals(JavaTokenType.PERC))
+            node = methodGenerator.createRem(first, second);
+        else if(op.equals(JavaTokenType.EQEQ))
+            node = methodGenerator.createEq(first, second);
+        else if(op.equals(JavaTokenType.NE))
+            node = methodGenerator.createNe(first, second);
+        else if(op.equals(JavaTokenType.GE))
+            node = methodGenerator.createGe(first, second);
+        else if(op.equals(JavaTokenType.GT))
+            node = methodGenerator.createGt(first, second);
+        else if(op.equals(JavaTokenType.LT))
+            node = methodGenerator.createLt(first, second);
+        else if(op.equals(JavaTokenType.LE))
+            node = methodGenerator.createLe(first, second);
+        else
+            throw new IllegalStateException("Unrecognized operator " + op);
+        return new NodeExpression(node);
     }
 
     private Expression resolveMethodCall(PsiMethodCallExpression expression, ResolutionContext context) {
@@ -933,16 +968,15 @@ public class ExpressionResolver {
     private JoinNode constructAtomicIf(PsiExpression condition, boolean negated, Runnable thenAction,
                                            Runnable elseAction, ResolutionContext context) {
         var expr = resolveNormal(condition, context);
-        if(!negated)
-            expr = Expressions.not(expr);
-        var ifNode = methodGenerator.createIf(expr, null);
+        var ifNode = negated ? methodGenerator.createIf(expr, null)
+                : methodGenerator.createIfNot(expr, null);
         methodGenerator.enterCondSection(ifNode);
-        methodGenerator.enterBranch(ifNode, 0, Values.expression(expr));
+        methodGenerator.enterBranch(ifNode, 0);
         thenAction.run();
         var g = methodGenerator.createGoto(null);
         var join1 = methodGenerator.createJoin();
         ifNode.setTarget(join1);
-        methodGenerator.enterBranch(ifNode, 1, Values.expression(Expressions.not(expr)));
+        methodGenerator.enterBranch(ifNode, 1);
         elseAction.run();
         var exit2 = requireNonNull(methodGenerator.scope().getLastNode());
         var join2 = methodGenerator.createJoin();
@@ -962,7 +996,7 @@ public class ExpressionResolver {
                 thenExit, Values.expression(Expressions.trueExpression()),
                 elseExit, Values.expression(Expressions.falseExpression())
         ));
-        return Expressions.nodeProperty(joinNode, valueField);
+        return Expressions.node(methodGenerator.createNodeProperty(joinNode, valueField));
     }
 
     public Expression resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
@@ -999,15 +1033,25 @@ public class ExpressionResolver {
         var body = requireNonNull(psiSwitchExpression.getBody());
         var statements = requireNonNull(body.getStatements());
         var branchIdx = 0L;
-        IfNode lastIfNode = null;
+        JumpNode lastIfNode = null;
         var exits = new HashMap<Long, NodeRT>();
         for (PsiStatement statement : statements) {
             if (statement instanceof PsiSwitchLabeledRuleStatement labeledRuleStatement) {
                 if(labeledRuleStatement.isDefaultCase())
                     continue;
-                var cond = resolveSwitchCaseCondition(switchExpr, labeledRuleStatement, context);
-                methodGenerator.enterBranch(entry, branchIdx, Values.expression(cond));
-                var ifNode = methodGenerator.createIf(Expressions.not(cond), null);
+                methodGenerator.enterBranch(entry, branchIdx);
+                var caseElementList = requireNonNull(labeledRuleStatement.getCaseLabelElementList());
+                Expression cond = null;
+                for (PsiCaseLabelElement element : caseElementList.getElements()) {
+                    var newCond = Expressions.node(
+                            methodGenerator.createEq(switchExpr, resolve((PsiExpression) element, context))
+                    );
+                    if (cond == null)
+                        cond = newCond;
+                    else
+                        cond = Expressions.node(methodGenerator.createOr(cond, newCond));
+                }
+                var ifNode = methodGenerator.createIfNot(cond, null);
                 if(lastIfNode != null)
                     lastIfNode.setTarget(ifNode);
                 lastIfNode = ifNode;
@@ -1021,7 +1065,7 @@ public class ExpressionResolver {
         }
         var defaultStmt = (PsiSwitchLabeledRuleStatement) NncUtils.findRequired(statements,
                 stmt -> stmt instanceof PsiSwitchLabeledRuleStatement ruleStmt && ruleStmt.isDefaultCase());
-        methodGenerator.enterBranch(entry, branchIdx, Values.constantTrue());
+        methodGenerator.enterBranch(entry, branchIdx);
         var defaultCase = methodGenerator.createNoop();
         if(lastIfNode != null)
             lastIfNode.setTarget(defaultCase);
@@ -1033,7 +1077,8 @@ public class ExpressionResolver {
                 g.setTarget(joinNode);
         }
         methodGenerator.exitCondSection(entry, joinNode, exits, true);
-        return Expressions.nodeProperty(joinNode, joinNode.getKlass().getFieldByCode("yield"));
+        return Expressions.node(methodGenerator.createNodeProperty(joinNode,
+                joinNode.getKlass().getFieldByCode("yield")));
     }
 
     private void processSwitchCaseBody(PsiElement caseBody, ResolutionContext context) {
@@ -1042,21 +1087,6 @@ public class ExpressionResolver {
         } else {
             caseBody.accept(visitor);
         }
-    }
-
-    private Expression resolveSwitchCaseCondition(Expression switchExpression, PsiSwitchLabeledRuleStatement switchLabeledRuleStatement, ResolutionContext context) {
-        if (switchLabeledRuleStatement.isDefaultCase())
-            return Expressions.trueExpression();
-        var caseElementList = requireNonNull(switchLabeledRuleStatement.getCaseLabelElementList());
-        Expression cond = null;
-        for (PsiCaseLabelElement element : caseElementList.getElements()) {
-            var newCond = Expressions.eq(switchExpression, resolve((PsiExpression) element, context));
-            if (cond == null)
-                cond = newCond;
-            else
-                cond = Expressions.or(cond, newCond);
-        }
-        return cond;
     }
 
     private List<Parameter> resolveParameterList(PsiParameterList parameterList) {

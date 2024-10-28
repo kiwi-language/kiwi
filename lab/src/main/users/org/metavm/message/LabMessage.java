@@ -12,14 +12,6 @@ import javax.annotation.Nullable;
 @EntityType(searchable = true)
 public class LabMessage {
 
-    @EntityIndex
-    public record IndexTarget(@Nullable Object target) {
-
-        public IndexTarget(LabMessage message) {
-            this(message.target);
-        }
-    }
-
     private final LabUser receiver;
     @EntityField(asTitle = true)
     private final String title;
@@ -70,6 +62,18 @@ public class LabMessage {
         if (!message.isRead()) {
             message.setRead(true);
         }
+    }
+
+    public record IndexTarget(@Nullable Object target) {
+
+        public IndexTarget(LabMessage message) {
+            this(message.target);
+        }
+    }
+
+    @EntityIndex
+    private IndexTarget indexTarget() {
+        return new IndexTarget(target);
     }
 
 //    public MessageDTO toDTO() {

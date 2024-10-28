@@ -50,7 +50,6 @@ public class LabUser {
         this.roles.addAll(roles);
     }
 
-    @EntityIndex
     public record IndexAppPlatformUser(LabApplication application,
                                        LabPlatformUser platformUser) implements Index<LabUser> {
 
@@ -59,7 +58,11 @@ public class LabUser {
         }
     }
 
-    @EntityIndex(unique = true)
+    @EntityIndex
+    private IndexAppPlatformUser indexAppPlatformUser() {
+        return new IndexAppPlatformUser(application, platformUser);
+    }
+
     public record LoginNameIndex(
             LabApplication application,
             String loginName) implements Index<LabUser> {
@@ -67,6 +70,11 @@ public class LabUser {
         public LoginNameIndex(LabUser user) {
             this(user.application, user.loginName);
         }
+    }
+
+    @EntityIndex(unique = true)
+    private LoginNameIndex loginNameIndex() {
+        return new LoginNameIndex(application, loginName);
     }
 
     public static LabLoginResult login(LabApplication application, String loginName, String password, String clientIP) {

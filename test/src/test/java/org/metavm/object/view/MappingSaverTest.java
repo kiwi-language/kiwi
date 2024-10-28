@@ -103,7 +103,7 @@ public class MappingSaverTest extends TestCase {
             var scope = getBarsMethod.getRootScope();
             var selfNode = Nodes.self("self", fooType, scope);
             var barsNode = Nodes.newArray("newArray", null, barReadWriteArrayType,
-                    Values.nodeProperty(selfNode, fooBarsField), null, scope);
+                    Values.node(Nodes.nodeProperty(selfNode, fooBarsField, scope)), null, scope);
             Nodes.ret("return", scope, Values.node(barsNode));
         }
 
@@ -115,10 +115,11 @@ public class MappingSaverTest extends TestCase {
             var scope = setBarsMethod.getRootScope();
             var selfNode = Nodes.self("self", fooType, scope);
             var inputNode = Nodes.input(setBarsMethod);
-            Nodes.clearArray("ClearBars", null, Values.nodeProperty(selfNode, fooBarsField), scope);
-            Nodes.forEach("forEach", () -> Values.inputValue(inputNode, 0),
+            Nodes.clearArray("clearBars", null, Values.node(Nodes.nodeProperty(selfNode, fooBarsField, scope)), scope);
+            var bars = Nodes.inputField(inputNode, 0, scope);
+            Nodes.forEach("forEach", () -> Values.node(bars),
                     (bodyScope, element, index) -> {
-                        Nodes.addElement("AddBar", null, Values.nodeProperty(selfNode, fooBarsField),
+                        Nodes.addElement("addBar", null, Values.node(Nodes.nodeProperty(selfNode, fooBarsField, scope)),
                                 element.get(), bodyScope);
                     },
                     scope);
@@ -312,7 +313,7 @@ public class MappingSaverTest extends TestCase {
             Nodes.input(getSkuListMethod);
             var skuList = Nodes.newArray(
                     "skuList", "skuList", skuRwArrayType,
-                    Values.nodeProperty(self, skuListField),
+                    Values.node(Nodes.nodeProperty(self, skuListField, scope)),
                     null, scope
             );
             Nodes.ret("return", scope, Values.node(skuList));
@@ -325,13 +326,14 @@ public class MappingSaverTest extends TestCase {
             var scope = setSkuListMethod.getRootScope();
             var self = Nodes.self("self", productType, scope);
             var input = Nodes.input(setSkuListMethod);
-            Nodes.clearArray("clearArray", null, Values.nodeProperty(self, skuListField), scope);
+            Nodes.clearArray("clearArray", null, Values.node(Nodes.nodeProperty(self, skuListField, scope)), scope);
+            var array = Nodes.inputField(input, 0, scope);
             Nodes.forEach(
                     "forEach",
-                    () -> Values.inputValue(input, 0),
+                    () -> Values.node(array),
                     (bodyScope, getElement, getIndex) -> {
                         Nodes.addElement("addElement", null,
-                                Values.nodeProperty(self, skuListField), getElement.get(), bodyScope);
+                                Values.node(Nodes.nodeProperty(self, skuListField, scope)), getElement.get(), bodyScope);
                     },
                     scope
             );
@@ -515,7 +517,7 @@ public class MappingSaverTest extends TestCase {
         {
             var scope = getOwnerMethod.getRootScope();
             var selfNode = Nodes.self("self", applicationType, scope);
-            Nodes.ret("return", scope, Values.nodeProperty(selfNode, ownerField));
+            Nodes.ret("return", scope, Values.node(Nodes.nodeProperty(selfNode, ownerField, scope)));
         }
         TestUtils.initEntityIds(applicationType);
 

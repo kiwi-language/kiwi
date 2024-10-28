@@ -141,11 +141,11 @@ public class LongValue extends NumberValue {
     }
 
     @Override
-    public NumberValue minus(NumberValue that) {
+    public NumberValue sub(NumberValue that) {
         if (that instanceof LongValue thatLong)
             return minus(thatLong);
         else
-            return that.minus(this);
+            return that.sub(this);
     }
 
     @Override
@@ -165,11 +165,11 @@ public class LongValue extends NumberValue {
     }
 
     @Override
-    public NumberValue mod(NumberValue that) {
+    public NumberValue rem(NumberValue that) {
         if (that instanceof LongValue thatLong)
             return mod(thatLong);
         else
-            return that.mod(this);
+            return that.rem(this);
     }
 
     @Override

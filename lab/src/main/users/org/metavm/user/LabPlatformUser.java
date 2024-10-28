@@ -29,13 +29,6 @@ public class LabPlatformUser extends LabUser {
         super(loginName, password, name, roles, PlatformApplication.getInstance());
     }
 
-    @EntityIndex
-    public record ApplicationsIndex(List<LabApplication> applications) {
-        public ApplicationsIndex(LabPlatformUser user) {
-            this(user.applications);
-        }
-    }
-
     public List<LabApplication> getApplications() {
         return applications;
     }
@@ -151,5 +144,14 @@ public class LabPlatformUser extends LabUser {
             SessionUtils.removeEntry("LoggedInUser" + Lang.getId(s.getUser().getApplication()));
         });
     }
+
+    public record ApplicationsIndex(List<LabApplication> applications) {
+    }
+
+    @EntityIndex
+    private ApplicationsIndex applicationsIndex() {
+        return new ApplicationsIndex(applications);
+    }
+
 
 }

@@ -920,36 +920,24 @@ public class Assembler {
                     }
                     var inputNode = Nodes.input(method, nextNodeName("input"), null);
                     for (var parameter : method.getParameters()) {
-                        new ValueNode(
-                                NncUtils.randomNonNegative(),
+                        Nodes.nodeProperty(
                                 parameter.getName(),
-                                null,
-                                parameter.getType(),
-                                rootScope.getLastNode(),
-                                rootScope,
-                                Values.nodeProperty(inputNode, inputNode.getKlass().getFieldByCode(parameter.getCode()))
+                                inputNode,
+                                inputNode.getKlass().getFieldByCode(parameter.getCode()),
+                                rootScope
                         );
                     }
                     if (isConstructor && currentClass.isEnum) {
-                        new UpdateObjectNode(
-                                NncUtils.randomNonNegative(),
+                        Nodes.update(
                                 nextNodeName(),
-                                null,
-                                rootScope.getLastNode(),
-                                rootScope,
                                 Values.node(selfNode),
-                                List.of(
-                                        new UpdateField(
-                                                klass.getField(f -> f.getEffectiveTemplate() == StdField.enumName.get()).getRef(),
-                                                UpdateOp.SET,
-                                                Values.nodeProperty(inputNode, inputNode.getKlass().getFieldByCode("_name"))
-                                        ),
-                                        new UpdateField(
-                                                klass.getField(f -> f.getEffectiveTemplate() == StdField.enumOrdinal.get()).getRef(),
-                                                UpdateOp.SET,
-                                                Values.nodeProperty(inputNode, inputNode.getKlass().getFieldByCode("_ordinal"))
-                                        )
-                                )
+                                Map.of(
+                                        klass.getField(f -> f.getEffectiveTemplate() == StdField.enumName.get()),
+                                        Values.node(Nodes.nodeProperty(inputNode, inputNode.getKlass().getFieldByCode("_name"), rootScope)),
+                                        klass.getField(f -> f.getEffectiveTemplate() == StdField.enumOrdinal.get()),
+                                        Values.node(Nodes.nodeProperty(inputNode, inputNode.getKlass().getFieldByCode("_ordinal"), rootScope))
+                                ),
+                                rootScope
                         );
                     }
                     processMethodBlock(block, method);
@@ -1188,10 +1176,10 @@ public class Assembler {
                     );
                 }
                 if (statement.IF() != null) {
-                    var ifNode = Nodes.if_(
-                            nextNodeName("if"),
+                    var ifNode = Nodes.ifNot(
+                            nextNodeName("ifNot"),
                             Values.expression(
-                                    Expressions.not(parseExpression(statement.parExpression().expression(), parsingContext))
+                                    parseExpression(statement.parExpression().expression(), parsingContext)
                             ),
                             null,
                             scope
@@ -1225,7 +1213,7 @@ public class Assembler {
                     fieldTypes.forEach((fieldName, fieldType) ->
                             FieldBuilder.newBuilder(fieldName, fieldName, loopKlass, fieldType).build()
                     );
-                    var ifNode = Nodes.if_(nextNodeName("if"), Values.constantTrue(), null, scope);
+                    var ifNode = Nodes.ifNot(nextNodeName("if"), Values.constantTrue(), null, scope);
                     parseBlockNodes(statement.block(0), scope);
                     var g = Nodes.goto_(nextNodeName("goto"), scope);
                     g.setTarget(joinNode);
@@ -1239,7 +1227,7 @@ public class Assembler {
                             scope.getLastNode()
                     );
                     ifNode.setCondition(
-                            Values.expression(Expressions.not(parseExpression(forCtl.expression(), loopParsingContext)))
+                            Values.expression(parseExpression(forCtl.expression(), loopParsingContext))
                     );
                     if (loopVarDecls != null) {
                         for (var update : forCtl.loopVariableUpdates().loopVariableUpdate()) {
@@ -1288,13 +1276,11 @@ public class Assembler {
                     );
                     params.forEach(p -> {
                         var inputField = FieldBuilder.newBuilder(p.getName(), p.getCode(), inputKlass, p.getType()).build();
-                        new ValueNode(NncUtils.randomNonNegative(),
+                        Nodes.nodeProperty(
                                 p.getName(),
-                                p.getCode(),
-                                p.getType(),
-                                scope.getLastNode(),
-                                scope,
-                                Values.nodeProperty(inputNode, inputField)
+                                inputNode,
+                                inputField,
+                                scope
                         );
                     });
                     parseBlockNodes(lambda.lambdaBody().block(), scope);

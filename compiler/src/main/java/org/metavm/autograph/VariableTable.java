@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.expression.*;
 import org.metavm.flow.NodeRT;
 import org.metavm.flow.TryEnterNode;
-import org.metavm.flow.Value;
 import org.metavm.util.NncUtils;
 
 import java.util.*;
@@ -38,12 +37,11 @@ public class VariableTable {
         condSections.put(branchNode, new CondSection(branchNode, variableMap));
     }
 
-    ExpressionTypeMap nextBranch(NodeRT sectionId, long branchIndex, Value condition) {
+    void nextBranch(NodeRT sectionId, long branchIndex) {
         var section = condSections.get(sectionId);
         section.currentBranch = branchIndex;
         variableMap = section.entryMap.copy();
         section.putBranchMap(branchIndex, variableMap);
-        return section.nextBranch(condition);
     }
 
     void setYield(Expression yield) {
@@ -159,12 +157,9 @@ public class VariableTable {
     private static class CondSection {
         final NodeRT branchNode;
         Long currentBranch;
-        Expression nextBranchCond;
         final VariableMap entryMap;
         final Map<Long, VariableMap> branchMaps = new HashMap<>();
         final Map<Long, Expression> yields = new HashMap<>();
-
-        private final List<ExpressionTypeMap> nextBranchEntries = new ArrayList<>();
 
         private CondSection(NodeRT branchNode, VariableMap entryMap) {
             this.branchNode = branchNode;
@@ -175,26 +170,7 @@ public class VariableTable {
             branchMaps.put(branchIndex, map);
         }
 
-        ExpressionTypeMap nextBranch(Value condition) {
-            var narrower = new TypeNarrower(branchNode.getNextExpressionTypes()::getType);
-            ExpressionTypeMap extraExprTypeMap = null;
-            if(nextBranchCond != null && !Expressions.isConstantFalse(nextBranchCond)) {
-                extraExprTypeMap = narrower.narrowType(nextBranchCond);
-            }
-            for (var entry : nextBranchEntries) {
-                if(extraExprTypeMap == null) {
-                    extraExprTypeMap = entry;
-                }
-                else {
-                    extraExprTypeMap = entry.union(extraExprTypeMap);
-                }
-            }
-            var exprTypeMap = narrower.narrowType(condition.getExpression());
-            nextBranchEntries.clear();
-            nextBranchCond = nextBranchCond == null ?
-                    Expressions.not(condition.getExpression()) :
-                    Expressions.and(nextBranchCond, Expressions.not(condition.getExpression()));
-            return extraExprTypeMap != null ? exprTypeMap.merge(extraExprTypeMap) : exprTypeMap;
+        void nextBranch() {
         }
 
         void setYield(Expression yield) {

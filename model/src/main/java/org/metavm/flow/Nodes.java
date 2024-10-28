@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import org.metavm.entity.natives.StdFunction;
+import org.metavm.expression.Expression;
 import org.metavm.expression.Expressions;
 import org.metavm.object.type.*;
 import org.metavm.object.view.ObjectMapping;
@@ -30,6 +31,10 @@ public class Nodes {
         return new NewArrayNode(null, name, code, type, value, null, parentRef, scope.getLastNode(), scope);
     }
 
+    public static ArrayLengthNode arrayLength(String name, Value array, ScopeRT scope) {
+        return new ArrayLengthNode(null, name, null, scope.getLastNode(), scope, array);
+    }
+
     public static NewObjectNode newObject(String name, ScopeRT scope, Method constructor,
                                           List<Argument> arguments, boolean ephemeral, boolean unbound) {
         return new NewObjectNode(null, name, null,
@@ -49,28 +54,25 @@ public class Nodes {
         var join = join(scope.nextNodeName(name), scope);
         var indexField = FieldBuilder.newBuilder("index", "index", join.getKlass(), Types.getLongType())
                 .build();
+        var len = arrayLength("len", getArray.get(), scope);
+        var index = Expressions.node(nodeProperty(join, indexField, scope));
         var ifNode = if_(scope.nextNodeName("if"),
-                Values.expression(Expressions.ge(
-                        Expressions.nodeProperty(join, indexField),
-                        Expressions.arrayLength(getArray.get().getExpression())
-                )), null, scope);
+                Values.node(Nodes.ge(index, Expressions.node(len), scope)), null, scope);
         var element = new GetElementNode(
                 null, scope.nextNodeName("element"), null, scope.getLastNode(), scope,
-                getArray.get(), Values.nodeProperty(join, indexField)
+                getArray.get(), Values.expression(index)
         );
-        action.accept(scope, () -> Values.node(element), () -> Values.nodeProperty(join, indexField));
+        action.accept(scope, () -> Values.node(element), () -> Values.expression(index));
+        var updatedIndex = Nodes.add(
+                Expressions.node(nodeProperty(join, indexField, scope)),
+                Expressions.constantLong(1L),
+                scope
+        );
         var g = goto_(scope.nextNodeName("goto"), scope);
         g.setTarget(join);
         new JoinNodeField(
                 indexField, join,
-                Map.of(entry, Values.constantLong(0L), g,
-                        Values.expression(
-                                Expressions.add(
-                                        Expressions.nodeProperty(join, indexField),
-                                        Expressions.constantLong(1L)
-                                )
-                        )
-                )
+                Map.of(entry, Values.constantLong(0L), g, Values.node(updatedIndex))
         );
         var exit = noop(scope.nextNodeName("noop"), scope);
         ifNode.setTarget(exit);
@@ -99,11 +101,10 @@ public class Nodes {
         var join = join(name, scope);
         var indexField = FieldBuilder.newBuilder("index", "index", join.getKlass(), Types.getLongType())
                 .build();
+        var index = Expressions.node(nodeProperty(join, indexField, scope));
+
         var ifNode = if_(scope.nextNodeName("if"),
-                Values.expression(Expressions.ge(
-                        Expressions.nodeProperty(join, indexField),
-                        Expressions.node(size)
-                )),
+                Values.node(ge(index, Expressions.node(size), scope)),
                 null,
                 scope
         );
@@ -112,19 +113,18 @@ public class Nodes {
                 null, scope.nextNodeName("getElement"), null,
                 scope.getLastNode(), scope,
                 getArray.get(), getMethod.getRef(),
-                List.of(Nodes.argument(getMethod, 0, Values.nodeProperty(join, indexField)))
+                List.of(Nodes.argument(getMethod, 0, Values.expression(index)))
         );
-        action.accept(scope, () -> Values.node(element), () -> Values.nodeProperty(join, indexField));
+        action.accept(scope, () -> Values.node(element), () -> Values.expression(index));
+        var updatedIndex = Nodes.add(
+                Expressions.node(nodeProperty(join, indexField, scope)),
+                Expressions.constantLong(1L),
+                scope
+        );
         var g = goto_(scope.nextNodeName("goto"), scope);
         g.setTarget(join);
         new JoinNodeField(indexField, join, Map.of(
-                entry, Values.constantLong(0L),
-                g, Values.expression(
-                        Expressions.add(
-                                Expressions.nodeProperty(join, indexField),
-                                Expressions.constantLong(1L)
-                        )
-                )
+                entry, Values.constantLong(0L), g, Values.node(updatedIndex)
         ));
         var exit = noop(scope.nextNodeName("noop"), scope);
         ifNode.setTarget(exit);
@@ -171,6 +171,18 @@ public class Nodes {
 
     public static IfNode if_(String name, Value condition, @Nullable NodeRT target, ScopeRT scope) {
         return new IfNode(
+                null,
+                name,
+                null,
+                scope.getLastNode(),
+                scope,
+                condition,
+                target
+        );
+    }
+
+    public static IfNotNode ifNot(String name, Value condition, @Nullable NodeRT target, ScopeRT scope) {
+        return new IfNotNode(
                 null,
                 name,
                 null,
@@ -279,6 +291,81 @@ public class Nodes {
                 null,
                 scope.getLastNode(),
                 scope
+        );
+    }
+
+    public static NodeRT eq(Expression first, Expression second, ScopeRT scope) {
+        return new EqNode(
+                null,
+                scope.nextNodeName("eq"),
+                null,
+                scope.getLastNode(),
+                scope,
+                Values.expression(first),
+                Values.expression(second)
+        );
+    }
+
+    public static NodeRT ne(Expression first, Expression second, ScopeRT scope) {
+        return new NeNode(
+                null,
+                scope.nextNodeName("ne"),
+                null,
+                scope.getLastNode(),
+                scope,
+                Values.expression(first),
+                Values.expression(second)
+        );
+    }
+
+    public static NodeRT add(Expression first, Expression second, ScopeRT scope) {
+        return new AddNode(
+                null,
+                scope.nextNodeName("add"),
+                null,
+                scope.getLastNode(),
+                scope,
+                Values.expression(first),
+                Values.expression(second)
+        );
+    }
+
+    public static NodeRT nodeProperty(NodeRT node, Property property, ScopeRT scope) {
+        return getProperty(Expressions.node(node), property, scope);
+    }
+
+    public static NodeRT nodeProperty(String name, NodeRT node, Property property, ScopeRT scope) {
+        return getProperty(name, Expressions.node(node), property, scope);
+    }
+
+    public static NodeRT getProperty(Expression instance, Property property, ScopeRT scope) {
+        return getProperty(scope.nextNodeName("property"), instance, property, scope);
+    }
+
+    public static NodeRT inputField(InputNode node, int parameterIndex, ScopeRT scope) {
+         return nodeProperty(node, node.getType().resolve().getFields().get(parameterIndex), scope);
+    }
+
+    public static NodeRT getProperty(String name,Expression instance, Property property, ScopeRT scope) {
+        return new GetPropertyNode(
+                null,
+                name,
+                null,
+                scope.getLastNode(),
+                scope,
+                Values.expression(instance),
+                property.getRef()
+        );
+    }
+    private static NodeRT ge(Expression first, Expression second, ScopeRT scope) {
+        return new GeNode(
+                null,
+                scope.nextNodeName("ge"),
+                null,
+                scope.getLastNode(),
+                scope,
+                Values.expression(first),
+                Values.expression(second)
         );
     }
 

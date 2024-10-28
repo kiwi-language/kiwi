@@ -2,6 +2,7 @@ package org.metavm.expression;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.ModelDefRegistry;
+import org.metavm.flow.*;
 import org.metavm.object.type.NeverType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.UnionType;
@@ -28,26 +29,60 @@ public class TypeNarrower {
     }
 
     private Map<Expression, Type> process(Expression expression, boolean negated) {
-        if (expression instanceof InstanceOfExpression instanceOfExpr) {
-            return processInstanceOf(instanceOfExpr, negated);
-        } else if (expression instanceof BinaryExpression binaryExpression) {
-            return processBinary(binaryExpression, negated);
-        } else if (expression instanceof UnaryExpression unaryExpression) {
-            return processUnary(unaryExpression, negated);
-        }
-        return Map.of();
+        return switch (expression) {
+            case NodeExpression nodeExpression -> processNode(nodeExpression.getNode(), negated);
+            case InstanceOfExpression instanceOfExpr ->
+                    processInstanceOf(instanceOfExpr.getOperand(), instanceOfExpr.getTargetType(), negated);
+            case BinaryExpression binaryExpression -> processBinary(binaryExpression.getLeft(),
+                    binaryExpression.getRight(),
+                    binaryExpression.getOperator(),
+                    negated);
+            case UnaryExpression unaryExpression -> processUnary(unaryExpression, negated);
+            default -> Map.of();
+        };
     }
 
-    private Map<Expression, Type> processInstanceOf(InstanceOfExpression expression, boolean negated) {
-        var type = negated ? typeDiff(getType(expression.getOperand()), expression.getTargetType()) :
-                typeIntersection(getType(expression.getOperand()), expression.getTargetType());
-        return type != null ? Map.of(expression.getOperand(), type) : Map.of();
+    private Map<Expression, Type> processNode(NodeRT node, boolean negated) {
+        return switch (node) {
+            case NotNode notNode -> process(notNode.getOperand().getExpression(), !negated);
+            case InstanceOfNode instanceOfNode -> processInstanceOf(
+                    instanceOfNode.getOperand().getExpression(),
+                    instanceOfNode.getTargetType(),
+                    negated);
+            case AndNode andNode -> processBinary(
+                    andNode.getFirst().getExpression(),
+                    andNode.getSecond().getExpression(),
+                    BinaryOperator.AND,
+                    negated);
+            case OrNode orNode -> processBinary(
+                    orNode.getFirst().getExpression(),
+                    orNode.getSecond().getExpression(),
+                    BinaryOperator.OR,
+                    negated);
+            case EqNode eqNode -> processBinary(
+                    eqNode.getFirst().getExpression(),
+                    eqNode.getSecond().getExpression(),
+                    BinaryOperator.EQ,
+                    negated);
+            case NeNode neNode -> processBinary(
+                    neNode.getFirst().getExpression(),
+                    neNode.getSecond().getExpression(),
+                    BinaryOperator.NE,
+                    negated);
+            default -> Map.of();
+        };
     }
 
-    private Map<Expression, Type> processBinary(BinaryExpression binaryExpression, boolean negated) {
-        var op = binaryExpression.getOperator();
-        var first = binaryExpression.getLeft();
-        var second = binaryExpression.getRight();
+    private Map<Expression, Type> processInstanceOf(Expression operand, Type targetType, boolean negated) {
+        var type = negated ? typeDiff(getType(operand), targetType) :
+                typeIntersection(getType(operand), targetType);
+        return type != null ? Map.of(operand, type) : Map.of();
+    }
+
+    private Map<Expression, Type> processBinary(Expression first,
+                                                Expression second,
+                                                BinaryOperator op,
+                                                boolean negated) {
         final Map<Expression, Type> result = new HashMap<>();
         if (op == BinaryOperator.AND || op == BinaryOperator.OR) {
             if (negated) {
@@ -127,9 +162,6 @@ public class TypeNarrower {
 
     private Map<Expression, Type> processUnary(UnaryExpression unaryExpression, boolean negated) {
         var operand = unaryExpression.getOperand();
-        if (getType(operand).isNotNull()) {
-            return Map.of();
-        }
         var op = unaryExpression.getOperator();
         if (op == UnaryOperator.IS_NOT_NULL || op == UnaryOperator.IS_NULL) {
             if (negated) {

@@ -40,4 +40,32 @@ public class NodeKindCodes {
     public static final int JOIN = 45;
     public static final int NOOP = 46;
     public static final int LAMBDA_EXIT = 47;
+    public static final int ADD = 48;
+    public static final int SUB = 49;
+    public static final int MUL = 50;
+    public static final int DIV = 51;
+    public static final int LEFT_SHIFT = 52;
+    public static final int RIGHT_SHIFT = 53;
+    public static final int UNSIGNED_RIGHT_SHIFT = 54;
+    public static final int BITWISE_OR = 55;
+    public static final int BITWISE_AND = 56;
+    public static final int BITWISE_XOR = 57;
+    public static final int AND = 58;
+    public static final int OR = 59;
+    public static final int BITWISE_COMPLEMENT = 60;
+    public static final int NOT = 61;
+    public static final int NEGATE = 62;
+    public static final int REM = 63;
+    public static final int EQ = 64;
+    public static final int NE = 65;
+    public static final int GE = 66;
+    public static final int GT = 67;
+    public static final int LT = 68;
+    public static final int LE = 69;
+    public static final int GET_PROPERTY = 70;
+    public static final int GET_STATIC = 71;
+    public static final int INSTANCE_OF = 72;
+    public static final int ARRAY_LENGTH = 73;
+    public static final int IF_NOT = 74;
+
 }

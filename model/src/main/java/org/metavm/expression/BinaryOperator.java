@@ -34,7 +34,7 @@ public enum BinaryOperator {
     MOD(4, "%", 2, OperatorTypes.BINARY, null) {
         @Override
         public NumberValue evaluate(Value first, Value second) {
-            return ((NumberValue) first).mod(((NumberValue) second));
+            return ((NumberValue) first).rem(((NumberValue) second));
         }
     },
 
@@ -48,7 +48,7 @@ public enum BinaryOperator {
     MINUS(6, "-", 3, OperatorTypes.BINARY, null) {
         @Override
         public NumberValue evaluate(Value first, Value second) {
-            return ((NumberValue) first).minus((NumberValue) second);
+            return ((NumberValue) first).sub((NumberValue) second);
         }
     },
     // SHIFT

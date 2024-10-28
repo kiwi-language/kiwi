@@ -64,18 +64,4 @@ public class Values {
         return reference(Expressions.node(node));
     }
 
-    public static Value nodeProperty(NodeRT node, Property property) {
-        return reference(Expressions.nodeProperty(node, property));
-    }
-
-    public static Value nodeProperty(NodeRT node, String fieldCode) {
-        var type = (ClassType) Objects.requireNonNull(node.getType());
-        var klass = type.resolve();
-        var field = klass.getFieldByCode(fieldCode);
-        return reference(Expressions.nodeProperty(node, field));
-    }
-
-    public static Value inputValue(InputNode node, int parameterIndex) {
-        return nodeProperty(node, node.getType().resolve().getFields().get(parameterIndex));
-    }
 }

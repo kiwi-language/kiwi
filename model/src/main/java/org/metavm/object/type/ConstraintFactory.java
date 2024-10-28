@@ -36,7 +36,7 @@ public class ConstraintFactory {
         if (constraintDTO.param() instanceof IndexParam) {
             var index = createIndexConstraint(constraintDTO.tmpId(), constraintDTO.getParam(), type,
                     constraintDTO.name(), constraintDTO.code(),
-                    message, parsingContext);
+                    message, parsingContext, entityContext);
             entityContext.bind(index);
             return index;
         }
@@ -59,8 +59,10 @@ public class ConstraintFactory {
             String name,
             @Nullable String code,
             String message,
-            ParsingContext parsingContext) {
-        var index = new Index(type, name, code, message, param.unique());
+            ParsingContext parsingContext,
+            IEntityContext entityContext) {
+        var method =  NncUtils.get(param.methodId(), entityContext::getMethod);
+        var index = new Index(type, name, code, message, param.unique(), List.of(), method);
         index.setTmpId(tmpId);
         for (IndexFieldDTO fieldDTO : param.fields()) {
             var indexField = new IndexField(
@@ -126,7 +128,7 @@ public class ConstraintFactory {
         NncUtils.requireNotEmpty(fields, "fields can not empty");
         Klass type = fields.get(0).getDeclaringType();
         String message = "Duplicate field '" + NncUtils.join(fields, Field::getQualifiedName) + "'";
-        return new Index(type, name, code, message, true, fields);
+        return new Index(type, name, code, message, true, fields, null);
     }
 
 }

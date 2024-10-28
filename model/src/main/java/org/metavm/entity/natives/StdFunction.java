@@ -303,6 +303,15 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             List.of(ReflectionUtils.getMethod(PasswordUtils.class, "randomPassword")),
             (func, args, ctx) -> FlowExecResult.of(Instances.stringInstance(NncUtils.randomPassword()))
     ),
+    password(
+            "password passwd(string s)",
+            true,
+            List.of(),
+            (func, args, ctx) -> {
+                var s = ((StringValue) args.get(0)).getValue();
+                return FlowExecResult.of(Instances.passwordInstance(EncodingUtils.md5(s)));
+            }
+    ),
     regexMatch(
             "boolean regexMatch(string pattern, string str)",
             true,
@@ -329,6 +338,21 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var date = (TimeValue) args.get(0);
                 return FlowExecResult.of(Instances.longInstance(date.getValue()));
             }),
+    now(
+            "time now()",
+            true,
+            List.of(),
+            (func, args, ctx) -> FlowExecResult.of(Instances.timeInstance(System.currentTimeMillis()))
+    ),
+    time(
+            "time timeFromMillis(long millis)",
+            true,
+            List.of(),
+            (func, args, ctx) -> {
+                var millis = (LongValue) args.get(0);
+                return FlowExecResult.of(Instances.timeInstance(millis.getValue()));
+            }
+    ),
     formatNumber(
             "string formatNumber(string format, long number)",
             true,

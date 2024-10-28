@@ -40,25 +40,6 @@ public class ValueUtils {
         throw new InternalException("Unsupported value: " + value);
     }
 
-    public static Type getCompatibleType(Type type1, Type type2) {
-        if (type1.equals(type2)) {
-            return type1;
-        }
-        if (isAssignable(type1, type2)) {
-            return type2;
-        }
-        if (isAssignable(type2, type1)) {
-            return type1;
-        }
-        if (isConvertible(type1, type2)) {
-            return type2;
-        }
-        if (isConvertible(type2, type1)) {
-            return type1;
-        }
-        throw new InternalException("category " + type1 + " and category " + type2 + " are incompatible");
-    }
-
     public static boolean isConvertible(Type from, Type to) {
         if (to.isString()) return true;
         if (to.isLong()) {
@@ -74,23 +55,6 @@ public class ValueUtils {
             }
         }
         throw new InternalException("Can not convert instance '" + instance + "' to type '" + type + "'");
-    }
-
-    public static Type getCompatibleType(List<Type> types) {
-        NncUtils.requireMinimumSize(types, 1);
-        Iterator<Type> it = types.iterator();
-        Type compatibleType = it.next();
-        while (it.hasNext()) {
-            Type t = it.next();
-            if (!t.equals(compatibleType) && !isAssignable(t, compatibleType)) {
-                if (isAssignable(compatibleType, t)) {
-                    compatibleType = t;
-                } else {
-                    throw new InternalException("Types are not compatible: " + types);
-                }
-            }
-        }
-        return compatibleType;
     }
 
     private static final Set<Class<?>> PRIMITIVE_TYPES = Set.of(

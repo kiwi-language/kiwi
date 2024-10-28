@@ -53,12 +53,12 @@ public class UnionNestedMapping extends NestedMapping implements LoadAware {
     public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
         Map<GotoNode, Value> exit2value = new HashMap<>();
         var source = Nodes.value(scope.nextNodeName("source"), getSource.get(), scope);
-        IfNode lastIfNode = null;
+        JumpNode lastIfNode = null;
         for (var memberMapping : memberMappings) {
-            var ifNode = Nodes.if_(scope.nextNodeName("if"),
-                     Values.expression(Expressions.not(
+            var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
+                     Values.expression(
                              new InstanceOfExpression(getSource.get().getExpression(), memberMapping.sourceType())
-                     )),
+                     ),
                     null,
                     scope
             );
@@ -77,18 +77,19 @@ public class UnionNestedMapping extends NestedMapping implements LoadAware {
         exit2value.keySet().forEach(g -> g.setTarget(join));
         var valueField = FieldBuilder.newBuilder("value", null, join.getKlass(), targetType).build();
         new JoinNodeField(valueField, join, exit2value);
-        return () -> Values.nodeProperty(join, valueField);
+        var value = Nodes.nodeProperty(join, valueField, scope);
+        return () -> Values.node(value);
     }
 
     @Override
     public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
         var exit2value = new HashMap<GotoNode, Value>();
         var view = Nodes.value(scope.nextNodeName("view"), getView.get(), scope);
-        IfNode lastIfNode = null;
+        JumpNode lastIfNode = null;
         for (var memberMapping : memberMappings) {
-            var ifNode = Nodes.if_(scope.nextNodeName("if"),
+            var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
                     Values.expression(
-                            Expressions.not(new InstanceOfExpression(getView.get().getExpression(), memberMapping.targetType()))
+                            new InstanceOfExpression(getView.get().getExpression(), memberMapping.targetType())
                     ),
                     null, scope
             );
@@ -106,7 +107,8 @@ public class UnionNestedMapping extends NestedMapping implements LoadAware {
         exit2value.keySet().forEach(g -> g.setTarget(join));
         var valueField = FieldBuilder.newBuilder("value", null, join.getType().resolve(), sourceType).build();
         new JoinNodeField(valueField, join, exit2value);
-        return () -> Values.nodeProperty(join, valueField);
+        var value = Nodes.nodeProperty(join, valueField, scope);
+        return () -> Values.node(value);
     }
 
     @Override

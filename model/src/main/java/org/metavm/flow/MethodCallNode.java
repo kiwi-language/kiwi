@@ -127,7 +127,8 @@ public class MethodCallNode extends CallNode {
     @Override
     public void writeContent(CodeWriter writer) {
         var method = getFlowRef().resolve();
-        writer.write(method.getDeclaringType().getName() + "." + method.getNameWithTypeArguments()
+        var qualifier = self == null ? method.getDeclaringType().getTypeDesc() : self.getText();
+        writer.write(qualifier + "." + method.getNameWithTypeArguments()
                 + "(" + NncUtils.join(arguments, Argument::getText, ", ") + ")");
     }
 

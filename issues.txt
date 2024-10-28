@@ -39,6 +39,7 @@ record Foo(String value) {
 11 Memory leaks in compiler test cases through ThreadLocalDefContextHolder
 12 Strings are not assignable CharSequence in MetaVM
 13 Add support for byte, short and int types
+14 Simple expressions that can be resolved directly are resolved into boolean structures, e.g. a boolean literal 'true'
 
 Issues with compiling java.util.Map
 

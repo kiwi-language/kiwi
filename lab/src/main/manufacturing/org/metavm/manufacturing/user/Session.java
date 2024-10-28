@@ -45,13 +45,12 @@ public class Session {
         this.expiryTime = expiryTime;
     }
 
-    @EntityIndex(unique = true)
     public record TokenIndex(String token) implements Index<Session> {
+    }
 
-        TokenIndex(Session session) {
-            this(session.token);
-        }
-
+    @EntityIndex(unique = true)
+    private TokenIndex tokenIndex() {
+        return new TokenIndex(token);
     }
 
 }

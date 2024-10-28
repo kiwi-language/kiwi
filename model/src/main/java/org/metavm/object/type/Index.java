@@ -5,12 +5,15 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.InstanceEvaluationContext;
+import org.metavm.flow.Flows;
+import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.IndexFieldDTO;
 import org.metavm.object.type.rest.dto.IndexParam;
+import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
@@ -19,17 +22,22 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import static java.util.Objects.requireNonNull;
+
 @EntityType
 public class Index extends Constraint implements LocalKey {
 
     @ChildEntity
     private final ChildArray<IndexField> fields = addChild(new ChildArray<>(IndexField.class), "fields");
     private final boolean unique;
+    private @Nullable Method method;
     private transient IndexDef<?> indexDef;
 
-    public Index(Klass type, String name, @Nullable String code, String message, boolean unique, List<Field> fields) {
+    public Index(Klass type, String name, @Nullable String code, String message, boolean unique, List<Field> fields,
+                 @Nullable Method method) {
         super(ConstraintKind.UNIQUE, type, name, code, message);
         this.unique = unique;
+        this.method = method;
         for (Field field : fields) {
             IndexField.createFieldItem(this, field);
         }
@@ -85,22 +93,45 @@ public class Index extends Constraint implements LocalKey {
     public void forEachIndexKey(ClassInstance instance, Consumer<IndexKeyRT> action) {
         EvaluationContext evaluationContext = new InstanceEvaluationContext(instance);
         Map<IndexField, Value> values = new HashMap<>();
-        for (int i = 0; i < fields.size() - 1; i++) {
-            var field = fields.get(i);
-            values.put(field, field.getValue().evaluate(evaluationContext));
-        }
-        // When the last index item is an array, create an index key for each element.
-        var lastField = fields.get(fields.size() - 1);
-        if (lastField.getValue().getType().getUnderlyingType().isArray()) {
-            var lastValues = new HashSet<>(( lastField.getValue().evaluate(evaluationContext)).resolveArray().getElements());
-            List<IndexKeyRT> keys = new ArrayList<>();
-            for (Value lastValue : lastValues) {
-                values.put(lastField, lastValue);
-                action.accept(createIndexKey(values));
+        if(method != null) {
+            var indexValues =
+                    requireNonNull(Flows.execute(method, instance, List.of(), ContextUtil.getEntityContext()).ret())
+                            .resolveObject();
+            for (int i = 0; i < fields.size() - 1; i++) {
+                var field = fields.get(i);
+                values.put(field, indexValues.getField(field.getName()));
             }
-        } else {
-            values.put(lastField, lastField.getValue().evaluate(evaluationContext));
-            action.accept(new IndexKeyRT(this, values));
+            // When the last index item is an array, create an index key for each element.
+            var lastField = fields.get(fields.size() - 1);
+            if (lastField.getValue().getType().getUnderlyingType().isArray()) {
+                var lastValues = new HashSet<>(indexValues.getField(lastField.getName()).resolveArray().getElements());
+                for (Value lastValue : lastValues) {
+                    values.put(lastField, lastValue);
+                    action.accept(createIndexKey(values));
+                }
+            } else {
+                values.put(lastField, indexValues.getField(lastField.getName()));
+                action.accept(new IndexKeyRT(this, values));
+            }
+        }
+        else {
+            for (int i = 0; i < fields.size() - 1; i++) {
+                var field = fields.get(i);
+                values.put(field, field.getValue().evaluate(evaluationContext));
+            }
+            // When the last index item is an array, create an index key for each element.
+            var lastField = fields.get(fields.size() - 1);
+            if (lastField.getValue().getType().getUnderlyingType().isArray()) {
+                var lastValues = new HashSet<>((lastField.getValue().evaluate(evaluationContext)).resolveArray().getElements());
+                List<IndexKeyRT> keys = new ArrayList<>();
+                for (Value lastValue : lastValues) {
+                    values.put(lastField, lastValue);
+                    action.accept(createIndexKey(values));
+                }
+            } else {
+                values.put(lastField, lastField.getValue().evaluate(evaluationContext));
+                action.accept(new IndexKeyRT(this, values));
+            }
         }
     }
 
@@ -124,15 +155,19 @@ public class Index extends Constraint implements LocalKey {
 
     @Override
     protected IndexParam getParam() {
-        return new IndexParam(
-                unique,
-                NncUtils.map(fields, item -> item.toDTO())
-        );
+        try(var serContext = SerializeContext.enter()) {
+            return new IndexParam(
+                    unique,
+                    NncUtils.map(fields, IndexField::toDTO),
+                    NncUtils.get(method, serContext::getStringId)
+            );
+        }
     }
 
     @Override
     public void setParam(Object param, IEntityContext context) {
         IndexParam indexParam = (IndexParam) param;
+        this.method = NncUtils.get(indexParam.methodId(), context::getMethod);
         if (indexParam.fields() != null) {
             for (IndexFieldDTO fieldDTO : indexParam.fields()) {
                 if (fieldDTO.id() != null) {

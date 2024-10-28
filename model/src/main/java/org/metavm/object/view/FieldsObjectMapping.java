@@ -145,8 +145,7 @@ public class FieldsObjectMapping extends ObjectMapping {
         var scope = Objects.requireNonNull(writeMethod).newEphemeralRootScope();
         var selfNode = new SelfNode(null, "self", null, getSourceType(), null, scope);
         var inputNode = Nodes.input(writeMethod);
-        var viewNode = new ValueNode(null, "view", null, getTargetType(), scope.getLastNode(), scope,
-                Values.inputValue(inputNode, 0));
+        var viewNode = Nodes.inputField(inputNode, 0, scope);
         for (FieldMapping fieldMapping : fieldMappings) {
             if (!fieldMapping.isReadonly())
                 fieldMapping.generateWriteCode(selfNode, viewNode);

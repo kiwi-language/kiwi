@@ -3,6 +3,7 @@ package org.metavm.user;
 import org.metavm.api.EntityIndex;
 import org.metavm.api.EntityType;
 import org.metavm.api.Index;
+import org.metavm.api.ValueType;
 
 import java.util.Date;
 
@@ -10,21 +11,24 @@ import java.util.Date;
 public record LabLoginAttempt(boolean successful, String loginName,
                               String clientIP, Date time) {
 
-    @EntityIndex
+    @ValueType
     public record LoginNameSuccTimeIndex(String loginName, boolean successful, Date time)
             implements Index<LabLoginAttempt> {
+    }
 
-        public LoginNameSuccTimeIndex(LabLoginAttempt labLoginAttempt) {
-            this(labLoginAttempt.loginName, labLoginAttempt.successful, labLoginAttempt.time);
-        }
+    @ValueType
+    public record ClientIpSuccTimeIndex(String clientIP, boolean successful, Date time)
+            implements Index<LabLoginAttempt> {
     }
 
     @EntityIndex
-    public record ClientIpSuccTimeIndex(String clientIP, boolean successful, Date time)
-            implements Index<LabLoginAttempt> {
-
-        public ClientIpSuccTimeIndex(LabLoginAttempt labLoginAttempt) {
-            this(labLoginAttempt.clientIP, labLoginAttempt.successful, labLoginAttempt.time);
-        }
+    private LoginNameSuccTimeIndex loginNameSuccTimeIndex() {
+        return new LoginNameSuccTimeIndex(loginName, successful, time);
     }
+
+    @EntityIndex
+    private ClientIpSuccTimeIndex clientIpSuccTimeIndex() {
+        return new ClientIpSuccTimeIndex(clientIP, successful, time);
+    }
+
 }

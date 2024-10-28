@@ -2,9 +2,9 @@ package org.metavm.autograph;
 
 import com.intellij.psi.PsiNewExpression;
 import org.metavm.api.builtin.Password;
+import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expression;
-import org.metavm.expression.Func;
-import org.metavm.expression.FunctionExpression;
+import org.metavm.expression.Expressions;
 
 import java.util.List;
 
@@ -26,6 +26,6 @@ public class NewPasswordResolver implements NewResolver {
     @Override
     public Expression resolve(PsiNewExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
         var password = expressionResolver.resolve(requireNonNull(methodCallExpression.getArgumentList()).getExpressions()[0]);
-        return new FunctionExpression(Func.PASSWORD, password);
+        return Expressions.node(methodGenerator.createFunctionCall(StdFunction.password.get(), List.of(password)));
     }
 }

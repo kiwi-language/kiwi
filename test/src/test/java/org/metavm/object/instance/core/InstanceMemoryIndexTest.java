@@ -30,7 +30,7 @@ public class InstanceMemoryIndexTest extends TestCase {
 
         var index = new Index(
                 fooType, "idxName", "idxName", "name must be unique", true,
-                List.of(nameField)
+                List.of(nameField), null
         );
 
         TestUtils.initEntityIds(fooType);

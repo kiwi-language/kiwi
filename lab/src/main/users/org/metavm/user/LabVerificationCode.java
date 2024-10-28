@@ -15,21 +15,6 @@ import java.util.Date;
 @EntityType
 public class LabVerificationCode {
 
-    @EntityIndex
-    public record IndexReceiverCodeExpiredAt(String receiver, String code,
-                                             Date expiredAt) implements Index<LabVerificationCode> {
-        public IndexReceiverCodeExpiredAt(LabVerificationCode verificationCode) {
-            this(verificationCode.receiver, verificationCode.code, verificationCode.expiredAt);
-        }
-    }
-
-    @EntityIndex
-    public record IndexClientIpCreatedAt(String clientIP, Date createdAt) implements Index<LabVerificationCode> {
-        public IndexClientIpCreatedAt(LabVerificationCode verificationCode) {
-            this(verificationCode.clientIP, verificationCode.createdAt);
-        }
-    }
-
     public static final long DEFAULT_EXPIRE_IN_MILLIS = 15 * 60 * 1000L;
 
     private static final int MAX_SENT_PER_FIFTEEN_MINUTES = 15;
@@ -98,6 +83,30 @@ public class LabVerificationCode {
         ) > 0L;
         if (!valid)
             throw new LabBusinessException(LabErrorCode.INCORRECT_VERIFICATION_CODE);
+    }
+
+
+    public record IndexReceiverCodeExpiredAt(String receiver, String code,
+                                             Date expiredAt) implements Index<LabVerificationCode> {
+        public IndexReceiverCodeExpiredAt(LabVerificationCode verificationCode) {
+            this(verificationCode.receiver, verificationCode.code, verificationCode.expiredAt);
+        }
+    }
+
+    @EntityIndex
+    private IndexReceiverCodeExpiredAt indexReceiverCodeExpiredAt() {
+        return new IndexReceiverCodeExpiredAt(receiver, code, expiredAt);
+    }
+
+    public record IndexClientIpCreatedAt(String clientIP, Date createdAt) implements Index<LabVerificationCode> {
+        public IndexClientIpCreatedAt(LabVerificationCode verificationCode) {
+            this(verificationCode.clientIP, verificationCode.createdAt);
+        }
+    }
+
+    @EntityIndex
+    private IndexClientIpCreatedAt indexClientIpCreatedAt() {
+        return new IndexClientIpCreatedAt(clientIP, createdAt);
     }
 
 }

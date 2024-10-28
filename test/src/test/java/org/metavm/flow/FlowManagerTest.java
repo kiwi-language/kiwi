@@ -63,7 +63,7 @@ public class FlowManagerTest extends TestCase {
             var input = Nodes.input(method);
             var inputValueField = input.getKlass().getFieldByCode("value");
             var if_ = Nodes.if_("if",
-                    Values.nodeProperty(input, inputValueField),
+                    Values.node(Nodes.nodeProperty(input, inputValueField, scope)),
                     null,
                     scope
             );
@@ -73,7 +73,7 @@ public class FlowManagerTest extends TestCase {
             var f = FieldBuilder.newBuilder("value", null, join.getKlass(), Types.getBooleanType())
                             .build();
             join.addField(new JoinNodeField(f, join, Map.of(noop, Values.constantFalse(), if_, Values.constantTrue())));
-            Nodes.ret("ret", scope, Values.nodeProperty(join, f));
+            Nodes.ret("ret", scope, Values.node(Nodes.nodeProperty(join, f, scope)));
             context.bind(klass);
             klass.accept(new FlowAnalyzer());
             var r = Flows.execute(method, null, List.of(Instances.trueInstance()), context).ret();

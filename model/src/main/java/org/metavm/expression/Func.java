@@ -1,10 +1,7 @@
 package org.metavm.expression;
 
-import org.metavm.api.ReadonlyList;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
-import org.metavm.util.Password;
-import org.metavm.util.ValueUtils;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -12,77 +9,11 @@ import java.util.List;
 
 public enum Func {
 
-    MAX$_INT(Integer.class, Integer.class, Integer.class),
-    MAX$_LONG(Long.class, Long.class, Long.class),
-    MAX$_DOUBLE(Double.class, Double.class, Double.class),
-
-    MIN$_INT(Integer.class, Integer.class, Integer.class),
-    MIN$_LONG(Long.class, Long.class, Long.class),
-    MIN$_DOUBLE(Double.class, Double.class, Double.class),
-
-    SUM$_INT(Integer.class, Integer.class, Integer.class),
-    SUM$_LONG(Long.class, Long.class, Long.class),
-    SUM$_DOUBLE(Double.class, Double.class, Double.class),
-
-    RANDOM(Long.class),
-
-    BOUNDED_RANDOM(Long.class, Long.class),
-
-    IF(Object.class, List.of(Boolean.class, Object.class, Object.class),
-            types -> ValueUtils.getCompatibleType(types.get(1), types.get(2))),
-
-    IS_BLANK(Boolean.class, String.class),
-
-    NOW(Date.class),
-
-    NOW_MILLIS(Long.class),
-
-    TIME(Date.class, Long.class),
-
-    LEN(Boolean.class, Object.class),
-
     STARTS_WITH(Boolean.class, Object.class, String.class),
-
     CONTAINS(Boolean.class, Object.class, String.class),
-
+    NOW(Date.class),
+    LEN(Boolean.class, Object.class),
     CONCAT(String.class, Object.class, Object.class),
-
-    HAS_NEXT(Boolean.class, Object.class),
-
-    TO_STRING(String.class, Object.class),
-
-    PASSWORD(Password.class, String.class),
-
-    GET_PASSWORD(String.class, Password.class),
-
-    REPLACE(String.class, String.class, String.class, String.class),
-
-    REPLACE_FIRST(String.class, String.class, String.class, String.class),
-
-    ARRAY_CONTAINS(Boolean.class, ReadonlyList.class, Object.class),
-
-    UUID(String.class),
-
-    DATE_BEFORE(Boolean.class, Date.class, Date.class),
-
-    DATE_AFTER(Boolean.class, Date.class, Date.class),
-
-    DATE_GET_TIME(Long.class, Date.class),
-
-    MD5(String.class, String.class),
-
-    RANDOM_PASSWORD(String.class),
-
-    NUMBER_FORMAT(String.class, String.class, Long.class),
-
-    REGEX_MATCH(Boolean.class, String.class, String.class),
-
-//    IS_ASSIGNABLE(Boolean.class, Type.class, Type.class),
-
-    GET_ID(Long.class, Object.class),
-
-    STRING_FORMAT(String.class, String.class, ReadonlyList.class),
-
     ;
 
     private final FunctionDesc desc;

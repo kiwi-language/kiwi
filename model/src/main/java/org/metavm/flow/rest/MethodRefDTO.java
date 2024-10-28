@@ -8,6 +8,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
+import org.metavm.object.type.rest.dto.PropertyRefDTO;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.Constants;
 import org.metavm.util.InstanceInput;
@@ -20,7 +21,7 @@ public record MethodRefDTO(
         String declaringType,
         String rawFlowId,
         List<String> typeArguments
-) implements FlowRefDTO, GenericDeclarationRefKey {
+) implements FlowRefDTO, PropertyRefDTO, GenericDeclarationRefKey {
 
     @Override
     public int getKind() {

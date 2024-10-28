@@ -92,6 +92,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processBooleanConditional();
             processElseTypeNarrowing();
             processSwitchExpression();
+            processMultiply();
+            processForeach();
         });
     }
 
@@ -977,6 +979,18 @@ public class BasicCompilingTest extends CompilerTestBase {
         var currencyKlassName = klassName + ".Currency";
         var yuanId = (String) getStatic(currencyKlassName, "YUAN");
         Assert.assertEquals(0.14, callMethod(klassName, "getRate", List.of(yuanId)));
+    }
+
+    private void processMultiply() {
+        var klassName = "operators.MultiplyFoo";
+        Assert.assertEquals(15L, callMethod(klassName, "multiply", List.of(3, 5)));
+    }
+
+    private void processForeach() {
+        var klassName = "loops.ForeachFoo";
+        Assert.assertEquals(
+                6L,
+                callMethod(klassName, "sum", List.of(List.of(1, 2, 3))));
     }
 
 }
