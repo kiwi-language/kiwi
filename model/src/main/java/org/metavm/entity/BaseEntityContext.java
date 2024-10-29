@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
@@ -44,11 +45,14 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     private final Set<ContextFlag> flags = new HashSet<>();
     private boolean entityCreationDisabled;
     private ParameterizedMap parameterizedMap;
+    private final transient WeakReference<IEntityContext> enclosingEntityContext;
 
     public BaseEntityContext(IInstanceContext instanceContext, @Nullable IEntityContext parent) {
         this.instanceContext = instanceContext;
         this.parent = parent;
         instanceContext.addListener(this);
+        enclosingEntityContext = new WeakReference<>(ContextUtil.getEntityContext());
+        ContextUtil.setEntityContext(this);
     }
 
     protected abstract TypeFactory getTypeFactory();
@@ -496,6 +500,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         if (instanceContext != null) {
             instanceContext.close();
         }
+        ContextUtil.setEntityContext(enclosingEntityContext.get());
     }
 
     @Override

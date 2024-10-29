@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.Id;
@@ -9,6 +10,7 @@ import org.metavm.util.profile.Profiler;
 import javax.annotation.Nullable;
 import java.util.*;
 
+@Slf4j
 public class ContextUtil {
 
     private static class ContextInfo {

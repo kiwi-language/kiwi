@@ -632,6 +632,16 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(clone.getReference());
             }
     ),
+    concat(
+            "string concat(string s1, string s2)",
+            false,
+            List.of(),
+            (func, args, callContext) -> {
+                var s1 = (StringValue) args.get(0);
+                var s2 = (StringValue) args.get(1);
+                return FlowExecResult.of(s1.concat(s2));
+            }
+    ),
     checkFromIndexSize(
             "long checkFromIndexSize(long fromIndex, long size, long length)",
             false,
@@ -736,10 +746,12 @@ public enum StdFunction implements ValueHolderOwner<Function> {
     }
 
     public void set(Function function) {
+        function.setNativeCode(impl);
         functionHolder.set(function);
     }
 
     public void setLocal(Function function) {
+        function.setNativeCode(impl);
         functionHolder.setLocal(function);
     }
 

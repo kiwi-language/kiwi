@@ -1,11 +1,15 @@
+record IdxProductName {
+    private readonly string name;
+
+    public IdxProductName(string name) {
+        this.name = name;
+    }
+}
+
 class Product extends Versioned {
 
-    index IdxName {
-        name: this.name;
-    }
-
     public static Product|null findByName(string name) {
-        found: selectFirst(Product.IdxName, name);
+        found: selectFirst(Product.idxName, name);
         return found;
     }
 
@@ -85,6 +89,11 @@ class Product extends Versioned {
 
     public void setManufacturer(any manufacturer) {
         this.manufacturer = manufacturer;
+    }
+
+    public IdxProductName idxName() {
+        idx: new IdxProductName(this.name);
+        return idx;
     }
 
 }

@@ -5,7 +5,7 @@ import org.metavm.asm.antlr.AssemblyLexer;
 import org.metavm.asm.antlr.AssemblyParser;
 import org.metavm.asm.antlr.AssemblyParserBaseVisitor;
 import org.metavm.entity.*;
-import org.metavm.expression.*;
+import org.metavm.expression.Expression;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.EnumConstantDef;
@@ -105,19 +105,13 @@ public class Assembler {
         );
     }
 
-    private Expression parseExpression(AssemblyParser.ExpressionContext expression, ParsingContext parsingContext) {
-        return parseExpression(
-                tokenStream.getText(expression.getSourceInterval()),
-                parsingContext
-        );
-    }
-
-    private Expression parseExpression(String expression, ParsingContext parsingContext) {
-        var replaced = expression.replace("==", "=")
-                .replace("&&", "and")
-                .replace("||", "or");
-        return ExpressionParser.parse(replaced, parsingContext);
-    }
+    private Expression resolveExpression(AssemblyParser.ExpressionContext ctx, ScopeRT scope, AsmScope asmScope, CompilationUit compilationUit) {
+        return new AsmExpressionResolver(
+                scope,
+                t -> parseType(t, asmScope, compilationUit),
+                name -> findKlass(compilationUit.getReferenceName(name))
+        ).resolve(ctx);
+}
 
     private <T> T getAttribute(ParserRuleContext ctx, AsmAttributeKey<T> key) {
         return key.cast(Objects.requireNonNull(attributes.get(ctx).get(key), "Can not find attribute " + key.name + " in " + ctx.getText()));
@@ -216,6 +210,7 @@ public class Assembler {
         int enumConstantOrdinal;
         private final Set<Method> visitedMethods = new HashSet<>();
         private final Set<Field> visitedFields = new HashSet<>();
+        private final Set<Index> visitedIndices = new HashSet<>();
         private final Set<EnumConstantDef> visitEnumConstantDefs = new HashSet<>();
 
         private ClassInfo(
@@ -457,7 +452,7 @@ public class Assembler {
                                  List<AssemblyParser.AnnotationContext> annotations, ParserRuleContext ctx,
                                  Runnable processBody) {
             var code = getCompilationUnit().getDefinitionName(name);
-            var klass = tryGetKlass(code);
+            var klass = findKlass(code);
             var kind = ClassKind.fromTypeCategory(typeCategory);
             boolean searchable = false;
             boolean isBean = false;
@@ -593,16 +588,10 @@ public class Assembler {
                         .build();
             }
             var enumConstantDef = klass.findEnumConstantDef(ec -> ec.getName().equals(name));
-            List<AssemblyParser.ExpressionContext> argCtx =
-                    ctx.arguments() != null ? ctx.arguments().expressionList().expression() : List.of();
-            var args = NncUtils.map(argCtx, arg -> Values.expression(parseExpression(arg.getText(), new EmptyParsingContext())));
-            if(enumConstantDef == null) {
-                enumConstantDef = new EnumConstantDef(klass, name, classInfo.nextEnumConstantOrdinal(), args);
-            }
-            else {
+            if(enumConstantDef == null)
+                enumConstantDef = new EnumConstantDef(klass, name, classInfo.nextEnumConstantOrdinal(), List.of());
+            else
                 enumConstantDef.setOrdinal(classInfo.nextEnumConstantOrdinal());
-                enumConstantDef.setArguments(args);
-            }
             setAttribute(ctx, AsmAttributeKey.field, field);
             setAttribute(ctx, AsmAttributeKey.enumConstantDef, enumConstantDef);
             return super.visitEnumConstant(ctx);
@@ -718,40 +707,51 @@ public class Assembler {
     private class IndexDefiner extends VisitorBase {
 
         @Override
-        public Void visitIndexDeclaration(AssemblyParser.IndexDeclarationContext ctx) {
-            var index = getAttribute(ctx, AsmAttributeKey.index);
-            index.setFields(NncUtils.map(ctx.indexField(), f -> parseIndexField(f, index)));
-            return null;
+        public void visitTypeDef(String name, TypeCategory typeCategory, boolean isStruct, @Nullable AssemblyParser.TypeTypeContext superType, @Nullable AssemblyParser.TypeListContext interfaces, @Nullable AssemblyParser.TypeParametersContext typeParameters, List<AssemblyParser.AnnotationContext> annotations, ParserRuleContext ctx, Runnable processBody) {
+            super.visitTypeDef(name, typeCategory, isStruct, superType, interfaces, typeParameters, annotations, ctx, processBody);
+            var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
+            var klass = classInfo.klass;
+            var removedIndices = NncUtils.exclude(klass.getIndices(), classInfo.visitedIndices::contains);
+            removedIndices.forEach(klass::removeConstraint);
         }
 
-        private IndexField parseIndexField(AssemblyParser.IndexFieldContext ctx, Index index) {
-            var name = ctx.IDENTIFIER().getText();
-            var field = index.findField(f -> f.getName().equals(name));
-            var expression = parseExpression(ctx.expression().getText(), new TypeParsingContext(
-                    id -> {
-                        throw new UnsupportedOperationException();
-                    },
-                    new IndexedTypeDefProvider() {
-                        @Nullable
-                        @Override
-                        public Klass findKlassByName(String name) {
-                            return klassProvider.apply(name);
-                        }
-
-                        @Override
-                        public TypeDef getTypeDef(Id id) {
-                            throw new UnsupportedOperationException();
-                        }
-                    },
-                    index.getDeclaringType())
-            );
-            if (field == null)
-                field = new IndexField(index, name, name, Values.expression(expression));
-            else
-                field.setValue(Values.expression(expression));
-            return field;
+        @Override
+        protected void visitFunction(String name, @Nullable AssemblyParser.TypeParametersContext typeParameters, @Nullable AssemblyParser.FormalParameterListContext formalParameterList, @Nullable AssemblyParser.TypeTypeOrVoidContext returnType, @Nullable AssemblyParser.BlockContext block, ParserRuleContext ctx, boolean isConstructor, Runnable processBody) {
+            super.visitFunction(name, typeParameters, formalParameterList, returnType, block, ctx, isConstructor, processBody);
+            var methodInfo = getAttribute(ctx, AsmAttributeKey.methodInfo);
+            var method = methodInfo.method;
+            var classInfo = Objects.requireNonNull(methodInfo.parent());
+            var klass = method.getDeclaringType();
+            if(!isConstructor
+                    && (name.startsWith("idx") || name.startsWith("uniqueIdx"))
+                    && method.getParameters().isEmpty()
+                    && method.getReturnType() instanceof ClassType indexType
+                    && !method.isStatic()) {
+                Index index = NncUtils.find(klass.getIndices(), idx -> Objects.equals(idx.getCode(), name));
+                if (index == null) {
+                    index = new Index(
+                            klass,
+                            name,
+                            name,
+                            "",
+                            name.startsWith("uniqueIdx"),
+                            List.of(),
+                            method
+                    );
+                } else {
+                    index.setName(name);
+                }
+                classInfo.visitedIndices.add(index);
+                var indexKlass = indexType.resolve();
+                for (var field : indexKlass.getFields()) {
+                    if(!field.isStatic() && !field.isTransient()) {
+                        var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), field.getName()));
+                        if (indexField == null)
+                            new IndexField(index, field.getName(), field.getName(), Values.nullValue());
+                    }
+                }
+            }
         }
-
     }
 
     private class Preprocessor extends VisitorBase {
@@ -975,6 +975,21 @@ public class Assembler {
             return null;
         }
 
+        @Override
+        public Void visitEnumConstant(AssemblyParser.EnumConstantContext ctx) {
+            var classInfo = (ClassInfo) scope;
+            var klass = classInfo.klass;
+            var name = ctx.IDENTIFIER().getText();
+            var cinit = klass.getMethod("<cinit>", List.of());
+            var enumConstantDef = Objects.requireNonNull(klass.findEnumConstantDef(ec -> ec.getName().equals(name)));
+            List<AssemblyParser.ExpressionContext> argCtx =
+                    ctx.arguments() != null ? ctx.arguments().expressionList().expression() : List.of();
+            var args = NncUtils.map(argCtx, arg -> Values.expression(resolveExpression(arg,
+                    cinit.getRootScope(), classInfo, getCompilationUnit())));
+            enumConstantDef.setArguments(args);
+            return super.visitEnumConstant(ctx);
+        }
+
         private void processMethodBlock(AssemblyParser.BlockContext block, Method method) {
             for (var stmt : block.labeledStatement()) {
                 processLabeledStatement(stmt, method.getRootScope());
@@ -1003,19 +1018,11 @@ public class Assembler {
         private NodeRT processStatement(String name, AssemblyParser.StatementContext statement, ScopeRT scope) {
             try {
                 var currentClass = currentClass();
-                var prevNode = scope.getLastNode();
-                var parsingContext = new FlowParsingContext(
-                        id -> {
-                            throw new UnsupportedOperationException();
-                        },
-                        new AsmTypeDefProvider(getCompilationUnit()),
-                        scope.getLastNode()
-                );
                 if (statement.bop != null) {
                     var qualifier = statement.THIS() != null ? "this" : statement.IDENTIFIER(0).getText();
                     var fieldName = statement.IDENTIFIER(statement.IDENTIFIER().size() - 1).getText();
-                    var value = parseValue(statement.expression(), parsingContext);
-                    var klass = tryGetKlass(qualifier);
+                    var value = parseValue(statement.expression(), scope, this.scope, getCompilationUnit());
+                    var klass = findKlass(qualifier);
                     if(klass != null) {
                         var field = klass.getStaticFieldByName(fieldName);
                         return new UpdateStaticNode(
@@ -1029,7 +1036,7 @@ public class Assembler {
                         );
                     }
                     else {
-                        var object = parseValue(qualifier, parsingContext);
+                        var object = Values.node(scope.getNodeByName(qualifier));
                         var objectType = (ClassType) getExpressionType(object.getExpression(), scope);
                         var field = objectType.resolve().getFieldByCode(fieldName);
                         return new UpdateObjectNode(
@@ -1050,14 +1057,11 @@ public class Assembler {
                     }
                 }
                 if (statement.RETURN() != null) {
-                    return new ReturnNode(
-                            NncUtils.randomNonNegative(),
+                    return Nodes.ret(
                             name,
-                            null,
-                            scope.getLastNode(),
                             scope,
                             statement.expression() != null ?
-                                    parseValue(statement.expression(), parsingContext) : null
+                                    parseValue(statement.expression(), scope, this.scope, getCompilationUnit()) : null
                     );
                 }
                 if (statement.NEW() != null || statement.UNEW() != null || statement.ENEW() != null) {
@@ -1079,7 +1083,7 @@ public class Assembler {
                                 );
                         List<Type> typeArgs = creator.typeArguments() != null ?
                                 NncUtils.map(creator.typeArguments().typeType(), t -> parseType(t, this.scope, getCompilationUnit())) : List.of();
-                        var args = NncUtils.map(arguments, arg -> parseValue(arg, parsingContext));
+                        var args = NncUtils.map(arguments, arg -> parseValue(arg, scope, this.scope, getCompilationUnit()));
                         var constructor = targetKlass.resolveMethod(
                                 targetKlass.getEffectiveTemplate().getName(), NncUtils.map(args, Value::getType), typeArgs, false
                         );
@@ -1100,27 +1104,27 @@ public class Assembler {
                 if (statement.methodCall() != null) {
                     var methodCall = statement.methodCall();
                     List<Value> arguments = methodCall.expressionList() != null ?
-                            NncUtils.map(methodCall.expressionList().expression(), e -> parseValue(e, parsingContext)) : List.of();
+                            NncUtils.map(methodCall.expressionList().expression(), e -> parseValue(e, scope, this.scope, getCompilationUnit())) : List.of();
                     Value self;
                     String methodName;
                     ClassType type;
                     if (methodCall.IDENTIFIER() != null) {
                         methodName = methodCall.IDENTIFIER().getText();
-                        var targetKlass = tryGetKlass(methodCall.expression().getText());
+                        var targetKlass = findKlass(methodCall.expression().getText());
                         if (targetKlass != null) {
                             type = new ClassType(targetKlass, List.of());
                             self = null;
                         } else {
-                            self = parseValue(methodCall.expression(), parsingContext);
+                            self = parseValue(methodCall.expression(), scope, this.scope, getCompilationUnit());
                             type = (ClassType) self.getType();
                         }
                     } else if (methodCall.SUPER() != null) {
                         methodName = requireNonNull(currentClass.superType).getKlass().getName();
-                        self = parseValue("this", parsingContext);
+                        self = Values.node(scope.getNodeByName("this"));
                         type = (ClassType) self.getType();
                     } else if (methodCall.THIS() != null) {
                         methodName = currentClass.klass.getName();
-                        self = parseValue("this", parsingContext);
+                        self = Values.node(scope.getNodeByName("this"));
                         type = (ClassType) self.getType();
                     } else
                         throw new InternalException("methodCall syntax error: " + methodCall.getText());
@@ -1131,7 +1135,7 @@ public class Assembler {
                             NncUtils.randomNonNegative(),
                             statement.BANG() != null ? nextNodeName(name + "_nullable") : name,
                             null,
-                            prevNode,
+                            scope.getLastNode(),
                             scope,
                             self,
                             method.getRef(),
@@ -1153,33 +1157,25 @@ public class Assembler {
                 }
                 if (statement.functionCall() != null) {
                     var funcCall = statement.functionCall();
-                    return new FunctionNode(
-                            NncUtils.randomNonNegative(),
+                    return Nodes.function(
                             name,
-                            null,
-                            prevNode,
                             scope,
-                            parseValue(funcCall.expression(), parsingContext),
-                            parseValueList(funcCall.expressionList(), parsingContext)
+                            parseValue(funcCall.expression(), scope, this.scope, getCompilationUnit()),
+                            parseValueList(funcCall.expressionList(), scope, this.scope, getCompilationUnit())
                     );
                 }
                 if (statement.THROW() != null) {
-                    return new RaiseNode(
-                            NncUtils.randomNonNegative(),
+                    return Nodes.raise2(
                             name,
-                            null,
-                            prevNode,
                             scope,
-                            RaiseParameterKind.THROWABLE,
-                            parseValue(statement.expression(), parsingContext),
-                            null
+                            parseValue(statement.expression(), scope, this.scope, getCompilationUnit())
                     );
                 }
                 if (statement.IF() != null) {
                     var ifNode = Nodes.ifNot(
-                            nextNodeName("ifNot"),
                             Values.expression(
-                                    parseExpression(statement.parExpression().expression(), parsingContext)
+                                    resolveExpression(statement.parExpression().expression(), scope,
+                                            this.scope, getCompilationUnit())
                             ),
                             null,
                             scope
@@ -1205,7 +1201,7 @@ public class Assembler {
                         for (var decl : loopVarDecls.loopVariableDeclarator()) {
                             var fieldName = decl.IDENTIFIER().getText();
                             fieldTypes.put(fieldName, parseType(decl.typeType(), currentClass, getCompilationUnit()));
-                            initialValues.put(fieldName, parseValue(decl.expression(), parsingContext));
+                            initialValues.put(fieldName, parseValue(decl.expression(), scope, this.scope, getCompilationUnit()));
                         }
                     }
                     var joinNode = Nodes.join(name, scope);
@@ -1213,27 +1209,18 @@ public class Assembler {
                     fieldTypes.forEach((fieldName, fieldType) ->
                             FieldBuilder.newBuilder(fieldName, fieldName, loopKlass, fieldType).build()
                     );
-                    var ifNode = Nodes.ifNot(nextNodeName("if"), Values.constantTrue(), null, scope);
+                    var ifNode = Nodes.ifNot(Values.expression(resolveExpression(forCtl.expression(), scope, this.scope, getCompilationUnit())),
+                            null, scope);
                     parseBlockNodes(statement.block(0), scope);
+                    if (loopVarDecls != null) {
+                        for (var update : forCtl.loopVariableUpdates().loopVariableUpdate()) {
+                            updatedValues.put(update.IDENTIFIER().getText(), parseValue(update.expression(), scope, this.scope, getCompilationUnit()));
+                        }
+                    }
                     var g = Nodes.goto_(nextNodeName("goto"), scope);
                     g.setTarget(joinNode);
                     var exit = Nodes.noop(nextNodeName("exit"), scope);
                     ifNode.setTarget(exit);
-                    var loopParsingContext = new FlowParsingContext(
-                            id -> {
-                                throw new UnsupportedOperationException();
-                            },
-                            new AsmTypeDefProvider(getCompilationUnit()),
-                            scope.getLastNode()
-                    );
-                    ifNode.setCondition(
-                            Values.expression(parseExpression(forCtl.expression(), loopParsingContext))
-                    );
-                    if (loopVarDecls != null) {
-                        for (var update : forCtl.loopVariableUpdates().loopVariableUpdate()) {
-                            updatedValues.put(update.IDENTIFIER().getText(), parseValue(update.expression(), loopParsingContext));
-                        }
-                    }
                     fieldTypes.keySet().forEach(fieldName -> new JoinNodeField(
                             loopKlass.getFieldByCode(fieldName),
                             joinNode,
@@ -1244,7 +1231,7 @@ public class Assembler {
                     ));
                     if (DebugEnv.debugging) {
                         DebugEnv.logger.info("loopFields: {}", NncUtils.toJSONString(joinNode.getFields()));
-                        DebugEnv.logger.info("loopCond: {}", NncUtils.toJSONString(parseValue(forCtl.expression(), parsingContext)));
+                        DebugEnv.logger.info("loopCond: {}", NncUtils.toJSONString(parseValue(forCtl.expression(), scope, this.scope, getCompilationUnit())));
                     }
                     return exit;
                 }
@@ -1255,7 +1242,7 @@ public class Assembler {
                             NncUtils.randomNonNegative(),
                             name,
                             null,
-                            prevNode,
+                            scope.getLastNode(),
                             scope,
                             params,
                             parseType(lambda.typeTypeOrVoid(), this.scope, getCompilationUnit()),
@@ -1303,7 +1290,7 @@ public class Assembler {
                             () -> "Cannot find index with name " + indexName + " class " + klass.getTypeDesc());
                     var fieldValues = NncUtils.map(
                             select.expression(),
-                            e -> Values.expression(parseExpression(e.getText(), parsingContext))
+                            e -> Values.expression(resolveExpression(e, scope, this.scope, getCompilationUnit()))
                     );
                     var key = new IndexQueryKey(
                             index,
@@ -1318,7 +1305,8 @@ public class Assembler {
                                 name,
                                 null,
                                 index.getDeclaringType().getType(),
-                                prevNode, scope,
+                                scope.getLastNode(),
+                                scope,
                                 index,
                                 key
                         );
@@ -1327,7 +1315,7 @@ public class Assembler {
                                 null,
                                 name,
                                 null,
-                                prevNode,
+                                scope.getLastNode(),
                                 scope,
                                 index,
                                 key
@@ -1335,19 +1323,29 @@ public class Assembler {
                     }
                 }
                 if(statement.castType != null) {
-                    return new CastNode(
-                            null,
+                    return Nodes.cast(
                             name,
-                            null,
                             parseType(statement.castType, this.scope, getCompilationUnit()),
-                            prevNode,
-                            scope,
-                            parseValue(statement.expression().getText(), parsingContext)
+                            parseValue(statement.expression(), scope, this.scope, getCompilationUnit()),
+                            scope
                     );
                 }
                 if(statement.ALLOCATE() != null) {
                     var allocator = statement.allocator();
                     var type = (ClassType) parseClassType(allocator.classOrInterfaceType(), this.scope, getCompilationUnit());
+                    var fieldParams = new ArrayList<FieldParam>();
+                    if(allocator.allocatorFieldList() != null) {
+                        var fields = allocator.allocatorFieldList().allocatorField();
+                        var klass = type.resolve();
+                        for (AssemblyParser.AllocatorFieldContext field : fields) {
+                            fieldParams.add(
+                                    new FieldParam(
+                                            klass.getFieldByCode(field.IDENTIFIER().getText()).getRef(),
+                                            parseValue(field.expression(), scope, this.scope, getCompilationUnit())
+                                    )
+                            );
+                        }
+                    }
                     var node = new AddObjectNode(
                             null,
                             name,
@@ -1358,18 +1356,7 @@ public class Assembler {
                             scope.getLastNode(),
                             scope
                     );
-                    if(allocator.allocatorFieldList() != null) {
-                        var fields = allocator.allocatorFieldList().allocatorField();
-                        var klass = type.resolve();
-                        for (AssemblyParser.AllocatorFieldContext field : fields) {
-                            node.addField(
-                                    new FieldParam(
-                                            klass.getFieldByCode(field.IDENTIFIER().getText()).getRef(),
-                                            parseValue(field.expression().getText(), parsingContext)
-                                    )
-                            );
-                        }
-                    }
+                    fieldParams.forEach(node::addField);
                     return node;
                 }
                 throw new InternalException("Unknown statement: " + statement.getText());
@@ -1393,19 +1380,15 @@ public class Assembler {
             throw new InternalException("Unknown binary operator: " + bop);
         }
 
-        private Value parseValue(AssemblyParser.ExpressionContext expression, ParsingContext parsingContext) {
-            return parseValue(tokenStream.getText(expression.getSourceInterval()), parsingContext);
+        private Value parseValue(AssemblyParser.ExpressionContext expression, ScopeRT scope, AsmScope asmScope, CompilationUit compilationUit) {
+            return Values.expression(resolveExpression(expression, scope, asmScope, compilationUit));
         }
 
-        private List<Value> parseValueList(@Nullable AssemblyParser.ExpressionListContext expressionList, ParsingContext parsingContext) {
+        private List<Value> parseValueList(@Nullable AssemblyParser.ExpressionListContext expressionList,
+                                           ScopeRT scope, AsmScope asmScope, CompilationUit compilationUnit) {
             if (expressionList == null)
                 return List.of();
-            return NncUtils.map(expressionList.expression(), e -> parseValue(e, parsingContext));
-        }
-
-
-        private Value parseValue(String expression, ParsingContext parsingContext) {
-            return Values.expression(parseExpression(expression, parsingContext));
+            return NncUtils.map(expressionList.expression(), e -> parseValue(e, scope, asmScope, compilationUnit));
         }
 
     }
@@ -1547,10 +1530,10 @@ public class Assembler {
     }
 
     public Klass getKlass(String name) {
-        return requireNonNull(tryGetKlass(name), () -> "Can not find class with name '" + name + "'");
+        return requireNonNull(findKlass(name), () -> "Can not find class with name '" + name + "'");
     }
 
-    private @Nullable Klass tryGetKlass(String code) {
+    private @Nullable Klass findKlass(String code) {
         return code2klass.computeIfAbsent(code, klassProvider);
     }
 

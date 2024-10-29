@@ -24,7 +24,6 @@ public abstract class ScanTask extends Task {
 
     @Override
     protected boolean run0(IEntityContext context, IEntityContext taskContext) {
-        ContextUtil.setEntityContext(context);
         if(cursor == 0)
             onStart(context, taskContext);
         var r = scan(context.getInstanceContext(), cursor, BATCH_SIZE);

@@ -33,7 +33,6 @@ public class MvObjectIOTest extends TestCase {
         var ref = new Object() { byte[] bytes;};
         TestUtils.doInTransactionWithoutResult( () -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                ContextUtil.setEntityContext(context);
                 var foo = context.bind(new Foo("foo", new Bar("bar001")));
                 context.initIds();
                 var output = new MarkingInstanceOutput();
@@ -46,12 +45,9 @@ public class MvObjectIOTest extends TestCase {
                 Assert.assertTrue(output.size() > 0);
                 ref.bytes = output.toByteArray();
                 context.finish();
-            } finally {
-                ContextUtil.setEntityContext(null);
             }
         });
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            ContextUtil.setEntityContext(context);
             var input = context.getInstanceContext().createInstanceInput(new ByteArrayInputStream(ref.bytes));
             var objInput = context.bind(new MvObjectInputStream(input, context));
             var objInputInst = (ClassInstance) context.getInstance(objInput);
@@ -59,8 +55,6 @@ public class MvObjectIOTest extends TestCase {
             var r = Objects.requireNonNull(Flows.invoke(readObjectMethod, objInputInst, List.of(), context));
             var inst = r.resolveObject();
             Assert.assertEquals(Instances.stringInstance("foo"), inst.getField("name"));
-        } finally {
-            ContextUtil.setEntityContext(null);
         }
     }
 

@@ -112,6 +112,16 @@ public class NamingUtils {
         }
     }
 
+    public static String constantNameToCamelCase(String constName) {
+        var splits = constName.split("_");
+        var sb = new StringBuilder();
+        for (String split : splits) {
+            sb.append(NamingUtils.firstCharToUpperCase(split.toLowerCase()));
+        }
+        return sb.toString();
+
+    }
+
     public static String pathToName(String path) {
         return pathToName(path, false);
     }

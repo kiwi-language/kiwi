@@ -478,7 +478,9 @@ public class MockUtils {
             var assembler = AssemblerFactory.createWithStandardTypes(context);
             assembler.assemble(List.of(source));
             FlowSavingContext.initConfig();
-            var commitId = TestUtils.doInTransaction(() -> typeManager.batchSave(new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true)));
+            var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
+            NncUtils.writeFile("/Users/leen/workspace/object/test.json", NncUtils.toPrettyJsonString(request));
+            var commitId = TestUtils.doInTransaction(() -> typeManager.batchSave(request));
             if (waitForDDLDone)
                 TestUtils.waitForDDLState(CommitState.COMPLETED, schedulerAndWorker);
             return commitId;

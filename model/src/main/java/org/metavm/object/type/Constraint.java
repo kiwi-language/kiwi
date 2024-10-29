@@ -58,6 +58,10 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
         return name;
     }
 
+    public String getQualifiedName() {
+        return declaringType.getTypeDesc() + "." + getName();
+    }
+
     @Nullable
     public String getCode() {
         return code;

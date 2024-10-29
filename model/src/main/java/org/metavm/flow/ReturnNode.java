@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
@@ -18,6 +19,7 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 @EntityType
+@Slf4j
 public class ReturnNode extends NodeRT implements LoadAware {
 
     public static ReturnNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext entityContext) {

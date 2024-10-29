@@ -2,9 +2,13 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.metavm.common.ErrorCode;
+import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.SerializeContext;
 import org.metavm.object.instance.rest.InstanceFieldDTO;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
+import org.metavm.util.BusinessException;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -95,12 +99,12 @@ public class InstanceField implements IInstanceField {
         else if(field.isMetadataRemoved() && value.isNull())
             return value;
         else {
-//            try {
+            try {
                 return value.convert(field.getType());
-//            } catch (Exception e) {
-//                throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
-//                        field.getQualifiedName(), e.getMessage());
-//            }
+            } catch (Exception e) {
+                throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
+                        field.getQualifiedName(), e.getMessage());
+            }
         }
     }
 

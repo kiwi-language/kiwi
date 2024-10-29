@@ -106,6 +106,8 @@ public class Declarator extends CodeGenVisitor {
         }
         klass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, -1)));
         removedMethods.forEach(klass::removeMethod);
+        var removedIndices = NncUtils.exclude(klass.getIndices(), classInfo.visitedIndices::contains);
+        removedIndices.forEach(klass::removeConstraint);
 //        metaClass.setStage(ResolutionStage.DECLARATION);
     }
 
@@ -181,6 +183,7 @@ public class Declarator extends CodeGenVisitor {
             } else {
                 index.setName(TranspileUtils.getIndexName(method));
             }
+            currentClass().visitedIndices.add(index);
             var indexKlass =  TranspileUtils.resolvePsiClass((PsiClassType) requireNonNull(method.getReturnType()));
             for (PsiField field : indexKlass.getFields()) {
                 if(!TranspileUtils.isStatic(field) && !TranspileUtils.isTransient(field)) {
@@ -339,6 +342,7 @@ public class Declarator extends CodeGenVisitor {
         private int nextEnumConstantOrdinal;
         private final Set<Field> visitedFields = new HashSet<>();
         private final Set<Method> visitedMethods = new HashSet<>();
+        private final Set<Index> visitedIndices = new HashSet<>();
 
         private ClassInfo(Klass klass) {
             this.klass = klass;

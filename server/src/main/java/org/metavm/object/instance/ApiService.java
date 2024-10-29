@@ -48,7 +48,6 @@ public class ApiService extends EntityContextFactoryAware {
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public String handleNewInstance(String classCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
-            ContextUtil.setEntityContext(context);
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, null, rawArguments, false, true, context);
             var self = ClassInstanceBuilder.newBuilder(klass.getType()).build();
@@ -57,15 +56,11 @@ public class ApiService extends EntityContextFactoryAware {
             context.finish();
             return (String) formatInstance(result, false);
         }
-        finally {
-            ContextUtil.setEntityContext(null);
-        }
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public Object handleMethodCall(String qualifier, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
-            ContextUtil.setEntityContext(context);
             Value result;
             if (qualifier.startsWith("0")) {
                 var self = (ClassInstance) context.getInstanceContext().get(Id.parse(qualifier));
@@ -84,9 +79,6 @@ public class ApiService extends EntityContextFactoryAware {
             }
             context.finish();
             return formatInstance(result, false);
-        }
-        finally {
-            ContextUtil.setEntityContext(null);
         }
     }
 
@@ -170,11 +162,7 @@ public class ApiService extends EntityContextFactoryAware {
     @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
     public Object getInstance(String id) {
         try (var context = newContext()) {
-            ContextUtil.setEntityContext(context);
             return formatInstance(context.getInstanceContext().get(Id.parse(id)).getReference(), true);
-        }
-        finally {
-            ContextUtil.setEntityContext(null);
         }
     }
 
@@ -190,12 +178,9 @@ public class ApiService extends EntityContextFactoryAware {
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public void deleteInstance(String id) {
         try (var context = newContext()) {
-            ContextUtil.setEntityContext(context);
             var instanceContext = context.getInstanceContext();
             instanceContext.remove(instanceContext.get(Id.parse(id)));
             context.finish();
-        } finally {
-            ContextUtil.setEntityContext(null);
         }
     }
 
@@ -203,7 +188,6 @@ public class ApiService extends EntityContextFactoryAware {
     public String saveInstance(String classCode, Map<String, Object> object, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
 //            logTxId();
-            ContextUtil.setEntityContext(context);
             Klass klass;
             if(object.containsKey(KEY_ID)) {
                 var inst0 = (ClassInstance) context.getInstanceContext().get(Id.parse((String) object.get(KEY_ID)));
@@ -227,9 +211,6 @@ public class ApiService extends EntityContextFactoryAware {
                 return inst.getStringId();
             } else
                 throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE, object);
-        }
-        finally {
-            ContextUtil.setEntityContext(null);
         }
     }
 

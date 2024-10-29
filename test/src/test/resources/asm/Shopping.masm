@@ -151,7 +151,7 @@ class Order {
         this.sku = sku;
         couponsCopy: new ArrayList<Coupon>(coupons);
         this.coupons = couponsCopy;
-        this.orderTime = NOW();
+        this.orderTime = now();
     }
 
     public string getCode() {

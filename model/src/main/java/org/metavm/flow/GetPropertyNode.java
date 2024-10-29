@@ -9,6 +9,7 @@ import org.metavm.flow.rest.GetPropertyNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.PropertyRef;
+import org.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 
@@ -37,7 +38,7 @@ public class GetPropertyNode extends NodeRT {
                            @NotNull ScopeRT scope,
                            Value instance,
                            PropertyRef propertyRef) {
-        super(tmpId, name, code, propertyRef.resolve().getType(), previous, scope);
+        super(tmpId, name, code, null, previous, scope);
         this.instance = instance;
         this.propertyRef = propertyRef;
     }
@@ -50,6 +51,11 @@ public class GetPropertyNode extends NodeRT {
     @Override
     protected Object getParam(SerializeContext serializeContext) {
         return new GetPropertyNodeParam(instance.toDTO(), propertyRef.toDTO(serializeContext));
+    }
+
+    @NotNull
+    public Type getType() {
+        return propertyRef.resolve().getType();
     }
 
     @Override

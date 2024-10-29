@@ -133,7 +133,6 @@ public class Worker extends EntityContextFactoryAware {
                             builder -> builder.readWAL(appTask.getWAL())
                                     .relocationEnabled(appTask.isRelocationEnabled())
                                     .timeout(appTask.getTimeout()))) {
-                        ContextUtil.setEntityContext(walContext);
                         terminated = runTask0(appTask, walContext, appContext);
                         if(!appTask.isFailed())
                             walContext.finish();
@@ -141,7 +140,6 @@ public class Worker extends EntityContextFactoryAware {
                             logger.info("Task {}-{} completed successfully", shadowTask.getAppId(), appTask.getTitle());
                     }
                     finally {
-                        ContextUtil.setEntityContext(oldContext);
                         if(parentContext instanceof ReversedDefContext reversedDefContext)
                             SystemConfig.clearLocal();
                     }

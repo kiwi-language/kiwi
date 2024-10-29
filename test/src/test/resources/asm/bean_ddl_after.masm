@@ -8,12 +8,18 @@ abstract class BaseService {
 
 }
 
+record IdxFooServiceAllFlags {
+
+    private readonly boolean allFlags;
+
+    public IdxFooServiceAllFlags(boolean allFlags) {
+        this.allFlags = allFlags;
+    }
+
+}
+
 @Component
 class FooService extends BaseService {
-
-    index IDX_ALL_FLAGS {
-        allFlags: this.allFlags;
-    }
 
     private readonly boolean allFlags;
     private readonly BarService barService;
@@ -24,20 +30,36 @@ class FooService extends BaseService {
         this.barService = barService;
     }
 
+    public IdxFooServiceAllFlags idxAllFlags() {
+        idx: new IdxFooServiceAllFlags(this.allFlags);
+        return idx;
+    }
+
 }
 
 @Component
 class BarService extends BaseService {
-
-    index IDX_ALL_FLAGS {
-        allFlags: this.allFlags;
-    }
 
     private readonly boolean allFlags;
 
     public BarService(IdService idService) {
         super(idService);
         this.allFlags = true;
+    }
+
+    public IdxBarServiceAllFlags idxAllFlags() {
+        idx: new IdxBarServiceAllFlags(this.allFlags);
+        return idx;
+    }
+
+}
+
+record IdxBarServiceAllFlags {
+
+    private readonly boolean allFlags;
+
+    public IdxBarServiceAllFlags(boolean allFlags) {
+        this.allFlags = allFlags;
     }
 
 }

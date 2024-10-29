@@ -4,7 +4,7 @@ class Lab {
     public Lab() {}
 
     public any|null getFieldValue(Field field) {
-        fieldValue: selectFirst(FieldValue.IdxField, field);
+        fieldValue: selectFirst(FieldValue.uniqueIdxField, field);
         if(fieldValue == null) {
             return null;
         }
@@ -15,7 +15,7 @@ class Lab {
     }
 
     public void setFieldValue(Field field, any|null value) {
-        fieldValue: selectFirst(FieldValue.IdxField, field);
+        fieldValue: selectFirst(FieldValue.uniqueIdxField, field);
         if(fieldValue == null) {
             newFieldValue: new FieldValue(field);
             newFieldValue.setValue(value);
@@ -51,11 +51,17 @@ class Field {
 
 }
 
-class FieldValue {
+record IdxFieldValueField {
 
-    unique index IdxField {
-        field: this.field;
+    private readonly Field field;
+
+    public IdxFieldValueField(Field field) {
+        this.field = field;
     }
+
+}
+
+class FieldValue {
 
     private readonly Field field;
     private any|null value;
@@ -72,4 +78,10 @@ class FieldValue {
     public void setValue(any|null value) {
         this.value = value;
     }
+
+    public IdxFieldValueField uniqueIdxField() {
+        idx: new IdxFieldValueField(this.field);
+        return idx;
+    }
+
 }

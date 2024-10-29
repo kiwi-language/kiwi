@@ -33,7 +33,6 @@ public class TestNativeKlass extends TestCase {
 
     public void test() {
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            ContextUtil.setEntityContext(context);
             var request = new HttpRequestImpl(
                     "GET",
                     "/",
@@ -48,8 +47,6 @@ public class TestNativeKlass extends TestCase {
             Assert.assertEquals(stringInstance("GET"), httpMethod);
             var token = Flows.invokeVirtual(httpRequestGetCookie.get(), inst, List.of(stringInstance("token")), context);
             Assert.assertEquals(stringInstance("__token__"), token);
-        } finally {
-            ContextUtil.setEntityContext(null);
         }
     }
 

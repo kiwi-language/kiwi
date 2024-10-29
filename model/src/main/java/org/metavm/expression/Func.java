@@ -4,16 +4,12 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 public enum Func {
 
     STARTS_WITH(Boolean.class, Object.class, String.class),
     CONTAINS(Boolean.class, Object.class, String.class),
-    NOW(Date.class),
-    LEN(Boolean.class, Object.class),
-    CONCAT(String.class, Object.class, Object.class),
     ;
 
     private final FunctionDesc desc;

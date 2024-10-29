@@ -11,6 +11,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.PropertyRef;
 import org.metavm.object.type.StaticFieldTable;
+import org.metavm.object.type.Type;
 import org.metavm.util.ContextUtil;
 
 import javax.annotation.Nullable;
@@ -36,8 +37,14 @@ public class GetStaticNode extends NodeRT {
                          @Nullable NodeRT previous,
                          @NotNull ScopeRT scope,
                          PropertyRef propertyRef) {
-        super(tmpId, name, code, propertyRef.resolve().getType(), previous, scope);
+        super(tmpId, name, code, null, previous, scope);
         this.propertyRef = propertyRef;
+    }
+
+    @NotNull
+    @Override
+    public Type getType() {
+        return propertyRef.resolve().getType();
     }
 
     @Override

@@ -42,7 +42,7 @@ enum ProductKind {
 
     public static ProductKind __map__(ProductKind kind) {
         values: ProductKind.values();
-        loop: for(int i = 0; loop.i < len(values); i = loop.i + 1) {
+        loop: for(int i = 0; loop.i < values.length; i = loop.i + 1) {
            name: values[loop.i].name();
            if(name == kind.name) {
                 return values[loop.i];

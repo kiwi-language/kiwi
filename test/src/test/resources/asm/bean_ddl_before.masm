@@ -1,14 +1,25 @@
+record IdxFooServiceAllFlags {
+
+    private readonly boolean allFlags;
+
+    public IdxFooServiceAllFlags(boolean allFlags) {
+        this.allFlags = allFlags;
+    }
+
+}
+
 @Component
 class FooService {
-
-    index IDX_ALL_FLAGS {
-        allFlags: this.allFlags;
-    }
 
     private readonly boolean allFlags;
 
     public FooService() {
         this.allFlags = true;
+    }
+
+    public IdxFooServiceAllFlags idxAllFlags() {
+        idx: new IdxFooServiceAllFlags(this.allFlags);
+        return idx;
     }
 
 }

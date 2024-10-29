@@ -34,7 +34,6 @@ public class FlowExecutionService extends EntityContextFactoryAware {
     @Transactional
     public InstanceDTO execute(FlowExecutionRequest request) {
         try (var context = newContext(); var ignored =ContextUtil.getProfiler().enter("FlowExecutionService.execute")) {
-            ContextUtil.setEntityContext(context);
             var flowRef = FlowRef.create(request.flowRef(), context);
             var flow = flowRef.resolve();
             var self = NncUtils.get(request.instanceId(),
@@ -53,14 +52,10 @@ public class FlowExecutionService extends EntityContextFactoryAware {
             context.finish();
             return NncUtils.get(result, Value::toDTO);
         }
-        finally {
-            ContextUtil.setEntityContext(null);
-        }
     }
 
     public Value executeInternal(Flow flow, @Nullable ClassInstance self, List<Value> arguments, IEntityContext context) {
         try(var ignored = ContextUtil.getProfiler().enter("FlowExecutionService.executeInternal")) {
-            ContextUtil.setEntityContext(context);
             if (flow instanceof Method method && method.isInstanceMethod()) {
                 if (method.isConstructor()) {
                     self = ClassInstanceBuilder.newBuilder(((Method) flow).getDeclaringType().getType()).build();
@@ -82,9 +77,6 @@ public class FlowExecutionService extends EntityContextFactoryAware {
         }
         catch (Exception e) {
            throw new InternalException("Fail to invoke flow: " + flow.getQualifiedName(), e);
-        }
-        finally {
-            ContextUtil.setEntityContext(null);
         }
     }
 
