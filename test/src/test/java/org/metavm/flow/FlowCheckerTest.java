@@ -2,7 +2,6 @@ package org.metavm.flow;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.expression.Expressions;
 import org.metavm.object.type.Types;
 import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
@@ -22,11 +21,11 @@ public class FlowCheckerTest extends TestCase {
         var input = Nodes.input(method);
         var field = input.getKlass().getFieldByCode("value");
         var scope = method.getRootScope();
-        var value = Expressions.node(Nodes.nodeProperty(input, field, scope));
+        var value = Values.node(Nodes.nodeProperty(input, field, scope));
         var ifNode = Nodes.if_("if", Values.node(
-                Nodes.ne(value, Expressions.nullExpression(), scope)), null, scope);
+                Nodes.ne(value, Values.nullValue(), scope)), null, scope);
         Nodes.raise("NPE", scope, Values.constantString("Value required"));
-        var ret = Nodes.ret("return", scope, Values.expression(value));
+        var ret = Nodes.ret("return", scope, value);
         ifNode.setTarget(ret);
         klass.accept(new FlowAnalyzer());
         klass.accept(new FlowChecker());
@@ -43,11 +42,11 @@ public class FlowCheckerTest extends TestCase {
         var input = Nodes.input(method);
         var field = input.getKlass().getFieldByCode("value");
         var scope = method.getRootScope();
-        var value = Expressions.node(Nodes.nodeProperty(input, field, scope));
+        var value = Values.node(Nodes.nodeProperty(input, field, scope));
         var ifNode = Nodes.if_("if", Values.node(Nodes.eq(
-                value, Expressions.nullExpression(), scope
+                value, Values.nullValue(), scope
         )), null, scope);
-        Nodes.ret("return", scope, Values.expression(value));
+        Nodes.ret("return", scope, value);
         ifNode.setTarget(Nodes.raise("NPE", scope, Values.constantString("Value required")));
         klass.accept(new FlowChecker());
         Assert.assertEquals(0, klass.getErrors().size());

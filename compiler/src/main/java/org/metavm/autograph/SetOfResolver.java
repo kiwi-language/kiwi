@@ -6,8 +6,8 @@ import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiModifier;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
-import org.metavm.expression.Expression;
-import org.metavm.expression.Expressions;
+import org.metavm.flow.Value;
+import org.metavm.flow.Values;
 import org.metavm.object.type.ClassType;
 import org.metavm.util.NncUtils;
 
@@ -40,9 +40,9 @@ public class SetOfResolver implements MethodCallResolver {
     }
 
     @Override
-    public Expression resolve(PsiMethodCallExpression methodCallExpression,
-                              ExpressionResolver expressionResolver,
-                              MethodGenerator methodGenerator) {
+    public Value resolve(PsiMethodCallExpression methodCallExpression,
+                         ExpressionResolver expressionResolver,
+                         MethodGenerator methodGenerator) {
         var methodGenerics = methodCallExpression.resolveMethodGenerics();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var setType = (ClassType) expressionResolver.getTypeResolver().resolve(
@@ -57,11 +57,11 @@ public class SetOfResolver implements MethodCallResolver {
         for (PsiExpression expression : methodCallExpression.getArgumentList().getExpressions()) {
             var value = expressionResolver.resolve(expression);
             methodGenerator.createMethodCall(
-                    Expressions.node(set),
+                    Values.node(set),
                     addMethod,
                     List.of(value)
             );
         }
-        return Expressions.node(set);
+        return Values.node(set);
     }
 }

@@ -4,8 +4,6 @@ import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ChildArray;
 import org.metavm.entity.LoadAware;
-import org.metavm.expression.Expressions;
-import org.metavm.expression.InstanceOfExpression;
 import org.metavm.flow.*;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Type;
@@ -54,21 +52,22 @@ public class UnionNestedMapping extends NestedMapping implements LoadAware {
         Map<GotoNode, Value> exit2value = new HashMap<>();
         var source = Nodes.value(scope.nextNodeName("source"), getSource.get(), scope);
         JumpNode lastIfNode = null;
+        GotoNode lastGoto = null;
         for (var memberMapping : memberMappings) {
             var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
-                     Values.expression(
-                             new InstanceOfExpression(getSource.get().getExpression(), memberMapping.sourceType())
+                     Values.node(
+                             Nodes.instanceOf(getSource.get(), memberMapping.sourceType(), scope)
                      ),
                     null,
                     scope
             );
             if(lastIfNode != null)
-                lastIfNode.setTarget(ifNode);
+                lastIfNode.setTarget(lastGoto.getSuccessor());
             lastIfNode = ifNode;
             var castSource = Nodes.castNode(scope.nextNodeName("castSource"),
                     memberMapping.sourceType(), scope, Values.node(source));
             var value = memberMapping.nestedMapping().generateMappingCode(() -> Values.node(castSource), scope).get();
-            exit2value.put(Nodes.goto_(scope.nextNodeName("goto"), scope), value);
+            exit2value.put(lastGoto = Nodes.goto_(scope.nextNodeName("goto"), scope), value);
         }
         Objects.requireNonNull(lastIfNode).setTarget(
                 Nodes.raise(scope.nextNodeName("invalidTypeError"), scope, Values.constantString("Invalid type"))
@@ -86,19 +85,20 @@ public class UnionNestedMapping extends NestedMapping implements LoadAware {
         var exit2value = new HashMap<GotoNode, Value>();
         var view = Nodes.value(scope.nextNodeName("view"), getView.get(), scope);
         JumpNode lastIfNode = null;
+        GotoNode lastGoto = null;
         for (var memberMapping : memberMappings) {
             var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
-                    Values.expression(
-                            new InstanceOfExpression(getView.get().getExpression(), memberMapping.targetType())
+                    Values.node(
+                            Nodes.instanceOf(getView.get(), memberMapping.targetType(), scope)
                     ),
                     null, scope
             );
             if(lastIfNode != null)
-                lastIfNode.setTarget(ifNode);
+                lastIfNode.setTarget(lastGoto.getSuccessor());
             lastIfNode = ifNode;
             var castView =  Nodes.cast(scope.nextNodeName("castView"), memberMapping.targetType(), Values.node(view), scope);
             var value = memberMapping.nestedMapping().generateUnmappingCode(() -> Values.node(castView), scope).get();
-            exit2value.put(Nodes.goto_(scope.nextNodeName("goto"), scope), value);
+            exit2value.put(lastGoto = Nodes.goto_(scope.nextNodeName("goto"), scope), value);
         }
         Objects.requireNonNull(lastIfNode).setTarget(
             Nodes.raise(scope.nextNodeName("invalidTypeError"), scope, Values.constantString("invalid type"))

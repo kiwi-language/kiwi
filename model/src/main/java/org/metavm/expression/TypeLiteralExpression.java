@@ -40,7 +40,7 @@ public class TypeLiteralExpression extends Expression {
 
     @Override
     public Type getType() {
-        return StdKlass.valueList.get().getType();
+        return StdKlass.type.get().getType();
     }
 
     @Override
@@ -50,18 +50,8 @@ public class TypeLiteralExpression extends Expression {
 
     @Override
     protected Value evaluateSelf(EvaluationContext context) {
-        var klass = getKlass(type);
+        var klass = Types.getKlass(type);
         return ContextUtil.getEntityContext().getInstance(klass.getEffectiveTemplate()).getReference();
-    }
-
-    private Klass getKlass(Type type) {
-        return switch (type) {
-            case ClassType classType -> classType.resolve();
-            case ArrayType arrayType -> getKlass(arrayType.getElementType()).getArrayKlass();
-            case UnionType unionType -> getKlass(unionType.getUnderlyingType());
-            case AnyType anyType -> ModelDefRegistry.getDefContext().getKlass(DummyAny.class);
-            default -> throw new IllegalStateException("Cannot get klass for type: " + type);
-        };
     }
 
     public Type getTypeObject() {

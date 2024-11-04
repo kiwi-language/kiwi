@@ -4,9 +4,11 @@ import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
-import org.metavm.object.type.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.FieldBuilder;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.Types;
 
 import java.util.HashMap;
 import java.util.List;
@@ -87,7 +89,7 @@ public class ListNestedMapping extends NestedMapping {
         var sourceKlass = sourceType.resolve();
         Map<NodeRT, Value> exit2value = new HashMap<>();
         var ifNode = Nodes.if_(scope.nextNodeName("if"),
-                Values.node(Nodes.eq(Expressions.node(isSourcePresent), Expressions.falseExpression(), scope)),
+                Values.node(Nodes.eq(Values.node(isSourcePresent), Values.constantFalse(), scope)),
                 null,
                 scope
         );

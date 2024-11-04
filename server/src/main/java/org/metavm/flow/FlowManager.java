@@ -333,7 +333,7 @@ public class FlowManager extends EntityContextFactoryAware {
         Value value;
         if (Flows.isConstructor(flow)) {
             NncUtils.requireTrue(flow.getRootNode() instanceof SelfNode);
-            value = Values.reference(new NodeExpression(flow.getRootNode()));
+            value = Values.node(flow.getRootNode());
         } else
             value = null;
         new ReturnNode(null, "return", null, prev, flow.getRootScope(), value);

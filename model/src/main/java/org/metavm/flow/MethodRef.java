@@ -22,12 +22,14 @@ import java.util.function.Function;
 @Slf4j
 public class MethodRef extends FlowRef implements PropertyRef {
 
-    public static MethodRef create(MethodRefDTO methodRefDTO, EntityRepository context) {
-        return new MethodRef(
-                (ClassType) TypeParser.parseType(methodRefDTO.declaringType(), context),
-                context.getEntity(Method.class, Id.parse(methodRefDTO.rawFlowId())),
-                NncUtils.map(methodRefDTO.typeArguments(), t -> TypeParser.parseType(t, context))
-        );
+    public static MethodRef createMethodRef(MethodRefDTO methodRefDTO, TypeDefProvider typeDefProvider) {
+        var classType = (ClassType) TypeParser.parseType(methodRefDTO.declaringType(), typeDefProvider);
+        var klass = classType.getKlass();
+        var methodId = Id.parse(methodRefDTO.rawFlowId());
+        var method = Objects.requireNonNull(klass.findSelfMethod(m -> m.idEquals(methodId)),
+                () -> "Cannot find method with ID " + methodId + " in klass " + klass.getTypeDesc());
+        return new MethodRef(classType, method,
+                NncUtils.map(methodRefDTO.typeArguments(), t -> TypeParser.parseType(t, typeDefProvider)));
     }
 
     private final ClassType declaringType;

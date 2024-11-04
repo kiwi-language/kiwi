@@ -5,8 +5,6 @@ import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.NodeExpression;
-import org.metavm.expression.PropertyExpression;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.*;
@@ -42,16 +40,12 @@ public class SubstitutorV2Test extends TestCase {
                     .staticType(new FunctionType(List.of(foo.getType()), typeVar.getType()))
                     .returnType(typeVar.getType())
                     .build();
+            var scope = getValueFlow.getRootScope();
             var selfNode = new SelfNode(null, "self", null, foo.getType(), null, getValueFlow.getRootScope());
-            var valueNode = new ValueNode(
-                    null, "value", null, typeVar.getType(), selfNode, getValueFlow.getRootScope(),
-                    Values.expression(
-                            new PropertyExpression(new NodeExpression(selfNode), valueField.getRef())
-                    )
-            );
+            var valueNode = Nodes.nodeProperty(selfNode, valueField, scope);
             new ReturnNode(
                     null, "return", null, selfNode, getValueFlow.getRootScope(),
-                    Values.expression(new NodeExpression(valueNode))
+                    Values.node(valueNode)
             );
         }
 
@@ -62,6 +56,7 @@ public class SubstitutorV2Test extends TestCase {
                     .returnType(voidType)
                     .parameters(new Parameter(null, "value", "value", typeVar.getType()))
                     .build();
+            var scope = flow.getRootScope();
             var selfNode = new SelfNode(null, "self", null, foo.getType(), null, flow.getRootScope());
             var inputType = TestUtils.newKlassBuilder("setValueInput", "setValueInput")
                     .ephemeral(true)
@@ -71,10 +66,10 @@ public class SubstitutorV2Test extends TestCase {
                     .build();
             var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getRootScope());
             var updateNode = new UpdateObjectNode(null, "update", null, inputNode, flow.getRootScope(),
-                    Values.reference(new NodeExpression(selfNode)), List.of());
+                    Values.node(selfNode), List.of());
             updateNode.setUpdateField(
                     valueField, UpdateOp.SET,
-                    Values.reference(new PropertyExpression(new NodeExpression(inputNode), inputValueField.getRef()))
+                    Values.node(Nodes.nodeProperty(inputNode, inputValueField, scope))
             );
             new ReturnNode(null, "return", null, updateNode, flow.getRootScope(), null);
         }

@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.expression.*;
 import org.metavm.flow.NodeRT;
 import org.metavm.flow.TryEnterNode;
+import org.metavm.flow.Value;
 import org.metavm.util.NncUtils;
 
 import java.util.*;
@@ -20,11 +21,11 @@ public class VariableTable {
 
     private final LinkedList<TrySection> trySections = new LinkedList<>();
 
-    Expression get(String name) {
+    Value get(String name) {
         return variableMap.getVariable(name);
     }
 
-    void set(String name, Expression value) {
+    void set(String name, Value value) {
         variableMap.setVariable(name, value);
     }
 
@@ -44,7 +45,7 @@ public class VariableTable {
         section.putBranchMap(branchIndex, variableMap);
     }
 
-    void setYield(Expression yield) {
+    void setYield(Value yield) {
         var branchNode = requireNonNull(branchNodes.peek(), "Not in a branch");
         condSections.get(branchNode).setYield(yield);
     }
@@ -57,7 +58,7 @@ public class VariableTable {
         for (var entry : section.branchMaps.entrySet()) {
             var branch = entry.getKey();
             var varMap = entry.getValue();
-            Map<String, Expression> branchOutputs = new HashMap<>();
+            Map<String, Value> branchOutputs = new HashMap<>();
             for (String outputVar : outputVars) {
                 branchOutputs.put(outputVar, varMap.getVariable(outputVar));
             }
@@ -76,10 +77,10 @@ public class VariableTable {
         trySections.push(new TrySection(tryEnterNode));
     }
 
-    Map<NodeRT, Map<String, Expression>> exitTrySection(TryEnterNode tryEnterNode, List<String> outputVars) {
+    Map<NodeRT, Map<String, Value>> exitTrySection(TryEnterNode tryEnterNode, List<String> outputVars) {
         var trySection = trySections.pop();
         NncUtils.requireTrue(trySection.tryEnterNode == tryEnterNode);
-        Map<NodeRT, Map<String, Expression>> result = new HashMap<>();
+        Map<NodeRT, Map<String, Value>> result = new HashMap<>();
         trySection.raiseVariables.forEach((raiseNode, variableMap) ->
             result.put(
                     raiseNode,
@@ -104,7 +105,7 @@ public class VariableTable {
 
     private static class VariableMap {
 
-        private final Map<String, Expression> variables = new HashMap<>();
+        private final Map<String, Value> variables = new HashMap<>();
         private final Set<String> modified = new HashSet<>();
         private final Set<String> defined = new HashSet<>();
 
@@ -118,11 +119,11 @@ public class VariableTable {
             return new VariableMap(this);
         }
 
-        Expression getVariable(String name) {
+        Value getVariable(String name) {
             return variables.get(name);
         }
 
-        void setVariable(String name, Expression value) {
+        void setVariable(String name, Value value) {
             modified.add(name);
             variables.put(name, value);
         }
@@ -139,14 +140,14 @@ public class VariableTable {
             return NncUtils.diffSet(modified, defined);
         }
 
-        Map<String, Expression> toMap() {
+        Map<String, Value> toMap() {
             return Collections.unmodifiableMap(variables);
         }
 
         public void logVariables() {
             var map = variables;
             log.debug("VariableMap@{} contains {} variables", System.identityHashCode(this), map.size());
-            map.forEach((name, expr) -> log.debug("{}: {}", name, expr.build(VarType.NAME)));
+            map.forEach((name, expr) -> log.debug("{}: {}", name, expr.getText()));
         }
 
         public void define(String name) {
@@ -159,7 +160,7 @@ public class VariableTable {
         Long currentBranch;
         final VariableMap entryMap;
         final Map<Long, VariableMap> branchMaps = new HashMap<>();
-        final Map<Long, Expression> yields = new HashMap<>();
+        final Map<Long, Value> yields = new HashMap<>();
 
         private CondSection(NodeRT branchNode, VariableMap entryMap) {
             this.branchNode = branchNode;
@@ -173,12 +174,12 @@ public class VariableTable {
         void nextBranch() {
         }
 
-        void setYield(Expression yield) {
+        void setYield(Value yield) {
             requireNonNull(currentBranch, "Not in a branch");
             yields.put(currentBranch, yield);
         }
 
-        Map<Long, Expression> getYields() {
+        Map<Long, Value> getYields() {
             return Collections.unmodifiableMap(yields);
         }
 

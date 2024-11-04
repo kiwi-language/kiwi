@@ -94,6 +94,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processSwitchExpression();
             processMultiply();
             processForeach();
+            processTypePatternSwitch();
+            processTypePatternSwitchExpression();
         });
     }
 
@@ -991,6 +993,16 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(
                 6L,
                 callMethod(klassName, "sum", List.of(List.of(1, 2, 3))));
+    }
+
+    private void processTypePatternSwitch() {
+        var klassName = "switch_.TypePatternSwitchFoo";
+        callMethod(klassName, "test", List.of());
+    }
+
+    private void processTypePatternSwitchExpression() {
+        var klassName = "switchexpr.TypePatternSwitchExpressionFoo";
+        Assert.assertEquals("foo", callMethod(klassName, "test", List.of("foo")));
     }
 
 }

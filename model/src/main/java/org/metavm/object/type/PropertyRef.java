@@ -1,6 +1,5 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.EntityRepository;
 import org.metavm.entity.Reference;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.MethodRef;
@@ -10,10 +9,10 @@ import org.metavm.object.type.rest.dto.PropertyRefDTO;
 
 public interface PropertyRef extends Reference {
 
-    static PropertyRef create(PropertyRefDTO propertyRefDTO, EntityRepository entityRepository) {
+    static PropertyRef create(PropertyRefDTO propertyRefDTO, TypeDefProvider typeDefProvider) {
         return switch (propertyRefDTO) {
-            case MethodRefDTO methodRefDTO -> MethodRef.create(methodRefDTO, entityRepository);
-            case FieldRefDTO fieldRefDTO -> FieldRef.create(fieldRefDTO, entityRepository);
+            case MethodRefDTO methodRefDTO -> MethodRef.createMethodRef(methodRefDTO, typeDefProvider);
+            case FieldRefDTO fieldRefDTO -> FieldRef.create(fieldRefDTO, typeDefProvider);
             default -> throw new IllegalStateException("Unrecognized property ref: " + propertyRefDTO );
         };
     }

@@ -3,9 +3,9 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
-import org.metavm.expression.Expression;
-import org.metavm.expression.Expressions;
 import org.metavm.flow.Function;
+import org.metavm.flow.Value;
+import org.metavm.flow.Values;
 import org.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ public class NativeFunctionCallResolver implements MethodCallResolver {
     }
 
     @Override
-    public Expression resolve(PsiMethodCallExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
+    public Value resolve(PsiMethodCallExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
         var function = this.function;
         if (function.isTemplate()) {
             var methodGenerics = methodCallExpression.resolveMethodGenerics();
@@ -39,22 +39,22 @@ public class NativeFunctionCallResolver implements MethodCallResolver {
             );
             function = function.getParameterized(typeArgs);
         }
-        var arguments = new ArrayList<Expression>();
+        var arguments = new ArrayList<Value>();
         if (!signature.isStatic())
             arguments.add(expressionResolver.resolve(methodCallExpression.getMethodExpression().getQualifierExpression()));
         for (PsiExpression expression : methodCallExpression.getArgumentList().getExpressions()) {
             arguments.add(expressionResolver.resolve(expression));
         }
-        var convertedArgs = new ArrayList<Expression>();
+        var convertedArgs = new ArrayList<Value>();
         NncUtils.biForEach(function.getParameters(), arguments, (param, arg) -> {
-            if(param.getType().isNotNull() && methodGenerator.getExpressionType(arg).isNullable())
-                convertedArgs.add(Expressions.node(methodGenerator.createNonNull("nonNull", arg)));
+            if(param.getType().isNotNull() && methodGenerator.getExpressionType(arg.getExpression()).isNullable())
+                convertedArgs.add(Values.node(methodGenerator.createNonNull("nonNull", arg)));
             else
                 convertedArgs.add(arg);
         });
         var node = methodGenerator.createFunctionCall(function, convertedArgs);
         expressionResolver.setCapturedExpressions(node, null);
-        return function.getReturnType().isVoid() ? null : Expressions.node(node);
+        return function.getReturnType().isVoid() ? null : Values.node(node);
     }
 
 }

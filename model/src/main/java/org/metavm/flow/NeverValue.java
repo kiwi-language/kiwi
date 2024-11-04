@@ -1,49 +1,43 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.expression.*;
-import org.metavm.flow.rest.ConstantValueDTO;
+import org.metavm.expression.EvaluationContext;
+import org.metavm.expression.Expression;
+import org.metavm.flow.rest.NeverValueDTO;
 import org.metavm.flow.rest.ValueDTO;
 import org.metavm.object.type.Type;
 
-@EntityType
-public class ConstantValue extends Value {
-
-    private final org.metavm.object.instance.core.Value value;
-
-    public ConstantValue(org.metavm.object.instance.core.Value value) {
-        this.value = value;
-    }
+public class NeverValue extends Value {
 
     @Override
     public ValueDTO toDTO() {
-        return new ConstantValueDTO(value.toFieldValueDTO());
+        return new NeverValueDTO();
     }
 
     @Override
     public Type getType() {
-        return value.getType();
+        return null;
     }
 
     @Override
     public org.metavm.object.instance.core.@NotNull Value evaluate(EvaluationContext context) {
-        return value;
+        throw new IllegalStateException("NeverValue should not be evaluated");
     }
 
     @Override
     public String getText() {
-        return value.getText();
+        return null;
     }
 
     @Override
     public Expression getExpression() {
-        return new ConstantExpression(value);
+        return null;
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitConstantValue(this);
+        return visitor.visitNeverValue(this);
     }
+
 }

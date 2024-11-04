@@ -34,7 +34,7 @@ public class NewObjectNode extends CallNode implements NewNode {
         NewObjectNodeParam param = nodeDTO.getParam();
         if (param.isResolved()) {
             var declaringType = (ClassType) TypeParser.parseType(Objects.requireNonNull(param.getType()), context);
-            var methodRef = MethodRef.create(Objects.requireNonNull(param.getFlowRef()), context);
+            var methodRef = MethodRef.createMethodRef(Objects.requireNonNull(param.getFlowRef()), context);
             var parsingContext = FlowParsingContext.create(scope, prev, context);
             List<Argument> arguments = NncUtils.biMap(
                     methodRef.resolve().getParameters(),

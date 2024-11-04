@@ -6,7 +6,6 @@ import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.LocalKey;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
@@ -66,7 +65,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         );
         var view = Nodes.inputField(input, 0, scope);
         var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
-                Values.expression(Expressions.node(isSourcePresent)), null, scope
+                Values.node(isSourcePresent), null, scope
         );
         var source = Nodes.functionCall(
                 scope.nextNodeName("source"), scope,
@@ -93,7 +92,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
             ifNode.setTarget(Nodes.raise(
                     scope.nextNodeName("fromViewNotSupported"),
                     scope,
-                    Values.constant(Expressions.constantString("fromView not supported"))
+                    Values.constantString("fromView not supported")
             ));
         }
         return unmapper;

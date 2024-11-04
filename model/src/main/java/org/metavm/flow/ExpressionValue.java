@@ -3,47 +3,49 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.expression.*;
-import org.metavm.flow.rest.ConstantValueDTO;
+import org.metavm.expression.EvaluationContext;
+import org.metavm.expression.Expression;
+import org.metavm.expression.VarType;
+import org.metavm.flow.rest.ExpressionValueDTO;
 import org.metavm.flow.rest.ValueDTO;
 import org.metavm.object.type.Type;
 
 @EntityType
-public class ConstantValue extends Value {
+public class ExpressionValue extends Value {
 
-    private final org.metavm.object.instance.core.Value value;
+    private final Expression expression;
 
-    public ConstantValue(org.metavm.object.instance.core.Value value) {
-        this.value = value;
+    public ExpressionValue(@NotNull Expression expression) {
+        this.expression = expression;
     }
 
     @Override
     public ValueDTO toDTO() {
-        return new ConstantValueDTO(value.toFieldValueDTO());
+        return new ExpressionValueDTO(expression.build(VarType.ID));
     }
 
     @Override
     public Type getType() {
-        return value.getType();
+        return expression.getType();
     }
 
     @Override
     public org.metavm.object.instance.core.@NotNull Value evaluate(EvaluationContext context) {
-        return value;
+        return expression.evaluate(context);
     }
 
     @Override
     public String getText() {
-        return value.getText();
+        return expression.build(VarType.NAME);
     }
 
     @Override
     public Expression getExpression() {
-        return new ConstantExpression(value);
+        return expression;
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitConstantValue(this);
+        return visitor.visitExpressionValue(this);
     }
 }

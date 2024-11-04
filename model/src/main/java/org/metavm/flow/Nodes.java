@@ -1,8 +1,6 @@
 package org.metavm.flow;
 
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.expression.Expression;
-import org.metavm.expression.Expressions;
 import org.metavm.object.type.*;
 import org.metavm.object.view.ObjectMapping;
 import org.metavm.util.NncUtils;
@@ -64,18 +62,18 @@ public class Nodes {
         var join = join(scope.nextNodeName(name), scope);
         var indexField = FieldBuilder.newBuilder("index", "index", join.getKlass(), Types.getLongType())
                 .build();
-        var len = arrayLength("len", getArray.get(), scope);
-        var index = Expressions.node(nodeProperty(join, indexField, scope));
+        var len = Values.node(arrayLength("len", getArray.get(), scope));
+        var index = Values.node(nodeProperty(join, indexField, scope));
         var ifNode = if_(scope.nextNodeName("if"),
-                Values.node(Nodes.ge(index, Expressions.node(len), scope)), null, scope);
+                Values.node(Nodes.ge(index, len, scope)), null, scope);
         var element = new GetElementNode(
                 null, scope.nextNodeName("element"), null, scope.getLastNode(), scope,
-                getArray.get(), Values.expression(index)
+                getArray.get(), index
         );
-        action.accept(scope, () -> Values.node(element), () -> Values.expression(index));
+        action.accept(scope, () -> Values.node(element), () -> index);
         var updatedIndex = Nodes.add(
-                Expressions.node(nodeProperty(join, indexField, scope)),
-                Expressions.constantLong(1L),
+                Values.node(nodeProperty(join, indexField, scope)),
+                Values.constantLong(1L),
                 scope
         );
         var g = goto_(scope.nextNodeName("goto"), scope);
@@ -111,10 +109,9 @@ public class Nodes {
         var join = join(name, scope);
         var indexField = FieldBuilder.newBuilder("index", "index", join.getKlass(), Types.getLongType())
                 .build();
-        var index = Expressions.node(nodeProperty(join, indexField, scope));
-
+        var index = Values.node(nodeProperty(join, indexField, scope));
         var ifNode = if_(scope.nextNodeName("if"),
-                Values.node(ge(index, Expressions.node(size), scope)),
+                Values.node(ge(index, Values.node(size), scope)),
                 null,
                 scope
         );
@@ -123,12 +120,12 @@ public class Nodes {
                 null, scope.nextNodeName("getElement"), null,
                 scope.getLastNode(), scope,
                 getArray.get(), getMethod.getRef(),
-                List.of(Nodes.argument(getMethod, 0, Values.expression(index)))
+                List.of(Nodes.argument(getMethod, 0, index))
         );
-        action.accept(scope, () -> Values.node(element), () -> Values.expression(index));
+        action.accept(scope, () -> Values.node(element), () -> index);
         var updatedIndex = Nodes.add(
-                Expressions.node(nodeProperty(join, indexField, scope)),
-                Expressions.constantLong(1L),
+                Values.node(nodeProperty(join, indexField, scope)),
+                Values.constantLong(1L),
                 scope
         );
         var g = goto_(scope.nextNodeName("goto"), scope);
@@ -320,288 +317,288 @@ public class Nodes {
         );
     }
 
-    public static NodeRT add(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT add(Value first, Value second, ScopeRT scope) {
         return new AddNode(
                 null,
                 scope.nextNodeName("add"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT sub(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT sub(Value first, Value second, ScopeRT scope) {
         return new SubNode(
                 null,
                 scope.nextNodeName("sub"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT mul(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT mul(Value first, Value second, ScopeRT scope) {
         return new MultiplyNode(
                 null,
                 scope.nextNodeName("mul"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT div(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT div(Value first, Value second, ScopeRT scope) {
         return new DivideNode(
                 null,
                 scope.nextNodeName("div"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT leftShift(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT leftShift(Value first, Value second, ScopeRT scope) {
         return new LeftShiftNode(
                 null,
                 scope.nextNodeName("leftShift"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT rightShift(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT rightShift(Value first, Value second, ScopeRT scope) {
         return new RightShiftNode(
                 null,
                 scope.nextNodeName("rightShift"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT unsignedRightShift(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT unsignedRightShift(Value first, Value second, ScopeRT scope) {
         return new UnsignedRightShiftNode(
                 null,
                 scope.nextNodeName("unsignedRightShift"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT bitwiseOr(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT bitwiseOr(Value first, Value second, ScopeRT scope) {
         return new BitwiseOrNode(
                 null,
                 scope.nextNodeName("bitwiseOr"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT bitwiseAnd(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT bitwiseAnd(Value first, Value second, ScopeRT scope) {
         return new BitwiseAndNode(
                 null,
                 scope.nextNodeName("bitwiseAnd"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT bitwiseXor(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT bitwiseXor(Value first, Value second, ScopeRT scope) {
         return new BitwiseXorNode(
                 null,
                 scope.nextNodeName("bitwiseXor"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT and(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT and(Value first, Value second, ScopeRT scope) {
         return new AndNode(
                 null,
                 scope.nextNodeName("and"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT or(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT or(Value first, Value second, ScopeRT scope) {
         return new OrNode(
                 null,
                 scope.nextNodeName("or"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT bitwiseComplement(Expression operand, ScopeRT scope) {
+    public static NodeRT bitwiseComplement(Value operand, ScopeRT scope) {
         return new BitwiseComplementNode(
                 null,
                 scope.nextNodeName("bitwiseComplement"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(operand)
+                operand
         );
     }
 
-    public static NodeRT not(Expression operand, ScopeRT scope) {
+    public static NodeRT not(Value operand, ScopeRT scope) {
         return new NotNode(
                 null,
                 scope.nextNodeName("not"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(operand)
+                operand
         );
     }
 
-    public static NodeRT negate(Expression operand, ScopeRT scope) {
+    public static NodeRT negate(Value operand, ScopeRT scope) {
         return new NegateNode(
                 null,
                 scope.nextNodeName("negate"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(operand)
+                operand
         );
     }
 
-    public static NodeRT rem(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT rem(Value first, Value second, ScopeRT scope) {
         return new RemainderNode(
                 null,
                 scope.nextNodeName("rem"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT eq(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT eq(Value first, Value second, ScopeRT scope) {
         return new EqNode(
                 null,
                 scope.nextNodeName("eq"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT ne(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT ne(Value first, Value second, ScopeRT scope) {
         return new NeNode(
                 null,
                 scope.nextNodeName("ne"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT ge(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT ge(Value first, Value second, ScopeRT scope) {
         return new GeNode(
                 null,
                 scope.nextNodeName("ge"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT gt(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT gt(Value first, Value second, ScopeRT scope) {
         return new GtNode(
                 null,
                 scope.nextNodeName("gt"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT lt(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT lt(Value first, Value second, ScopeRT scope) {
         return new LtNode(
                 null,
                 scope.nextNodeName("lt"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT le(Expression first, Expression second, ScopeRT scope) {
+    public static NodeRT le(Value first, Value second, ScopeRT scope) {
         return new LeNode(
                 null,
                 scope.nextNodeName("le"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(first),
-                Values.expression(second)
+                first,
+                second
         );
     }
 
-    public static NodeRT instanceOf(Expression operand, Type targetType, ScopeRT scope) {
+    public static NodeRT instanceOf(Value operand, Type targetType, ScopeRT scope) {
         return new InstanceOfNode(
                 null,
                 scope.nextNodeName("le"),
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(operand),
+                operand,
                 targetType
         );
     }
 
     public static NodeRT nodeProperty(NodeRT node, Property property, ScopeRT scope) {
-        return getProperty(Expressions.node(node), property, scope);
+        return getProperty(Values.node(node), property, scope);
     }
 
     public static NodeRT nodeProperty(String name, NodeRT node, Property property, ScopeRT scope) {
-        return getProperty(name, Expressions.node(node), property, scope);
+        return getProperty(name, Values.node(node), property, scope);
     }
 
-    public static NodeRT getProperty(Expression instance, Property property, ScopeRT scope) {
+    public static NodeRT getProperty(Value instance, Property property, ScopeRT scope) {
         return getProperty(scope.nextNodeName("property"), instance, property, scope);
     }
 
@@ -609,14 +606,14 @@ public class Nodes {
          return nodeProperty(node, node.getType().resolve().getFields().get(parameterIndex), scope);
     }
 
-    public static NodeRT getProperty(String name,Expression instance, Property property, ScopeRT scope) {
+    public static NodeRT getProperty(String name,Value instance, Property property, ScopeRT scope) {
         return new GetPropertyNode(
                 null,
                 name,
                 null,
                 scope.getLastNode(),
                 scope,
-                Values.expression(instance),
+                instance,
                 property.getRef()
         );
     }

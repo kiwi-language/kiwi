@@ -15,7 +15,7 @@ public abstract class FlowRef extends CallableRef implements GenericDeclarationR
 
     public static FlowRef create(FlowRefDTO flowRefDTO, EntityRepository context) {
         if(flowRefDTO instanceof MethodRefDTO methodRefDTO)
-            return MethodRef.create(methodRefDTO, context);
+            return MethodRef.createMethodRef(methodRefDTO, context);
         else if(flowRefDTO instanceof FunctionRefDTO functionRefDTO)
             return FunctionRef.create(functionRefDTO, context);
         else

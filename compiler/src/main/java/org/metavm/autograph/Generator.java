@@ -4,7 +4,7 @@ import com.intellij.psi.*;
 import org.metavm.api.EntityIndex;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.StdKlass;
-import org.metavm.expression.*;
+import org.metavm.expression.Expression;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.CompositeTypeEventRegistry;
@@ -62,7 +62,7 @@ public class Generator extends CodeGenVisitor {
             initFlow = klass.getMethodByCodeAndParamTypes("<init>", List.of());
             initFlowBuilder = new MethodGenerator(initFlow, typeResolver, this);
             initFlowBuilder.enterScope(initFlowBuilder.getMethod().getRootScope());
-            initFlowBuilder.setVariable("this", new NodeExpression(initFlowBuilder.createSelf()));
+            initFlowBuilder.setVariable("this", Values.node(initFlowBuilder.createSelf()));
             initFlowBuilder.createInput();
             if (klass.getSuperType() != null) {
                 var superInit = klass.getSuperType().resolve().findSelfMethodByCode("<init>");
@@ -111,8 +111,8 @@ public class Generator extends CodeGenVisitor {
                 var constructor = klass.getDefaultConstructor();
                 var constructorGen = new MethodGenerator(constructor, typeResolver, this);
                 constructorGen.enterScope(constructor.getRootScope());
-                constructorGen.createMethodCall(new NodeExpression(constructorGen.createSelf()), initFlow, List.of());
-                constructorGen.createReturn(new NodeExpression(constructorGen.createSelf()));
+                constructorGen.createMethodCall(Values.node(constructorGen.createSelf()), initFlow, List.of());
+                constructorGen.createReturn(Values.node(constructorGen.createSelf()));
                 constructorGen.exitScope();
             }
         }
@@ -128,7 +128,7 @@ public class Generator extends CodeGenVisitor {
         var builder = currentClassInfo().staticBuilder;
         ecd.setArguments(NncUtils.map(
                 requireNonNull(enumConstant.getArgumentList()).getExpressions(),
-                expr -> Values.expression(builder.getExpressionResolver().resolve(expr))
+                expr -> builder.getExpressionResolver().resolve(expr)
         ));
     }
 
@@ -177,17 +177,17 @@ public class Generator extends CodeGenVisitor {
                 builder.createUpdate(builder.getVariable("this"), Map.of(field, initializer));
             }
         } else if (field.getType().isNullable()) {
-            initField(field, Expressions.nullExpression());
+            initField(field, Values.nullValue());
         } else if (field.getType().isBoolean()) {
-            initField(field, Expressions.constantBoolean(false));
+            initField(field, Values.constantBoolean(false));
         } else if (field.getType().isLong()) {
-            initField(field, Expressions.constantLong(0L));
+            initField(field, Values.constantLong(0L));
         } else if (field.getType().isDouble()) {
-            initField(field, Expressions.constantDouble(0.0));
+            initField(field, Values.constantDouble(0.0));
         }
     }
 
-    private void initField(Field field, Expression initializer) {
+    private void initField(Field field, Value initializer) {
         if (field.isStatic()) {
             var builder = currentClassInfo().staticBuilder;
             builder.createUpdateStatic(currentClass(), Map.of(field, initializer));
@@ -227,20 +227,21 @@ public class Generator extends CodeGenVisitor {
                             trySectionOutput.keySet(),
                             raiseNode -> new TryExitValue(
                                     raiseNode,
-                                    Values.expressionOrNever(trySectionOutput.get(raiseNode).get(outputVar.toString()))
+                                    Values.getOrNever(trySectionOutput.get(raiseNode).get(outputVar.toString()))
                             )
                     ),
-                    Values.expressionOrNever(builder().getVariable(outputVar.toString())),
+                    Values.getOrNever(builder().getVariable(outputVar.toString())),
                     tryExit
             );
             builder().setVariable(outputVar.toString(),
-                    Expressions.node(builder().createNodeProperty(tryExit, field)));
+                    Values.node(builder().createNodeProperty(tryExit, field)));
         }
 
-        var exceptionExpr = new PropertyExpression(
-                new NodeExpression(tryExit),
-                tryExit.getKlass().getFieldByCode("exception").getRef()
-        );
+        var exceptionExpr = Values.node(Nodes.getProperty(
+                Values.node(tryExit),
+                tryExit.getKlass().getFieldByCode("exception"),
+                builder().scope()
+        ));
 
         if (statement.getCatchSections().length > 0) {
             Set<QualifiedName> catchModified = new HashSet<>();
@@ -256,9 +257,8 @@ public class Generator extends CodeGenVisitor {
                 if (catchLiveOut == null) {
                     catchLiveOut = getBlockLiveOut(catchBlock);
                 }
-                var cond = createExceptionCheck(exceptionExpr, catchSection.getCatchType());
                 builder().enterBranch(entryNode, branchIdx);
-                var ifNode = builder().createIfNot(cond, null);
+                var ifNode = createExceptionCheck(exceptionExpr, catchSection.getCatchType());
                 if(lastIfNode != null)
                     lastIfNode.setTarget(ifNode);
                 lastIfNode = ifNode;
@@ -290,19 +290,16 @@ public class Generator extends CodeGenVisitor {
                     NncUtils.toMap(
                             exits.values(),
                             java.util.function.Function.identity(),
-                            exit ->
-                                    Values.expression(
-                                            exit == defaultExit ? exceptionExprFinal : Expressions.nullExpression()
-                                    )
+                            exit -> exit == defaultExit ? exceptionExprFinal : Values.nullValue()
                     )
             );
-            exceptionExpr = new PropertyExpression(new NodeExpression(joinNode), exceptionField.getRef());
+            exceptionExpr = Values.node(builder().createNodeProperty(joinNode, exceptionField));
         }
         if (statement.getFinallyBlock() != null) {
             statement.getFinallyBlock().accept(this);
         }
         var ifNode = builder().createIf(
-                Expressions.node(builder().createEq(exceptionExpr, Expressions.nullExpression())),
+                Values.node(builder().createEq(exceptionExpr, Values.nullValue())),
                 null);
         builder().createRaise(exceptionExpr);
         ifNode.setTarget(builder().createNoop());
@@ -317,23 +314,24 @@ public class Generator extends CodeGenVisitor {
         return NncUtils.requireNonNull(lastStmt.getUserData(Keys.LIVE_VARS_OUT));
     }
 
-    private Expression createExceptionCheck(Expression exceptionExpr, List<PsiType> catchTypes) {
+    private List<JumpNode> createExceptionCheck(Value exceptionExpr, List<PsiType> catchTypes) {
         NncUtils.requireNotEmpty(catchTypes);
-        Expression expression = null;
+        var jumps = new ArrayList<JumpNode>();
         for (PsiType catchType : catchTypes) {
-            var checkExpr = new InstanceOfExpression(exceptionExpr, resolveType(catchType));
-            if (expression == null) {
-                expression = checkExpr;
-            } else {
-                expression = new BinaryExpression(BinaryOperator.OR, expression, checkExpr);
-            }
+            var ifNode = builder().createIfNot(
+                    Values.node(builder().createInstanceOf(exceptionExpr, resolveType(catchType))),
+                    null
+            );
+            jumps.add(ifNode);
         }
-        return NncUtils.requireNonNull(expression);
+        return jumps;
     }
 
-    private Expression createExceptionCheck(Expression exceptionExpr, PsiType catchType) {
-        var expression = new InstanceOfExpression(exceptionExpr, resolveType(catchType));
-        return NncUtils.requireNonNull(expression);
+    private JumpNode createExceptionCheck(Value exceptionExpr, PsiType catchType) {
+        return builder().createIfNot(
+                Values.node(builder().createInstanceOf(exceptionExpr, resolveType(catchType))),
+                null
+        );
     }
 
     @Override
@@ -365,7 +363,7 @@ public class Generator extends CodeGenVisitor {
             processParameters(psiMethod.getParameterList(), method);
         } else {
             var selfNode = builder().createSelf();
-            builder.setVariable("this", new NodeExpression(selfNode));
+            builder.setVariable("this", Values.node(selfNode));
             processParameters(psiMethod.getParameterList(), method);
             if (psiMethod.isConstructor()) {
                 var superClass = NncUtils.get(currentClass().getSuperType(), ClassType::resolve);
@@ -378,7 +376,7 @@ public class Generator extends CodeGenVisitor {
                     );
                 }
                 builder.createMethodCall(
-                        new NodeExpression(selfNode),
+                        Values.node(selfNode),
                         currentClassInfo().fieldBuilder.getMethod(),
                         List.of()
                 );
@@ -387,18 +385,19 @@ public class Generator extends CodeGenVisitor {
                     var enumClass = requireNonNull(klass.getSuperType()).resolve();
                     var inputNode = method.getInputNode();
                     builder.createUpdate(
-                            new NodeExpression(selfNode),
+                            Values.node(selfNode),
                             Map.of(
                                     enumClass.getFieldByCode("name"),
-                                    new PropertyExpression(
-                                            new NodeExpression(inputNode),
-                                            inputNode.getKlass().getFieldByCode("__name__").getRef()
-                                    ),
+                                    Values.node(builder.createNodeProperty(
+                                            inputNode,
+                                            inputNode.getKlass().getFieldByCode("__name__")
+
+                                    )),
                                     enumClass.getFieldByCode("ordinal"),
-                                    new PropertyExpression(
-                                            new NodeExpression(inputNode),
-                                            inputNode.getKlass().getFieldByCode("__ordinal__").getRef()
-                                    )
+                                    Values.node(builder.createNodeProperty(
+                                            inputNode,
+                                            inputNode.getKlass().getFieldByCode("__ordinal__")
+                                    ))
                             )
                     );
                 }
@@ -407,7 +406,7 @@ public class Generator extends CodeGenVisitor {
         requireNonNull(psiMethod.getBody(), "body is missing from method " +
                 TranspileUtils.getMethodQualifiedName(psiMethod)).accept(this);
         if (psiMethod.isConstructor()) {
-            builder.createReturn(new NodeExpression(method.getRootNode()));
+            builder.createReturn(Values.node(method.getRootNode()));
         } else if (method.getReturnType().isVoid() && !requireNonNull(method.getRootScope().getLastNode()).isExit()) {
             builder.createReturn();
         }
@@ -458,14 +457,15 @@ public class Generator extends CodeGenVisitor {
 
     private void processLabeledRuleSwitch(PsiSwitchStatement statement) {
         var entryNode = builder().createValue("switchValue", resolveExpression(statement.getExpression()));
-        var switchExpr = new NodeExpression(entryNode);
+        var switchExpr = Values.node(entryNode);
         var stmts = NncUtils.requireNonNull(statement.getBody()).getStatements();
         builder().enterCondSection(entryNode);
         var modified = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE)).getModified();
         var liveVarOut = NncUtils.requireNonNull(statement.getUserData(Keys.LIVE_VARS_OUT));
         var outputVars = NncUtils.intersect(modified, liveVarOut);
         var exits = new HashMap<Long, NodeRT>();
-        JumpNode lastIfNode = null;
+        List<? extends JumpNode> lastIfNodes = List.of();
+        GotoNode lastGoto = null;
         var branchIdx = 0L;
         for (PsiStatement stmt : stmts) {
             var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) stmt;
@@ -473,7 +473,7 @@ public class Generator extends CodeGenVisitor {
             if (caseLabelElementList == null || caseLabelElementList.getElementCount() == 0)
                 continue;
             String castVar = null;
-            Expression cond;
+            List<IfNotNode> ifNodes;
             if (isTypePatternCase(caseLabelElementList)) {
                 PsiTypeTestPattern typeTestPattern = (PsiTypeTestPattern) caseLabelElementList.getElements()[0];
                 var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
@@ -481,41 +481,40 @@ public class Generator extends CodeGenVisitor {
                         requireNonNull(typeTestPattern.getPatternVariable()).getName(),
                         switchExpr
                 );
-                cond = new InstanceOfExpression(
-                        switchExpr,
-                        typeResolver.resolveDeclaration(checkType)
-                );
+                ifNodes = List.of(builder().createIfNot(
+                        Values.node(builder().createInstanceOf(switchExpr, typeResolver.resolveDeclaration(checkType))),
+                        null
+                ));
                 castVar = requireNonNull(typeTestPattern.getPatternVariable()).getName();
             } else {
                 var expressions = NncUtils.map(caseLabelElementList.getElements(),
                         e -> resolveExpression((PsiExpression) e));
-                cond = null;
-                for (Expression expression : expressions) {
-                    var expr = new BinaryExpression(BinaryOperator.EQ, switchExpr, expression);
-                    if (cond == null)
-                        cond = expr;
-                    else
-                        cond = new BinaryExpression(BinaryOperator.OR, cond, expr);
+                ifNodes = new ArrayList<>();
+                for (var expression : expressions) {
+                    ifNodes.add(builder().createIfNot(
+                            Values.node(builder().createEq(switchExpr, expression)),
+                            null
+                    ));
                 }
-                requireNonNull(cond);
             }
             builder().enterBranch(entryNode, branchIdx);
-            var ifNode = builder().createIfNot(cond, null);
-            if(lastIfNode != null)
-                lastIfNode.setTarget(ifNode);
-            lastIfNode = ifNode;
+            if(lastGoto != null) {
+                for (JumpNode lastIfNode : lastIfNodes) {
+                    lastIfNode.setTarget(lastGoto.getSuccessor());
+                }
+            }
+            lastIfNodes = ifNodes;
             if (castVar != null) {
                 builder().setVariable(castVar, switchExpr);
             }
             processSwitchCaseBody(labeledRuleStmt.getBody());
-            exits.put(branchIdx++, builder().createGoto(null));
+            exits.put(branchIdx++, lastGoto = builder().createGoto(null));
         }
         var defaultStmt = (PsiSwitchLabeledRuleStatement)
                 NncUtils.findRequired(stmts, stmt -> ((PsiSwitchLabeledRuleStatement) stmt).isDefaultCase());
         builder().enterBranch(entryNode, branchIdx);
         var noop = builder().createNoop();
-        if(lastIfNode != null)
-            lastIfNode.setTarget(noop);
+        lastIfNodes.forEach(n -> n.setTarget(noop));
         processSwitchCaseBody(defaultStmt.getBody());
         exits.put(branchIdx, requireNonNull(builder().scope().getLastNode()));
         var joinNode = builder().createJoin();
@@ -530,7 +529,7 @@ public class Generator extends CodeGenVisitor {
                     .build();
             var joinField = new JoinNodeField(field, joinNode);
             condOutputs.forEach((idx, values) ->
-                    joinField.setValue(requireNonNull(exits.get(idx)), Values.expression(values.get(outputVar.toString())))
+                    joinField.setValue(requireNonNull(exits.get(idx)), values.get(outputVar.toString()))
             );
         }
     }
@@ -580,7 +579,7 @@ public class Generator extends CodeGenVisitor {
         builder().defineVariable(parameter.getName());
         builder().setVariable(
                 parameter.getName(),
-                new PropertyExpression(new NodeExpression(inputNode), field.getRef())
+                Values.node(builder().createGetProperty(Values.node(inputNode), field))
         );
     }
 
@@ -618,7 +617,7 @@ public class Generator extends CodeGenVisitor {
             for (var entry2 : condOutputs.entrySet()) {
                 var branchIdx = entry2.getKey();
                 var branchOutputs = entry2.getValue();
-                branch2value.put(exits.get(branchIdx), Values.expression(branchOutputs.get(qn.toString())));
+                branch2value.put(exits.get(branchIdx), branchOutputs.get(qn.toString()));
             }
             var memberTypes = new HashSet<Type>();
             for (var value : branch2value.values()) {
@@ -629,7 +628,7 @@ public class Generator extends CodeGenVisitor {
                     memberTypes.size() == 1 ? memberTypes.iterator().next() : new UnionType(memberTypes);
             var field = FieldBuilder.newBuilder(qn.toString(), qn.toString(), joinNode.getKlass(), fieldType).build();
             var mergeField = new JoinNodeField(field, joinNode, branch2value);
-            builder().setVariable(qn.toString(), new PropertyExpression(new NodeExpression(joinNode), mergeField.getField().getRef()));
+            builder().setVariable(qn.toString(), Values.node(builder().createNodeProperty(joinNode, mergeField.getField())));
         }
     }
 
@@ -638,7 +637,7 @@ public class Generator extends CodeGenVisitor {
         builder().defineVariable(variable.getName());
         if (variable.getInitializer() != null) {
             var valueNode = builder().createValue(variable.getName(), resolveExpression(variable.getInitializer()));
-            builder().setVariable(variable.getName(), new NodeExpression(valueNode));
+            builder().setVariable(variable.getName(), Values.node(valueNode));
         }
     }
 
@@ -659,7 +658,7 @@ public class Generator extends CodeGenVisitor {
         List<QualifiedName> loopVars = NncUtils.filter(
                 modified, qn -> liveIn.contains(qn) || liveOut.contains(qn)
         );
-        Map<Field, Expression> initialValues = new HashMap<>();
+        Map<Field, Value> initialValues = new HashMap<>();
         Map<QualifiedName, Field> loopVar2Field = new HashMap<>();
         for (QualifiedName loopVar : loopVars) {
             var field = builder().newTemporaryField(
@@ -673,14 +672,14 @@ public class Generator extends CodeGenVisitor {
         for (QualifiedName loopVar : loopVar2Field.keySet()) {
             var field = loopVar2Field.get(loopVar);
             builder().setVariable(loopVar.toString(),
-                    Expressions.node(builder().createNodeProperty(joinNode, field)));
+                    Values.node(builder().createNodeProperty(joinNode, field)));
         }
-        var cond = condition != null ? resolveExpression(condition) : Expressions.trueExpression();
+        var cond = condition != null ? resolveExpression(condition) : Values.constantTrue();
         var ifNode = builder().createIfNot(cond, null);
         JumpNode extraIfNode = null;
         if (preprocessor != null)
             extraIfNode = preprocessor.apply(joinNode, loopVar2Field);
-        var exitValues = new HashMap<Field, Expression>();
+        var exitValues = new HashMap<Field, Value>();
         for (QualifiedName loopVar : loopVars) {
             var field = loopVar2Field.get(loopVar);
             exitValues.put(field, builder().getVariable(loopVar.toString()));
@@ -706,8 +705,8 @@ public class Generator extends CodeGenVisitor {
             var field = loopVar2Field.get(loopVar);
             var initialValue = initialValues.get(field);
             var updatedValue = builder().getVariable(loopVar.toString());
-            new JoinNodeField(field, joinNode, Map.of(entryNode, Values.expression(initialValue),
-                    goBack, Values.expression(updatedValue)));
+            new JoinNodeField(field, joinNode, Map.of(entryNode, initialValue,
+                    goBack, updatedValue));
             builder().setVariable(loopVar.toString(), Objects.requireNonNull(exitValues.get(field)));
         }
     }
@@ -731,12 +730,12 @@ public class Generator extends CodeGenVisitor {
     @Override
     public void visitForeachStatement(PsiForeachStatement statement) {
         var iteratedExpr0 = resolveExpression(statement.getIteratedValue());
-        Expression iteratedExpr;
-        if(builder().getExpressionType(iteratedExpr0).isNullable())
-            iteratedExpr = Expressions.node(builder().createNonNull("nonNull", iteratedExpr0));
+        Value iteratedExpr;
+        if(builder().getExpressionType(iteratedExpr0.getExpression()).isNullable())
+            iteratedExpr = Values.node(builder().createNonNull("nonNull", iteratedExpr0));
         else
             iteratedExpr = iteratedExpr0;
-        var type = builder().getExpressionType(iteratedExpr);
+        var type = builder().getExpressionType(iteratedExpr.getExpression());
         if (type instanceof ArrayType) {
             processLoop(statement, getExtraLoopTest(statement),
                     (joinNode, loopVar2Field) -> {
@@ -744,12 +743,12 @@ public class Generator extends CodeGenVisitor {
                                 .newBuilder("index", "index", joinNode.getKlass(), Types.getLongType())
                                 .build();
                         var index = builder().createNodeProperty(joinNode, indexField);
-                        var ifNode = builder().createIf(Expressions.node(builder().createGe(
-                                Expressions.node(index),
-                                Expressions.node(builder().createArrayLength(iteratedExpr))
+                        var ifNode = builder().createIf(Values.node(builder().createGe(
+                                Values.node(index),
+                                Values.node(builder().createArrayLength(iteratedExpr))
                         )), null);
                         builder().setVariable(statement.getIterationParameter().getName(),
-                                Expressions.node(builder().createGetElement(iteratedExpr, Expressions.node(index))));
+                                Values.node(builder().createGetElement(iteratedExpr, Values.node(index))));
                         return ifNode;
                     },
                     joinNode -> {
@@ -759,10 +758,10 @@ public class Generator extends CodeGenVisitor {
                                 Values.constantLong(0L),
                                 Values.node(
                                         builder().createAdd(
-                                                Expressions.node(
+                                                Values.node(
                                                         builder().createNodeProperty(joinNode, indexField)
                                                 ),
-                                                Expressions.constantLong(1L)
+                                                Values.constantLong(1L)
                                         )
                                 )
                         );
@@ -772,27 +771,27 @@ public class Generator extends CodeGenVisitor {
             var collType = Types.resolveKlass(type);
             typeResolver.ensureDeclared(collType);
             var itNode = builder().createNonNull("nonNull",
-                    Expressions.node(builder().createMethodCall(
+                    Values.node(builder().createMethodCall(
                         iteratedExpr, Objects.requireNonNull(collType.findMethodByCode("iterator")),
                         List.of()))
             );
             var itType = Types.resolveKlass(NncUtils.requireNonNull(itNode.getType()));
             processLoop(statement, getExtraLoopTest(statement), (joinNode, loopVar2Field) -> {
                 var hashNext = builder().createMethodCall(
-                        Expressions.node(itNode),
+                        Values.node(itNode),
                         itType.getMethod("hasNext", List.of()),
                         List.of()
                 );
                 var ifNode = builder().createIfNot(
-                        Expressions.node(hashNext),
+                        Values.node(hashNext),
                         null
                 );
                 var elementNode = builder().createMethodCall(
-                        new NodeExpression(itNode),
+                        Values.node(itNode),
                         itType.getMethod("next", List.of()),
                         List.of()
                 );
-                builder().setVariable(statement.getIterationParameter().getName(), new NodeExpression(elementNode));
+                builder().setVariable(statement.getIterationParameter().getName(), Values.node(elementNode));
                 return ifNode;
             }, null);
         }
@@ -816,9 +815,9 @@ public class Generator extends CodeGenVisitor {
 
     @Override
     public void visitReturnStatement(PsiReturnStatement statement) {
-        Expression returnValue;
+        Value returnValue;
         if (Flows.isConstructor(builder().getMethod())) {
-            returnValue = new NodeExpression(builder().getMethod().getRootNode());
+            returnValue = Values.node(builder().getMethod().getRootNode());
         } else {
             if (statement.getReturnValue() != null) {
                 returnValue = resolveExpression(statement.getReturnValue());
@@ -847,7 +846,7 @@ public class Generator extends CodeGenVisitor {
         resolveExpression(statement.getExpression());
     }
 
-    private Expression resolveExpression(PsiExpression expression) {
+    private Value resolveExpression(PsiExpression expression) {
         return builder().getExpressionResolver().resolve(expression);
     }
 

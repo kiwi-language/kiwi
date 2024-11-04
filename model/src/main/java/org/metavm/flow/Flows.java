@@ -140,7 +140,7 @@ public class Flows {
                     "add_" + ecd.getName(),
                     null,
                     Values.node(values),
-                    Values.expression(new StaticPropertyExpression(ecd.getField().getRef())),
+                    Values.node(Nodes.getStatic(ecd.getField(), scope)),
                     scope
             );
         }

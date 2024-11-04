@@ -44,6 +44,15 @@ public class ExpressionParser {
         }
     }
 
+    public static Type parseType(@NotNull String expression, @NotNull ParsingContext context) {
+        try {
+            return new ExpressionParser(expression, context).parseType();
+        }
+        catch (Exception e) {
+            throw new InternalException("fail to type parse expression " + expression, e);
+        }
+    }
+
     private final String expression;
     private final MetaVMParser parser;
     private final ParsingContext context;
@@ -64,6 +73,10 @@ public class ExpressionParser {
         catch (ParseCancellationException e) {
             throw new InternalException("fail to parse expression: " + expression, e);
         }
+    }
+
+    private Type parseType() {
+        return parseTypeType(parser.typeTypeOrVoid());
     }
 
     private Expression resolve(Expression expression, @Nullable Type assignedType) {

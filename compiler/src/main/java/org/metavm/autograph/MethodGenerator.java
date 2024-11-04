@@ -40,24 +40,24 @@ public class MethodGenerator {
         return method;
     }
 
-    IfNode createIf(Expression condition, @Nullable NodeRT target) {
+    IfNode createIf(Value condition, @Nullable NodeRT target) {
         return onNodeCreated(new IfNode(null,
                 nextName("if"),
                 null,
                 scope().getLastNode(),
                 scope(),
-                Values.expression(condition),
+                condition,
                 target
         ));
     }
 
-    IfNotNode createIfNot(Expression condition, @Nullable NodeRT target) {
+    IfNotNode createIfNot(Value condition, @Nullable NodeRT target) {
         return onNodeCreated(new IfNotNode(null,
                 nextName("ifNot"),
                 null,
                 scope().getLastNode(),
                 scope(),
-                Values.expression(condition),
+                condition,
                 target
         ));
     }
@@ -119,28 +119,28 @@ public class MethodGenerator {
     }
 
 
-    ValueNode createValue(String name, Expression expression) {
+    ValueNode createValue(String name, Value expression) {
         return onNodeCreated(new ValueNode(
                         null,
                         nextName(name),
                         null,
-                        getExpressionType(expression),
+                        getExpressionType(expression.getExpression()),
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(expression)
+                        expression
                 )
         );
     }
 
-    NonNullNode createNonNull(String name, Expression expression) {
+    NonNullNode createNonNull(String name, Value expression) {
         var node = onNodeCreated(new NonNullNode(
                         null,
                         nextName(name),
                         null,
-                        Types.getNonNullType(getExpressionType(expression)),
+                        Types.getNonNullType(getExpressionType(expression.getExpression())),
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(expression)
+                        expression
                 )
         );
         variableTable.processRaiseNode(node);
@@ -151,34 +151,34 @@ public class MethodGenerator {
         return onNodeCreated(new TargetNode(null, nextName("target"), null, scope().getLastNode(), scope()));
     }
 
-    NewArrayNode createNewArray(ArrayType type, @Nullable Expression initialValue) {
+    NewArrayNode createNewArray(ArrayType type, @Nullable Value initialValue) {
         return onNodeCreated(new NewArrayNode(
                 null, nextName("NewArray"), null,
                 type,
-                NncUtils.get(initialValue, Values::expression),
+                initialValue,
                 null,
                 null,
                 scope().getLastNode(), scope()
         ));
     }
 
-    NewArrayNode createNewArrayWithDimensions(ArrayType type, List<Expression> dimensions) {
+    NewArrayNode createNewArrayWithDimensions(ArrayType type, List<Value> dimensions) {
         return onNodeCreated(new NewArrayNode(
                 null, nextName("NewArray"), null,
                 type,
                 null,
-                NncUtils.map(dimensions, Values::expression),
+                dimensions,
                 null,
                 scope().getLastNode(), scope()
         ));
     }
 
-    ArrayLengthNode createArrayLength(Expression array) {
+    ArrayLengthNode createArrayLength(Value array) {
         return new ArrayLengthNode(
                 null, nextName("length"), null,
                 scope().getLastNode(),
                 scope(),
-                Values.expression(array)
+                array
         );
     }
 
@@ -186,7 +186,7 @@ public class MethodGenerator {
         variableTable.enterTrySection(tryEnterNode);
     }
 
-    Map<NodeRT, Map<String, Expression>> exitTrySection(TryEnterNode tryEnterNode, List<String> outputVars) {
+    Map<NodeRT, Map<String, Value>> exitTrySection(TryEnterNode tryEnterNode, List<String> outputVars) {
         return variableTable.exitTrySection(tryEnterNode, outputVars);
     }
 
@@ -199,11 +199,11 @@ public class MethodGenerator {
         variableTable.nextBranch(sectionId, branchIndex);
     }
 
-    void setYield(Expression yield) {
+    void setYield(Value yield) {
         variableTable.setYield(yield);
     }
 
-    Map<Long, Map<String, Expression>> exitCondSection(NodeRT sectionId,
+    Map<Long, Map<String, Value>> exitCondSection(NodeRT sectionId,
                          JoinNode joinNode,
                          Map<Long, NodeRT> exits,
                          boolean isSwitchExpression) {
@@ -229,18 +229,18 @@ public class MethodGenerator {
                     .filter(Objects::nonNull)
                     .toList();
             var yieldType = Types.getUnionType(
-                    yields.stream().map(Expression::getType).collect(Collectors.toSet())
+                    yields.stream().map(Value::getType).collect(Collectors.toSet())
             );
             var yieldField = FieldBuilder.newBuilder("yield", "yield", joinNode.getKlass(), yieldType).build();
             var values = new HashMap<NodeRT, Value>();
             exits.forEach((branchIdx, exit) -> {
                 if(exit.isSequential() || exit instanceof GotoNode g && g.getTarget() == joinNode) {
-                    values.put(exit, Values.expression(result.get(branchIdx).yield()));
+                    values.put(exit, result.get(branchIdx).yield());
                 }
             });
             new JoinNodeField(yieldField, joinNode, values);
             if (isInsideBranch() && !isSwitchExpression) {
-                setYield(Expressions.node(createNodeProperty(joinNode, yieldField)));
+                setYield(Values.node(createNodeProperty(joinNode, yieldField)));
             }
         }
         return result.keySet().stream().collect(Collectors.toMap(
@@ -265,7 +265,7 @@ public class MethodGenerator {
 //                        () -> "Variable " + var + " is missing from branch " + branch.getIndex());
                 if(v == null)
                     continue out;
-                branch2value.put(Objects.requireNonNull(exits.get(branchIdx)), Values.expression(v));
+                branch2value.put(Objects.requireNonNull(exits.get(branchIdx)), v);
             }
             var memberTypes = new HashSet<Type>();
             for (var value : branch2value.values()) {
@@ -276,7 +276,7 @@ public class MethodGenerator {
                     memberTypes.size() == 1 ? memberTypes.iterator().next() : Types.getUnionType(memberTypes);
             var field = FieldBuilder.newBuilder(var, var, joinNode.getKlass(), fieldType).build();
             var joinField = new JoinNodeField(field, joinNode, branch2value);
-            setVariable(var, Expressions.node(createNodeProperty(joinNode, joinField.getField())));
+            setVariable(var, Values.node(createNodeProperty(joinNode, joinField.getField())));
         }
     }
 
@@ -288,7 +288,7 @@ public class MethodGenerator {
         return NncUtils.requireNonNull(scopes.peek());
     }
 
-    void setVariable(String name, Expression value) {
+    void setVariable(String name, Value value) {
         variableTable.set(name, value);
     }
 
@@ -296,7 +296,7 @@ public class MethodGenerator {
         variableTable.define(name);
     }
 
-    Expression getVariable(String name) {
+    Value getVariable(String name) {
         return variableTable.get(name);
     }
 
@@ -327,22 +327,22 @@ public class MethodGenerator {
         return currentScope().scope;
     }
 
-    UpdateObjectNode createUpdateObject(Expression objectId) {
-        return onNodeCreated(new UpdateObjectNode(null, nextName("Update"), null, scope().getLastNode(), scope(), Values.expression(objectId), List.of()));
+    UpdateObjectNode createUpdateObject(Value objectId) {
+        return onNodeCreated(new UpdateObjectNode(null, nextName("Update"), null, scope().getLastNode(), scope(), objectId, List.of()));
     }
 
-    UpdateObjectNode createUpdate(Expression self, Map<Field, Expression> fields) {
+    UpdateObjectNode createUpdate(Value self, Map<Field, Value> fields) {
         var node = createUpdateObject(self);
-        fields.forEach((field, value) -> node.setUpdateField(field, UpdateOp.SET, Values.expression(value)));
+        fields.forEach((field, value) -> node.setUpdateField(field, UpdateOp.SET, value));
         return node;
     }
 
-    UpdateStaticNode createUpdateStatic(Klass klass, Map<Field, Expression> fields) {
+    UpdateStaticNode createUpdateStatic(Klass klass, Map<Field, Value> fields) {
         var node = onNodeCreated(new UpdateStaticNode(
                 null, nextName("UpdateStatic"), null,
                 scope().getLastNode(), scope(), klass,
                 List.of()));
-        fields.forEach((field, expr) -> node.setUpdateField(field, UpdateOp.SET, Values.expression(expr)));
+        fields.forEach((field, expr) -> node.setUpdateField(field, UpdateOp.SET, expr));
         return node;
     }
 
@@ -352,7 +352,7 @@ public class MethodGenerator {
                 scope().getLastNode(), scope()));
     }
 
-    AddElementNode createAddElement(Expression array, Expression value) {
+    AddElementNode createAddElement(Value array, Value value) {
         return onNodeCreated(
                 new AddElementNode(
                         null,
@@ -360,13 +360,13 @@ public class MethodGenerator {
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(array),
-                        Values.expression(value)
+                        array,
+                        value
                 )
         );
     }
 
-    RemoveElementNode createRemoveElement(Expression array, Expression element) {
+    RemoveElementNode createRemoveElement(Value array, Value element) {
         return onNodeCreated(
                 new RemoveElementNode(
                         null,
@@ -374,13 +374,13 @@ public class MethodGenerator {
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(array),
-                        Values.expression(element)
+                        array,
+                        element
                 )
         );
     }
 
-    GetElementNode createGetElement(Expression array, Expression index) {
+    GetElementNode createGetElement(Value array, Value index) {
         return onNodeCreated(
                 new GetElementNode(
                         null,
@@ -388,8 +388,8 @@ public class MethodGenerator {
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(array),
-                        Values.expression(index)
+                        array,
+                        index
                 )
         );
     }
@@ -399,13 +399,13 @@ public class MethodGenerator {
         return createReturn(null);
     }
 
-    ReturnNode createReturn(Expression value) {
+    ReturnNode createReturn(Value value) {
         return onNodeCreated(new ReturnNode(null,
                 nextName("Exit"),
                 null,
                 scope().getLastNode(),
                 scope(),
-                NncUtils.get(value, Values::expression)
+                value
         ));
     }
 
@@ -443,11 +443,11 @@ public class MethodGenerator {
         return FieldBuilder.newBuilder(name, null, klass, type).build();
     }
 
-    MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments) {
+    MethodCallNode createMethodCall(Value self, Method method, List<Value> arguments) {
         return createMethodCall(self, method, arguments, List.of(), List.of());
     }
 
-    MethodCallNode createMethodCall(Expression self, Method method, List<Expression> arguments,
+    MethodCallNode createMethodCall(Value self, Method method, List<Value> arguments,
                                     List<Type> capturedExpressionTypes,
                                     List<Expression> capturedExpressions) {
         if(method.getParameters().size() != arguments.size()) {
@@ -457,19 +457,19 @@ public class MethodGenerator {
         }
         List<Argument> args = NncUtils.biMap(
                 method.getParameters(), arguments,
-                (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))
+                (param, arg) -> new Argument(null, param.getRef(), arg)
         );
         var node = new MethodCallNode(null, nextName(method.getName()), null,
                 scope().getLastNode(), scope(),
-                NncUtils.get(self, Values::expression), method.getRef(), args);
+                self, method.getRef(), args);
         node.setCapturedExpressions(capturedExpressions);
         node.setCapturedExpressionTypes(capturedExpressionTypes);
         variableTable.processRaiseNode(node);
         return onNodeCreated(node);
     }
 
-    NodeRT createTypeCast(Expression operand, Type targetType) {
-        if (getExpressionType(operand).isNullable() && !targetType.isNullable())
+    NodeRT createTypeCast(Value operand, Type targetType) {
+        if (getExpressionType(operand.getExpression()).isNullable() && !targetType.isNullable())
             targetType = new UnionType(Set.of(targetType, Types.getNullType()));
         return createFunctionCall(
                 StdFunction.typeCast.get().getParameterized(List.of(targetType)),
@@ -477,11 +477,11 @@ public class MethodGenerator {
         );
     }
 
-    FunctionCallNode createFunctionCall(Function function, List<Expression> arguments) {
+    FunctionCallNode createFunctionCall(Function function, List<Value> arguments) {
         var functionRef = function.getRef();
         List<Argument> args = NncUtils.biMap(
                 functionRef.getRawFlow().getParameters(), arguments,
-                (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))
+                (param, arg) -> new Argument(null, param.getRef(), arg)
         );
         var node = onNodeCreated(new FunctionCallNode(
                 null,
@@ -506,11 +506,11 @@ public class MethodGenerator {
         return new LambdaExitNode(null, nextName("lambdaExit"), null, scope().getLastNode(), scope());
     }
 
-    NewObjectNode createNew(Method method, List<Expression> arguments, boolean ephemeral, boolean unbound) {
+    NewObjectNode createNew(Method method, List<Value> arguments, boolean ephemeral, boolean unbound) {
         var methodRef = method.getRef();
         List<Argument> args = NncUtils.biMap(
                 methodRef.getRawFlow().getParameters(), arguments,
-                (param, arg) -> new Argument(null, param.getRef(), Values.expression(arg))
+                (param, arg) -> new Argument(null, param.getRef(), arg)
         );
         var node = onNodeCreated(new NewObjectNode(null, nextName(methodRef.resolve().getName()), null, methodRef, args,
                 scope().getLastNode(), scope(), null, ephemeral, unbound));
@@ -563,13 +563,13 @@ public class MethodGenerator {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public RaiseNode createRaise(Expression exception) {
+    public RaiseNode createRaise(Value exception) {
         var node = onNodeCreated(new RaiseNode(
                 null,
                 nextName("Error"),
                 null,
                 scope().getLastNode(), scope(), RaiseParameterKind.THROWABLE,
-                Values.expression(exception),
+                exception,
                 null
         ));
         variableTable.processRaiseNode(node);
@@ -580,327 +580,327 @@ public class MethodGenerator {
         return null;
     }
 
-    public ClearArrayNode createClearArray(Expression array) {
+    public ClearArrayNode createClearArray(Value array) {
         return onNodeCreated(new ClearArrayNode(
                 null, nextName("ClearArray"), null,
-                scope().getLastNode(), scope(), Values.expression(array)
+                scope().getLastNode(), scope(), array
         ));
     }
 
-    public SetElementNode createSetElement(Expression array, Expression index, Expression value) {
+    public SetElementNode createSetElement(Value array, Value index, Value value) {
         return onNodeCreated(new SetElementNode(null, nextName("SetElement"), null,
-                scope().getLastNode(), scope(), Values.expression(array),
-                Values.expression(index), Values.expression(value)));
+                scope().getLastNode(), scope(), array,
+                index, value));
     }
 
-    AddNode createAdd(Expression first, Expression second) {
+    AddNode createAdd(Value first, Value second) {
         return onNodeCreated(new AddNode(
                         null,
                         nextName("add"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    SubNode createSub(Expression first, Expression second) {
+    SubNode createSub(Value first, Value second) {
         return onNodeCreated(new SubNode(
                         null,
                         nextName("sub"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    MultiplyNode createMul(Expression first, Expression second) {
+    MultiplyNode createMul(Value first, Value second) {
         return onNodeCreated(new MultiplyNode(
                         null,
                         nextName("mul"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    DivideNode createDiv(Expression first, Expression second) {
+    DivideNode createDiv(Value first, Value second) {
         return onNodeCreated(new DivideNode(
                         null,
                         nextName("div"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    LeftShiftNode createLeftShift(Expression first, Expression second) {
+    LeftShiftNode createLeftShift(Value first, Value second) {
         return onNodeCreated(new LeftShiftNode(
                         null,
                         nextName("leftShift"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    RightShiftNode createRightShift(Expression first, Expression second) {
+    RightShiftNode createRightShift(Value first, Value second) {
         return onNodeCreated(new RightShiftNode(
                         null,
                         nextName("rightShift"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    UnsignedRightShiftNode createUnsignedRightShift(Expression first, Expression second) {
+    UnsignedRightShiftNode createUnsignedRightShift(Value first, Value second) {
         return onNodeCreated(new UnsignedRightShiftNode(
                         null,
                         nextName("unsignedRightShift"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    BitwiseOrNode createBitwiseOr(Expression first, Expression second) {
+    BitwiseOrNode createBitwiseOr(Value first, Value second) {
         return onNodeCreated(new BitwiseOrNode(
                         null,
                         nextName("bitwiseOr"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    BitwiseAndNode createBitwiseAnd(Expression first, Expression second) {
+    BitwiseAndNode createBitwiseAnd(Value first, Value second) {
         return onNodeCreated(new BitwiseAndNode(
                         null,
                         nextName("bitwiseAnd"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    BitwiseXorNode createBitwiseXor(Expression first, Expression second) {
+    BitwiseXorNode createBitwiseXor(Value first, Value second) {
         return onNodeCreated(new BitwiseXorNode(
                         null,
                         nextName("bitwiseXor"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    AndNode createAnd(Expression first, Expression second) {
+    AndNode createAnd(Value first, Value second) {
         return onNodeCreated(new AndNode(
                         null,
                         nextName("and"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    OrNode createOr(Expression first, Expression second) {
+    OrNode createOr(Value first, Value second) {
         return onNodeCreated(new OrNode(
                         null,
                         nextName("or"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    RemainderNode createRem(Expression first, Expression second) {
+    RemainderNode createRem(Value first, Value second) {
         return onNodeCreated(new RemainderNode(
                         null,
                         nextName("rem"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    EqNode createEq(Expression first, Expression second) {
+    EqNode createEq(Value first, Value second) {
         return onNodeCreated(new EqNode(
                         null,
                         nextName("eq"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    NeNode createNe(Expression first, Expression second) {
+    NeNode createNe(Value first, Value second) {
         return onNodeCreated(new NeNode(
                         null,
                         nextName("ne"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    GeNode createGe(Expression first, Expression second) {
+    GeNode createGe(Value first, Value second) {
         return onNodeCreated(new GeNode(
                         null,
                         nextName("ge"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    GtNode createGt(Expression first, Expression second) {
+    GtNode createGt(Value first, Value second) {
         return onNodeCreated(new GtNode(
                         null,
                         nextName("gt"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    LtNode createLt(Expression first, Expression second) {
+    LtNode createLt(Value first, Value second) {
         return onNodeCreated(new LtNode(
                         null,
                         nextName("lt"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    LeNode createLe(Expression first, Expression second) {
+    LeNode createLe(Value first, Value second) {
         return onNodeCreated(new LeNode(
                         null,
                         nextName("le"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
-                        Values.expression(second)
+                        first,
+                        second
                 )
         );
     }
 
-    InstanceOfNode createInstanceOf(Expression first, Type type) {
+    InstanceOfNode createInstanceOf(Value operand, Type type) {
         return onNodeCreated(new InstanceOfNode(
                         null,
                         nextName("instanceOf"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(first),
+                        operand,
                         type
                 )
         );
     }
 
-    BitwiseComplementNode createBitwiseComplement(Expression operand) {
+    BitwiseComplementNode createBitwiseComplement(Value operand) {
         return onNodeCreated(new BitwiseComplementNode(
                         null,
                         nextName("bitwiseComplement"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(operand)
+                        operand
                 )
         );
     }
 
-    NotNode createNot(Expression operand) {
+    NotNode createNot(Value operand) {
         return onNodeCreated(new NotNode(
                         null,
                         nextName("not"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(operand)
+                        operand
                 )
         );
     }
 
-    NegateNode createNegate(Expression operand) {
+    NegateNode createNegate(Value operand) {
         return onNodeCreated(new NegateNode(
                         null,
                         nextName("negate"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(operand)
+                        operand
                 )
         );
     }
 
     GetPropertyNode createNodeProperty(NodeRT node, Property property) {
-        return createGetProperty(Expressions.node(node), property);
+        return createGetProperty(Values.node(node), property);
     }
 
-    GetPropertyNode createGetProperty(Expression instance, Property property) {
+    GetPropertyNode createGetProperty(Value instance, Property property) {
         return onNodeCreated(new GetPropertyNode(
                         null,
                         nextName("negate"),
                         null,
                         scope().getLastNode(),
                         scope(),
-                        Values.expression(instance),
+                        instance,
                         property.getRef()
                 )
         );

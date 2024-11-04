@@ -3,9 +3,6 @@ package org.metavm.object.type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.*;
-import org.metavm.expression.Expressions;
-import org.metavm.expression.NodeExpression;
-import org.metavm.expression.PropertyExpression;
 import org.metavm.flow.*;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.instance.core.FunctionValue;
@@ -315,7 +312,7 @@ public class Types {
                 .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
                 .returnType(sam.getReturnType())
                 .build();
-
+        var scope = flow.getRootScope();
         var selfNode = new SelfNode(null, "self", null, flow.getDeclaringType().getType(), null, flow.getRootScope());
         var inputType = KlassBuilder.newBuilder("Input", "Input").temporary().build();
         for (Parameter parameter : flow.getParameters()) {
@@ -324,14 +321,13 @@ public class Types {
         }
 
         var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getRootScope());
-        var funcNode = new FunctionNode(null, "function", null, inputNode, flow.getRootScope(),
-                Values.expression(new PropertyExpression(new NodeExpression(selfNode), funcField.getRef())),
+        var funcNode = Nodes.function("function", scope,
+                Values.node(Nodes.nodeProperty(selfNode, funcField, scope)),
                 NncUtils.map(inputType.getReadyFields(),
-                        inputField ->
-                                Values.expression(new PropertyExpression(new NodeExpression(inputNode), inputField.getRef()))
+                        inputField -> Values.node(Nodes.nodeProperty(inputNode, inputField, scope))
                 )
         );
-        var returnValue = flow.getReturnType().isVoid() ? null : Values.expression(new NodeExpression(funcNode));
+        var returnValue = flow.getReturnType().isVoid() ? null : Values.node(funcNode);
         new ReturnNode(null, "return", null, funcNode, flow.getRootScope(), returnValue);
         return klass.getParameterized(NncUtils.map(typeVars, TypeVariable::getType)).getType();
     }
@@ -385,7 +381,7 @@ public class Types {
         var func = Nodes.function(
                 "function",
                 scope,
-                Values.constant(Expressions.constant(function)),
+                Values.constant(function),
                 args
         );
         if (sam.getReturnType().isVoid())
@@ -944,5 +940,15 @@ public class Types {
             return type1;
         }
         throw new InternalException("category " + type1 + " and category " + type2 + " are incompatible");
+    }
+
+    public static Klass getKlass(Type type) {
+        return switch (type) {
+            case ClassType classType -> classType.resolve();
+            case ArrayType arrayType -> getKlass(arrayType.getElementType()).getArrayKlass();
+            case UnionType unionType -> getKlass(unionType.getUnderlyingType());
+            case AnyType anyType -> ModelDefRegistry.getDefContext().getKlass(DummyAny.class);
+            default -> throw new IllegalStateException("Cannot get klass for type: " + type);
+        };
     }
 }

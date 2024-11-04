@@ -2,8 +2,8 @@ package org.metavm.autograph;
 
 import com.intellij.psi.PsiNewExpression;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.expression.Expression;
-import org.metavm.expression.Expressions;
+import org.metavm.flow.Value;
+import org.metavm.flow.Values;
 
 import java.util.Date;
 import java.util.List;
@@ -25,12 +25,12 @@ public class NewDateResolver implements NewResolver {
     }
 
     @Override
-    public Expression resolve(PsiNewExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
+    public Value resolve(PsiNewExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
         var args = requireNonNull(methodCallExpression.getArgumentList()).getExpressions();
         if(args.length == 0)
-            return Expressions.node(methodGenerator.createFunctionCall(StdFunction.now.get(), List.of()));
+            return Values.node(methodGenerator.createFunctionCall(StdFunction.now.get(), List.of()));
         else
-            return Expressions.node(methodGenerator.createFunctionCall(StdFunction.time.get(),
+            return Values.node(methodGenerator.createFunctionCall(StdFunction.time.get(),
                             List.of(expressionResolver.resolve(args[0]))));
     }
 }

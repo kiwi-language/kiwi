@@ -9,11 +9,16 @@ import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.IterableNative;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.entity.natives.NativeMethods;
+import org.metavm.expression.ParsingContext;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
+import org.metavm.flow.rest.FieldReferringDTO;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.rest.FieldValue;
+import org.metavm.object.instance.rest.PrimitiveFieldValue;
+import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.*;
 import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 import org.slf4j.Logger;
@@ -1126,6 +1131,15 @@ public class Instances {
                     throw new IllegalArgumentException("Cannot get java value for object instance");
             }
             default -> throw new IllegalArgumentException("Cannot get java value for value " + value);
+        };
+    }
+
+    public static Value fromFieldValue(FieldValue fieldValue, Function<Id, Value> getInstance) {
+        return switch (fieldValue) {
+            case PrimitiveFieldValue primitiveFieldValue -> fromJavaValue(primitiveFieldValue.getValue(),
+                    () -> {throw new UnsupportedOperationException();});
+            case ReferenceFieldValue referenceFieldValue -> getInstance.apply(Id.parse(referenceFieldValue.getId()));
+            default -> throw new IllegalStateException("Unexpected value: " + fieldValue);
         };
     }
 

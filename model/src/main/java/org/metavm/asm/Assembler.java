@@ -105,7 +105,7 @@ public class Assembler {
         );
     }
 
-    private Expression resolveExpression(AssemblyParser.ExpressionContext ctx, ScopeRT scope, AsmScope asmScope, CompilationUit compilationUit) {
+    private Value resolveExpression(AssemblyParser.ExpressionContext ctx, ScopeRT scope, AsmScope asmScope, CompilationUit compilationUit) {
         return new AsmExpressionResolver(
                 scope,
                 t -> parseType(t, asmScope, compilationUit),
@@ -984,8 +984,8 @@ public class Assembler {
             var enumConstantDef = Objects.requireNonNull(klass.findEnumConstantDef(ec -> ec.getName().equals(name)));
             List<AssemblyParser.ExpressionContext> argCtx =
                     ctx.arguments() != null ? ctx.arguments().expressionList().expression() : List.of();
-            var args = NncUtils.map(argCtx, arg -> Values.expression(resolveExpression(arg,
-                    cinit.getRootScope(), classInfo, getCompilationUnit())));
+            var args = NncUtils.map(argCtx, arg -> resolveExpression(arg,
+                    cinit.getRootScope(), classInfo, getCompilationUnit()));
             enumConstantDef.setArguments(args);
             return super.visitEnumConstant(ctx);
         }
@@ -1173,10 +1173,8 @@ public class Assembler {
                 }
                 if (statement.IF() != null) {
                     var ifNode = Nodes.ifNot(
-                            Values.expression(
-                                    resolveExpression(statement.parExpression().expression(), scope,
-                                            this.scope, getCompilationUnit())
-                            ),
+                            resolveExpression(statement.parExpression().expression(), scope,
+                                    this.scope, getCompilationUnit()),
                             null,
                             scope
                     );
@@ -1209,7 +1207,7 @@ public class Assembler {
                     fieldTypes.forEach((fieldName, fieldType) ->
                             FieldBuilder.newBuilder(fieldName, fieldName, loopKlass, fieldType).build()
                     );
-                    var ifNode = Nodes.ifNot(Values.expression(resolveExpression(forCtl.expression(), scope, this.scope, getCompilationUnit())),
+                    var ifNode = Nodes.ifNot(resolveExpression(forCtl.expression(), scope, this.scope, getCompilationUnit()),
                             null, scope);
                     parseBlockNodes(statement.block(0), scope);
                     if (loopVarDecls != null) {
@@ -1290,7 +1288,7 @@ public class Assembler {
                             () -> "Cannot find index with name " + indexName + " class " + klass.getTypeDesc());
                     var fieldValues = NncUtils.map(
                             select.expression(),
-                            e -> Values.expression(resolveExpression(e, scope, this.scope, getCompilationUnit()))
+                            e -> resolveExpression(e, scope, this.scope, getCompilationUnit())
                     );
                     var key = new IndexQueryKey(
                             index,
@@ -1381,7 +1379,7 @@ public class Assembler {
         }
 
         private Value parseValue(AssemblyParser.ExpressionContext expression, ScopeRT scope, AsmScope asmScope, CompilationUit compilationUit) {
-            return Values.expression(resolveExpression(expression, scope, asmScope, compilationUit));
+            return resolveExpression(expression, scope, asmScope, compilationUit);
         }
 
         private List<Value> parseValueList(@Nullable AssemblyParser.ExpressionListContext expressionList,

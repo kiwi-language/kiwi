@@ -3,7 +3,6 @@ package org.metavm.object.view;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.FieldBuilder;
@@ -74,7 +73,7 @@ public class ArrayNestedMapping extends NestedMapping {
                 List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, getView.get())));
         Map<NodeRT, Value> exit2value = new HashMap<>();
         var ifNode = Nodes.if_(scope.nextNodeName("if"),
-                Values.node(Nodes.eq(Expressions.node(isSourcePresent), Expressions.falseExpression(), scope)),
+                Values.node(Nodes.eq(Values.node(isSourcePresent), Values.constantFalse(), scope)),
                 null,
                 scope
         );

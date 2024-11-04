@@ -1,67 +1,71 @@
 package org.metavm.flow;
 
-import org.metavm.expression.Expression;
-import org.metavm.expression.ExpressionParser;
-import org.metavm.expression.Expressions;
-import org.metavm.expression.ParsingContext;
-import org.metavm.object.type.ClassType;
+import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Property;
+import org.metavm.object.type.Type;
+import org.metavm.util.Instances;
 
-import javax.annotation.Nullable;
-import java.util.Objects;
+import java.util.List;
 
 public class Values {
 
     public static Value constantLong(long value) {
-        return constant(Expressions.constantLong(value));
+        return constant(Instances.longInstance(value));
     }
 
     public static Value never() {
-        return constant(Expressions.never());
+        return new NeverValue();
     }
 
     public static Value constantString(String string) {
-        return constant(Expressions.constantString(string));
+        return constant(Instances.stringInstance(string));
     }
 
     public static Value constantBoolean(boolean bool) {
-        return constant(Expressions.constantBoolean(bool));
+        return constant(Instances.booleanInstance(bool));
     }
 
-    public static Value constant(Expression expression) {
-        return new ConstantValue(ValueKind.CONSTANT, expression);
+    public static Value constant(org.metavm.object.instance.core.Value value) {
+        return new ConstantValue(value);
     }
 
     public static Value constantTrue() {
-        return constant(Expressions.trueExpression());
+        return constant(Instances.trueInstance());
     }
 
     public static Value constantFalse() {
-        return constant(Expressions.falseExpression());
-    }
-
-    public static Value reference(Expression expression) {
-        return new DynamicValue(ValueKind.REFERENCE, expression);
-    }
-
-    public static Value expression(Expression expression) {
-        return new DynamicValue(ValueKind.EXPRESSION, expression);
-    }
-
-    public static Value expressionOrNever(@Nullable Expression expression) {
-        return expression != null ? new DynamicValue(ValueKind.EXPRESSION, expression) : never();
-    }
-
-    public static Value expression(String expression, ParsingContext parsingContext) {
-        return expression(ExpressionParser.parse(expression, parsingContext));
+        return constant(Instances.falseInstance());
     }
 
     public static Value nullValue() {
-        return new ConstantValue(ValueKind.NULL, Expressions.nullExpression());
+        return new ConstantValue(Instances.nullInstance());
     }
 
     public static Value node(NodeRT node) {
-        return reference(Expressions.node(node));
+        return new NodeValue(node);
     }
 
+    public static Value type(Type type) {
+        return new TypeValue(type);
+    }
+
+    public static Value getOrNever(Value value) {
+        return value != null ? value : never();
+    }
+
+    public static Value constantDouble(double v) {
+        return new ConstantValue(Instances.doubleInstance(v));
+    }
+
+    public static Value array(List<Value> elements, ArrayType type) {
+        return new ArrayValue(elements, type);
+    }
+
+    public static Value constantChar(char c) {
+        return constant(Instances.charInstance(c));
+    }
+
+    public static Value property(Property property) {
+        return new PropertyValue(property.getRef());
+    }
 }

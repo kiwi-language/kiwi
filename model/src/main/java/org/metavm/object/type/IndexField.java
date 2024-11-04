@@ -25,7 +25,7 @@ public class IndexField extends Entity implements LocalKey {
                 constraint,
                 field.getName(),
                 field.getCode(),
-                Values.reference(Expressions.propertyExpr(field))
+                Values.property(field)
         );
     }
 

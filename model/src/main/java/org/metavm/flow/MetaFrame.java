@@ -139,6 +139,7 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         var outputs = this.outputs;
         var pc = entry;
         for(int i = 0; i < MAX_STEPS; i++) {
+//            log.debug("Executing node {}", pc.getName());
             var result = pc.execute(this);
             if(result.exception() != null)
                 return new FlowExecResult(null, result.exception());

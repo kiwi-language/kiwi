@@ -100,6 +100,11 @@ public class FlowParsingContext extends BaseParsingContext {
         lastBuiltVersion = prev.getFlow().getVersion();
     }
 
+    public NodeRT getNodeById(Id id) {
+        rebuildIfOutdated();
+        return Objects.requireNonNull(id2node.get(id), () -> "Cannot find node with ID " + id);
+    }
+
     private NodeRT getNode(Var var) {
         return switch (var.getType()) {
             case ID -> id2node.get(var.getId());

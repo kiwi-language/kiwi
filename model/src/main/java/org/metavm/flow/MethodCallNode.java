@@ -27,7 +27,7 @@ public class MethodCallNode extends CallNode {
         MethodCallNodeParam param = nodeDTO.getParam();
         var parsingContext = FlowParsingContext.create(scope, prev, context);
         if (param.isResolved()) {
-            var methodRef = MethodRef.create(Objects.requireNonNull(param.getFlowRef()), context);
+            var methodRef = MethodRef.createMethodRef(Objects.requireNonNull(param.getFlowRef()), context);
             var self = NncUtils.get(param.getSelf(), s -> ValueFactory.create(s, parsingContext));
             List<Argument> arguments = NncUtils.biMap(
                     methodRef.resolve().getParameters(),

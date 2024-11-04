@@ -1,34 +1,31 @@
 package org.metavm.flow.rest;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.metavm.object.instance.rest.ExpressionFieldValue;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.PrimitiveFieldValue;
 
-public record ValueDTO (
-        int kind,
-        FieldValue value
-) {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)
+@JsonSubTypes(
+        {
+                @JsonSubTypes.Type(name = "1", value = ConstantValueDTO.class),
+                @JsonSubTypes.Type(name = "2", value = NeverValueDTO.class),
+                @JsonSubTypes.Type(name = "3", value = TypeValueDTO.class),
+                @JsonSubTypes.Type(name = "4", value = NodeValueDTO.class),
+                @JsonSubTypes.Type(name = "5", value = ArrayValueDTO.class),
+                @JsonSubTypes.Type(name = "6", value = PropertyValueDTO.class),
+                @JsonSubTypes.Type(name = "7", value = ExpressionValueDTO.class),
+        }
+)
+public interface ValueDTO {
 
-    public static ValueDTO constValue(FieldValue value) {
-        return new ValueDTO(ValueKindCodes.CONSTANT, value);
+    static ValueDTO constValue(FieldValue value) {
+        return new ConstantValueDTO(value);
     }
 
-    public static ValueDTO refValue(String ref) {
-        return new ValueDTO(ValueKindCodes.REFERENCE, new ExpressionFieldValue(ref));
+    static ValueDTO exprValue(String expr) {
+        return new ExpressionValueDTO(expr);
     }
 
-    public static ValueDTO exprValue(String expr) {
-        return new ValueDTO(ValueKindCodes.EXPRESSION, new ExpressionFieldValue(expr));
-    }
-
-    @JsonIgnore
-    public boolean isNull() {
-        if(value == null)
-            return true;
-        if(value instanceof PrimitiveFieldValue primitiveFieldValue)
-            return primitiveFieldValue.getValue() == null;
-        return false;
-    }
+    int getKind();
 
 }

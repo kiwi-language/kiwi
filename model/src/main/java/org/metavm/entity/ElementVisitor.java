@@ -539,4 +539,32 @@ public abstract class ElementVisitor<R> {
     public R visitArrayLengthNode(ArrayLengthNode node) {
         return visitNode(node);
     }
+
+    public R visitExpressionValue(ExpressionValue value) {
+        return visitValue(value);
+    }
+
+    public R visitPropertyValue(PropertyValue value) {
+        return visitValue(value);
+    }
+
+    public R visitNeverValue(NeverValue value) {
+        return visitValue(value);
+    }
+
+    public R visitArrayValue(ArrayValue value) {
+        return visitValue(value);
+    }
+
+    public R visitConstantValue(ConstantValue value) {
+        return visitValue(value);
+    }
+
+    public R visitTypeValue(TypeValue value) {
+        return visitValue(value);
+    }
+
+    public R visitNodeValue(NodeValue value) {
+        return visitValue(value);
+    }
 }

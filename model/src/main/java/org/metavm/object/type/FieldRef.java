@@ -10,11 +10,15 @@ import java.util.Objects;
 @EntityType
 public class FieldRef extends ValueElement implements PropertyRef {
 
-    public static FieldRef create(FieldRefDTO fieldRefDTO, EntityProvider entityProvider) {
-        return new FieldRef(
-                (ClassType) TypeParser.parseType(fieldRefDTO.declaringType(), entityProvider),
-                entityProvider.getEntity(Field.class, Id.parse(fieldRefDTO.rawFieldId()))
-        );
+    public static FieldRef create(FieldRefDTO fieldRefDTO, TypeDefProvider typeDefProvider) {
+        var classType = (ClassType) TypeParser.parseType(fieldRefDTO.declaringType(), typeDefProvider);
+        var klass = classType.getKlass();
+        var fieldId = Id.parse(fieldRefDTO.rawFieldId());
+        var field = klass.findSelfField(f -> f.idEquals(fieldId));
+        if(field == null)
+            field = klass.findSelfStaticField(f -> f.idEquals(fieldId));
+        return new FieldRef(classType, Objects.requireNonNull(field,
+                () -> "Cannot find field with ID " + fieldId + " in klass " + klass.getTypeDesc()));
     }
 
     private final ClassType declaringType;

@@ -4,14 +4,20 @@ import com.google.common.collect.Streams;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.expression.*;
+import org.metavm.expression.BinaryOperator;
+import org.metavm.expression.Expression;
+import org.metavm.expression.NodeExpression;
+import org.metavm.expression.UnaryOperator;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.BooleanValue;
 import org.metavm.object.instance.core.DoubleValue;
 import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
-import org.metavm.util.*;
+import org.metavm.util.Instances;
+import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
+import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,7 +84,7 @@ public class ExpressionResolver {
         this.visitor = visitor;
     }
 
-    public Expression resolve(PsiExpression psiExpression) {
+    public org.metavm.flow.Value resolve(PsiExpression psiExpression) {
         ResolutionContext context = new ResolutionContext();
         try {
             return resolve(psiExpression, context);
@@ -88,15 +94,15 @@ public class ExpressionResolver {
         }
     }
 
-    private Expression resolve(PsiExpression psiExpression, ResolutionContext context) {
-        Expression resolved;
+    private org.metavm.flow.Value resolve(PsiExpression psiExpression, ResolutionContext context) {
+        org.metavm.flow.Value resolved;
         if (isBoolExpression(psiExpression)) {
             resolved = resolveBoolExpr(psiExpression, context);
         } else {
             resolved = resolveNormal(psiExpression, context);
         }
-        if(!expressionMap.containsKey(psiExpression))
-            expressionMap.put(psiExpression, resolved);
+        if(resolved != null && !expressionMap.containsKey(psiExpression))
+            expressionMap.put(psiExpression, resolved.getExpression());
 //        if(resolved != null && resolved.getType().isCaptured())
 //            TranspileUtil.forEachCapturedTypePairs(psiExpression.getType(), resolved.getType(), typeResolver::mapCapturedType);
         return resolved;
@@ -106,7 +112,7 @@ public class ExpressionResolver {
         return (CapturedType) expressionMap.get((PsiExpression) psiCapturedWildcardType.getContext()).getType();
     }
 
-    private Expression resolveNormal(PsiExpression psiExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveNormal(PsiExpression psiExpression, ResolutionContext context) {
         return switch (psiExpression) {
             case PsiBinaryExpression binaryExpression -> resolveBinary(binaryExpression, context);
             case PsiPolyadicExpression polyadicExpression -> resolvePolyadic(polyadicExpression, context);
@@ -131,22 +137,22 @@ public class ExpressionResolver {
         };
     }
 
-    private Expression resolveSuper(PsiSuperExpression superExpression) {
+    private org.metavm.flow.Value resolveSuper(PsiSuperExpression superExpression) {
         return variableTable.get("this");
     }
 
-    private Expression resolveClassObjectAccess(PsiClassObjectAccessExpression classObjectAccessExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveClassObjectAccess(PsiClassObjectAccessExpression classObjectAccessExpression, ResolutionContext context) {
         var type = typeResolver.resolveTypeOnly(classObjectAccessExpression.getOperand().getType());
-        return new TypeLiteralExpression(type);
+        return Values.type(type);
     }
 
-    private Expression resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {
         var operand = resolve(typeCastExpression.getOperand(), context);
         var targetType = typeResolver.resolveDeclaration(requireNonNull(typeCastExpression.getCastType()).getType());
-        return Expressions.node(methodGenerator.createTypeCast(operand, targetType));
+        return Values.node(methodGenerator.createTypeCast(operand, targetType));
     }
 
-    private Expression resolvePolyadic(PsiPolyadicExpression psiExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolvePolyadic(PsiPolyadicExpression psiExpression, ResolutionContext context) {
         var op = psiExpression.getOperationTokenType();
         var operands = psiExpression.getOperands();
         var current = resolve(operands[0], context);
@@ -156,31 +162,29 @@ public class ExpressionResolver {
         return current;
     }
 
-    private Expression resolveInstanceOf(PsiInstanceOfExpression instanceOfExpression, ResolutionContext context) {
-        Expression operand;
+    private org.metavm.flow.Value resolveInstanceOf(PsiInstanceOfExpression instanceOfExpression, ResolutionContext context) {
+        org.metavm.flow.Value operand;
         if (instanceOfExpression.getPattern() instanceof PsiTypeTestPattern pattern) {
             String varName = requireNonNull(pattern.getPatternVariable()).getName();
-            operand = new NodeExpression(
-                    methodGenerator.createValue(varName, resolve(instanceOfExpression.getOperand(), context))
-            );
+            operand = resolve(instanceOfExpression.getOperand(), context);
             variableTable.set(varName, operand);
         } else {
             operand = resolve(instanceOfExpression.getOperand(), context);
         }
-        return Expressions.node(methodGenerator.createInstanceOf(
+        return Values.node(methodGenerator.createInstanceOf(
                 operand,
                 typeResolver.resolveDeclaration(requireNonNull(instanceOfExpression.getCheckType()).getType())
         ));
     }
 
-    private Expression resolveArrayAccess(PsiArrayAccessExpression arrayAccessExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveArrayAccess(PsiArrayAccessExpression arrayAccessExpression, ResolutionContext context) {
         var array = resolve(arrayAccessExpression.getArrayExpression(), context);
         var index = resolve(arrayAccessExpression.getIndexExpression(), context);
-        if (methodGenerator.getExpressionType(array).isNullable())
-            array = Expressions.node(methodGenerator.createNonNull("nonNull", array));
-        if (methodGenerator.getExpressionType(index).isNullable())
-            index = Expressions.node(methodGenerator.createNonNull("nonNull", index));
-        return new ArrayAccessExpression(array, index);
+        if (methodGenerator.getExpressionType(array.getExpression()).isNullable())
+            array = Values.node(methodGenerator.createNonNull("nonNull", array));
+        if (methodGenerator.getExpressionType(index.getExpression()).isNullable())
+            index = Values.node(methodGenerator.createNonNull("nonNull", index));
+        return Values.node(methodGenerator.createGetElement(array, index));
     }
 
     public TypeResolver getTypeResolver() {
@@ -191,14 +195,14 @@ public class ExpressionResolver {
         return psiExpression.getType() == PsiType.BOOLEAN;
     }
 
-    private Expression resolveThis(PsiThisExpression ignored) {
+    private org.metavm.flow.Value resolveThis(PsiThisExpression ignored) {
         return variableTable.get("this");
     }
 
-    private Expression resolveConditional(PsiConditionalExpression psiExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveConditional(PsiConditionalExpression psiExpression, ResolutionContext context) {
         var ref = new Object() {
-            Expression thenExpr;
-            Expression elseExpr;
+            org.metavm.flow.Value thenExpr;
+            org.metavm.flow.Value elseExpr;
         };
         var joinNode = constructIf(psiExpression.getCondition(), false,
                 () -> ref.thenExpr = resolve(psiExpression.getThenExpression(), context),
@@ -212,20 +216,20 @@ public class ExpressionResolver {
                         Types.getUnionType(List.of(ref.thenExpr.getType(), ref.elseExpr.getType())))
                 .build();
         new JoinNodeField(valueField, joinNode, Map.of(
-                thenExit, Values.expression(ref.thenExpr),
-                elseExit, Values.expression(ref.elseExpr))
+                thenExit, ref.thenExpr,
+                elseExit, ref.elseExpr)
         );
-        return Expressions.node(methodGenerator.createNodeProperty(joinNode, valueField));
+        return Values.node(methodGenerator.createNodeProperty(joinNode, valueField));
     }
 
-    private Expression resolveParenthesized(PsiParenthesizedExpression psiExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveParenthesized(PsiParenthesizedExpression psiExpression, ResolutionContext context) {
         return resolve(requireNonNull(psiExpression.getExpression()), context);
     }
 
-    private Expression resolveLiteral(PsiLiteralExpression literalExpression) {
+    private org.metavm.flow.Value resolveLiteral(PsiLiteralExpression literalExpression) {
         Object value = literalExpression.getValue();
         if (value == null) {
-            return new ConstantExpression(Instances.nullInstance());
+            return Values.nullValue();
         }
         Value instance;
         PrimitiveType valueType = (PrimitiveType) typeResolver.resolve(literalExpression.getType());
@@ -239,10 +243,10 @@ public class ExpressionResolver {
             case Character c -> Instances.charInstance(c);
             case null, default -> throw new InternalException("Unrecognized literal value: " + value);
         };
-        return new ConstantExpression(instance);
+        return Values.constant(instance);
     }
 
-    private Expression resolveReference(PsiReferenceExpression psiReferenceExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveReference(PsiReferenceExpression psiReferenceExpression, ResolutionContext context) {
         var qnAndMode = psiReferenceExpression.getUserData(Keys.QN_AND_MODE);
         if (qnAndMode != null) {
             var qn = qnAndMode.qualifiedName();
@@ -255,7 +259,7 @@ public class ExpressionResolver {
         if (target instanceof PsiField psiField) {
             if (isArrayLength(psiField)) {
                 var arrayExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
-                return Expressions.node(methodGenerator.createArrayLength(arrayExpr));
+                return Values.node(methodGenerator.createArrayLength(arrayExpr));
             } else {
                 PsiClass psiClass = requireNonNull(psiField.getContainingClass());
                 Field field;
@@ -264,19 +268,19 @@ public class ExpressionResolver {
                     if(className != null && className.startsWith("java.")) {
                         var javaField = ReflectionUtils.getField(ReflectionUtils.classForName(className), psiField.getName());
                         if(PrimitiveStaticFields.isConstant(javaField))
-                            return Expressions.constant(Instances.fromConstant(PrimitiveStaticFields.getConstant(javaField)));
+                            return Values.constant(Instances.fromConstant(PrimitiveStaticFields.getConstant(javaField)));
                     }
                     var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass))).resolve();
                     field = Objects.requireNonNull(klass.findStaticFieldByCode(psiField.getName()));
-                    return Expressions.node(methodGenerator.createGetStatic(field));
+                    return Values.node(methodGenerator.createGetStatic(field));
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
-                    if(methodGenerator.getExpressionType(qualifierExpr).isNullable())
-                        qualifierExpr = Expressions.node(methodGenerator.createNonNull("nonNull", qualifierExpr));
-                    Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr));
+                    if(methodGenerator.getExpressionType(qualifierExpr.getExpression()).isNullable())
+                        qualifierExpr = Values.node(methodGenerator.createNonNull("nonNull", qualifierExpr));
+                    Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr.getExpression()));
                     typeResolver.ensureDeclared(klass);
                     field = klass.getFieldByCode(psiField.getName());
-                    return Expressions.node(methodGenerator.createGetProperty(qualifierExpr, field));
+                    return Values.node(methodGenerator.createGetProperty(qualifierExpr, field));
                 }
             }
         } else if (target instanceof PsiMethod psiMethod) {
@@ -285,19 +289,19 @@ public class ExpressionResolver {
             if (psiMethod.hasModifierProperty(PsiModifier.STATIC)) {
                 Klass klass = Types.resolveKlass(typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass)));
                 method = klass.getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
-                return new StaticPropertyExpression(method.getRef());
+                return Values.node(methodGenerator.createGetStatic(method));
             } else {
                 if (psiReferenceExpression.getQualifierExpression() instanceof PsiReferenceExpression refExpr &&
                         refExpr.resolve() instanceof PsiClass) {
                     var klass = Types.resolveKlass(typeResolver.resolve(TranspileUtils.createType(psiClass)));
                     method = klass.getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
-                    return Expressions.node(methodGenerator.createGetStatic(method));
+                    return Values.node(methodGenerator.createGetStatic(method));
                 } else {
                     var qualifierExpr = resolveQualifier(psiReferenceExpression.getQualifierExpression(), context);
-                    Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr));
+                    Klass klass = Types.resolveKlass(methodGenerator.getExpressionType(qualifierExpr.getExpression()));
                     typeResolver.ensureDeclared(klass);
                     method = klass.getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
-                    return Expressions.node(methodGenerator.createGetProperty(qualifierExpr, method));
+                    return Values.node(methodGenerator.createGetProperty(qualifierExpr, method));
                 }
             }
         } else if (target instanceof PsiVariable variable) {
@@ -312,7 +316,7 @@ public class ExpressionResolver {
                 refExpr.resolve() instanceof PsiClass;
     }
 
-    private Expression resolveQualifier(PsiExpression qualifier, ResolutionContext context) {
+    private org.metavm.flow.Value resolveQualifier(PsiExpression qualifier, ResolutionContext context) {
         if (qualifier == null) {
             return variableTable.get("this");
         } else {
@@ -325,37 +329,29 @@ public class ExpressionResolver {
                 Objects.equals(requireNonNull(field.getContainingClass()).getName(), "__Array__");
     }
 
-    private Expression resolvePrefix(PsiPrefixExpression psiPrefixExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolvePrefix(PsiPrefixExpression psiPrefixExpression, ResolutionContext context) {
         var operand = NncUtils.requireNonNull(psiPrefixExpression.getOperand());
+        var resolvedOperand = resolve(requireNonNull(psiPrefixExpression.getOperand()), context);
         var op = psiPrefixExpression.getOperationSign().getTokenType();
         if (op == JavaTokenType.EXCL) {
-            return new BinaryExpression(
-                    BinaryOperator.EQ,
-                    resolve(Objects.requireNonNull(psiPrefixExpression.getOperand()), context),
-                    new ConstantExpression(Instances.booleanInstance(false))
-            );
+            return Values.node(methodGenerator.createNot(resolvedOperand));
         }
-        var resolvedOperand = resolve(requireNonNull(psiPrefixExpression.getOperand()), context);
         if(op == JavaTokenType.MINUS)
-            return new UnaryExpression(UnaryOperator.NEG, resolvedOperand);
+            return Values.node(methodGenerator.createNegate(resolvedOperand));
         if(op == JavaTokenType.PLUS)
             return resolvedOperand;
         if(op == JavaTokenType.TILDE)
-            return new UnaryExpression(UnaryOperator.BITWISE_COMPLEMENT, resolvedOperand);
+            return Values.node(methodGenerator.createBitwiseComplement(resolvedOperand));
         if (op == JavaTokenType.PLUSPLUS) {
-            var assignment = Expressions.node(methodGenerator.createValue("value", new BinaryExpression(
-                    BinaryOperator.ADD,
-                    resolvedOperand,
-                    new ConstantExpression(Instances.longInstance(1))
-            )));
+            var assignment = Values.node(methodGenerator.createAdd(
+                    resolvedOperand, Values.constantLong(1L)
+            ));
             processAssignment(operand, assignment, context);
             return assignment;
         } else if (op == JavaTokenType.MINUSMINUS) {
-            var assignment = Expressions.node(methodGenerator.createValue("value", new BinaryExpression(
-                    BinaryOperator.MINUS,
-                    resolvedOperand,
-                    new ConstantExpression(Instances.longInstance(1))
-            )));
+            var assignment = Values.node(methodGenerator.createSub(
+                    resolvedOperand, Values.constantLong(1L)
+            ));
             processAssignment(operand, assignment, context);
             return assignment;
         } else {
@@ -363,58 +359,46 @@ public class ExpressionResolver {
         }
     }
 
-    private Expression resolveUnary(PsiUnaryExpression psiUnaryExpression, ResolutionContext context) {
-        if (psiUnaryExpression.getOperand() instanceof PsiLiteralExpression literalExpression) {
-            return new UnaryExpression(
-                    resolveUnaryOperator(psiUnaryExpression.getOperationSign().getTokenType()),
-                    resolveLiteral(literalExpression)
-            );
-        }
+    private org.metavm.flow.Value resolveUnary(PsiUnaryExpression psiUnaryExpression, ResolutionContext context) {
+//        if (psiUnaryExpression.getOperand() instanceof PsiLiteralExpression literalExpression) {
+//            return new UnaryExpression(
+//                    resolveUnaryOperator(psiUnaryExpression.getOperationSign().getTokenType()),
+//                    resolveLiteral(literalExpression)
+//            );
+//        }
         if (psiUnaryExpression instanceof PsiPrefixExpression prefixExpression) {
             return resolvePrefix(prefixExpression, context);
         }
         var op = psiUnaryExpression.getOperationSign().getTokenType();
         var resolvedOperand = resolve(requireNonNull(psiUnaryExpression.getOperand()), context);
         if (op == JavaTokenType.PLUSPLUS) {
-            var value = Expressions.node(methodGenerator.createValue("value", resolvedOperand));
+            var value = Values.node(methodGenerator.createValue("value", resolvedOperand));
             processAssignment(
                     psiUnaryExpression.getOperand(),
-                    new BinaryExpression(
-                            BinaryOperator.ADD,
-                            value,
-                            new ConstantExpression(Instances.longInstance(1))
-                    ),
+                    Values.node(methodGenerator.createAdd(value, Values.constantLong(1L))),
                     context
             );
             return value;
         } else if (op == JavaTokenType.MINUSMINUS) {
-            var value = Expressions.node(methodGenerator.createValue("value", resolvedOperand));
+            var value = Values.node(methodGenerator.createValue("value", resolvedOperand));
             processAssignment(
                     psiUnaryExpression.getOperand(),
-                    new BinaryExpression(
-                            BinaryOperator.MINUS,
-                            value,
-                            new ConstantExpression(Instances.longInstance(1))
-                    ),
+                    Values.node(methodGenerator.createSub(value, Values.constantLong(1L))),
                     context
             );
             return value;
-        } else {
-            return new UnaryExpression(
-                    resolveUnaryOperator(psiUnaryExpression.getOperationSign().getTokenType()),
-                    resolve(Objects.requireNonNull(psiUnaryExpression.getOperand()), context)
-            );
-        }
+        } else
+            throw new IllegalStateException("Unrecognized unary expression: " + psiUnaryExpression.getText());
     }
 
-    private Expression resolveBinary(PsiBinaryExpression psiExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveBinary(PsiBinaryExpression psiExpression, ResolutionContext context) {
         var op = psiExpression.getOperationSign().getTokenType();
         var first = resolve(psiExpression.getLOperand(), context);
         var second = resolve(psiExpression.getROperand(), context);
         return resolveBinary(op, first, second);
     }
 
-    private Expression resolveBinary(IElementType op, Expression first, Expression second) {
+    private org.metavm.flow.Value resolveBinary(IElementType op, org.metavm.flow.Value first, org.metavm.flow.Value second) {
         NodeRT node;
         if(op.equals(JavaTokenType.PLUS))
             node = methodGenerator.createAdd(first, second);
@@ -456,10 +440,10 @@ public class ExpressionResolver {
             node = methodGenerator.createLe(first, second);
         else
             throw new IllegalStateException("Unrecognized operator " + op);
-        return new NodeExpression(node);
+        return Values.node(node);
     }
 
-    private Expression resolveMethodCall(PsiMethodCallExpression expression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveMethodCall(PsiMethodCallExpression expression, ResolutionContext context) {
         var methodCallResolver = getMethodCallResolver(expression);
         if (methodCallResolver != null)
             return methodCallResolver.resolve(expression, this, methodGenerator);
@@ -499,14 +483,14 @@ public class ExpressionResolver {
         );
     }
 
-    private MethodCallNode createInvokeFlowNode(Expression self, String flowCode, PsiExpressionList argumentList, ResolutionContext context) {
-        List<Expression> arguments = NncUtils.map(argumentList.getExpressions(), arg -> resolve(arg, context));
-        var exprType = Types.resolveKlass(methodGenerator.getExpressionType(self));
+    private MethodCallNode createInvokeFlowNode(org.metavm.flow.Value self, String flowCode, PsiExpressionList argumentList, ResolutionContext context) {
+        List<org.metavm.flow.Value> arguments = NncUtils.map(argumentList.getExpressions(), arg -> resolve(arg, context));
+        var exprType = Types.resolveKlass(methodGenerator.getExpressionType(self.getExpression()));
         typeResolver.ensureDeclared(exprType);
         return methodGenerator.createMethodCall(self, Objects.requireNonNull(exprType.findMethodByCode(flowCode)), arguments);
     }
 
-    private Expression invokeFlow(Expression self, String flowCode, PsiExpressionList argumentList, ResolutionContext context) {
+    private Expression invokeFlow(org.metavm.flow.Value self, String flowCode, PsiExpressionList argumentList, ResolutionContext context) {
         return createNodeExpression(createInvokeFlowNode(self, flowCode, argumentList, context));
     }
 
@@ -527,7 +511,7 @@ public class ExpressionResolver {
         }
     }
 
-    private Expression resolveFlowCall(PsiMethodCallExpression expression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveFlowCall(PsiMethodCallExpression expression, ResolutionContext context) {
         var ref = expression.getMethodExpression();
         var rawMethod = (PsiMethod) Objects.requireNonNull(ref.resolve());
         var klassName = requireNonNull(requireNonNull(rawMethod.getContainingClass()).getQualifiedName());
@@ -536,13 +520,13 @@ public class ExpressionResolver {
         }
         var isStatic = TranspileUtils.isStatic(rawMethod);
         PsiExpression psiSelf = (PsiExpression) ref.getQualifier();
-        Expression qualifier;
+        org.metavm.flow.Value qualifier;
         if(isStatic)
             qualifier = null;
         else {
             qualifier = getQualifier(psiSelf, context);
-            if(methodGenerator.getExpressionType(qualifier).isNullable())
-                qualifier = Expressions.node(methodGenerator.createNonNull("nonNull", qualifier));
+            if(methodGenerator.getExpressionType(qualifier.getExpression()).isNullable())
+                qualifier = Values.node(methodGenerator.createNonNull("nonNull", qualifier));
         }
         if (psiSelf != null) {
             if (isStatic) {
@@ -555,7 +539,7 @@ public class ExpressionResolver {
         var substitutor = expression.resolveMethodGenerics().getSubstitutor();
         var method = resolveMethod(expression);
         var psiArgs = expression.getArgumentList().getExpressions();
-        var args = new ArrayList<Expression>();
+        var args = new ArrayList<org.metavm.flow.Value>();
         for (var psiArg : psiArgs) {
             var arg = resolve(psiArg, context);
             var paramType = typeResolver.resolveDeclaration(substitutor.substitute(psiArg.getType()));
@@ -563,7 +547,7 @@ public class ExpressionResolver {
                 var klass = classType.resolve();
                 if (klass.isSAMInterface()
                         && arg.getType() instanceof FunctionType) {
-                    arg = new NodeExpression(createSAMConversion(klass, arg));
+                    arg = Values.node(createSAMConversion(klass, arg));
                 }
             }
             args.add(arg);
@@ -573,7 +557,7 @@ public class ExpressionResolver {
         if (method.getReturnType().isVoid()) {
             return null;
         } else {
-            return createNodeExpression(node);
+            return Values.node(node);
         }
     }
 
@@ -595,12 +579,12 @@ public class ExpressionResolver {
         node.setCapturedExpressionTypes(captureExpressionTypes);
     }
 
-    private NodeRT createSAMConversion(Klass samInterface, Expression function) {
+    private NodeRT createSAMConversion(Klass samInterface, org.metavm.flow.Value function) {
         var func = StdFunction.functionToInstance.get().getParameterized(List.of(samInterface.getType()));
         return methodGenerator.createFunctionCall(func, List.of(function));
     }
 
-    private Expression getQualifier(@Nullable PsiExpression qualifierExpression, ResolutionContext context) {
+    private org.metavm.flow.Value getQualifier(@Nullable PsiExpression qualifierExpression, ResolutionContext context) {
         return qualifierExpression == null ? variableTable.get("this")
                 : resolve(requireNonNull(qualifierExpression), context);
     }
@@ -631,7 +615,7 @@ public class ExpressionResolver {
         return flow;
     }
 
-    private Expression resolveNew(PsiNewExpression expression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveNew(PsiNewExpression expression, ResolutionContext context) {
         if (expression.isArrayCreation()) {
             return resolveNewArray(expression, context);
         } else {
@@ -639,7 +623,7 @@ public class ExpressionResolver {
         }
     }
 
-    private Expression resolveNewArray(PsiNewExpression expression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveNewArray(PsiNewExpression expression, ResolutionContext context) {
         var type = (ArrayType) typeResolver.resolveDeclaration(expression.getType());
         NewArrayNode node;
         if (expression.getArrayInitializer() == null) {
@@ -650,7 +634,7 @@ public class ExpressionResolver {
         } else {
             node = methodGenerator.createNewArray(
                     type,
-                    new ArrayExpression(
+                    Values.array(
                             NncUtils.map(
                                     expression.getArrayInitializer().getInitializers(),
                                     e -> resolve(e, context)
@@ -659,14 +643,14 @@ public class ExpressionResolver {
                     )
             );
         }
-        return new NodeExpression(node);
+        return Values.node(node);
     }
 
-    private Expression resolveArrayInitialization(PsiArrayInitializerExpression arrayInitializerExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveArrayInitialization(PsiArrayInitializerExpression arrayInitializerExpression, ResolutionContext context) {
         var type = (ArrayType) typeResolver.resolveTypeOnly(arrayInitializerExpression.getType());
-        return Expressions.node(methodGenerator.createNewArray(
+        return Values.node(methodGenerator.createNewArray(
                 type,
-                new ArrayExpression(
+                Values.array(
                         NncUtils.map(
                                 arrayInitializerExpression.getInitializers(),
                                 e -> resolve(e, context)
@@ -676,13 +660,13 @@ public class ExpressionResolver {
         ));
     }
 
-    private Expression resolveNewPojo(PsiNewExpression expression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveNewPojo(PsiNewExpression expression, ResolutionContext context) {
         var resolver = getNewResolver(expression);
         if (resolver != null)
             return resolver.resolve(expression, this, methodGenerator);
         if (expression.getType() instanceof PsiClassType psiClassType) {
             var klass = Types.resolveKlass(typeResolver.resolve(psiClassType));
-            List<Expression> args = NncUtils.map(
+            List<org.metavm.flow.Value> args = NncUtils.map(
                     requireNonNull(expression.getArgumentList()).getExpressions(),
                     expr -> resolve(expr, context)
             );
@@ -712,12 +696,12 @@ public class ExpressionResolver {
         );
     }
 
-    private List<Expression> resolveExpressionList(PsiExpressionList expressionList, ResolutionContext context) {
+    private List<org.metavm.flow.Value> resolveExpressionList(PsiExpressionList expressionList, ResolutionContext context) {
         return NncUtils.map(expressionList.getExpressions(), expression -> resolve(expression, context));
     }
 
-    public Expression newInstance(Klass declaringType, List<Expression> arguments,
-                                  List<PsiType> prefixTypes, PsiConstructorCall constructorCall, ResolutionContext context) {
+    public org.metavm.flow.Value newInstance(Klass declaringType, List<org.metavm.flow.Value> arguments,
+                                             List<PsiType> prefixTypes, PsiConstructorCall constructorCall, ResolutionContext context) {
         var methodGenerics = constructorCall.resolveMethodGenerics();
         NewObjectNode node;
         if (methodGenerics.getElement() == null) {
@@ -740,7 +724,7 @@ public class ExpressionResolver {
             node = methodGenerator.createNew(flow, arguments, false, false);
         }
         setCapturedExpressions(node, context);
-        return new NodeExpression(node);
+        return Values.node(node);
     }
 
     private Type resolveParameterType(PsiParameter param, PsiSubstitutor substitutor) {
@@ -751,43 +735,44 @@ public class ExpressionResolver {
         return new NodeExpression(node);
     }
 
-    private Expression resolveAssignment(PsiAssignmentExpression expression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveAssignment(PsiAssignmentExpression expression, ResolutionContext context) {
         var op = expression.getOperationSign().getTokenType();
         var resolvedRight = resolve(requireNonNull(expression.getRExpression()), context);
-        Expression assignment;
+        org.metavm.flow.Value assignment;
         if (op == JavaTokenType.EQ) {
             assignment = resolvedRight;
         } else {
+            NodeRT node;
             var resolvedLeft = resolve(expression.getLExpression(), context);
             if (op == JavaTokenType.PLUSEQ) {
-                assignment = new BinaryExpression(BinaryOperator.ADD, resolvedLeft, resolvedRight);
+                node = methodGenerator.createAdd(resolvedLeft, resolvedRight);
             } else if (op == JavaTokenType.MINUSEQ) {
-                assignment = new BinaryExpression(BinaryOperator.MINUS, resolvedLeft, resolvedRight);
+                node = methodGenerator.createSub(resolvedLeft, resolvedRight);
             } else if (op == JavaTokenType.ASTERISKEQ) {
-                assignment = new BinaryExpression(BinaryOperator.MULTIPLY, resolvedLeft, resolvedRight);
+                node = methodGenerator.createMul(resolvedLeft, resolvedRight);
             } else if (op == JavaTokenType.DIVEQ) {
-                assignment = new BinaryExpression(BinaryOperator.DIVIDE, resolvedLeft, resolvedRight);
+                node = methodGenerator.createDiv(resolvedLeft, resolvedRight);
             } else if(op == JavaTokenType.OREQ) {
-                assignment = new BinaryExpression(BinaryOperator.BITWISE_OR, resolvedLeft, resolvedRight);
+                node = methodGenerator.createBitwiseOr(resolvedLeft, resolvedRight);
             } else if(op == JavaTokenType.ANDEQ) {
-                assignment = new BinaryExpression(BinaryOperator.BITWISE_AND, resolvedLeft, resolvedRight);
+                node = methodGenerator.createBitwiseAnd(resolvedLeft, resolvedRight);
             } else if(op == JavaTokenType.GTGTGTEQ)
-                assignment = new BinaryExpression(BinaryOperator.UNSIGNED_RIGHT_SHIFT, resolvedLeft, resolvedRight);
+                node = methodGenerator.createUnsignedRightShift(resolvedLeft, resolvedRight);
             else if(op == JavaTokenType.GTGTEQ)
-                assignment = new BinaryExpression(BinaryOperator.RIGHT_SHIFT, resolvedLeft, resolvedRight);
+                node = methodGenerator.createRightShift(resolvedLeft, resolvedRight);
             else if(op == JavaTokenType.LTLTEQ)
-                assignment = new BinaryExpression(BinaryOperator.LEFT_SHIFT, resolvedLeft, resolvedRight);
+                node = methodGenerator.createLeftShift(resolvedLeft, resolvedRight);
             else {
                 throw new InternalException("Unsupported assignment operator " + op);
             }
+            assignment = Values.node(node);
         }
-        assignment = Expressions.node(methodGenerator.createValue("assignment", assignment));
         return processAssignment(
                 expression.getLExpression(), assignment, context
         );
     }
 
-    private Expression processAssignment(PsiExpression assigned, Expression assignment, ResolutionContext context) {
+    private org.metavm.flow.Value processAssignment(PsiExpression assigned, org.metavm.flow.Value assignment, ResolutionContext context) {
         if(assigned instanceof PsiReferenceExpression refExpr) {
             var target = refExpr.resolve();
             if (target instanceof PsiVariable variable) {
@@ -797,25 +782,22 @@ public class ExpressionResolver {
                         var field = klass.getStaticFieldByName(psiField.getName());
                         methodGenerator.createUpdateStatic(klass, Map.of(field, assignment));
                     } else {
-                        Expression self;
+                        org.metavm.flow.Value self;
                         if (refExpr.getQualifierExpression() != null) {
                             self = resolve(refExpr.getQualifierExpression(), context);
-                            if(methodGenerator.getExpressionType(self).isNullable())
-                                self = Expressions.node(methodGenerator.createNonNull("nonNull", self));
+                            if(methodGenerator.getExpressionType(self.getExpression()).isNullable())
+                                self = Values.node(methodGenerator.createNonNull("nonNull", self));
                         } else {
                             self = variableTable.get("this");
                         }
-                        Klass instanceType = Types.resolveKlass(methodGenerator.getExpressionType(self));
+                        Klass instanceType = Types.resolveKlass(methodGenerator.getExpressionType(self.getExpression()));
                         typeResolver.ensureDeclared(instanceType);
                         Field field = instanceType.getFieldByCode(psiField.getName());
                         UpdateObjectNode node = methodGenerator.createUpdateObject(self);
-                        node.setUpdateField(field, UpdateOp.SET, Values.expression(assignment));
+                        node.setUpdateField(field, UpdateOp.SET, assignment);
                     }
                 } else {
-                    variableTable.set(
-                            variable.getName(),
-                            new NodeExpression(methodGenerator.createValue(variable.getName(), assignment))
-                    );
+                    variableTable.set(variable.getName(), assignment);
                 }
             } else {
                 throw new InternalException("Invalid assignment target " + target);
@@ -825,10 +807,10 @@ public class ExpressionResolver {
         else if(assigned instanceof PsiArrayAccessExpression arrayAccess) {
             var array = resolve(arrayAccess.getArrayExpression(), context);
             if(array.getType().isNullable())
-                array = Expressions.node(methodGenerator.createNonNull("nonNull", array));
+                array = Values.node(methodGenerator.createNonNull("nonNull", array));
             var index = resolve(arrayAccess.getIndexExpression(), context);
             if(index.getType().isNullable())
-                index = Expressions.node(methodGenerator.createNonNull("nonNull", index));
+                index = Values.node(methodGenerator.createNonNull("nonNull", index));
             methodGenerator.createSetElement(array, index, assignment);
             return assignment;
         }
@@ -836,12 +818,12 @@ public class ExpressionResolver {
             throw new IllegalStateException("Unsupported assignment target: " + assigned);
     }
 
-    void processChildAssignment(Expression self, @Nullable Field field, Expression assignment) {
+    void processChildAssignment(org.metavm.flow.Value self, @Nullable Field field, Expression assignment) {
         NncUtils.requireTrue(field == null || field.isChild());
         NncUtils.requireTrue(assignment instanceof NodeExpression);
         var node = ((NodeExpression) assignment).getNode();
         if (node instanceof NewNode newNode) {
-            newNode.setParentRef(new ParentRef(Values.expression(self), NncUtils.get(field, Field::getRef)));
+            newNode.setParentRef(new ParentRef(self, NncUtils.get(field, Field::getRef)));
         } else {
             throw new InternalException(
                     String.format("Only new objects are allowed to be assigned to a child. field: %s",
@@ -985,7 +967,7 @@ public class ExpressionResolver {
         return join2;
     }
 
-    public Expression resolveBoolExpr(PsiExpression expression, ResolutionContext context) {
+    public org.metavm.flow.Value resolveBoolExpr(PsiExpression expression, ResolutionContext context) {
         var joinNode = constructIf(expression, false, () -> {}, () -> {}, context);
         var thenExit = joinNode.getSources().get(0);
         var elseExit = Objects.requireNonNull(joinNode.getPredecessor());
@@ -993,13 +975,13 @@ public class ExpressionResolver {
                 .newBuilder("value", "value", joinNode.getKlass(), Types.getBooleanType())
                 .build();
         new JoinNodeField(valueField, joinNode, Map.of(
-                thenExit, Values.expression(Expressions.trueExpression()),
-                elseExit, Values.expression(Expressions.falseExpression())
+                thenExit, Values.constantTrue(),
+                elseExit, Values.constantFalse()
         ));
-        return Expressions.node(methodGenerator.createNodeProperty(joinNode, valueField));
+        return Values.node(methodGenerator.createNodeProperty(joinNode, valueField));
     }
 
-    public Expression resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
+    public org.metavm.flow.Value resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
         var returnType = typeResolver.resolveNullable(TranspileUtils.getLambdaReturnType(expression), ResolutionStage.DECLARATION);
         var parameters = resolveParameterList(expression.getParameterList());
         var funcInterface = Types.resolveKlass(typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType()));
@@ -1010,7 +992,7 @@ public class ExpressionResolver {
                     .build();
             methodGenerator.defineVariable(parameter.getCode());
             methodGenerator.setVariable(parameter.getCode(),
-                    new PropertyExpression(new NodeExpression(inputNode), field.getRef()));
+                    Values.node(methodGenerator.createNodeProperty(inputNode, field)));
         }
         if (expression.getBody() instanceof PsiExpression bodyExpr) {
             methodGenerator.createReturn(resolve(bodyExpr, context));
@@ -1023,17 +1005,18 @@ public class ExpressionResolver {
             }
         }
         methodGenerator.createLambdaExit();
-        return new NodeExpression(lambdaEnter);
+        return Values.node(lambdaEnter);
     }
 
-    private Expression resolveSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
+    private org.metavm.flow.Value resolveSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
         var switchExpr = resolve(psiSwitchExpression.getExpression(), context);
         var entry = methodGenerator.createNoop();
         methodGenerator.enterCondSection(entry);
         var body = requireNonNull(psiSwitchExpression.getBody());
         var statements = requireNonNull(body.getStatements());
         var branchIdx = 0L;
-        JumpNode lastIfNode = null;
+        List<IfNotNode> lastIfNodes = List.of();
+        GotoNode lastGoto = null;
         var exits = new HashMap<Long, NodeRT>();
         for (PsiStatement statement : statements) {
             if (statement instanceof PsiSwitchLabeledRuleStatement labeledRuleStatement) {
@@ -1041,25 +1024,23 @@ public class ExpressionResolver {
                     continue;
                 methodGenerator.enterBranch(entry, branchIdx);
                 var caseElementList = requireNonNull(labeledRuleStatement.getCaseLabelElementList());
-                Expression cond = null;
+                var ifNodes = new ArrayList<IfNotNode>();
                 for (PsiCaseLabelElement element : caseElementList.getElements()) {
-                    var newCond = Expressions.node(
-                            methodGenerator.createEq(switchExpr, resolve((PsiExpression) element, context))
-                    );
-                    if (cond == null)
-                        cond = newCond;
-                    else
-                        cond = Expressions.node(methodGenerator.createOr(cond, newCond));
+                    ifNodes.add(resolveSwitchCaseLabel(switchExpr, element, context));
                 }
-                var ifNode = methodGenerator.createIfNot(cond, null);
-                if(lastIfNode != null)
-                    lastIfNode.setTarget(ifNode);
-                lastIfNode = ifNode;
+                if(lastGoto != null) {
+                    for (IfNotNode lastIfNode : lastIfNodes) {
+                        lastIfNode.setTarget(lastGoto.getSuccessor());
+                    }
+                }
+                lastIfNodes = ifNodes;
                 var caseBody = requireNonNull(labeledRuleStatement.getBody());
                 processSwitchCaseBody(caseBody, context);
                 var lastNode = Objects.requireNonNull(methodGenerator.scope().getLastNode());
-                if(!lastNode.isExit())
-                    exits.put(branchIdx, methodGenerator.createGoto(null));
+                if(lastNode.isExit())
+                    lastGoto = null;
+                else
+                    exits.put(branchIdx, lastGoto = methodGenerator.createGoto(null));
                 branchIdx++;
             }
         }
@@ -1067,8 +1048,7 @@ public class ExpressionResolver {
                 stmt -> stmt instanceof PsiSwitchLabeledRuleStatement ruleStmt && ruleStmt.isDefaultCase());
         methodGenerator.enterBranch(entry, branchIdx);
         var defaultCase = methodGenerator.createNoop();
-        if(lastIfNode != null)
-            lastIfNode.setTarget(defaultCase);
+        lastIfNodes.forEach(n -> n.setTarget(defaultCase));
         processSwitchCaseBody(defaultStmt.getBody(), context);
         exits.put(branchIdx, Objects.requireNonNull(methodGenerator.scope().getLastNode()));
         var joinNode = methodGenerator.createJoin();
@@ -1077,8 +1057,28 @@ public class ExpressionResolver {
                 g.setTarget(joinNode);
         }
         methodGenerator.exitCondSection(entry, joinNode, exits, true);
-        return Expressions.node(methodGenerator.createNodeProperty(joinNode,
+        return Values.node(methodGenerator.createNodeProperty(joinNode,
                 joinNode.getKlass().getFieldByCode("yield")));
+    }
+
+    private IfNotNode resolveSwitchCaseLabel(org.metavm.flow.Value switchExpr, PsiElement label, ResolutionContext context) {
+        if(label instanceof PsiExpression expression) {
+            return methodGenerator.createIfNot(Values.node(
+                    methodGenerator.createEq(switchExpr, resolve(expression, context))
+            ), null);
+        }
+        if(label instanceof PsiTypeTestPattern typeTestPattern) {
+            var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
+            methodGenerator.setVariable(
+                    requireNonNull(typeTestPattern.getPatternVariable()).getName(),
+                    switchExpr
+            );
+            return methodGenerator.createIfNot(
+                    Values.node(methodGenerator.createInstanceOf(switchExpr, typeResolver.resolveDeclaration(checkType))),
+                    null
+            );
+        }
+        throw new IllegalArgumentException("Invalid switch case: " + label);
     }
 
     private void processSwitchCaseBody(PsiElement caseBody, ResolutionContext context) {
@@ -1101,35 +1101,34 @@ public class ExpressionResolver {
     }
 
     private org.metavm.flow.Value trueValue() {
-        return Values.constant(Expressions.trueExpression());
+        return Values.constantTrue();
     }
 
     private org.metavm.flow.Value falseValue() {
-        return Values.constant(Expressions.falseExpression());
+        return Values.constantFalse();
     }
 
     public static class ResolutionContext {
-        private final Map<QualifiedName, Expression> tempVariableMap = new HashMap<>();
+        private final Map<QualifiedName, org.metavm.flow.Value> tempVariableMap = new HashMap<>();
         private final List<VariableOperation> variableOperations = new ArrayList<>();
         private final List<FieldOperation> fieldOperations = new ArrayList<>();
         private Expression result;
 
-        public Expression get(QualifiedName qn) {
+        public org.metavm.flow.Value get(QualifiedName qn) {
             return tempVariableMap.get(qn);
         }
 
-        public void set(QualifiedName qn, Expression expression) {
+        public void set(QualifiedName qn, org.metavm.flow.Value expression) {
             tempVariableMap.put(qn, expression);
         }
 
         public void finish(VariableTable variableTable, MethodGenerator flowBuilder) {
-            for (VariableOperation(String variableName, Expression value) : variableOperations) {
-                var node = flowBuilder.createValue(variableName, value);
-                variableTable.set(variableName, new NodeExpression(node));
+            for (VariableOperation(String variableName, org.metavm.flow.Value value) : variableOperations) {
+                variableTable.set(variableName, value);
             }
-            for (FieldOperation(Expression instance, Field field, Expression value) : fieldOperations) {
+            for (FieldOperation(org.metavm.flow.Value instance, Field field, org.metavm.flow.Value value) : fieldOperations) {
                 var node = flowBuilder.createUpdateObject(instance);
-                node.setUpdateField(field, UpdateOp.SET, Values.expression(value));
+                node.setUpdateField(field, UpdateOp.SET, value);
             }
         }
 
@@ -1155,15 +1154,15 @@ public class ExpressionResolver {
 
     private record VariableOperation(
             String variableName,
-            Expression value
+            org.metavm.flow.Value value
     ) {
 
     }
 
     private record FieldOperation(
-            Expression instance,
+            org.metavm.flow.Value instance,
             Field field,
-            Expression value
+            org.metavm.flow.Value value
     ) {
 
     }
