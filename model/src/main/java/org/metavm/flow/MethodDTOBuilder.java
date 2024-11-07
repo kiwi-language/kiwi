@@ -174,7 +174,9 @@ public class MethodDTOBuilder {
                 synthetic,
                 skipRootScope ? null : new ScopeDTO(
                         rootScopeId,
-                        nodes
+                        nodes,
+                        0,
+                        0
                 ),
                 returnType,
                 parameters,
@@ -185,6 +187,7 @@ public class MethodDTOBuilder {
                 capturedTypeIds,
                 capturedCompositeTypeIds,
                 capturedFlowIds,
+                List.of(),
                 false,
                 Map.of(),
                 state,

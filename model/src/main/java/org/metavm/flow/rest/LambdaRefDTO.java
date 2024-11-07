@@ -1,6 +1,6 @@
 package org.metavm.flow.rest;
 
-public record LambdaNodeRefDTO(
+public record LambdaRefDTO(
         String lambdaNodeId
 ) implements CallableRefDTO {
     @Override

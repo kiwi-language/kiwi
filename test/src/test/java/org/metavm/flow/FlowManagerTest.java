@@ -59,7 +59,7 @@ public class FlowManagerTest extends TestCase {
                     .returnType(Types.getBooleanType())
                     .isStatic(true)
                     .build();
-            var scope = method.getRootScope();
+            var scope = method.getScope();
             var input = Nodes.input(method);
             var inputValueField = input.getKlass().getFieldByCode("value");
             var if_ = Nodes.if_("if",
@@ -76,6 +76,7 @@ public class FlowManagerTest extends TestCase {
             Nodes.ret("ret", scope, Values.node(Nodes.nodeProperty(join, f, scope)));
             context.bind(klass);
             klass.accept(new FlowAnalyzer());
+            klass.accept(new MaxesComputer());
             var r = Flows.execute(method, null, List.of(Instances.trueInstance()), context).ret();
             Assert.assertNotNull(r);
             Assert.assertEquals(Instances.trueInstance(), r);

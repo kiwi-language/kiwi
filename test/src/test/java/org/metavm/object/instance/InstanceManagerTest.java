@@ -465,7 +465,7 @@ public class InstanceManagerTest extends TestCase {
                         "call",
                         null,
                         null,
-                        method.getRootScope(),
+                        method.getScope(),
                         null,
                         new MethodRef(
                                 classType,

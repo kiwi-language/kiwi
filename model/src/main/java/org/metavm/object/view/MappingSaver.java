@@ -266,7 +266,7 @@ public class MappingSaver {
         }
         if (generateCode) {
             fromView.clearContent();
-            var scope = fromView.getRootScope();
+            var scope = fromView.getScope();
             var inputNode = Nodes.input(fromView);
             var view = Nodes.nodeProperty(inputNode, inputNode.getType().resolve().getFieldByCode("view"), scope);
             var fieldValues = new HashMap<String, Supplier<Value>>();
@@ -286,7 +286,7 @@ public class MappingSaver {
 
             var newNode = Nodes.newObject(
                     scope.nextNodeName("newObject"),
-                    fromView.getRootScope(),
+                    fromView.getScope(),
                     canonicalConstructor,
                     NncUtils.biMap(
                             viewType.resolve().getAllFields(),
@@ -302,6 +302,7 @@ public class MappingSaver {
                     false
             );
             Nodes.ret(scope.nextNodeName("return"), scope, Values.node(newNode));
+            fromView.computeMaxes();
         }
     }
 

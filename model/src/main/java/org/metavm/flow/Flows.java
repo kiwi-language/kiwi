@@ -8,7 +8,6 @@ import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.expression.Expression;
 import org.metavm.expression.ExpressionTypeMap;
-import org.metavm.expression.StaticPropertyExpression;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.FunctionValue;
 import org.metavm.object.instance.core.Value;
@@ -132,7 +131,7 @@ public class Flows {
         assert klass.isEnum();
         var valuesMethod = klass.getMethod(Flows::isValuesMethod);
         valuesMethod.clearContent();
-        var scope = valuesMethod.getRootScope();
+        var scope = valuesMethod.getScope();
         var values = Nodes.newArray("values", null, new ArrayType(klass.getType(), ArrayKind.READ_WRITE),
                 null, null, scope);
         for (var ecd : klass.getEnumConstantDefs()) {

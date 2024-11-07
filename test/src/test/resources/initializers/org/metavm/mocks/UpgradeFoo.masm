@@ -11,19 +11,17 @@ class UpgradeFooInitializer {
     }
 
     public static UpgradeBar __bar__(UpgradeFoo foo) {
-        bar: allocate UpgradeBar { name: concat(foo.name, "-bar") };
-        return bar;
+        return allocate UpgradeBar { name: concat(foo.name, "-bar") };
     }
 
     public static UpgradeFoo[rw] __array__(UpgradeFoo foo) {
-        array: new UpgradeFoo[rw];
-        return array;
+        return new UpgradeFoo[rw];
     }
 
     public static void __run__(UpgradeFoo foo) {
-        value: selectFirst(UpgradeValue.IDX_FOO, foo);
+        var value = selectFirst(UpgradeValue.IDX_FOO, foo);
         if (value == null) {
-            newValue: allocate UpgradeValue {foo: foo};
+            var newValue = allocate UpgradeValue {foo: foo};
             newValue.value = foo.value;
         }
     }

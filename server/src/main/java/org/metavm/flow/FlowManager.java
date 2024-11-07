@@ -6,7 +6,6 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.NodeExpression;
 import org.metavm.flow.rest.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
@@ -248,20 +247,17 @@ public class FlowManager extends EntityContextFactoryAware {
     public void initNodes(Flow flow, IEntityContext context) {
         if (flow instanceof Method method && method.isInstanceMethod())
             createSelfNode(method, context);
-        NodeRT inputNode = createInputNode(flow, flow.getRootScope().getLastNode());
+        NodeRT inputNode = createInputNode(flow, flow.getScope().getLastNode());
         createReturnNode(flow, inputNode);
     }
 
-    private void saveNodes(FlowDTO flowDTO, Flow flow, IEntityContext context) {
-        if (flowDTO.rootScope() == null) {
-            return;
+    private void saveNodes(ScopeDTO scopeDTO, ScopeRT scope, IEntityContext context) {
+        scope.clearNodes();
+        for (NodeDTO nodeDTO : scopeDTO.nodes()) {
+            saveNode(nodeDTO, scope, NodeSavingStage.INIT, context);
         }
-        flow.clearNodes();
-        for (NodeDTO nodeDTO : flowDTO.rootScope().nodes()) {
-            saveNode(nodeDTO, flow.getRootScope(), NodeSavingStage.INIT, context);
-        }
-        for (NodeDTO nodeDTO : flowDTO.rootScope().nodes()) {
-            saveNode(nodeDTO, flow.getRootScope(), NodeSavingStage.FINALIZE, context);
+        for (NodeDTO nodeDTO : scopeDTO.nodes()) {
+            saveNode(nodeDTO, scope, NodeSavingStage.FINALIZE, context);
         }
     }
 
@@ -297,8 +293,11 @@ public class FlowManager extends EntityContextFactoryAware {
             if (flow.getNodes().isEmpty() && flowDTO.rootScope() == null) {
                 if (context.isNewEntity(flow))
                     initNodes(flow, context);
-            } else
-                saveNodes(flowDTO, flow, context);
+            } else if(flowDTO.rootScope() != null)
+                saveNodes(flowDTO.rootScope(), flow.getScope(), context);
+            for (LambdaDTO lambdaDTO : flowDTO.lambdas()) {
+                saveLambdaContent(lambdaDTO, context);
+            }
             afterFlowChange(flow, context);
 //            Flows.retransformFlowIfRequired(flow, context);
 //        if (flowDTO.horizontalInstances() != null) {
@@ -309,6 +308,11 @@ public class FlowManager extends EntityContextFactoryAware {
         }
     }
 
+    private void saveLambdaContent(LambdaDTO lambdaDTO, IEntityContext context) {
+        var lambda = context.getEntity(Lambda.class, lambdaDTO.id());
+        saveNodes(lambdaDTO.scope(), lambda.getScope(), context);
+    }
+
     private SelfNode createSelfNode(Method flow, IEntityContext context) {
         NodeDTO selfNodeDTO = NodeDTO.newNode(
                 null,
@@ -317,7 +321,7 @@ public class FlowManager extends EntityContextFactoryAware {
                 null
         );
         return new SelfNode(selfNodeDTO.tmpId(), selfNodeDTO.name(), null,
-                flow.getDeclaringType().getType(), null, flow.getRootScope());
+                flow.getDeclaringType().getType(), null, flow.getScope());
     }
 
     private NodeRT createInputNode(Flow flow, NodeRT prev) {
@@ -326,7 +330,7 @@ public class FlowManager extends EntityContextFactoryAware {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), type, parameter.getType())
                     .build();
         }
-        return new InputNode(null, "input", null, type, prev, flow.getRootScope());
+        return new InputNode(null, "input", null, type, prev, flow.getScope());
     }
 
     private void createReturnNode(Flow flow, NodeRT prev) {
@@ -336,7 +340,7 @@ public class FlowManager extends EntityContextFactoryAware {
             value = Values.node(flow.getRootNode());
         } else
             value = null;
-        new ReturnNode(null, "return", null, prev, flow.getRootScope(), value);
+        new ReturnNode(null, "return", null, prev, flow.getScope(), value);
     }
 
     @Transactional
@@ -380,9 +384,10 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     private void afterFlowChange(Flow flow, IEntityContext context) {
-        try (var ignored1 = context.getProfiler().enter("Flow.check")) {
+        try (var ignored1 = context.getProfiler().enter("afterFlowChange")) {
             flow.analyze();
             flow.check();
+            flow.computeMaxes();
         }
     }
 

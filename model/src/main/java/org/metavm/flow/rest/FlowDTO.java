@@ -24,6 +24,7 @@ public record FlowDTO(
         List<String> capturedTypeIds,
         List<String> capturedCompositeTypeIds,
         List<String> capturedFlowIds,
+        List<LambdaDTO> lambdas,
         boolean isTemplate,
         Map<String, String> attributes,
         int state,

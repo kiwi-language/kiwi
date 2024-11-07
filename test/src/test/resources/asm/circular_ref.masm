@@ -6,8 +6,7 @@ class Foo {
     private child Bar bar;
 
     public Foo() {
-        bar: new Bar(this);
-        this.bar = bar;
+        this.bar = new Bar(this);
     }
 
     public Bar getBar() {
@@ -18,8 +17,7 @@ class Foo {
     }
 
     private void readObject(ObjectInputStream s) {
-         bar: new Bar(this);
-         this.bar = bar;
+         this.bar = new Bar(this);
     }
 
 }

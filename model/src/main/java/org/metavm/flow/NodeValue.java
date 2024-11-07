@@ -29,7 +29,10 @@ public class NodeValue extends Value {
 
     @Override
     public org.metavm.object.instance.core.@NotNull Value evaluate(EvaluationContext context) {
-        return ((MetaFrame) context).getOutput(node);
+        var v =  ((MetaFrame) context).getOutput(node);
+        if(v == null)
+            throw new NullPointerException("Cannot find output for node " + node.getName());
+        return v;
     }
 
     @Override

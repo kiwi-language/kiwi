@@ -2,8 +2,7 @@
 public class Utils {
 
     public static any[c] createArray() {
-        array: new any[c];
-        return array;
+        return new any[c];
     }
 
 }

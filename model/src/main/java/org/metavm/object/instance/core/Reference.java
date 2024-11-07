@@ -148,7 +148,7 @@ public class Reference extends Value {
 
     @Override
     public <R> R accept(ValueVisitor<R> visitor) {
-        return visitor.visitInstanceReference(this);
+        return visitor.visitReference(this);
     }
 
     @Override
@@ -162,7 +162,7 @@ public class Reference extends Value {
 
     @Override
     protected void writeTree(TreeWriter treeWriter) {
-        treeWriter.writeLine(resolve().toString());
+        treeWriter.write(resolve().toString());
     }
 
     @Override

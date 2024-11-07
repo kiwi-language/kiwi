@@ -11,7 +11,6 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
-import org.metavm.object.type.Types;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -79,7 +78,8 @@ public class Function extends Flow implements GlobalKey {
         }
         else
             return new MetaFrame(this.getRootNode(), null, null,
-                    arguments, callContext.instanceRepository()
+                    arguments, callContext.instanceRepository(), null, getScope().getMaxLocals(),
+                    getScope().getMaxStack()
             ).execute();
     }
 

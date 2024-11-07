@@ -1,32 +1,30 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.entity.natives.CallContext;
-import org.metavm.flow.FlowExecResult;
-import org.metavm.flow.Flows;
-import org.metavm.flow.LambdaEnterNode;
-import org.metavm.flow.MetaFrame;
-import org.metavm.object.instance.LambdaFrame;
+import org.metavm.flow.*;
 import org.metavm.util.InstanceOutput;
 
 import java.util.List;
 import java.util.Objects;
 
-public class Lambda extends FunctionValue {
+public class LambdaValue extends FunctionValue {
 
-    private final LambdaEnterNode lambdaEnterNode;
+    private final Lambda lambda;
     private final MetaFrame containingFrame;
 
-    public Lambda(LambdaEnterNode lambdaEnterNode, MetaFrame containingFrame) {
-        super(lambdaEnterNode.getFunctionType());
-        this.lambdaEnterNode = lambdaEnterNode;
+    public LambdaValue(Lambda lambda, MetaFrame containingFrame) {
+        super(lambda.getFunctionType());
+        this.lambda = lambda;
         this.containingFrame = containingFrame;
     }
 
     private MetaFrame createFrame(List<? extends Value> arguments, InstanceRepository instanceRepository) {
-        return new LambdaFrame(
-                Objects.requireNonNull(lambdaEnterNode.getSuccessor()),
-                Flows.getDeclaringType(lambdaEnterNode.getFlow()),
-                arguments, instanceRepository, containingFrame
+        return new MetaFrame(
+                Objects.requireNonNull(lambda.getScope().tryGetFirstNode()),
+                Flows.getDeclaringType(lambda.getScope().getFlow()),
+                null,
+                arguments, instanceRepository, containingFrame,
+                lambda.getScope().getMaxLocals(), lambda.getScope().getMaxStack()
         );
     }
 
@@ -42,7 +40,7 @@ public class Lambda extends FunctionValue {
 
     @Override
     public <R> R accept(ValueVisitor<R> visitor) {
-        return visitor.visitLambdaInstance(this);
+        return visitor.visitLambdaValue(this);
     }
 
     @Override

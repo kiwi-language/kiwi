@@ -79,18 +79,17 @@ public class NodeDTOFactory {
         );
     }
 
-    public static NodeDTO createLambda(Long tmpId, String name, List<ParameterDTO> parameters, String returnTypeId, List<NodeDTO> nodes) {
+    public static NodeDTO createLambda(Long tmpId, String name, String lambdaId, List<NodeDTO> nodes) {
         return new NodeDTO(
                 getStringTmpId(tmpId),
                 null,
                 name,
                 null,
-                NodeKind.LAMBDA_ENTER.code(),
+                NodeKind.LAMBDA.code(),
                 null,
                 null,
-                new LambdaEnterNodeParam(
-                        parameters,
-                        returnTypeId,
+                new LambdaNodeParam(
+                        lambdaId,
                         null
                 ),
                 null,

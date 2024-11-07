@@ -312,15 +312,15 @@ public class Types {
                 .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
                 .returnType(sam.getReturnType())
                 .build();
-        var scope = flow.getRootScope();
-        var selfNode = new SelfNode(null, "self", null, flow.getDeclaringType().getType(), null, flow.getRootScope());
+        var scope = flow.getScope();
+        var selfNode = new SelfNode(null, "self", null, flow.getDeclaringType().getType(), null, flow.getScope());
         var inputType = KlassBuilder.newBuilder("Input", "Input").temporary().build();
         for (Parameter parameter : flow.getParameters()) {
             FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
                     .build();
         }
 
-        var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getRootScope());
+        var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getScope());
         var funcNode = Nodes.function("function", scope,
                 Values.node(Nodes.nodeProperty(selfNode, funcField, scope)),
                 NncUtils.map(inputType.getReadyFields(),
@@ -328,7 +328,8 @@ public class Types {
                 )
         );
         var returnValue = flow.getReturnType().isVoid() ? null : Values.node(funcNode);
-        new ReturnNode(null, "return", null, funcNode, flow.getRootScope(), returnValue);
+        new ReturnNode(null, "return", null, funcNode, flow.getScope(), returnValue);
+        klass.accept(new MaxesComputer());
         return klass.getParameterized(NncUtils.map(typeVars, TypeVariable::getType)).getType();
     }
 
@@ -363,7 +364,7 @@ public class Types {
                 .type(sam.getType())
                 .staticType(methodStaticType)
                 .build();
-        var scope = method.getRootScope();
+        var scope = method.getScope();
         var input = Nodes.input(method);
         var args = new ArrayList<Value>();
         var paramTypeIt = function.getType().getParameterTypes().iterator();
@@ -388,6 +389,7 @@ public class Types {
             Nodes.ret("ret", scope, null);
         else
             Nodes.ret("ret", scope, Values.node(func));
+        klass.accept(new MaxesComputer());
         return klass;
     }
 

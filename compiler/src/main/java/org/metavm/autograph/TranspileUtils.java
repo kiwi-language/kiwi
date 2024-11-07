@@ -1441,4 +1441,45 @@ public class TranspileUtils {
                 && "this".equals(callExpr.getMethodExpression().getReferenceName());
     }
 
+    public static int getVariableIndex(PsiVariable variable) {
+        return Objects.requireNonNull(variable.getUserData(Keys.VARIABLE_INDEX));
+    }
+
+    public static int getMaxLocals(PsiElement element) {
+        if(element.getUserData(Keys.MAX_LOCALS) == null)
+            printContexts(element);
+        return Objects.requireNonNull(element.getUserData(Keys.MAX_LOCALS));
+    }
+
+    /**
+     *
+     * @return the index of the context where the variable is defined, or -1 if it's the variable is not captured
+     */
+    public static int getContextIndex(PsiVariable variable, PsiLambdaExpression lambdaExpression) {
+        var context = requireNonNull(getParent(variable, Set.of(PsiMethod.class, PsiClassInitializer.class, PsiLambdaExpression.class)));
+        int idx = -1;
+        PsiElement e = lambdaExpression;
+        while (e != null && e != context) {
+            if(e instanceof PsiLambdaExpression)
+                idx++;
+            e = e.getParent();
+        }
+        if(e == null)
+            throw new IllegalStateException("Variable " + variable.getName() + " is not defined in an enclosing context of the " +
+                    "lambda expression");
+        return idx;
+    }
+
+    public static int getMethodContextIndex(PsiLambdaExpression expression) {
+        PsiElement e = expression;
+        int idx = 0;
+        while (e != null && !(e instanceof PsiMethod) && !(e instanceof PsiClassInitializer)) {
+            e = e.getParent();
+            if(e instanceof PsiLambdaExpression)
+                idx++;
+        }
+        Objects.requireNonNull(e, "Lambda expression is not enclosed by a method or class initializer");
+        return idx;
+    }
+
 }

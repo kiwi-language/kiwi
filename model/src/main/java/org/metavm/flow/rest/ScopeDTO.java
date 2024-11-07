@@ -6,7 +6,9 @@ import java.util.List;
 
 public record ScopeDTO(
         String id,
-        List<NodeDTO> nodes
+        List<NodeDTO> nodes,
+        int maxLocals,
+        int maxStack
 ) implements BaseDTO {
 
 }

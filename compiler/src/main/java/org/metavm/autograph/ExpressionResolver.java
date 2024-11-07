@@ -68,6 +68,7 @@ public class ExpressionResolver {
     private final VariableTable variableTable;
     private final VisitorBase visitor;
     private final Map<PsiExpression, Expression> expressionMap = new IdentityHashMap<>();
+    private final LinkedList<PsiLambdaExpression> lambdas = new LinkedList<>();
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
             new ListOfResolver(), new SetOfResolver(), new IndexUtilsCallResolver()
@@ -138,7 +139,7 @@ public class ExpressionResolver {
     }
 
     private org.metavm.flow.Value resolveSuper(PsiSuperExpression superExpression) {
-        return variableTable.get("this");
+        return getThis();
     }
 
     private org.metavm.flow.Value resolveClassObjectAccess(PsiClassObjectAccessExpression classObjectAccessExpression, ResolutionContext context) {
@@ -165,9 +166,8 @@ public class ExpressionResolver {
     private org.metavm.flow.Value resolveInstanceOf(PsiInstanceOfExpression instanceOfExpression, ResolutionContext context) {
         org.metavm.flow.Value operand;
         if (instanceOfExpression.getPattern() instanceof PsiTypeTestPattern pattern) {
-            String varName = requireNonNull(pattern.getPatternVariable()).getName();
             operand = resolve(instanceOfExpression.getOperand(), context);
-            variableTable.set(varName, operand);
+            methodGenerator.createStore(pattern.getPatternVariable(), operand);
         } else {
             operand = resolve(instanceOfExpression.getOperand(), context);
         }
@@ -196,7 +196,7 @@ public class ExpressionResolver {
     }
 
     private org.metavm.flow.Value resolveThis(PsiThisExpression ignored) {
-        return variableTable.get("this");
+        return getThis();
     }
 
     private org.metavm.flow.Value resolveConditional(PsiConditionalExpression psiExpression, ResolutionContext context) {
@@ -305,7 +305,14 @@ public class ExpressionResolver {
                 }
             }
         } else if (target instanceof PsiVariable variable) {
-            return variableTable.get(variable.getName());
+            var lambda = currentLambda();
+            int contextIndex;
+            var type = typeResolver.resolveNullable(variable.getType(), ResolutionStage.DECLARATION);
+            var index = TranspileUtils.getVariableIndex(variable);
+            if(lambda != null && (contextIndex = TranspileUtils.getContextIndex(variable, lambda)) >= 0)
+                return Values.node(methodGenerator.createLoadContextSlot(contextIndex, index, type));
+            else
+                return Values.node(methodGenerator.createLoad(index, type));
         } else {
             throw new InternalException("Can not resolve reference expression with target: " + target);
         }
@@ -318,7 +325,7 @@ public class ExpressionResolver {
 
     private org.metavm.flow.Value resolveQualifier(PsiExpression qualifier, ResolutionContext context) {
         if (qualifier == null) {
-            return variableTable.get("this");
+            return getThis();
         } else {
             return resolve(qualifier, context);
         }
@@ -585,7 +592,7 @@ public class ExpressionResolver {
     }
 
     private org.metavm.flow.Value getQualifier(@Nullable PsiExpression qualifierExpression, ResolutionContext context) {
-        return qualifierExpression == null ? variableTable.get("this")
+        return qualifierExpression == null ? getThis()
                 : resolve(requireNonNull(qualifierExpression), context);
     }
 
@@ -788,7 +795,7 @@ public class ExpressionResolver {
                             if(methodGenerator.getExpressionType(self.getExpression()).isNullable())
                                 self = Values.node(methodGenerator.createNonNull("nonNull", self));
                         } else {
-                            self = variableTable.get("this");
+                            self = getThis();
                         }
                         Klass instanceType = Types.resolveKlass(methodGenerator.getExpressionType(self.getExpression()));
                         typeResolver.ensureDeclared(instanceType);
@@ -797,7 +804,13 @@ public class ExpressionResolver {
                         node.setUpdateField(field, UpdateOp.SET, assignment);
                     }
                 } else {
-                    variableTable.set(variable.getName(), assignment);
+                    var lambda = currentLambda();
+                    int contextIndex;
+                    var index = TranspileUtils.getVariableIndex(variable);
+                    if(lambda != null && (contextIndex = TranspileUtils.getContextIndex(variable, lambda)) >= 0)
+                        methodGenerator.createStoreContextSlot(contextIndex, index, assignment);
+                    else
+                        methodGenerator.createStore(index, assignment);
                 }
             } else {
                 throw new InternalException("Invalid assignment target " + target);
@@ -982,30 +995,29 @@ public class ExpressionResolver {
     }
 
     public org.metavm.flow.Value resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
+        enterLambda(expression);
         var returnType = typeResolver.resolveNullable(TranspileUtils.getLambdaReturnType(expression), ResolutionStage.DECLARATION);
         var parameters = resolveParameterList(expression.getParameterList());
         var funcInterface = Types.resolveKlass(typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType()));
-        var lambdaEnter = methodGenerator.createLambdaEnter(parameters, returnType, funcInterface);
-        var inputNode = methodGenerator.createInput();
+        var lambda = new Lambda(null, parameters, returnType, methodGenerator.getMethod());
+        lambda.getScope().setMaxLocals(TranspileUtils.getMaxLocals(expression));
         for (Parameter parameter : parameters) {
-            var field = FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getKlass(), parameter.getType())
-                    .build();
             methodGenerator.defineVariable(parameter.getCode());
-            methodGenerator.setVariable(parameter.getCode(),
-                    Values.node(methodGenerator.createNodeProperty(inputNode, field)));
         }
+        methodGenerator.enterScope(lambda.getScope());
         if (expression.getBody() instanceof PsiExpression bodyExpr) {
             methodGenerator.createReturn(resolve(bodyExpr, context));
         } else {
             requireNonNull(expression.getBody()).accept(visitor);
-            if (lambdaEnter.getReturnType().isVoid()) {
+            if (lambda.getReturnType().isVoid()) {
                 var lastNode = methodGenerator.scope().getLastNode();
                 if (lastNode == null || !lastNode.isExit())
                     methodGenerator.createReturn();
             }
         }
-        methodGenerator.createLambdaExit();
-        return Values.node(lambdaEnter);
+        methodGenerator.exitScope();
+        exitLambda();
+        return Values.node(methodGenerator.createLambda(lambda, funcInterface));
     }
 
     private org.metavm.flow.Value resolveSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
@@ -1069,8 +1081,8 @@ public class ExpressionResolver {
         }
         if(label instanceof PsiTypeTestPattern typeTestPattern) {
             var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
-            methodGenerator.setVariable(
-                    requireNonNull(typeTestPattern.getPatternVariable()).getName(),
+            methodGenerator.createStore(
+                    TranspileUtils.getVariableIndex(Objects.requireNonNull(typeTestPattern.getPatternVariable())),
                     switchExpr
             );
             return methodGenerator.createIfNot(
@@ -1108,6 +1120,30 @@ public class ExpressionResolver {
         return Values.constantFalse();
     }
 
+    void enterLambda(PsiLambdaExpression lambda) {
+        lambdas.push(lambda);
+    }
+
+    void exitLambda() {
+        lambdas.pop();
+    }
+
+    @Nullable PsiLambdaExpression currentLambda() {
+        return lambdas.peek();
+    }
+
+    org.metavm.flow.Value getThis() {
+        assert !methodGenerator.getMethod().isStatic();
+        var lambda = currentLambda();
+        if(lambda == null)
+            return methodGenerator.getThis();
+        else {
+            return new NodeValue(methodGenerator.createLoadContextSlot(
+                    TranspileUtils.getMethodContextIndex(lambda), 0, methodGenerator.getThisType())
+            );
+        }
+    }
+
     public static class ResolutionContext {
         private final Map<QualifiedName, org.metavm.flow.Value> tempVariableMap = new HashMap<>();
         private final List<VariableOperation> variableOperations = new ArrayList<>();
@@ -1123,9 +1159,6 @@ public class ExpressionResolver {
         }
 
         public void finish(VariableTable variableTable, MethodGenerator flowBuilder) {
-            for (VariableOperation(String variableName, org.metavm.flow.Value value) : variableOperations) {
-                variableTable.set(variableName, value);
-            }
             for (FieldOperation(org.metavm.flow.Value instance, Field field, org.metavm.flow.Value value) : fieldOperations) {
                 var node = flowBuilder.createUpdateObject(instance);
                 node.setUpdateField(field, UpdateOp.SET, value);

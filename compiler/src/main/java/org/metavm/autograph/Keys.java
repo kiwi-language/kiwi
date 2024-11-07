@@ -83,6 +83,12 @@ public class Keys {
 
     public static final Key<Integer> MAX_SYNTHETIC_CLASS_SEQ = Keys.createKey("MaxSyntheticClassSeq");
 
+    public static final Key<Integer> VARIABLE_INDEX = Keys.createKey("VariableIndex");
+
+    public static final Key<Integer> MAX_LOCALS = Keys.createKey("MaxLocals");
+
+    public static final Key<Integer> NAX_STACK = Keys.createKey("MaxStack");
+
     public static Set<Key<?>> getKeys() {
         return new HashSet<>(KEYS);
     }

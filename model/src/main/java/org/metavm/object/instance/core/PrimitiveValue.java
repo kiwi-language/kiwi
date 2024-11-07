@@ -108,7 +108,7 @@ public abstract class PrimitiveValue extends Value implements Comparable<Primiti
 
     @Override
     protected void writeTree(TreeWriter treeWriter) {
-        treeWriter.writeLine(Objects.toString(getValue()));
+        treeWriter.write(Objects.toString(getValue()));
     }
 
     @Override

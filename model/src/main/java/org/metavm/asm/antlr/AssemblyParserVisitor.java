@@ -215,17 +215,17 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitBlock(AssemblyParser.BlockContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link AssemblyParser#labeledStatement}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitLabeledStatement(AssemblyParser.LabeledStatementContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#statement}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitStatement(AssemblyParser.StatementContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#localVariableDeclaration}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLocalVariableDeclaration(AssemblyParser.LocalVariableDeclarationContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#allocator}.
 	 * @param ctx the parse tree
@@ -419,12 +419,6 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMethodCall(AssemblyParser.MethodCallContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link AssemblyParser#functionCall}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitFunctionCall(AssemblyParser.FunctionCallContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#literal}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -491,11 +485,11 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitClassOrInterfaceModifier(AssemblyParser.ClassOrInterfaceModifierContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link AssemblyParser#lambda}.
+	 * Visit a parse tree produced by {@link AssemblyParser#lambdaExpression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitLambda(AssemblyParser.LambdaContext ctx);
+	T visitLambdaExpression(AssemblyParser.LambdaExpressionContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#lambdaParameters}.
 	 * @param ctx the parse tree

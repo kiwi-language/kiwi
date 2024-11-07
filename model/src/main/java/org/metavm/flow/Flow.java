@@ -59,6 +59,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     private final CodeSource codeSource;
     @ChildEntity
     private final ChildArray<CapturedTypeVariable> capturedTypeVariables = addChild(new ChildArray<>(CapturedTypeVariable.class), "capturedTypeVariables");
+    @ChildEntity
+    private final ChildArray<Lambda> lambdas = addChild(new ChildArray<>(Lambda.class), "lambdas");
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient List<NodeRT> nodes = new ArrayList<>();
@@ -87,7 +89,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.isSynthetic = isSynthetic;
         this.returnType = returnType;
         this.type = new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
-        rootScope = !noCode && codeSource == null && !isNative ? addChild(new ScopeRT(this), "rootScope") : null;
+        rootScope = !noCode && codeSource == null && !isNative ? addChild(new ScopeRT(this, this), "rootScope") : null;
         setTypeParameters(typeParameters);
         if(typeParameters.isEmpty())
             setTypeArguments(typeArguments);
@@ -107,7 +109,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return returnType;
     }
 
-    public @NotNull ScopeRT getRootScope() {
+    @Override
+    public @NotNull ScopeRT getScope() {
         return Objects.requireNonNull(rootScope, () -> "Root scope not present in flow: " + getQualifiedName());
     }
 
@@ -126,8 +129,10 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                 return super.visitNode(node);
             }
         });
-        if (codeSource != null)
+        if (codeSource != null) {
             codeSource.generateCode(this);
+            accept(new MaxesComputer());
+        }
     }
 
     public boolean matches(String code, List<Type> argumentTypes) {
@@ -155,7 +160,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                 getCode(),
                 isNative,
                 isSynthetic,
-                includeCode && isRootScopePresent() ? getRootScope().toDTO(true, serContext) : null,
+                includeCode && isRootScopePresent() ? getScope().toDTO(true, serContext) : null,
                 returnType.toExpression(serContext),
                 NncUtils.map(parameters, Parameter::toDTO),
                 type.toExpression(serContext),
@@ -165,6 +170,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                 NncUtils.map(capturedTypeVariables, serContext::getStringId),
                 List.of(),
                 List.of(),
+                NncUtils.map(lambdas, l -> l.toDTO(serContext)),
                 isTemplate(),
                 getAttributesMap(),
                 getState().code(),
@@ -195,10 +201,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public boolean isSynthetic() {
         return isSynthetic;
-    }
-
-    public InputNode getInputNode() {
-        return (InputNode) NncUtils.findRequired(getRootScope().getNodes(), node -> node instanceof InputNode);
     }
 
     private List<NodeRT> nodes() {
@@ -259,6 +261,10 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         accept(new FlowAnalyzer());
     }
 
+    public void computeMaxes() {
+        accept(new MaxesComputer());
+    }
+
     @SuppressWarnings("unused")
     public List<NodeRT> getNodes() {
         return nodes();
@@ -298,12 +304,12 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     public NodeRT getRootNode() {
-        return getRootScope().tryGetFirstNode();
+        return getScope().tryGetFirstNode();
     }
 
     public ScopeRT newEphemeralRootScope() {
         NncUtils.requireTrue(codeSource != null);
-        return rootScope = addChild(new ScopeRT(this, true), "rootScope");
+        return rootScope = addChild(new ScopeRT(this, this, true), "rootScope");
     }
 
     @SuppressWarnings("unused")
@@ -455,7 +461,9 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     public String getSignatureString() {
-        return getCode() + "(" + NncUtils.join(getParameterTypes(), Type::getTypeDesc) + ")";
+        var name = isParameterized() ?
+                getCode() + "<" + NncUtils.join(getTypeArguments(), Type::getTypeDesc) + ">" : getCode();
+        return name + "(" + NncUtils.join(getParameterTypes(), Type::getTypeDesc) + ")";
     }
 
     public void setState(@NotNull MetadataState state) {
@@ -554,7 +562,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                         + ": " + getReturnType().getName()
         );
         if (isRootScopePresent())
-            getRootScope().writeCode(writer);
+            getScope().writeCode(writer);
         else
             writer.write(";");
     }
@@ -622,6 +630,18 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         while (nodeNames.contains(prefix + "_" + n))
             n++;
         return prefix + "_" + n;
+    }
+
+    public List<Lambda> getLambdas() {
+        return lambdas.toList();
+    }
+
+    public void addLambda(Lambda lambda) {
+        this.lambdas.addChild(lambda);
+    }
+
+    public void setLambdas(List<Lambda> lambdas) {
+        this.lambdas.resetChildren(lambdas);
     }
 
 }

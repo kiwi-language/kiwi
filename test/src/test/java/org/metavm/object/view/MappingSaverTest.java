@@ -8,10 +8,7 @@ import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.mocks.MockNativeFunctionsInitializer;
-import org.metavm.flow.MethodBuilder;
-import org.metavm.flow.Nodes;
-import org.metavm.flow.Parameter;
-import org.metavm.flow.Values;
+import org.metavm.flow.*;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.mocks.MockInstanceRepository;
 import org.metavm.object.type.*;
@@ -100,7 +97,7 @@ public class MappingSaverTest extends TestCase {
                 .returnType(barReadWriteArrayType)
                 .build();
         {
-            var scope = getBarsMethod.getRootScope();
+            var scope = getBarsMethod.getScope();
             var selfNode = Nodes.self("self", fooType, scope);
             var barsNode = Nodes.newArray("newArray", null, barReadWriteArrayType,
                     Values.node(Nodes.nodeProperty(selfNode, fooBarsField, scope)), null, scope);
@@ -112,7 +109,7 @@ public class MappingSaverTest extends TestCase {
                 .parameters(new Parameter(null, "bars", "bars", barReadWriteArrayType))
                 .build();
         {
-            var scope = setBarsMethod.getRootScope();
+            var scope = setBarsMethod.getScope();
             var selfNode = Nodes.self("self", fooType, scope);
             var inputNode = Nodes.input(setBarsMethod);
             Nodes.clearArray("clearBars", null, Values.node(Nodes.nodeProperty(selfNode, fooBarsField, scope)), scope);
@@ -126,6 +123,8 @@ public class MappingSaverTest extends TestCase {
             Nodes.ret("return", scope, null);
         }
         TestUtils.initEntityIds(fooType);
+        fooType.accept(new MaxesComputer());
+        barType.accept(new MaxesComputer());
 
         var typeDefRepository = new MockTypeDefRepository();
         typeDefRepository.save(fooType);
@@ -308,7 +307,7 @@ public class MappingSaverTest extends TestCase {
                 .returnType(skuRwArrayType)
                 .build();
         {
-            var scope = getSkuListMethod.getRootScope();
+            var scope = getSkuListMethod.getScope();
             var self = Nodes.self("self", productType, scope);
             Nodes.input(getSkuListMethod);
             var skuList = Nodes.newArray(
@@ -323,7 +322,7 @@ public class MappingSaverTest extends TestCase {
                 .parameters(new Parameter(null, "skuList", "skuList", skuRwArrayType))
                 .build();
         {
-            var scope = setSkuListMethod.getRootScope();
+            var scope = setSkuListMethod.getScope();
             var self = Nodes.self("self", productType, scope);
             var input = Nodes.input(setSkuListMethod);
             Nodes.clearArray("clearArray", null, Values.node(Nodes.nodeProperty(self, skuListField, scope)), scope);
@@ -339,6 +338,7 @@ public class MappingSaverTest extends TestCase {
             );
         }
         TestUtils.initEntityIds(productType);
+        productType.accept(new MaxesComputer());
         var typeDefRepository = new MockTypeDefRepository();
         typeDefRepository.save(productType);
         typeDefRepository.save(skuType);
@@ -515,7 +515,7 @@ public class MappingSaverTest extends TestCase {
                 .returnType(platformUserType.getType())
                 .build();
         {
-            var scope = getOwnerMethod.getRootScope();
+            var scope = getOwnerMethod.getScope();
             var selfNode = Nodes.self("self", applicationType, scope);
             Nodes.ret("return", scope, Values.node(Nodes.nodeProperty(selfNode, ownerField, scope)));
         }

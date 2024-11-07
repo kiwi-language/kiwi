@@ -56,6 +56,7 @@ NEVER:              'never';
 SELECT:             'select';
 SELECT_FIRST:       'selectFirst';
 DELETED:            'deleted';
+VAR:                'var';
 
 // Operators
 
@@ -63,6 +64,7 @@ ASSIGN:             '=';
 GT:                 '>';
 LT:                 '<';
 BANG:               '!';
+BANGBANG:           '!!';
 TILDE:              '~';
 QUESTION:           '?';
 COLON:              ':';

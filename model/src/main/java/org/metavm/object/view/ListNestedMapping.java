@@ -65,16 +65,13 @@ public class ListNestedMapping extends NestedMapping {
                     ));
                     Nodes.methodCall(
                             scope.nextNodeName("add"),
-                            bodyScope,
-                            Values.node(targetList),
-                            addMethod,
-                            List.of(
+                            Values.node(targetList), addMethod, List.of(
                                     Nodes.argument(
                                             addMethod,
                                             0,
                                             getTargetElement.get()
                                     )
-                            )
+                            ), bodyScope
                     );
                 },
                 scope
@@ -117,10 +114,7 @@ public class ListNestedMapping extends NestedMapping {
         var clearMethod = sourceKlass.getMethodByCodeAndParamTypes("clear", List.of());
         Nodes.methodCall(
                 scope.nextNodeName("clear"),
-                scope,
-                Values.node(Nodes.nodeProperty(join, sourceField, scope)),
-                clearMethod,
-                List.of()
+                Values.node(Nodes.nodeProperty(join, sourceField, scope)), clearMethod, List.of(), scope
         );
         Nodes.listForEach(
                 scope.nextNodeName("iterate"), getView,
@@ -130,16 +124,13 @@ public class ListNestedMapping extends NestedMapping {
                             List.of(Types.getNullableType(sourceType.getFirstTypeArgument())));
                     Nodes.methodCall(
                             scope.nextNodeName("addElement"),
-                            bodyScope,
-                            Values.node(Nodes.nodeProperty(join, sourceField, scope)),
-                            addMethod,
-                            List.of(
+                            Values.node(Nodes.nodeProperty(join, sourceField, scope)), addMethod, List.of(
                                     Nodes.argument(
                                             addMethod,
                                             0,
                                             getSourceElement.get()
                                     )
-                            )
+                            ), bodyScope
                     );
                 },
                 scope

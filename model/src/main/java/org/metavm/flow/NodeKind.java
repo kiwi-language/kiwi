@@ -24,7 +24,7 @@ public enum NodeKind {
     TRY_ENTER(NodeKindCodes.TRY_ENTER, TryEnterNode.class, TryEnterNodeParam.class),
     TRY_EXIT(NodeKindCodes.TRY_EXIT, TryExitNode.class, TryExitNodeParam.class, true),
     FUNC(NodeKindCodes.FUNC, FunctionNode.class, FunctionNodeParam.class),
-    LAMBDA_ENTER(NodeKindCodes.LAMBDA_ENTER, LambdaEnterNode.class, LambdaEnterNodeParam.class),
+    LAMBDA(NodeKindCodes.LAMBDA, LambdaNode.class, LambdaNodeParam.class),
     ADD_ELEMENT(NodeKindCodes.ADD_ELEMENT, AddElementNode.class, AddElementNodeParam.class),
     DELETE_ELEMENT(NodeKindCodes.DELETE_ELEMENT, RemoveElementNode.class, RemoveElementNodeParam.class),
     GET_ELEMENT(NodeKindCodes.GET_ELEMENT, GetElementNode.class, GetElementNodeParam.class),
@@ -45,7 +45,6 @@ public enum NodeKind {
     IF(NodeKindCodes.IF, IfNode.class, IfNodeParam.class, false),
     JOIN(NodeKindCodes.JOIN, JoinNode.class, JoinNodeParam.class, true),
     NOOP(NodeKindCodes.NOOP, NoopNode.class, NoopNodeParam.class),
-    LAMBDA_EXIT(NodeKindCodes.LAMBDA_EXIT, LambdaExitNode.class, LambdaExitNodeParam.class),
     ADD(NodeKindCodes.ADD, AddNode.class, AddNodeParam.class),
     SUB(NodeKindCodes.SUB, SubNode.class, SubNodeParam.class),
     MUL(NodeKindCodes.MUL, MultiplyNode.class, MultiplyNodeParam.class),
@@ -72,7 +71,11 @@ public enum NodeKind {
     GET_STATIC(NodeKindCodes.GET_STATIC, GetStaticNode.class, GetStaticNodeParam.class),
     INSTANCE_OF(NodeKindCodes.INSTANCE_OF, InstanceOfNode.class, InstanceOfNodeParam.class),
     ARRAY_LENGTH(NodeKindCodes.ARRAY_LENGTH, ArrayLengthNode.class, ArrayLengthNodeParam.class),
-    IF_NOT(NodeKindCodes.IF_NOT, IfNotNode.class, IfNotNodeParam.class)
+    IF_NOT(NodeKindCodes.IF_NOT, IfNotNode.class, IfNotNodeParam.class),
+    STORE(NodeKindCodes.STORE, StoreNode.class, StoreNodeParam.class),
+    LOAD(NodeKindCodes.LOAD, LoadNode.class, LoadNodeParam.class),
+    LOAD_CONTEXT_SLOT(NodeKindCodes.LOAD_CONTEXT_SLOT, LoadContextSlotNode.class, LoadContextSlotNodeParam.class),
+    STORE_CONTEXT_SLOT(NodeKindCodes.STORE_CONTEXT_SLOT, StoreContextSlotNode.class, StoreContextSlotNodeParam.class),
     ;
 
     private final int code;

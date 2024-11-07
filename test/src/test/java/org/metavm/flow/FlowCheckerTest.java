@@ -20,7 +20,7 @@ public class FlowCheckerTest extends TestCase {
                 .build();
         var input = Nodes.input(method);
         var field = input.getKlass().getFieldByCode("value");
-        var scope = method.getRootScope();
+        var scope = method.getScope();
         var value = Values.node(Nodes.nodeProperty(input, field, scope));
         var ifNode = Nodes.if_("if", Values.node(
                 Nodes.ne(value, Values.nullValue(), scope)), null, scope);
@@ -41,7 +41,7 @@ public class FlowCheckerTest extends TestCase {
                 .build();
         var input = Nodes.input(method);
         var field = input.getKlass().getFieldByCode("value");
-        var scope = method.getRootScope();
+        var scope = method.getScope();
         var value = Values.node(Nodes.nodeProperty(input, field, scope));
         var ifNode = Nodes.if_("if", Values.node(Nodes.eq(
                 value, Values.nullValue(), scope

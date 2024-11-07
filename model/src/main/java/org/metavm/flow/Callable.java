@@ -36,4 +36,6 @@ public interface Callable {
 
     CallableRef getRef();
 
+    ScopeRT getScope();
+
 }

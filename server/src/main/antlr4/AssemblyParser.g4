@@ -157,10 +157,8 @@ methodBody
     ;
 
 block
-    : '{' labeledStatement* '}'
+    : '{' statement* '}'
     ;
-
-labeledStatement: (IDENTIFIER ':')? statement;
 
 statement
     : WHILE parExpression block
@@ -171,18 +169,14 @@ statement
     | RETURN expression? ';'
     | THROW expression ';'
     | SEMI
+    | statementExpression=expression ';'
+    | localVariableDeclaration ';'
 //    | statementExpression=expression ';'
-    | methodCall '!'? ';'
-    | functionCall ';'
-    | (NEW | UNEW | ENEW) creator ';'
-    | ALLOCATE allocator ';'
-    | select ';'
-    | '(' castType=typeType ')' expression ';'
-    | (THIS | IDENTIFIER) '.' IDENTIFIER
-      bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
-      expression ';'
-    | lambda
+//    | methodCall '!'? ';'
+//    | functionCall ';'
     ;
+
+localVariableDeclaration: VAR IDENTIFIER '=' expression | typeType IDENTIFIER ('=' expression)?;
 
 allocator: classOrInterfaceType '{' allocatorFieldList? '}';
 
@@ -270,12 +264,18 @@ expression
       (
          IDENTIFIER
        | THIS
+       | methodCall
 //       | SUPER superSuffix
 //       | explicitGenericInvocation
       )
+    | THIS '(' expressionList? ')'
+    | SUPER '(' expressionList? ')'
     | expression '[' expression ']'
-//    | '(' castType=typeType ')' expression
-    | expression postfix=('++' | '--')
+    | (NEW | UNEW | ENEW) creator
+    | ALLOCATE allocator
+    | select
+    | '(' castType=typeType ')' expression
+    | expression postfix=('++' | '--' | '!!')
     | prefix=('+'|'-'|'++'|'--') expression
     | prefix=('~'|'!') expression
     | expression bop=('*'|'/'|'%') expression
@@ -290,9 +290,10 @@ expression
     | expression bop='&&' expression
     | expression bop='||' expression
     | <assoc=right> expression bop='?' expression ':' expression
-//    | <assoc=right> expression
-//      bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
-//      expression
+    | <assoc=right> expression
+      bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
+      expression
+    | lambdaExpression
     // Java 8 methodReference
     | expression '::' typeArguments? IDENTIFIER
     | IDENTIFIER arguments
@@ -331,12 +332,8 @@ classType
     ;
 
 methodCall
-    : expression '.' typeArguments? IDENTIFIER '(' expressionList? ')'
-    | THIS '(' expressionList? ')'
-    | SUPER '(' expressionList? ')'
+    : typeArguments? IDENTIFIER '(' expressionList? ')'
     ;
-
-functionCall: expression '(' expressionList? ')';
 
 literal
     : integerLiteral
@@ -415,7 +412,7 @@ classOrInterfaceModifier
     | ABSTRACT
     ;
 
-lambda
+lambdaExpression
     : lambdaParameters ':' typeTypeOrVoid '->' lambdaBody
     ;
 

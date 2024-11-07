@@ -315,7 +315,9 @@ public class Method extends Flow implements Property, GenericElement {
                     throw new IllegalStateException("Failed to invoke method " + getQualifiedSignature() + ": empty method body");
                 try {
                     result = new MetaFrame(this.getRootNode(), declaringType, self,
-                            arguments, callContext.instanceRepository()).execute();
+                            arguments, callContext.instanceRepository(), null, getScope().getMaxLocals(),
+                            getScope().getMaxStack()
+                    ).execute();
                 } catch (Exception e) {
                     logger.info("Fail to execute method {}", getQualifiedName());
                     logger.info(getText());

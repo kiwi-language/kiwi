@@ -34,8 +34,7 @@ class Product {
     }
 
     public int __price__(double price) {
-        r: (int) price;
-        return r;
+        return (int) price;
     }
 
 }

@@ -8,7 +8,7 @@ class UpdateFieldFoo {
 
     public static void update(UpdateFieldFoo|null foo, int value) {
         if(foo != null) {
-            foo.value = value;
+            foo!!.value = value;
         }
     }
 

@@ -20,7 +20,7 @@ import java.util.*;
 import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.TranspileUtils.*;
 
-public class Declarator extends CodeGenVisitor {
+public class Declarator extends VisitorBase {
 
     public static final Logger logger = LoggerFactory.getLogger(Declarator.class);
 

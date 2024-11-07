@@ -18,8 +18,7 @@ class FooService {
     }
 
     public IdxFooServiceAllFlags idxAllFlags() {
-        idx: new IdxFooServiceAllFlags(this.allFlags);
-        return idx;
+        return new IdxFooServiceAllFlags(this.allFlags);
     }
 
 }

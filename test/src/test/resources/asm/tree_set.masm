@@ -3,8 +3,7 @@ import java.util.TreeSet;
 class TreeSetLab {
 
     public static TreeSet<int> create() {
-        s: new TreeSet<int>();
-        return s;
+        return new TreeSet<int>();
     }
 
 }

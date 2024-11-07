@@ -48,15 +48,16 @@ enum ProductKind {
     }
 
     public static ProductKind __map__(ProductKind kind) {
-        values: ProductKind.values();
-        loop: for(int i = 0; loop.i < values.length; i = loop.i + 1) {
-            name: values[loop.i].name();
+        var values = ProductKind.values();
+        int i = 0;
+        while (i < values.length) {
+            var name = values[i].name();
             if(name == kind.name) {
-                return values[loop.i];
+                return values[i];
             }
+            i = i + 1;
         }
-        e: new IllegalStateException(concat("Can not find an enum constant of ProductKind for name: ", kind.name));
-        throw e;
+        throw new IllegalStateException(concat("Can not find an enum constant of ProductKind for name: ", kind.name));
     }
 
 }

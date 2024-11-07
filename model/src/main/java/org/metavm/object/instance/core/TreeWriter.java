@@ -5,9 +5,13 @@ public class TreeWriter {
     private final StringBuilder buf = new StringBuilder();
     private int indent;
 
-    public void writeLine(String line) {
+    public void write(String s) {
         buf.append("    ".repeat(Math.max(0, indent)));
-        buf.append(line);
+        buf.append(s);
+    }
+
+    public void writeLine(String line) {
+        write(line);
         buf.append("\n");
     }
 

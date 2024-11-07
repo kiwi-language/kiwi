@@ -348,16 +348,6 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 */
 	void exitBlock(AssemblyParser.BlockContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link AssemblyParser#labeledStatement}.
-	 * @param ctx the parse tree
-	 */
-	void enterLabeledStatement(AssemblyParser.LabeledStatementContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link AssemblyParser#labeledStatement}.
-	 * @param ctx the parse tree
-	 */
-	void exitLabeledStatement(AssemblyParser.LabeledStatementContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#statement}.
 	 * @param ctx the parse tree
 	 */
@@ -367,6 +357,16 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitStatement(AssemblyParser.StatementContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#localVariableDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterLocalVariableDeclaration(AssemblyParser.LocalVariableDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#localVariableDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitLocalVariableDeclaration(AssemblyParser.LocalVariableDeclarationContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#allocator}.
 	 * @param ctx the parse tree
@@ -688,16 +688,6 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 */
 	void exitMethodCall(AssemblyParser.MethodCallContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link AssemblyParser#functionCall}.
-	 * @param ctx the parse tree
-	 */
-	void enterFunctionCall(AssemblyParser.FunctionCallContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link AssemblyParser#functionCall}.
-	 * @param ctx the parse tree
-	 */
-	void exitFunctionCall(AssemblyParser.FunctionCallContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#literal}.
 	 * @param ctx the parse tree
 	 */
@@ -808,15 +798,15 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 */
 	void exitClassOrInterfaceModifier(AssemblyParser.ClassOrInterfaceModifierContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link AssemblyParser#lambda}.
+	 * Enter a parse tree produced by {@link AssemblyParser#lambdaExpression}.
 	 * @param ctx the parse tree
 	 */
-	void enterLambda(AssemblyParser.LambdaContext ctx);
+	void enterLambdaExpression(AssemblyParser.LambdaExpressionContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link AssemblyParser#lambda}.
+	 * Exit a parse tree produced by {@link AssemblyParser#lambdaExpression}.
 	 * @param ctx the parse tree
 	 */
-	void exitLambda(AssemblyParser.LambdaContext ctx);
+	void exitLambdaExpression(AssemblyParser.LambdaExpressionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link AssemblyParser#lambdaParameters}.
 	 * @param ctx the parse tree

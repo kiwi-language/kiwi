@@ -9,8 +9,7 @@ record IdxProductName {
 class Product extends Versioned {
 
     public static Product|null findByName(string name) {
-        found: selectFirst(Product.idxName, name);
-        return found;
+        return selectFirst(Product.idxName, name);
     }
 
     private title string name;
@@ -74,13 +73,11 @@ class Product extends Versioned {
     }
 
     private double __price__(int price) {
-        r: (double) price;
-        return r;
+        return (double) price;
     }
 
     private Versioned __Versioned__() {
-        v: new Versioned();
-        return v;
+        return new Versioned();
     }
 
     public any getManufacturer() {
@@ -92,8 +89,7 @@ class Product extends Versioned {
     }
 
     public IdxProductName idxName() {
-        idx: new IdxProductName(this.name);
-        return idx;
+        return new IdxProductName(this.name);
     }
 
 }
@@ -120,8 +116,7 @@ class Versioned {
     private Version version;
 
     public Versioned() {
-        v: new Version(0, 0);
-        this.version = v;
+        this.version = new Version(0, 0);
     }
 
     public Version getVersion() {

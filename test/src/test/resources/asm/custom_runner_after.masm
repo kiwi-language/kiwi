@@ -4,21 +4,19 @@ class Lab {
     public Lab() {}
 
     public any|null getFieldValue(Field field) {
-        fieldValue: selectFirst(FieldValue.uniqueIdxField, field);
+        var fieldValue = selectFirst(FieldValue.uniqueIdxField, field);
         if(fieldValue == null) {
             return null;
         }
         else {
-            value: fieldValue.getValue();
-            return value;
+            return fieldValue.getValue();
         }
     }
 
     public void setFieldValue(Field field, any|null value) {
-        fieldValue: selectFirst(FieldValue.uniqueIdxField, field);
+        var fieldValue = selectFirst(FieldValue.uniqueIdxField, field);
         if(fieldValue == null) {
-            newFieldValue: new FieldValue(field);
-            newFieldValue.setValue(value);
+            new FieldValue(field).setValue(value);
         }
         else {
             fieldValue.setValue(value);
@@ -45,8 +43,7 @@ class Field {
     }
 
     public void __run__() {
-        fieldValue: new FieldValue(this);
-        fieldValue.setValue(this.value);
+        new FieldValue(this).setValue(this.value);
     }
 
 }
@@ -80,8 +77,7 @@ class FieldValue {
     }
 
     public IdxFieldValueField uniqueIdxField() {
-        idx: new IdxFieldValueField(this.field);
-        return idx;
+        return new IdxFieldValueField(this.field);
     }
 
 }

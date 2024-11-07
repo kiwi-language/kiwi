@@ -62,7 +62,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
             var klass = get().getKlass();
             var constructor = NncUtils.findRequired(klass.getMethods(), Method::isConstructor);
             {
-                var scope = constructor.getRootScope();
+                var scope = constructor.getScope();
                 scope.setStrictEphemeral(true);
                 var self = Nodes.self("self", klass, scope);
                 var input = Nodes.input(constructor);
@@ -75,7 +75,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
             }
             for (org.metavm.object.type.Field field : klass.getFields()) {
                 var accessor = klass.getMethodByCode(field.getCodeNotNull());
-                var scope = accessor.getRootScope();
+                var scope = accessor.getScope();
                 scope.setStrictEphemeral(true);
                 var self = Nodes.self("self", klass, scope);
                 Nodes.ret("return", scope,

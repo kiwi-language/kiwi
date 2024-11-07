@@ -43,6 +43,7 @@ public class Compiler {
             new CompileStage(
                     file -> true,
                     file -> {
+                        file.accept(new RecordToClass());
                         file.accept(new BodyNormalizer());
                         file.accept(new RawTypeTransformer());
                     }

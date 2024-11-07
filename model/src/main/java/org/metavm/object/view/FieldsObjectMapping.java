@@ -139,6 +139,7 @@ public class FieldsObjectMapping extends ObjectMapping {
                 true, getTargetType(), scope.getLastNode(), scope);
         fieldParams.forEach(view::addField);
         new ReturnNode(null, "return", null, scope.getLastNode(), scope, Values.node(view));
+        readMethod.computeMaxes();
     }
 
     public void generateWriteMethodCode() {
@@ -151,6 +152,7 @@ public class FieldsObjectMapping extends ObjectMapping {
                 fieldMapping.generateWriteCode(selfNode, viewNode);
         }
         new ReturnNode(null, "return", null, scope.getLastNode(), scope, null);
+        writeMethod.computeMaxes();
     }
 
     public void setName(String name) {

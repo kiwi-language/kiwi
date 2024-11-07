@@ -4,10 +4,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.expression.TypeParsingContext;
 import org.metavm.flow.*;
-import org.metavm.flow.rest.FlowDTO;
-import org.metavm.flow.rest.FunctionParam;
-import org.metavm.flow.rest.MethodParam;
-import org.metavm.flow.rest.ParameterDTO;
+import org.metavm.flow.rest.*;
 import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.*;
@@ -271,10 +268,26 @@ public abstract class TypeFactory {
             method.setParameters(NncUtils.map(flowDTO.parameters(), paramDTO -> saveParameter(paramDTO, batch)));
             method.setReturnType(TypeParser.parseType(flowDTO.returnType(), context));
             method.setAbstract(param.isAbstract());
+            var m = method;
+            method.setLambdas(NncUtils.map(flowDTO.lambdas(), l -> saveLambda(l, m, stage, batch)));
             if (method.getParameters().isEmpty() && !method.isStatic() && method.getName().equals(Constants.RUN_METHOD_NAME))
                 batch.addRunMethod(method);
         }
         return method;
+    }
+
+    public Lambda saveLambda(LambdaDTO lambdaDTO, Flow flow, ResolutionStage stage, SaveTypeBatch batch) {
+        var context = batch.getContext();
+        var lambda = context.getEntity(Lambda.class, lambdaDTO.id());
+        var params = NncUtils.map(lambdaDTO.parameters(), p -> saveParameter(p, batch));
+        var returnType = TypeParser.parseType(lambdaDTO.returnType(), context);
+        if(lambda == null)
+            lambda = context.bind(new Lambda(lambdaDTO.tmpId(), params, returnType, flow));
+        else {
+            lambda.setParameters(params);
+            lambda.setReturnType(returnType);
+        }
+        return lambda;
     }
 
     public EnumConstantDef saveEnumConstantDef(Klass declaringKlass, EnumConstantDefDTO enumConstantDefDTO, ResolutionStage stage, SaveTypeBatch saveTypeBatch) {

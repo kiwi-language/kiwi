@@ -11,10 +11,8 @@ class LivingBeing {
     public LivingBeing(int age, any|null extra) {
         this.age = age;
         this.extra = extra;
-        offsprings: new ArrayList<LivingBeing>();
-        this.offsprings = offsprings;
-        ancestors: new ArrayList<LivingBeing>();
-        this.ancestors = ancestors;
+        this.offsprings = new ArrayList<LivingBeing>();
+        this.ancestors = new ArrayList<LivingBeing>();
     }
 
     public int getAge() {
@@ -26,13 +24,11 @@ class LivingBeing {
     }
 
     public List<LivingBeing> getOffsprings() {
-        offsprings: new ArrayList<LivingBeing>(this.offsprings);
-        return offsprings;
+        return new ArrayList<LivingBeing>(this.offsprings);
     }
 
     public List<LivingBeing> getAncestors() {
-        ancestors: new ArrayList<LivingBeing>(this.ancestors);
-        return ancestors;
+        return new ArrayList<LivingBeing>(this.ancestors);
     }
 
     public void addOffspring(LivingBeing offspring) {

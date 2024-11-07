@@ -10,8 +10,7 @@ struct Product {
 
     public Product(string name, List<SKU> skuList) {
         this.name = name;
-        skuListCopy: new ChildList<SKU>(skuList);
-        this.skuList = skuListCopy;
+        this.skuList = new ChildList<SKU>(skuList);
     }
 
     public string getName() {
@@ -23,8 +22,7 @@ struct Product {
     }
 
     public List<SKU> getSkuList() {
-        skuList: unew ArrayList<SKU>(this.skuList);
-        return skuList;
+        return unew ArrayList<SKU>(this.skuList);
     }
 
     public void setSkuList(List<SKU> skuList) {
@@ -48,21 +46,23 @@ struct SKU {
 
     public void decQuantity(int quantity) {
         if (this.quantity < quantity) {
-            exception: new RuntimeException("Out of inventory");
-            throw exception;
+            throw new RuntimeException("Out of inventory");
         }
-        this.quantity -= quantity;
+        this.quantity = this.quantity - quantity;
     }
 
     public Order buy(int quantity, List<Coupon> coupons) {
         this.decQuantity(quantity);
-        size: coupons.size();
-        loop: for(int i = 0, double totalDiscount = 0; loop.i < size; i = loop.i + 1, totalDiscount = loop.totalDiscount + discount) {
-            coupon: coupons.get(loop.i)!;
-            discount: coupon.use();
+        var size = coupons.size();
+        int i = 0;
+        double totalDiscount = 0.0;
+        while (i < size) {
+            var coupon = coupons.get(i)!!;
+            var discount = coupon.use();
+            i = i + 1;
+            totalDiscount = totalDiscount + discount;
         }
-        order: new Order(this.name, quantity, this.price * quantity - loop.totalDiscount, this, coupons);
-        return order;
+        return new Order(this.name, quantity, this.price * quantity - totalDiscount, this, coupons);
     }
 
     public string getName() {
@@ -116,8 +116,7 @@ class Coupon {
 
     public double use() {
         if(this.state == CouponState.USED) {
-            exception: new RuntimeException("Coupon already used");
-            throw exception;
+            throw new RuntimeException("Coupon already used");
         }
         this.state = CouponState.USED;
         return this.discount;
@@ -149,8 +148,7 @@ class Order {
         this.quantity = quantity;
         this.price = price;
         this.sku = sku;
-        couponsCopy: new ArrayList<Coupon>(coupons);
-        this.coupons = couponsCopy;
+        this.coupons = new ArrayList<Coupon>(coupons);
         this.orderTime = now();
     }
 
@@ -175,8 +173,7 @@ class Order {
     }
 
     public List<Coupon> getCoupons() {
-        coupons: unew ArrayList<Coupon>(this.coupons);
-        return coupons;
+        return unew ArrayList<Coupon>(this.coupons);
     }
 
 }

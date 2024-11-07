@@ -63,6 +63,7 @@ public class CodeGenerator {
     }
 
     void generateCode(PsiClass psiClass, TypeResolver typeResolver) {
+        psiClass.accept(new VariableIndexAssigner());
         psiClass.accept(new Generator(psiClass, typeResolver, context));
     }
 

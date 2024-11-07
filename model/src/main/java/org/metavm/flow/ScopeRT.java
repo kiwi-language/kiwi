@@ -20,24 +20,30 @@ public class ScopeRT extends Element {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
+    private final Callable callable;
     private final Flow flow;
     @ChildEntity
     private final ChildArray<NodeRT> nodes = addChild(new ChildArray<>(new TypeReference<>() {
     }), "nodes");
+    private int maxLocals;
+    private int maxStack;
 
-    public ScopeRT(Flow flow) {
-        this(flow, false);
+    public ScopeRT(Callable callable, Flow flow) {
+        this(callable, flow, false);
     }
 
-    public ScopeRT(Flow flow, boolean ephemeral) {
+    public ScopeRT(Callable callable, Flow flow, boolean ephemeral) {
         super(null, null, ephemeral);
+        this.callable = callable;
         this.flow = flow;
     }
 
     public ScopeDTO toDTO(boolean withNodes, SerializeContext serializeContext) {
         return new ScopeDTO(
                 serializeContext.getStringId(this),
-                withNodes ? NncUtils.map(getNodes(), nodeRT -> nodeRT.toDTO(serializeContext)) : List.of()
+                withNodes ? NncUtils.map(getNodes(), nodeRT -> nodeRT.toDTO(serializeContext)) : List.of(),
+                maxLocals,
+                maxStack
         );
     }
 
@@ -107,6 +113,10 @@ public class ScopeRT extends Element {
         flow.removeNode(node);
     }
 
+    public Callable getCallable() {
+        return callable;
+    }
+
     @JsonIgnore
     public Flow getFlow() {
         return flow;
@@ -145,4 +155,19 @@ public class ScopeRT extends Element {
         return flow.nextNodeName(prefix);
     }
 
+    public int getMaxLocals() {
+        return maxLocals;
+    }
+
+    public void setMaxLocals(int maxLocals) {
+        this.maxLocals = maxLocals;
+    }
+
+    public int getMaxStack() {
+        return maxStack;
+    }
+
+    public void setMaxStack(int maxStack) {
+        this.maxStack = maxStack;
+    }
 }

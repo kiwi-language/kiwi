@@ -5,16 +5,14 @@ import org.metavm.api.ValueList;
 import org.metavm.api.entity.MvObject;
 import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.flow.MethodBuilder;
-import org.metavm.flow.Nodes;
-import org.metavm.flow.Parameter;
-import org.metavm.flow.Values;
+import org.metavm.flow.*;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 
 import java.io.*;
+import java.lang.Error;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
@@ -347,102 +345,12 @@ public class StandardDefBuilder {
         return parseKlass(Iterator.class);
     }
 
-    private void createIteratorFlows(Klass iteratorType, Type elementType) {
-        boolean isAbstract = iteratorType.isInterface();
-        boolean isNative = !iteratorType.isInterface();
-        MethodBuilder.newBuilder(iteratorType, "hasNext", "hasNext")
-                .isNative(isNative)
-                .isAbstract(isAbstract)
-                .returnType(Types.getBooleanType())
-                .build();
-
-        MethodBuilder.newBuilder(iteratorType, "next", "next")
-                .isAbstract(isAbstract)
-                .isNative(isNative)
-                .returnType(elementType)
-                .build();
-
-        iteratorType.setStage(ResolutionStage.DEFINITION);
-    }
-
     public Klass createIterableKlass() {
         return parseKlass(Iterable.class);
     }
 
-    private void createIterableFlows(Klass iterableType, TypeVariable elementType) {
-        MethodBuilder.newBuilder(iterableType, "forEach", "forEach")
-                .isNative(true)
-                .returnType(Types.getVoidType())
-                .parameters(new Parameter(null, "action", "action",
-                        consumerKlass.getParameterized(
-                                List.of(UncertainType.createLowerBounded(elementType.getType()))).getType())
-                )
-                .build();
-
-        var pIteratorType = iteratorKlass.getParameterized(List.of(elementType.getType()));
-        MethodBuilder.newBuilder(iterableType, "iterator", "iterator")
-                .isNative(true)
-                .returnType(pIteratorType.getType())
-                .build();
-
-        iterableType.setStage(ResolutionStage.DEFINITION);
-    }
-
     public Klass createCollectionKlass() {
         return parseKlass(Collection.class);
-    }
-
-    private void createCollectionFlows(Klass collectionType, TypeVariable elementType) {
-        MethodBuilder.newBuilder(collectionType, "size", "size")
-                .isNative(true)
-                .returnType(Types.getLongType())
-                .build();
-
-        MethodBuilder.newBuilder(collectionType, "isEmpty", "isEmpty")
-                .isNative(true)
-                .returnType(Types.getBooleanType())
-                .build();
-
-        MethodBuilder.newBuilder(collectionType, "contains", "contains")
-                .isNative(true)
-                .returnType(Types.getBooleanType())
-                .parameters(new Parameter(null, "element", "element", Types.getAnyType()))
-                .build();
-
-        MethodBuilder.newBuilder(collectionType, "add", "add")
-                .isNative(true)
-                .returnType(Types.getBooleanType())
-                .parameters(new Parameter(null, "element", "element", elementType.getType()))
-                .build();
-
-        MethodBuilder.newBuilder(collectionType, "addAll", "addAll")
-                .isNative(true)
-                .returnType(Types.getBooleanType())
-                .parameters(new Parameter(null, "c", "c",
-                        collectionType.getParameterized(List.of(UncertainType.createUpperBounded(elementType.getType()))).getType()))
-                .build();
-
-        MethodBuilder.newBuilder(collectionType, "remove", "remove")
-                .isNative(true)
-                .returnType(Types.getBooleanType())
-                .parameters(new Parameter(null, "element", "element", Types.getAnyType()))
-                .build();
-
-        MethodBuilder.newBuilder(collectionType, "clear", "clear")
-                .isNative(true)
-                .returnType(Types.getVoidType())
-                .build();
-
-        MethodBuilder.newBuilder(collectionType, "removeIf", "removeIf")
-                .isNative(true)
-                .returnType(Types.getBooleanType())
-                .parameters(new Parameter(null, "filter", "filter",
-                        predicateKlass.getParameterized(
-                                List.of(UncertainType.createLowerBounded(elementType.getType()))
-                        ).getType()))
-                .build();
-
-        collectionType.setStage(ResolutionStage.DEFINITION);
     }
 
     public Klass createSetKlass() {
@@ -549,39 +457,11 @@ public class StandardDefBuilder {
         var c = MethodBuilder.newBuilder(klass, "MvObject", "MvObject")
                 .isConstructor(true)
                 .build();
-        var self = Nodes.self("self", klass, c.getRootScope());
-        Nodes.ret("ret", c.getRootScope(), Values.node(self));
+        var self = Nodes.self("self", klass, c.getScope());
+        Nodes.ret("ret", c.getScope(), Values.node(self));
         defContext.addDef(new DirectDef<>(MvObject.class, klass));
+        klass.accept(new MaxesComputer());
         return klass;
-    }
-
-    private void createMapFlows(Klass mapType, Type keyType, Type valueType) {
-        var nullableValueType = new UnionType(Set.of(valueType, Types.getNullType()));
-
-        MethodBuilder.newBuilder(mapType, "put", "put")
-                .returnType(nullableValueType)
-                .parameters(new Parameter(null, "key", "key", keyType),
-                        new Parameter(null, "value", "value", valueType))
-                .build();
-
-        MethodBuilder.newBuilder(mapType, "get", "get")
-                .returnType(nullableValueType)
-                .parameters(new Parameter(null, "key", "key", Types.getAnyType()))
-                .build();
-
-        MethodBuilder.newBuilder(mapType, "remove", "remove")
-                .returnType(nullableValueType)
-                .parameters(new Parameter(null, "key", "key", Types.getAnyType()))
-                .build();
-
-        MethodBuilder.newBuilder(mapType, "size", "size")
-                .returnType(Types.getLongType())
-                .build();
-
-        MethodBuilder.newBuilder(mapType, "clear", "clear")
-                .returnType(Types.getVoidType())
-                .build();
-        mapType.setStage(ResolutionStage.DEFINITION);
     }
 
     private void createThrowableFlows(Klass throwableType) {

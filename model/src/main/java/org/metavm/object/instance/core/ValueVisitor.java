@@ -64,15 +64,15 @@ public abstract class ValueVisitor<R> {
         return visitValue(value);
     }
 
-    public R visitFlowInstance(FlowValue value) {
+    public R visitFlowValue(FlowValue value) {
         return visitFunctionValue(value);
     }
 
-    public R visitLambdaInstance(Lambda value) {
+    public R visitLambdaValue(LambdaValue value) {
         return visitFunctionValue(value);
     }
 
-    public R visitInstanceReference(Reference reference) {
+    public R visitReference(Reference reference) {
         return visitValue(reference);
     }
 

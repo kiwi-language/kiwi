@@ -42,4 +42,9 @@ public class DummyCallable implements Callable {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public ScopeRT getScope() {
+        throw new UnsupportedOperationException();
+    }
+
 }

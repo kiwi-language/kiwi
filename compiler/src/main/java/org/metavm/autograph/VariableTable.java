@@ -21,18 +21,6 @@ public class VariableTable {
 
     private final LinkedList<TrySection> trySections = new LinkedList<>();
 
-    Value get(String name) {
-        return variableMap.getVariable(name);
-    }
-
-    void set(String name, Value value) {
-        variableMap.setVariable(name, value);
-    }
-
-    void logVariables() {
-        variableMap.logVariables();
-    }
-
     void enterCondSection(NodeRT branchNode) {
         branchNodes.push(branchNode);
         condSections.put(branchNode, new CondSection(branchNode, variableMap));

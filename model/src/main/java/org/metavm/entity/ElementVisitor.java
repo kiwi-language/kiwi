@@ -112,11 +112,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitLambdaEnterNode(LambdaEnterNode node) {
-        return visitNode(node);
-    }
-
-    public R visitLambdaExitNode(LambdaExitNode node) {
+    public R visitLambdaEnterNode(LambdaNode node) {
         return visitNode(node);
     }
 
@@ -392,8 +388,8 @@ public abstract class ElementVisitor<R> {
         return visitElement(parameterRef);
     }
 
-    public R visitLambdaNodeRef(LambdaNodeRef lambdaNodeRef) {
-        return visitElement(lambdaNodeRef);
+    public R visitLambdaNodeRef(LambdaRef lambdaRef) {
+        return visitElement(lambdaRef);
     }
 
     public R visitObjectMappingRef(ObjectMappingRef objectMappingRef) {
@@ -566,5 +562,25 @@ public abstract class ElementVisitor<R> {
 
     public R visitNodeValue(NodeValue value) {
         return visitValue(value);
+    }
+
+    public R visitStoreNode(StoreNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadNode(LoadNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadContextSlotNode(LoadContextSlotNode node) {
+        return visitNode(node);
+    }
+
+    public R visitStoreContextSlotNode(StoreContextSlotNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLambda(Lambda lambda) {
+        return visitElement(lambda);
     }
 }

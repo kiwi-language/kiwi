@@ -226,12 +226,16 @@ public class SubstitutorV2 extends CopyVisitor {
                 copy.setJavaMethod(method.getJavaMethod());
             copy.setConstructor(method.isConstructor());
             addCopy(method, copy);
-            if(method.isRootScopePresent())
-                addCopy(method.getRootScope(), copy.getRootScope());
+            if(method.isRootScopePresent()) {
+                addCopy(method.getScope(), copy.getScope());
+                copy.getScope().setMaxLocals(method.getScope().getMaxLocals());
+                copy.getScope().setMaxStack(method.getScope().getMaxStack());
+            }
             enterElement(copy);
             copy.setParameters(NncUtils.map(method.getParameters(), p -> (Parameter) copy0(p)));
             copy.setReturnType(substituteType(method.getReturnType()));
             processFlowBody(method, copy);
+            copy.setLambdas(NncUtils.map(method.getLambdas(), l -> (Lambda) copy0(l)));
             exitElement();
             check();
             return copy;
@@ -263,7 +267,7 @@ public class SubstitutorV2 extends CopyVisitor {
                 copy.setNativeCode(function.getNativeCode());
             addCopy(function, copy);
             if (function.isRootScopePresent())
-                addCopy(function.getRootScope(), copy.getRootScope());
+                addCopy(function.getScope(), copy.getScope());
             enterElement(copy);
             copy.setParameters(NncUtils.map(function.getParameters(), p -> (Parameter) copy0(p)));
             copy.setReturnType(substituteType(function.getReturnType()));
@@ -289,8 +293,8 @@ public class SubstitutorV2 extends CopyVisitor {
 //                ctCopy.setCapturedCompositeTypes(NncUtils.map(ct.getCapturedCompositeTypes(), this::substituteType));
 //                ctCopy.setCapturedFlows(NncUtils.map(ct.getCapturedFlows(), this::substituteFlow));
 //            }
-            for (NodeRT node : flow.getRootScope().getNodes())
-                copy.getRootScope().addNode((NodeRT) copy0(node));
+            for (NodeRT node : flow.getScope().getNodes())
+                copy.getScope().addNode((NodeRT) copy0(node));
             for (Type capturedCompositeType : flow.getCapturedCompositeTypes())
                 copy.addCapturedCompositeType((Type) copy0(capturedCompositeType));
             for (Flow capturedFlow : flow.getCapturedFlows())

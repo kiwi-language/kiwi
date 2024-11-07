@@ -65,7 +65,7 @@ public class InnerClassQualifier extends VisitorBase {
     @Override
     public void visitMethodCallExpression(PsiMethodCallExpression expression) {
         super.visitMethodCallExpression(expression);
-        var method = Objects.requireNonNull(expression.resolveMethod());
+        var method = Objects.requireNonNull(expression.resolveMethod(), expression::getText);
         if(!TranspileUtils.isStatic(method)) {
             var declaringClass = Objects.requireNonNull(method.getContainingClass());
             if (expression.getMethodExpression().getQualifierExpression() == null) {

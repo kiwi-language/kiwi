@@ -21,7 +21,7 @@ import java.util.function.BiFunction;
 
 import static java.util.Objects.requireNonNull;
 
-public class Generator extends CodeGenVisitor {
+public class Generator extends VisitorBase {
 
     public static final Logger logger = LoggerFactory.getLogger(Generator.class);
 
@@ -61,14 +61,12 @@ public class Generator extends CodeGenVisitor {
         if(!psiClass.isInterface()) {
             initFlow = klass.getMethodByCodeAndParamTypes("<init>", List.of());
             initFlowBuilder = new MethodGenerator(initFlow, typeResolver, this);
-            initFlowBuilder.enterScope(initFlowBuilder.getMethod().getRootScope());
-            initFlowBuilder.setVariable("this", Values.node(initFlowBuilder.createSelf()));
-            initFlowBuilder.createInput();
+            initFlowBuilder.enterScope(initFlowBuilder.getMethod().getScope());
             if (klass.getSuperType() != null) {
                 var superInit = klass.getSuperType().resolve().findSelfMethodByCode("<init>");
                 if (superInit != null) {
                     initFlowBuilder.createMethodCall(
-                            initFlowBuilder.getVariable("this"),
+                            initFlowBuilder.getThis(),
                             superInit,
                             List.of()
                     );
@@ -81,8 +79,7 @@ public class Generator extends CodeGenVisitor {
         }
         var classInit = klass.getMethodByCodeAndParamTypes("<cinit>", List.of());
         var classInitFlowBuilder = new MethodGenerator(classInit, typeResolver, this);
-        classInitFlowBuilder.enterScope(classInitFlowBuilder.getMethod().getRootScope());
-        classInitFlowBuilder.createInput();
+        classInitFlowBuilder.enterScope(classInitFlowBuilder.getMethod().getScope());
         if (klass.getSuperType() != null) {
             var superCInit = klass.getSuperType().resolve().findSelfMethodByCode("<cinit>");
             if (superCInit != null) {
@@ -110,7 +107,7 @@ public class Generator extends CodeGenVisitor {
             if (!hasConstructor) {
                 var constructor = klass.getDefaultConstructor();
                 var constructorGen = new MethodGenerator(constructor, typeResolver, this);
-                constructorGen.enterScope(constructor.getRootScope());
+                constructorGen.enterScope(constructor.getScope());
                 constructorGen.createMethodCall(Values.node(constructorGen.createSelf()), initFlow, List.of());
                 constructorGen.createReturn(Values.node(constructorGen.createSelf()));
                 constructorGen.exitScope();
@@ -174,7 +171,7 @@ public class Generator extends CodeGenVisitor {
             } else {
                 var builder = currentClassInfo().fieldBuilder;
                 var initializer = builder.getExpressionResolver().resolve(psiField.getInitializer());
-                builder.createUpdate(builder.getVariable("this"), Map.of(field, initializer));
+                builder.createUpdate(builder.getThis(), Map.of(field, initializer));
             }
         } else if (field.getType().isNullable()) {
             initField(field, Values.nullValue());
@@ -193,7 +190,7 @@ public class Generator extends CodeGenVisitor {
             builder.createUpdateStatic(currentClass(), Map.of(field, initializer));
         } else {
             var builder = currentClassInfo().fieldBuilder;
-            builder.createUpdate(builder.getVariable("this"), Map.of(field, initializer));
+            builder.createUpdate(builder.getThis(), Map.of(field, initializer));
         }
     }
 
@@ -217,26 +214,6 @@ public class Generator extends CodeGenVisitor {
         tryBlock.accept(this);
         var trySectionOutput = builder().exitTrySection(tryEnter, NncUtils.map(outputVars, Objects::toString));
         var tryExit = builder().createTryExit();
-        for (QualifiedName outputVar : outputVars) {
-            var field = FieldBuilder.newBuilder(outputVar.toString(), outputVar.toString(),
-                            tryExit.getKlass(), resolveType(outputVar.type()))
-                    .build();
-            new TryExitField(
-                    field,
-                    NncUtils.map(
-                            trySectionOutput.keySet(),
-                            raiseNode -> new TryExitValue(
-                                    raiseNode,
-                                    Values.getOrNever(trySectionOutput.get(raiseNode).get(outputVar.toString()))
-                            )
-                    ),
-                    Values.getOrNever(builder().getVariable(outputVar.toString())),
-                    tryExit
-            );
-            builder().setVariable(outputVar.toString(),
-                    Values.node(builder().createNodeProperty(tryExit, field)));
-        }
-
         var exceptionExpr = Values.node(Nodes.getProperty(
                 Values.node(tryExit),
                 tryExit.getKlass().getFieldByCode("exception"),
@@ -264,7 +241,7 @@ public class Generator extends CodeGenVisitor {
                 lastIfNode = ifNode;
                 var param = requireNonNull(catchSection.getParameter());
                 builder().defineVariable(param.getName());
-                builder().setVariable(param.getName(), exceptionExpr);
+                builder().createStore(TranspileUtils.getVariableIndex(param), exceptionExpr);
                 catchBlock.accept(this);
                 exits.put(branchIdx++, builder().createGoto(null));
             }
@@ -340,7 +317,10 @@ public class Generator extends CodeGenVisitor {
             return;
         if(TranspileUtils.isAbstract(psiMethod))
             return;
+//        logger.debug("Generating code for method {}", TranspileUtils.getMethodQualifiedName(psiMethod));
         var method = NncUtils.requireNonNull(psiMethod.getUserData(Keys.Method));
+        method.getScope().setMaxLocals(TranspileUtils.getMaxLocals(psiMethod));
+        method.setLambdas(List.of());
         var capturedTypeListener = new CompositeTypeListener() {
             @Override
             public void onTypeCreated(Type type) {
@@ -358,19 +338,18 @@ public class Generator extends CodeGenVisitor {
         method.clearContent();
         MethodGenerator builder = new MethodGenerator(method, typeResolver, this);
         builders.push(builder);
-        builder.enterScope(method.getRootScope());
+        builder.enterScope(method.getScope());
         if (TranspileUtils.isStatic(psiMethod)) {
             processParameters(psiMethod.getParameterList(), method);
         } else {
             var selfNode = builder().createSelf();
-            builder.setVariable("this", Values.node(selfNode));
             processParameters(psiMethod.getParameterList(), method);
             if (psiMethod.isConstructor()) {
                 var superClass = NncUtils.get(currentClass().getSuperType(), ClassType::resolve);
                 if (superClass != null && !isEnumType(superClass) && !isEntityType(superClass)
                         && !isRecordType(superClass) && !isSuperCallPresent(psiMethod)) {
                     builder().createMethodCall(
-                            builder().getVariable("this"),
+                            builder().getThis(),
                             superClass.getDefaultConstructor(),
                             List.of()
                     );
@@ -383,21 +362,13 @@ public class Generator extends CodeGenVisitor {
                 if (currentClass().isEnum()) {
                     var klass = currentClass();
                     var enumClass = requireNonNull(klass.getSuperType()).resolve();
-                    var inputNode = method.getInputNode();
                     builder.createUpdate(
                             Values.node(selfNode),
                             Map.of(
                                     enumClass.getFieldByCode("name"),
-                                    Values.node(builder.createNodeProperty(
-                                            inputNode,
-                                            inputNode.getKlass().getFieldByCode("__name__")
-
-                                    )),
+                                    Values.node(builder.createLoad(1, Types.getStringType())),
                                     enumClass.getFieldByCode("ordinal"),
-                                    Values.node(builder.createNodeProperty(
-                                            inputNode,
-                                            inputNode.getKlass().getFieldByCode("__ordinal__")
-                                    ))
+                                    Values.node(builder.createLoad(2, Types.getLongType()))
                             )
                     );
                 }
@@ -405,9 +376,11 @@ public class Generator extends CodeGenVisitor {
         }
         requireNonNull(psiMethod.getBody(), "body is missing from method " +
                 TranspileUtils.getMethodQualifiedName(psiMethod)).accept(this);
+        NodeRT lastNode;
         if (psiMethod.isConstructor()) {
             builder.createReturn(Values.node(method.getRootNode()));
-        } else if (method.getReturnType().isVoid() && !requireNonNull(method.getRootScope().getLastNode()).isExit()) {
+        } else if (method.getReturnType().isVoid() &&
+                ((lastNode = method.getScope().getLastNode()) == null || !lastNode.isExit())) {
             builder.createReturn();
         }
         builder.exitScope();
@@ -472,20 +445,20 @@ public class Generator extends CodeGenVisitor {
             var caseLabelElementList = labeledRuleStmt.getCaseLabelElementList();
             if (caseLabelElementList == null || caseLabelElementList.getElementCount() == 0)
                 continue;
-            String castVar = null;
+            PsiVariable castVar = null;
             List<IfNotNode> ifNodes;
             if (isTypePatternCase(caseLabelElementList)) {
                 PsiTypeTestPattern typeTestPattern = (PsiTypeTestPattern) caseLabelElementList.getElements()[0];
                 var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
-                builder().setVariable(
-                        requireNonNull(typeTestPattern.getPatternVariable()).getName(),
+                builder().createStore(
+                        TranspileUtils.getVariableIndex(requireNonNull(typeTestPattern.getPatternVariable())),
                         switchExpr
                 );
                 ifNodes = List.of(builder().createIfNot(
                         Values.node(builder().createInstanceOf(switchExpr, typeResolver.resolveDeclaration(checkType))),
                         null
                 ));
-                castVar = requireNonNull(typeTestPattern.getPatternVariable()).getName();
+                castVar = requireNonNull(typeTestPattern.getPatternVariable());
             } else {
                 var expressions = NncUtils.map(caseLabelElementList.getElements(),
                         e -> resolveExpression((PsiExpression) e));
@@ -505,7 +478,7 @@ public class Generator extends CodeGenVisitor {
             }
             lastIfNodes = ifNodes;
             if (castVar != null) {
-                builder().setVariable(castVar, switchExpr);
+                builder().createStore(TranspileUtils.getVariableIndex(castVar), switchExpr);
             }
             processSwitchCaseBody(labeledRuleStmt.getBody());
             exits.put(branchIdx++, lastGoto = builder().createGoto(null));
@@ -554,15 +527,6 @@ public class Generator extends CodeGenVisitor {
 
 
     private void processParameters(PsiParameterList parameterList, Flow flow) {
-        var inputNode = builder().createInput();
-        for (Parameter parameter : flow.getParameters()) {
-            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputNode.getKlass(),
-                            Types.tryCapture(parameter.getType(), flow, parameter))
-                    .build();
-        }
-        for (PsiParameter parameter : parameterList.getParameters()) {
-            processParameter(parameter, inputNode);
-        }
     }
 
     private Klass currentClass() {
@@ -571,16 +535,6 @@ public class Generator extends CodeGenVisitor {
 
     private ClassInfo currentClassInfo() {
         return requireNonNull(classInfoStack.peek());
-    }
-
-    private void processParameter(PsiParameter parameter, InputNode inputNode) {
-        var field = Objects.requireNonNull(inputNode.getKlass().findFieldByCode(parameter.getName()),
-                () -> "Field for parameter " + parameter.getName() + " is not found in the input class");
-        builder().defineVariable(parameter.getName());
-        builder().setVariable(
-                parameter.getName(),
-                Values.node(builder().createGetProperty(Values.node(inputNode), field))
-        );
     }
 
     private Type resolveType(PsiType type) {
@@ -610,34 +564,15 @@ public class Generator extends CodeGenVisitor {
     }
 
     private void exitCondSection(NodeRT sectionId, JoinNode joinNode, Map<Long, NodeRT> exits, List<QualifiedName> outputVariables) {
-        var outputVars = NncUtils.map(outputVariables, Objects::toString);
-        var condOutputs = builder().exitCondSection(sectionId, joinNode, exits, false);
-        for (var qn : outputVariables) {
-            var branch2value = new HashMap<NodeRT, Value>();
-            for (var entry2 : condOutputs.entrySet()) {
-                var branchIdx = entry2.getKey();
-                var branchOutputs = entry2.getValue();
-                branch2value.put(exits.get(branchIdx), branchOutputs.get(qn.toString()));
-            }
-            var memberTypes = new HashSet<Type>();
-            for (var value : branch2value.values()) {
-                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType())))
-                    memberTypes.add(value.getType());
-            }
-            var fieldType =
-                    memberTypes.size() == 1 ? memberTypes.iterator().next() : new UnionType(memberTypes);
-            var field = FieldBuilder.newBuilder(qn.toString(), qn.toString(), joinNode.getKlass(), fieldType).build();
-            var mergeField = new JoinNodeField(field, joinNode, branch2value);
-            builder().setVariable(qn.toString(), Values.node(builder().createNodeProperty(joinNode, mergeField.getField())));
-        }
+        builder().exitCondSection(sectionId, joinNode, exits, false);
     }
 
     @Override
     public void visitLocalVariable(PsiLocalVariable variable) {
         builder().defineVariable(variable.getName());
         if (variable.getInitializer() != null) {
-            var valueNode = builder().createValue(variable.getName(), resolveExpression(variable.getInitializer()));
-            builder().setVariable(variable.getName(), Values.node(valueNode));
+            builder().createStore(TranspileUtils.getVariableIndex(variable),
+                    resolveExpression(variable.getInitializer()));
         }
     }
 
@@ -660,30 +595,11 @@ public class Generator extends CodeGenVisitor {
         );
         Map<Field, Value> initialValues = new HashMap<>();
         Map<QualifiedName, Field> loopVar2Field = new HashMap<>();
-        for (QualifiedName loopVar : loopVars) {
-            var field = builder().newTemporaryField(
-                    joinNode.getKlass(),
-                    loopVar.toString(),
-                    Types.getNullableType(resolveType(loopVar.type()))
-            );
-            loopVar2Field.put(loopVar, field);
-            initialValues.put(field, builder().getVariable(loopVar.toString()));
-        }
-        for (QualifiedName loopVar : loopVar2Field.keySet()) {
-            var field = loopVar2Field.get(loopVar);
-            builder().setVariable(loopVar.toString(),
-                    Values.node(builder().createNodeProperty(joinNode, field)));
-        }
         var cond = condition != null ? resolveExpression(condition) : Values.constantTrue();
         var ifNode = builder().createIfNot(cond, null);
         JumpNode extraIfNode = null;
         if (preprocessor != null)
             extraIfNode = preprocessor.apply(joinNode, loopVar2Field);
-        var exitValues = new HashMap<Field, Value>();
-        for (QualifiedName loopVar : loopVars) {
-            var field = loopVar2Field.get(loopVar);
-            exitValues.put(field, builder().getVariable(loopVar.toString()));
-        }
         if (statement.getBody() != null) {
             statement.getBody().accept(this);
         }
@@ -700,14 +616,6 @@ public class Generator extends CodeGenVisitor {
                             entryNode, extraLoopField.initialValue,
                             goBack, extraLoopField.updatedValue
             ));
-        }
-        for (QualifiedName loopVar : loopVars) {
-            var field = loopVar2Field.get(loopVar);
-            var initialValue = initialValues.get(field);
-            var updatedValue = builder().getVariable(loopVar.toString());
-            new JoinNodeField(field, joinNode, Map.of(entryNode, initialValue,
-                    goBack, updatedValue));
-            builder().setVariable(loopVar.toString(), Objects.requireNonNull(exitValues.get(field)));
         }
     }
 
@@ -747,7 +655,7 @@ public class Generator extends CodeGenVisitor {
                                 Values.node(index),
                                 Values.node(builder().createArrayLength(iteratedExpr))
                         )), null);
-                        builder().setVariable(statement.getIterationParameter().getName(),
+                        builder().createStore(statement.getIterationParameter(),
                                 Values.node(builder().createGetElement(iteratedExpr, Values.node(index))));
                         return ifNode;
                     },
@@ -791,7 +699,7 @@ public class Generator extends CodeGenVisitor {
                         itType.getMethod("next", List.of()),
                         List.of()
                 );
-                builder().setVariable(statement.getIterationParameter().getName(), Values.node(elementNode));
+                builder().createStore(statement.getIterationParameter(), Values.node(elementNode));
                 return ifNode;
             }, null);
         }

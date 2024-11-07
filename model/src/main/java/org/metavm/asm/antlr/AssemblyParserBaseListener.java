@@ -425,18 +425,6 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLabeledStatement(AssemblyParser.LabeledStatementContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLabeledStatement(AssemblyParser.LabeledStatementContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterStatement(AssemblyParser.StatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -444,6 +432,18 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitStatement(AssemblyParser.StatementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLocalVariableDeclaration(AssemblyParser.LocalVariableDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLocalVariableDeclaration(AssemblyParser.LocalVariableDeclarationContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -833,18 +833,6 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFunctionCall(AssemblyParser.FunctionCallContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitFunctionCall(AssemblyParser.FunctionCallContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterLiteral(AssemblyParser.LiteralContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -977,13 +965,13 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLambda(AssemblyParser.LambdaContext ctx) { }
+	@Override public void enterLambdaExpression(AssemblyParser.LambdaExpressionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLambda(AssemblyParser.LambdaContext ctx) { }
+	@Override public void exitLambdaExpression(AssemblyParser.LambdaExpressionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

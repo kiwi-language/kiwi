@@ -31,8 +31,7 @@ class FooService extends BaseService {
     }
 
     public IdxFooServiceAllFlags idxAllFlags() {
-        idx: new IdxFooServiceAllFlags(this.allFlags);
-        return idx;
+        return new IdxFooServiceAllFlags(this.allFlags);
     }
 
 }
@@ -48,8 +47,7 @@ class BarService extends BaseService {
     }
 
     public IdxBarServiceAllFlags idxAllFlags() {
-        idx: new IdxBarServiceAllFlags(this.allFlags);
-        return idx;
+        return new IdxBarServiceAllFlags(this.allFlags);
     }
 
 }

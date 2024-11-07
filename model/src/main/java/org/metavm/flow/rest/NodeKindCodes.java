@@ -18,7 +18,7 @@ public class NodeKindCodes {
     public static final int TRY_ENTER = 23;
     public static final int TRY_EXIT = 24;
     public static final int FUNC = 25;
-    public static final int LAMBDA_ENTER = 26;
+    public static final int LAMBDA = 26;
     public static final int ADD_ELEMENT = 27;
     public static final int DELETE_ELEMENT = 28;
     public static final int GET_ELEMENT = 29;
@@ -39,7 +39,6 @@ public class NodeKindCodes {
     public static final int IF = 44;
     public static final int JOIN = 45;
     public static final int NOOP = 46;
-    public static final int LAMBDA_EXIT = 47;
     public static final int ADD = 48;
     public static final int SUB = 49;
     public static final int MUL = 50;
@@ -67,5 +66,9 @@ public class NodeKindCodes {
     public static final int INSTANCE_OF = 72;
     public static final int ARRAY_LENGTH = 73;
     public static final int IF_NOT = 74;
+    public static final int STORE = 75;
+    public static final int LOAD = 76;
+    public static final int LOAD_CONTEXT_SLOT = 77;
+    public static final int STORE_CONTEXT_SLOT = 78;
 
 }

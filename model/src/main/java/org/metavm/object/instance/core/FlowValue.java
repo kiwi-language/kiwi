@@ -50,7 +50,7 @@ public class FlowValue extends FunctionValue {
 
     @Override
     public <R> R accept(ValueVisitor<R> visitor) {
-        return visitor.visitFlowInstance(this);
+        return visitor.visitFlowValue(this);
     }
 
 }

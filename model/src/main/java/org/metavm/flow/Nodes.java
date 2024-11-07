@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.object.type.*;
 import org.metavm.object.view.ObjectMapping;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+@Slf4j
 public class Nodes {
 
     // create raise node
@@ -20,8 +22,8 @@ public class Nodes {
                 RaiseParameterKind.MESSAGE, null, message);
     }
 
-    public static RaiseNode raise2(String name, ScopeRT scope, Value exception) {
-        return new RaiseNode(null, name, null, scope.getLastNode(), scope,
+    public static RaiseNode raise2(ScopeRT scope, Value exception) {
+        return new RaiseNode(null, scope.nextNodeName("raise"), null, scope.getLastNode(), scope,
                 RaiseParameterKind.THROWABLE, exception, null);
     }
 
@@ -159,8 +161,15 @@ public class Nodes {
         return new FunctionCallNode(null, name, null, scope.getLastNode(), scope, function.getRef(), arguments);
     }
 
-    public static MethodCallNode methodCall(String name, ScopeRT scope,
-                                            Value self, Method method, List<Argument> arguments) {
+    public static MethodCallNode methodCall(Value self, Method method, List<Value> arguments, ScopeRT scope) {
+        return methodCall(scope.nextNodeName("methodCall") ,
+                self,
+                method,
+                NncUtils.biMap(method.getParameters(), arguments, (p, a) -> new Argument(null, p.getRef(), a)),
+                scope);
+    }
+
+    public static MethodCallNode methodCall(String name, Value self, Method method, List<Argument> arguments, ScopeRT scope) {
         return new MethodCallNode(null, name, null, scope.getLastNode(), scope, self, method.getRef(), arguments);
     }
 
@@ -240,7 +249,7 @@ public class Nodes {
         }
         return new InputNode(
                 null, name, code, inputType,
-                flow.getRootScope().getLastNode(), flow.getRootScope()
+                flow.getScope().getLastNode(), flow.getScope()
         );
     }
 
@@ -293,6 +302,36 @@ public class Nodes {
         );
     }
 
+    public static UpdateObjectNode update(Value self, Field field, Value value, ScopeRT scope) {
+        return new UpdateObjectNode(
+                null,
+                scope.nextNodeName("update"),
+                null,
+                scope.getLastNode(),
+                scope,
+                self,
+                List.of(new UpdateField(field.getRef(), UpdateOp.SET, value))
+        );
+    }
+
+    public static UpdateStaticNode updateStatic(Field field, Value value, ScopeRT scope) {
+        return new UpdateStaticNode(
+                null,
+                scope.nextNodeName("updateStatic"),
+                null,
+                scope.getLastNode(),
+                scope,
+                field.getDeclaringType(),
+                List.of(
+                        new UpdateField(field.getRef(), UpdateOp.SET, value)
+                )
+        );
+    }
+
+    public static NonNullNode nonNull(Value value, ScopeRT scope) {
+        return nonNull(scope.nextNodeName("nonnull"), value, scope);
+    }
+
     public static NonNullNode nonNull(String name, Value value, ScopeRT scope) {
         return new NonNullNode(
                 null, name, null, Types.getNonNullType(value.getType()), scope.getLastNode(), scope, value
@@ -305,16 +344,6 @@ public class Nodes {
 
     public static NoopNode noop(String name, ScopeRT scope) {
         return new NoopNode(null, name,null, scope.getLastNode(), scope);
-    }
-
-    public static LambdaExitNode lambdaExit(ScopeRT scope) {
-        return new LambdaExitNode(
-                null,
-                scope.nextNodeName("lambdaExit"),
-                null,
-                scope.getLastNode(),
-                scope
-        );
     }
 
     public static NodeRT add(Value first, Value second, ScopeRT scope) {
@@ -626,6 +655,93 @@ public class Nodes {
                 scope.getLastNode(),
                 scope,
                 property.getRef()
+        );
+    }
+
+    public static NodeRT store(int index, Value value, ScopeRT scope) {
+        return new StoreNode(
+                null,
+                scope.nextNodeName("store"),
+                null,
+                scope.getLastNode(),
+                scope,
+                index,
+                value
+        );
+    }
+
+    public static NodeRT load(int index, Type type, ScopeRT scope) {
+        return new LoadNode(
+                null,
+                scope.nextNodeName("load"),
+                null,
+                type,
+                scope.getLastNode(),
+                scope,
+                index
+        );
+    }
+
+    public static NodeRT storeContextSlot(int contextIndex, int slotIndex, Value value, ScopeRT scope) {
+        return new StoreContextSlotNode(
+                null,
+                scope.nextNodeName("storeContextSlot"),
+                null,
+                scope.getLastNode(),
+                scope,
+                contextIndex,
+                slotIndex,
+                value
+        );
+    }
+
+    public static NodeRT loadContextSlot(int contextIndex, int slotIndex, Type type, ScopeRT scope) {
+        return new LoadContextSlotNode(
+                null,
+                scope.nextNodeName("loadContextSlot"),
+                null,
+                type,
+                scope.getLastNode(),
+                scope,
+                contextIndex,
+                slotIndex
+        );
+    }
+
+    public static NodeRT lambda(Lambda lambda, ScopeRT scope) {
+        return new LambdaNode(
+                null,
+                scope.nextNodeName("lambda"),
+                null,
+                scope.getLastNode(),
+                scope,
+                lambda,
+                null
+        );
+    }
+
+    public static NodeRT select(Index index, IndexQueryKey key, ScopeRT scope) {
+        return new IndexSelectNode(
+                null,
+                scope.nextNodeName("select"),
+                null,
+                index.getDeclaringType().getType(),
+                scope.getLastNode(),
+                scope,
+                index,
+                key
+        );
+    }
+
+    public static NodeRT selectFirst(Index index, IndexQueryKey key, ScopeRT scope) {
+        return new IndexSelectFirstNode(
+                null,
+                scope.nextNodeName("select"),
+                null,
+                scope.getLastNode(),
+                scope,
+                index,
+                key
         );
     }
 

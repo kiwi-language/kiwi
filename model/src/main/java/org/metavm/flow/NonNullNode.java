@@ -72,6 +72,6 @@ public class NonNullNode extends NodeRT {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write(value.getText() + "!");
+        writer.write(value.getText() + "!!");
     }
 }

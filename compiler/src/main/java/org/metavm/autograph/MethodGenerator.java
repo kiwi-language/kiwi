@@ -1,12 +1,12 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiVariable;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expression;
 import org.metavm.expression.ExpressionTypeMap;
-import org.metavm.expression.Expressions;
 import org.metavm.expression.TypeNarrower;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
@@ -38,6 +38,10 @@ public class MethodGenerator {
 
     Method getMethod() {
         return method;
+    }
+
+    Type getThisType() {
+        return method.getDeclaringType().getType();
     }
 
     IfNode createIf(Value condition, @Nullable NodeRT target) {
@@ -252,32 +256,6 @@ public class MethodGenerator {
     void exitCondSection1(NodeRT sectionId, JoinNode joinNode, Map<Long, NodeRT> exits, boolean isSwitchExpression) {
         var condOutputs = exitCondSection(sectionId, joinNode, exits, isSwitchExpression);
         var vars = condOutputs.values().iterator().next().keySet();
-        out: for (var var : vars) {
-            var branch2value = new HashMap<NodeRT, org.metavm.flow.Value>();
-            for (var entry2 : condOutputs.entrySet()) {
-                var branchIdx = entry2.getKey();
-                var exit = Objects.requireNonNull(exits.get(branchIdx));
-                if(exit.isExit() || (exit instanceof GotoNode g && g.getTarget() != joinNode))
-                    continue;
-                var branchOutputs = entry2.getValue();
-                var v = branchOutputs.get(var);
-//                var v = Objects.requireNonNull(,
-//                        () -> "Variable " + var + " is missing from branch " + branch.getIndex());
-                if(v == null)
-                    continue out;
-                branch2value.put(Objects.requireNonNull(exits.get(branchIdx)), v);
-            }
-            var memberTypes = new HashSet<Type>();
-            for (var value : branch2value.values()) {
-                if (NncUtils.noneMatch(memberTypes, t -> t.isAssignableFrom(value.getType())))
-                    memberTypes.add(value.getType());
-            }
-            var fieldType =
-                    memberTypes.size() == 1 ? memberTypes.iterator().next() : Types.getUnionType(memberTypes);
-            var field = FieldBuilder.newBuilder(var, var, joinNode.getKlass(), fieldType).build();
-            var joinField = new JoinNodeField(field, joinNode, branch2value);
-            setVariable(var, Values.node(createNodeProperty(joinNode, joinField.getField())));
-        }
     }
 
     boolean isInsideBranch() {
@@ -288,16 +266,12 @@ public class MethodGenerator {
         return NncUtils.requireNonNull(scopes.peek());
     }
 
-    void setVariable(String name, Value value) {
-        variableTable.set(name, value);
-    }
-
     void defineVariable(String name) {
         variableTable.define(name);
     }
 
-    Value getVariable(String name) {
-        return variableTable.get(name);
+    Value getThis() {
+        return new NodeValue(createLoadThis());
     }
 
     ScopeInfo enterScope(ScopeRT scope) {
@@ -493,17 +467,13 @@ public class MethodGenerator {
         return node;
     }
 
-    LambdaEnterNode createLambdaEnter(List<Parameter> parameters, Type returnType, Klass functionalInterface) {
-        var node = onNodeCreated(new LambdaEnterNode(
-                null, nextName("lambdaEnter"), null, scope().getLastNode(), scope(),
-                parameters, returnType, functionalInterface.getType()
+    LambdaNode createLambda(Lambda lambda, Klass functionalInterface) {
+        var node = onNodeCreated(new LambdaNode(
+                null, nextName("lambda"), null, scope().getLastNode(), scope(),
+                lambda, functionalInterface.getType()
         ));
         node.createSAMImpl();
         return node;
-    }
-
-    LambdaExitNode createLambdaExit() {
-        return new LambdaExitNode(null, nextName("lambdaExit"), null, scope().getLastNode(), scope());
     }
 
     NewObjectNode createNew(Method method, List<Value> arguments, boolean ephemeral, boolean unbound) {
@@ -524,11 +494,6 @@ public class MethodGenerator {
 
     TypeResolver getTypeResolver() {
         return typeResolver;
-    }
-
-    public InputNode createInput() {
-        var type = KlassBuilder.newBuilder("Input", null).temporary().build();
-        return onNodeCreated(new InputNode(null, nextName("input"), null, type, scope().getLastNode(), scope()));
     }
 
     public SelfNode createSelf() {
@@ -896,7 +861,7 @@ public class MethodGenerator {
     GetPropertyNode createGetProperty(Value instance, Property property) {
         return onNodeCreated(new GetPropertyNode(
                         null,
-                        nextName("negate"),
+                        nextName("property"),
                         null,
                         scope().getLastNode(),
                         scope(),
@@ -909,7 +874,7 @@ public class MethodGenerator {
     GetStaticNode createGetStatic(Property property) {
         return onNodeCreated(new GetStaticNode(
                         null,
-                        nextName("negate"),
+                        nextName("static"),
                         null,
                         scope().getLastNode(),
                         scope(),
@@ -920,6 +885,64 @@ public class MethodGenerator {
 
     NoopNode createNoop() {
         return new NoopNode(null, nextName("noop"), null, scope().getLastNode(), scope());
+    }
+
+    public NodeRT createLoadThis() {
+        return createLoad(0, getThisType());
+    }
+
+    public NodeRT createLoad(int index, Type type) {
+        return onNodeCreated(new LoadNode(
+                null,
+                nextName("load"),
+                null,
+                type,
+                scope().getLastNode(),
+                scope(),
+                index
+        ));
+    }
+
+    public NodeRT createStore(PsiVariable variable, Value value) {
+        return createStore(TranspileUtils.getVariableIndex(variable), value);
+    }
+
+    public NodeRT createStore(int index, Value value) {
+        return onNodeCreated(new StoreNode(
+                null,
+                nextName("store"),
+                null,
+                scope().getLastNode(),
+                scope(),
+                index,
+                value
+        ));
+    }
+
+    public NodeRT createLoadContextSlot(int contextIndex, int slotIndex, Type type) {
+        return onNodeCreated(new LoadContextSlotNode(
+                null,
+                nextName("store"),
+                null,
+                type,
+                scope().getLastNode(),
+                scope(),
+                contextIndex,
+                slotIndex
+        ));
+    }
+
+    public NodeRT createStoreContextSlot(int contextIndex, int slotIndex, Value value) {
+        return onNodeCreated(new StoreContextSlotNode(
+                null,
+                nextName("store"),
+                null,
+                scope().getLastNode(),
+                scope(),
+                contextIndex,
+                slotIndex,
+                value
+        ));
     }
 
     private static final class ScopeInfo {

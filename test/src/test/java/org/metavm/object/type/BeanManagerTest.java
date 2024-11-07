@@ -53,14 +53,14 @@ public class BeanManagerTest extends TestCase {
                     .returnType(barServiceKlass.getType())
                     .build();
             {
-                var self = Nodes.self("self", barServiceKlass, constructor.getRootScope());
+                var self = Nodes.self("self", barServiceKlass, constructor.getScope());
                 var input = Nodes.input(constructor);
                 Nodes.updateField("setFooService", Values.node(self),
                         field, Values.node(Nodes.nodeProperty(input, input.getKlass().getFieldByName("fooService"),
-                                constructor.getRootScope())),
-                        constructor.getRootScope()
+                                constructor.getScope())),
+                        constructor.getScope()
                 );
-                Nodes.ret("return", constructor.getRootScope(), Values.node(self));
+                Nodes.ret("return", constructor.getScope(), Values.node(self));
             }
             var factoryMethod = MethodBuilder.newBuilder(configKlass, "barService", "barService")
                     .addAttribute(AttributeNames.BEAN_NAME, "barService")
@@ -71,7 +71,7 @@ public class BeanManagerTest extends TestCase {
                 var input = Nodes.input(factoryMethod);
                 var barService = Nodes.newObject(
                         "barService",
-                        factoryMethod.getRootScope(),
+                        factoryMethod.getScope(),
                         constructor,
                         List.of(
                                 new Argument(
@@ -80,16 +80,19 @@ public class BeanManagerTest extends TestCase {
                                         Values.node(
                                                 Nodes.nodeProperty(input,
                                                 input.getKlass().getFieldByName("fooService"),
-                                                        factoryMethod.getRootScope())
+                                                        factoryMethod.getScope())
                                         )
                                 )
                         ),
                         false,
                         false
                 );
-                Nodes.ret("return", factoryMethod.getRootScope(), Values.node(barService));
+                Nodes.ret("return", factoryMethod.getScope(), Values.node(barService));
             }
             var registry = BeanDefinitionRegistry.getInstance(context);
+            configKlass.accept(new MaxesComputer());
+            fooServiceKlass.accept(new MaxesComputer());
+            barServiceKlass.accept(new MaxesComputer());
             beanManager.createBeans(List.of(configKlass, fooServiceKlass), registry, context);
             var fooService = registry.getBean("fooService");
             Assert.assertTrue(fooServiceKlass.getType().isInstance(fooService.getReference()));
@@ -107,8 +110,8 @@ public class BeanManagerTest extends TestCase {
                 .isConstructor(true)
                 .returnType(klass.getType())
                 .build();
-        var self = Nodes.self("self", klass, constructor.getRootScope());
-        Nodes.ret("return", constructor.getRootScope(), Values.node(self));
+        var self = Nodes.self("self", klass, constructor.getScope());
+        Nodes.ret("return", constructor.getScope(), Values.node(self));
     }
 
 }

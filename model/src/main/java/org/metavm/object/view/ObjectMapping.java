@@ -42,12 +42,10 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var readMethod = getSourceMethod(actualSourceType.resolve(), getReadMethod());
         var view = Nodes.methodCall(
                 scope.nextNodeName("view"),
-                scope,
-                Values.node(Nodes.inputField(input, 0, scope)),
-                readMethod,
-                List.of()
+                Values.node(Nodes.inputField(input, 0, scope)), readMethod, List.of(), scope
         );
         new ReturnNode(null, scope.nextNodeName("return"), null, scope.getLastNode(), scope, Values.node(view));
+        mapper.computeMaxes();
         return mapper;
     }
 
@@ -74,17 +72,14 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         );
         var castedSource = Nodes.cast(scope.nextNodeName("castedSource"), getSourceType(), Values.node(source), scope);
         Nodes.methodCall(
-                scope.nextNodeName("saveView"), scope, Values.node(castedSource),
-                writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.node(view)))
+                scope.nextNodeName("saveView"), Values.node(castedSource), writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.node(view))), scope
         );
         Nodes.ret(scope.nextNodeName("return"), scope, Values.node(castedSource));
         if (fromViewMethod != null) {
             var fromView = Nodes.methodCall(
-                    scope.nextNodeName("fromView"), scope,
-                    null, fromViewMethod,
-                    List.of(
+                    scope.nextNodeName("fromView"), null, fromViewMethod, List.of(
                             Nodes.argument(fromViewMethod, 0, Values.node(view))
-                    )
+                    ), scope
             );
             ifNode.setTarget(fromView);
             Nodes.ret(scope.nextNodeName("return"), scope, Values.node(fromView));
@@ -95,6 +90,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
                     Values.constantString("fromView not supported")
             ));
         }
+        unmapper.computeMaxes();
         return unmapper;
     }
 

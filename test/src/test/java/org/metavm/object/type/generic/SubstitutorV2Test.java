@@ -40,11 +40,11 @@ public class SubstitutorV2Test extends TestCase {
                     .staticType(new FunctionType(List.of(foo.getType()), typeVar.getType()))
                     .returnType(typeVar.getType())
                     .build();
-            var scope = getValueFlow.getRootScope();
-            var selfNode = new SelfNode(null, "self", null, foo.getType(), null, getValueFlow.getRootScope());
+            var scope = getValueFlow.getScope();
+            var selfNode = new SelfNode(null, "self", null, foo.getType(), null, getValueFlow.getScope());
             var valueNode = Nodes.nodeProperty(selfNode, valueField, scope);
             new ReturnNode(
-                    null, "return", null, selfNode, getValueFlow.getRootScope(),
+                    null, "return", null, selfNode, getValueFlow.getScope(),
                     Values.node(valueNode)
             );
         }
@@ -56,22 +56,22 @@ public class SubstitutorV2Test extends TestCase {
                     .returnType(voidType)
                     .parameters(new Parameter(null, "value", "value", typeVar.getType()))
                     .build();
-            var scope = flow.getRootScope();
-            var selfNode = new SelfNode(null, "self", null, foo.getType(), null, flow.getRootScope());
+            var scope = flow.getScope();
+            var selfNode = new SelfNode(null, "self", null, foo.getType(), null, flow.getScope());
             var inputType = TestUtils.newKlassBuilder("setValueInput", "setValueInput")
                     .ephemeral(true)
                     .anonymous(true)
                     .build();
             var inputValueField = FieldBuilder.newBuilder("value", "value", inputType, typeVar.getType())
                     .build();
-            var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getRootScope());
-            var updateNode = new UpdateObjectNode(null, "update", null, inputNode, flow.getRootScope(),
+            var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getScope());
+            var updateNode = new UpdateObjectNode(null, "update", null, inputNode, flow.getScope(),
                     Values.node(selfNode), List.of());
             updateNode.setUpdateField(
                     valueField, UpdateOp.SET,
                     Values.node(Nodes.nodeProperty(inputNode, inputValueField, scope))
             );
-            new ReturnNode(null, "return", null, updateNode, flow.getRootScope(), null);
+            new ReturnNode(null, "return", null, updateNode, flow.getScope(), null);
         }
 
         var stringType = PrimitiveType.stringType;

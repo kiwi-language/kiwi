@@ -6,8 +6,7 @@ import org.metavm.object.type.KlassFlags;
 class KlassInitializer {
 
     public static KlassFlags __flags__(Klass klass) {
-        flags: allocate KlassFlags {flag1: true};
-        return flags;
+        return allocate KlassFlags {flag1: true};
     }
 
 }

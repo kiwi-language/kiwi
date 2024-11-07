@@ -5,8 +5,7 @@ import org.metavm.ddl.Commit;
 class CommitInitializer {
 
     public static string[rw] __runMethodIds__(Commit commit) {
-        a: new string[rw];
-        return a;
+        return new string[rw];
     }
 
 }

@@ -26,8 +26,7 @@ class Product {
     }
 
     public boolean isDefaultKind() {
-        r: this.kind.isDefault();
-        return r;
+        return this.kind.isDefault();
     }
 
 }
@@ -63,15 +62,16 @@ enum ProductKind {
         if(kind.ordinal != -1) {
             return kind;
         }
-        values: ProductKind.values();
-        loop: for(int i = 0; loop.i < values.length; i = loop.i + 1) {
-            name: values[loop.i].name();
+        var values = ProductKind.values();
+        int i = 0;
+        while (i < values.length) {
+            var name = values[i].name();
             if(name == kind.name) {
-                return values[loop.i];
+                return values[i];
             }
+            i = i + 1;
         }
-        exception: new IllegalStateException(concat("Failed to map enum constant: ", kind.name));
-        throw exception;
+        throw new IllegalStateException(concat("Failed to map enum constant: ", kind.name));
     }
 
 }

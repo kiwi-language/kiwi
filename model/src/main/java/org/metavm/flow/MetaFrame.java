@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 @Slf4j
-public class MetaFrame implements EvaluationContext, Frame, CallContext {
+public class MetaFrame implements EvaluationContext, Frame, CallContext, ClosureContext {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
@@ -37,21 +37,73 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     private FrameState state = FrameState.RUNNING;
     private final LinkedList<TryEnterNode> tryEnterNodes = new LinkedList<>();
     private ClassInstance exception;
+    private final Value[] locals;
+    private final Value[] stack;
+    private int top;
+    @Nullable
+    private final MetaFrame containingFrame;
 
     private final Map<TryEnterNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
     private NodeRT lastNode;
 
-    public MetaFrame(@NotNull NodeRT entry, @Nullable Klass owner, @Nullable ClassInstance self, List<? extends Value> arguments,
-                     InstanceRepository instanceRepository) {
+    public MetaFrame(@NotNull NodeRT entry,
+                     @Nullable Klass owner,
+                     @Nullable ClassInstance self,
+                     List<? extends Value> arguments,
+                     InstanceRepository instanceRepository,
+                     @Nullable MetaFrame containingFrame,
+                     int maxLocals,
+                     int maxStack) {
         this.entry = entry;
         this.owner = owner;
         this.self = self;
         this.arguments = arguments;
         this.instanceRepository = instanceRepository;
+        this.containingFrame = containingFrame;
+        this.locals = new Value[maxLocals];
+        this.stack = new Value[maxStack];
+//        log.debug("flow: {}, maxLocals: {}, self: {}, arguments: {}",
+//                entry.getFlow().getQualifiedName(), maxLocals, self, arguments.size());
+        if(self != null) {
+            if(locals.length < arguments.size() + 1) {
+                throw new IllegalStateException("Incorrect max locals for flow: " + entry.getFlow().getQualifiedName()
+                        + ", maxLocals: " + entry.getFlow().getScope().getMaxLocals()
+                        + ", template maxLocals: " + entry.getFlow().getEffectiveHorizontalTemplate().getScope().getMaxLocals());
+            }
+            locals[0] = self.getReference();
+            for (int i = 0; i < arguments.size(); i++) {
+                locals[i + 1] = arguments.get(i);
+            }
+        }
+        else {
+            if(locals.length < arguments.size()) {
+                if(entry.getFlow() instanceof Method method) {
+                    throw new IllegalStateException("Incorrect max locals for flow: " + entry.getFlow().getQualifiedName()
+                            + ", maxLocals: " + entry.getFlow().getScope().getMaxLocals()
+                            + ", horizontal template maxLocals: " + entry.getFlow().getEffectiveHorizontalTemplate().getScope().getMaxLocals()
+                            + ", vertical template maxLocals: " + method.getEffectiveVerticalTemplate().getScope().getMaxLocals()
+                    );
+                }
+                else {
+                    throw new IllegalStateException("Incorrect max locals for flow: " + entry.getFlow().getQualifiedName()
+                            + ", maxLocals: " + entry.getFlow().getScope().getMaxLocals()
+                            + ", horizontal template maxLocals: " + entry.getFlow().getEffectiveHorizontalTemplate().getScope().getMaxLocals());
+                }
+            }
+            for (int i = 0; i < arguments.size(); i++) {
+                locals[i] = arguments.get(i);
+            }
+        }
     }
 
     public Value getOutput(NodeRT node) {
-        return outputs.get(node);
+        var result = outputs.get(node);
+        if(result != null)
+            return result;
+        if(containingFrame != null)
+            return containingFrame.getOutput(node);
+        throw new IllegalStateException("Cannot find result for node " + node.getName()
+                + " in flow " + node.getFlow().getQualifiedName());
     }
 
     public void setOutput(NodeRT node, Value output) {
@@ -140,7 +192,14 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         var pc = entry;
         for(int i = 0; i < MAX_STEPS; i++) {
 //            log.debug("Executing node {}", pc.getName());
-            var result = pc.execute(this);
+            NodeExecResult result;
+            try {
+                result = pc.execute(this);
+            }
+            catch (Exception e) {
+                throw new InternalException("Failed to execute node " + pc.getName()
+                        + " in flow " + pc.getFlow().getQualifiedName(), e);
+            }
             if(result.exception() != null)
                 return new FlowExecResult(null, result.exception());
             var output = result.output();
@@ -191,6 +250,10 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
         return Collections.unmodifiableList(arguments);
     }
 
+    public List<Value> getLocals() {
+        return List.of(locals);
+    }
+
     public void jumpTo(NodeRT node) {
         this.entry = node;
     }
@@ -210,6 +273,50 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext {
     @Override
     public InstanceRepository instanceRepository() {
         return instanceRepository;
+    }
+
+    public Value pop() {
+        return stack[--top];
+    }
+
+    public void push(Value value) {
+        stack[top++] = value;
+    }
+
+    public Value load(int index) {
+        return locals[index];
+    }
+
+    public void store(int index, Value value) {
+        locals[index] = value;
+    }
+
+    public ClosureContext getCapturingContext() {
+        return Objects.requireNonNull(containingFrame);
+    }
+
+    public Value loadContextSlot(int contextIndex, int slotIndex) {
+        return getCapturingContext().getContextSlot(contextIndex, slotIndex);
+    }
+
+    public void storeContextSlot(int contextIndex, int slotIndex, Value value) {
+        getCapturingContext().setContextSlot(contextIndex, slotIndex, value);
+    }
+
+    public Value getContextSlot(int contextIndex, int slotIndex) {
+        assert contextIndex >= 0;
+        if(contextIndex == 0)
+            return locals[slotIndex];
+        else
+            return Objects.requireNonNull(containingFrame).getContextSlot(contextIndex - 1, slotIndex);
+    }
+
+    public void setContextSlot(int contextIndex, int slotIndex, Value value) {
+        assert contextIndex >= 0;
+        if(contextIndex == 0)
+            locals[slotIndex] = value;
+        else
+            Objects.requireNonNull(containingFrame).setContextSlot(contextIndex - 1, slotIndex, value);
     }
 
 }

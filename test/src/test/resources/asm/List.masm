@@ -28,8 +28,7 @@ struct MyList<T> {
 
     public MyList(string label, List<Node<T>> nodes) {
         this.label = label;
-        nodesCopy: new ChildList<Node<T>>(nodes);
-        this.nodes = nodesCopy;
+        this.nodes = new ChildList<Node<T>>(nodes);
     }
 
     public string getLabel() {
@@ -37,8 +36,7 @@ struct MyList<T> {
     }
 
     public List<Node<T>> getNodes() {
-        nodes: unew ArrayList<Node<T>>(this.nodes);
-        return nodes;
+        return unew ArrayList<Node<T>>(this.nodes);
     }
 
 }
