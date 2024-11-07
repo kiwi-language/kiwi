@@ -27,10 +27,6 @@ public class Nodes {
                 RaiseParameterKind.THROWABLE, exception, null);
     }
 
-    public static SelfNode self(String name, Klass type, ScopeRT scope) {
-        return new SelfNode(null, name, null, type.getType(), scope.getLastNode(), scope);
-    }
-
     public static NewArrayNode newArray(String name, @Nullable String code, ArrayType type,
                                         @Nullable Value value, @Nullable ParentRef parentRef, ScopeRT scope) {
         return new NewArrayNode(null, name, code, type, value, null, parentRef, scope.getLastNode(), scope);
@@ -181,10 +177,6 @@ public class Nodes {
         return new CastNode(null, name, null, outputType, scope.getLastNode(), scope, object);
     }
 
-    public static InputNode input(Flow flow) {
-        return input(flow, "input", null);
-    }
-
     public static IfNode if_(String name, Value condition, @Nullable NodeRT target, ScopeRT scope) {
         return new IfNode(
                 null,
@@ -235,22 +227,6 @@ public class Nodes {
 
     public static GotoNode goto_(String name, ScopeRT scope) {
         return new GotoNode(null, name, null, scope.getLastNode(), scope);
-    }
-
-    public static InputNode input(Flow flow, String name, String code) {
-        var inputType = KlassBuilder.newBuilder("Input", null)
-                .temporary()
-                .tmpId(NncUtils.randomNonNegative())
-                .build();
-        for (var parameter : flow.getParameters()) {
-            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType,
-                            Types.tryCapture(parameter.getType(), flow, null))
-                    .build();
-        }
-        return new InputNode(
-                null, name, code, inputType,
-                flow.getScope().getLastNode(), flow.getScope()
-        );
     }
 
     public static AddElementNode addElement(String name, @Nullable String code, Value array, Value element, ScopeRT scope) {
@@ -619,6 +595,19 @@ public class Nodes {
         );
     }
 
+    public static NodeRT this_(ScopeRT scope) {
+        var type = ((Method) scope.getFlow()).getDeclaringType().getType();
+        return Nodes.load(0, type, scope);
+    }
+
+    public static NodeRT thisProperty(Property property, ScopeRT scope) {
+        return getProperty(
+                Values.node(this_(scope)),
+                property,
+                scope
+        );
+    }
+
     public static NodeRT nodeProperty(NodeRT node, Property property, ScopeRT scope) {
         return getProperty(Values.node(node), property, scope);
     }
@@ -629,10 +618,6 @@ public class Nodes {
 
     public static NodeRT getProperty(Value instance, Property property, ScopeRT scope) {
         return getProperty(scope.nextNodeName("property"), instance, property, scope);
-    }
-
-    public static NodeRT inputField(InputNode node, int parameterIndex, ScopeRT scope) {
-         return nodeProperty(node, node.getType().resolve().getFields().get(parameterIndex), scope);
     }
 
     public static NodeRT getProperty(String name,Value instance, Property property, ScopeRT scope) {
@@ -668,6 +653,11 @@ public class Nodes {
                 index,
                 value
         );
+    }
+
+    public static NodeRT argument(Callable callable, int index) {
+        var i = callable instanceof Method method && !method.isStatic() ? index + 1 : index;
+        return load(i, callable.getParameters().get(index).getType(), callable.getScope());
     }
 
     public static NodeRT load(int index, Type type, ScopeRT scope) {

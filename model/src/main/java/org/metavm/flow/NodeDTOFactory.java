@@ -98,32 +98,16 @@ public class NodeDTOFactory {
         );
     }
 
-    public static NodeDTO createInputNode(Long tmpId, String name, List<InputFieldDTO> fields) {
+    public static NodeDTO createThis(Long tmpId, String name, String outputType) {
         return new NodeDTO(
                 getStringTmpId(tmpId),
                 null,
                 name,
                 null,
-                NodeKind.INPUT.code(),
-                null,
-                TmpId.of(NncUtils.randomNonNegative()).toString(),
-                new InputNodeParam(fields),
-                null,
-                null,
-                null
-        );
-    }
-
-    public static NodeDTO createSelfNode(Long tmpId, String name, String outputType) {
-        return new NodeDTO(
-                getStringTmpId(tmpId),
-                null,
-                name,
-                null,
-                NodeKind.SELF.code(),
+                NodeKind.LOAD.code(),
                 null,
                 outputType,
-                null,
+                new LoadNodeParam(0, outputType),
                 null,
                 null,
                 null

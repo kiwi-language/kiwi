@@ -102,30 +102,29 @@ public abstract class FieldMapping extends Element {
         getTargetField().setReadonly(readonly);
     }
 
-    public FieldParam generateReadCode(SelfNode selfNode) {
-        var valueSupplier = generateReadCode0(selfNode);
+    public FieldParam generateReadCode(ScopeRT scope) {
+        var valueSupplier = generateReadCode0(scope);
         var value = valueSupplier.get();
         if (nestedMapping != null) {
-            var getNestedValue = nestedMapping.generateMappingCode(valueSupplier, selfNode.getScope());
+            var getNestedValue = nestedMapping.generateMappingCode(valueSupplier, scope);
             return new FieldParam(targetFieldRef, getNestedValue.get());
         } else
             return new FieldParam(targetFieldRef, value);
     }
 
-    protected abstract Supplier<Value> generateReadCode0(SelfNode selfNode);
+    protected abstract Supplier<Value> generateReadCode0(ScopeRT scope);
 
-    public void generateWriteCode(SelfNode selfNode, NodeRT viewNode) {
-        var scope = selfNode.getScope();
+    public void generateWriteCode(ScopeRT scope, NodeRT viewNode) {
         var target = Nodes.nodeProperty(viewNode, getTargetField(), scope);
         if (nestedMapping != null) {
             var nestedFieldSource = nestedMapping.generateUnmappingCode(
                     () -> Values.node(target), scope);
-            generateWriteCode0(selfNode, nestedFieldSource);
+            generateWriteCode0(scope, nestedFieldSource);
         } else
-            generateWriteCode0(selfNode, () -> Values.node(target));
+            generateWriteCode0(scope, () -> Values.node(target));
     }
 
-    protected abstract void generateWriteCode0(SelfNode selfNode, Supplier<Value> fieldValueSupplier);
+    protected abstract void generateWriteCode0(ScopeRT scope, Supplier<Value> fieldValueSupplier);
 
     protected abstract Type getTargetFieldType();
 

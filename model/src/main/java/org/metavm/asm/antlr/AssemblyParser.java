@@ -6017,10 +6017,10 @@ public class AssemblyParser extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class TypeTypeOrVoidContext extends ParserRuleContext {
+		public TerminalNode VOID() { return getToken(AssemblyParser.VOID, 0); }
 		public TypeTypeContext typeType() {
 			return getRuleContext(TypeTypeContext.class,0);
 		}
-		public TerminalNode VOID() { return getToken(AssemblyParser.VOID, 0); }
 		public TypeTypeOrVoidContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -6051,14 +6051,14 @@ public class AssemblyParser extends Parser {
 				enterOuterAlt(_localctx, 1);
 				{
 				setState(880);
-				typeType(0);
+				match(VOID);
 				}
 				break;
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(881);
-				match(VOID);
+				typeType(0);
 				}
 				break;
 			}
@@ -7702,8 +7702,8 @@ public class AssemblyParser extends Parser {
 		"\u036a\u0368\u0001\u0000\u0000\u0000\u036a\u0369\u0001\u0000\u0000\u0000"+
 		"\u036b\u0089\u0001\u0000\u0000\u0000\u036c\u036d\u0007\f\u0000\u0000\u036d"+
 		"\u008b\u0001\u0000\u0000\u0000\u036e\u036f\u0007\r\u0000\u0000\u036f\u008d"+
-		"\u0001\u0000\u0000\u0000\u0370\u0373\u0003\u0090H\u0000\u0371\u0373\u0005"+
-		"0\u0000\u0000\u0372\u0370\u0001\u0000\u0000\u0000\u0372\u0371\u0001\u0000"+
+		"\u0001\u0000\u0000\u0000\u0370\u0373\u00050\u0000\u0000\u0371\u0373\u0003"+
+		"\u0090H\u0000\u0372\u0370\u0001\u0000\u0000\u0000\u0372\u0371\u0001\u0000"+
 		"\u0000\u0000\u0373\u008f\u0001\u0000\u0000\u0000\u0374\u0375\u0006H\uffff"+
 		"\uffff\u0000\u0375\u038e\u0003\u0094J\u0000\u0376\u038e\u0003\u0098L\u0000"+
 		"\u0377\u038e\u00052\u0000\u0000\u0378\u038e\u00053\u0000\u0000\u0379\u0382"+

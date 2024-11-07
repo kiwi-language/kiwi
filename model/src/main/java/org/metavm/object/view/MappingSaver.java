@@ -267,8 +267,7 @@ public class MappingSaver {
         if (generateCode) {
             fromView.clearContent();
             var scope = fromView.getScope();
-            var inputNode = Nodes.input(fromView);
-            var view = Nodes.nodeProperty(inputNode, inputNode.getType().resolve().getFieldByCode("view"), scope);
+            var view = Nodes.load(0, viewType, scope);
             var fieldValues = new HashMap<String, Supplier<Value>>();
             for (FieldMapping fieldMapping : mapping.getFieldMappings()) {
                 var nestedMapping = fieldMapping.getNestedMapping();

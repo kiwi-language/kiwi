@@ -41,12 +41,8 @@ public class SubstitutorV2Test extends TestCase {
                     .returnType(typeVar.getType())
                     .build();
             var scope = getValueFlow.getScope();
-            var selfNode = new SelfNode(null, "self", null, foo.getType(), null, getValueFlow.getScope());
-            var valueNode = Nodes.nodeProperty(selfNode, valueField, scope);
-            new ReturnNode(
-                    null, "return", null, selfNode, getValueFlow.getScope(),
-                    Values.node(valueNode)
-            );
+            var valueNode = Nodes.thisProperty(valueField, scope);
+            Nodes.ret("return", scope, Values.node(valueNode));
         }
 
         {
@@ -57,19 +53,11 @@ public class SubstitutorV2Test extends TestCase {
                     .parameters(new Parameter(null, "value", "value", typeVar.getType()))
                     .build();
             var scope = flow.getScope();
-            var selfNode = new SelfNode(null, "self", null, foo.getType(), null, flow.getScope());
-            var inputType = TestUtils.newKlassBuilder("setValueInput", "setValueInput")
-                    .ephemeral(true)
-                    .anonymous(true)
-                    .build();
-            var inputValueField = FieldBuilder.newBuilder("value", "value", inputType, typeVar.getType())
-                    .build();
-            var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getScope());
-            var updateNode = new UpdateObjectNode(null, "update", null, inputNode, flow.getScope(),
-                    Values.node(selfNode), List.of());
+            var updateNode = new UpdateObjectNode(null, "update", null, scope.getLastNode(), scope,
+                    Values.node(Nodes.this_(scope)), List.of());
             updateNode.setUpdateField(
                     valueField, UpdateOp.SET,
-                    Values.node(Nodes.nodeProperty(inputNode, inputValueField, scope))
+                    Values.node(Nodes.argument(flow, 0))
             );
             new ReturnNode(null, "return", null, updateNode, flow.getScope(), null);
         }

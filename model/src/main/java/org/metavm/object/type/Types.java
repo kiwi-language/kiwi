@@ -313,19 +313,13 @@ public class Types {
                 .returnType(sam.getReturnType())
                 .build();
         var scope = flow.getScope();
-        var selfNode = new SelfNode(null, "self", null, flow.getDeclaringType().getType(), null, flow.getScope());
-        var inputType = KlassBuilder.newBuilder("Input", "Input").temporary().build();
-        for (Parameter parameter : flow.getParameters()) {
-            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), inputType, parameter.getType())
-                    .build();
+        var args = new ArrayList<Value>();
+        int numParams = flow.getParameters().size();
+        for (int i = 0; i < numParams; i++) {
+            args.add(Values.node(Nodes.argument(flow, i)));
         }
-
-        var inputNode = new InputNode(null, "input", null, inputType, selfNode, flow.getScope());
         var funcNode = Nodes.function("function", scope,
-                Values.node(Nodes.nodeProperty(selfNode, funcField, scope)),
-                NncUtils.map(inputType.getReadyFields(),
-                        inputField -> Values.node(Nodes.nodeProperty(inputNode, inputField, scope))
-                )
+                Values.node(Nodes.thisProperty(funcField, scope)), args
         );
         var returnValue = flow.getReturnType().isVoid() ? null : Values.node(funcNode);
         new ReturnNode(null, "return", null, funcNode, flow.getScope(), returnValue);
@@ -365,19 +359,18 @@ public class Types {
                 .staticType(methodStaticType)
                 .build();
         var scope = method.getScope();
-        var input = Nodes.input(method);
         var args = new ArrayList<Value>();
         var paramTypeIt = function.getType().getParameterTypes().iterator();
-        for (Field field : input.getType().resolve().getFields()) {
+        int i = 1;
+        for (var methodParam : method.getParameters()) {
             var paramType = paramTypeIt.next();
-            if(field.getType().isNullable() && paramType.isNotNull()) {
+            if(methodParam.getType().isNullable() && paramType.isNotNull()) {
                 args.add(Values.node(
-                        Nodes.nonNull(field.getName() + "_nonNull",
-                                Values.node(Nodes.nodeProperty(input, field, scope)), scope)
+                        Nodes.nonNull(Values.node(Nodes.load(i++, methodParam.getType(), scope)), scope)
                 ));
             }
             else
-                args.add(Values.node(Nodes.nodeProperty(input, field, scope)));
+                args.add(Values.node(Nodes.load(i++, methodParam.getType(), scope)));
         }
         var func = Nodes.function(
                 "function",

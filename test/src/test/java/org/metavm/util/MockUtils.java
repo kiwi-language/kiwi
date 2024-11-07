@@ -713,10 +713,10 @@ public class MockUtils {
                         .tmpId(NncUtils.randomNonNegative())
                         .code("getOwner")
                         .returnType(TypeExpressions.getClassType(platformUserTypeDTO.id()))
-                        .addNode(NodeDTOFactory.createSelfNode(
+                        .addNode(NodeDTOFactory.createThis(
                                 NncUtils.randomNonNegative(),
                                 "self",
-                                applicationTypeTmpId
+                                TypeExpressions.getClassType(applicationTypeTmpId)
                         ))
                         .addNode(NodeDTOFactory.createReturnNode(
                                 NncUtils.randomNonNegative(),

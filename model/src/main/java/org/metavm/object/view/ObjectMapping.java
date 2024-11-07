@@ -37,12 +37,11 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
     @Override
     protected Flow generateMappingCode(boolean generateReadMethod) {
         var scope = Objects.requireNonNull(mapper).newEphemeralRootScope();
-        var input = Nodes.input(mapper);
         var actualSourceType = (ClassType) mapper.getParameter(0).getType();
         var readMethod = getSourceMethod(actualSourceType.resolve(), getReadMethod());
         var view = Nodes.methodCall(
                 scope.nextNodeName("view"),
-                Values.node(Nodes.inputField(input, 0, scope)), readMethod, List.of(), scope
+                Values.node(Nodes.argument( mapper, 0)), readMethod, List.of(), scope
         );
         new ReturnNode(null, scope.nextNodeName("return"), null, scope.getLastNode(), scope, Values.node(view));
         mapper.computeMaxes();
@@ -55,13 +54,12 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var fromViewMethod = findSourceMethod(actualSourceKlass, findFromViewMethod());
         var writeMethod = getSourceMethod(actualSourceKlass, getWriteMethod());
         var scope = unmapper.newEphemeralRootScope();
-        var input = Nodes.input(unmapper);
         var isSourcePresent = Nodes.functionCall(
                 scope.nextNodeName("isSourcePresent"), scope,
                 StdFunction.isSourcePresent.get(),
-                List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, Values.node(Nodes.inputField(input, 0, scope))))
+                List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, Values.node(Nodes.argument(unmapper, 0))))
         );
-        var view = Nodes.inputField(input, 0, scope);
+        var view = Nodes.argument(unmapper, 0);
         var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
                 Values.node(isSourcePresent), null, scope
         );

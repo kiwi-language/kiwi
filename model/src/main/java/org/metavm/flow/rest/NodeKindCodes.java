@@ -2,8 +2,6 @@ package org.metavm.flow.rest;
 
 public class NodeKindCodes {
 
-    public static final int SELF = 0;
-    public static final int INPUT = 1;
     public static final int ADD_OBJECT = 3;
     public static final int UPDATE_OBJECT = 4;
     public static final int DELETE_OBJECT = 5;

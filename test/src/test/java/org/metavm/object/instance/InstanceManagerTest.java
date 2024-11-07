@@ -322,7 +322,7 @@ public class InstanceManagerTest extends TestCase {
                                         .returnType(typeExpr)
                                         .isConstructor(true)
                                         .addNode(
-                                                NodeDTOFactory.createSelfNode(NncUtils.randomNonNegative(), "self", typeExpr)
+                                                NodeDTOFactory.createThis(NncUtils.randomNonNegative(), "self", typeExpr)
                                         )
                                         .addNode(
                                                 NodeDTOFactory.createAddObjectNode(

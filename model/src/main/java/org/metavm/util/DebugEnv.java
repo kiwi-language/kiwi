@@ -2,7 +2,6 @@ package org.metavm.util;
 
 import org.metavm.entity.SystemDefContext;
 import org.metavm.flow.Function;
-import org.metavm.flow.InputNode;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodCallNode;
 import org.metavm.object.instance.core.ClassInstance;
@@ -69,8 +68,6 @@ public class DebugEnv {
     public static volatile long treeId;
 
     public static final LinkedList<String> path = new LinkedList<>();
-
-    public static final List<InputNode> nodes = new CopyOnWriteArrayList<>();
 
     public static volatile IInstanceContext context;
 

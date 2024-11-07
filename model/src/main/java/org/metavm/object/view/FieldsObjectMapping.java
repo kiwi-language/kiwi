@@ -131,10 +131,9 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     public void generateReadMethodCode() {
         var scope = Objects.requireNonNull(readMethod).newEphemeralRootScope();
-        var selfNode = new SelfNode(null, "self", null, getSourceType(), null, scope);
         List<FieldParam> fieldParams = new ArrayList<>();
         for (FieldMapping fieldMapping : fieldMappings)
-            fieldParams.add(fieldMapping.generateReadCode(selfNode));
+            fieldParams.add(fieldMapping.generateReadCode(readMethod.getScope()));
         var view = new AddObjectNode(null, "view", null, false,
                 true, getTargetType(), scope.getLastNode(), scope);
         fieldParams.forEach(view::addField);
@@ -144,12 +143,10 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     public void generateWriteMethodCode() {
         var scope = Objects.requireNonNull(writeMethod).newEphemeralRootScope();
-        var selfNode = new SelfNode(null, "self", null, getSourceType(), null, scope);
-        var inputNode = Nodes.input(writeMethod);
-        var viewNode = Nodes.inputField(inputNode, 0, scope);
+        var viewNode = Nodes.load(1, getTargetType(), scope);
         for (FieldMapping fieldMapping : fieldMappings) {
             if (!fieldMapping.isReadonly())
-                fieldMapping.generateWriteCode(selfNode, viewNode);
+                fieldMapping.generateWriteCode(scope, viewNode);
         }
         new ReturnNode(null, "return", null, scope.getLastNode(), scope, null);
         writeMethod.computeMaxes();

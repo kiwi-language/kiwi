@@ -673,6 +673,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void onLoadPrepare() {
         extensions = new ArrayList<>();
         implementations = new ArrayList<>();
+        closure = new Closure(this);
     }
 
     @Override
@@ -687,7 +688,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             superType.resolve().addExtension(this);
         interfaces.forEach(it -> it.resolve().addImplementation(this));
         resetSelfFieldOffset();
-        closure = new Closure(this);
         resetRank();
     }
 

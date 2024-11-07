@@ -457,8 +457,8 @@ public class StandardDefBuilder {
         var c = MethodBuilder.newBuilder(klass, "MvObject", "MvObject")
                 .isConstructor(true)
                 .build();
-        var self = Nodes.self("self", klass, c.getScope());
-        Nodes.ret("ret", c.getScope(), Values.node(self));
+        var scope = c.getScope();
+        Nodes.ret("ret", scope, Values.node(Nodes.this_(scope)));
         defContext.addDef(new DirectDef<>(MvObject.class, klass));
         klass.accept(new MaxesComputer());
         return klass;

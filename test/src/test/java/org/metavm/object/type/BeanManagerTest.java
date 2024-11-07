@@ -53,14 +53,11 @@ public class BeanManagerTest extends TestCase {
                     .returnType(barServiceKlass.getType())
                     .build();
             {
-                var self = Nodes.self("self", barServiceKlass, constructor.getScope());
-                var input = Nodes.input(constructor);
-                Nodes.updateField("setFooService", Values.node(self),
-                        field, Values.node(Nodes.nodeProperty(input, input.getKlass().getFieldByName("fooService"),
-                                constructor.getScope())),
-                        constructor.getScope()
+                var scope = constructor.getScope();
+                Nodes.updateField("setFooService", Values.node(Nodes.this_(scope)),
+                        field, Values.node(Nodes.argument(constructor, 0)), scope
                 );
-                Nodes.ret("return", constructor.getScope(), Values.node(self));
+                Nodes.ret("return", constructor.getScope(), Values.node(Nodes.this_(scope)));
             }
             var factoryMethod = MethodBuilder.newBuilder(configKlass, "barService", "barService")
                     .addAttribute(AttributeNames.BEAN_NAME, "barService")
@@ -68,7 +65,7 @@ public class BeanManagerTest extends TestCase {
                     .returnType(barServiceKlass.getType())
                     .build();
             {
-                var input = Nodes.input(factoryMethod);
+//                var input = Nodes.input(factoryMethod);
                 var barService = Nodes.newObject(
                         "barService",
                         factoryMethod.getScope(),
@@ -77,11 +74,7 @@ public class BeanManagerTest extends TestCase {
                                 new Argument(
                                         null,
                                         constructor.getParameter(0).getRef(),
-                                        Values.node(
-                                                Nodes.nodeProperty(input,
-                                                input.getKlass().getFieldByName("fooService"),
-                                                        factoryMethod.getScope())
-                                        )
+                                        Values.node(Nodes.argument(factoryMethod, 0))
                                 )
                         ),
                         false,
@@ -110,8 +103,8 @@ public class BeanManagerTest extends TestCase {
                 .isConstructor(true)
                 .returnType(klass.getType())
                 .build();
-        var self = Nodes.self("self", klass, constructor.getScope());
-        Nodes.ret("return", constructor.getScope(), Values.node(self));
+        var scope = constructor.getScope();
+        Nodes.ret("return", scope, Values.node(Nodes.this_(scope)));
     }
 
 }

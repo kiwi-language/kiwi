@@ -2,10 +2,8 @@ package org.metavm.object.view;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
-import org.metavm.expression.NodeExpression;
 import org.metavm.expression.ThisExpression;
-import org.metavm.flow.SelfNode;
-import org.metavm.flow.Value;
+import org.metavm.flow.*;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Type;
@@ -67,17 +65,21 @@ public class ComputedFieldMapping extends FieldMapping {
     }
 
     @Override
-    public Supplier<Value> generateReadCode0(SelfNode selfNode) {
+    public Supplier<Value> generateReadCode0(ScopeRT scope) {
         return () -> (Value) new CopyVisitor(value, value.isStrictEphemeral()) {
+
             @Override
-            public Element visitThisExpression(ThisExpression expression) {
-                return new NodeExpression(selfNode);
+            public Element visitExpressionValue(ExpressionValue value) {
+                if(value.getExpression() instanceof ThisExpression)
+                    return Nodes.this_(scope);
+                else
+                    return super.visitExpressionValue(value);
             }
         }.copy(value);
     }
 
     @Override
-    protected void generateWriteCode0(SelfNode selfNode, Supplier<Value> fieldValueSupplier) {
+    protected void generateWriteCode0(ScopeRT scope, Supplier<Value> fieldValueSupplier) {
         throw new UnsupportedOperationException();
     }
 

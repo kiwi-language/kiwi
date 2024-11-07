@@ -132,14 +132,6 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitSelfNode(SelfNode node) {
-        return visitNode(node);
-    }
-
-    public R visitInputNode(InputNode node) {
-        return visitNode(node);
-    }
-
     public R visitReturnNode(ReturnNode node) {
         return visitNode(node);
     }

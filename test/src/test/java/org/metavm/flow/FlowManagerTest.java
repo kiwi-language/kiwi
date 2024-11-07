@@ -60,10 +60,8 @@ public class FlowManagerTest extends TestCase {
                     .isStatic(true)
                     .build();
             var scope = method.getScope();
-            var input = Nodes.input(method);
-            var inputValueField = input.getKlass().getFieldByCode("value");
             var if_ = Nodes.if_("if",
-                    Values.node(Nodes.nodeProperty(input, inputValueField, scope)),
+                    Values.node(Nodes.argument(method, 0)),
                     null,
                     scope
             );

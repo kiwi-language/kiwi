@@ -798,59 +798,24 @@ public class Assembler {
                 var currentClass = currentClass();
                 if (block != null) {
                     var rootScope = method.getScope();
-                    SelfNode selfNode = null;
-                    if (!method.isStatic()) {
-                        selfNode = new SelfNode(
-                                NncUtils.randomNonNegative(),
-                                "this",
-                                null,
-                                klass.getType(),
-                                null,
-                                rootScope
-                        );
-                    }
-                    var inputNode = Nodes.input(method, nextNodeName("input"), null);
-                    for (var parameter : method.getParameters()) {
-                        Nodes.nodeProperty(
-                                parameter.getName(),
-                                inputNode,
-                                inputNode.getKlass().getFieldByCode(parameter.getCode()),
-                                rootScope
-                        );
-                    }
                     if (isConstructor && currentClass.isEnum) {
                         Nodes.update(
                                 nextNodeName(),
-                                Values.node(selfNode),
+                                Values.node(Nodes.this_(rootScope)),
                                 Map.of(
                                         klass.getField(f -> f.getEffectiveTemplate() == StdField.enumName.get()),
-                                        Values.node(Nodes.nodeProperty(inputNode, inputNode.getKlass().getFieldByCode("_name"), rootScope)),
+                                        Values.node(Nodes.load(1, Types.getStringType(), rootScope)),
                                         klass.getField(f -> f.getEffectiveTemplate() == StdField.enumOrdinal.get()),
-                                        Values.node(Nodes.nodeProperty(inputNode, inputNode.getKlass().getFieldByCode("_ordinal"), rootScope))
+                                        Values.node(Nodes.load(2, Types.getLongType(), rootScope))
                                 ),
                                 rootScope
                         );
                     }
                     processBlock(block, method.getScope());
-                    if (isConstructor) {
-                        new ReturnNode(
-                                NncUtils.randomNonNegative(),
-                                nextNodeName(),
-                                null,
-                                rootScope.getLastNode(),
-                                rootScope,
-                                Values.node(Objects.requireNonNull(selfNode))
-                        );
-                    } else if (Objects.requireNonNull(returnType).VOID() != null) {
-                        new ReturnNode(
-                                NncUtils.randomNonNegative(),
-                                nextNodeName(),
-                                null,
-                                rootScope.getLastNode(),
-                                rootScope,
-                                null
-                        );
-                    }
+                    if (isConstructor)
+                        Nodes.ret(nextNodeName(), rootScope, Values.node(Nodes.this_(rootScope)));
+                    else if (Objects.requireNonNull(returnType).VOID() != null)
+                        Nodes.ret(nextNodeName(), rootScope, null);
                 }
                 if (typeParameters != null)
                     typeParameters.accept(this);

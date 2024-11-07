@@ -18,10 +18,8 @@ public class FlowCheckerTest extends TestCase {
                 .returnType(Types.getAnyType())
                 .parameters(new Parameter(null, "value", "value", Types.getNullableAnyType()))
                 .build();
-        var input = Nodes.input(method);
-        var field = input.getKlass().getFieldByCode("value");
         var scope = method.getScope();
-        var value = Values.node(Nodes.nodeProperty(input, field, scope));
+        var value = Values.node(Nodes.argument(method, 0));
         var ifNode = Nodes.if_("if", Values.node(
                 Nodes.ne(value, Values.nullValue(), scope)), null, scope);
         Nodes.raise("NPE", scope, Values.constantString("Value required"));
@@ -39,10 +37,8 @@ public class FlowCheckerTest extends TestCase {
                 .returnType(Types.getAnyType())
                 .parameters(new Parameter(null, "value", "value", Types.getNullableAnyType()))
                 .build();
-        var input = Nodes.input(method);
-        var field = input.getKlass().getFieldByCode("value");
         var scope = method.getScope();
-        var value = Values.node(Nodes.nodeProperty(input, field, scope));
+        var value = Values.node(Nodes.argument(method, 0));
         var ifNode = Nodes.if_("if", Values.node(Nodes.eq(
                 value, Values.nullValue(), scope
         )), null, scope);

@@ -64,22 +64,22 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
             {
                 var scope = constructor.getScope();
                 scope.setStrictEphemeral(true);
-                var self = Nodes.self("self", klass, scope);
-                var input = Nodes.input(constructor);
                 var fieldMap = new HashMap<org.metavm.object.type.Field, Value>();
-                klass.getFields().forEach(f ->
-                        fieldMap.put(f, Values.node(Nodes.nodeProperty(input, f, scope)))
-                );
-                Nodes.update("initFields", Values.node(self), fieldMap, scope);
-                Nodes.ret("return", scope, Values.node(self));
+                int i = 1;
+                for (var field : klass.getFields()) {
+                   if(!field.isStatic()) {
+                       fieldMap.put(field, Values.node(Nodes.load(i++, field.getType(), scope)));
+                   }
+                }
+                Nodes.update("initFields", Values.node(Nodes.this_(scope)), fieldMap, scope);
+                Nodes.ret("return", scope, Values.node(Nodes.this_(scope)));
             }
             for (org.metavm.object.type.Field field : klass.getFields()) {
                 var accessor = klass.getMethodByCode(field.getCodeNotNull());
                 var scope = accessor.getScope();
                 scope.setStrictEphemeral(true);
-                var self = Nodes.self("self", klass, scope);
                 Nodes.ret("return", scope,
-                        Values.node(Nodes.nodeProperty(self, field, scope))
+                        Values.node(Nodes.thisProperty(field, scope))
                 );
             }
         }

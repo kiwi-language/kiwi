@@ -221,7 +221,7 @@ class AsmExpressionResolver {
         if(ctx.LPAREN() != null)
             return resolve0(ctx.expression());
         if(ctx.THIS() != null)
-            return Values.node(scope.getNodeByName("this"));
+            return getThis();
         if(ctx.literal() != null)
             return resolveLiteral(ctx.literal());
         if(ctx.IDENTIFIER() != null)

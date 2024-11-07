@@ -8,8 +8,6 @@ import java.util.Objects;
 import java.util.Set;
 
 public enum NodeKind {
-    SELF(NodeKindCodes.SELF, SelfNode.class, Void.class),
-    INPUT(NodeKindCodes.INPUT, InputNode.class, InputNodeParam.class, true),
     ADD_OBJECT(NodeKindCodes.ADD_OBJECT, AddObjectNode.class, AddObjectNodeParam.class),
     UPDATE_OBJECT(NodeKindCodes.UPDATE_OBJECT, UpdateObjectNode.class, UpdateObjectNodeParam.class),
     DELETE_OBJECT(NodeKindCodes.DELETE_OBJECT, DeleteObjectNode.class, DeleteObjectNodeParam.class),

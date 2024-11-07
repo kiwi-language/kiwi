@@ -100,14 +100,6 @@ public class MethodDTOBuilder {
         return this;
     }
 
-    public MethodDTOBuilder autoCreateInputNode(Long tmpId, String name) {
-        return addNode(NodeDTOFactory.createInputNode(
-                tmpId,
-                name,
-                NncUtils.map(parameters, p -> InputFieldDTO.create(p.name(), p.type()))
-        ));
-    }
-
     public MethodDTOBuilder access(int access) {
         this.access = access;
         return this;

@@ -496,12 +496,6 @@ public class MethodGenerator {
         return typeResolver;
     }
 
-    public SelfNode createSelf() {
-        return onNodeCreated(new SelfNode(null, nextName("self"), null,
-                ((Method) scope().getFlow()).getDeclaringType().getType(),
-                scope().getLastNode(), scope()));
-    }
-
     public <T extends NodeRT> T onNodeCreated(T node) {
         var scope = scope();
         var lastNode = scope.getLastNode();

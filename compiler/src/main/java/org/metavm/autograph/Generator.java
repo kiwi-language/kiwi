@@ -108,8 +108,8 @@ public class Generator extends VisitorBase {
                 var constructor = klass.getDefaultConstructor();
                 var constructorGen = new MethodGenerator(constructor, typeResolver, this);
                 constructorGen.enterScope(constructor.getScope());
-                constructorGen.createMethodCall(Values.node(constructorGen.createSelf()), initFlow, List.of());
-                constructorGen.createReturn(Values.node(constructorGen.createSelf()));
+                constructorGen.createMethodCall(constructorGen.getThis(), initFlow, List.of());
+                constructorGen.createReturn(constructorGen.getThis());
                 constructorGen.exitScope();
             }
         }
@@ -342,7 +342,6 @@ public class Generator extends VisitorBase {
         if (TranspileUtils.isStatic(psiMethod)) {
             processParameters(psiMethod.getParameterList(), method);
         } else {
-            var selfNode = builder().createSelf();
             processParameters(psiMethod.getParameterList(), method);
             if (psiMethod.isConstructor()) {
                 var superClass = NncUtils.get(currentClass().getSuperType(), ClassType::resolve);
@@ -355,7 +354,7 @@ public class Generator extends VisitorBase {
                     );
                 }
                 builder.createMethodCall(
-                        Values.node(selfNode),
+                        builder.getThis(),
                         currentClassInfo().fieldBuilder.getMethod(),
                         List.of()
                 );
@@ -363,7 +362,7 @@ public class Generator extends VisitorBase {
                     var klass = currentClass();
                     var enumClass = requireNonNull(klass.getSuperType()).resolve();
                     builder.createUpdate(
-                            Values.node(selfNode),
+                            builder.getThis(),
                             Map.of(
                                     enumClass.getFieldByCode("name"),
                                     Values.node(builder.createLoad(1, Types.getStringType())),

@@ -245,10 +245,7 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     public void initNodes(Flow flow, IEntityContext context) {
-        if (flow instanceof Method method && method.isInstanceMethod())
-            createSelfNode(method, context);
-        NodeRT inputNode = createInputNode(flow, flow.getScope().getLastNode());
-        createReturnNode(flow, inputNode);
+        createReturnNode(flow, null);
     }
 
     private void saveNodes(ScopeDTO scopeDTO, ScopeRT scope, IEntityContext context) {
@@ -313,31 +310,10 @@ public class FlowManager extends EntityContextFactoryAware {
         saveNodes(lambdaDTO.scope(), lambda.getScope(), context);
     }
 
-    private SelfNode createSelfNode(Method flow, IEntityContext context) {
-        NodeDTO selfNodeDTO = NodeDTO.newNode(
-                null,
-                "self",
-                NodeKind.SELF.code(),
-                null
-        );
-        return new SelfNode(selfNodeDTO.tmpId(), selfNodeDTO.name(), null,
-                flow.getDeclaringType().getType(), null, flow.getScope());
-    }
-
-    private NodeRT createInputNode(Flow flow, NodeRT prev) {
-        var type = KlassBuilder.newBuilder("Input", null).temporary().build();
-        for (Parameter parameter : flow.getParameters()) {
-            FieldBuilder.newBuilder(parameter.getName(), parameter.getCode(), type, parameter.getType())
-                    .build();
-        }
-        return new InputNode(null, "input", null, type, prev, flow.getScope());
-    }
-
     private void createReturnNode(Flow flow, NodeRT prev) {
         Value value;
         if (Flows.isConstructor(flow)) {
-            NncUtils.requireTrue(flow.getRootNode() instanceof SelfNode);
-            value = Values.node(flow.getRootNode());
+            value = Values.node(Nodes.this_(flow.getScope()));
         } else
             value = null;
         new ReturnNode(null, "return", null, prev, flow.getScope(), value);
@@ -456,31 +432,11 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     private NodeDTO preprocess(NodeDTO nodeDTO, NodeRT node, ScopeRT scope, IEntityContext context) {
-        if (nodeDTO.kind() == NodeKind.INPUT.code())
-            return preprocessInputNode(nodeDTO, (InputNode) node);
         if (nodeDTO.kind() == NodeKind.JOIN.code())
             return preprocessJoinNode(nodeDTO, (JoinNode) node);
         if (nodeDTO.kind() == NodeKind.TRY_EXIT.code())
             return preprocessTryEndNode(nodeDTO, (TryExitNode) node);
         return nodeDTO;
-    }
-
-    private NodeDTO preprocessInputNode(NodeDTO nodeDTO, @Nullable InputNode node) {
-        InputNodeParam inputParam = nodeDTO.getParam();
-        var inputFields = initializeFieldRefs(inputParam.fields());
-        var currentKlassId = NncUtils.get(node, n -> n.getKlass().getStringId());
-        List<FieldDTO> fields = NncUtils.map(inputFields, inputField -> inputField.toFieldDTO(currentKlassId));
-        KlassDTO klassDTO = ClassTypeDTOBuilder.newBuilder(
-                        NncUtils.getOrElse(node, n -> n.getKlass().getName(), "input" + NncUtils.randomNonNegative())
-                )
-                .id(currentKlassId)
-                .anonymous(true)
-                .ephemeral(true)
-                .fields(fields)
-                .build();
-        return nodeDTO.copyWithParamAndType(
-                new InputNodeParam(inputFields),
-                klassDTO);
     }
 
     private NodeDTO preprocessJoinNode(NodeDTO nodeDTO, JoinNode node) {

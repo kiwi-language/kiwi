@@ -357,10 +357,7 @@ floatLiteral
     | HEX_FLOAT_LITERAL
     ;
 
-typeTypeOrVoid
-    : typeType
-    | VOID
-    ;
+typeTypeOrVoid: VOID | typeType;
 
 typeType
     : classOrInterfaceType
