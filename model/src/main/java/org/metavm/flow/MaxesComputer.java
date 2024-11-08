@@ -51,13 +51,7 @@ public class MaxesComputer extends StructuralVisitor<Void> {
     }
 
     @Override
-    public Void visitStoreNode(StoreNode node) {
-        currentCallable().setMaxLocals(node.getIndex() + 1);
-        return null;
-    }
-
-    @Override
-    public Void visitLoadNode(LoadNode node) {
+    public Void visitVariableAccessNode(VariableAccessNode node) {
         currentCallable().setMaxLocals(node.getIndex() + 1);
         return null;
     }

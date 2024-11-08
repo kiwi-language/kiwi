@@ -9,7 +9,6 @@ import org.metavm.flow.Values;
 import org.metavm.object.type.Type;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 
 @EntityType
 public class ObjectNestedMapping extends NestedMapping {
@@ -21,17 +20,15 @@ public class ObjectNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
-        var mapNode = Nodes.map(scope.nextNodeName("nestedMapping"), scope, getSource.get(), mappingRef.resolve());
-        return () -> Values.node(mapNode);
+    public Value generateMappingCode(Value source, ScopeRT scope) {
+        var mapNode = Nodes.map(scope.nextNodeName("nestedMapping"), scope, source, mappingRef.resolve());
+        return Values.node(mapNode);
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
-//        if (sourceType == targetType)
-//            return getView;
-        var source = Nodes.unmap(scope.nextNodeName("unmap"), scope, getView.get(), mappingRef.resolve());
-        return () -> Values.node(source);
+    public Value generateUnmappingCode(Value view, ScopeRT scope) {
+        var source = Nodes.unmap(scope.nextNodeName("unmap"), scope, view, mappingRef.resolve());
+        return Values.node(source);
     }
 
     public ObjectMapping getMapping() {

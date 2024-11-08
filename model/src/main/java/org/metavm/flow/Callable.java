@@ -38,4 +38,8 @@ public interface Callable {
 
     ScopeRT getScope();
 
+    default int getMinLocals() {
+        return getParameters().size();
+    }
+
 }

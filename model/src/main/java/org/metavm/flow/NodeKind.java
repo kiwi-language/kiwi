@@ -5,7 +5,6 @@ import org.metavm.util.NncUtils;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Set;
 
 public enum NodeKind {
     ADD_OBJECT(NodeKindCodes.ADD_OBJECT, AddObjectNode.class, AddObjectNodeParam.class),
@@ -16,11 +15,10 @@ public enum NodeKind {
     METHOD_CALL(NodeKindCodes.METHOD_CALL, MethodCallNode.class, MethodCallNodeParam.class),
     GET_UNIQUE(NodeKindCodes.GET_UNIQUE, GetUniqueNode.class, GetUniqueNodeParam.class),
     NEW(NodeKindCodes.NEW, NewObjectNode.class, NewObjectNodeParam.class),
-    VALUE(NodeKindCodes.VALUE, ValueNode.class, ValueNodeParam.class),
     SET_STATIC(NodeKindCodes.SET_STATIC, SetStaticNode.class, SetStaticNodeParam.class),
     NEW_ARRAY(NodeKindCodes.NEW_ARRAY, NewArrayNode.class, NewArrayNodeParam.class),
     TRY_ENTER(NodeKindCodes.TRY_ENTER, TryEnterNode.class, TryEnterNodeParam.class),
-    TRY_EXIT(NodeKindCodes.TRY_EXIT, TryExitNode.class, TryExitNodeParam.class, true),
+    TRY_EXIT(NodeKindCodes.TRY_EXIT, TryExitNode.class, TryExitNodeParam.class),
     FUNC(NodeKindCodes.FUNC, FunctionNode.class, FunctionNodeParam.class),
     LAMBDA(NodeKindCodes.LAMBDA, LambdaNode.class, LambdaNodeParam.class),
     ADD_ELEMENT(NodeKindCodes.ADD_ELEMENT, AddElementNode.class, AddElementNodeParam.class),
@@ -36,12 +34,11 @@ public enum NodeKind {
     INDEX_COUNT(NodeKindCodes.INDEX_COUNT, IndexCountNode.class, IndexCountNodeParam.class),
     INDEX_SELECT(NodeKindCodes.INDEX_SELECT, IndexSelectNode.class, IndexSelectNodeParam.class),
     INDEX_SELECT_FIRST(NodeKindCodes.INDEX_SELECT_FIRST, IndexSelectFirstNode.class, IndexSelectFirstNodeParam.class),
-    GOTO(NodeKindCodes.GOTO, GotoNode.class, GotoNodeParam.class, false),
-    TARGET(NodeKindCodes.TARGET, TargetNode.class, TargetNodeParam.class, false),
+    GOTO(NodeKindCodes.GOTO, GotoNode.class, GotoNodeParam.class),
+    TARGET(NodeKindCodes.TARGET, TargetNode.class, TargetNodeParam.class),
     NON_NULL(NodeKindCodes.NON_NULL, NonNullNode.class, NonNullNodeParam.class),
     SET_ELEMENT(NodeKindCodes.SET_ELEMENT, SetElementNode.class, SetElementNodeParam.class),
-    IF(NodeKindCodes.IF, IfNode.class, IfNodeParam.class, false),
-    JOIN(NodeKindCodes.JOIN, JoinNode.class, JoinNodeParam.class, true),
+    IF(NodeKindCodes.IF, IfNode.class, IfNodeParam.class),
     NOOP(NodeKindCodes.NOOP, NoopNode.class, NoopNodeParam.class),
     ADD(NodeKindCodes.ADD, AddNode.class, AddNodeParam.class),
     SUB(NodeKindCodes.SUB, SubNode.class, SubNodeParam.class),
@@ -79,19 +76,11 @@ public enum NodeKind {
     private final int code;
     private final Class<? extends NodeRT> nodeClass;
     private final Class<?> paramClass;
-    private final boolean outputTypeAsChild;
-
-    public static final Set<NodeKind> CREATING_KINDS = Set.of(ADD_OBJECT, NEW, NEW_ARRAY);
 
     NodeKind(int code, Class<? extends NodeRT> nodeClass, Class<?> paramClass) {
-        this(code, nodeClass, paramClass, false);
-    }
-
-    NodeKind(int code, Class<? extends NodeRT> nodeClass, Class<?> paramClass, boolean outputTypeAsChild) {
         this.code = code;
         this.nodeClass = nodeClass;
         this.paramClass = paramClass;
-        this.outputTypeAsChild = outputTypeAsChild;
     }
 
     public static NodeKind fromCode(int code) {
@@ -119,10 +108,6 @@ public enum NodeKind {
 
     public Class<? extends NodeRT> getNodeClass() {
         return nodeClass;
-    }
-
-    public boolean isOutputTypeAsChild() {
-        return outputTypeAsChild;
     }
 
     public int code() {

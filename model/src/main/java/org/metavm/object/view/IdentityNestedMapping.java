@@ -6,7 +6,6 @@ import org.metavm.flow.Value;
 import org.metavm.object.type.Type;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 
 @EntityType
 public class IdentityNestedMapping extends NestedMapping {
@@ -18,13 +17,13 @@ public class IdentityNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
-        return getSource;
+    public Value generateMappingCode(Value source, ScopeRT scope) {
+        return source;
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
-        return getView;
+    public Value generateUnmappingCode(Value view, ScopeRT scope) {
+        return view;
     }
 
     @Override

@@ -160,10 +160,6 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitValueNode(ValueNode node) {
-        return visitNode(node);
-    }
-
     public R visitGetUniqueNode(GetUniqueNode node) {
         return visitNode(node);
     }
@@ -416,10 +412,6 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitJoinNode(JoinNode node) {
-        return visitNode(node);
-    }
-
     public R visitNoopNode(NoopNode node) {
         return visitNode(node);
     }
@@ -557,11 +549,11 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitStoreNode(StoreNode node) {
-        return visitNode(node);
+        return visitVariableAccessNode(node);
     }
 
     public R visitLoadNode(LoadNode node) {
-        return visitNode(node);
+        return visitVariableAccessNode(node);
     }
 
     public R visitLoadContextSlotNode(LoadContextSlotNode node) {
@@ -575,4 +567,9 @@ public abstract class ElementVisitor<R> {
     public R visitLambda(Lambda lambda) {
         return visitElement(lambda);
     }
+
+    public R visitVariableAccessNode(VariableAccessNode node) {
+        return visitNode(node);
+    }
+
 }

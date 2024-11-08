@@ -10,28 +10,20 @@ import org.metavm.flow.rest.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
-import org.metavm.object.type.rest.dto.FieldDTO;
-import org.metavm.object.type.rest.dto.FieldDTOBuilder;
-import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.BusinessException;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionOperations;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
 @Component
 @Slf4j
 public class FlowManager extends EntityContextFactoryAware {
-
-    private TypeManager typeManager;
 
     private final TransactionOperations transactionTemplate;
 
@@ -55,26 +47,6 @@ public class FlowManager extends EntityContextFactoryAware {
         try (var serContext = SerializeContext.enter()) {
             var flowDTO = flow.toDTO(includeNodes, serContext);
             return new GetFlowResponse(flowDTO, List.of());
-        }
-    }
-
-    @Transactional
-    public List<NodeDTO> createTryNode(NodeDTO nodeDTO) {
-        try (var context = newContext(); var serContext = SerializeContext.enter()) {
-            var scope = context.getScope(nodeDTO.scopeId());
-            TryEnterNode tryEnterNode = (TryEnterNode) createNode(nodeDTO, scope, NodeSavingStage.INIT, context);
-            TryExitNode tryExitNode = new TryExitNode(null, tryEnterNode.getName() + " end", null,
-                    KlassBuilder.newBuilder("TryEndOutput", "TryEndOutput").temporary().build(),
-                    tryEnterNode, scope);
-            FieldBuilder.newBuilder("exception", "exception",
-                            tryExitNode.getType().resolve(), Types.getNullableThrowableType())
-                    .build();
-            context.bind(tryExitNode);
-            afterFlowChange(scope.getFlow(), context);
-            context.finish();
-            try (var ignored = SerializeContext.enter()) {
-                return List.of(tryEnterNode.toDTO(serContext), tryExitNode.toDTO(serContext));
-            }
         }
     }
 
@@ -296,12 +268,6 @@ public class FlowManager extends EntityContextFactoryAware {
                 saveLambdaContent(lambdaDTO, context);
             }
             afterFlowChange(flow, context);
-//            Flows.retransformFlowIfRequired(flow, context);
-//        if (flowDTO.horizontalInstances() != null) {
-//            for (FlowDTO inst : flowDTO.horizontalInstances()) {
-//                saveContent(inst, context.getFlow(inst.getRef()), context);
-//            }
-//        }
         }
     }
 
@@ -369,18 +335,10 @@ public class FlowManager extends EntityContextFactoryAware {
 
     private NodeRT createNode(NodeDTO nodeDTO, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         try (var ignored = context.getProfiler().enter("createNode")) {
-            nodeDTO = beforeNodeChange(nodeDTO, null, scope, context);
             try (var ignored1 = context.getProfiler().enter("Flow.analyze", true)) {
                 scope.getFlow().analyze();
             }
-            var node = NodeFactory.save(nodeDTO, scope, stage, context);
-            afterNodeChange(nodeDTO, node, stage, context);
-//            Flows.retransformFlowIfRequired(scope.getFlow(), context);
-//            try (var ignored1 = context.getProfiler().enter("Flow.check")) {
-//                node.getFlow().analyze();
-//                node.getFlow().check();
-//            }
-            return node;
+            return NodeFactory.save(nodeDTO, scope, stage, context);
         }
     }
 
@@ -409,94 +367,8 @@ public class FlowManager extends EntityContextFactoryAware {
         }
         var scope = context.getScope(Id.parse(nodeDTO.scopeId()));
         scope.getFlow().analyze();
-        nodeDTO = beforeNodeChange(nodeDTO, node, scope, context);
         NodeFactory.save(nodeDTO, scope, stage, context);
-        afterNodeChange(nodeDTO, node, stage, context);
-//        Flows.retransformFlowIfRequired(scope.getFlow(), context);
-//        try (var ignored = context.getProfiler().enter("Flow.check")) {
-//            node.getFlow().check();
-//        }
         return node;
-    }
-
-    private NodeDTO beforeNodeChange(NodeDTO nodeDTO, @Nullable NodeRT node, ScopeRT scope, IEntityContext context) {
-        try (var ignored = context.getProfiler().enter("FlowManager.beforeNodeChange")) {
-            if (!FlowSavingContext.skipPreprocessing())
-                nodeDTO = preprocess(nodeDTO, node, scope, context);
-            NodeKind kind = NodeKind.fromCode(nodeDTO.kind());
-            if (kind.isOutputTypeAsChild()) {
-                typeManager.saveTypeWithContent(nodeDTO.outputKlass(), context);
-            }
-            return nodeDTO;
-        }
-    }
-
-    private NodeDTO preprocess(NodeDTO nodeDTO, NodeRT node, ScopeRT scope, IEntityContext context) {
-        if (nodeDTO.kind() == NodeKind.JOIN.code())
-            return preprocessJoinNode(nodeDTO, (JoinNode) node);
-        if (nodeDTO.kind() == NodeKind.TRY_EXIT.code())
-            return preprocessTryEndNode(nodeDTO, (TryExitNode) node);
-        return nodeDTO;
-    }
-
-    private NodeDTO preprocessJoinNode(NodeDTO nodeDTO, JoinNode node) {
-        JoinNodeParam param = nodeDTO.getParam();
-        var joinFields = initializeFieldRefs(param.fields());
-        List<FieldDTO> fields = NncUtils.map(joinFields, JoinNodeFieldDTO::toFieldDTO);
-        var outputType = createNodeTypeDTO("JoinOutput",
-                NncUtils.get(node, JoinNode::getKlass), fields);
-        return nodeDTO.copyWithParamAndType(new JoinNodeParam(param.sourceIds(), joinFields), outputType);
-    }
-
-    private NodeDTO preprocessTryEndNode(NodeDTO nodeDTO, TryExitNode node) {
-        TryExitNodeParam param = nodeDTO.getParam();
-        var tryEndFields = initializeFieldRefs(param.fields());
-        List<FieldDTO> fieldDTOs = NncUtils.map(tryEndFields, TryExitFieldDTO::toFieldDTO);
-        FieldDTO excetpionFieldDTO;
-        if (node != null) {
-            var outputType = node.getType();
-            excetpionFieldDTO = outputType.resolve().getFieldByCode("exception").toDTO();
-        } else {
-            excetpionFieldDTO = FieldDTOBuilder
-                    .newBuilder("exception", Types.getNullableThrowableType().toExpression())
-                    .readonly(true)
-                    .code("exception")
-                    .build();
-        }
-        fieldDTOs = NncUtils.prepend(excetpionFieldDTO, fieldDTOs);
-        var outputTypeDTO = createNodeTypeDTO("TryEndOutput",
-                NncUtils.get(node, TryExitNode::getKlass), fieldDTOs);
-        return nodeDTO.copyWithParamAndType(new TryExitNodeParam(tryEndFields), outputTypeDTO);
-    }
-
-    private <T extends FieldReferringDTO<T>> List<T> initializeFieldRefs(List<T> fields) {
-        if (NncUtils.isEmpty(fields)) {
-            return List.of();
-        }
-        return NncUtils.map(
-                fields,
-                field -> field.fieldId() != null ?
-                        field : field.copyWithFieldId(TmpId.of(NncUtils.randomNonNegative()).toString())
-        );
-    }
-
-    private KlassDTO createNodeTypeDTO(String namePrefix, @Nullable Klass currentType, List<FieldDTO> fields) {
-        var id = NncUtils.get(currentType, Klass::getStringId);
-        String name = NncUtils.get(currentType, Klass::getName);
-//        String code = NncUtils.get(currentType, Type::getCode);
-        Long tmpId = NncUtils.get(currentType, Klass::getTmpId);
-        if (name == null)
-            name = namePrefix + "_" + NncUtils.randomNonNegative();
-        if (tmpId == null)
-            tmpId = NncUtils.randomNonNegative();
-        return ClassTypeDTOBuilder.newBuilder(name)
-                .id(id)
-                .tmpId(tmpId)
-                .kind(ClassKind.CLASS.code())
-                .ephemeral(true)
-                .anonymous(true)
-                .fields(fields)
-                .build();
     }
 
     @Transactional
@@ -506,11 +378,6 @@ public class FlowManager extends EntityContextFactoryAware {
             flow.check();
             context.finish();
             return makeFlowResponse(flow, true);
-        }
-    }
-
-    private void afterNodeChange(NodeDTO nodeDTO, NodeRT node, NodeSavingStage stage, IEntityContext context) {
-        try (var ignored = context.getProfiler().enter("afterNodeChange")) {
         }
     }
 
@@ -558,8 +425,4 @@ public class FlowManager extends EntityContextFactoryAware {
         }
     }
 
-    @Autowired
-    public void setTypeManager(TypeManager typeManager) {
-        this.typeManager = typeManager;
-    }
 }

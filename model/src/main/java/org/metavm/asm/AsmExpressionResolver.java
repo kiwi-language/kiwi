@@ -13,7 +13,6 @@ import org.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -387,18 +386,16 @@ class AsmExpressionResolver {
     private Value resolveConditional(AssemblyParser.ExpressionContext condition,
                                      AssemblyParser.ExpressionContext first,
                                      AssemblyParser.ExpressionContext second) {
+        var i = callable.nextVariableIndex();
         var ifNot = Nodes.ifNot(resolve0(condition), null, scope);
         var result1 = resolve0(first);
+        Nodes.store(i, result1, scope);
         var g = Nodes.goto_(scope);
         ifNot.setTarget(Nodes.noop(scope));
         var result2 = resolve0(second);
-        var e = requireNonNull(scope.getLastNode());
-        var join = Nodes.join(scope);
-        g.setTarget(join);
-        var field = FieldBuilder.newBuilder("value", null, join.getKlass(),
-                Types.getCompatibleType(result1.getType(), result2.getType())).build();
-        new JoinNodeField(field, join, Map.of(g, result1, e, result2));
-        return Values.node(Nodes.nodeProperty(join, field, scope));
+        Nodes.store(i, result2, scope);
+        g.setTarget(Nodes.noop(scope));
+        return Values.node(Nodes.load(i, Types.getCompatibleType(result1.getType(), result2.getType()), scope));
     }
 
     private Value resolveInstanceOf(AssemblyParser.ExpressionContext operand,

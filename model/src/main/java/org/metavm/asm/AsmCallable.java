@@ -16,7 +16,7 @@ public abstract class AsmCallable implements AsmScope {
     final AsmScope parent;
     final Callable callable;
     final Map<String, AsmVariable> variableMap = new HashMap<>();
-    int nextVariableIndex;
+    private int nextVariableIndex;
 
     AsmCallable(AsmScope parent, Callable callable) {
         this.parent = parent;

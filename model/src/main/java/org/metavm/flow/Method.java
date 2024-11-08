@@ -419,6 +419,11 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     @Override
+    public int getMinLocals() {
+        return isStatic() ? getParameters().size() : getParameters().size() + 1;
+    }
+
+    @Override
     public Method getParameterized(List<? extends Type> typeArguments) {
         return (Method) super.getParameterized(typeArguments);
     }

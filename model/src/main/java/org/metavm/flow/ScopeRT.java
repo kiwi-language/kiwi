@@ -66,6 +66,8 @@ public class ScopeRT extends Element {
                 nodes.get(0).insertBefore(node);
             nodes.addFirstChild(node);
         }
+        if(node instanceof VariableAccessNode varAccNode)
+            maxLocals = Math.max(maxLocals, varAccNode.getIndex() + 1);
         flow.addNode(node);
     }
 
@@ -170,4 +172,11 @@ public class ScopeRT extends Element {
     public void setMaxStack(int maxStack) {
         this.maxStack = maxStack;
     }
+
+    public int nextVariableIndex() {
+        var i = Math.max(callable.getMinLocals(), maxLocals);
+        maxLocals = i + 1;
+        return i;
+    }
+
 }

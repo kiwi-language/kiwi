@@ -1,12 +1,12 @@
 package org.metavm.autograph;
 
+import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiVariable;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expression;
-import org.metavm.expression.ExpressionTypeMap;
 import org.metavm.expression.TypeNarrower;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
@@ -21,18 +21,17 @@ public class MethodGenerator {
 
     private final Method method;
     private final LinkedList<ScopeInfo> scopes = new LinkedList<>();
-    private final VariableTable variableTable = new VariableTable();
     private final TypeResolver typeResolver;
     private final ExpressionResolver expressionResolver;
     private final Set<String> generatedNames = new HashSet<>();
     private final TypeNarrower typeNarrower = new TypeNarrower(this::getExpressionType);
-    private final Map<NodeRT, LinkedList<ScopeInfo>> condScopes = new IdentityHashMap<>();
     private final Map<String, Integer> varNames = new HashMap<>();
+    private final LinkedList<Integer> yieldVariables = new LinkedList<>();
 
     public MethodGenerator(Method method, TypeResolver typeResolver, VisitorBase visitor) {
         this.method = method;
         this.typeResolver = typeResolver;
-        expressionResolver = new ExpressionResolver(this, variableTable, typeResolver,
+        expressionResolver = new ExpressionResolver(this, typeResolver,
                 visitor);
     }
 
@@ -63,17 +62,6 @@ public class MethodGenerator {
                 scope(),
                 condition,
                 target
-        ));
-    }
-
-    JoinNode createJoin() {
-        return onNodeCreated(new JoinNode(
-                null,
-                nextName("join"),
-                null,
-                KlassBuilder.newBuilder("JoinOutput", null).temporary().build(),
-                scope().getLastNode(),
-                scope()
         ));
     }
 
@@ -109,32 +97,14 @@ public class MethodGenerator {
     }
 
     TryExitNode createTryExit() {
-        var node = onNodeCreated(new TryExitNode(
+        return onNodeCreated(new TryExitNode(
                 null, nextName("tryExit"), null,
-                KlassBuilder.newBuilder("TryExitOutput", null)
-                        .temporary().build(),
                 scope().getLastNode(),
-                scope()
+                scope(),
+                nextVariableIndex()
         ));
-        FieldBuilder.newBuilder("exception", "exception", node.getKlass(),
-                        Types.getNullableThrowableType())
-                .build();
-        return node;
     }
 
-
-    ValueNode createValue(String name, Value expression) {
-        return onNodeCreated(new ValueNode(
-                        null,
-                        nextName(name),
-                        null,
-                        getExpressionType(expression.getExpression()),
-                        scope().getLastNode(),
-                        scope(),
-                        expression
-                )
-        );
-    }
 
     NonNullNode createNonNull(String name, Value expression) {
         var node = onNodeCreated(new NonNullNode(
@@ -147,7 +117,6 @@ public class MethodGenerator {
                         expression
                 )
         );
-        variableTable.processRaiseNode(node);
         return node;
     }
 
@@ -186,88 +155,26 @@ public class MethodGenerator {
         );
     }
 
-    void enterTrySection(TryEnterNode tryEnterNode) {
-        variableTable.enterTrySection(tryEnterNode);
+    int enterSwitchExpression() {
+        var i = nextVariableIndex();
+        yieldVariables.push(i);
+        return i;
     }
 
-    Map<NodeRT, Map<String, Value>> exitTrySection(TryEnterNode tryEnterNode, List<String> outputVars) {
-        return variableTable.exitTrySection(tryEnterNode, outputVars);
+    void exitSwitchExpression() {
+        yieldVariables.pop();
     }
 
-    void enterCondSection(NodeRT sectionId) {
-        variableTable.enterCondSection(sectionId);
-        condScopes.put(sectionId, new LinkedList<>());
-    }
-
-    void enterBranch(NodeRT sectionId, long branchIndex) {
-        variableTable.nextBranch(sectionId, branchIndex);
+    int yieldVariable() {
+        return Objects.requireNonNull(yieldVariables.peek());
     }
 
     void setYield(Value yield) {
-        variableTable.setYield(yield);
-    }
-
-    Map<Long, Map<String, Value>> exitCondSection(NodeRT sectionId,
-                         JoinNode joinNode,
-                         Map<Long, NodeRT> exits,
-                         boolean isSwitchExpression) {
-        ExpressionTypeMap exprTypes = null;
-        for (ScopeInfo scope : condScopes.remove(sectionId)) {
-            var lastNode = scope.scope.getLastNode();
-            if (lastNode == null || !lastNode.isExit()) {
-                var newExprTypes = lastNode == null ? ExpressionTypeMap.EMPTY : lastNode.getNextExpressionTypes();
-                if (exprTypes == null) {
-                    exprTypes = newExprTypes;
-                } else {
-                    exprTypes = exprTypes.union(newExprTypes);
-                }
-            }
-        }
-        if (exprTypes != null) {
-            joinNode.mergeExpressionTypes(exprTypes);
-        }
-        var result = variableTable.exitCondSection(sectionId);
-        var hasYield = result.values().stream().anyMatch(b -> b.yield() != null);
-        if (hasYield) {
-            var yields = result.values().stream().map(BranchInfo::yield)
-                    .filter(Objects::nonNull)
-                    .toList();
-            var yieldType = Types.getUnionType(
-                    yields.stream().map(Value::getType).collect(Collectors.toSet())
-            );
-            var yieldField = FieldBuilder.newBuilder("yield", "yield", joinNode.getKlass(), yieldType).build();
-            var values = new HashMap<NodeRT, Value>();
-            exits.forEach((branchIdx, exit) -> {
-                if(exit.isSequential() || exit instanceof GotoNode g && g.getTarget() == joinNode) {
-                    values.put(exit, result.get(branchIdx).yield());
-                }
-            });
-            new JoinNodeField(yieldField, joinNode, values);
-            if (isInsideBranch() && !isSwitchExpression) {
-                setYield(Values.node(createNodeProperty(joinNode, yieldField)));
-            }
-        }
-        return result.keySet().stream().collect(Collectors.toMap(
-                java.util.function.Function.identity(),
-                b -> result.get(b).variables()
-        ));
-    }
-
-    void exitCondSection1(NodeRT sectionId, JoinNode joinNode, Map<Long, NodeRT> exits, boolean isSwitchExpression) {
-        var condOutputs = exitCondSection(sectionId, joinNode, exits, isSwitchExpression);
-        var vars = condOutputs.values().iterator().next().keySet();
-    }
-
-    boolean isInsideBranch() {
-        return variableTable.isInsideBranch();
+        createStore(yieldVariable(), yield);
     }
 
     private ScopeInfo currentScope() {
         return NncUtils.requireNonNull(scopes.peek());
-    }
-
-    void defineVariable(String name) {
-        variableTable.define(name);
     }
 
     Value getThis() {
@@ -299,6 +206,20 @@ public class MethodGenerator {
 
     ScopeRT scope() {
         return currentScope().scope;
+    }
+
+    int nextVariableIndex() {
+        return scope().nextVariableIndex();
+    }
+
+    int getVariableIndex(PsiVariable variable) {
+        assert !(variable instanceof PsiField);
+        var i = variable.getUserData(Keys.VARIABLE_INDEX);
+        if(i != null)
+            return i;
+        i = scope().nextVariableIndex();
+        variable.putUserData(Keys.VARIABLE_INDEX, i);
+        return i;
     }
 
     SetFieldNode createSetField(Value self, Field field, Value value) {
@@ -437,7 +358,6 @@ public class MethodGenerator {
                 self, method.getRef(), args);
         node.setCapturedExpressions(capturedExpressions);
         node.setCapturedExpressionTypes(capturedExpressionTypes);
-        variableTable.processRaiseNode(node);
         return onNodeCreated(node);
     }
 
@@ -456,14 +376,12 @@ public class MethodGenerator {
                 functionRef.getRawFlow().getParameters(), arguments,
                 (param, arg) -> new Argument(null, param.getRef(), arg)
         );
-        var node = onNodeCreated(new FunctionCallNode(
+        return onNodeCreated(new FunctionCallNode(
                 null,
                 nextName(functionRef.getRawFlow().getName()),
                 null,
                 scope().getLastNode(), scope(),
                 functionRef, args));
-        variableTable.processRaiseNode(node);
-        return node;
     }
 
     LambdaNode createLambda(Lambda lambda, Klass functionalInterface) {
@@ -481,10 +399,8 @@ public class MethodGenerator {
                 methodRef.getRawFlow().getParameters(), arguments,
                 (param, arg) -> new Argument(null, param.getRef(), arg)
         );
-        var node = onNodeCreated(new NewObjectNode(null, nextName(methodRef.resolve().getName()), null, methodRef, args,
+        return onNodeCreated(new NewObjectNode(null, nextName(methodRef.resolve().getName()), null, methodRef, args,
                 scope().getLastNode(), scope(), null, ephemeral, unbound));
-        variableTable.processRaiseNode(node);
-        return node;
     }
 
     ExpressionResolver getExpressionResolver() {
@@ -522,7 +438,7 @@ public class MethodGenerator {
 
     @SuppressWarnings("UnusedReturnValue")
     public RaiseNode createRaise(Value exception) {
-        var node = onNodeCreated(new RaiseNode(
+        return onNodeCreated(new RaiseNode(
                 null,
                 nextName("Error"),
                 null,
@@ -530,8 +446,6 @@ public class MethodGenerator {
                 exception,
                 null
         ));
-        variableTable.processRaiseNode(node);
-        return node;
     }
 
     public PsiMethod getJavaMethod() {
@@ -894,10 +808,6 @@ public class MethodGenerator {
                 scope(),
                 index
         ));
-    }
-
-    public NodeRT createStore(PsiVariable variable, Value value) {
-        return createStore(TranspileUtils.getVariableIndex(variable), value);
     }
 
     public NodeRT createStore(int index, Value value) {

@@ -10,7 +10,6 @@ import org.metavm.object.type.Type;
 import org.metavm.object.view.rest.dto.ComputedFieldMappingParam;
 
 import javax.annotation.Nullable;
-import java.util.function.Supplier;
 
 @EntityType
 public class ComputedFieldMapping extends FieldMapping {
@@ -65,8 +64,8 @@ public class ComputedFieldMapping extends FieldMapping {
     }
 
     @Override
-    public Supplier<Value> generateReadCode0(ScopeRT scope) {
-        return () -> (Value) new CopyVisitor(value, value.isStrictEphemeral()) {
+    public Value generateReadCode0(ScopeRT scope) {
+        return (Value) new CopyVisitor(value, value.isStrictEphemeral()) {
 
             @Override
             public Element visitExpressionValue(ExpressionValue value) {
@@ -79,7 +78,7 @@ public class ComputedFieldMapping extends FieldMapping {
     }
 
     @Override
-    protected void generateWriteCode0(ScopeRT scope, Supplier<Value> fieldValueSupplier) {
+    protected void generateWriteCode0(ScopeRT scope, Value fieldValue) {
         throw new UnsupportedOperationException();
     }
 

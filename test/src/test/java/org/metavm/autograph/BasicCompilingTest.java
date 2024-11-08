@@ -96,6 +96,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processForeach();
             processTypePatternSwitch();
             processTypePatternSwitchExpression();
+            processEmptyMethod();
         });
     }
 
@@ -1003,6 +1004,11 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processTypePatternSwitchExpression() {
         var klassName = "switchexpr.TypePatternSwitchExpressionFoo";
         Assert.assertEquals("foo", callMethod(klassName, "test", List.of("foo")));
+    }
+
+    private void processEmptyMethod() {
+        var klassName = "misc.EmptyMethodFoo";
+        callMethod(klassName, "test", List.of());
     }
 
 }

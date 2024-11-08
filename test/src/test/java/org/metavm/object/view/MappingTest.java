@@ -56,7 +56,6 @@ public class MappingTest extends TestCase {
                 bootResult.metaContextCache());
         typeManager.setInstanceManager(instanceManager);
         flowManager = new FlowManager(bootResult.entityContextFactory(), new MockTransactionOperations());
-        flowManager.setTypeManager(typeManager);
         typeManager.setFlowManager(flowManager);
         var flowExecutionService = new FlowExecutionService(bootResult.entityContextFactory());
         typeManager.setFlowExecutionService(flowExecutionService);

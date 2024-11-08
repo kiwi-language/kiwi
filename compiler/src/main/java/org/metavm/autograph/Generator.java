@@ -2,9 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import org.metavm.api.EntityIndex;
-import org.metavm.entity.IEntityContext;
 import org.metavm.entity.StdKlass;
-import org.metavm.expression.Expression;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.CompositeTypeEventRegistry;
@@ -17,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.BiFunction;
 
 import static java.util.Objects.requireNonNull;
 
@@ -30,12 +27,10 @@ public class Generator extends VisitorBase {
     private final Map<String, Klass> classes = new HashMap<>();
     private final LinkedList<ClassInfo> classInfoStack = new LinkedList<>();
     private final TypeResolver typeResolver;
-    private final IEntityContext entityContext;
 
-    public Generator(PsiClass psiClass, TypeResolver typeResolver, IEntityContext entityContext) {
+    public Generator(PsiClass psiClass, TypeResolver typeResolver) {
         this.psiClass = psiClass;
         this.typeResolver = typeResolver;
-        this.entityContext = entityContext;
     }
 
     @Override
@@ -160,8 +155,6 @@ public class Generator extends VisitorBase {
             index.setFields(indexFields);
             return;
         }
-//        An NPE may occur here for record fields if modifications are made between declaration stage and generation stage.
-//        To track these modifications, set a breakpoint at com.intellij.openapi.util.SimpleModificationTracker.incModificationCount.
         var field = Objects.requireNonNull(psiField.getUserData(Keys.FIELD));
         if (psiField.getInitializer() != null) {
             if (field.isStatic()) {
@@ -205,103 +198,42 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitTryStatement(PsiTryStatement statement) {
-        var tryBlock = NncUtils.requireNonNull(statement.getTryBlock());
-        var tryScope = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
-        Set<QualifiedName> liveOut = getBlockLiveOut(tryBlock);
-        Set<QualifiedName> outputVars = liveOut == null ? Set.of() : NncUtils.intersect(tryScope.getModified(), liveOut);
-        var tryEnter = builder().createTryEnter();
-        builder().enterTrySection(tryEnter);
-        tryBlock.accept(this);
-        var trySectionOutput = builder().exitTrySection(tryEnter, NncUtils.map(outputVars, Objects::toString));
+        builder().createTryEnter();
+        requireNonNull(statement.getTryBlock()).accept(this);
         var tryExit = builder().createTryExit();
-        var exceptionExpr = Values.node(Nodes.getProperty(
-                Values.node(tryExit),
-                tryExit.getKlass().getFieldByCode("exception"),
-                builder().scope()
-        ));
-
+        var exceptionExpr = Values.node(builder().createLoad(tryExit.getVariableIndex(), Types.getNullableType(StdKlass.exception.type())));
+        var caught = builder().nextVariableIndex();
         if (statement.getCatchSections().length > 0) {
-            Set<QualifiedName> catchModified = new HashSet<>();
-            Set<QualifiedName> catchLiveOut = null;
-            var entryNode = builder().createNoop();
-            builder().enterCondSection(entryNode);
             JumpNode lastIfNode = null;
-            long branchIdx = 0;
-            var exits = new HashMap<Long, NodeRT>();
+            var gotoNodes = new ArrayList<GotoNode>();
             for (PsiCatchSection catchSection : statement.getCatchSections()) {
                 var catchBlock = NncUtils.requireNonNull(catchSection.getCatchBlock());
-                catchModified.addAll(requireNonNull(catchSection.getUserData(Keys.BODY_SCOPE)).getModified());
-                if (catchLiveOut == null) {
-                    catchLiveOut = getBlockLiveOut(catchBlock);
-                }
-                builder().enterBranch(entryNode, branchIdx);
                 var ifNode = createExceptionCheck(exceptionExpr, catchSection.getCatchType());
                 if(lastIfNode != null)
                     lastIfNode.setTarget(ifNode);
                 lastIfNode = ifNode;
                 var param = requireNonNull(catchSection.getParameter());
-                builder().defineVariable(param.getName());
-                builder().createStore(TranspileUtils.getVariableIndex(param), exceptionExpr);
+                var e = builder().getVariableIndex(param);
+                builder().createStore(caught, Values.constantTrue());
+                builder().createStore(e, exceptionExpr);
                 catchBlock.accept(this);
-                exits.put(branchIdx++, builder().createGoto(null));
+                gotoNodes.add(builder().createGoto(null));
             }
-            builder().enterBranch(entryNode, branchIdx);
-            var defaultExit = builder().createNoop();
+            var defaultExit = builder().createStore(caught, Values.constantFalse());
             Objects.requireNonNull(lastIfNode).setTarget(defaultExit);
-            exits.put(branchIdx, defaultExit);
-            List<QualifiedName> catchOutputVars = catchLiveOut == null ? List.of()
-                    : new ArrayList<>(NncUtils.intersect(catchModified, catchLiveOut));
-            var joinNode = builder().createJoin();
-            for (NodeRT exit : exits.values()) {
-                if(exit instanceof GotoNode g)
-                    g.setTarget(joinNode);
-            }
-            exitCondSection(entryNode, joinNode, exits, catchOutputVars);
-            var exceptionField = FieldBuilder.newBuilder("exception", "exception",
-                    joinNode.getKlass(), Types.getNullableThrowableType()).build();
-
-            final var exceptionExprFinal = exceptionExpr;
-            new JoinNodeField(
-                    exceptionField,
-                    joinNode,
-                    NncUtils.toMap(
-                            exits.values(),
-                            java.util.function.Function.identity(),
-                            exit -> exit == defaultExit ? exceptionExprFinal : Values.nullValue()
-                    )
-            );
-            exceptionExpr = Values.node(builder().createNodeProperty(joinNode, exceptionField));
-        }
+            var joinNode = builder().createNoop();
+            gotoNodes.forEach(g -> g.setTarget(joinNode));
+        } else
+            builder().createStore(caught, Values.constantFalse());
         if (statement.getFinallyBlock() != null) {
             statement.getFinallyBlock().accept(this);
         }
-        var ifNode = builder().createIf(
-                Values.node(builder().createEq(exceptionExpr, Values.nullValue())),
-                null);
+        var if1 = builder().createIf(Values.node(builder().createEq(exceptionExpr, Values.nullValue())), null);
+        var if2 = builder().createIf(Values.node(builder().createLoad(caught, Types.getBooleanType())), null);
         builder().createRaise(exceptionExpr);
-        ifNode.setTarget(builder().createNoop());
-    }
-
-    @Nullable
-    private Set<QualifiedName> getBlockLiveOut(PsiCodeBlock block) {
-        if (block.isEmpty()) {
-            return null;
-        }
-        var lastStmt = block.getStatements()[block.getStatementCount() - 1];
-        return NncUtils.requireNonNull(lastStmt.getUserData(Keys.LIVE_VARS_OUT));
-    }
-
-    private List<JumpNode> createExceptionCheck(Value exceptionExpr, List<PsiType> catchTypes) {
-        NncUtils.requireNotEmpty(catchTypes);
-        var jumps = new ArrayList<JumpNode>();
-        for (PsiType catchType : catchTypes) {
-            var ifNode = builder().createIfNot(
-                    Values.node(builder().createInstanceOf(exceptionExpr, resolveType(catchType))),
-                    null
-            );
-            jumps.add(ifNode);
-        }
-        return jumps;
+        var exit = builder().createNoop();
+        if1.setTarget(exit);
+        if2.setTarget(exit);
     }
 
     private JumpNode createExceptionCheck(Value exceptionExpr, PsiType catchType) {
@@ -319,7 +251,6 @@ public class Generator extends VisitorBase {
             return;
 //        logger.debug("Generating code for method {}", TranspileUtils.getMethodQualifiedName(psiMethod));
         var method = NncUtils.requireNonNull(psiMethod.getUserData(Keys.Method));
-        method.getScope().setMaxLocals(TranspileUtils.getMaxLocals(psiMethod));
         method.setLambdas(List.of());
         var capturedTypeListener = new CompositeTypeListener() {
             @Override
@@ -401,12 +332,12 @@ public class Generator extends VisitorBase {
     }
 
     private static boolean isSuperCallPresent(PsiMethod method) {
-        var stmts = requireNonNull(method.getBody(),
+        var statements = requireNonNull(method.getBody(),
                 () -> "Failed to get body of method " + TranspileUtils.getMethodQualifiedName(method))
                 .getStatements();
         boolean requireSuperCall = false;
-        if (stmts.length > 0) {
-            if (stmts[0] instanceof PsiExpressionStatement exprStmt &&
+        if (statements.length > 0) {
+            if (statements[0] instanceof PsiExpressionStatement exprStmt &&
                     exprStmt.getExpression() instanceof PsiMethodCallExpression methodCallExpr) {
                 if (Objects.equals(methodCallExpr.getMethodExpression().getReferenceName(), "super")) {
                     requireSuperCall = true;
@@ -420,91 +351,58 @@ public class Generator extends VisitorBase {
     public void visitSwitchStatement(PsiSwitchStatement statement) {
         if (statement.getBody() != null && statement.getBody().getStatementCount() > 0) {
             var fistStmt = statement.getBody().getStatements()[0];
-            if (fistStmt instanceof PsiSwitchLabeledRuleStatement) {
+            if (fistStmt instanceof PsiSwitchLabeledRuleStatement)
                 processLabeledRuleSwitch(statement);
-            } else {
+            else
                 processClassicSwitch(statement);
-            }
         }
     }
 
     private void processLabeledRuleSwitch(PsiSwitchStatement statement) {
-        var entryNode = builder().createValue("switchValue", resolveExpression(statement.getExpression()));
-        var switchExpr = Values.node(entryNode);
-        var stmts = NncUtils.requireNonNull(statement.getBody()).getStatements();
-        builder().enterCondSection(entryNode);
-        var modified = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE)).getModified();
-        var liveVarOut = NncUtils.requireNonNull(statement.getUserData(Keys.LIVE_VARS_OUT));
-        var outputVars = NncUtils.intersect(modified, liveVarOut);
-        var exits = new HashMap<Long, NodeRT>();
-        List<? extends JumpNode> lastIfNodes = List.of();
+        var value = resolveExpression(statement.getExpression());
+        var statements = requireNonNull(statement.getBody()).getStatements();
+        var gotoNodes = new ArrayList<GotoNode>();
+        List<IfNotNode> lastIfNodes = List.of();
         GotoNode lastGoto = null;
-        var branchIdx = 0L;
-        for (PsiStatement stmt : stmts) {
+        for (PsiStatement stmt : statements) {
             var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) stmt;
             var caseLabelElementList = labeledRuleStmt.getCaseLabelElementList();
             if (caseLabelElementList == null || caseLabelElementList.getElementCount() == 0)
                 continue;
-            PsiVariable castVar = null;
             List<IfNotNode> ifNodes;
             if (isTypePatternCase(caseLabelElementList)) {
-                PsiTypeTestPattern typeTestPattern = (PsiTypeTestPattern) caseLabelElementList.getElements()[0];
+                var typeTestPattern = (PsiTypeTestPattern) caseLabelElementList.getElements()[0];
                 var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
-                builder().createStore(
-                        TranspileUtils.getVariableIndex(requireNonNull(typeTestPattern.getPatternVariable())),
-                        switchExpr
-                );
+                var patternVar = requireNonNull(typeTestPattern.getPatternVariable());
+                builder().createStore(builder().getVariableIndex(patternVar), value);
                 ifNodes = List.of(builder().createIfNot(
-                        Values.node(builder().createInstanceOf(switchExpr, typeResolver.resolveDeclaration(checkType))),
+                        Values.node(builder().createInstanceOf(value, typeResolver.resolveDeclaration(checkType))),
                         null
                 ));
-                castVar = requireNonNull(typeTestPattern.getPatternVariable());
             } else {
                 var expressions = NncUtils.map(caseLabelElementList.getElements(),
                         e -> resolveExpression((PsiExpression) e));
                 ifNodes = new ArrayList<>();
                 for (var expression : expressions) {
-                    ifNodes.add(builder().createIfNot(
-                            Values.node(builder().createEq(switchExpr, expression)),
-                            null
-                    ));
+                    ifNodes.add(builder().createIfNot(Values.node(builder().createEq(value, expression)), null));
                 }
             }
-            builder().enterBranch(entryNode, branchIdx);
             if(lastGoto != null) {
                 for (JumpNode lastIfNode : lastIfNodes) {
                     lastIfNode.setTarget(lastGoto.getSuccessor());
                 }
             }
             lastIfNodes = ifNodes;
-            if (castVar != null) {
-                builder().createStore(TranspileUtils.getVariableIndex(castVar), switchExpr);
-            }
             processSwitchCaseBody(labeledRuleStmt.getBody());
-            exits.put(branchIdx++, lastGoto = builder().createGoto(null));
+            gotoNodes.add(lastGoto = builder().createGoto(null));
         }
         var defaultStmt = (PsiSwitchLabeledRuleStatement)
-                NncUtils.findRequired(stmts, stmt -> ((PsiSwitchLabeledRuleStatement) stmt).isDefaultCase());
-        builder().enterBranch(entryNode, branchIdx);
-        var noop = builder().createNoop();
-        lastIfNodes.forEach(n -> n.setTarget(noop));
+                NncUtils.findRequired(statements, stmt -> ((PsiSwitchLabeledRuleStatement) stmt).isDefaultCase());
+        var d = builder().createNoop();
+        lastIfNodes.forEach(n -> n.setTarget(d));
         processSwitchCaseBody(defaultStmt.getBody());
-        exits.put(branchIdx, requireNonNull(builder().scope().getLastNode()));
-        var joinNode = builder().createJoin();
-        exits.values().forEach(exit -> {
-            if(exit instanceof GotoNode g)
-                g.setTarget(joinNode);
-        });
-        var condOutputs = builder().exitCondSection(entryNode, joinNode, exits, true);
-        for (QualifiedName outputVar : outputVars) {
-            var field = FieldBuilder.newBuilder(outputVar.toString(), outputVar.toString(), joinNode.getKlass(),
-                            typeResolver.resolveDeclaration(outputVar.type()))
-                    .build();
-            var joinField = new JoinNodeField(field, joinNode);
-            condOutputs.forEach((idx, values) ->
-                    joinField.setValue(requireNonNull(exits.get(idx)), values.get(outputVar.toString()))
-            );
-        }
+        var exit = builder().createNoop();
+        gotoNodes.forEach(g -> g.setTarget(exit));
     }
 
     private void processSwitchCaseBody(PsiElement element) {
@@ -516,7 +414,7 @@ public class Generator extends VisitorBase {
         }
     }
 
-    private Expression processClassicSwitch(PsiSwitchStatement statement) {
+    private void processClassicSwitch(PsiSwitchStatement ignored) {
         throw new UnsupportedOperationException();
     }
 
@@ -526,7 +424,11 @@ public class Generator extends VisitorBase {
     }
 
 
-    private void processParameters(PsiParameterList parameterList, Flow flow) {
+    private void processParameters(PsiParameterList parameterList, Method method) {
+        var i = method.isStatic() ? 0 : (method.isConstructor() && method.getDeclaringType().isEnum() ? 3 : 1);
+        for (PsiParameter parameter : parameterList.getParameters()) {
+            parameter.putUserData(Keys.VARIABLE_INDEX, i++);
+        }
     }
 
     private Klass currentClass() {
@@ -543,11 +445,6 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitIfStatement(PsiIfStatement statement) {
-        Scope bodyScope = requireNonNull(statement.getUserData(Keys.BODY_SCOPE)),
-                elseScope = requireNonNull(statement.getUserData(Keys.ELSE_SCOPE));
-        Set<QualifiedName> modified = NncUtils.union(bodyScope.getModified(), elseScope.getModified());
-        Set<QualifiedName> outputVars = getBlockOutputVariables(statement, modified);
-        List<String> outputVariables = NncUtils.map(outputVars, Object::toString);
         builder().getExpressionResolver().constructIf(
                 requireNonNull(statement.getCondition()),
                 () -> {
@@ -563,63 +460,11 @@ public class Generator extends VisitorBase {
         );
     }
 
-    private void exitCondSection(NodeRT sectionId, JoinNode joinNode, Map<Long, NodeRT> exits, List<QualifiedName> outputVariables) {
-        builder().exitCondSection(sectionId, joinNode, exits, false);
-    }
-
     @Override
     public void visitLocalVariable(PsiLocalVariable variable) {
-        builder().defineVariable(variable.getName());
-        if (variable.getInitializer() != null) {
-            builder().createStore(TranspileUtils.getVariableIndex(variable),
-                    resolveExpression(variable.getInitializer()));
-        }
-    }
-
-    private void processLoop(PsiLoopStatement statement,
-                             PsiExpression condition,
-                             @Nullable BiFunction<JoinNode, Map<QualifiedName, Field>, JumpNode> preprocessor,
-                             @Nullable java.util.function.Function<JoinNode, LoopField> postProcessor
-                             ) {
-        var entryNode = builder().createNoop();
-        var joinNode = builder().createJoin();
-        var bodyScope = NncUtils.requireNonNull(statement.getUserData(Keys.BODY_SCOPE));
-        var modified = new HashSet<>(bodyScope.getModified());
-        var condScope = statement.getUserData(Keys.COND_SCOPE);
-        if(condScope != null)
-            modified.addAll(condScope.getModified());
-        Set<QualifiedName> liveIn = requireNonNull(statement.getUserData(Keys.LIVE_VARS_IN));
-        Set<QualifiedName> liveOut = requireNonNull(statement.getUserData(Keys.LIVE_VARS_OUT));
-        List<QualifiedName> loopVars = NncUtils.filter(
-                modified, qn -> liveIn.contains(qn) || liveOut.contains(qn)
-        );
-        Map<Field, Value> initialValues = new HashMap<>();
-        Map<QualifiedName, Field> loopVar2Field = new HashMap<>();
-        var cond = condition != null ? resolveExpression(condition) : Values.constantTrue();
-        var ifNode = builder().createIfNot(cond, null);
-        JumpNode extraIfNode = null;
-        if (preprocessor != null)
-            extraIfNode = preprocessor.apply(joinNode, loopVar2Field);
-        if (statement.getBody() != null) {
-            statement.getBody().accept(this);
-        }
-        LoopField extraLoopField = null;
-        if(postProcessor != null)
-            extraLoopField = postProcessor.apply(joinNode);
-        var goBack = builder().createGoto(joinNode);
-        var exit = builder().createNoop();
-        ifNode.setTarget(exit);
-        if(extraIfNode != null)
-            extraIfNode.setTarget(exit);
-        if(extraLoopField != null) {
-            new JoinNodeField(extraLoopField.field(), joinNode, Map.of(
-                            entryNode, extraLoopField.initialValue,
-                            goBack, extraLoopField.updatedValue
-            ));
-        }
-    }
-
-    private record LoopField(Field field, Value initialValue, Value updatedValue) {
+        var i = builder().getVariableIndex(variable);
+        if (variable.getInitializer() != null)
+            builder().createStore(i, resolveExpression(variable.getInitializer()));
     }
 
     @Override
@@ -629,10 +474,15 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitWhileStatement(PsiWhileStatement statement) {
-        processLoop(statement, statement.getCondition(), null, null
-//                loopVar2Field ->
-//                        node.setCondition(Value.expression(resolveExpression(statement.getCondition())))
-        );
+        var entryNode = builder().createNoop();
+        var condition = statement.getCondition();
+        var ifNode = condition != null ? builder().createIfNot(resolveExpression(condition), null) : null;
+        if (statement.getBody() != null)
+            statement.getBody().accept(this);
+        builder().createGoto(entryNode);
+        var exit = builder().createNoop();
+        if(ifNode != null)
+            ifNode.setTarget(exit);
     }
 
     @Override
@@ -645,66 +495,59 @@ public class Generator extends VisitorBase {
             iteratedExpr = iteratedExpr0;
         var type = builder().getExpressionType(iteratedExpr.getExpression());
         if (type instanceof ArrayType) {
-            processLoop(statement, getExtraLoopTest(statement),
-                    (joinNode, loopVar2Field) -> {
-                        var indexField = FieldBuilder
-                                .newBuilder("index", "index", joinNode.getKlass(), Types.getLongType())
-                                .build();
-                        var index = builder().createNodeProperty(joinNode, indexField);
-                        var ifNode = builder().createIf(Values.node(builder().createGe(
-                                Values.node(index),
-                                Values.node(builder().createArrayLength(iteratedExpr))
-                        )), null);
-                        builder().createStore(statement.getIterationParameter(),
-                                Values.node(builder().createGetElement(iteratedExpr, Values.node(index))));
-                        return ifNode;
-                    },
-                    joinNode -> {
-                        var indexField = joinNode.getKlass().getFieldByCode("index");
-                        return new LoopField(
-                            indexField,
-                                Values.constantLong(0L),
-                                Values.node(
-                                        builder().createAdd(
-                                                Values.node(
-                                                        builder().createNodeProperty(joinNode, indexField)
-                                                ),
-                                                Values.constantLong(1L)
-                                        )
-                                )
-                        );
-                    }
-                );
+            var i = builder().nextVariableIndex();
+            builder().createStore(i, Values.constantLong(0));
+            var entryNode = builder().createNoop();
+            var condition = getExtraLoopTest(statement);
+            var index = Values.node(builder().createLoad(i, Types.getLongType()));
+            var ifNode = builder().createIf(Values.node(builder().createGe(
+                    index,
+                    Values.node(builder().createArrayLength(iteratedExpr))
+            )), null);
+            var ifNode1 = condition != null ? builder().createIfNot(resolveExpression(condition), null) : null;
+            builder().createStore(builder().getVariableIndex(statement.getIterationParameter()),
+                    Values.node(builder().createGetElement(iteratedExpr, index)));
+            if (statement.getBody() != null)
+                statement.getBody().accept(this);
+            builder().createStore(i, Values.node(builder().createAdd(index, Values.constantLong(1))));
+            builder().createGoto(entryNode);
+            var exit = builder().createNoop();
+            ifNode.setTarget(exit);
+            if(ifNode1 != null)
+                ifNode1.setTarget(exit);
         } else {
             var collType = Types.resolveKlass(type);
             typeResolver.ensureDeclared(collType);
             var itNode = builder().createNonNull("nonNull",
                     Values.node(builder().createMethodCall(
-                        iteratedExpr, Objects.requireNonNull(collType.findMethodByCode("iterator")),
-                        List.of()))
+                            iteratedExpr, Objects.requireNonNull(collType.findMethodByCode("iterator")),
+                            List.of()))
             );
             var itType = Types.resolveKlass(NncUtils.requireNonNull(itNode.getType()));
-            processLoop(statement, getExtraLoopTest(statement), (joinNode, loopVar2Field) -> {
-                var hashNext = builder().createMethodCall(
-                        Values.node(itNode),
-                        itType.getMethod("hasNext", List.of()),
-                        List.of()
-                );
-                var ifNode = builder().createIfNot(
-                        Values.node(hashNext),
-                        null
-                );
-                var elementNode = builder().createMethodCall(
-                        Values.node(itNode),
-                        itType.getMethod("next", List.of()),
-                        List.of()
-                );
-                builder().createStore(statement.getIterationParameter(), Values.node(elementNode));
-                return ifNode;
-            }, null);
+            var entryNode = builder().createNoop();
+            var hashNext = builder().createMethodCall(
+                    Values.node(itNode),
+                    itType.getMethod("hasNext", List.of()),
+                    List.of()
+            );
+            var ifNode = builder().createIfNot(Values.node(hashNext), null);
+            var condition = getExtraLoopTest(statement);
+            var ifNode1 = condition != null ? builder().createIfNot(resolveExpression(condition), null) : null;
+            var elementNode = builder().createMethodCall(
+                    Values.node(itNode),
+                    itType.getMethod("next", List.of()),
+                    List.of()
+            );
+            builder().createStore(builder().getVariableIndex(statement.getIterationParameter()), Values.node(elementNode));
+            if (statement.getBody() != null)
+                statement.getBody().accept(this);
+            builder().createGoto(entryNode);
+            var exit = builder().createNoop();
+            ifNode.setTarget(exit);
+            if(ifNode1 != null)
+                ifNode1.setTarget(exit);
         }
     }
-
 
     @Nullable
     private PsiExpression getExtraLoopTest(PsiForeachStatement statement) {
@@ -714,11 +557,6 @@ public class Generator extends VisitorBase {
                     .getArgumentList().getExpressions()[0];
         }
         return null;
-    }
-
-    private Set<QualifiedName> getBlockOutputVariables(PsiStatement statement, Set<QualifiedName> modified) {
-        Set<QualifiedName> liveOut = requireNonNull(statement.getUserData(Keys.LIVE_VARS_OUT));
-        return NncUtils.filterUnique(modified, qn -> qn.isSimple() && liveOut.contains(qn));
     }
 
     @Override
@@ -767,28 +605,7 @@ public class Generator extends VisitorBase {
         return classes;
     }
 
-    private static final class ClassInfo {
-        private final Klass klass;
-        private final PsiClass psiClass;
-        private final MethodGenerator fieldBuilder;
-        private final MethodGenerator staticBuilder;
-        private int enumConstantCount;
-
-        private ClassInfo(
-                Klass klass,
-                PsiClass psiClass,
-                MethodGenerator fieldBuilder,
-                MethodGenerator staticBuilder
-        ) {
-            this.klass = klass;
-            this.psiClass = psiClass;
-            this.fieldBuilder = fieldBuilder;
-            this.staticBuilder = staticBuilder;
-        }
-
-        private int nextEnumConstantOrdinal() {
-            return enumConstantCount++;
-        }
+    private record ClassInfo(Klass klass, PsiClass psiClass, MethodGenerator fieldBuilder, MethodGenerator staticBuilder) {
 
 
     }

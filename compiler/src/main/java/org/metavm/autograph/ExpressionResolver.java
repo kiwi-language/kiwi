@@ -65,7 +65,6 @@ public class ExpressionResolver {
 
     private final MethodGenerator methodGenerator;
     private final TypeResolver typeResolver;
-    private final VariableTable variableTable;
     private final VisitorBase visitor;
     private final Map<PsiExpression, Expression> expressionMap = new IdentityHashMap<>();
     private final LinkedList<PsiLambdaExpression> lambdas = new LinkedList<>();
@@ -78,10 +77,9 @@ public class ExpressionResolver {
             new NewPasswordResolver(), new NewDateResolver()
     );
 
-    public ExpressionResolver(MethodGenerator methodGenerator, VariableTable variableTable, TypeResolver typeResolver, VisitorBase visitor) {
+    public ExpressionResolver(MethodGenerator methodGenerator, TypeResolver typeResolver, VisitorBase visitor) {
         this.methodGenerator = methodGenerator;
         this.typeResolver = typeResolver;
-        this.variableTable = variableTable;
         this.visitor = visitor;
     }
 
@@ -167,7 +165,8 @@ public class ExpressionResolver {
         org.metavm.flow.Value operand;
         if (instanceOfExpression.getPattern() instanceof PsiTypeTestPattern pattern) {
             operand = resolve(instanceOfExpression.getOperand(), context);
-            methodGenerator.createStore(pattern.getPatternVariable(), operand);
+            var i = methodGenerator.getVariableIndex(Objects.requireNonNull(pattern.getPatternVariable()));
+            methodGenerator.createStore(i, operand);
         } else {
             operand = resolve(instanceOfExpression.getOperand(), context);
         }
@@ -200,26 +199,13 @@ public class ExpressionResolver {
     }
 
     private org.metavm.flow.Value resolveConditional(PsiConditionalExpression psiExpression, ResolutionContext context) {
-        var ref = new Object() {
-            org.metavm.flow.Value thenExpr;
-            org.metavm.flow.Value elseExpr;
-        };
-        var joinNode = constructIf(psiExpression.getCondition(), false,
-                () -> ref.thenExpr = resolve(psiExpression.getThenExpression(), context),
-                () -> ref.elseExpr = resolve(psiExpression.getElseExpression(), context),
+        var i = methodGenerator.nextVariableIndex();
+        constructIf(psiExpression.getCondition(), false,
+                () -> methodGenerator.createStore(i, resolve(psiExpression.getThenExpression(), context)),
+                () -> methodGenerator.createStore(i, resolve(psiExpression.getElseExpression(), context)),
                 context
         );
-        var thenExit = joinNode.getSources().get(0);
-        var elseExit = Objects.requireNonNull(joinNode.getPredecessor());
-        var valueField = FieldBuilder
-                .newBuilder("value", "value", joinNode.getKlass(),
-                        Types.getUnionType(List.of(ref.thenExpr.getType(), ref.elseExpr.getType())))
-                .build();
-        new JoinNodeField(valueField, joinNode, Map.of(
-                thenExit, ref.thenExpr,
-                elseExit, ref.elseExpr)
-        );
-        return Values.node(methodGenerator.createNodeProperty(joinNode, valueField));
+        return Values.node(methodGenerator.createLoad(i, typeResolver.resolveDeclaration(psiExpression.getType())));
     }
 
     private org.metavm.flow.Value resolveParenthesized(PsiParenthesizedExpression psiExpression, ResolutionContext context) {
@@ -379,21 +365,19 @@ public class ExpressionResolver {
         var op = psiUnaryExpression.getOperationSign().getTokenType();
         var resolvedOperand = resolve(requireNonNull(psiUnaryExpression.getOperand()), context);
         if (op == JavaTokenType.PLUSPLUS) {
-            var value = Values.node(methodGenerator.createValue("value", resolvedOperand));
             processAssignment(
                     psiUnaryExpression.getOperand(),
-                    Values.node(methodGenerator.createAdd(value, Values.constantLong(1L))),
+                    Values.node(methodGenerator.createAdd(resolvedOperand, Values.constantLong(1L))),
                     context
             );
-            return value;
+            return resolvedOperand;
         } else if (op == JavaTokenType.MINUSMINUS) {
-            var value = Values.node(methodGenerator.createValue("value", resolvedOperand));
             processAssignment(
                     psiUnaryExpression.getOperand(),
-                    Values.node(methodGenerator.createSub(value, Values.constantLong(1L))),
+                    Values.node(methodGenerator.createSub(resolvedOperand, Values.constantLong(1L))),
                     context
             );
-            return value;
+            return resolvedOperand;
         } else
             throw new IllegalStateException("Unrecognized unary expression: " + psiUnaryExpression.getText());
     }
@@ -856,11 +840,11 @@ public class ExpressionResolver {
         return OPERATOR_MAP.get(elementType);
     }
 
-    public JoinNode constructIf(PsiExpression condition, Runnable thenAction, Runnable elseAction) {
+    public NodeRT constructIf(PsiExpression condition, Runnable thenAction, Runnable elseAction) {
         return constructIf(condition, false, thenAction, elseAction, new ResolutionContext());
     }
 
-    public JoinNode constructIf(PsiExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
+    public NodeRT constructIf(PsiExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
         return switch (condition) {
             case PsiBinaryExpression binaryExpression ->
                     constructBinaryIf(binaryExpression, negated, thenAction, elseAction, context);
@@ -871,7 +855,7 @@ public class ExpressionResolver {
         };
     }
 
-    private JoinNode constructUnaryIf(PsiUnaryExpression unaryExpression,
+    private NodeRT constructUnaryIf(PsiUnaryExpression unaryExpression,
                                           boolean negated,
                                           Runnable thenAction,
                                           Runnable elseAction,
@@ -884,7 +868,7 @@ public class ExpressionResolver {
         }
     }
 
-    private JoinNode constructBinaryIf(PsiBinaryExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
+    private NodeRT constructBinaryIf(PsiBinaryExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
         var op = resolveOperator(condition.getOperationSign());
         if(op == BinaryOperator.AND || op == BinaryOperator.OR)
             return constructPolyadicIf(condition, negated, thenAction, elseAction, context);
@@ -892,7 +876,7 @@ public class ExpressionResolver {
             return constructAtomicIf(condition, negated, thenAction, elseAction, context);
     }
 
-    private JoinNode constructPolyadicIf(PsiPolyadicExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
+    private NodeRT constructPolyadicIf(PsiPolyadicExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
         var op = resolveOperator(condition.getOperationTokenType());
         if (op == BinaryOperator.AND) {
             return constructAndPolyadicIf(condition.getOperands(),  0, negated, thenAction, elseAction, context);
@@ -903,7 +887,7 @@ public class ExpressionResolver {
         }
     }
 
-    private JoinNode constructAndPolyadicIf(PsiExpression[] items,
+    private NodeRT constructAndPolyadicIf(PsiExpression[] items,
                                                 int index,
                                                 boolean negated,
                                                 Runnable thenAction,
@@ -930,7 +914,7 @@ public class ExpressionResolver {
         }
     }
 
-    private JoinNode constructOrPolyadicIf(PsiExpression[] items,
+    private NodeRT constructOrPolyadicIf(PsiExpression[] items,
                                                int index,
                                                boolean negated,
                                                Runnable thenAction, Runnable elseAction,
@@ -959,50 +943,40 @@ public class ExpressionResolver {
         }
     }
 
-    private JoinNode constructAtomicIf(PsiExpression condition, boolean negated, Runnable thenAction,
+    private NodeRT constructAtomicIf(PsiExpression condition, boolean negated, Runnable thenAction,
                                            Runnable elseAction, ResolutionContext context) {
         var expr = resolveNormal(condition, context);
         var ifNode = negated ? methodGenerator.createIf(expr, null)
                 : methodGenerator.createIfNot(expr, null);
-        methodGenerator.enterCondSection(ifNode);
-        methodGenerator.enterBranch(ifNode, 0);
         thenAction.run();
         var g = methodGenerator.createGoto(null);
-        var join1 = methodGenerator.createJoin();
-        ifNode.setTarget(join1);
-        methodGenerator.enterBranch(ifNode, 1);
+        ifNode.setTarget(methodGenerator.createNoop());
         elseAction.run();
-        var exit2 = requireNonNull(methodGenerator.scope().getLastNode());
-        var join2 = methodGenerator.createJoin();
-        g.setTarget(join2);
-        methodGenerator.exitCondSection1(ifNode, join2, Map.of(0L, g, 1L, exit2), false);
-        return join2;
+        var join = methodGenerator.createNoop();
+        g.setTarget(join);
+        return join;
     }
 
     public org.metavm.flow.Value resolveBoolExpr(PsiExpression expression, ResolutionContext context) {
-        var joinNode = constructIf(expression, false, () -> {}, () -> {}, context);
-        var thenExit = joinNode.getSources().get(0);
-        var elseExit = Objects.requireNonNull(joinNode.getPredecessor());
-        var valueField = FieldBuilder
-                .newBuilder("value", "value", joinNode.getKlass(), Types.getBooleanType())
-                .build();
-        new JoinNodeField(valueField, joinNode, Map.of(
-                thenExit, Values.constantTrue(),
-                elseExit, Values.constantFalse()
-        ));
-        return Values.node(methodGenerator.createNodeProperty(joinNode, valueField));
+        var i = methodGenerator.nextVariableIndex();
+         constructIf(expression, false,
+                () -> methodGenerator.createStore(i, Values.constantTrue()),
+                () -> methodGenerator.createStore(i, Values.constantFalse()), context);
+        return Values.node(methodGenerator.createLoad(i, Types.getBooleanType()));
     }
 
     public org.metavm.flow.Value resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
         enterLambda(expression);
         var returnType = typeResolver.resolveNullable(TranspileUtils.getLambdaReturnType(expression), ResolutionStage.DECLARATION);
-        var parameters = resolveParameterList(expression.getParameterList());
+        var parameters = new ArrayList<Parameter>();
+        int i = 0;
+        for (var psiParameter : expression.getParameterList().getParameters()) {
+            parameters.add(resolveParameter(psiParameter));
+            psiParameter.putUserData(Keys.VARIABLE_INDEX, i++);
+        }
         var funcInterface = Types.resolveKlass(typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType()));
         var lambda = new Lambda(null, parameters, returnType, methodGenerator.getMethod());
-        lambda.getScope().setMaxLocals(TranspileUtils.getMaxLocals(expression));
-        for (Parameter parameter : parameters) {
-            methodGenerator.defineVariable(parameter.getCode());
-        }
+//        lambda.getScope().setMaxLocals(TranspileUtils.getMaxLocals(expression));
         methodGenerator.enterScope(lambda.getScope());
         if (expression.getBody() instanceof PsiExpression bodyExpr) {
             methodGenerator.createReturn(resolve(bodyExpr, context));
@@ -1020,20 +994,19 @@ public class ExpressionResolver {
     }
 
     private org.metavm.flow.Value resolveSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
+        var y = methodGenerator.enterSwitchExpression();
         var switchExpr = resolve(psiSwitchExpression.getExpression(), context);
-        var entry = methodGenerator.createNoop();
-        methodGenerator.enterCondSection(entry);
+         methodGenerator.createNoop();
         var body = requireNonNull(psiSwitchExpression.getBody());
         var statements = requireNonNull(body.getStatements());
-        var branchIdx = 0L;
         List<IfNotNode> lastIfNodes = List.of();
         GotoNode lastGoto = null;
-        var exits = new HashMap<Long, NodeRT>();
+        var gotoNodes = new ArrayList<GotoNode>();
+        var type = typeResolver.resolveDeclaration(psiSwitchExpression.getType());
         for (PsiStatement statement : statements) {
             if (statement instanceof PsiSwitchLabeledRuleStatement labeledRuleStatement) {
                 if(labeledRuleStatement.isDefaultCase())
                     continue;
-                methodGenerator.enterBranch(entry, branchIdx);
                 var caseElementList = requireNonNull(labeledRuleStatement.getCaseLabelElementList());
                 var ifNodes = new ArrayList<IfNotNode>();
                 for (PsiCaseLabelElement element : caseElementList.getElements()) {
@@ -1051,25 +1024,18 @@ public class ExpressionResolver {
                 if(lastNode.isExit())
                     lastGoto = null;
                 else
-                    exits.put(branchIdx, lastGoto = methodGenerator.createGoto(null));
-                branchIdx++;
+                    gotoNodes.add(lastGoto = methodGenerator.createGoto(null));
             }
         }
         var defaultStmt = (PsiSwitchLabeledRuleStatement) NncUtils.findRequired(statements,
                 stmt -> stmt instanceof PsiSwitchLabeledRuleStatement ruleStmt && ruleStmt.isDefaultCase());
-        methodGenerator.enterBranch(entry, branchIdx);
         var defaultCase = methodGenerator.createNoop();
         lastIfNodes.forEach(n -> n.setTarget(defaultCase));
         processSwitchCaseBody(defaultStmt.getBody(), context);
-        exits.put(branchIdx, Objects.requireNonNull(methodGenerator.scope().getLastNode()));
-        var joinNode = methodGenerator.createJoin();
-        for (NodeRT exit : exits.values()) {
-            if(exit instanceof GotoNode g)
-                g.setTarget(joinNode);
-        }
-        methodGenerator.exitCondSection(entry, joinNode, exits, true);
-        return Values.node(methodGenerator.createNodeProperty(joinNode,
-                joinNode.getKlass().getFieldByCode("yield")));
+        var joinNode = methodGenerator.createNoop();
+        gotoNodes.forEach(g -> g.setTarget(joinNode));
+        methodGenerator.exitSwitchExpression();
+        return Values.node(methodGenerator.createLoad(y, type));
     }
 
     private IfNotNode resolveSwitchCaseLabel(org.metavm.flow.Value switchExpr, PsiElement label, ResolutionContext context) {
@@ -1081,7 +1047,7 @@ public class ExpressionResolver {
         if(label instanceof PsiTypeTestPattern typeTestPattern) {
             var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
             methodGenerator.createStore(
-                    TranspileUtils.getVariableIndex(Objects.requireNonNull(typeTestPattern.getPatternVariable())),
+                    methodGenerator.getVariableIndex(Objects.requireNonNull(typeTestPattern.getPatternVariable())),
                     switchExpr
             );
             return methodGenerator.createIfNot(
@@ -1093,15 +1059,10 @@ public class ExpressionResolver {
     }
 
     private void processSwitchCaseBody(PsiElement caseBody, ResolutionContext context) {
-        if (caseBody instanceof PsiExpressionStatement exprStmt) {
+        if (caseBody instanceof PsiExpressionStatement exprStmt)
             methodGenerator.setYield(resolve(exprStmt.getExpression(), context));
-        } else {
+        else
             caseBody.accept(visitor);
-        }
-    }
-
-    private List<Parameter> resolveParameterList(PsiParameterList parameterList) {
-        return NncUtils.map(parameterList.getParameters(), this::resolveParameter);
     }
 
     private Parameter resolveParameter(PsiParameter psiParameter) {
@@ -1157,7 +1118,7 @@ public class ExpressionResolver {
             tempVariableMap.put(qn, expression);
         }
 
-        public void finish(VariableTable variableTable, MethodGenerator flowBuilder) {
+        public void finish(MethodGenerator flowBuilder) {
             for (FieldOperation(org.metavm.flow.Value instance, Field field, org.metavm.flow.Value value) : fieldOperations) {
                 flowBuilder.createSetField(instance, field, value);
             }

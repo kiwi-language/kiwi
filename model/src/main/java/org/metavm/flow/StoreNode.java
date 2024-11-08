@@ -11,7 +11,7 @@ import org.metavm.object.instance.core.Id;
 
 import javax.annotation.Nullable;
 
-public class StoreNode extends NodeRT {
+public class StoreNode extends VariableAccessNode {
 
     public static StoreNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         StoreNodeParam param = nodeDTO.getParam();
@@ -24,12 +24,10 @@ public class StoreNode extends NodeRT {
         return node;
     }
 
-    private final int index;
     private final Value value;
 
     public StoreNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope, int index, Value value) {
-        super(tmpId, name, code, null, previous, scope);
-        this.index = index;
+        super(tmpId, name, code, null, previous, scope, index);
         this.value = value;
     }
 

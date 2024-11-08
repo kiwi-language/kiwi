@@ -72,11 +72,6 @@ public class FlowController {
         return Result.voidSuccess();
     }
 
-    @PostMapping("/try-node")
-    public Result<List<NodeDTO>> createGuardNode(@RequestBody NodeDTO node) {
-        return Result.success(flowManager.createTryNode(node));
-    }
-
     @GetMapping("/node/{id}")
     public Result<NodeDTO> getNode(@PathVariable("id") String nodeId) {
         return Result.success(flowManager.getNode(nodeId));

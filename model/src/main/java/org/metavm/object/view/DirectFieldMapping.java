@@ -12,7 +12,6 @@ import org.metavm.object.view.rest.dto.DirectFieldMappingParam;
 import org.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
-import java.util.function.Supplier;
 
 @EntityType
 public class DirectFieldMapping extends FieldMapping implements LocalKey, GenericElement {
@@ -57,14 +56,14 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     }
 
     @Override
-    public Supplier<Value> generateReadCode0(ScopeRT scope) {
+    public Value generateReadCode0(ScopeRT scope) {
         var source = Nodes.thisProperty(getSourceField(), scope);
-        return () -> Values.node(source);
+        return Values.node(source);
     }
 
     @Override
-    protected void generateWriteCode0(ScopeRT scope, Supplier<Value> fieldValueSupplier) {
-        Nodes.setField(Values.node(Nodes.this_(scope)), getSourceField(), fieldValueSupplier.get(), scope);
+    protected void generateWriteCode0(ScopeRT scope, Value fieldValue) {
+        Nodes.setField(Values.node(Nodes.this_(scope)), getSourceField(), fieldValue, scope);
     }
 
     @Override

@@ -5,14 +5,10 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.*;
 import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Type;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 @EntityType
 public class ArrayNestedMapping extends NestedMapping {
@@ -29,7 +25,7 @@ public class ArrayNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
+    public Value generateMappingCode(Value source, ScopeRT scope) {
         var targetArray = Nodes.newArray(
                 scope.nextNodeName("array"),
                 null,
@@ -45,64 +41,58 @@ public class ArrayNestedMapping extends NestedMapping {
                 setSourceFunc,
                 List.of(
                         Nodes.argument(setSourceFunc, 0, Values.node(targetArray)),
-                        Nodes.argument(setSourceFunc, 1, getSource.get())
+                        Nodes.argument(setSourceFunc, 1, source)
                 )
         );
         Nodes.forEach(
-                scope.nextNodeName("iterate"),
-                getSource,
-                (bodyScope, getElement, getIndex) -> {
-                    var getTargetElement = elementNestedMapping.generateMappingCode(getElement,
+                source,
+                (bodyScope, element, index) -> {
+                    var targetElement = elementNestedMapping.generateMappingCode(element,
                             bodyScope);
                     Nodes.addElement(
                             scope.nextNodeName("add"),
                             null,
                             Values.node(targetArray),
-                            getTargetElement.get(),
+                            targetElement,
                             bodyScope
                     );
                 },
                 scope
         );
-        return () -> Values.node(targetArray);
+        return Values.node(targetArray);
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
+    public Value generateUnmappingCode(Value view, ScopeRT scope) {
         var isSourcePresent = Nodes.functionCall(scope.nextNodeName("isSourcePresent"), scope, StdFunction.isSourcePresent.get(),
-                List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, getView.get())));
-        Map<NodeRT, Value> exit2value = new HashMap<>();
-        var ifNode = Nodes.if_(scope.nextNodeName("if"),
-                Values.node(Nodes.eq(Values.node(isSourcePresent), Values.constantFalse(), scope)),
+                List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, view)));
+        var ifNode = Nodes.if_(Values.node(Nodes.eq(Values.node(isSourcePresent), Values.constantFalse(), scope)),
                 null,
                 scope
         );
         var existingSource = Nodes.functionCall(scope.nextNodeName("source"), scope,
                 StdFunction.getSource.get(),
-                List.of(Nodes.argument(StdFunction.getSource.get(), 0, getView.get())));
-        var g = Nodes.goto_(scope.nextNodeName("goto"), scope);
-        exit2value.put(g, Values.node(existingSource));
+                List.of(Nodes.argument(StdFunction.getSource.get(), 0, view)));
+        var i = scope.nextVariableIndex();
+        Nodes.store(i, Values.node(existingSource), scope);
+        var g = Nodes.goto_(scope);
         var newSource = Nodes.newArray(scope.nextNodeName("newSource"), null,
                 sourceType, null, null, scope);
         ifNode.setTarget(newSource);
-        exit2value.put(newSource, Values.node(newSource));
-        var join = Nodes.join(scope.nextNodeName("join"), scope);
-        g.setTarget(join);
-        var sourceField = FieldBuilder.newBuilder("source", null, join.getKlass(), sourceType).build();
-        new JoinNodeField(sourceField, join, exit2value);
-        Nodes.clearArray(scope.nextNodeName("clearArray"), null, Values.node(Nodes.nodeProperty(join, sourceField, scope)),
-                scope);
+        Nodes.store(i, Values.node(newSource), scope);
+        g.setTarget(Nodes.noop(scope));
+        var source = Values.node(Nodes.load(i, sourceType, scope));
+        Nodes.clearArray(scope.nextNodeName("clearArray"), null, source, scope);
         Nodes.forEach(
-                scope.nextNodeName("iterate"), getView,
-                (bodyScope, getElement, getIndex) -> {
-                    var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
+                view,
+                (bodyScope, element, index) -> {
+                    var getSourceElement = elementNestedMapping.generateUnmappingCode(element, bodyScope);
                     Nodes.addElement(scope.nextNodeName("addElement"), null,
-                            Values.node(Nodes.nodeProperty(join, sourceField, scope)), getSourceElement.get(), bodyScope);
+                            source, getSourceElement, bodyScope);
                 },
                 scope
         );
-        var source = Nodes.nodeProperty(join, sourceField, scope);
-        return () -> Values.node(source);
+        return source;
     }
 
     @Override

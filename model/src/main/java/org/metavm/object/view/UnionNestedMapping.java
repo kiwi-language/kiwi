@@ -5,13 +5,11 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ChildArray;
 import org.metavm.entity.LoadAware;
 import org.metavm.flow.*;
-import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.UnionType;
 import org.metavm.util.NncUtils;
 
 import java.util.*;
-import java.util.function.Supplier;
 
 @EntityType
 public class UnionNestedMapping extends NestedMapping implements LoadAware {
@@ -42,21 +40,16 @@ public class UnionNestedMapping extends NestedMapping implements LoadAware {
     public void onLoad() {
     }
 
-    private static Type getViewType(Type sourceType, UnionType targetUnionType) {
-        return NncUtils.findRequired(targetUnionType.getMembers(), sourceType::isViewType,
-                () -> "Cannot find view type of " + sourceType + " in union type " + targetUnionType);
-    }
-
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
-        Map<GotoNode, Value> exit2value = new HashMap<>();
-        var source = Nodes.value(scope.nextNodeName("source"), getSource.get(), scope);
+    public Value generateMappingCode(Value source, ScopeRT scope) {
         JumpNode lastIfNode = null;
         GotoNode lastGoto = null;
+        int i = -1;
+        var gotoNodes = new ArrayList<GotoNode>();
         for (var memberMapping : memberMappings) {
             var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
                      Values.node(
-                             Nodes.instanceOf(getSource.get(), memberMapping.sourceType(), scope)
+                             Nodes.instanceOf(source, memberMapping.sourceType(), scope)
                      ),
                     null,
                     scope
@@ -65,50 +58,50 @@ public class UnionNestedMapping extends NestedMapping implements LoadAware {
                 lastIfNode.setTarget(lastGoto.getSuccessor());
             lastIfNode = ifNode;
             var castSource = Nodes.castNode(scope.nextNodeName("castSource"),
-                    memberMapping.sourceType(), scope, Values.node(source));
-            var value = memberMapping.nestedMapping().generateMappingCode(() -> Values.node(castSource), scope).get();
-            exit2value.put(lastGoto = Nodes.goto_(scope.nextNodeName("goto"), scope), value);
+                    memberMapping.sourceType(), scope, source);
+            var value = memberMapping.nestedMapping().generateMappingCode(Values.node(castSource), scope);
+            if(i == -1)
+                i = scope.nextVariableIndex();
+            Nodes.store(i, value, scope);
+            gotoNodes.add(lastGoto = Nodes.goto_(scope));
         }
         Objects.requireNonNull(lastIfNode).setTarget(
                 Nodes.raise(scope.nextNodeName("invalidTypeError"), scope, Values.constantString("Invalid type"))
         );
-        var join = Nodes.join(scope.nextNodeName("join"), scope);
-        exit2value.keySet().forEach(g -> g.setTarget(join));
-        var valueField = FieldBuilder.newBuilder("value", null, join.getKlass(), targetType).build();
-        new JoinNodeField(valueField, join, exit2value);
-        var value = Nodes.nodeProperty(join, valueField, scope);
-        return () -> Values.node(value);
+        var value = Nodes.load(i, targetType, scope);
+        gotoNodes.forEach(g -> g.setTarget(value));
+        return Values.node(value);
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
-        var exit2value = new HashMap<GotoNode, Value>();
-        var view = Nodes.value(scope.nextNodeName("view"), getView.get(), scope);
+    public Value generateUnmappingCode(Value view, ScopeRT scope) {
+        var gotoNodes = new ArrayList<GotoNode>();
         JumpNode lastIfNode = null;
         GotoNode lastGoto = null;
+        var i = -1;
         for (var memberMapping : memberMappings) {
             var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
                     Values.node(
-                            Nodes.instanceOf(getView.get(), memberMapping.targetType(), scope)
+                            Nodes.instanceOf(view, memberMapping.targetType(), scope)
                     ),
                     null, scope
             );
             if(lastIfNode != null)
                 lastIfNode.setTarget(lastGoto.getSuccessor());
             lastIfNode = ifNode;
-            var castView =  Nodes.cast(scope.nextNodeName("castView"), memberMapping.targetType(), Values.node(view), scope);
-            var value = memberMapping.nestedMapping().generateUnmappingCode(() -> Values.node(castView), scope).get();
-            exit2value.put(lastGoto = Nodes.goto_(scope.nextNodeName("goto"), scope), value);
+            var castView =  Nodes.cast(scope.nextNodeName("castView"), memberMapping.targetType(), view, scope);
+            var value = memberMapping.nestedMapping().generateUnmappingCode(Values.node(castView), scope);
+            if (i == -1)
+                i = scope.nextVariableIndex();
+            Nodes.store(i, value, scope);
+            gotoNodes.add(lastGoto = Nodes.goto_(scope));
         }
         Objects.requireNonNull(lastIfNode).setTarget(
             Nodes.raise(scope.nextNodeName("invalidTypeError"), scope, Values.constantString("invalid type"))
         );
-        var join = Nodes.join(scope.nextNodeName("join"), scope);
-        exit2value.keySet().forEach(g -> g.setTarget(join));
-        var valueField = FieldBuilder.newBuilder("value", null, join.getType().resolve(), sourceType).build();
-        new JoinNodeField(valueField, join, exit2value);
-        var value = Nodes.nodeProperty(join, valueField, scope);
-        return () -> Values.node(value);
+        var value = Nodes.load(i, sourceType, scope);
+        gotoNodes.forEach(g -> g.setTarget(value));
+        return Values.node(value);
     }
 
     @Override

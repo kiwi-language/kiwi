@@ -13,7 +13,7 @@ import org.metavm.object.type.TypeParser;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public class LoadNode extends NodeRT {
+public class LoadNode extends VariableAccessNode {
 
     public static LoadNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         LoadNodeParam param = nodeDTO.getParam();
@@ -25,12 +25,9 @@ public class LoadNode extends NodeRT {
         return node;
     }
 
-    private final int index;
-
     public LoadNode(Long tmpId, @NotNull String name, @Nullable String code, Type outputType,
                     @Nullable NodeRT previous, @NotNull ScopeRT scope, int index) {
-        super(tmpId, name, code, outputType, previous, scope);
-        this.index = index;
+        super(tmpId, name, code, outputType, previous, scope, index);
     }
 
     @Override

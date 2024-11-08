@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.instance.InstanceManager;
-import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.Types;
 import org.metavm.util.*;
@@ -12,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
 
 public class FlowManagerTest extends TestCase {
 
@@ -60,18 +58,13 @@ public class FlowManagerTest extends TestCase {
                     .isStatic(true)
                     .build();
             var scope = method.getScope();
-            var if_ = Nodes.if_("if",
-                    Values.node(Nodes.argument(method, 0)),
-                    null,
-                    scope
-            );
-            var noop = Nodes.value("noop", Values.constantBoolean(true), scope);
-            var join = Nodes.join("join", scope);
-            if_.setTarget(join);
-            var f = FieldBuilder.newBuilder("value", null, join.getKlass(), Types.getBooleanType())
-                            .build();
-            join.addField(new JoinNodeField(f, join, Map.of(noop, Values.constantFalse(), if_, Values.constantTrue())));
-            Nodes.ret("ret", scope, Values.node(Nodes.nodeProperty(join, f, scope)));
+            var if_ = Nodes.if_(Values.node(Nodes.argument(method, 0)), null, scope);
+            var i = scope.nextVariableIndex();
+            Nodes.store(i, Values.constantFalse(), scope);
+            var g = Nodes.goto_(scope);
+            if_.setTarget(Nodes.store(i, Values.constantTrue(), scope));
+            g.setTarget(Nodes.noop(scope));
+            Nodes.ret("ret", scope, Values.node(Nodes.load(i, Types.getBooleanType(), scope)));
             context.bind(klass);
             klass.accept(new FlowAnalyzer());
             klass.accept(new MaxesComputer());

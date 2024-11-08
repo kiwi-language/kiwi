@@ -111,10 +111,10 @@ public class MappingSaverTest extends TestCase {
             var scope = setBarsMethod.getScope();
             Nodes.clearArray("clearBars", null, Values.node(Nodes.thisProperty(fooBarsField, scope)), scope);
             var bars = Nodes.argument(setBarsMethod, 0);
-            Nodes.forEach("forEach", () -> Values.node(bars),
+            Nodes.forEach(Values.node(bars),
                     (bodyScope, element, index) -> {
                         Nodes.addElement("addBar", null, Values.node(Nodes.thisProperty(fooBarsField, scope)),
-                                element.get(), bodyScope);
+                                element, bodyScope);
                     },
                     scope);
             Nodes.ret("return", scope, null);
@@ -321,11 +321,10 @@ public class MappingSaverTest extends TestCase {
             Nodes.clearArray("clearArray", null, Values.node(Nodes.thisProperty(skuListField, scope)), scope);
             var array = Nodes.argument(setSkuListMethod, 0);
             Nodes.forEach(
-                    "forEach",
-                    () -> Values.node(array),
-                    (bodyScope, getElement, getIndex) -> {
+                     Values.node(array),
+                    (bodyScope, element, index) -> {
                         Nodes.addElement("addElement", null,
-                                Values.node(Nodes.thisProperty(skuListField, scope)), getElement.get(), bodyScope);
+                                Values.node(Nodes.thisProperty(skuListField, scope)), element, bodyScope);
                     },
                     scope
             );

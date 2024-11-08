@@ -6,15 +6,11 @@ import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.*;
 import org.metavm.object.type.ClassType;
-import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 @EntityType
 public class ListNestedMapping extends NestedMapping {
@@ -31,7 +27,7 @@ public class ListNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope) {
+    public Value generateMappingCode(Value source, ScopeRT scope) {
         var targetKlass = targetType.resolve();
         var constructor = targetKlass.isEffectiveAbstract() ?
                 StdKlass.arrayList.get().getParameterized(List.of(targetKlass.getFirstTypeArgument())).getDefaultConstructor() :
@@ -51,15 +47,13 @@ public class ListNestedMapping extends NestedMapping {
                 setSourceFunc,
                 List.of(
                         Nodes.argument(setSourceFunc, 0, Values.node(targetList)),
-                        Nodes.argument(setSourceFunc, 1, getSource.get())
+                        Nodes.argument(setSourceFunc, 1, source)
                 )
         );
         Nodes.listForEach(
-                scope.nextNodeName("iterate"),
-                getSource,
-                (bodyScope, getElement, getIndex) -> {
-                    var getTargetElement = elementNestedMapping.generateMappingCode(getElement,
-                            bodyScope);
+                source,
+                (bodyScope, element, index) -> {
+                    var getTargetElement = elementNestedMapping.generateMappingCode(element, bodyScope);
                     var addMethod = targetKlass.getMethodByCodeAndParamTypes("add", List.of(
                             Types.getNullableType(targetType.getFirstTypeArgument())
                     ));
@@ -69,32 +63,29 @@ public class ListNestedMapping extends NestedMapping {
                                     Nodes.argument(
                                             addMethod,
                                             0,
-                                            getTargetElement.get()
+                                            getTargetElement
                                     )
                             ), bodyScope
                     );
                 },
                 scope
         );
-        return () -> Values.node(targetList);
+        return Values.node(targetList);
     }
 
     @Override
-    public Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope) {
+    public Value generateUnmappingCode(Value view, ScopeRT scope) {
         var isSourcePresent = Nodes.functionCall(scope.nextNodeName("isSourcePresent"), scope, StdFunction.isSourcePresent.get(),
-                List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, getView.get())));
+                List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, view)));
         var sourceKlass = sourceType.resolve();
-        Map<NodeRT, Value> exit2value = new HashMap<>();
-        var ifNode = Nodes.if_(scope.nextNodeName("if"),
-                Values.node(Nodes.eq(Values.node(isSourcePresent), Values.constantFalse(), scope)),
-                null,
-                scope
-        );
+        var ifNode = Nodes.if_(Values.node(Nodes.eq(Values.node(isSourcePresent), Values.constantFalse(), scope)),
+                null, scope);
         var existingSource = Nodes.functionCall(scope.nextNodeName("source"), scope,
                 StdFunction.getSource.get(),
-                List.of(Nodes.argument(StdFunction.getSource.get(), 0, getView.get())));
-        var g = Nodes.goto_(scope.nextNodeName("goto"), scope);
-        exit2value.put(g, Values.node(existingSource));
+                List.of(Nodes.argument(StdFunction.getSource.get(), 0, view)));
+        var i = scope.nextVariableIndex();
+        Nodes.store(i, Values.node(existingSource), scope);
+        var g = Nodes.goto_(scope);
         var newSource = Nodes.newObject(
                 scope.nextNodeName("newSource"),
                 scope,
@@ -106,37 +97,22 @@ public class ListNestedMapping extends NestedMapping {
                 true
         );
         ifNode.setTarget(newSource);
-        exit2value.put(newSource, Values.node(newSource));
-        var join = Nodes.join(scope.nextNodeName("join"), scope);
-        g.setTarget(join);
-        var sourceField = FieldBuilder.newBuilder("source", null, join.getKlass(), sourceType).build();
-        new JoinNodeField(sourceField, join, exit2value);
+        Nodes.store(i, Values.node(newSource), scope);
+        g.setTarget(Nodes.noop(scope));
         var clearMethod = sourceKlass.getMethodByCodeAndParamTypes("clear", List.of());
-        Nodes.methodCall(
-                scope.nextNodeName("clear"),
-                Values.node(Nodes.nodeProperty(join, sourceField, scope)), clearMethod, List.of(), scope
-        );
+        var source = Values.node(Nodes.load(i, sourceType, scope));
+        Nodes.methodCall(source, clearMethod, List.of(), scope);
         Nodes.listForEach(
-                scope.nextNodeName("iterate"), getView,
-                (bodyScope, getElement, getIndex) -> {
-                    var getSourceElement = elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
+                view,
+                (bodyScope, element, index) -> {
+                    var getSourceElement = elementNestedMapping.generateUnmappingCode(element, bodyScope);
                     var addMethod = sourceKlass.getMethodByCodeAndParamTypes("add",
                             List.of(Types.getNullableType(sourceType.getFirstTypeArgument())));
-                    Nodes.methodCall(
-                            scope.nextNodeName("addElement"),
-                            Values.node(Nodes.nodeProperty(join, sourceField, scope)), addMethod, List.of(
-                                    Nodes.argument(
-                                            addMethod,
-                                            0,
-                                            getSourceElement.get()
-                                    )
-                            ), bodyScope
-                    );
+                    Nodes.methodCall(source, addMethod, List.of(getSourceElement), bodyScope);
                 },
                 scope
         );
-        var source = Nodes.nodeProperty(join, sourceField, scope);
-        return () -> Values.node(source);
+        return source;
     }
 
     @Override

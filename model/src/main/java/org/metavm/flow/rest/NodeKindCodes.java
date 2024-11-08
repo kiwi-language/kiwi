@@ -10,7 +10,6 @@ public class NodeKindCodes {
     public static final int METHOD_CALL = 12;
     public static final int GET_UNIQUE = 13;
     public static final int NEW = 15;
-    public static final int VALUE = 16;
     public static final int SET_STATIC = 17;
     public static final int NEW_ARRAY = 21;
     public static final int TRY_ENTER = 23;
@@ -35,7 +34,6 @@ public class NodeKindCodes {
     public static final int NON_NULL = 42;
     public static final int SET_ELEMENT = 43;
     public static final int IF = 44;
-    public static final int JOIN = 45;
     public static final int NOOP = 46;
     public static final int ADD = 48;
     public static final int SUB = 49;

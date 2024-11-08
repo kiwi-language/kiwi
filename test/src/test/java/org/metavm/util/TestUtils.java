@@ -461,7 +461,6 @@ public class TestUtils {
         var flowManager = new FlowManager(entityContextFactory, transactionOps);
         var scheduler = new Scheduler(entityContextFactory, transactionOps);
         var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), bootResult.metaContextCache());
-        flowManager.setTypeManager(typeManager);
         typeManager.setFlowExecutionService(flowExecutionService);
         typeManager.setVersionManager(new VersionManager(entityContextFactory));
         typeManager.setFlowManager(flowManager);

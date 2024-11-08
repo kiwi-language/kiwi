@@ -19,7 +19,5 @@ public abstract class JumpNode extends NodeRT {
 
     public void setTarget(NodeRT target) {
         this.target = target;
-        if(target instanceof JoinNode joinNode && !joinNode.getSources().contains(this))
-            joinNode.addSource(this);
     }
 }

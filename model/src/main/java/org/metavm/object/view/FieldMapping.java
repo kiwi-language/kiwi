@@ -3,8 +3,10 @@ package org.metavm.object.view;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
-import org.metavm.flow.Value;
+import org.metavm.entity.BuildKeyContext;
+import org.metavm.entity.Element;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.flow.*;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.FieldRef;
@@ -16,7 +18,6 @@ import org.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 @EntityType
 public abstract class FieldMapping extends Element {
@@ -103,28 +104,27 @@ public abstract class FieldMapping extends Element {
     }
 
     public FieldParam generateReadCode(ScopeRT scope) {
-        var valueSupplier = generateReadCode0(scope);
-        var value = valueSupplier.get();
+        var value = generateReadCode0(scope);
         if (nestedMapping != null) {
-            var getNestedValue = nestedMapping.generateMappingCode(valueSupplier, scope);
-            return new FieldParam(targetFieldRef, getNestedValue.get());
+            var nestedValue = nestedMapping.generateMappingCode(value, scope);
+            return new FieldParam(targetFieldRef, nestedValue);
         } else
             return new FieldParam(targetFieldRef, value);
     }
 
-    protected abstract Supplier<Value> generateReadCode0(ScopeRT scope);
+    protected abstract Value generateReadCode0(ScopeRT scope);
 
     public void generateWriteCode(ScopeRT scope, NodeRT viewNode) {
         var target = Nodes.nodeProperty(viewNode, getTargetField(), scope);
         if (nestedMapping != null) {
             var nestedFieldSource = nestedMapping.generateUnmappingCode(
-                    () -> Values.node(target), scope);
+                    Values.node(target), scope);
             generateWriteCode0(scope, nestedFieldSource);
         } else
-            generateWriteCode0(scope, () -> Values.node(target));
+            generateWriteCode0(scope, Values.node(target));
     }
 
-    protected abstract void generateWriteCode0(ScopeRT scope, Supplier<Value> fieldValueSupplier);
+    protected abstract void generateWriteCode0(ScopeRT scope, Value fieldValue);
 
     protected abstract Type getTargetFieldType();
 

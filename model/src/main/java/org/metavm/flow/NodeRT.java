@@ -126,9 +126,6 @@ public abstract class NodeRT extends Element implements LocalKey {
     @Override
     public final List<Object> beforeRemove(IEntityContext context) {
         var cascade = new ArrayList<>(nodeBeforeRemove());
-        if (kind.isOutputTypeAsChild() && outputType != null) {
-            cascade.add(outputType);
-        }
         if (this.predecessor != null) {
             this.predecessor.setSuccessor(this.successor);
         }

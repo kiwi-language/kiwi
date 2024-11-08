@@ -9,8 +9,6 @@ import org.metavm.util.TriConsumer;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
 
 @Slf4j
 public class Nodes {
@@ -50,89 +48,39 @@ public class Nodes {
         return new ReturnNode(null, name, null, scope.getLastNode(), scope, value);
     }
 
-    public static NodeRT forEach(
-            String name,
-            Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>,
-            Supplier<Value>> action,
+    public static void forEach(Value array,
+            TriConsumer<ScopeRT, Value, Value> action,
             ScopeRT scope) {
+        var i = scope.nextVariableIndex();
+        Nodes.store(i, Values.constantLong(0), scope);
         var entry = noop(scope.nextNodeName("noop"), scope);
-        var join = join(scope.nextNodeName(name), scope);
-        var indexField = FieldBuilder.newBuilder("index", "index", join.getKlass(), Types.getLongType())
-                .build();
-        var len = Values.node(arrayLength("len", getArray.get(), scope));
-        var index = Values.node(nodeProperty(join, indexField, scope));
-        var ifNode = if_(scope.nextNodeName("if"),
-                Values.node(Nodes.ge(index, len, scope)), null, scope);
-        var element = new GetElementNode(
-                null, scope.nextNodeName("element"), null, scope.getLastNode(), scope,
-                getArray.get(), index
-        );
-        action.accept(scope, () -> Values.node(element), () -> index);
-        var updatedIndex = Nodes.add(
-                Values.node(nodeProperty(join, indexField, scope)),
-                Values.constantLong(1L),
-                scope
-        );
-        var g = goto_(scope.nextNodeName("goto"), scope);
-        g.setTarget(join);
-        new JoinNodeField(
-                indexField, join,
-                Map.of(entry, Values.constantLong(0L), g, Values.node(updatedIndex))
-        );
-        var exit = noop(scope.nextNodeName("noop"), scope);
-        ifNode.setTarget(exit);
-        return exit;
+        var len = Values.node(arrayLength("len", array, scope));
+        var index = Values.node(Nodes.load(i, Types.getLongType(), scope));
+        var ifNode = if_(Values.node(Nodes.ge(index, len, scope)), null, scope);
+        var element = Nodes.getElement(array, index, scope);
+        action.accept(scope, Values.node(element), index);
+        Nodes.store(i, Values.node(Nodes.add(index, Values.constantLong(1), scope)), scope);
+        goto_(entry, scope);
+        ifNode.setTarget(noop(scope));
     }
 
-    public static NodeRT listForEach(
-            String name,
-            Supplier<Value> getArray, TriConsumer<ScopeRT, Supplier<Value>,
-            Supplier<Value>> action,
+    public static void listForEach(
+            Value list, TriConsumer<ScopeRT, Value, Value> action,
             ScopeRT scope) {
-        var list = getArray.get();
+        var i = scope.nextVariableIndex();
+        store(i, Values.constantLong(0), scope);
         var listClass = ((ClassType) list.getType()).resolve();
-        var methodRef = listClass.getMethodByCodeAndParamTypes("size", List.of()).getRef();
-        var size = new MethodCallNode(
-                null,
-                scope.nextNodeName("listSize"),
-                null,
-                scope.getLastNode(),
-                scope,
-                list,
-                methodRef,
-                List.of()
-        );
-        var entry = noop(scope.nextNodeName("entry"), scope);
-        var join = join(name, scope);
-        var indexField = FieldBuilder.newBuilder("index", "index", join.getKlass(), Types.getLongType())
-                .build();
-        var index = Values.node(nodeProperty(join, indexField, scope));
-        var ifNode = if_(scope.nextNodeName("if"),
-                Values.node(ge(index, Values.node(size), scope)),
-                null,
-                scope
-        );
+        var sizeMethod = listClass.getMethodByCodeAndParamTypes("size", List.of());
+        var entry = noop(scope);
+        var size = Nodes.methodCall(list, sizeMethod, List.of(), scope);
+        var index = Values.node(Nodes.load(i, Types.getLongType(), scope));
+        var ifNode = if_(Values.node(ge(index, Values.node(size), scope)), null, scope);
         var getMethod = listClass.getMethodByCodeAndParamTypes("get", List.of(Types.getLongType()));
-        var element = new MethodCallNode(
-                null, scope.nextNodeName("getElement"), null,
-                scope.getLastNode(), scope,
-                getArray.get(), getMethod.getRef(),
-                List.of(Nodes.argument(getMethod, 0, index))
-        );
-        action.accept(scope, () -> Values.node(element), () -> index);
-        var updatedIndex = Nodes.add(
-                Values.node(nodeProperty(join, indexField, scope)),
-                Values.constantLong(1L),
-                scope
-        );
-        var g = goto_(scope.nextNodeName("goto"), scope);
-        g.setTarget(join);
-        new JoinNodeField(indexField, join, Map.of(
-                entry, Values.constantLong(0L), g, Values.node(updatedIndex)
-        ));
-        var exit = noop(scope.nextNodeName("noop"), scope);
-        ifNode.setTarget(exit);
-        return exit;
+        var element = Nodes.methodCall(list, getMethod, List.of(index), scope);
+        action.accept(scope, Values.node(element), index);
+        Nodes.store(i, Values.node(Nodes.add(index, Values.constantLong(1), scope)), scope);
+        goto_(entry, scope);
+        ifNode.setTarget(noop(scope));
     }
 
     public static MapNode map(String name, ScopeRT scope, Value source, ObjectMapping mapping) {
@@ -145,10 +93,6 @@ public class Nodes {
 
     public static CastNode castNode(String name, Type type, ScopeRT scope, Value value) {
         return new CastNode(null, name, null, type, scope.getLastNode(), scope, value);
-    }
-
-    public static ValueNode value(String name, Value value, ScopeRT scope) {
-        return new ValueNode(null, name, null, value.getType(), scope.getLastNode(), scope, value);
     }
 
     public static FunctionCallNode functionCall(String name, ScopeRT scope,
@@ -174,6 +118,10 @@ public class Nodes {
 
     public static CastNode cast(String name, Type outputType, Value object, ScopeRT scope) {
         return new CastNode(null, name, null, outputType, scope.getLastNode(), scope, object);
+    }
+
+    public static IfNode if_(Value condition, @Nullable NodeRT target, ScopeRT scope) {
+        return if_(scope.nextNodeName("if"), condition, target, scope);
     }
 
     public static IfNode if_(String name, Value condition, @Nullable NodeRT target, ScopeRT scope) {
@@ -204,28 +152,16 @@ public class Nodes {
         );
     }
 
-    public static JoinNode join( ScopeRT scope) {
-        return join(scope.nextNodeName("join"), scope);
-    }
-
-    public static JoinNode join(String name, ScopeRT scope) {
-        var klass = KlassBuilder.newBuilder("MergeOutput", null).temporary().build();
-        return new JoinNode(
-                null,
-                name,
-                null,
-                klass,
-                scope.getLastNode(),
-                scope
-        );
-    }
-
     public static GotoNode goto_(ScopeRT scope) {
         return goto_(scope.nextNodeName("goto"), scope);
     }
 
     public static GotoNode goto_(String name, ScopeRT scope) {
         return new GotoNode(null, name, null, scope.getLastNode(), scope);
+    }
+
+    public static GotoNode goto_(NodeRT target, ScopeRT scope) {
+        return new GotoNode(null, scope.nextNodeName("goto"), null, scope.getLastNode(), scope, target);
     }
 
     public static AddElementNode addElement(String name, @Nullable String code, Value array, Value element, ScopeRT scope) {

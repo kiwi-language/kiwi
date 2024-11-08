@@ -10,14 +10,13 @@ import org.metavm.flow.Value;
 import org.metavm.object.type.Type;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 
 @EntityType
 public abstract class NestedMapping extends Entity implements LocalKey {
 
-    public abstract Supplier<Value> generateMappingCode(Supplier<Value> getSource, ScopeRT scope);
+    public abstract Value generateMappingCode(Value source, ScopeRT scope);
 
-    public abstract Supplier<Value> generateUnmappingCode(Supplier<Value> getView, ScopeRT scope);
+    public abstract Value generateUnmappingCode(Value view, ScopeRT scope);
 
     public abstract Type getTargetType();
 

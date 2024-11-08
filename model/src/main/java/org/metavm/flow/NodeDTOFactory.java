@@ -186,22 +186,6 @@ public class NodeDTOFactory {
         );
     }
 
-    public static NodeDTO createValueNode(Long tmpId, String name, ValueDTO value) {
-        return new NodeDTO(
-                getStringTmpId(tmpId),
-                null,
-                name,
-                null,
-                NodeKind.VALUE.code(),
-                null,
-                null,
-                new ValueNodeParam(value),
-                null,
-                null,
-                null
-        );
-    }
-
     public static NodeDTO createUnresolvedNewObjectNode(Long tmpId, String name, String typeId, String methodName, List<String> typeArgumentIds,
                                                         List<ValueDTO> arguments,
                                                         boolean unbound, boolean ephemeral) {

@@ -268,15 +268,15 @@ public class MappingSaver {
             fromView.clearContent();
             var scope = fromView.getScope();
             var view = Nodes.load(0, viewType, scope);
-            var fieldValues = new HashMap<String, Supplier<Value>>();
+            var fieldValues = new HashMap<String, Value>();
             for (FieldMapping fieldMapping : mapping.getFieldMappings()) {
                 var nestedMapping = fieldMapping.getNestedMapping();
                 var target = Nodes.nodeProperty(view, fieldMapping.getTargetField(), scope);
                 if (nestedMapping == null)
-                    fieldValues.put(fieldMapping.getTargetField().getCode(), () -> Values.node(target));
+                    fieldValues.put(fieldMapping.getTargetField().getCode(), Values.node(target));
                 else {
                     var fieldValue = nestedMapping.generateUnmappingCode(
-                            () -> Values.node(target),
+                            Values.node(target),
                             scope
                     );
                     fieldValues.put(fieldMapping.getTargetField().getCode(), fieldValue);
@@ -294,7 +294,7 @@ public class MappingSaver {
                                     null,
                                     p.getRef(),
                                     Objects.requireNonNull(fieldValues.get(p.getCode()),
-                                            () -> "Can not find field value for: " + p.getCode()).get()
+                                            () -> "Can not find field value for: " + p.getCode())
                             )
                     ),
                     false,
