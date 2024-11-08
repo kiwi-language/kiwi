@@ -3,6 +3,7 @@ package org.metavm.flow;
 import org.metavm.flow.rest.*;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.ArrayFieldValue;
+import org.metavm.object.type.rest.dto.FieldRefDTO;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -114,33 +115,33 @@ public class NodeDTOFactory {
         );
     }
 
-    public static NodeDTO createUpdateObjectNode(Long tmpId, String name,
-                                                 ValueDTO objectId, List<UpdateFieldDTO> fields) {
+    public static NodeDTO createSetFieldNode(Long tmpId, String name,
+                                             ValueDTO objectId, FieldRefDTO fieldRef, ValueDTO value) {
         return new NodeDTO(
                 getStringTmpId(tmpId),
                 null,
                 name,
                 null,
-                NodeKind.UPDATE_OBJECT.code(),
+                NodeKind.SET_FIELD.code(),
                 null,
                 null,
-                new UpdateObjectNodeParam(objectId, fields),
+                new SetFieldNodeParam(objectId, fieldRef, value),
                 null,
                 null,
                 null
         );
     }
 
-    public static NodeDTO createUpdateStaticNode(Long tmpId, String name, String typeId, List<UpdateFieldDTO> fields) {
+    public static NodeDTO createUpdateStaticNode(Long tmpId, String name, FieldRefDTO fieldRef, ValueDTO value) {
         return new NodeDTO(
                 getStringTmpId(tmpId),
                 null,
                 name,
                 null,
-                NodeKind.UPDATE_STATIC.code(),
+                NodeKind.SET_STATIC.code(),
                 null,
                 null,
-                new UpdateStaticNodeParam(typeId, fields),
+                new SetStaticNodeParam(fieldRef, value),
                 null,
                 null,
                 null

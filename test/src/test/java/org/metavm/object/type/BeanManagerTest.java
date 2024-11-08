@@ -54,7 +54,7 @@ public class BeanManagerTest extends TestCase {
                     .build();
             {
                 var scope = constructor.getScope();
-                Nodes.updateField("setFooService", Values.node(Nodes.this_(scope)),
+                Nodes.setField("setFooService", Values.node(Nodes.this_(scope)),
                         field, Values.node(Nodes.argument(constructor, 0)), scope
                 );
                 Nodes.ret("return", constructor.getScope(), Values.node(Nodes.this_(scope)));

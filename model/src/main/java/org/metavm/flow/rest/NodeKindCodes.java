@@ -3,7 +3,7 @@ package org.metavm.flow.rest;
 public class NodeKindCodes {
 
     public static final int ADD_OBJECT = 3;
-    public static final int UPDATE_OBJECT = 4;
+    public static final int SET_FIELD = 4;
     public static final int DELETE_OBJECT = 5;
     public static final int RETURN = 9;
     public static final int EXCEPTION = 10;
@@ -11,7 +11,7 @@ public class NodeKindCodes {
     public static final int GET_UNIQUE = 13;
     public static final int NEW = 15;
     public static final int VALUE = 16;
-    public static final int UPDATE_STATIC = 17;
+    public static final int SET_STATIC = 17;
     public static final int NEW_ARRAY = 21;
     public static final int TRY_ENTER = 23;
     public static final int TRY_EXIT = 24;

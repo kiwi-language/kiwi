@@ -167,11 +167,11 @@ public class Generator extends VisitorBase {
             if (field.isStatic()) {
                 var builder = currentClassInfo().staticBuilder;
                 var initializer = builder.getExpressionResolver().resolve(psiField.getInitializer());
-                builder.createUpdateStatic(currentClass(), Map.of(field, initializer));
+                builder.createSetStatic(field, initializer);
             } else {
                 var builder = currentClassInfo().fieldBuilder;
                 var initializer = builder.getExpressionResolver().resolve(psiField.getInitializer());
-                builder.createUpdate(builder.getThis(), Map.of(field, initializer));
+                builder.createSetField(builder.getThis(), field, initializer);
             }
         } else if (field.getType().isNullable()) {
             initField(field, Values.nullValue());
@@ -187,10 +187,10 @@ public class Generator extends VisitorBase {
     private void initField(Field field, Value initializer) {
         if (field.isStatic()) {
             var builder = currentClassInfo().staticBuilder;
-            builder.createUpdateStatic(currentClass(), Map.of(field, initializer));
+            builder.createSetStatic(field, initializer);
         } else {
             var builder = currentClassInfo().fieldBuilder;
-            builder.createUpdate(builder.getThis(), Map.of(field, initializer));
+            builder.createSetField(builder.getThis(), field, initializer);
         }
     }
 
@@ -361,14 +361,15 @@ public class Generator extends VisitorBase {
                 if (currentClass().isEnum()) {
                     var klass = currentClass();
                     var enumClass = requireNonNull(klass.getSuperType()).resolve();
-                    builder.createUpdate(
+                    builder.createSetField(
                             builder.getThis(),
-                            Map.of(
-                                    enumClass.getFieldByCode("name"),
-                                    Values.node(builder.createLoad(1, Types.getStringType())),
-                                    enumClass.getFieldByCode("ordinal"),
-                                    Values.node(builder.createLoad(2, Types.getLongType()))
-                            )
+                            enumClass.getFieldByCode("name"),
+                            Values.node(builder.createLoad(1, Types.getStringType()))
+                    );
+                    builder.createSetField(
+                            builder.getThis(),
+                            enumClass.getFieldByCode("ordinal"),
+                            Values.node(builder.createLoad(2, Types.getLongType()))
                     );
                 }
             }

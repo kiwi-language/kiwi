@@ -10,10 +10,8 @@ import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Type;
 import org.metavm.object.view.rest.dto.DirectFieldMappingParam;
 import org.metavm.util.BusinessException;
-import org.metavm.util.NamingUtils;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.function.Supplier;
 
 @EntityType
@@ -66,7 +64,7 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
 
     @Override
     protected void generateWriteCode0(ScopeRT scope, Supplier<Value> fieldValueSupplier) {
-        Nodes.update(Values.node(Nodes.this_(scope)), getSourceField(), fieldValueSupplier.get(), scope);
+        Nodes.setField(Values.node(Nodes.this_(scope)), getSourceField(), fieldValueSupplier.get(), scope);
     }
 
     @Override

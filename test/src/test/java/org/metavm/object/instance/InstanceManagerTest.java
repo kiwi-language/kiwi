@@ -11,7 +11,6 @@ import org.metavm.entity.StdKlass;
 import org.metavm.flow.*;
 import org.metavm.flow.rest.FlowExecutionRequest;
 import org.metavm.flow.rest.MethodRefDTO;
-import org.metavm.flow.rest.UpdateFieldDTO;
 import org.metavm.mocks.*;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
@@ -333,30 +332,27 @@ public class InstanceManagerTest extends TestCase {
                                                 )
                                         )
                                         .addNode(
-                                                NodeDTOFactory.createUpdateObjectNode(
+                                                NodeDTOFactory.createSetFieldNode(
                                                         NncUtils.randomNonNegative(),
-                                                        "init",
+                                                        "init1",
                                                         ValueDTOFactory.createReference("self"),
-                                                        List.of(
-                                                                new UpdateFieldDTO(
-                                                                        new FieldRefDTO(
-                                                                                typeExpr,
-                                                                                childFieldTmpId
-                                                                        ),
-                                                                        null,
-                                                                        UpdateOp.SET.code(),
-                                                                        ValueDTOFactory.createReference("child")
-                                                                ),
-                                                                new UpdateFieldDTO(
-                                                                        new FieldRefDTO(
-                                                                                typeExpr,
-                                                                                childRefFieldTmpId
-                                                                        ),
-                                                                        null,
-                                                                        UpdateOp.SET.code(),
-                                                                        ValueDTOFactory.createReference("child")
-                                                                )
-                                                        )
+                                                        new FieldRefDTO(
+                                                                typeExpr,
+                                                                childFieldTmpId
+                                                        ),
+                                                        ValueDTOFactory.createReference("child")
+                                                )
+                                        )
+                                        .addNode(
+                                                NodeDTOFactory.createSetFieldNode(
+                                                        NncUtils.randomNonNegative(),
+                                                        "init2",
+                                                        ValueDTOFactory.createReference("self"),
+                                                        new FieldRefDTO(
+                                                                typeExpr,
+                                                                childRefFieldTmpId
+                                                        ),
+                                                        ValueDTOFactory.createReference("child")
                                                 )
                                         )
                                         .addNode(

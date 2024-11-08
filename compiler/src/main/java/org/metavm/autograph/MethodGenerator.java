@@ -301,23 +301,22 @@ public class MethodGenerator {
         return currentScope().scope;
     }
 
-    UpdateObjectNode createUpdateObject(Value objectId) {
-        return onNodeCreated(new UpdateObjectNode(null, nextName("Update"), null, scope().getLastNode(), scope(), objectId, List.of()));
+    SetFieldNode createSetField(Value self, Field field, Value value) {
+        return onNodeCreated(new SetFieldNode(null,
+                nextName("Update"),
+                null,
+                scope().getLastNode(),
+                scope(),
+                self,
+                field.getRef(),
+                value));
     }
 
-    UpdateObjectNode createUpdate(Value self, Map<Field, Value> fields) {
-        var node = createUpdateObject(self);
-        fields.forEach((field, value) -> node.setUpdateField(field, UpdateOp.SET, value));
-        return node;
-    }
-
-    UpdateStaticNode createUpdateStatic(Klass klass, Map<Field, Value> fields) {
-        var node = onNodeCreated(new UpdateStaticNode(
+    SetStaticNode createSetStatic(Field field, Value value) {
+        return onNodeCreated(new SetStaticNode(
                 null, nextName("UpdateStatic"), null,
-                scope().getLastNode(), scope(), klass,
-                List.of()));
-        fields.forEach((field, expr) -> node.setUpdateField(field, UpdateOp.SET, expr));
-        return node;
+                scope().getLastNode(), scope(),
+                field.getRef(), value));
     }
 
     AddObjectNode createAddObject(Klass klass) {

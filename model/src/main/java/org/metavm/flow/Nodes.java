@@ -8,7 +8,6 @@ import org.metavm.util.NncUtils;
 import org.metavm.util.TriConsumer;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -250,57 +249,32 @@ public class Nodes {
         ));
     }
 
-    public static UpdateObjectNode updateField(String name, Value self, Field field, Value value, ScopeRT scope) {
-        return new UpdateObjectNode(
+    public static SetFieldNode setField(String name, Value self, Field field, Value value, ScopeRT scope) {
+        return new SetFieldNode(
                 null,
                 name,
                 null,
                 scope.getLastNode(),
                 scope,
                 self,
-                List.of(
-                        new UpdateField(field.getRef(), UpdateOp.SET, value)
-                )
+                field.getRef(),
+                value
         );
     }
 
-    public static UpdateObjectNode update(String name, Value self, Map<Field, Value> updates, ScopeRT scope) {
-        var fields = new ArrayList<UpdateField>();
-        updates.forEach((field, value) -> fields.add(new UpdateField(field.getRef(), UpdateOp.SET, value)));
-        return new UpdateObjectNode(
-                null,
-                name,
-                null,
-                scope.getLastNode(),
-                scope,
-                self,
-                fields
-        );
+    public static SetFieldNode setField(Value self, Field field, Value value, ScopeRT scope) {
+        return setField(scope.nextNodeName("setField"), self, field, value, scope);
     }
 
-    public static UpdateObjectNode update(Value self, Field field, Value value, ScopeRT scope) {
-        return new UpdateObjectNode(
+    public static SetStaticNode setStatic(Field field, Value value, ScopeRT scope) {
+        return new SetStaticNode(
                 null,
-                scope.nextNodeName("update"),
-                null,
-                scope.getLastNode(),
-                scope,
-                self,
-                List.of(new UpdateField(field.getRef(), UpdateOp.SET, value))
-        );
-    }
-
-    public static UpdateStaticNode updateStatic(Field field, Value value, ScopeRT scope) {
-        return new UpdateStaticNode(
-                null,
-                scope.nextNodeName("updateStatic"),
+                scope.nextNodeName("setStatic"),
                 null,
                 scope.getLastNode(),
                 scope,
-                field.getDeclaringType(),
-                List.of(
-                        new UpdateField(field.getRef(), UpdateOp.SET, value)
-                )
+                field.getRef(),
+                value
         );
     }
 

@@ -9,7 +9,7 @@ import java.util.Set;
 
 public enum NodeKind {
     ADD_OBJECT(NodeKindCodes.ADD_OBJECT, AddObjectNode.class, AddObjectNodeParam.class),
-    UPDATE_OBJECT(NodeKindCodes.UPDATE_OBJECT, UpdateObjectNode.class, UpdateObjectNodeParam.class),
+    SET_FIELD(NodeKindCodes.SET_FIELD, SetFieldNode.class, SetFieldNodeParam.class),
     DELETE_OBJECT(NodeKindCodes.DELETE_OBJECT, DeleteObjectNode.class, DeleteObjectNodeParam.class),
     RETURN(NodeKindCodes.RETURN, ReturnNode.class, ReturnNodeParam.class),
     EXCEPTION(NodeKindCodes.EXCEPTION, RaiseNode.class, RaiseNodeParam.class),
@@ -17,7 +17,7 @@ public enum NodeKind {
     GET_UNIQUE(NodeKindCodes.GET_UNIQUE, GetUniqueNode.class, GetUniqueNodeParam.class),
     NEW(NodeKindCodes.NEW, NewObjectNode.class, NewObjectNodeParam.class),
     VALUE(NodeKindCodes.VALUE, ValueNode.class, ValueNodeParam.class),
-    UPDATE_STATIC(NodeKindCodes.UPDATE_STATIC, UpdateStaticNode.class, UpdateStaticNodeParam.class),
+    SET_STATIC(NodeKindCodes.SET_STATIC, SetStaticNode.class, SetStaticNodeParam.class),
     NEW_ARRAY(NodeKindCodes.NEW_ARRAY, NewArrayNode.class, NewArrayNodeParam.class),
     TRY_ENTER(NodeKindCodes.TRY_ENTER, TryEnterNode.class, TryEnterNodeParam.class),
     TRY_EXIT(NodeKindCodes.TRY_EXIT, TryExitNode.class, TryExitNodeParam.class, true),

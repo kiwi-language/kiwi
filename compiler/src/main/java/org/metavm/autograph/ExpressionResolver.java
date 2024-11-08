@@ -787,7 +787,7 @@ public class ExpressionResolver {
                     if (TranspileUtils.isStatic(psiField)) {
                         var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.createType(psiField.getContainingClass()))).resolve();
                         var field = klass.getStaticFieldByName(psiField.getName());
-                        methodGenerator.createUpdateStatic(klass, Map.of(field, assignment));
+                        methodGenerator.createSetStatic(field, assignment);
                     } else {
                         org.metavm.flow.Value self;
                         if (refExpr.getQualifierExpression() != null) {
@@ -800,8 +800,7 @@ public class ExpressionResolver {
                         Klass instanceType = Types.resolveKlass(methodGenerator.getExpressionType(self.getExpression()));
                         typeResolver.ensureDeclared(instanceType);
                         Field field = instanceType.getFieldByCode(psiField.getName());
-                        UpdateObjectNode node = methodGenerator.createUpdateObject(self);
-                        node.setUpdateField(field, UpdateOp.SET, assignment);
+                        methodGenerator.createSetField(self, field, assignment);
                     }
                 } else {
                     var lambda = currentLambda();
@@ -1160,8 +1159,7 @@ public class ExpressionResolver {
 
         public void finish(VariableTable variableTable, MethodGenerator flowBuilder) {
             for (FieldOperation(org.metavm.flow.Value instance, Field field, org.metavm.flow.Value value) : fieldOperations) {
-                var node = flowBuilder.createUpdateObject(instance);
-                node.setUpdateField(field, UpdateOp.SET, value);
+                flowBuilder.createSetField(instance, field, value);
             }
         }
 

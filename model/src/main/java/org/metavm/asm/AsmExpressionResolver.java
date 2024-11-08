@@ -317,13 +317,13 @@ class AsmExpressionResolver {
             var klass = findKlass(qualifierCtx.getText());
             if(klass != null) {
                 var field = klass.getStaticFieldByName(fieldName);
-                Nodes.updateStatic(field, assignment, scope);
+                Nodes.setStatic(field, assignment, scope);
             }
             else {
                 var qualifier = resolve0(qualifierCtx);
                 var qualifierType = (ClassType) qualifier.getType();
                 var field = qualifierType.resolve().getFieldByCode(fieldName);
-                Nodes.update(qualifier, field, assignment, scope);
+                Nodes.setField(qualifier, field, assignment, scope);
             }
         }
         return assignment;

@@ -53,12 +53,8 @@ public class SubstitutorV2Test extends TestCase {
                     .parameters(new Parameter(null, "value", "value", typeVar.getType()))
                     .build();
             var scope = flow.getScope();
-            var updateNode = new UpdateObjectNode(null, "update", null, scope.getLastNode(), scope,
-                    Values.node(Nodes.this_(scope)), List.of());
-            updateNode.setUpdateField(
-                    valueField, UpdateOp.SET,
-                    Values.node(Nodes.argument(flow, 0))
-            );
+            var updateNode = new SetFieldNode(null, "setField", null, scope.getLastNode(), scope,
+                    Values.node(Nodes.this_(scope)), valueField.getRef(), Values.node(Nodes.argument(flow, 0)));
             new ReturnNode(null, "return", null, updateNode, flow.getScope(), null);
         }
 

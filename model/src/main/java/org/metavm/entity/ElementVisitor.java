@@ -148,7 +148,7 @@ public abstract class ElementVisitor<R> {
         return visitCallNode(node);
     }
 
-    public R visitUpdateObjectNode(UpdateObjectNode node) {
+    public R visitSetFieldNode(SetFieldNode node) {
         return visitNode(node);
     }
 
@@ -184,7 +184,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitUpdateStaticNode(UpdateStaticNode node) {
+    public R visitSetStaticNode(SetStaticNode node) {
         return visitNode(node);
     }
 

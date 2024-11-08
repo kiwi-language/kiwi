@@ -799,15 +799,18 @@ public class Assembler {
                 if (block != null) {
                     var rootScope = method.getScope();
                     if (isConstructor && currentClass.isEnum) {
-                        Nodes.update(
+                        Nodes.setField(
                                 nextNodeName(),
                                 Values.node(Nodes.this_(rootScope)),
-                                Map.of(
-                                        klass.getField(f -> f.getEffectiveTemplate() == StdField.enumName.get()),
-                                        Values.node(Nodes.load(1, Types.getStringType(), rootScope)),
-                                        klass.getField(f -> f.getEffectiveTemplate() == StdField.enumOrdinal.get()),
-                                        Values.node(Nodes.load(2, Types.getLongType(), rootScope))
-                                ),
+                                klass.getField(f -> f.getEffectiveTemplate() == StdField.enumName.get()),
+                                Values.node(Nodes.load(1, Types.getStringType(), rootScope)),
+                                rootScope
+                        );
+                        Nodes.setField(
+                                nextNodeName(),
+                                Values.node(Nodes.this_(rootScope)),
+                                klass.getField(f -> f.getEffectiveTemplate() == StdField.enumOrdinal.get()),
+                                Values.node(Nodes.load(2, Types.getLongType(), rootScope)),
                                 rootScope
                         );
                     }
@@ -933,16 +936,6 @@ public class Assembler {
         private Type getExpressionType(Expression expression, ScopeRT scope) {
             var lastNode = scope.getLastNode();
             return lastNode != null ? lastNode.getNextExpressionTypes().getType(expression) : expression.getType();
-        }
-
-        private UpdateOp parseUpdateOp(String bop) {
-            if (bop.equals("="))
-                return UpdateOp.SET;
-            if (bop.equals("+="))
-                return UpdateOp.INC;
-            if (bop.equals("-="))
-                return UpdateOp.DEC;
-            throw new InternalException("Unknown binary operator: " + bop);
         }
 
         private Value parseExpression(AssemblyParser.ExpressionContext expression) {
