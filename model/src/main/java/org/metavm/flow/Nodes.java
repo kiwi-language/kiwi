@@ -280,7 +280,7 @@ public class Nodes {
     }
 
     public static NodeRT mul(ScopeRT scope) {
-        return new MultiplyNode(
+        return new MulNode(
                 null,
                 scope.nextNodeName("mul"),
                 scope.getLastNode(),
@@ -289,7 +289,7 @@ public class Nodes {
     }
 
     public static NodeRT div(ScopeRT scope) {
-        return new DivideNode(
+        return new DivNode(
                 null,
                 scope.nextNodeName("div"),
                 scope.getLastNode(),

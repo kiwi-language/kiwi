@@ -19,13 +19,13 @@ import java.util.Arrays;
 public enum BinaryOperator {
 
     // Multiply and division
-    MULTIPLY(2, "*", 2, OperatorTypes.BINARY, null) {
+    MUL(2, "*", 2, OperatorTypes.BINARY, null) {
         @Override
         public NumberValue evaluate(Value first, Value second) {
             return ((NumberValue) first).mul((NumberValue) second);
         }
     },
-    DIVIDE(3, "/", 2, OperatorTypes.BINARY, null) {
+    DIV(3, "/", 2, OperatorTypes.BINARY, null) {
         @Override
         public NumberValue evaluate(Value first, Value second) {
             return ((NumberValue) first).div((NumberValue) second);
@@ -45,7 +45,7 @@ public enum BinaryOperator {
             return ((NumberValue) first).add((NumberValue) second);
         }
     },
-    MINUS(6, "-", 3, OperatorTypes.BINARY, null) {
+    SUB(6, "-", 3, OperatorTypes.BINARY, null) {
         @Override
         public NumberValue evaluate(Value first, Value second) {
             return ((NumberValue) first).sub((NumberValue) second);

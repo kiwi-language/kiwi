@@ -12,25 +12,25 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class MultiplyNode extends NodeRT {
+public class MulNode extends NodeRT {
 
-    public static MultiplyNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        MultiplyNode node = (MultiplyNode) context.getNode(Id.parse(nodeDTO.id()));
+    public static MulNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+        MulNode node = (MulNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new MultiplyNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new MulNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
         return node;
     }
 
-    public MultiplyNode(Long tmpId,
-                        @NotNull String name,
-                        @Nullable NodeRT previous,
-                        @NotNull ScopeRT scope) {
+    public MulNode(Long tmpId,
+                   @NotNull String name,
+                   @Nullable NodeRT previous,
+                   @NotNull ScopeRT scope) {
         super(tmpId, name, null, previous, scope);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitMultiplyNode(this);
+        return visitor.visitMulNode(this);
     }
 
     @Override

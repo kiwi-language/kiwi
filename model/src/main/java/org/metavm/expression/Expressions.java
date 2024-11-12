@@ -185,16 +185,16 @@ public class Expressions {
         );
     }
 
-    public static Expression subtract(Expression first, Expression second) {
-        return new BinaryExpression(BinaryOperator.MINUS, first, second);
+    public static Expression sub(Expression first, Expression second) {
+        return new BinaryExpression(BinaryOperator.SUB, first, second);
     }
 
-    public static Expression multiply(Expression first, Expression second) {
-        return new BinaryExpression(BinaryOperator.MULTIPLY, first, second);
+    public static Expression mul(Expression first, Expression second) {
+        return new BinaryExpression(BinaryOperator.MUL, first, second);
     }
 
-    public static Expression divide(Expression first, Expression second) {
-        return new BinaryExpression(BinaryOperator.DIVIDE, first, second);
+    public static Expression div(Expression first, Expression second) {
+        return new BinaryExpression(BinaryOperator.DIV, first, second);
     }
 
     public static Expression mod(Expression first, Expression second) {

@@ -12,25 +12,25 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class DivideNode extends NodeRT {
+public class DivNode extends NodeRT {
 
-    public static DivideNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        DivideNode node = (DivideNode) context.getNode(Id.parse(nodeDTO.id()));
+    public static DivNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+        DivNode node = (DivNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new DivideNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new DivNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
         return node;
     }
 
-    public DivideNode(Long tmpId,
-                      @NotNull String name,
-                      @Nullable NodeRT previous,
-                      @NotNull ScopeRT scope) {
+    public DivNode(Long tmpId,
+                   @NotNull String name,
+                   @Nullable NodeRT previous,
+                   @NotNull ScopeRT scope) {
         super(tmpId, name, null, previous, scope);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitDivideNode(this);
+        return visitor.visitDivNode(this);
     }
 
     @Override

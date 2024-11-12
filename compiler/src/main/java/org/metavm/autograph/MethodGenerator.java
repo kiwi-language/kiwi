@@ -423,8 +423,8 @@ public class MethodGenerator {
         );
     }
 
-    MultiplyNode createMul() {
-        return onNodeCreated(new MultiplyNode(
+    MulNode createMul() {
+        return onNodeCreated(new MulNode(
                         null,
                         nextName("mul"),
                         scope().getLastNode(),
@@ -433,8 +433,8 @@ public class MethodGenerator {
         );
     }
 
-    DivideNode createDiv() {
-        return onNodeCreated(new DivideNode(
+    DivNode createDiv() {
+        return onNodeCreated(new DivNode(
                         null,
                         nextName("div"),
                         scope().getLastNode(),

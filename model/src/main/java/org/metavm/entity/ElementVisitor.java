@@ -420,11 +420,11 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitMultiplyNode(MultiplyNode node) {
+    public R visitMulNode(MulNode node) {
         return visitNode(node);
     }
 
-    public R visitDivideNode(DivideNode node) {
+    public R visitDivNode(DivNode node) {
         return visitNode(node);
     }
 
