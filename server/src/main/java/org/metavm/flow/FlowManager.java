@@ -203,21 +203,16 @@ public class FlowManager extends EntityContextFactoryAware {
                                 && overridden.getReturnType().isAssignableFrom(f.getReturnType())
                 );
                 if (candidate == null) {
-                    flow = MethodBuilder.newBuilder(type, overridden.getName(), overridden.getCode())
+                    MethodBuilder.newBuilder(type, overridden.getName(), overridden.getCode())
                             .returnType(overridden.getReturnType())
                             .type(overridden.getType())
                             .access(overridden.getAccess())
                             .parameters(NncUtils.map(overridden.getParameters(), Parameter::copy))
                             .typeParameters(NncUtils.map(overridden.getTypeParameters(), TypeVariable::copy))
                             .build();
-                    initNodes(flow, context);
                 }
             }
         }
-    }
-
-    public void initNodes(Flow flow, IEntityContext context) {
-        createReturnNode(flow, null);
     }
 
     private void saveNodes(ScopeDTO scopeDTO, ScopeRT scope, IEntityContext context) {
@@ -259,10 +254,7 @@ public class FlowManager extends EntityContextFactoryAware {
                 DebugEnv.logger.info("FlowManager.saveContent flow: {}", flow.getQualifiedName());
             if (flow.isNative() || (flow instanceof Method method && method.isAbstract()))
                 return;
-            if (flow.getNodes().isEmpty() && flowDTO.rootScope() == null) {
-                if (context.isNewEntity(flow))
-                    initNodes(flow, context);
-            } else if(flowDTO.rootScope() != null)
+            if(flowDTO.rootScope() != null)
                 saveNodes(flowDTO.rootScope(), flow.getScope(), context);
             for (LambdaDTO lambdaDTO : flowDTO.lambdas()) {
                 saveLambdaContent(lambdaDTO, context);
@@ -274,15 +266,6 @@ public class FlowManager extends EntityContextFactoryAware {
     private void saveLambdaContent(LambdaDTO lambdaDTO, IEntityContext context) {
         var lambda = context.getEntity(Lambda.class, lambdaDTO.id());
         saveNodes(lambdaDTO.scope(), lambda.getScope(), context);
-    }
-
-    private void createReturnNode(Flow flow, NodeRT prev) {
-        Value value;
-        if (Flows.isConstructor(flow)) {
-            value = Values.node(Nodes.this_(flow.getScope()));
-        } else
-            value = null;
-        new ReturnNode(null, "return", null, prev, flow.getScope(), value);
     }
 
     @Transactional

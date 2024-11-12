@@ -310,10 +310,16 @@ public class Declarator extends VisitorBase {
         } else
             field.setName(getEnumConstantName(enumConstant));
         var ecd = klass.findEnumConstantDef(e -> e.getName().equals(enumConstant.getName()));
-        if(ecd == null)
-            ecd = new EnumConstantDef(klass, enumConstant.getName(), classInfo.nextEnumConstantOrdinal(), List.of());
-        else
+        if(ecd == null) {
+            var name = enumConstant.getName();
+            var initializer = MethodBuilder.newBuilder(klass, "$" + name, "$" + name)
+                    .isStatic(true)
+                    .returnType(klass.getType())
+                    .build();
+            ecd = new EnumConstantDef(klass, name, classInfo.nextEnumConstantOrdinal(), initializer);
+        } else
             ecd.setOrdinal(classInfo.nextEnumConstantOrdinal());
+        classInfo.visitedMethods.add(ecd.getInitializer());
         enumConstant.putUserData(Keys.FIELD, field);
         enumConstant.putUserData(Keys.ENUM_CONSTANT_DEF, ecd);
     }

@@ -6,16 +6,9 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.flow.rest.ReturnNodeParam;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
-import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
-
-import javax.annotation.Nullable;
-import java.util.Objects;
 
 @EntityType
 @Slf4j
@@ -23,64 +16,34 @@ public class ReturnNode extends NodeRT {
 
     public static ReturnNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext entityContext) {
         ReturnNode node = (ReturnNode) entityContext.getNode(Id.parse(nodeDTO.id()));
-        var param = (ReturnNodeParam) nodeDTO.getParam();
-        var parsingContext = FlowParsingContext.create(scope, prev, entityContext);
-        var value = param.value() != null ? ValueFactory.create(param.value(), parsingContext) : null;
         if (node == null)
-            node = new ReturnNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, value);
-        else
-            node.setValue(value);
+            node = new ReturnNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
         return node;
     }
 
-    private @Nullable Value value;
-
-    public ReturnNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, @Nullable Value value) {
-        super(tmpId, name, code, null, prev, scope);
-        this.value = value;
-    }
-
-    public void setValue(@Nullable Value value) {
-        this.value = value;
-    }
-
-    @Nullable
-    public Value getValue() {
-        return value;
+    public ReturnNode(Long tmpId, String name, NodeRT prev, ScopeRT scope) {
+        super(tmpId, name, null, prev, scope);
     }
 
     @Override
-    protected ReturnNodeParam getParam(SerializeContext serializeContext) {
-        return new ReturnNodeParam(
-                NncUtils.get(value, Value::toDTO)
-        );
+    protected Object getParam(SerializeContext serializeContext) {
+        return null;
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        var retValue = getType().isVoid() ? Instances.nullInstance() : Objects.requireNonNull(value).evaluate(frame);
-        return NodeExecResult.ret(retValue);
+    public int execute(MetaFrame frame) {
+        frame.setReturnValue(frame.pop());
+        return MetaFrame.STATE_RET;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
         writer.write("return");
-        if (value != null)
-            writer.write(" " + value.getText());
     }
 
     @Override
-    protected String check0() {
-        var callable = getScope().getCallable();
-        var returnType = callable.getReturnType();
-        if (!returnType.isVoid()) {
-            if (value == null)
-                return "Return value is not set";
-            var exprType = getExpressionTypes().getType(value.getExpression());
-            if (!returnType.isConvertibleFrom(exprType))
-                return "Invalid return value. " + returnType + " is not convertible from " + exprType;
-        }
-        return null;
+    public int getStackChange() {
+        return -1;
     }
 
     @Override

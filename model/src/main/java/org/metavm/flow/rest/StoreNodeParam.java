@@ -1,4 +1,4 @@
 package org.metavm.flow.rest;
 
-public record StoreNodeParam(int index, ValueDTO value) {
+public record StoreNodeParam(int index) {
 }

@@ -20,7 +20,7 @@ public class LoadContextSlotNode extends NodeRT {
         var node = (LoadContextSlotNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var type = TypeParser.parseType(nodeDTO.outputType(), context);
-            node = new LoadContextSlotNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), type, prev, scope,
+            node = new LoadContextSlotNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, scope,
                     param.contextIndex(), param.slotIndex());
         }
         return node;
@@ -29,9 +29,9 @@ public class LoadContextSlotNode extends NodeRT {
     private final int contextIndex;
     private final int slotIndex;
 
-    public LoadContextSlotNode(Long tmpId, @NotNull String name, @Nullable String code, Type outputType,
+    public LoadContextSlotNode(Long tmpId, @NotNull String name, Type outputType,
                                @Nullable NodeRT previous, @NotNull ScopeRT scope, int contextIndex, int slotIndex) {
-        super(tmpId, name, code, outputType, previous, scope);
+        super(tmpId, name, outputType, previous, scope);
         this.contextIndex = contextIndex;
         this.slotIndex = slotIndex;
     }
@@ -53,13 +53,19 @@ public class LoadContextSlotNode extends NodeRT {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        return next(frame.loadContextSlot(contextIndex, slotIndex));
+    public int execute(MetaFrame frame) {
+        frame.push(frame.loadContextSlot(contextIndex, slotIndex));
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
         writer.write("loadContextSlot " + contextIndex + " " + slotIndex);
+    }
+
+    @Override
+    public int getStackChange() {
+        return 1;
     }
 
 }

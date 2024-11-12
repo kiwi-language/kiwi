@@ -5,7 +5,9 @@ import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.SerializeContext;
-import org.metavm.flow.*;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Nodes;
+import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
@@ -41,8 +43,8 @@ public class SubstitutorV2Test extends TestCase {
                     .returnType(typeVar.getType())
                     .build();
             var scope = getValueFlow.getScope();
-            var valueNode = Nodes.thisProperty(valueField, scope);
-            Nodes.ret("return", scope, Values.node(valueNode));
+            Nodes.thisProperty(valueField, scope);
+            Nodes.ret(scope);
         }
 
         {
@@ -53,9 +55,10 @@ public class SubstitutorV2Test extends TestCase {
                     .parameters(new Parameter(null, "value", "value", typeVar.getType()))
                     .build();
             var scope = flow.getScope();
-            var updateNode = new SetFieldNode(null, "setField", null, scope.getLastNode(), scope,
-                    Values.node(Nodes.this_(scope)), valueField.getRef(), Values.node(Nodes.argument(flow, 0)));
-            new ReturnNode(null, "return", null, updateNode, flow.getScope(), null);
+            Nodes.this_(scope);
+            Nodes.argument(flow, 0);
+            Nodes.setField(valueField, scope);
+            Nodes.voidRet(scope);
         }
 
         var stringType = PrimitiveType.stringType;

@@ -6,8 +6,8 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.entity.SerializeContext;
-import org.metavm.flow.rest.TargetNodeParam;
 import org.metavm.flow.rest.NodeDTO;
+import org.metavm.flow.rest.TargetNodeParam;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.NncUtils;
 
@@ -21,7 +21,7 @@ public class TargetNode extends NodeRT {
         var param = (TargetNodeParam) nodeDTO.getParam();
         var node = (TargetNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new TargetNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope);
+            node = new TargetNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
         if(stage == NodeSavingStage.FINALIZE) {
             node.setSources(
                     NncUtils.map(
@@ -36,8 +36,8 @@ public class TargetNode extends NodeRT {
     @ChildEntity
     private final ReadWriteArray<GotoNode> sources = addChild(new ReadWriteArray<>(GotoNode.class), "sources");
 
-    public TargetNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope) {
-        super(tmpId, name, code, null, previous, scope);
+    public TargetNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope) {
+        super(tmpId, name, null, previous, scope);
     }
 
     @Override
@@ -51,13 +51,18 @@ public class TargetNode extends NodeRT {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        return next();
+    public int execute(MetaFrame frame) {
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
         writer.write("LabelNode");
+    }
+
+    @Override
+    public int getStackChange() {
+        return 0;
     }
 
     public void setSources(List<GotoNode> sources) {

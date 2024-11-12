@@ -23,7 +23,7 @@ public class GetStaticNode extends NodeRT {
         if (node == null) {
             GetStaticNodeParam param = nodeDTO.getParam();
             var propertyRef = PropertyRef.create(param.propertyRef(), context);
-            node = new GetStaticNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
+            node = new GetStaticNode(nodeDTO.tmpId(), nodeDTO.name(),
                     prev, scope, propertyRef);
         }
         return node;
@@ -33,11 +33,10 @@ public class GetStaticNode extends NodeRT {
 
     public GetStaticNode(Long tmpId,
                          @NotNull String name,
-                         @Nullable String code,
                          @Nullable NodeRT previous,
                          @NotNull ScopeRT scope,
                          PropertyRef propertyRef) {
-        super(tmpId, name, code, null, previous, scope);
+        super(tmpId, name, null, previous, scope);
         this.propertyRef = propertyRef;
     }
 
@@ -58,20 +57,27 @@ public class GetStaticNode extends NodeRT {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
+    public int execute(MetaFrame frame) {
         var property = propertyRef.resolve();
         if(property instanceof Field field) {
             var staticFieldTable = StaticFieldTable.getInstance(field.getDeclaringType(), ContextUtil.getEntityContext());
-            return next(staticFieldTable.get(field));
+            frame.push(staticFieldTable.get(field));
         }
-        else if (property instanceof Method method)
-            return next(new FlowValue(method, null));
-        else
+        else if (property instanceof Method method) {
+            frame.push(new FlowValue(method, null));
+        } else
             throw new IllegalStateException("Unknown property type: " + property);
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
         writer.write(propertyRef.resolve().getQualifiedName());
     }
+
+    @Override
+    public int getStackChange() {
+        return 1;
+    }
+
 }

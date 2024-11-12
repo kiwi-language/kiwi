@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.object.type.rest.dto.KlassDTO;
-import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
@@ -14,7 +12,6 @@ public record NodeDTO(
         @Nullable String id,
         String flowId,
         String name,
-        @Nullable String code,
         int kind,
         String prevId,
         String outputType,
@@ -27,82 +24,7 @@ public record NodeDTO(
 ) implements BaseDTO {
 
     public static NodeDTO create(String name, int kind) {
-        return new NodeDTO(null, null, name, null, kind, null, null, null, null, null, null);
-    }
-
-    public static NodeDTO newNode(String flowId, String name, int type, String prevId) {
-        return newNode(flowId, name, type, prevId, null, null);
-    }
-
-    public static NodeDTO newNode(String flowId, String name, int type, String prevId, Object param, String scopeId) {
-        return new NodeDTO(
-                null, flowId, name, null, type, prevId,
-                null, param, null, scopeId, null
-        );
-    }
-
-    public NodeDTO copyWithParam(Object newParam) {
-        return new NodeDTO(
-                id,
-                flowId,
-                name,
-                code,
-                kind,
-                prevId,
-                outputType,
-                newParam,
-                outputKlass,
-                scopeId,
-                error
-        );
-    }
-
-    public NodeDTO copyWithType(KlassDTO type) {
-        return new NodeDTO(
-                id,
-                flowId,
-                name,
-                code,
-                kind,
-                prevId,
-                NncUtils.get(type.id(), id -> Constants.ID_PREFIX + id),
-                param,
-                type,
-                scopeId,
-                error
-        );
-    }
-
-    public NodeDTO copyWithParamAndType(Object param, KlassDTO type) {
-        return new NodeDTO(
-                id,
-                flowId,
-                name,
-                code,
-                kind,
-                prevId,
-                NncUtils.get(type.id(), id -> Constants.ID_PREFIX + id),
-                param,
-                type,
-                scopeId,
-                error
-        );
-    }
-
-    public NodeDTO copyWithPrevId(String prevId) {
-        return new NodeDTO(
-                id,
-                flowId,
-                name,
-                code,
-                kind,
-                prevId,
-                outputType,
-                param,
-                outputKlass,
-                scopeId,
-                error
-        );
+        return new NodeDTO(null, null, name,  kind, null, null, null, null, null, null);
     }
 
     public void ensureIdSet() {
@@ -114,6 +36,10 @@ public record NodeDTO(
     public <T> T getParam() {
         //noinspection unchecked
         return (T) param;
+    }
+
+    public String code() {
+        return name;
     }
 
 }

@@ -4,7 +4,6 @@ import org.metavm.flow.rest.*;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.Access;
 import org.metavm.object.type.MetadataState;
-import org.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -90,13 +89,6 @@ public class MethodDTOBuilder {
 
     public MethodDTOBuilder nodes(List<NodeDTO> nodes) {
         this.nodes = nodes;
-        return this;
-    }
-
-    public MethodDTOBuilder addNode(NodeDTO node) {
-        if (!this.nodes.isEmpty())
-            node = node.copyWithPrevId(this.nodes.get(this.nodes.size() - 1).id());
-        this.nodes.add(node);
         return this;
     }
 

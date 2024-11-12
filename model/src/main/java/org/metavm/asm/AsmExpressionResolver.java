@@ -2,17 +2,20 @@ package org.metavm.asm;
 
 import org.antlr.v4.runtime.Token;
 import org.metavm.asm.antlr.AssemblyParser;
+import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expression;
 import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
+import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -39,7 +42,7 @@ class AsmExpressionResolver {
         this.findKlassFunc = findKlassFunc;
     }
 
-    public Value resolve(AssemblyParser.ExpressionContext ctx) {
+    public Type resolve(AssemblyParser.ExpressionContext ctx) {
         try {
             return resolve0(ctx);
         } catch (Exception e) {
@@ -47,7 +50,7 @@ class AsmExpressionResolver {
         }
     }
 
-    private Value resolve0(AssemblyParser.ExpressionContext ctx) {
+    private Type resolve0(AssemblyParser.ExpressionContext ctx) {
         if (ctx.primary() != null)
             return resolvePrimary(ctx.primary());
         if (ctx.bop != null)
@@ -79,69 +82,70 @@ class AsmExpressionResolver {
         throw new IllegalStateException("Unrecognized expression: " + ctx.getText());
     }
 
-    private Value resolvePostfix(AssemblyParser.ExpressionContext operand, Token postfix) {
+    private Type resolvePostfix(AssemblyParser.ExpressionContext operand, Token postfix) {
         var p = postfix.getType();
-        var o = resolve0(operand);
-        if(p == AssemblyParser.BANGBANG)
-            return new NodeValue(Nodes.nonNull(o, scope));
+        var type = resolve0(operand);
+        if(p == AssemblyParser.BANGBANG) {
+            Nodes.nonNull(scope);
+            return type.getUnderlyingType();
+        }
         throw new IllegalStateException("Unrecognized postfix " + postfix.getText());
     }
 
-    private Value resolveSelect(AssemblyParser.SelectContext ctx) {
+    private Type resolveSelect(AssemblyParser.SelectContext ctx) {
         var klass = requireNonNull(findKlass(ctx.qualifiedName().getText()));
         var indexName = ctx.IDENTIFIER().getText();
         var index = requireNonNull(klass.findIndex(i -> i.getName().equals(indexName)),
                 () -> "Cannot find index with name " + indexName + " class " + klass.getTypeDesc());
-        var fieldValues = NncUtils.map(ctx.expression(), this::resolve0);
-        var key = new IndexQueryKey(
-                index,
-                NncUtils.biMap(index.getFields(), fieldValues, IndexQueryKeyItem::new)
-        );
-        if (ctx.SELECT() != null)
-            return new NodeValue(Nodes.select(index, key, scope));
-        else
-            return new NodeValue(Nodes.selectFirst(index, key, scope));
+        NncUtils.map(ctx.expression(), this::resolve0);
+        if (ctx.SELECT() != null) {
+            Nodes.select(index, scope);
+            return new ClassType(StdKlass.arrayList.get(), List.of(index.getDeclaringType().getType()));
+        }
+        else {
+            Nodes.selectFirst(index, scope);
+            return Types.getNullableType(index.getDeclaringType().getType());
+        }
     }
 
-    private Value resolveCast(AssemblyParser.ExpressionContext operand, AssemblyParser.TypeTypeContext type) {
-        return new NodeValue(Nodes.cast(
-                scope.nextNodeName("cast"),
-                parseType(type),
-                resolve0(operand),
-                scope
-        ));
+    private Type resolveCast(AssemblyParser.ExpressionContext operand, AssemblyParser.TypeTypeContext type) {
+        resolve0(operand);
+        var t = parseType(type);
+        Nodes.cast(t, scope);
+        return t;
     }
 
-    private Value resolveAllocate(AssemblyParser.AllocatorContext allocator) {
+    private Type resolveAllocate(AssemblyParser.AllocatorContext allocator) {
         var type = (ClassType) parseClassType(allocator.classOrInterfaceType());
-        var fieldParams = new ArrayList<FieldParam>();
+        var field2expression = new HashMap<String, AssemblyParser.ExpressionContext>();
         if(allocator.allocatorFieldList() != null) {
             var fields = allocator.allocatorFieldList().allocatorField();
-            var klass = type.resolve();
             for (AssemblyParser.AllocatorFieldContext field : fields) {
-                fieldParams.add(
-                        new FieldParam(
-                                klass.getFieldByCode(field.IDENTIFIER().getText()).getRef(),
-                                resolve0(field.expression())
-                        )
-                );
+                field2expression.put(field.IDENTIFIER().getText(), field.expression());
             }
         }
-        var node = new AddObjectNode(
+        for (Field field : type.resolve().getAllFields()) {
+            var fieldValue = field2expression.get(field.getName());
+            if(fieldValue != null)
+                resolve0(fieldValue);
+            else {
+                var value = Objects.requireNonNull(Instances.getDefaultValue(field.getType()),
+                        () -> "Value for field '" + field.getName() + "' is missing in the allocate expression");
+                Nodes.loadConstant(value, scope);
+            }
+        }
+        new AddObjectNode(
                 null,
                 scope.nextNodeName("addObject"),
-                null,
-                false,
                 false,
                 type,
                 scope.getLastNode(),
                 scope
         );
-        fieldParams.forEach(node::addField);
-        return new NodeValue(node);
+        return type;
     }
 
-    private Value resolveLambdaExpression(AssemblyParser.LambdaExpressionContext ctx) {
+    private Type resolveLambdaExpression(AssemblyParser.LambdaExpressionContext ctx) {
         var params = parseParameterList(ctx.lambdaParameters().formalParameterList(), null);
         var returnType = parseType(ctx.typeTypeOrVoid());
         var lambda = new Lambda(null, params, returnType, scope.getFlow());
@@ -152,24 +156,19 @@ class AsmExpressionResolver {
         codeGenerator.processBlock(ctx.lambdaBody().block(), lambdaScope);
         codeGenerator.exitScope();
         if (ctx.typeTypeOrVoid().VOID() != null)
-            Nodes.ret(scope.nextNodeName("ret"), lambdaScope, null);
-        return new NodeValue(Nodes.lambda(lambda, scope));
+            Nodes.voidRet(lambdaScope);
+        Nodes.lambda(lambda, scope);
+        return lambda.getFunctionType();
     }
 
-    private Value resolveNew(AssemblyParser.ExpressionContext ctx) {
+    private Type resolveNew(AssemblyParser.ExpressionContext ctx) {
         var creator = ctx.creator();
         if(creator.arrayKind() != null) {
             var elementType = parseType(creator.typeType());
             var arrayKind = parseArrayKind(creator.arrayKind());
             var type = new ArrayType(elementType, arrayKind);
-            return new NodeValue(Nodes.newArray(
-                    scope.nextNodeName("newArray"),
-                    null,
-                    type,
-                    null,
-                    null,
-                    scope
-            ));
+            Nodes.newArray(type, scope);
+            return type;
         }
         else {
             var type = (ClassType) parseClassType(creator.classOrInterfaceType());
@@ -182,41 +181,30 @@ class AsmExpressionResolver {
                     );
             List<Type> typeArgs = creator.typeArguments() != null ?
                     NncUtils.map(creator.typeArguments().typeType(), this::parseType) : List.of();
-            var args = NncUtils.map(arguments, this::resolve0);
+            var argTypes = NncUtils.map(arguments, this::resolve0);
             var constructor = targetKlass.resolveMethod(
-                    targetKlass.getEffectiveTemplate().getName(), NncUtils.map(args, Value::getType), typeArgs, false
+                    targetKlass.getEffectiveTemplate().getName(), argTypes, typeArgs, false
             );
-            return new NodeValue(new NewObjectNode(
-                    NncUtils.randomNonNegative(),
-                    scope.nextNodeName("newObject"),
-                    null,
-                    constructor.getRef(),
-                    NncUtils.biMap(constructor.getParameters(), args, (p, a) -> new Argument(NncUtils.randomNonNegative(), p.getRef(), a)),
-                    scope.getLastNode(),
-                    scope,
-                    null,
-                    ctx.UNEW() != null,
-                    ctx.ENEW() != null
-            ));
+            Nodes.newObject(scope, constructor, ctx.UNEW() != null, ctx.ENEW() != null);
+            return targetKlass.getType();
         }
     }
 
-    private Value resolveShift(AssemblyParser.ExpressionContext ctx) {
-        var first = resolve0(ctx.expression(0));
-        var second = resolve0(ctx.expression(1));
-        NodeRT node;
+    private Type resolveShift(AssemblyParser.ExpressionContext ctx) {
+        resolve0(ctx.expression(0));
+        resolve0(ctx.expression(1));
         if(ctx.LT().size() == 2)
-            node = Nodes.leftShift(first, second, scope);
+            Nodes.leftShift(scope);
         else if(ctx.GT().size() == 2)
-            node = Nodes.rightShift(first, second, scope);
+            Nodes.rightShift(scope);
         else if(ctx.GT().size() == 3)
-            node = Nodes.unsignedRightShift(first, second, scope);
+            Nodes.unsignedRightShift(scope);
         else
             throw new IllegalStateException("Invalid shift expression: " + ctx.getText());
-        return Values.node(node);
+        return Types.getLongType();
     }
 
-    private Value resolvePrimary(AssemblyParser.PrimaryContext ctx) {
+    private Type resolvePrimary(AssemblyParser.PrimaryContext ctx) {
         if(ctx.LPAREN() != null)
             return resolve0(ctx.expression());
         if(ctx.THIS() != null)
@@ -228,36 +216,41 @@ class AsmExpressionResolver {
         throw new IllegalStateException("Unrecognized expression: " + ctx.getText());
     }
 
-    private Value resolveIdentifier(String identifier) {
+    private Type resolveIdentifier(String identifier) {
         return loadVariable(callable.resolveVariable(identifier));
     }
 
-    private Value loadVariable(AsmVariable v) {
+    private Type loadVariable(AsmVariable v) {
         var cIdx = v.getContextIndex(callable);
         if(cIdx == -1)
-            return new NodeValue(Nodes.load(v.index(), v.type(), scope));
+            Nodes.load(v.index(), v.type(), scope);
         else
-            return new NodeValue(Nodes.loadContextSlot(cIdx, v.index(), v.type(), scope));
+            Nodes.loadContextSlot(cIdx, v.index(), v.type(), scope);
+        return v.type();
     }
 
-    private Value resolveLiteral(AssemblyParser.LiteralContext literal) {
+    private Type resolveLiteral(AssemblyParser.LiteralContext literal) {
         var text = literal.getText();
+        org.metavm.object.instance.core.Value value;
         if(literal.integerLiteral() != null)
-            return Values.constantLong(Long.parseLong(text));
-        if(literal.floatLiteral() != null)
-            return Values.constantDouble(Double.parseDouble(text));
-        if(literal.BOOL_LITERAL() != null)
-            return Values.constantBoolean(Boolean.parseBoolean(text));
-        if(literal.CHAR_LITERAL() != null)
-            return Values.constantChar(Expressions.deEscapeChar(text));
-        if(literal.STRING_LITERAL() != null)
-            return Values.constantString(Expressions.deEscapeDoubleQuoted(text));
-        if(literal.NULL() != null)
-            return Values.nullValue();
-        throw new IllegalStateException("Unrecognized literal: " + text);
+            value = Instances.longInstance(Long.parseLong(text));
+        else if(literal.floatLiteral() != null)
+            value = Instances.doubleInstance(Double.parseDouble(text));
+        else if (literal.BOOL_LITERAL() != null)
+            value = Instances.booleanInstance(Boolean.parseBoolean(text));
+        else if (literal.CHAR_LITERAL() != null)
+            value = Instances.charInstance(Expressions.deEscapeChar(text));
+        else if(literal.STRING_LITERAL() != null)
+            value = Instances.stringInstance(Expressions.deEscapeDoubleQuoted(text));
+        else if(literal.NULL() != null)
+            value = Instances.nullInstance();
+        else
+            throw new IllegalStateException("Unrecognized literal: " + text);
+        Nodes.loadConstant(value, scope);
+        return value.getType();
     }
 
-    private Value resolveBop(AssemblyParser.ExpressionContext ctx) {
+    private Type resolveBop(AssemblyParser.ExpressionContext ctx) {
         var bop = ctx.bop.getType();
         if(ctx.IDENTIFIER() != null) {
             var qualifier = ctx.expression(0);
@@ -275,166 +268,249 @@ class AsmExpressionResolver {
             return resolveInstanceOf(ctx.expression(0), ctx.typeType());
         if(ctx.methodCall() != null)
             return resolveMethodCall(ctx.expression(0), ctx.methodCall());
-        var first = resolve0(ctx.expression(0));
-        var second = resolve0(ctx.expression(1));
-        var node = switch (bop) {
-            case AssemblyParser.ADD -> Nodes.add(first, second, scope);
-            case AssemblyParser.SUB -> Nodes.sub(first, second, scope);
-            case AssemblyParser.MUL -> Nodes.mul(first, second, scope);
-            case AssemblyParser.DIV -> Nodes.div(first, second, scope);
-            case AssemblyParser.BITOR -> Nodes.bitwiseOr(first, second, scope);
-            case AssemblyParser.BITAND -> Nodes.bitwiseAnd(first, second, scope);
-            case AssemblyParser.CARET -> Nodes.bitwiseXor(first, second, scope);
-            case AssemblyParser.AND -> Nodes.and(first, second, scope);
-            case AssemblyParser.OR -> Nodes.or(first, second, scope);
-            case AssemblyParser.MOD -> Nodes.rem(first, second, scope);
-            case AssemblyParser.EQUAL -> Nodes.eq(first, second, scope);
-            case AssemblyParser.NOTEQUAL -> Nodes.ne(first, second, scope);
-            case AssemblyParser.GE -> Nodes.ge(first, second, scope);
-            case AssemblyParser.GT -> Nodes.gt(first, second, scope);
-            case AssemblyParser.LT -> Nodes.lt(first, second, scope);
-            case AssemblyParser.LE -> Nodes.le(first, second, scope);
+        var firstType = resolve0(ctx.expression(0));
+        var secondType = resolve0(ctx.expression(1));
+        var type = Types.getCompatibleType(firstType, secondType);
+        return switch (bop) {
+            case AssemblyParser.ADD -> {
+                Nodes.add(scope);
+                yield type;
+            }
+            case AssemblyParser.SUB -> {
+                Nodes.sub(scope);
+                yield type;
+            }
+            case AssemblyParser.MUL -> {
+                Nodes.mul(scope);
+                yield type;
+            }
+            case AssemblyParser.DIV -> {
+                Nodes.div(scope);
+                yield type;
+            }
+            case AssemblyParser.BITOR -> {
+                Nodes.bitwiseOr(scope);
+                yield Types.getLongType();
+            }
+            case AssemblyParser.BITAND -> {
+                Nodes.bitwiseAnd(scope);
+                yield Types.getLongType();
+            }
+            case AssemblyParser.CARET -> {
+                Nodes.bitwiseXor(scope);
+                yield Types.getLongType();
+            }
+            case AssemblyParser.AND -> {
+                Nodes.and(scope);
+                yield Types.getBooleanType();
+            }
+            case AssemblyParser.OR -> {
+                Nodes.or(scope);
+                yield Types.getBooleanType();
+            }
+            case AssemblyParser.MOD -> {
+                Nodes.rem(scope);
+                yield type;
+            }
+            case AssemblyParser.EQUAL -> {
+                Nodes.eq(scope);
+                yield Types.getBooleanType();
+            }
+            case AssemblyParser.NOTEQUAL -> {
+                Nodes.ne(scope);
+                yield Types.getBooleanType();
+            }
+            case AssemblyParser.GE -> {
+                Nodes.ge(scope);
+                yield Types.getBooleanType();
+            }
+            case AssemblyParser.GT -> {
+                Nodes.gt(scope);
+                yield Types.getBooleanType();
+            }
+            case AssemblyParser.LT -> {
+                Nodes.lt(scope);
+                yield Types.getBooleanType();
+            }
+            case AssemblyParser.LE -> {
+                Nodes.le(scope);
+                yield Types.getBooleanType();
+            }
             default -> throw new IllegalStateException("Unrecognized operator: " + ctx.bop.getText());
         };
-        return Values.node(node);
     }
 
-    private Value resolveAssignment(AssemblyParser.ExpressionContext ctx) {
-        var assignedCtx = ctx.expression(0);
-        var assignment = resolve0(ctx.expression(1));
-        if(assignedCtx.primary() != null && assignedCtx.primary().IDENTIFIER() != null) {
-            var v = callable.resolveVariable(assignedCtx.primary().IDENTIFIER().getText());
+    private Type resolveAssignment(AssemblyParser.ExpressionContext ctx) {
+        var assigned = ctx.expression(0);
+        var assignment = ctx.expression(1);
+        if(assigned.primary() != null && assigned.primary().IDENTIFIER() != null) {
+            var v = callable.resolveVariable(assigned.primary().IDENTIFIER().getText());
             var cIdx = v.getContextIndex(callable);
+            resolve0(ctx.expression(1));
+            Nodes.dup(scope);
             if(cIdx == -1)
-                Nodes.store(v.index(), assignment, scope);
+                Nodes.store(v.index(), scope);
             else
-                Nodes.storeContextSlot(cIdx, v.index(), assignment, scope);
+                Nodes.storeContextSlot(cIdx, v.index(), scope);
+            return v.type();
         }
-        else if(assignedCtx.bop.getType() == AssemblyParser.DOT && assignedCtx.IDENTIFIER() != null) {
-            var qualifierCtx = assignedCtx.expression(0);
-            var fieldName = assignedCtx.IDENTIFIER().getText();
+        else if(assigned.bop.getType() == AssemblyParser.DOT && assigned.IDENTIFIER() != null) {
+            var qualifierCtx = assigned.expression(0);
+            var fieldName = assigned.IDENTIFIER().getText();
             var klass = findKlass(qualifierCtx.getText());
             if(klass != null) {
                 var field = klass.getStaticFieldByName(fieldName);
-                Nodes.setStatic(field, assignment, scope);
+                resolve0(ctx.expression(1));
+                Nodes.dup(scope);
+                Nodes.setStatic(field, scope);
+                return field.getType();
             }
             else {
-                var qualifier = resolve0(qualifierCtx);
-                var qualifierType = (ClassType) qualifier.getType();
+                var qualifierType = (ClassType) resolve0(qualifierCtx);
+                resolve0(ctx.expression(1));
+                Nodes.dupX1(scope);
                 var field = qualifierType.resolve().getFieldByCode(fieldName);
-                Nodes.setField(qualifier, field, assignment, scope);
+                Nodes.setField(field, scope);
+                return field.getType();
             }
         }
-        return assignment;
+        else if (assigned.LBRACK() != null) {
+            var arrayType = (ArrayType) resolve0(assigned.expression(0));
+            resolve0(assigned.expression(1));
+            resolve0(assignment);
+            Nodes.dupX2(scope);
+            Nodes.setElement(scope);
+            return arrayType.getElementType();
+        }
+        else
+            throw new IllegalStateException("Invalid assignment expression: " + ctx.getText());
     }
 
-    private Value resolveMethodCall(AssemblyParser.ExpressionContext qualifier, AssemblyParser.MethodCallContext methodCall) {
-        List<Value> arguments = methodCall.expressionList() != null ?
-                NncUtils.map(methodCall.expressionList().expression(), this::resolve0) : List.of();
-        Value self;
+    private Type resolveMethodCall(AssemblyParser.ExpressionContext qualifier, AssemblyParser.MethodCallContext methodCall) {
         ClassType type;
         var methodName = methodCall.IDENTIFIER().getText();
         var targetKlass = findKlass(qualifier.getText());
         if (targetKlass != null) {
             type = new ClassType(targetKlass, List.of());
-            self = null;
         } else {
-            self = resolve0(qualifier);
-            type = (ClassType) self.getType();
+            type = (ClassType) resolve0(qualifier);
         }
         List<Type> typeArgs = methodCall.typeArguments() != null ?
                 NncUtils.map(methodCall.typeArguments().typeType(), this::parseType) : List.of();
-        Method method = type.resolve().resolveMethod(methodName, NncUtils.map(arguments, Value::getType), typeArgs, false);
-        return new NodeValue(Nodes.methodCall(self, method, arguments, scope));
+        List<Type> argTypes = methodCall.expressionList() != null ?
+                NncUtils.map(methodCall.expressionList().expression(), this::resolve0) : List.of();
+        Method method = type.resolve().resolveMethod(methodName, argTypes, typeArgs, false);
+        Nodes.methodCall(method, scope);
+        return method.getReturnType();
     }
 
-    private Value resolveThisCall(@Nullable AssemblyParser.ExpressionListContext expressionList) {
-        List<Value> arguments = expressionList != null ?
-                NncUtils.map(expressionList.expression(), this::resolve0) : List.of();
+    private Type resolveThisCall(@Nullable AssemblyParser.ExpressionListContext expressionList) {
         var methodName = currentKlass().getName();
-        var self = getThis();
-        var type = (ClassType) self.getType();
-        Method method = type.resolve().resolveMethod(methodName, NncUtils.map(arguments, Value::getType), List.of(), false);
-        return new NodeValue(Nodes.methodCall(self, method, arguments, scope));
-    }
-
-    private Value resolveSuperCall(@Nullable AssemblyParser.ExpressionListContext expressionList) {
-        List<Value> arguments = expressionList != null ?
+        var type = getThis();
+        List<Type> argTypes = expressionList != null ?
                 NncUtils.map(expressionList.expression(), this::resolve0) : List.of();
+        Method method = type.resolve().resolveMethod(methodName, argTypes, List.of(), false);
+        Nodes.methodCall(method, scope);
+        return null;
+    }
+
+    private Type resolveSuperCall(@Nullable AssemblyParser.ExpressionListContext expressionList) {
         var methodName = requireNonNull(currentKlass().getSuperType()).getKlass().getName();
-        var self = getThis();
-        var type = (ClassType) self.getType();
-        Method method = type.resolve().resolveMethod(methodName, NncUtils.map(arguments, Value::getType), List.of(), false);
-        return new NodeValue(Nodes.methodCall(self, method, arguments, scope));
+        var type = getThis();
+        List<Type> argTypes = expressionList != null ?
+                NncUtils.map(expressionList.expression(), this::resolve0) : List.of();
+        Method method = type.resolve().resolveMethod(methodName, argTypes, List.of(), false);
+        Nodes.methodCall(method, scope);
+        return null;
     }
 
-    private Value resolveGetStatic(Klass klass, String name) {
-        return Values.node(Nodes.getStatic(klass.getStaticFieldByName(name), scope));
+    private Type resolveGetStatic(Klass klass, String name) {
+        var field = klass.getStaticFieldByName(name);
+        Nodes.getStatic(field, scope);
+        return field.getType();
     }
 
-    private Value resolveGetField(AssemblyParser.ExpressionContext qualifier, String name) {
-        var i = resolve(qualifier);
-        if(i.getType() instanceof ArrayType && name.equals("length"))
-            return Values.node(Nodes.arrayLength(scope.nextNodeName("length"), i, scope));
-        else {
-            var klass = ((ClassType) i.getType()).resolve();
+    private Type resolveGetField(AssemblyParser.ExpressionContext qualifier, String name) {
+        var type = resolve0(qualifier);
+        if(type instanceof ArrayType && name.equals("length")) {
+            Nodes.arrayLength(scope.nextNodeName("length"), scope);
+            return Types.getLongType();
+        } else {
+            assert type instanceof ClassType;
+            var klass = ((ClassType) type).resolve();
             var field = klass.getFieldByCode(name);
-            return Values.node(Nodes.getProperty(i, field, scope));
+            Nodes.getProperty(field, scope);
+            return field.getType();
         }
     }
 
-    private Value resolveConditional(AssemblyParser.ExpressionContext condition,
-                                     AssemblyParser.ExpressionContext first,
-                                     AssemblyParser.ExpressionContext second) {
+    private Type resolveConditional(AssemblyParser.ExpressionContext condition,
+                                    AssemblyParser.ExpressionContext first,
+                                    AssemblyParser.ExpressionContext second) {
         var i = callable.nextVariableIndex();
-        var ifNot = Nodes.ifNot(resolve0(condition), null, scope);
-        var result1 = resolve0(first);
-        Nodes.store(i, result1, scope);
+        resolve0(condition);
+        var ifNot = Nodes.ifNot(null, scope);
+        var type1 = resolve0(first);
+        Nodes.store(i, scope);
         var g = Nodes.goto_(scope);
         ifNot.setTarget(Nodes.noop(scope));
-        var result2 = resolve0(second);
-        Nodes.store(i, result2, scope);
+        var type2 = resolve0(second);
+        Nodes.store(i, scope);
         g.setTarget(Nodes.noop(scope));
-        return Values.node(Nodes.load(i, Types.getCompatibleType(result1.getType(), result2.getType()), scope));
+        var type = Types.getCompatibleType(type1, type2);
+        Nodes.load(i, type, scope);
+        return type;
     }
 
-    private Value resolveInstanceOf(AssemblyParser.ExpressionContext operand,
+    private Type resolveInstanceOf(AssemblyParser.ExpressionContext operand,
                                     AssemblyParser.TypeTypeContext type) {
-        return Values.node(Nodes.instanceOf(resolve0(operand), parseType(type), scope));
+        resolve0(operand);
+        Nodes.instanceOf(parseType(type), scope);
+        return Types.getBooleanType();
     }
 
-    private Value resolveArrayAccess(AssemblyParser.ExpressionContext array, AssemblyParser.ExpressionContext index) {
-        return Values.node(Nodes.getElement(resolve0(array), resolve0(index), scope));
+    private Type resolveArrayAccess(AssemblyParser.ExpressionContext array, AssemblyParser.ExpressionContext index) {
+        var arrayType = (ArrayType) resolve0(array);
+        resolve0(index);
+        Nodes.getElement(scope);
+        return arrayType.getElementType();
     }
 
-    private Value resolvePrefix(AssemblyParser.ExpressionContext operand, Token prefix) {
-        var v = resolve0(operand);
-        var node = switch (prefix.getType()) {
-            case AssemblyParser.SUB -> Nodes.negate(v, scope);
-            case AssemblyParser.TILDE -> Nodes.bitwiseComplement(v, scope);
-            case AssemblyParser.BANG -> Nodes.not(v, scope);
+    private Type resolvePrefix(AssemblyParser.ExpressionContext operand, Token prefix) {
+        var type = resolve0(operand);
+         return switch (prefix.getType()) {
+            case AssemblyParser.SUB -> {
+                Nodes.negate(scope);
+                yield type;
+            }
+            case AssemblyParser.TILDE -> {
+                Nodes.bitwiseComplement(scope);
+                yield Types.getLongType();
+            }
+            case AssemblyParser.BANG -> {
+                Nodes.not(scope);
+                yield Types.getBooleanType();
+            }
             default -> throw new IllegalStateException("Unrecognized operator: " + prefix.getText());
         };
-        return Values.node(node);
     }
 
-    private Value resolveFunctionCall(String name, AssemblyParser.ArgumentsContext arguments) {
+    private Type resolveFunctionCall(String name, AssemblyParser.ArgumentsContext arguments) {
         var v = callable.tryResolveVariable(name);
         var exprListCtx = arguments.expressionList();
-        List<Value> args = exprListCtx != null ? NncUtils.map(exprListCtx.expression(), this::resolve0) : List.of();
         if(v != null && v.type() instanceof FunctionType) {
-            return new NodeValue(Nodes.function(
-                    scope.nextNodeName("call"),
-                    scope,
-                    loadVariable(v),
-                    args
-            ));
+            var funcType = (FunctionType) loadVariable(v);
+            if(exprListCtx != null)
+                NncUtils.map(exprListCtx.expression(), this::resolve0);
+            Nodes.function(scope, funcType);
+            return funcType.getReturnType();
         }
         else {
             var func = StdFunction.valueOf(name).get();
-            return Values.node(Nodes.functionCall(scope.nextNodeName("func"),
-                    scope, func, NncUtils.biMap(func.getParameters(), args, (param, arg) ->
-                            new Argument(null, param.getRef(), arg))));
+            if(exprListCtx != null)
+                NncUtils.map(exprListCtx.expression(), this::resolve0);
+            Nodes.functionCall(scope, func);
+            return func.getReturnType();
         }
     }
 
@@ -458,12 +534,14 @@ class AsmExpressionResolver {
         return ((Method) scope.getFlow()).getDeclaringType();
     }
 
-    private Value getThis() {
+    private ClassType getThis() {
         var cIdx = callable.getMethodContextIndex();
         var thisType = callable.getDeclaringKlass().getType();
-        var node =  cIdx == -1 ?
-                Nodes.load(0, thisType, scope) : Nodes.loadContextSlot(cIdx, 0, thisType, scope);
-        return new NodeValue(node);
+        if (cIdx == -1)
+            Nodes.load(0, thisType, scope);
+        else
+            Nodes.loadContextSlot(cIdx, 0, thisType, scope);
+        return thisType;
     }
 
     private List<Parameter> parseParameterList(@Nullable AssemblyParser.FormalParameterListContext parameterList,

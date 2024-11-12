@@ -1,11 +1,12 @@
 package org.metavm.object.view;
 
 import org.metavm.api.EntityType;
+import org.metavm.flow.NodeRT;
 import org.metavm.flow.ScopeRT;
-import org.metavm.flow.Value;
 import org.metavm.object.type.Type;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 @EntityType
 public class IdentityNestedMapping extends NestedMapping {
@@ -17,13 +18,15 @@ public class IdentityNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Value generateMappingCode(Value source, ScopeRT scope) {
-        return source;
+    public Type generateMappingCode(Supplier<NodeRT> getSource, ScopeRT scope) {
+        getSource.get();
+        return type;
     }
 
     @Override
-    public Value generateUnmappingCode(Value view, ScopeRT scope) {
-        return view;
+    public Type generateUnmappingCode(Supplier<NodeRT> viewSupplier, ScopeRT scope) {
+        viewSupplier.get();
+        return type;
     }
 
     @Override

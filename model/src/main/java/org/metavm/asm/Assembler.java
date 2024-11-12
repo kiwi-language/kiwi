@@ -14,10 +14,8 @@ import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.TypeDefDTO;
 import org.metavm.object.type.rest.dto.TypeVariableDTO;
-import org.metavm.util.InternalException;
 import org.metavm.util.LinkedList;
-import org.metavm.util.NamingUtils;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +105,7 @@ public class Assembler {
         );
     }
 
-    private Value parseExpression(AssemblyParser.ExpressionContext ctx,
+    private Type parseExpression(AssemblyParser.ExpressionContext ctx,
                                   AsmCodeGenerator codeGenerator) {
         var callable = (AsmCallable) codeGenerator.scopeNotNull();
         var compilationUnit = callable.getCompilationUnit();
@@ -475,10 +473,15 @@ public class Assembler {
                         .build();
             }
             var enumConstantDef = klass.findEnumConstantDef(ec -> ec.getName().equals(name));
-            if(enumConstantDef == null)
-                enumConstantDef = new EnumConstantDef(klass, name, classInfo.nextEnumConstantOrdinal(), List.of());
-            else
+            if(enumConstantDef == null) {
+                var initializer = MethodBuilder.newBuilder(klass, "$" + name, "$" + name)
+                        .isStatic(true)
+                        .returnType(klass.getType())
+                        .build();
+                enumConstantDef = new EnumConstantDef(klass, name, classInfo.nextEnumConstantOrdinal(), initializer);
+            } else
                 enumConstantDef.setOrdinal(classInfo.nextEnumConstantOrdinal());
+            classInfo.visitedMethods.add(enumConstantDef.getInitializer());
             setAttribute(ctx, AsmAttributeKey.field, field);
             setAttribute(ctx, AsmAttributeKey.enumConstantDef, enumConstantDef);
             return super.visitEnumConstant(ctx);
@@ -734,7 +737,7 @@ public class Assembler {
                 Flows.generateValuesMethodBody(klass);
             cinits.push(cinit);
             processBody.run();
-            Nodes.ret(nextNodeName(), cinit.getScope(), null);
+            Nodes.voidRet(cinit.getScope());
             exitScope();
             cinits.pop();
         }
@@ -799,26 +802,25 @@ public class Assembler {
                 if (block != null) {
                     var rootScope = method.getScope();
                     if (isConstructor && currentClass.isEnum) {
+                        Values.node(Nodes.this_(rootScope));
+                        Values.node(Nodes.load(1, Types.getStringType(), rootScope));
                         Nodes.setField(
-                                nextNodeName(),
-                                Values.node(Nodes.this_(rootScope)),
-                                klass.getField(f -> f.getEffectiveTemplate() == StdField.enumName.get()),
-                                Values.node(Nodes.load(1, Types.getStringType(), rootScope)),
-                                rootScope
+                            klass.getField(f -> f.getEffectiveTemplate() == StdField.enumName.get()),
+                            rootScope
                         );
+                        Values.node(Nodes.this_(rootScope));
+                        Values.node(Nodes.load(2, Types.getLongType(), rootScope));
                         Nodes.setField(
-                                nextNodeName(),
-                                Values.node(Nodes.this_(rootScope)),
                                 klass.getField(f -> f.getEffectiveTemplate() == StdField.enumOrdinal.get()),
-                                Values.node(Nodes.load(2, Types.getLongType(), rootScope)),
                                 rootScope
                         );
                     }
                     processBlock(block, method.getScope());
-                    if (isConstructor)
-                        Nodes.ret(nextNodeName(), rootScope, Values.node(Nodes.this_(rootScope)));
-                    else if (Objects.requireNonNull(returnType).VOID() != null)
-                        Nodes.ret(nextNodeName(), rootScope, null);
+                    if (isConstructor) {
+                        Values.node(Nodes.this_(rootScope));
+                        Nodes.ret(rootScope);
+                    } else if (Objects.requireNonNull(returnType).VOID() != null)
+                        Nodes.voidRet(rootScope);
                 }
                 if (typeParameters != null)
                     typeParameters.accept(this);
@@ -845,10 +847,20 @@ public class Assembler {
             var enumConstantDef = Objects.requireNonNull(klass.findEnumConstantDef(ec -> ec.getName().equals(name)));
             List<AssemblyParser.ExpressionContext> argCtx =
                     ctx.arguments() != null ? ctx.arguments().expressionList().expression() : List.of();
-            enterScope(classInfo.getClassInitializer());
-            var args = NncUtils.map(argCtx, this::parseExpression);
+            var initializer = enumConstantDef.getInitializer();
+            initializer.clearContent();
+            enterScope(new AsmMethod(classInfo, initializer));
+            var scope = initializer.getScope();
+            Nodes.loadConstant(Instances.stringInstance(name), scope);
+            Nodes.loadConstant(Instances.longInstance(enumConstantDef.getOrdinal()), scope);
+            var types = NncUtils.merge(
+                    List.of(Types.getStringType(), Types.getLongType()),
+                    NncUtils.map(argCtx, this::parseExpression)
+            );
+            var constructor = klass.resolveMethod(klass.getName(), types, List.of(), false);
+            Nodes.newObject(scope, constructor, false, false);
+            Nodes.ret(scope);
             exitScope();
-            enumConstantDef.setArguments(args);
             return super.visitEnumConstant(ctx);
         }
 
@@ -873,23 +885,23 @@ public class Assembler {
         private void processStatement(AssemblyParser.StatementContext statement, ScopeRT scope) {
             try {
                 if (statement.RETURN() != null) {
-                    Nodes.ret(
-                            scope.nextNodeName("ret"),
-                            scope,
-                            statement.expression() != null ?
-                                    parseExpression(statement.expression()) : null
-                    );
+                    if(statement.expression() != null) {
+                        parseExpression(statement.expression());
+                        Nodes.ret(scope);
+                    }
+                    else
+                        Nodes.voidRet(scope);
                 }
-                else if(statement.statementExpression != null)
-                    parseExpression(statement.statementExpression);
-                else if (statement.THROW() != null)
-                    Nodes.raise2(scope, parseExpression(statement.expression()));
-                else if (statement.IF() != null) {
-                    var ifNode = Nodes.ifNot(
-                            parseExpression(statement.parExpression().expression()),
-                            null,
-                            scope
-                    );
+                else if(statement.statementExpression != null) {
+                    var type = parseExpression(statement.statementExpression);
+                    if (type != null && !type.isVoid())
+                        Nodes.pop(scope);
+                } else if (statement.THROW() != null) {
+                    parseExpression(statement.expression());
+                    Nodes.raise(scope);
+                } else if (statement.IF() != null) {
+                    parseExpression(statement.parExpression().expression());
+                    var ifNode = Nodes.ifNot(null, scope);
                     parseBlockNodes(statement.block(0), scope);
                     var g = Nodes.goto_(scope);
                     ifNode.setTarget(Nodes.noop(scope));
@@ -899,8 +911,8 @@ public class Assembler {
                 }
                 else if (statement.WHILE() != null) {
                     var entry = Nodes.noop(scope);
-                    var ifNode = Nodes.ifNot(parseExpression(statement.parExpression().expression()),
-                            null, scope);
+                    parseExpression(statement.parExpression().expression());
+                    var ifNode = Nodes.ifNot(null, scope);
                     parseBlockNodes(statement.block(0), scope);
                     var g = Nodes.goto_(scope);
                     g.setTarget(entry);
@@ -912,17 +924,17 @@ public class Assembler {
                     var decl = statement.localVariableDeclaration();
                     var name = decl.IDENTIFIER().getText();
                     if(decl.VAR() != null) {
-                        var value = parseExpression(decl.expression());
-                        var v = callable.declareVariable(name, value.getType());
-                        Nodes.store(v.index(), value, scope);
+                        var type = parseExpression(decl.expression());
+                        var v = callable.declareVariable(name, type);
+                        Nodes.store(v.index(), scope);
                     } else {
                         var type = parseType(decl.typeType(), callable, callable.getCompilationUnit());
                         var v = callable.declareVariable(name, type);
                         if (decl.expression() != null) {
-                            var value = parseExpression(decl.expression());
-                            if(!type.isAssignableFrom(value.getType()))
+                            var type1 = parseExpression(decl.expression());
+                            if(!type.isAssignableFrom(type1))
                                 throw new IllegalStateException("Invalid initializer for variable: " + name);
-                            Nodes.store(v.index(), value, scope);
+                            Nodes.store(v.index(), scope);
                         }
                     }
                 }
@@ -938,11 +950,11 @@ public class Assembler {
             return lastNode != null ? lastNode.getNextExpressionTypes().getType(expression) : expression.getType();
         }
 
-        private Value parseExpression(AssemblyParser.ExpressionContext expression) {
+        private Type parseExpression(AssemblyParser.ExpressionContext expression) {
             return Assembler.this.parseExpression(expression, this);
         }
 
-        private List<Value> parseExpressionList(@Nullable AssemblyParser.ExpressionListContext expressionList) {
+        private List<Type> parseExpressionList(@Nullable AssemblyParser.ExpressionListContext expressionList) {
             if (expressionList == null)
                 return List.of();
             return NncUtils.map(expressionList.expression(), this::parseExpression);

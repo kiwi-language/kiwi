@@ -5,14 +5,10 @@ import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import org.metavm.api.lang.Indices;
-import org.metavm.flow.IndexQueryKey;
-import org.metavm.flow.IndexQueryKeyItem;
-import org.metavm.flow.Value;
-import org.metavm.flow.Values;
+import org.metavm.flow.NodeRT;
 import org.metavm.object.type.Index;
 import org.metavm.util.ReflectionUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -68,7 +64,7 @@ public class IndexUtilsCallResolver implements org.metavm.autograph.MethodCallRe
     }
 
     @Override
-    public Value resolve(PsiMethodCallExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
+    public NodeRT resolve(PsiMethodCallExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
         var methodGenerics = methodCallExpression.resolveMethodGenerics();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var indexPsiClassType = requireNonNull(((PsiClassType) requireNonNull(
@@ -78,29 +74,24 @@ public class IndexUtilsCallResolver implements org.metavm.autograph.MethodCallRe
         var index = requireNonNull(indexPsiClassType.getUserData(org.metavm.autograph.Keys.INDEX));
         var args = methodCallExpression.getArgumentList().getExpressions();
         if (methodName.equals("select")) {
-            var key = resolveIndexQueryKey(index, (PsiCallExpression) args[0], expressionResolver);
-            return Values.node(methodGenerator.createIndexSelect(index, key));
+            resolveIndexQueryKey(index, (PsiCallExpression) args[0], expressionResolver);
+            return methodGenerator.createIndexSelect(index);
         } else if (methodName.equals("selectFirst")) {
-            var key = resolveIndexQueryKey(index, (PsiCallExpression) args[0], expressionResolver);
-            return Values.node(methodGenerator.createIndexSelectFirst(index, key));
+            resolveIndexQueryKey(index, (PsiCallExpression) args[0], expressionResolver);
+            return methodGenerator.createIndexSelectFirst(index);
         } else {
-            var from = resolveIndexQueryKey(index, (PsiCallExpression) args[0], expressionResolver);
-            var to = resolveIndexQueryKey(index, (PsiCallExpression) args[1], expressionResolver);
-            var node = methodName.equals("count") ?
-                    methodGenerator.createIndexCount(index, from, to) :
-                    methodGenerator.createIndexScan(index, from, to);
-            return Values.node(node);
+            resolveIndexQueryKey(index, (PsiCallExpression) args[0], expressionResolver);
+            resolveIndexQueryKey(index, (PsiCallExpression) args[1], expressionResolver);
+            return methodName.equals("count") ?
+                    methodGenerator.createIndexCount(index) :
+                    methodGenerator.createIndexScan(index);
         }
     }
 
-    private IndexQueryKey resolveIndexQueryKey(Index index, PsiCallExpression callExpression, org.metavm.autograph.ExpressionResolver expressionResolver) {
-        var items = new ArrayList<IndexQueryKeyItem>();
+    private void resolveIndexQueryKey(Index index, PsiCallExpression callExpression, org.metavm.autograph.ExpressionResolver expressionResolver) {
         for (int i = 0; i < index.getFields().size(); i++) {
-            var indexField = index.getFields().get(i);
-            var valueExpr = expressionResolver.resolve(requireNonNull(callExpression.getArgumentList()).getExpressions()[i]);
-            items.add(new IndexQueryKeyItem(indexField, valueExpr));
+            expressionResolver.resolve(requireNonNull(callExpression.getArgumentList()).getExpressions()[i]);
         }
-        return new IndexQueryKey(index, items);
     }
 
 }

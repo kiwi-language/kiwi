@@ -4,7 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.flow.*;
+import org.metavm.flow.Nodes;
+import org.metavm.flow.ScopeRT;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Type;
@@ -12,6 +13,7 @@ import org.metavm.object.view.rest.dto.DirectFieldMappingParam;
 import org.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
+import java.util.function.Supplier;
 
 @EntityType
 public class DirectFieldMapping extends FieldMapping implements LocalKey, GenericElement {
@@ -56,14 +58,16 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     }
 
     @Override
-    public Value generateReadCode0(ScopeRT scope) {
-        var source = Nodes.thisProperty(getSourceField(), scope);
-        return Values.node(source);
+    public Type generateReadCode0(ScopeRT scope) {
+        Nodes.thisProperty(getSourceField(), scope);
+        return getSourceField().getType();
     }
 
     @Override
-    protected void generateWriteCode0(ScopeRT scope, Value fieldValue) {
-        Nodes.setField(Values.node(Nodes.this_(scope)), getSourceField(), fieldValue, scope);
+    protected void generateWriteCode0(Supplier<Type> getFieldValue, ScopeRT scope) {
+        Nodes.this_(scope);
+        getFieldValue.get();
+        Nodes.setField(getSourceField(), scope);
     }
 
     @Override

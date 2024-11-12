@@ -1,13 +1,9 @@
 package org.metavm.flow.rest;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
 
-public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObjectNodeParam> {
-
-    @Nullable
-    private final ParentRefDTO parent;
+public class NewObjectNodeParam extends CallNodeParam {
 
     private final boolean ephemeral;
 
@@ -17,16 +13,12 @@ public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObj
                               @Nullable String flowCode,
                               @Nullable List<String> typeArgumentIds,
                               @Nullable String type,
-                              List<ArgumentDTO> arguments,
-                              List<ValueDTO> argumentValues,
-                              @Nullable ParentRefDTO parent,
                               boolean ephemeral,
                               boolean unbound,
                               List<String> capturedExpressionTypes,
-                              List<String> capturedExpressions
+                              List<Long> capturedVariables
     ) {
-        super(flowRef, flowCode, typeArgumentIds, type, arguments, argumentValues, capturedExpressionTypes, capturedExpressions);
-        this.parent = parent;
+        super(flowRef, flowCode, typeArgumentIds, type, capturedExpressionTypes, capturedVariables);
         this.ephemeral = ephemeral;
         this.unbound = unbound;
     }
@@ -40,22 +32,9 @@ public class NewObjectNodeParam extends CallNodeParam implements NewParam<NewObj
     }
 
     @Nullable
-    public ParentRefDTO getParent() {
-        return parent;
-    }
-
-    @Nullable
     @Override
     public MethodRefDTO getFlowRef() {
         return (MethodRefDTO) super.getFlowRef();
-    }
-
-    @Override
-    public NewObjectNodeParam copyWithParentRef(ParentRefDTO parentRef) {
-        return new NewObjectNodeParam(
-                getFlowRef(), getFlowCode(), getTypeArguments(), getType(), getArguments(), getArgumentValues(), parentRef, ephemeral, unbound,
-                new ArrayList<>(getCapturedExpressionTypes()), new ArrayList<>(getCapturedExpressions())
-        );
     }
 
     @Override

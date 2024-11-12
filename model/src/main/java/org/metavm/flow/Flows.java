@@ -132,18 +132,17 @@ public class Flows {
         var valuesMethod = klass.getMethod(Flows::isValuesMethod);
         valuesMethod.clearContent();
         var scope = valuesMethod.getScope();
-        var values = Nodes.newArray("values", null, new ArrayType(klass.getType(), ArrayKind.READ_WRITE),
-                null, null, scope);
+        var arrayType = new ArrayType(klass.getType(), ArrayKind.READ_WRITE);
+        Nodes.newArray(arrayType, scope);
+        var arrayVar = scope.nextVariableIndex();
+        Nodes.store(arrayVar, scope);
         for (var ecd : klass.getEnumConstantDefs()) {
-            Nodes.addElement(
-                    "add_" + ecd.getName(),
-                    null,
-                    Values.node(values),
-                    Values.node(Nodes.getStatic(ecd.getField(), scope)),
-                    scope
-            );
+            Nodes.load(arrayVar, arrayType, scope);
+            Nodes.getStatic(ecd.getField(), scope);
+            Nodes.addElement(scope);
         }
-        Nodes.ret("return", scope, Values.node(values));
+        Nodes.load(arrayVar, arrayType, scope);
+        Nodes.ret(scope);
     }
 
 }

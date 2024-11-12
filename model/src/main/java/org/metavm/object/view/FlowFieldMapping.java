@@ -13,8 +13,7 @@ import org.metavm.util.BusinessException;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Objects;
+import java.util.function.Supplier;
 
 @EntityType
 public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericElement {
@@ -71,28 +70,18 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     }
 
     @Override
-    public Value generateReadCode0(ScopeRT scope) {
-        var node = Nodes.methodCall(
-                getGetter().getName(),
-                Values.node(Nodes.this_(scope)),
-                getterRef.resolve(),
-                List.of(),
-                scope
-        );
-        return Values.node(node);
+    public Type generateReadCode0(ScopeRT scope) {
+        var getter = getterRef.resolve();
+        Nodes.this_(scope);
+        Nodes.methodCall(getter, scope);
+        return getter.getReturnType();
     }
 
     @Override
-    protected void generateWriteCode0(ScopeRT scope, Value fieldValue) {
-        var setter = getSetter();
-        Objects.requireNonNull(setter);
-        Nodes.methodCall(
-                setter.getName(),
-                Values.node(Nodes.this_(scope)),
-                Objects.requireNonNull(setterRef).resolve(),
-                List.of(Nodes.argument(setter, 0, fieldValue)),
-                scope
-        );
+    protected void generateWriteCode0(Supplier<Type> getFieldValue, ScopeRT scope) {
+        Nodes.this_(scope);
+        getFieldValue.get();
+        Nodes.methodCall(getSetter(), scope);
     }
 
     @Override
@@ -124,7 +113,7 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     }
 
     @Nullable
-    public Flow getSetter() {
+    public Method getSetter() {
         return NncUtils.get(setterRef, MethodRef::resolve);
     }
 

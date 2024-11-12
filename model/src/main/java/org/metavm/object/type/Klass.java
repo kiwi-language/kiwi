@@ -585,6 +585,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return NncUtils.find(methods.toList(), predicate);
     }
 
+    public Method getSelfMethod(Predicate<Method> predicate) {
+        return Objects.requireNonNull(findSelfMethod(predicate));
+    }
+
     public Method getMethod(Predicate<Method> predicate) {
         return getMethod(predicate, () -> "Can not find method with predicate in klass " + this);
     }

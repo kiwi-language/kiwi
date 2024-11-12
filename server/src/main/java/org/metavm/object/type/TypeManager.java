@@ -22,7 +22,6 @@ import org.metavm.object.type.rest.dto.*;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.version.Versions;
 import org.metavm.task.AddFieldTaskGroup;
-import org.metavm.task.DDLTask;
 import org.metavm.task.TaskManager;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -31,8 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
 import java.util.LinkedList;
+import java.util.*;
 
 import static org.metavm.util.Constants.DDL_SESSION_TIMEOUT;
 

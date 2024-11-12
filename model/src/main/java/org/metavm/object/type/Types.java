@@ -313,16 +313,16 @@ public class Types {
                 .returnType(sam.getReturnType())
                 .build();
         var scope = flow.getScope();
-        var args = new ArrayList<Value>();
+        Nodes.thisProperty(funcField, scope);
         int numParams = flow.getParameters().size();
         for (int i = 0; i < numParams; i++) {
-            args.add(Values.node(Nodes.argument(flow, i)));
+            Nodes.argument(flow, i);
         }
-        var funcNode = Nodes.function("function", scope,
-                Values.node(Nodes.thisProperty(funcField, scope)), args
-        );
-        var returnValue = flow.getReturnType().isVoid() ? null : Values.node(funcNode);
-        new ReturnNode(null, "return", null, funcNode, flow.getScope(), returnValue);
+        Nodes.function(scope, funcType);
+        if(flow.getReturnType().isVoid())
+            Nodes.voidRet(scope);
+        else
+            Nodes.ret(scope);
         klass.accept(new MaxesComputer());
         return klass.getParameterized(NncUtils.map(typeVars, TypeVariable::getType)).getType();
     }
@@ -359,29 +359,20 @@ public class Types {
                 .staticType(methodStaticType)
                 .build();
         var scope = method.getScope();
-        var args = new ArrayList<Value>();
+        Nodes.loadConstant(function, scope);
         var paramTypeIt = function.getType().getParameterTypes().iterator();
         int i = 1;
         for (var methodParam : method.getParameters()) {
             var paramType = paramTypeIt.next();
-            if(methodParam.getType().isNullable() && paramType.isNotNull()) {
-                args.add(Values.node(
-                        Nodes.nonNull(Values.node(Nodes.load(i++, methodParam.getType(), scope)), scope)
-                ));
-            }
-            else
-                args.add(Values.node(Nodes.load(i++, methodParam.getType(), scope)));
+            Nodes.load(i++, methodParam.getType(), scope);
+            if(methodParam.getType().isNullable() && paramType.isNotNull())
+                Nodes.nonNull(scope);
         }
-        var func = Nodes.function(
-                "function",
-                scope,
-                Values.constant(function),
-                args
-        );
+        Nodes.function(scope, function.getType());
         if (sam.getReturnType().isVoid())
-            Nodes.ret("ret", scope, null);
+            Nodes.voidRet(scope);
         else
-            Nodes.ret("ret", scope, Values.node(func));
+            Nodes.ret(scope);
         klass.accept(new MaxesComputer());
         return klass;
     }

@@ -7,8 +7,6 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.ExceptionNative;
-import org.metavm.expression.FlowParsingContext;
-import org.metavm.flow.rest.CastNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
@@ -16,33 +14,22 @@ import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeParser;
 import org.metavm.util.Instances;
 
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 @EntityType
 public class CastNode extends NodeRT {
 
     public static CastNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        var param = (CastNodeParam) nodeDTO.param();
         var node = (CastNode) context.getNode(Id.parse(nodeDTO.id()));
-        var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var object = ValueFactory.create(param.object(), parsingContext);
         var type = TypeParser.parseType(nodeDTO.outputType(), context);
         if (node == null)
-            node = new CastNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), type, prev, scope, object);
-        else {
-            node.setOutputType(type);
-            node.setValue(object);
-        }
+            node = new CastNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, scope);
         return node;
     }
 
-    private @NotNull Value object;
-
-    public CastNode(Long tmpId, String name, @Nullable String code, @NotNull Type outputType,
-                    NodeRT previous, ScopeRT scope, @NotNull Value object) {
-        super(tmpId, name, code, outputType, previous, scope);
-        this.object = object;
+    public CastNode(Long tmpId, String name, @NotNull Type outputType,
+                    NodeRT previous, ScopeRT scope) {
+        super(tmpId, name, outputType, previous, scope);
     }
 
     @Override
@@ -51,16 +38,12 @@ public class CastNode extends NodeRT {
     }
 
     @Override
-    protected CastNodeParam getParam(SerializeContext serializeContext) {
-        return new CastNodeParam(object.toDTO());
+    protected Object getParam(SerializeContext serializeContext) {
+        return null;
     }
 
     public @NotNull Type getType() {
         return Objects.requireNonNull(super.getType());
-    }
-
-    public void setValue(@NotNull Value object) {
-        this.object = object;
     }
 
     @Override
@@ -69,25 +52,32 @@ public class CastNode extends NodeRT {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        var inst = object.evaluate(frame);
+    public int execute(MetaFrame frame) {
+        var inst = frame.pop();
         var type = getType();
-        if (type.isInstance(inst))
-            return next(inst);
-        else if(type.isConvertibleFrom(inst.getType()))
-            return next(type.convert(inst));
-        else {
+        if (type.isInstance(inst)) {
+            frame.push(inst);
+            return MetaFrame.STATE_NEXT;
+        } else if(type.isConvertibleFrom(inst.getType())) {
+            frame.push(type.convert(inst));
+            return MetaFrame.STATE_NEXT;
+        } else {
             var exception = ClassInstance.allocate(StdKlass.exception.get().getType());
             var exceptionNative = new ExceptionNative(exception);
             exceptionNative.Exception(Instances.stringInstance(
                     String.format("Can not cast instance '%s' to type '%s'", inst.getTitle(), type.getName())
             ), frame);
-            return NodeExecResult.exception(exception);
+            return frame.catchException(this, exception);
         }
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write( object.getText() + " as " + getType().getName());
+        writer.write( "cast " + getType().getName());
+    }
+
+    @Override
+    public int getStackChange() {
+        return 0;
     }
 }

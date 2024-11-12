@@ -2,13 +2,13 @@ package org.metavm.object.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
+import org.metavm.flow.NodeRT;
 import org.metavm.flow.Nodes;
 import org.metavm.flow.ScopeRT;
-import org.metavm.flow.Value;
-import org.metavm.flow.Values;
 import org.metavm.object.type.Type;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 @EntityType
 public class ObjectNestedMapping extends NestedMapping {
@@ -20,15 +20,19 @@ public class ObjectNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Value generateMappingCode(Value source, ScopeRT scope) {
-        var mapNode = Nodes.map(scope.nextNodeName("nestedMapping"), scope, source, mappingRef.resolve());
-        return Values.node(mapNode);
+    public Type generateMappingCode(Supplier<NodeRT> getSource, ScopeRT scope) {
+        getSource.get();
+        var mapping = mappingRef.resolve();
+        Nodes.map(scope, mapping);
+        return mapping.getTargetType();
     }
 
     @Override
-    public Value generateUnmappingCode(Value view, ScopeRT scope) {
-        var source = Nodes.unmap(scope.nextNodeName("unmap"), scope, view, mappingRef.resolve());
-        return Values.node(source);
+    public Type generateUnmappingCode(Supplier<NodeRT> viewSupplier, ScopeRT scope) {
+        viewSupplier.get();
+        var mapping = mappingRef.resolve();
+        Nodes.unmap(scope, mapping);
+        return mapping.getSourceType();
     }
 
     public ObjectMapping getMapping() {

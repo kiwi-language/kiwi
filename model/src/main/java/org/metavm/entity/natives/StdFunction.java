@@ -49,7 +49,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             (func, args, callContext) -> {
                 if (args.get(0) instanceof Reference ref) {
                     ref.resolve().setSourceRef(new SourceRef((Reference) args.get(1), null));
-                    return FlowExecResult.of(Instances.nullInstance());
+                    return FlowExecResult.of(null);
                 } else
                     throw new InternalException("Can not set source for a non-durable instance: " + args.get(0));
             }),
@@ -89,7 +89,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (session == null || !session.isActive())
                     throw new BusinessException(ErrorCode.LOGIN_REQUIRED);
                 session.setEntry(key, value);
-                return FlowExecResult.of(Instances.nullInstance());
+                return FlowExecResult.of(null);
             }),
     removeSessionEntry(
             "boolean removeSessionEntry(string key)",
@@ -123,7 +123,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             List.of(ReflectionUtils.getMethod(Lang.class, "print", Object.class)),
             (func, args, callContext) -> {
                 System.out.println(args.get(0).getTitle());
-                return FlowExecResult.of(Instances.nullInstance());
+                return FlowExecResult.of(null);
             }),
     delete(
             "void delete(any instance)",
@@ -134,7 +134,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var instance = args.get(0);
                 if (instance instanceof Reference ref) {
                     entityContext.getInstanceContext().remove(ref.resolve());
-                    return FlowExecResult.of(Instances.nullInstance());
+                    return FlowExecResult.of(null);
                 } else
                     throw new BusinessException(ErrorCode.DELETE_NON_DURABLE_INSTANCE, instance);
             }),
@@ -145,7 +145,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             (func, args, callContext) -> {
                 var key = (StringValue) args.get(0);
                 ContextUtil.setUserData(key.getValue(), args.get(1));
-                return FlowExecResult.of(Instances.nullInstance());
+                return FlowExecResult.of(null);
             }),
     getContext(
             "any|null getContext(string key)",
@@ -388,7 +388,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                         ((StringValue) args.get(1)).getValue(),
                         ((StringValue) args.get(2)).getValue()
                 );
-                return FlowExecResult.of(Instances.nullInstance());
+                return FlowExecResult.of(null);
             }),
     secureRandom(
             "string secureRandom(long length)",
@@ -438,7 +438,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var list = args.get(0).resolveObject();
                 var nat = new ListNative(list);
                 nat.sort(callContext);
-                return FlowExecResult.of(Instances.nullInstance());
+                return FlowExecResult.of(null);
             }
     ),
     sortArray(
@@ -461,7 +461,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                             Flows.invokeVirtual(cmpMethod, comparator, List.of(e1,e2), callContext
                     )));
                 }
-                return FlowExecResult.of(Instances.nullInstance());
+                return FlowExecResult.of(null);
             }
     ),
     copyOfArray(
@@ -542,7 +542,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var length = ((LongValue) args.get(4)).getValue().intValue();
                 for(int i = srcPos, j = destPos, k = 0; k < length; i++, j++, k++)
                     dest.setElement(j, src.getElement(i));
-                return FlowExecResult.of(Instances.nullInstance());
+                return FlowExecResult.of(null);
             }
     ),
     reverse(
@@ -553,7 +553,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var list = args.get(0).resolveObject();
                 var nat = new ListNative(list);
                 nat.reverse();
-                return FlowExecResult.of(Instances.nullInstance());
+                return FlowExecResult.of(null);
             }
     ),
     getClass(

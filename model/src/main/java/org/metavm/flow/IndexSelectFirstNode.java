@@ -2,17 +2,17 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
-import org.metavm.expression.FlowParsingContext;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.IndexSelectFirstNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Index;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
-
-import javax.annotation.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
@@ -22,37 +22,25 @@ public class IndexSelectFirstNode extends NodeRT {
     public static IndexSelectFirstNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var param = (IndexSelectFirstNodeParam) nodeDTO.param();
         var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
-        var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var key = IndexQueryKey.create(param.key(), context, parsingContext);
         var node = (IndexSelectFirstNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node != null) {
-            node.setIndex(index);
-            node.setKey(key);
-        } else
-            node = new IndexSelectFirstNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, index, key);
+        if (node == null)
+            node = new IndexSelectFirstNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, index);
         return node;
     }
 
     private Index index;
-    private IndexQueryKey key;
 
-    public IndexSelectFirstNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope,
-                                Index index, IndexQueryKey key) {
-        super(tmpId, name, code, index.getDeclaringType().getType(), previous, scope);
+    public IndexSelectFirstNode(Long tmpId, String name, NodeRT previous, ScopeRT scope,
+                                Index index) {
+        super(tmpId, name, null, previous, scope);
         this.index = index;
-        this.key = key;
     }
 
     @Override
     protected IndexSelectFirstNodeParam getParam(SerializeContext serializeContext) {
         return new IndexSelectFirstNodeParam(
-                serializeContext.getStringId(index),
-                key.toDTO(serializeContext)
+                serializeContext.getStringId(index)
         );
-    }
-
-    public void setKey(IndexQueryKey key) {
-        this.key = key;
     }
 
     public void setIndex(Index index) {
@@ -64,23 +52,30 @@ public class IndexSelectFirstNode extends NodeRT {
     }
 
     @Override
-    public ClassType getType() {
-        return requireNonNull((ClassType) super.getType());
+    public Type getType() {
+        return Types.getNullableType(index.getDeclaringType().getType());
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        var result = frame.instanceRepository().selectFirstByKey(key.buildIndexKey(frame));
-        return next(NncUtils.orElse(result, Instances.nullInstance()));
+    public int execute(MetaFrame frame) {
+        var result = frame.instanceRepository().selectFirstByKey(frame.loadIndexKey(index));
+        frame.push(NncUtils.orElse(result, Instances.nullInstance()));
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("indexSelectFirst(" + index.getName() + ", " + key.getText() + ")");
+        writer.write("indexSelectFirst(" + index.getName() + ", " +  ")");
+    }
+
+    @Override
+    public int getStackChange() {
+        return 1 - index.getFields().size();
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitIndexSelectFirstNode(this);
     }
+
 }

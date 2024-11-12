@@ -1,12 +1,18 @@
 package org.metavm.object.instance.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.flow.*;
+import org.metavm.flow.FlowExecResult;
+import org.metavm.flow.Flows;
+import org.metavm.flow.Lambda;
+import org.metavm.flow.MetaFrame;
 import org.metavm.util.InstanceOutput;
+import org.metavm.util.InternalException;
 
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 public class LambdaValue extends FunctionValue {
 
     private final Lambda lambda;
@@ -45,6 +51,13 @@ public class LambdaValue extends FunctionValue {
 
     @Override
     public FlowExecResult execute(List<? extends Value> arguments, CallContext callContext) {
-        return createFrame(arguments, callContext.instanceRepository()).execute();
+        try {
+            return createFrame(arguments, callContext.instanceRepository()).execute();
+        } catch (Exception e) {
+            log.info("Fail to execute lambda");
+            log.info(lambda.getText());
+            throw new InternalException("fail to lambda", e);
+        }
     }
+
 }

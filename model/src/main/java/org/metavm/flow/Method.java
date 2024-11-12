@@ -527,4 +527,9 @@ public class Method extends Flow implements Property, GenericElement {
         return false;
     }
 
+    @Override
+    public int getInputCount() {
+        return _static || isConstructor ? getParameters().size() : 1 + getParameters().size();
+    }
+
 }

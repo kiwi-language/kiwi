@@ -280,14 +280,6 @@ public abstract class ElementVisitor<R> {
         return visitCompositeType(type);
     }
 
-    public R visitArgument(Argument argument) {
-        return visitElement(argument);
-    }
-
-    public R visitParentRef(ParentRef parentRef) {
-        return visitElement(parentRef);
-    }
-
     public R visitExpressionPlaceholder(ExpressionPlaceholder expressionPlaceholder) {
         return visitExpression(expressionPlaceholder);
     }
@@ -314,10 +306,6 @@ public abstract class ElementVisitor<R> {
 
     public R visitDefaultObjectMapping(FieldsObjectMapping mapping) {
         return visitObjectMapping(mapping);
-    }
-
-    public R visitComputedFieldMapping(ComputedFieldMapping computedFieldMapping) {
-        return visitFieldMapping(computedFieldMapping);
     }
 
     public R visitCopyNode(CopyNode copyNode) {
@@ -572,4 +560,35 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
+    public R visitLoadConstantNode(LoadConstantNode node) {
+        return visitNode(node);
+    }
+
+    public R visitReturn(VoidReturnNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDupNode(DupNode node) {
+        return visitNode(node);
+    }
+
+    public R visitNewArrayWithDimsNode(NewArrayWithDimsNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadTypeNode(LoadTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitPopNode(PopNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDupX2Node(DupX2Node node) {
+        return visitNode(node);
+    }
+
+    public R visitDupX1Node(DupX1Node node) {
+        return visitNode(node);
+    }
 }

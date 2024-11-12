@@ -9,8 +9,6 @@ import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 public class NodeDTOTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(NodeDTOTest.class);
@@ -20,15 +18,12 @@ public class NodeDTOTest extends TestCase {
                 "1",
                 "1",
                 "Test",
-                null,
                 NodeKind.ADD_OBJECT.code(),
                 null,
                 "1",
                 new AddObjectNodeParam(
                         "1",
-                        true,
-                        false, List.of(),
-                        null
+                        false
                 ),
                 null,
                 "1",

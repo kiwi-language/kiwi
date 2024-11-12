@@ -1,8 +1,10 @@
 package org.metavm.object.type;
 
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
-import org.metavm.expression.TypeParsingContext;
+import org.metavm.entity.Attribute;
+import org.metavm.entity.GenericDeclaration;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.*;
 import org.metavm.flow.rest.*;
 import org.metavm.object.instance.InstanceFactory;
@@ -294,23 +296,20 @@ public abstract class TypeFactory {
         var id = enumConstantDefDTO.id() != null ? Id.parse(enumConstantDefDTO.id()) : null;
         EnumConstantDef ec = id != null ? declaringKlass.findEnumConstantDef(e -> e.idEquals(id)) : null;
         var context = saveTypeBatch.getContext();
-        var parsingContext = new TypeParsingContext(context.getInstanceContext(), new ContextTypeDefRepository(context), declaringKlass);
-        var args = NncUtils.map(enumConstantDefDTO.arguments(), a -> ValueFactory.create(a, parsingContext));
+        var initializer = context.getMethod(enumConstantDefDTO.initializerId());
         if(ec == null) {
             ec = new EnumConstantDef(
                     declaringKlass,
                     enumConstantDefDTO.name(),
                     enumConstantDefDTO.ordinal(),
-                    args
+                    initializer
             );
             saveTypeBatch.addNewEnumConstantDef(ec);
         }
         else {
-            if(enumConstantDefDTO.name().equals(ec.getName()) || enumConstantDefDTO.ordinal() != ec.getOrdinal()
-                    || !args.equals(ec.getArguments())) {
+            if(enumConstantDefDTO.name().equals(ec.getName()) || enumConstantDefDTO.ordinal() != ec.getOrdinal()) {
                 ec.setName(enumConstantDefDTO.name());
                 ec.setOrdinal(enumConstantDefDTO.ordinal());
-                ec.setArguments(args);
                 saveTypeBatch.addChangedEnumConstantDef(ec);
             }
         }

@@ -58,13 +58,17 @@ public class FlowManagerTest extends TestCase {
                     .isStatic(true)
                     .build();
             var scope = method.getScope();
-            var if_ = Nodes.if_(Values.node(Nodes.argument(method, 0)), null, scope);
+            Nodes.argument(method, 0);
+            var if_ = Nodes.if_(null, scope);
             var i = scope.nextVariableIndex();
-            Nodes.store(i, Values.constantFalse(), scope);
+            Nodes.loadConstant(Instances.falseInstance(), scope);
+            Nodes.store(i, scope);
             var g = Nodes.goto_(scope);
-            if_.setTarget(Nodes.store(i, Values.constantTrue(), scope));
+            if_.setTarget(Nodes.loadConstant(Instances.trueInstance(), scope));
+            Nodes.store(i, scope);
             g.setTarget(Nodes.noop(scope));
-            Nodes.ret("ret", scope, Values.node(Nodes.load(i, Types.getBooleanType(), scope)));
+            Nodes.load(i, Types.getBooleanType(), scope);
+            Nodes.ret(scope);
             context.bind(klass);
             klass.accept(new FlowAnalyzer());
             klass.accept(new MaxesComputer());

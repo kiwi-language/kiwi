@@ -1,64 +1,42 @@
 package org.metavm.flow;
 
-import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.ReadWriteArray;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.GetUniqueNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.Types;
 import org.metavm.object.type.UnionType;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
-
-import javax.annotation.Nullable;
-import java.util.List;
 
 @EntityType
 public class GetUniqueNode extends NodeRT {
 
     public static GetUniqueNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        GetUniqueNodeParam param = nodeDTO.getParam();
-        Index index = context.getEntity(Index.class, Id.parse(param.indexId()));
-        var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var type = Types.getNullableType(index.getDeclaringType().getType());
-        var values = NncUtils.map(param.values(), v -> ValueFactory.create(v, parsingContext));
         GetUniqueNode node = (GetUniqueNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node != null) {
-            node.setIndex(index);
-            node.setValues(values);
-        } else
-            node = new GetUniqueNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), (UnionType) type, index, prev, scope, values);
+        if (node == null) {
+            GetUniqueNodeParam param = nodeDTO.getParam();
+            Index index = context.getEntity(Index.class, Id.parse(param.indexId()));
+            var type = Types.getNullableType(index.getDeclaringType().getType());
+            node = new GetUniqueNode(nodeDTO.tmpId(), nodeDTO.name(), (UnionType) type, index, prev, scope);
+        }
         return node;
     }
 
     private Index index;
-    @ChildEntity
-    private final ReadWriteArray<org.metavm.flow.Value> values = addChild(new ReadWriteArray<>(org.metavm.flow.Value.class), "values");
 
-    public GetUniqueNode(Long tmpId, String name, @Nullable String code, UnionType type, Index index, NodeRT previous, ScopeRT scope, List<org.metavm.flow.Value> values) {
-        super(tmpId, name, code, type, previous, scope);
+    public GetUniqueNode(Long tmpId, String name, UnionType type, Index index, NodeRT previous, ScopeRT scope) {
+        super(tmpId, name, type, previous, scope);
         this.index = index;
-        this.values.addAll(values);
     }
 
     @Override
     protected GetUniqueNodeParam getParam(SerializeContext serializeContext) {
-        return new GetUniqueNodeParam(
-                index.getStringId(),
-                NncUtils.map(values, org.metavm.flow.Value::toDTO)
-        );
-    }
-
-    public void setValues(List<org.metavm.flow.Value> values) {
-        this.values.reset(values);
+        return new GetUniqueNodeParam(index.getStringId());
     }
 
     public void setIndex(Index index) {
@@ -70,21 +48,22 @@ public class GetUniqueNode extends NodeRT {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        Value result = frame.instanceRepository().selectFirstByKey(buildIndexKey(frame));
+    public int execute(MetaFrame frame) {
+        Value result = frame.instanceRepository().selectFirstByKey(frame.loadIndexKey(index));
         if (result == null)
             result = Instances.nullInstance();
-        return next(result);
+        frame.push(result);
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("getUnique(" + index.getName() + ", " +
-                NncUtils.join(values, org.metavm.flow.Value::getText, ", ") + ")");
+        writer.write("getUnique(" + index.getName() + ")");
     }
 
-    private IndexKeyRT buildIndexKey(MetaFrame frame) {
-        return index.createIndexKey(NncUtils.map(values, fp -> fp.evaluate(frame)));
+    @Override
+    public int getStackChange() {
+        return 1 - index.getFields().size();
     }
 
     @Override

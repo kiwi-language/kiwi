@@ -7,9 +7,11 @@ import org.metavm.entity.LoadAware;
 import org.metavm.flow.*;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.UnionType;
+import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 @EntityType
 public class UnionNestedMapping extends NestedMapping implements LoadAware {
@@ -41,67 +43,67 @@ public class UnionNestedMapping extends NestedMapping implements LoadAware {
     }
 
     @Override
-    public Value generateMappingCode(Value source, ScopeRT scope) {
+    public Type generateMappingCode(Supplier<NodeRT> getSource, ScopeRT scope) {
         JumpNode lastIfNode = null;
         GotoNode lastGoto = null;
         int i = -1;
         var gotoNodes = new ArrayList<GotoNode>();
         for (var memberMapping : memberMappings) {
-            var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
-                     Values.node(
-                             Nodes.instanceOf(source, memberMapping.sourceType(), scope)
-                     ),
-                    null,
-                    scope
-            );
+            getSource.get();
+            Nodes.instanceOf(memberMapping.sourceType(), scope);
+            var ifNode = Nodes.ifNot(null, scope);
             if(lastIfNode != null)
                 lastIfNode.setTarget(lastGoto.getSuccessor());
             lastIfNode = ifNode;
-            var castSource = Nodes.castNode(scope.nextNodeName("castSource"),
-                    memberMapping.sourceType(), scope, source);
-            var value = memberMapping.nestedMapping().generateMappingCode(Values.node(castSource), scope);
+            memberMapping.nestedMapping().generateMappingCode(
+                    () -> {
+                        getSource.get();
+                        return Nodes.castNode(memberMapping.sourceType(), scope);
+                    }, scope);
             if(i == -1)
                 i = scope.nextVariableIndex();
-            Nodes.store(i, value, scope);
+            Nodes.store(i, scope);
             gotoNodes.add(lastGoto = Nodes.goto_(scope));
         }
         Objects.requireNonNull(lastIfNode).setTarget(
-                Nodes.raise(scope.nextNodeName("invalidTypeError"), scope, Values.constantString("Invalid type"))
+                Nodes.loadConstant(Instances.stringInstance("Invalid type"), scope)
         );
-        var value = Nodes.load(i, targetType, scope);
-        gotoNodes.forEach(g -> g.setTarget(value));
-        return Values.node(value);
+        Nodes.raiseWithMessage(scope);
+        var exit = Nodes.load(i, targetType, scope);
+        gotoNodes.forEach(g -> g.setTarget(exit));
+        return targetType;
     }
 
     @Override
-    public Value generateUnmappingCode(Value view, ScopeRT scope) {
+    public Type generateUnmappingCode(Supplier<NodeRT> viewSupplier, ScopeRT scope) {
         var gotoNodes = new ArrayList<GotoNode>();
         JumpNode lastIfNode = null;
         GotoNode lastGoto = null;
         var i = -1;
         for (var memberMapping : memberMappings) {
-            var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
-                    Values.node(
-                            Nodes.instanceOf(view, memberMapping.targetType(), scope)
-                    ),
-                    null, scope
-            );
+            viewSupplier.get();
+            Nodes.instanceOf(memberMapping.targetType(), scope);
+            var ifNode = Nodes.ifNot(null, scope);
             if(lastIfNode != null)
                 lastIfNode.setTarget(lastGoto.getSuccessor());
             lastIfNode = ifNode;
-            var castView =  Nodes.cast(scope.nextNodeName("castView"), memberMapping.targetType(), view, scope);
-            var value = memberMapping.nestedMapping().generateUnmappingCode(Values.node(castView), scope);
+            var value = memberMapping.nestedMapping().generateUnmappingCode(
+                    () -> {
+                        viewSupplier.get();
+                        return  Nodes.cast(memberMapping.targetType() , scope);
+                    }, scope);
             if (i == -1)
                 i = scope.nextVariableIndex();
-            Nodes.store(i, value, scope);
+            Nodes.store(i, scope);
             gotoNodes.add(lastGoto = Nodes.goto_(scope));
         }
         Objects.requireNonNull(lastIfNode).setTarget(
-            Nodes.raise(scope.nextNodeName("invalidTypeError"), scope, Values.constantString("invalid type"))
+                Nodes.loadConstant(Instances.stringInstance("Invalid type"), scope)
         );
-        var value = Nodes.load(i, sourceType, scope);
-        gotoNodes.forEach(g -> g.setTarget(value));
-        return Values.node(value);
+        Nodes.raiseWithMessage(scope);
+        var exit = Nodes.load(i, sourceType, scope);
+        gotoNodes.forEach(g -> g.setTarget(exit));
+        return sourceType;
     }
 
     @Override

@@ -1,9 +1,4 @@
 package org.metavm.flow.rest;
 
-import java.util.List;
-
-public record FunctionNodeParam(
-        ValueDTO func,
-        List<ValueDTO> arguments
-) {
+public record FunctionNodeParam(String functionType) {
 }

@@ -19,27 +19,21 @@ public abstract class CallNodeParam {
     private final @Nullable String flowCode;
     private final @Nullable List<String> typeArguments;
     private final @Nullable String type;
-    private final List<ArgumentDTO> arguments;
-    private final List<ValueDTO> argumentValues;
-    private final List<String> capturedExpressionTypes;
-    private final List<String> capturedExpressions;
+    private final List<String> capturedVariableTypes;
+    private final List<Long> capturedVariableIndexes;
 
     public CallNodeParam(@Nullable FlowRefDTO flowRef,
                          @Nullable String flowCode,
                          @Nullable List<String> typeArguments,
                          @Nullable String type,
-                         List<ArgumentDTO> arguments,
-                         List<ValueDTO> argumentValues,
-                         List<String> capturedExpressionTypes,
-                         List<String> capturedExpressions) {
+                         List<String> capturedVariableTypes,
+                         List<Long> capturedVariableIndexes) {
         this.flowRef = flowRef;
         this.flowCode = flowCode;
         this.typeArguments = typeArguments;
         this.type = type;
-        this.arguments = arguments;
-        this.argumentValues = argumentValues;
-        this.capturedExpressionTypes = capturedExpressionTypes;
-        this.capturedExpressions = capturedExpressions;
+       this.capturedVariableTypes = capturedVariableTypes;
+        this.capturedVariableIndexes = capturedVariableIndexes;
     }
 
     public boolean isResolved() {
@@ -65,22 +59,14 @@ public abstract class CallNodeParam {
         return type;
     }
 
-    public List<ArgumentDTO> getArguments() {
-        return arguments;
-    }
-
-    public List<ValueDTO> getArgumentValues() {
-        return argumentValues;
-    }
-
     public abstract int getCallKind();
 
-    public List<String> getCapturedExpressionTypes() {
-        return capturedExpressionTypes;
+    public List<String> getCapturedVariableTypes() {
+        return capturedVariableTypes;
     }
 
-    public List<String> getCapturedExpressions() {
-        return capturedExpressions;
+    public List<Long> getCapturedVariableIndexes() {
+        return capturedVariableIndexes;
     }
 
 }

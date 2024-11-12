@@ -7,7 +7,8 @@ import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.Element;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.flow.*;
+import org.metavm.flow.Nodes;
+import org.metavm.flow.ScopeRT;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Type;
@@ -18,6 +19,7 @@ import org.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 @EntityType
 public abstract class FieldMapping extends Element {
@@ -103,28 +105,39 @@ public abstract class FieldMapping extends Element {
         getTargetField().setReadonly(readonly);
     }
 
-    public FieldParam generateReadCode(ScopeRT scope) {
-        var value = generateReadCode0(scope);
+    public void generateReadCode(ScopeRT scope) {
+        var t = generateReadCode0(scope);
         if (nestedMapping != null) {
-            var nestedValue = nestedMapping.generateMappingCode(value, scope);
-            return new FieldParam(targetFieldRef, nestedValue);
-        } else
-            return new FieldParam(targetFieldRef, value);
+            var viewVar = scope.nextVariableIndex();
+            Nodes.store(viewVar, scope);
+            nestedMapping.generateMappingCode(() -> Nodes.load(viewVar, t, scope), scope);
+        }
     }
 
-    protected abstract Value generateReadCode0(ScopeRT scope);
+    protected abstract Type generateReadCode0(ScopeRT scope);
 
-    public void generateWriteCode(ScopeRT scope, NodeRT viewNode) {
-        var target = Nodes.nodeProperty(viewNode, getTargetField(), scope);
+    public void generateWriteCode(Supplier<Type> getView, ScopeRT scope) {
+        getView.get();
+        Nodes.getProperty(getTargetField(), scope);
+        var fieldType = getTargetField().getType();
+        var fieldVar = scope.nextVariableIndex();
+        Nodes.store(fieldVar, scope);
         if (nestedMapping != null) {
-            var nestedFieldSource = nestedMapping.generateUnmappingCode(
-                    Values.node(target), scope);
-            generateWriteCode0(scope, nestedFieldSource);
+            var nestedFieldType = nestedMapping.generateUnmappingCode(() -> Nodes.load(fieldVar, fieldType, scope), scope);
+            var nestedFieldVar = scope.nextVariableIndex();
+            Nodes.store(nestedFieldVar, scope);
+            generateWriteCode0(() -> {
+                Nodes.load(nestedFieldVar, nestedFieldType, scope);
+                return nestedFieldType;
+            }, scope);
         } else
-            generateWriteCode0(scope, Values.node(target));
+            generateWriteCode0(() -> {
+                Nodes.load(fieldVar, fieldType, scope);
+                return fieldType;
+            }, scope);
     }
 
-    protected abstract void generateWriteCode0(ScopeRT scope, Value fieldValue);
+    protected abstract void generateWriteCode0(Supplier<Type> getFieldValue, ScopeRT scope);
 
     protected abstract Type getTargetFieldType();
 

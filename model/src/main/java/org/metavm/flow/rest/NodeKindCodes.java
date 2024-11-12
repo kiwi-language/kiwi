@@ -66,5 +66,12 @@ public class NodeKindCodes {
     public static final int LOAD = 76;
     public static final int LOAD_CONTEXT_SLOT = 77;
     public static final int STORE_CONTEXT_SLOT = 78;
-
+    public static final int LOAD_CONSTANT = 79;
+    public static final int NEW_ARRAY_WITH_DIMS = 80;
+    public static final int VOID_RETURN = 81;
+    public static final int LOAD_TYPE = 82;
+    public static final int DUP = 83;
+    public static final int POP = 84;
+    public static final int DUP_X1 = 85;
+    public static final int DUP_X2 = 86;
 }

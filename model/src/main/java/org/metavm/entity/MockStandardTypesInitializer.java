@@ -2,6 +2,9 @@ package org.metavm.entity;
 
 import org.metavm.api.ChildList;
 import org.metavm.api.ValueList;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Nodes;
+import org.metavm.flow.Parameter;
 import org.metavm.object.type.*;
 import org.metavm.util.NncUtils;
 
@@ -84,12 +87,20 @@ public class MockStandardTypesInitializer {
                         .tmpId(NncUtils.randomNonNegative())
                         .build()
         );
-        StdKlass.runtimeException.set(
-                newKlassBuilder(RuntimeException.class)
-                        .source(ClassSource.BUILTIN)
-                        .tmpId(NncUtils.randomNonNegative())
-                        .build()
-        );
+        var runtimeExceptionKlass = newKlassBuilder(RuntimeException.class)
+                .source(ClassSource.BUILTIN)
+                .tmpId(NncUtils.randomNonNegative())
+                .build();
+        {
+            var constructor = MethodBuilder.newBuilder(runtimeExceptionKlass, runtimeExceptionKlass.getName(), runtimeExceptionKlass.getName())
+                    .isConstructor(true)
+                    .parameters(Parameter.create("message", Types.getNullableStringType()))
+                    .build();
+            var scope = constructor.getScope();
+            Nodes.this_(scope);
+            Nodes.ret(scope);
+        }
+        StdKlass.runtimeException.set(runtimeExceptionKlass);
         StdKlass.iterable.set(
                 newKlassBuilder(Iterable.class)
                         .source(ClassSource.BUILTIN)

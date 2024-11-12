@@ -8,10 +8,7 @@ import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.TryExitNodeParam;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
-
-import javax.annotation.Nullable;
 
 @EntityType
 public class TryExitNode extends NodeRT implements LoadAware {
@@ -20,7 +17,7 @@ public class TryExitNode extends NodeRT implements LoadAware {
         var node = (TryExitNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var param = (TryExitNodeParam) nodeDTO.param();
-            node = new TryExitNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, param.variableIndex());
+            node = new TryExitNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, param.variableIndex());
         }
         return node;
     }
@@ -28,8 +25,8 @@ public class TryExitNode extends NodeRT implements LoadAware {
     private final int variableIndex;
     private transient TryEnterNode entry;
 
-    public TryExitNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, int variableIndex) {
-        super(tmpId, name, code, null, previous, scope);
+    public TryExitNode(Long tmpId, String name, NodeRT previous, ScopeRT scope, int variableIndex) {
+        super(tmpId, name, null, previous, scope);
         findEntry();
         this.variableIndex = variableIndex;
     }
@@ -56,22 +53,26 @@ public class TryExitNode extends NodeRT implements LoadAware {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
+    public int execute(MetaFrame frame) {
         var tryNode = frame.exitTrySection();
         assert tryNode == entry;
         var exceptionInfo = frame.getExceptionInfo(entry);
-        Value exception;
         if (exceptionInfo != null)
-            exception = exceptionInfo.exception().getReference();
+            frame.push(exceptionInfo.exception().getReference());
         else
-            exception = Instances.nullInstance();
-        frame.store(variableIndex, exception);
-        return next();
+            frame.push(Instances.nullInstance());
+        frame.store(variableIndex);
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
         writer.write("try-exit variable = " + variableIndex);
+    }
+
+    @Override
+    public int getStackChange() {
+        return 0;
     }
 
     @Override

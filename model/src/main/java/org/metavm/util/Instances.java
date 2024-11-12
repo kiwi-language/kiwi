@@ -9,10 +9,8 @@ import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.IterableNative;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.entity.natives.NativeMethods;
-import org.metavm.expression.ParsingContext;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
-import org.metavm.flow.rest.FieldReferringDTO;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
@@ -292,6 +290,14 @@ public class Instances {
 
     public static LongValue longInstance(long value) {
         return new LongValue(value, Types.getLongType());
+    }
+
+    public static LongValue longOne() {
+        return longInstance(1L);
+    }
+
+    public static LongValue longZero() {
+        return longInstance(0L);
     }
 
     public static CharValue charInstance(char value) {

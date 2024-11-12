@@ -9,7 +9,7 @@ class Lab {
             return null;
         }
         else {
-            return fieldValue.getValue();
+            return fieldValue!!.getValue();
         }
     }
 
@@ -19,7 +19,7 @@ class Lab {
             new FieldValue(field).setValue(value);
         }
         else {
-            fieldValue.setValue(value);
+            fieldValue!!.setValue(value);
         }
     }
 

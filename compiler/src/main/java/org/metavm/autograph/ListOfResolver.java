@@ -6,8 +6,7 @@ import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiModifier;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
-import org.metavm.flow.Value;
-import org.metavm.flow.Values;
+import org.metavm.flow.NodeRT;
 import org.metavm.object.type.ClassType;
 import org.metavm.util.NncUtils;
 
@@ -39,9 +38,9 @@ public class ListOfResolver implements MethodCallResolver {
     }
 
     @Override
-    public Value resolve(PsiMethodCallExpression methodCallExpression,
-                         ExpressionResolver expressionResolver,
-                         MethodGenerator methodGenerator) {
+    public NodeRT resolve(PsiMethodCallExpression methodCallExpression,
+                          ExpressionResolver expressionResolver,
+                          MethodGenerator methodGenerator) {
         var methodGenerics = methodCallExpression.resolveMethodGenerics();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var listType = (ClassType) expressionResolver.getTypeResolver().resolve(
@@ -49,18 +48,20 @@ public class ListOfResolver implements MethodCallResolver {
         var arrayListKlass = StdKlass.arrayList.get().getParameterized(List.of(listType.getFirstTypeArgument()));
         var list = methodGenerator.createNew(
                 arrayListKlass.getDefaultConstructor(),
-                List.of(),
                 false,
                 true);
         var addMethod = arrayListKlass.getMethod(m -> m.getEffectiveVerticalTemplate() == StdMethod.arrayListAdd.get());
-        for (PsiExpression expression : methodCallExpression.getArgumentList().getExpressions()) {
-            var value = expressionResolver.resolve(expression);
+        var expressions = methodCallExpression.getArgumentList().getExpressions();
+        for (PsiExpression psiExpression : expressions) {
+            methodGenerator.createDup();
+            expressionResolver.resolve(psiExpression);
             methodGenerator.createMethodCall(
-                    Values.node(list),
                     addMethod,
-                    List.of(value)
+                    List.of(),
+                    List.of()
             );
+            methodGenerator.createPop();
         }
-        return Values.node(list);
+        return list;
     }
 }

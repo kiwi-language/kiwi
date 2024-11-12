@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.GetPropertyNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
@@ -19,27 +18,21 @@ public class GetPropertyNode extends NodeRT {
         GetPropertyNode node = (GetPropertyNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             GetPropertyNodeParam param = nodeDTO.getParam();
-            var parsingContext = FlowParsingContext.create(scope, prev, context);
-            var first = ValueFactory.create(param.instance(), parsingContext);
             var propertyRef = PropertyRef.create(param.propertyRef(), context);
-            node = new GetPropertyNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
-                    prev, scope, first, propertyRef);
+            node = new GetPropertyNode(nodeDTO.tmpId(), nodeDTO.name(),
+                    prev, scope, propertyRef);
         }
         return node;
     }
 
-    private final Value instance;
     private final PropertyRef propertyRef;
 
     public GetPropertyNode(Long tmpId,
                            @NotNull String name,
-                           @Nullable String code,
                            @Nullable NodeRT previous,
                            @NotNull ScopeRT scope,
-                           Value instance,
                            PropertyRef propertyRef) {
-        super(tmpId, name, code, null, previous, scope);
-        this.instance = instance;
+        super(tmpId, name, null, previous, scope);
         this.propertyRef = propertyRef;
     }
 
@@ -50,7 +43,7 @@ public class GetPropertyNode extends NodeRT {
 
     @Override
     protected Object getParam(SerializeContext serializeContext) {
-        return new GetPropertyNodeParam(instance.toDTO(), propertyRef.toDTO(serializeContext));
+        return new GetPropertyNodeParam(propertyRef.toDTO(serializeContext));
     }
 
     @NotNull
@@ -59,14 +52,20 @@ public class GetPropertyNode extends NodeRT {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        var i = instance.evaluate(frame).resolveObject();
+    public int execute(MetaFrame frame) {
+        var i = frame.pop().resolveObject();
         var p = propertyRef.resolve();
-        return next(i.getProperty(p));
+        frame.push(i.getProperty(p));
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write(instance.getText() + "." + propertyRef.resolve().getName());
+        writer.write("getProperty " + propertyRef.resolve().getName());
+    }
+
+    @Override
+    public int getStackChange() {
+        return 0;
     }
 }

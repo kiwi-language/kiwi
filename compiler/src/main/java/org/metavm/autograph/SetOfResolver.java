@@ -6,8 +6,7 @@ import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiModifier;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
-import org.metavm.flow.Value;
-import org.metavm.flow.Values;
+import org.metavm.flow.NodeRT;
 import org.metavm.object.type.ClassType;
 import org.metavm.util.NncUtils;
 
@@ -40,9 +39,9 @@ public class SetOfResolver implements MethodCallResolver {
     }
 
     @Override
-    public Value resolve(PsiMethodCallExpression methodCallExpression,
-                         ExpressionResolver expressionResolver,
-                         MethodGenerator methodGenerator) {
+    public NodeRT resolve(PsiMethodCallExpression methodCallExpression,
+                          ExpressionResolver expressionResolver,
+                          MethodGenerator methodGenerator) {
         var methodGenerics = methodCallExpression.resolveMethodGenerics();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var setType = (ClassType) expressionResolver.getTypeResolver().resolve(
@@ -50,18 +49,15 @@ public class SetOfResolver implements MethodCallResolver {
         var hashSetKlass = StdKlass.hashSet.get().getParameterized(List.of(setType.getFirstTypeArgument()));
         var set = methodGenerator.createNew(
                 hashSetKlass.getDefaultConstructor(),
-                List.of(),
                 false,
                 true);
         var addMethod = hashSetKlass.getMethod(m -> m.getEffectiveVerticalTemplate() == StdMethod.hashSetAdd.get());
         for (PsiExpression expression : methodCallExpression.getArgumentList().getExpressions()) {
-            var value = expressionResolver.resolve(expression);
-            methodGenerator.createMethodCall(
-                    Values.node(set),
-                    addMethod,
-                    List.of(value)
-            );
+            methodGenerator.createDup();
+            expressionResolver.resolve(expression);
+            methodGenerator.createMethodCall(addMethod);
+            methodGenerator.createPop();
         }
-        return Values.node(set);
+        return set;
     }
 }

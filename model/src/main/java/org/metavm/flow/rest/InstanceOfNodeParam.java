@@ -1,4 +1,4 @@
 package org.metavm.flow.rest;
 
-public record InstanceOfNodeParam(ValueDTO operand, String type) {
+public record InstanceOfNodeParam(String type) {
 }

@@ -16,8 +16,8 @@ import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
-import org.metavm.util.*;
 import org.metavm.util.LinkedList;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -219,7 +219,7 @@ public class ApiService extends EntityContextFactoryAware {
             var throwableNative = new ThrowableNative(result.exception());
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, throwableNative.getMessage().getTitle());
         } else
-            return result.ret();
+            return Objects.requireNonNullElseGet(result.ret(), Instances::nullInstance);
     }
 
     private Object formatInstance(@Nullable Value instance, boolean asValue) {

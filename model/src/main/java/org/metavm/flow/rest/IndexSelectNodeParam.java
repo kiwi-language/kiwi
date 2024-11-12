@@ -1,7 +1,6 @@
 package org.metavm.flow.rest;
 
 public record IndexSelectNodeParam(
-        String indexId,
-        IndexQueryKeyDTO key
+        String indexId
 ) {
 }

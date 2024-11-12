@@ -2,7 +2,10 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
-import org.metavm.entity.*;
+import org.metavm.entity.ChildArray;
+import org.metavm.entity.Element;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.LambdaDTO;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Type;
@@ -42,6 +45,11 @@ public class Lambda extends Element implements Callable {
     @Override
     public List<Parameter> getParameters() {
         return parameters.toList();
+    }
+
+    @Override
+    public int getInputCount() {
+        return parameters.size();
     }
 
     public void setParameters(List<Parameter> parameters) {
@@ -92,4 +100,21 @@ public class Lambda extends Element implements Callable {
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitLambda(this);
     }
+
+    public String getText() {
+        CodeWriter writer = new CodeWriter();
+        writeCode(writer);
+        return writer.toString();
+    }
+
+    public void writeCode(CodeWriter writer) {
+        writer.writeNewLine(
+                "Lambda "
+                        + " (" + NncUtils.join(parameters, Parameter::getText, ", ")
+                        + ")"
+                        + ": " + getReturnType().getName()
+        );
+        getScope().writeCode(writer);
+    }
+
 }

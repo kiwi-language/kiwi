@@ -2,7 +2,7 @@ package org.metavm.expression;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.ModelDefRegistry;
-import org.metavm.flow.*;
+import org.metavm.flow.NodeRT;
 import org.metavm.object.type.NeverType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.UnionType;
@@ -43,34 +43,35 @@ public class TypeNarrower {
     }
 
     private Map<Expression, Type> processNode(NodeRT node, boolean negated) {
-        return switch (node) {
-            case NotNode notNode -> process(notNode.getOperand().getExpression(), !negated);
-            case InstanceOfNode instanceOfNode -> processInstanceOf(
-                    instanceOfNode.getOperand().getExpression(),
-                    instanceOfNode.getTargetType(),
-                    negated);
-            case AndNode andNode -> processBinary(
-                    andNode.getFirst().getExpression(),
-                    andNode.getSecond().getExpression(),
-                    BinaryOperator.AND,
-                    negated);
-            case OrNode orNode -> processBinary(
-                    orNode.getFirst().getExpression(),
-                    orNode.getSecond().getExpression(),
-                    BinaryOperator.OR,
-                    negated);
-            case EqNode eqNode -> processBinary(
-                    eqNode.getFirst().getExpression(),
-                    eqNode.getSecond().getExpression(),
-                    BinaryOperator.EQ,
-                    negated);
-            case NeNode neNode -> processBinary(
-                    neNode.getFirst().getExpression(),
-                    neNode.getSecond().getExpression(),
-                    BinaryOperator.NE,
-                    negated);
-            default -> Map.of();
-        };
+//        return switch (node) {
+//            case NotNode notNode -> process(notNode.getOperand().getExpression(), !negated);
+//            case InstanceOfNode instanceOfNode -> processInstanceOf(
+//                    instanceOfNode.getOperand().getExpression(),
+//                    instanceOfNode.getTargetType(),
+//                    negated);
+//            case AndNode andNode -> processBinary(
+//                    andNode.getFirst().getExpression(),
+//                    andNode.getSecond().getExpression(),
+//                    BinaryOperator.AND,
+//                    negated);
+//            case OrNode orNode -> processBinary(
+//                    orNode.getFirst().getExpression(),
+//                    orNode.getSecond().getExpression(),
+//                    BinaryOperator.OR,
+//                    negated);
+//            case EqNode eqNode -> processBinary(
+//                    eqNode.getFirst().getExpression(),
+//                    eqNode.getSecond().getExpression(),
+//                    BinaryOperator.EQ,
+//                    negated);
+//            case NeNode neNode -> processBinary(
+//                    neNode.getFirst().getExpression(),
+//                    neNode.getSecond().getExpression(),
+//                    BinaryOperator.NE,
+//                    negated);
+//            default -> Map.of();
+//        };
+        return Map.of();
     }
 
     private Map<Expression, Type> processInstanceOf(Expression operand, Type targetType, boolean negated) {

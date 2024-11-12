@@ -3,42 +3,34 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.api.EntityType;
-import org.metavm.common.ErrorCode;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.UnmapNodeParam;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.Type;
 import org.metavm.object.view.ObjectMappingRef;
-import org.metavm.util.AssertUtils;
 
 @EntityType
 public class UnmapNode extends NodeRT {
 
     public static UnmapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var node = (UnmapNode) context.getNode(Id.parse(nodeDTO.id()));
-        var param = (UnmapNodeParam) nodeDTO.param();
-        var mappingRef = ObjectMappingRef.create(param.mappingRef(), context);
-        var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var view = ValueFactory.create(param.view(), parsingContext);
-        if (node == null)
-            node = new UnmapNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, view, mappingRef);
-        else
-            node.update(view, mappingRef);
+        if (node == null) {
+            var param = (UnmapNodeParam) nodeDTO.param();
+            var mappingRef = ObjectMappingRef.create(param.mappingRef(), context);
+            node = new UnmapNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, mappingRef);
+        }
         return node;
     }
 
-    private Value view;
-    private ObjectMappingRef mappingRef;
+    private final ObjectMappingRef mappingRef;
 
-    public UnmapNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope,
-                     Value view, ObjectMappingRef mappingRef) {
-        super(tmpId, name, code, null, previous, scope);
-        this.view = view;
+    public UnmapNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope,
+                     ObjectMappingRef mappingRef) {
+        super(tmpId, name, null, previous, scope);
         this.mappingRef = mappingRef;
     }
 
@@ -49,14 +41,7 @@ public class UnmapNode extends NodeRT {
 
     @Override
     protected UnmapNodeParam getParam(SerializeContext serializeContext) {
-        return new UnmapNodeParam(view.toDTO(), mappingRef.toDTO(serializeContext));
-    }
-
-    public void update(Value view, ObjectMappingRef mappingRef) {
-        AssertUtils.assertTrue(mappingRef.resolve().getTargetType().isAssignableFrom(view.getType()),
-                ErrorCode.INCORRECT_MAPPING);
-        this.view = view;
-        this.mappingRef = mappingRef;
+        return new UnmapNodeParam(mappingRef.toDTO(serializeContext));
     }
 
     @NotNull
@@ -66,13 +51,19 @@ public class UnmapNode extends NodeRT {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        var viewInst = (Reference) view.evaluate(frame);
-        return next(mappingRef.resolve().unmap(viewInst, frame));
+    public int execute(MetaFrame frame) {
+        var viewInst = (Reference) frame.pop();
+        frame.push(mappingRef.resolve().unmap(viewInst, frame));
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("unmap " + mappingRef.resolve().getName() + "(" + view.getText() + ")");
+        writer.write("unmap " + mappingRef.resolve().getName());
+    }
+
+    @Override
+    public int getStackChange() {
+        return 0;
     }
 }

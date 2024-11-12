@@ -27,7 +27,7 @@ public class LambdaNode extends NodeRT implements LoadAware {
             var lambda = context.getEntity(Lambda.class, param.lambdaId());
             var funcInterface = (ClassType) NncUtils.get(param.functionalInterface(), t -> TypeParser.parseType(t, new ContextTypeDefRepository(context)));
             node = new LambdaNode(
-                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, lambda, funcInterface
+                    nodeDTO.tmpId(), nodeDTO.name(), prev, scope, lambda, funcInterface
             );
             node.createSAMImpl();
         }
@@ -39,9 +39,9 @@ public class LambdaNode extends NodeRT implements LoadAware {
 
     private transient ClassType functionInterfaceImpl;
 
-    public LambdaNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope,
+    public LambdaNode(Long tmpId, String name, NodeRT previous, ScopeRT scope,
                       @NotNull Lambda lambda, @Nullable ClassType functionalInterface) {
-        super(tmpId, name, code, functionalInterface != null ? functionalInterface : lambda.getFunctionType(), previous, scope);
+        super(tmpId, name, functionalInterface != null ? functionalInterface : lambda.getFunctionType(), previous, scope);
         this.functionalInterface = functionalInterface;
         this.lambda = lambda;
     }
@@ -66,21 +66,27 @@ public class LambdaNode extends NodeRT implements LoadAware {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
+    public int execute(MetaFrame frame) {
         var func = new LambdaValue(lambda, frame);
         if (functionInterfaceImpl == null) {
-            return next(func);
+            frame.push(func);
         } else {
             var funcImplKlass = functionInterfaceImpl.resolve();
             var funcField = funcImplKlass.getFieldByCode("func");
-            return next(ClassInstance.create(Map.of(funcField, func), functionInterfaceImpl).getReference());
+            frame.push(ClassInstance.create(Map.of(funcField, func), functionInterfaceImpl).getReference());
         }
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
         writer.write("(" + NncUtils.join(lambda.getParameters(), Parameter::getText, ", ") + ")");
         writer.write(": " + lambda.getReturnType().getName());
+    }
+
+    @Override
+    public int getStackChange() {
+        return 1;
     }
 
     @Override

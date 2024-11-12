@@ -1,30 +1,27 @@
 package org.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
-import org.metavm.expression.*;
+import org.metavm.expression.ExpressionTypeMap;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.rest.dto.KlassDTO;
-import org.metavm.util.NamingUtils;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
+@Slf4j
 @EntityType
 public abstract class NodeRT extends Element implements LocalKey {
 
     @EntityField(asTitle = true)
-    private String name;
-    @Nullable
-    private String code;
+    private final String name;
     private final NodeKind kind;
     private @Nullable Type outputType;
     private final @NotNull ScopeRT scope;
@@ -40,14 +37,12 @@ public abstract class NodeRT extends Element implements LocalKey {
     protected NodeRT(
             Long tmpId,
             @NotNull String name,
-            @Nullable String code,
             @Nullable Type outputType,
             @Nullable NodeRT previous,
             @NotNull ScopeRT scope
     ) {
         super(tmpId);
-        setName(name);
-        this.code = NncUtils.get(code, NamingUtils::ensureValidCode);
+        this.name = name;
         this.scope = scope;
         this.outputType = outputType;
         this.kind = NodeKind.fromNodeClass(this.getClass());
@@ -61,14 +56,6 @@ public abstract class NodeRT extends Element implements LocalKey {
     @JsonIgnore
     public Flow getFlow() {
         return scope.getFlow();
-    }
-
-    public void setName(String name) {
-        this.name = NamingUtils.ensureValidName(name);
-    }
-
-    public void setCode(@Nullable String code) {
-        this.code = NncUtils.get(code, NamingUtils::ensureValidCode);
     }
 
     public String getName() {
@@ -115,12 +102,12 @@ public abstract class NodeRT extends Element implements LocalKey {
 
     @Override
     public boolean isValidLocalKey() {
-        return code != null;
+        return true;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return Objects.requireNonNull(code);
+        return name;
     }
 
     @Override
@@ -142,15 +129,6 @@ public abstract class NodeRT extends Element implements LocalKey {
         return List.of();
     }
 
-    public ParsingContext getParsingContext(IEntityContext entityContext) {
-        return FlowParsingContext.create(this, entityContext);
-    }
-
-    @Nullable
-    public String getCode() {
-        return code;
-    }
-
     protected void setOutputType(@Nullable Type outputType) {
         this.outputType = outputType;
     }
@@ -160,18 +138,17 @@ public abstract class NodeRT extends Element implements LocalKey {
                 serContext.getStringId(this),
                 getFlow().getStringId(),
                 name,
-                code,
                 kind.code(),
                 NncUtils.get(predecessor, serContext::getStringId),
                 NncUtils.get(getType(), t -> t.toExpression(serContext)),
                 getParam(serContext),
-                getOutputKlassDTO(serContext),
+                getOutputKlassDTO(),
                 scope.getStringId(),
                 error
         );
     }
 
-    protected KlassDTO getOutputKlassDTO(SerializeContext serializeContext) {
+    protected KlassDTO getOutputKlassDTO() {
         return null;
     }
 
@@ -214,15 +191,7 @@ public abstract class NodeRT extends Element implements LocalKey {
         return outputType;
     }
 
-    public abstract NodeExecResult execute(MetaFrame frame);
-
-    public NodeExecResult next(Value output) {
-        return new NodeExecResult(output, null, getSuccessor());
-    }
-
-    public NodeExecResult next() {
-        return new NodeExecResult(null, null, getSuccessor());
-    }
+    public abstract int execute(MetaFrame frame);
 
     public ExpressionTypeMap getExpressionTypes() {
         return NncUtils.orElse(expressionTypes, () -> ExpressionTypeMap.EMPTY);
@@ -237,13 +206,6 @@ public abstract class NodeRT extends Element implements LocalKey {
             this.expressionTypes = expressionTypes;
         else
             this.expressionTypes = this.expressionTypes.merge(expressionTypes);
-    }
-
-    public void unionExpressionTypes(ExpressionTypeMap expressionTypes) {
-        if (this.expressionTypes == null)
-            this.expressionTypes = expressionTypes;
-        else
-            this.expressionTypes = this.expressionTypes.union(expressionTypes);
     }
 
     @Override
@@ -267,5 +229,7 @@ public abstract class NodeRT extends Element implements LocalKey {
     public ExpressionTypeMap getNextExpressionTypes() {
         return getExpressionTypes();
     }
+
+    public abstract int getStackChange();
 
 }

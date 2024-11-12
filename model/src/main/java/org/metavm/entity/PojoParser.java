@@ -137,7 +137,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 }
             }
         }
-        saveBuiltinMapping(false);
+//        saveBuiltinMapping(false);
         klass.setStage(DECLARATION);
         NncUtils.biForEach(
                 List.of(javaClass.getTypeParameters()),
@@ -152,7 +152,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
         klass.forEachField(f ->
                 defContext.ensureStage(f.getType().getUnderlyingType(), DECLARATION));
         getConstraintDefFields().forEach(f -> parseCheckConstraint(f, def));
-        saveBuiltinMapping(true);
+//        saveBuiltinMapping(true);
         klass.setStage(DEFINITION);
     }
 

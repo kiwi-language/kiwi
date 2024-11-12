@@ -1,18 +1,17 @@
 package org.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.IndexCountNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Index;
+import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
-
-import javax.annotation.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
@@ -20,48 +19,25 @@ import static java.util.Objects.requireNonNull;
 public class IndexCountNode extends NodeRT {
 
     public static IndexCountNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        var param = (IndexCountNodeParam) nodeDTO.param();
-        var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
-        var parsingContext = FlowParsingContext.create(scope, prev, context);
         var node = (IndexCountNode) context.getNode(Id.parse(nodeDTO.id()));
-        var from = IndexQueryKey.create(param.from(), context, parsingContext);
-        var to = IndexQueryKey.create(param.to(), context, parsingContext);
-        if (node != null) {
-            node.setIndex(index);
-            node.setFrom(from);
-            node.setTo(to);
-        } else
-            node = new IndexCountNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, index, from, to);
+        if (node == null) {
+            var param = (IndexCountNodeParam) nodeDTO.param();
+            var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
+            node = new IndexCountNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, index);
+        }
         return node;
     }
 
     private Index index;
-    private IndexQueryKey from;
-    private IndexQueryKey to;
 
-    public IndexCountNode(Long tmpId, String name, @Nullable String code, NodeRT previous, ScopeRT scope, Index index,
-                          IndexQueryKey from, IndexQueryKey to) {
-        super(tmpId, name, code, Types.getLongType(), previous, scope);
+    public IndexCountNode(Long tmpId, String name, NodeRT previous, ScopeRT scope, Index index) {
+        super(tmpId, name, null, previous, scope);
         this.index = index;
-        this.from = from;
-        this.to = to;
     }
 
     @Override
     protected IndexCountNodeParam getParam(SerializeContext serializeContext) {
-        return new IndexCountNodeParam(
-                serializeContext.getStringId(index),
-                from.toDTO(serializeContext),
-                to.toDTO(serializeContext)
-        );
-    }
-
-    public void setFrom(IndexQueryKey from) {
-        this.from = from;
-    }
-
-    public void setTo(IndexQueryKey to) {
-        this.to = to;
+        return new IndexCountNodeParam(serializeContext.getStringId(index));
     }
 
     public void setIndex(Index index) {
@@ -73,21 +49,32 @@ public class IndexCountNode extends NodeRT {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        var count = frame.instanceRepository().indexCount(
-                from.buildIndexKey(frame), to.buildIndexKey(frame)
-        );
-        return next(Instances.longInstance(count));
+    public int execute(MetaFrame frame) {
+        var to = frame.loadIndexKey(index);
+        var from = frame.loadIndexKey(index);
+        var count = frame.instanceRepository().indexCount(from, to);
+        frame.push(Instances.longInstance(count));
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("indexCount(" + index.getName() + ", " +
-                "[" + from.getText() + "," + to.getText() + "]" + ")");
+        writer.write("indexCount(" + index.getName() + ")");
+    }
+
+    @Override
+    public int getStackChange() {
+        return 1 - (index.getFields().size() << 1);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitIndexCountNode(this);
+    }
+
+    @NotNull
+    @Override
+    public Type getType() {
+        return Types.getLongType();
     }
 }

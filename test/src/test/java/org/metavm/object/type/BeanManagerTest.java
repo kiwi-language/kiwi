@@ -6,7 +6,10 @@ import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.flow.*;
+import org.metavm.flow.MaxesComputer;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Nodes;
+import org.metavm.flow.Parameter;
 import org.metavm.util.BootstrapUtils;
 import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
@@ -54,10 +57,11 @@ public class BeanManagerTest extends TestCase {
                     .build();
             {
                 var scope = constructor.getScope();
-                Nodes.setField("setFooService", Values.node(Nodes.this_(scope)),
-                        field, Values.node(Nodes.argument(constructor, 0)), scope
-                );
-                Nodes.ret("return", constructor.getScope(), Values.node(Nodes.this_(scope)));
+                Nodes.this_(scope);
+                Nodes.dup(scope);
+                Nodes.argument(constructor, 0);
+                Nodes.setField(field, scope);
+                Nodes.ret(scope);
             }
             var factoryMethod = MethodBuilder.newBuilder(configKlass, "barService", "barService")
                     .addAttribute(AttributeNames.BEAN_NAME, "barService")
@@ -65,22 +69,14 @@ public class BeanManagerTest extends TestCase {
                     .returnType(barServiceKlass.getType())
                     .build();
             {
-//                var input = Nodes.input(factoryMethod);
-                var barService = Nodes.newObject(
-                        "barService",
+                Nodes.argument(factoryMethod, 0);
+                Nodes.newObject(
                         factoryMethod.getScope(),
                         constructor,
-                        List.of(
-                                new Argument(
-                                        null,
-                                        constructor.getParameter(0).getRef(),
-                                        Values.node(Nodes.argument(factoryMethod, 0))
-                                )
-                        ),
                         false,
                         false
                 );
-                Nodes.ret("return", factoryMethod.getScope(), Values.node(barService));
+                Nodes.ret(factoryMethod.getScope());
             }
             var registry = BeanDefinitionRegistry.getInstance(context);
             configKlass.accept(new MaxesComputer());
@@ -104,7 +100,8 @@ public class BeanManagerTest extends TestCase {
                 .returnType(klass.getType())
                 .build();
         var scope = constructor.getScope();
-        Nodes.ret("return", scope, Values.node(Nodes.this_(scope)));
+        Nodes.this_(scope);
+        Nodes.ret(scope);
     }
 
 }

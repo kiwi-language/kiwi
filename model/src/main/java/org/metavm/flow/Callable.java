@@ -14,6 +14,8 @@ public interface Callable {
 
     List<Parameter> getParameters();
 
+    int getInputCount();
+
     default Parameter getParameter(int index) {
         return getParameters().get(index);
     }

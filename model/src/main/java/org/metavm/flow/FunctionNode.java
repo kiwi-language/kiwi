@@ -1,19 +1,18 @@
 package org.metavm.flow;
 
-import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.ReadWriteArray;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.FunctionNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.FunctionValue;
 import org.metavm.object.type.FunctionType;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.TypeParser;
 import org.metavm.util.BusinessException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.LinkedList;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -22,42 +21,25 @@ import java.util.List;
 public class FunctionNode extends NodeRT {
 
     public static FunctionNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        FunctionNodeParam param = nodeDTO.getParam();
-        var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var func = ValueFactory.create(param.func(), parsingContext);
-        var args = NncUtils.map(param.arguments(), arg -> ValueFactory.create(arg, parsingContext));
         var node = (FunctionNode) context.getNode(nodeDTO.id());
-        if (node != null)
-            node.update(func, args);
-        else
-            node = new FunctionNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, func, args);
+        if (node == null) {
+            var param = (FunctionNodeParam) nodeDTO.param();
+            var funcType = (FunctionType) TypeParser.parseType(param.functionType(), context);
+            node = new FunctionNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, funcType);
+        }
         return node;
     }
 
-    private Value func;
-    @ChildEntity
-    private final ReadWriteArray<Value> arguments = addChild(new ReadWriteArray<>(Value.class), "arguments");
+    private final FunctionType functionType;
 
-    public FunctionNode(Long tmpId, String name, @Nullable String code,  NodeRT previous, ScopeRT scope, Value func, List<Value> arguments) {
-        super(tmpId, name, code,
-                ((FunctionType) Flows.getExpressionType(func.getExpression(), previous)).getReturnType(), previous, scope);
-        check(func, arguments);
-        this.func = func;
-        this.arguments.addAll(arguments);
+    public FunctionNode(Long tmpId, String name, NodeRT previous, ScopeRT scope, FunctionType functionType) {
+        super(tmpId, name, null, previous, scope);
+        this.functionType = functionType;
     }
 
     @Override
     protected FunctionNodeParam getParam(SerializeContext serializeContext) {
-        return new FunctionNodeParam(
-                func.toDTO(),
-                NncUtils.map(arguments, Value::toDTO)
-        );
-    }
-
-    public void update(Value func, List<Value> arguments) {
-        check(func, arguments);
-        this.func = func;
-        this.arguments.reset(arguments);
+        return new FunctionNodeParam(functionType.toExpression(serializeContext));
     }
 
     private void check(Value func, List<Value> arguments) throws BusinessException {
@@ -81,22 +63,43 @@ public class FunctionNode extends NodeRT {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        var funcInst = (FunctionValue) func.evaluate(frame);
-        var result = funcInst.execute(NncUtils.map(arguments, arg -> arg.evaluate(frame)), frame);
+    public int execute(MetaFrame frame) {
+        var args = new LinkedList<org.metavm.object.instance.core.Value>();
+        var numArgs = functionType.getParameterTypes().size();
+        for (int i = 0; i < numArgs; i++) {
+            args.addFirst(frame.pop());
+        }
+        var funcInst = (FunctionValue) frame.pop();
+        var result = funcInst.execute(args, frame);
         if(result.exception() != null)
-            return frame.catchException(this, result.exception());
-        else
-            return next(result.ret());
+            frame.catchException(this, result.exception());
+        else {
+            if(result.ret() != null)
+                frame.push(result.ret());
+        }
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write(func.getText() + "(" + NncUtils.join(arguments, Value::getText, ", ") + ")");
+        writer.write("call " + functionType.toExpression());
+    }
+
+    @Override
+    public int getStackChange() {
+        var paramCount = functionType.getParameterTypes().size();
+        return functionType.isVoid() ? -paramCount - 1 : paramCount;
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitFunctionNode(this);
+    }
+
+    @Nullable
+    @Override
+    public Type getType() {
+        var type = functionType.getReturnType();
+        return type.isVoid() ? null : type;
     }
 }

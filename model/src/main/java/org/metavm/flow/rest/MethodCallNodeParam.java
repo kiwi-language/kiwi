@@ -7,20 +7,14 @@ import java.util.List;
 
 public class MethodCallNodeParam extends CallNodeParam {
 
-    private final ValueDTO self;
-
-    public MethodCallNodeParam(@JsonProperty("self") ValueDTO self,
-                               @JsonProperty("flowRef") MethodRefDTO flowRef,
+    public MethodCallNodeParam(@JsonProperty("flowRef") MethodRefDTO flowRef,
                                @JsonProperty("flowCode") String flowCode,
                                @JsonProperty("typeArgumentIds") List<String> typeArgumentIds,
                                @JsonProperty("type") @Nullable String type,
-                               @JsonProperty("arguments") List<ArgumentDTO> arguments,
-                               @JsonProperty("argumentValues") List<ValueDTO> argumentValues,
-                               @JsonProperty("capturedExpressionTypes") List<String> capturedExpressionTypes,
-                               @JsonProperty("capturedExpressions") List<String> capturedExpressions
+                               @JsonProperty("capturedVariableTypes") List<String> capturedVariableTypes,
+                               @JsonProperty("capturedVariableIndexes") List<Long> capturedVariableIndexes
     ) {
-        super(flowRef, flowCode, typeArgumentIds, type, arguments, argumentValues, capturedExpressionTypes, capturedExpressions);
-        this.self = self;
+        super(flowRef, flowCode, typeArgumentIds, type, capturedVariableTypes, capturedVariableIndexes);
     }
 
 
@@ -28,10 +22,6 @@ public class MethodCallNodeParam extends CallNodeParam {
     @Override
     public MethodRefDTO getFlowRef() {
         return (MethodRefDTO) super.getFlowRef();
-    }
-
-    public ValueDTO getSelf() {
-        return self;
     }
 
     @Override

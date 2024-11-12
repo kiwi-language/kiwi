@@ -4,8 +4,7 @@ import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiNewExpression;
 import org.metavm.api.ChildList;
 import org.metavm.common.ErrorCode;
-import org.metavm.flow.Value;
-import org.metavm.flow.Values;
+import org.metavm.flow.NodeRT;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.ArrayType;
 import org.metavm.util.BusinessException;
@@ -32,7 +31,7 @@ public class NewListResolver implements NewResolver {
     }
 
     @Override
-    public Value resolve(PsiNewExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
+    public NodeRT resolve(PsiNewExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
         var methodGenerics = methodCallExpression.resolveMethodGenerics();
         var type = (PsiClassType) Objects.requireNonNull(methodCallExpression.getType());
         if (type.getParameters().length == 0)
@@ -42,6 +41,6 @@ public class NewListResolver implements NewResolver {
         var mvElementType = typeResolver.resolve(elementType);
         var mvArrayType = new ArrayType(mvElementType,
                 CHILD_LIST_TYPE.isAssignableFrom(type) ? ArrayKind.CHILD : ArrayKind.READ_WRITE);
-        return Values.node(methodGenerator.createNewArray(mvArrayType, null));
+        return methodGenerator.createNewArray(mvArrayType);
     }
 }

@@ -4,7 +4,6 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiVariable;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expression;
 import org.metavm.expression.TypeNarrower;
@@ -39,28 +38,24 @@ public class MethodGenerator {
         return method;
     }
 
-    Type getThisType() {
+    ClassType getThisType() {
         return method.getDeclaringType().getType();
     }
 
-    IfNode createIf(Value condition, @Nullable NodeRT target) {
+    IfNode createIf( @Nullable NodeRT target) {
         return onNodeCreated(new IfNode(null,
                 nextName("if"),
-                null,
                 scope().getLastNode(),
                 scope(),
-                condition,
                 target
         ));
     }
 
-    IfNotNode createIfNot(Value condition, @Nullable NodeRT target) {
+    IfNotNode createIfNot(@Nullable NodeRT target) {
         return onNodeCreated(new IfNotNode(null,
                 nextName("ifNot"),
-                null,
                 scope().getLastNode(),
                 scope(),
-                condition,
                 target
         ));
     }
@@ -69,7 +64,6 @@ public class MethodGenerator {
         return onNodeCreated(new GotoNode(
                 null,
                  nextName("goto"),
-                null,
                 scope().getLastNode(),
                 scope(),
                 target
@@ -80,14 +74,13 @@ public class MethodGenerator {
         return onNodeCreated(new GotoNode(
                 null,
                 nextName("goto"),
-                null,
                 scope().getLastNode(),
                 scope()
         ));
     }
 
     TryEnterNode createTryEnter() {
-        return onNodeCreated(new TryEnterNode(null, nextName("tryEnter"), null, scope().getLastNode(), scope()));
+        return onNodeCreated(new TryEnterNode(null, nextName("tryEnter"), scope().getLastNode(), scope()));
     }
 
     String nextVarName(String name) {
@@ -98,7 +91,7 @@ public class MethodGenerator {
 
     TryExitNode createTryExit() {
         return onNodeCreated(new TryExitNode(
-                null, nextName("tryExit"), null,
+                null, nextName("tryExit"),
                 scope().getLastNode(),
                 scope(),
                 nextVariableIndex()
@@ -106,52 +99,42 @@ public class MethodGenerator {
     }
 
 
-    NonNullNode createNonNull(String name, Value expression) {
-        var node = onNodeCreated(new NonNullNode(
+    NonNullNode createNonNull() {
+        return onNodeCreated(new NonNullNode(
                         null,
-                        nextName(name),
-                        null,
-                        Types.getNonNullType(getExpressionType(expression.getExpression())),
+                        nextName("nonnull"),
                         scope().getLastNode(),
-                        scope(),
-                        expression
+                        scope()
                 )
         );
-        return node;
     }
 
     TargetNode createTarget() {
-        return onNodeCreated(new TargetNode(null, nextName("target"), null, scope().getLastNode(), scope()));
+        return onNodeCreated(new TargetNode(null, nextName("target"), scope().getLastNode(), scope()));
     }
 
-    NewArrayNode createNewArray(ArrayType type, @Nullable Value initialValue) {
+    NewArrayNode createNewArray(ArrayType type) {
         return onNodeCreated(new NewArrayNode(
-                null, nextName("NewArray"), null,
+                null, nextName("NewArray"),
                 type,
-                initialValue,
-                null,
-                null,
                 scope().getLastNode(), scope()
         ));
     }
 
-    NewArrayNode createNewArrayWithDimensions(ArrayType type, List<Value> dimensions) {
-        return onNodeCreated(new NewArrayNode(
-                null, nextName("NewArray"), null,
+    NewArrayWithDimsNode createNewArrayWithDimensions(ArrayType type, int dimensions) {
+        return onNodeCreated(new NewArrayWithDimsNode(
+                null, nextName("NewArray"),
                 type,
-                null,
-                dimensions,
-                null,
-                scope().getLastNode(), scope()
+                scope().getLastNode(), scope(),
+                dimensions
         ));
     }
 
-    ArrayLengthNode createArrayLength(Value array) {
+    ArrayLengthNode createArrayLength() {
         return new ArrayLengthNode(
-                null, nextName("length"), null,
+                null, nextName("length"),
                 scope().getLastNode(),
-                scope(),
-                array
+                scope()
         );
     }
 
@@ -169,8 +152,8 @@ public class MethodGenerator {
         return Objects.requireNonNull(yieldVariables.peek());
     }
 
-    void setYield(Value yield) {
-        createStore(yieldVariable(), yield);
+    void createYieldStore() {
+        createStore(yieldVariable());
     }
 
     private ScopeInfo currentScope() {
@@ -222,114 +205,95 @@ public class MethodGenerator {
         return i;
     }
 
-    SetFieldNode createSetField(Value self, Field field, Value value) {
+    SetFieldNode createSetField(Field field) {
         return onNodeCreated(new SetFieldNode(null,
                 nextName("Update"),
-                null,
                 scope().getLastNode(),
                 scope(),
-                self,
-                field.getRef(),
-                value));
+                field.getRef()));
     }
 
-    SetStaticNode createSetStatic(Field field, Value value) {
+    SetStaticNode createSetStatic(Field field) {
         return onNodeCreated(new SetStaticNode(
-                null, nextName("UpdateStatic"), null,
+                null, nextName("UpdateStatic"),
                 scope().getLastNode(), scope(),
-                field.getRef(), value));
+                field.getRef()));
     }
 
-    AddObjectNode createAddObject(Klass klass) {
-        return onNodeCreated(new AddObjectNode(null, nextName("Add"),
-                null, false, false, klass.getType(),
-                scope().getLastNode(), scope()));
-    }
-
-    AddElementNode createAddElement(Value array, Value value) {
+    AddElementNode createAddElement() {
         return onNodeCreated(
                 new AddElementNode(
                         null,
                         nextName("AddElement"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        array,
-                        value
+                        scope()
                 )
         );
     }
 
-    RemoveElementNode createRemoveElement(Value array, Value element) {
+    RemoveElementNode createRemoveElement() {
         return onNodeCreated(
                 new RemoveElementNode(
                         null,
                         nextName("RemoveElement"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        array,
-                        element
+                        scope()
                 )
         );
     }
 
-    GetElementNode createGetElement(Value array, Value index) {
+    GetElementNode createGetElement() {
         return onNodeCreated(
                 new GetElementNode(
                         null,
                         nextName("GetElement"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        array,
-                        index
+                        scope()
                 )
         );
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    ReturnNode createReturn() {
-        return createReturn(null);
+    VoidReturnNode createVoidReturn() {
+        return onNodeCreated(new VoidReturnNode(null,
+                nextName("Exit"),
+                scope().getLastNode(),
+                scope()
+        ));
     }
 
-    ReturnNode createReturn(Value value) {
+    ReturnNode createReturn() {
         return onNodeCreated(new ReturnNode(null,
                 nextName("Exit"),
-                null,
                 scope().getLastNode(),
-                scope(),
-                value
+                scope()
         ));
     }
 
-    IndexCountNode createIndexCount(Index index, IndexQueryKey from, IndexQueryKey to) {
+    IndexCountNode createIndexCount(Index index) {
         return onNodeCreated(new IndexCountNode(
-                null, nextName("IndexCount"), null, scope().getLastNode(), scope(),
-                index, from, to
+                null, nextName("IndexCount"), scope().getLastNode(), scope(), index
         ));
     }
 
-    IndexScanNode createIndexScan(Index index, IndexQueryKey from, IndexQueryKey to) {
-        var arrayType = new ArrayType(index.getDeclaringType().getType(), ArrayKind.READ_ONLY);
+    IndexScanNode createIndexScan(Index index) {
         return onNodeCreated(new IndexScanNode(
-                null, nextName("IndexScan"), null, arrayType, scope().getLastNode(),
-                scope(), index, from, to
+                null, nextName("IndexScan"), scope().getLastNode(),
+                scope(), index
         ));
     }
 
-    public IndexSelectNode createIndexSelect(Index index, IndexQueryKey key) {
-        var listType = StdKlass.arrayList.get().getParameterized(List.of(index.getDeclaringType().getType()));
+    public IndexSelectNode createIndexSelect(Index index) {
         return onNodeCreated(new IndexSelectNode(
-                null, nextName("IndexSelect"), null, listType.getType(),
-                scope().getLastNode(), scope(), index, key
+                null, nextName("IndexSelect"),
+                scope().getLastNode(), scope(), index
         ));
     }
 
-    public IndexSelectFirstNode createIndexSelectFirst(Index index, IndexQueryKey key) {
+    public IndexSelectFirstNode createIndexSelectFirst(Index index) {
         return onNodeCreated(new IndexSelectFirstNode(
-                null, nextName("IndexSelectFirst"), null,
-                scope().getLastNode(), scope(), index, key
+                null, nextName("IndexSelectFirst"),
+                scope().getLastNode(), scope(), index
         ));
     }
 
@@ -337,70 +301,48 @@ public class MethodGenerator {
         return FieldBuilder.newBuilder(name, null, klass, type).build();
     }
 
-    MethodCallNode createMethodCall(Value self, Method method, List<Value> arguments) {
-        return createMethodCall(self, method, arguments, List.of(), List.of());
+    MethodCallNode createMethodCall(Method method) {
+        return createMethodCall(method, List.of(), List.of());
     }
 
-    MethodCallNode createMethodCall(Value self, Method method, List<Value> arguments,
+    MethodCallNode createMethodCall(Method method,
                                     List<Type> capturedExpressionTypes,
-                                    List<Expression> capturedExpressions) {
-        if(method.getParameters().size() != arguments.size()) {
-            throw new IllegalArgumentException(
-                    "Method " + method.getTypeDesc() + " expects " + method.getParameters().size() +
-                            " arguments, but " + arguments.size() + " were provided");
-        }
-        List<Argument> args = NncUtils.biMap(
-                method.getParameters(), arguments,
-                (param, arg) -> new Argument(null, param.getRef(), arg)
-        );
-        var node = new MethodCallNode(null, nextName(method.getName()), null,
+                                    List<Long> capturedVariables) {
+        var node = new MethodCallNode(null, nextName(method.getName()),
                 scope().getLastNode(), scope(),
-                self, method.getRef(), args);
-        node.setCapturedExpressions(capturedExpressions);
-        node.setCapturedExpressionTypes(capturedExpressionTypes);
+                method.getRef());
+        node.setCapturedVariableIndexes(capturedVariables);
+        node.setCapturedVariableTypes(capturedExpressionTypes);
         return onNodeCreated(node);
     }
 
-    NodeRT createTypeCast(Value operand, Type targetType) {
-        if (getExpressionType(operand.getExpression()).isNullable() && !targetType.isNullable())
-            targetType = new UnionType(Set.of(targetType, Types.getNullType()));
-        return createFunctionCall(
-                StdFunction.typeCast.get().getParameterized(List.of(targetType)),
-                List.of(operand)
-        );
+    NodeRT createTypeCast(Type targetType) {
+        targetType = Types.getNullableType(targetType);
+        return createFunctionCall(StdFunction.typeCast.get().getParameterized(List.of(targetType)));
     }
 
-    FunctionCallNode createFunctionCall(Function function, List<Value> arguments) {
+    FunctionCallNode createFunctionCall(Function function) {
         var functionRef = function.getRef();
-        List<Argument> args = NncUtils.biMap(
-                functionRef.getRawFlow().getParameters(), arguments,
-                (param, arg) -> new Argument(null, param.getRef(), arg)
-        );
         return onNodeCreated(new FunctionCallNode(
                 null,
                 nextName(functionRef.getRawFlow().getName()),
-                null,
                 scope().getLastNode(), scope(),
-                functionRef, args));
+                functionRef));
     }
 
     LambdaNode createLambda(Lambda lambda, Klass functionalInterface) {
         var node = onNodeCreated(new LambdaNode(
-                null, nextName("lambda"), null, scope().getLastNode(), scope(),
+                null, nextName("lambda"), scope().getLastNode(), scope(),
                 lambda, functionalInterface.getType()
         ));
         node.createSAMImpl();
         return node;
     }
 
-    NewObjectNode createNew(Method method, List<Value> arguments, boolean ephemeral, boolean unbound) {
+    NewObjectNode createNew(Method method, boolean ephemeral, boolean unbound) {
         var methodRef = method.getRef();
-        List<Argument> args = NncUtils.biMap(
-                methodRef.getRawFlow().getParameters(), arguments,
-                (param, arg) -> new Argument(null, param.getRef(), arg)
-        );
-        return onNodeCreated(new NewObjectNode(null, nextName(methodRef.resolve().getName()), null, methodRef, args,
-                scope().getLastNode(), scope(), null, ephemeral, unbound));
+        return onNodeCreated(new NewObjectNode(null, nextName(methodRef.resolve().getName()), methodRef,
+                scope().getLastNode(), scope(), ephemeral, unbound));
     }
 
     ExpressionResolver getExpressionResolver() {
@@ -412,10 +354,10 @@ public class MethodGenerator {
     }
 
     public <T extends NodeRT> T onNodeCreated(T node) {
-        var scope = scope();
-        var lastNode = scope.getLastNode();
-        if (lastNode != null && lastNode.isSequential())
-            node.mergeExpressionTypes(lastNode.getNextExpressionTypes());
+//        var scope = scope();
+//        var lastNode = scope.getLastNode();
+//        if (lastNode != null && lastNode.isSequential())
+//            node.mergeExpressionTypes(lastNode.getNextExpressionTypes());
         return node;
     }
 
@@ -437,14 +379,11 @@ public class MethodGenerator {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public RaiseNode createRaise(Value exception) {
+    public RaiseNode createRaise() {
         return onNodeCreated(new RaiseNode(
                 null,
                 nextName("Error"),
-                null,
-                scope().getLastNode(), scope(), RaiseParameterKind.THROWABLE,
-                exception,
-                null
+                scope().getLastNode(), scope()
         ));
     }
 
@@ -452,327 +391,255 @@ public class MethodGenerator {
         return null;
     }
 
-    public ClearArrayNode createClearArray(Value array) {
+    public ClearArrayNode createClearArray() {
         return onNodeCreated(new ClearArrayNode(
-                null, nextName("ClearArray"), null,
-                scope().getLastNode(), scope(), array
+                null, nextName("ClearArray"),
+                scope().getLastNode(), scope()
         ));
     }
 
-    public SetElementNode createSetElement(Value array, Value index, Value value) {
-        return onNodeCreated(new SetElementNode(null, nextName("SetElement"), null,
-                scope().getLastNode(), scope(), array,
-                index, value));
+    public SetElementNode createSetElement() {
+        return onNodeCreated(new SetElementNode(null, nextName("SetElement"),
+                scope().getLastNode(), scope()));
     }
 
-    AddNode createAdd(Value first, Value second) {
+    AddNode createAdd() {
         return onNodeCreated(new AddNode(
                         null,
                         nextName("add"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    SubNode createSub(Value first, Value second) {
+    SubNode createSub() {
         return onNodeCreated(new SubNode(
                         null,
                         nextName("sub"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    MultiplyNode createMul(Value first, Value second) {
+    MultiplyNode createMul() {
         return onNodeCreated(new MultiplyNode(
                         null,
                         nextName("mul"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    DivideNode createDiv(Value first, Value second) {
+    DivideNode createDiv() {
         return onNodeCreated(new DivideNode(
                         null,
                         nextName("div"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    LeftShiftNode createLeftShift(Value first, Value second) {
+    LeftShiftNode createLeftShift() {
         return onNodeCreated(new LeftShiftNode(
                         null,
                         nextName("leftShift"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    RightShiftNode createRightShift(Value first, Value second) {
+    RightShiftNode createRightShift() {
         return onNodeCreated(new RightShiftNode(
                         null,
                         nextName("rightShift"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    UnsignedRightShiftNode createUnsignedRightShift(Value first, Value second) {
+    UnsignedRightShiftNode createUnsignedRightShift() {
         return onNodeCreated(new UnsignedRightShiftNode(
                         null,
                         nextName("unsignedRightShift"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    BitwiseOrNode createBitwiseOr(Value first, Value second) {
+    BitwiseOrNode createBitwiseOr() {
         return onNodeCreated(new BitwiseOrNode(
                         null,
                         nextName("bitwiseOr"),
-                        null,
-                        scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                scope().getLastNode(),
+                        scope()
                 )
         );
     }
 
-    BitwiseAndNode createBitwiseAnd(Value first, Value second) {
+    BitwiseAndNode createBitwiseAnd() {
         return onNodeCreated(new BitwiseAndNode(
                         null,
                         nextName("bitwiseAnd"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    BitwiseXorNode createBitwiseXor(Value first, Value second) {
+    BitwiseXorNode createBitwiseXor() {
         return onNodeCreated(new BitwiseXorNode(
                         null,
                         nextName("bitwiseXor"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    AndNode createAnd(Value first, Value second) {
+    AndNode createAnd() {
         return onNodeCreated(new AndNode(
                         null,
                         nextName("and"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    OrNode createOr(Value first, Value second) {
+    OrNode createOr() {
         return onNodeCreated(new OrNode(
                         null,
                         nextName("or"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    RemainderNode createRem(Value first, Value second) {
+    RemainderNode createRem() {
         return onNodeCreated(new RemainderNode(
                         null,
                         nextName("rem"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    EqNode createEq(Value first, Value second) {
+    EqNode createEq() {
         return onNodeCreated(new EqNode(
                         null,
                         nextName("eq"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    NeNode createNe(Value first, Value second) {
+    NeNode createNe() {
         return onNodeCreated(new NeNode(
                         null,
                         nextName("ne"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    GeNode createGe(Value first, Value second) {
+    GeNode createGe() {
         return onNodeCreated(new GeNode(
                         null,
                         nextName("ge"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    GtNode createGt(Value first, Value second) {
+    GtNode createGt() {
         return onNodeCreated(new GtNode(
                         null,
                         nextName("gt"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    LtNode createLt(Value first, Value second) {
+    LtNode createLt() {
         return onNodeCreated(new LtNode(
                         null,
                         nextName("lt"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    LeNode createLe(Value first, Value second) {
+    LeNode createLe() {
         return onNodeCreated(new LeNode(
                         null,
                         nextName("le"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        first,
-                        second
+                        scope()
                 )
         );
     }
 
-    InstanceOfNode createInstanceOf(Value operand, Type type) {
+    InstanceOfNode createInstanceOf(Type type) {
         return onNodeCreated(new InstanceOfNode(
                         null,
                         nextName("instanceOf"),
-                        null,
                         scope().getLastNode(),
                         scope(),
-                        operand,
                         type
                 )
         );
     }
 
-    BitwiseComplementNode createBitwiseComplement(Value operand) {
+    BitwiseComplementNode createBitwiseComplement() {
         return onNodeCreated(new BitwiseComplementNode(
                         null,
-                        nextName("bitwiseComplement"),
-                        null,
+                        nextName("bitnot"),
                         scope().getLastNode(),
-                        scope(),
-                        operand
+                        scope()
                 )
         );
     }
 
-    NotNode createNot(Value operand) {
+    NotNode createNot() {
         return onNodeCreated(new NotNode(
                         null,
                         nextName("not"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        operand
+                        scope()
                 )
         );
     }
 
-    NegateNode createNegate(Value operand) {
+    NegateNode createNegate() {
         return onNodeCreated(new NegateNode(
                         null,
                         nextName("negate"),
-                        null,
                         scope().getLastNode(),
-                        scope(),
-                        operand
+                        scope()
                 )
         );
     }
 
-    GetPropertyNode createNodeProperty(NodeRT node, Property property) {
-        return createGetProperty(Values.node(node), property);
-    }
-
-    GetPropertyNode createGetProperty(Value instance, Property property) {
+    GetPropertyNode createGetProperty(Property property) {
         return onNodeCreated(new GetPropertyNode(
                         null,
                         nextName("property"),
-                        null,
                         scope().getLastNode(),
                         scope(),
-                        instance,
                         property.getRef()
                 )
         );
@@ -782,7 +649,6 @@ public class MethodGenerator {
         return onNodeCreated(new GetStaticNode(
                         null,
                         nextName("static"),
-                        null,
                         scope().getLastNode(),
                         scope(),
                         property.getRef()
@@ -791,7 +657,7 @@ public class MethodGenerator {
     }
 
     NoopNode createNoop() {
-        return new NoopNode(null, nextName("noop"), null, scope().getLastNode(), scope());
+        return new NoopNode(null, nextName("noop"), scope().getLastNode(), scope());
     }
 
     public NodeRT createLoadThis() {
@@ -802,7 +668,6 @@ public class MethodGenerator {
         return onNodeCreated(new LoadNode(
                 null,
                 nextName("load"),
-                null,
                 type,
                 scope().getLastNode(),
                 scope(),
@@ -810,15 +675,13 @@ public class MethodGenerator {
         ));
     }
 
-    public NodeRT createStore(int index, Value value) {
+    public NodeRT createStore(int index) {
         return onNodeCreated(new StoreNode(
                 null,
                 nextName("store"),
-                null,
                 scope().getLastNode(),
                 scope(),
-                index,
-                value
+                index
         ));
     }
 
@@ -826,7 +689,6 @@ public class MethodGenerator {
         return onNodeCreated(new LoadContextSlotNode(
                 null,
                 nextName("store"),
-                null,
                 type,
                 scope().getLastNode(),
                 scope(),
@@ -835,16 +697,64 @@ public class MethodGenerator {
         ));
     }
 
-    public NodeRT createStoreContextSlot(int contextIndex, int slotIndex, Value value) {
+    public NodeRT createStoreContextSlot(int contextIndex, int slotIndex) {
         return onNodeCreated(new StoreContextSlotNode(
                 null,
                 nextName("store"),
-                null,
                 scope().getLastNode(),
                 scope(),
                 contextIndex,
-                slotIndex,
+                slotIndex
+        ));
+    }
+
+    public NodeRT createLoadConstant(org.metavm.object.instance.core.Value value) {
+        return onNodeCreated(new LoadConstantNode(
+                null,
+                nextName("ldc"),
+                scope().getLastNode(),
+                scope(),
                 value
+        ));
+    }
+
+    public NodeRT createDup() {
+        return onNodeCreated(new DupNode(
+                null, nextName("dup"),
+                scope().getLastNode(), scope()
+        ));
+    }
+
+    public NodeRT createDupX1() {
+        return onNodeCreated(new DupX1Node(
+                null, nextName("dup_x1"),
+                scope().getLastNode(), scope()
+        ));
+    }
+
+    public NodeRT createDupX2() {
+        return onNodeCreated(new DupX2Node(
+                null, nextName("dup_x2"),
+                scope().getLastNode(), scope()
+        ));
+    }
+
+    public NodeRT createLoadType(Type type) {
+        return onNodeCreated(new LoadTypeNode(
+                null, nextName("loadType"),
+                scope().getLastNode(), scope(), type
+        ));
+    }
+
+    public void recordValue(NodeRT anchor, int variableIndex) {
+        var dup = new DupNode(null, nextName("dup"), anchor, scope());
+        new StoreNode(null, nextName("store"), dup, scope(), variableIndex);
+    }
+
+    public PopNode createPop() {
+        return onNodeCreated(new PopNode(
+                null, nextName("pop"),
+                scope().getLastNode(), scope()
         ));
     }
 

@@ -370,6 +370,11 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return parameters.toList();
     }
 
+    @Override
+    public int getInputCount() {
+        return parameters.size();
+    }
+
     public @Nullable Parameter findParameter(Predicate<Parameter> predicate) {
         return NncUtils.find(parameters, predicate);
     }

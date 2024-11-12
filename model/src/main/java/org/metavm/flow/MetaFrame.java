@@ -3,16 +3,11 @@ package org.metavm.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.expression.EvaluationContext;
-import org.metavm.expression.Expression;
-import org.metavm.expression.NodeExpression;
+import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.Access;
-import org.metavm.object.type.Field;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.Type;
+import org.metavm.object.type.*;
 import org.metavm.util.LinkedList;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -22,21 +17,26 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 @Slf4j
-public class MetaFrame implements EvaluationContext, Frame, CallContext, ClosureContext {
+public class MetaFrame implements Frame, CallContext, ClosureContext {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
+
+    public static final int STATE_NEXT = 0;
+    public static final int STATE_JUMP = 1;
+    public static final int STATE_RET = 3;
+    public static final int STATE_RAISE = 4;
 
     @Nullable
     private final ClassInstance self;
     private final List<? extends Value> arguments;
     @Nullable
     private final Klass owner;
-    private final Map<NodeRT, Value> outputs = new HashMap<>();
-    private NodeRT entry;
+    private final NodeRT entry;
     private final InstanceRepository instanceRepository;
-    private FrameState state = FrameState.RUNNING;
     private final LinkedList<TryEnterNode> tryEnterNodes = new LinkedList<>();
     private ClassInstance exception;
+    private Value returnValue;
+    private NodeRT jumpTarget;
     private final Value[] locals;
     private final Value[] stack;
     private int top;
@@ -44,7 +44,6 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext, Closure
     private final MetaFrame containingFrame;
 
     private final Map<TryEnterNode, ExceptionInfo> exceptions = new IdentityHashMap<>();
-    private NodeRT lastNode;
 
     public MetaFrame(@NotNull NodeRT entry,
                      @Nullable Klass owner,
@@ -62,8 +61,6 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext, Closure
         this.containingFrame = containingFrame;
         this.locals = new Value[maxLocals];
         this.stack = new Value[maxStack];
-//        log.debug("flow: {}, maxLocals: {}, self: {}, arguments: {}",
-//                entry.getFlow().getQualifiedName(), maxLocals, self, arguments.size());
         if(self != null) {
             if(locals.length < arguments.size() + 1) {
                 throw new IllegalStateException("Incorrect max locals for flow: " + entry.getFlow().getQualifiedName()
@@ -96,20 +93,6 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext, Closure
         }
     }
 
-    public Value getOutput(NodeRT node) {
-        var result = outputs.get(node);
-        if(result != null)
-            return result;
-        if(containingFrame != null)
-            return containingFrame.getOutput(node);
-        throw new IllegalStateException("Cannot find result for node " + node.getName()
-                + " in flow " + node.getFlow().getQualifiedName());
-    }
-
-    public void setOutput(NodeRT node, Value output) {
-        this.outputs.put(node, output);
-    }
-
     public void addInstance(Instance instance) {
         instanceRepository.bind(instance);
     }
@@ -122,41 +105,16 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext, Closure
         return tryEnterNodes.pop();
     }
 
-    @SuppressWarnings("unused")
-    public boolean inTrySection() {
-        return !tryEnterNodes.isEmpty();
-    }
-
-    @SuppressWarnings("unused")
-    public TryEnterNode currentTrySection() {
-        return NncUtils.requireNonNull(tryEnterNodes.peek());
-    }
-
-    public NodeExecResult catchException(@NotNull NodeRT raiseNode, @NotNull ClassInstance exception) {
+    public int catchException(@NotNull NodeRT raiseNode, @NotNull ClassInstance exception) {
         var tryNode = tryEnterNodes.peek();
         if(tryNode != null) {
             exceptions.put(tryNode, new ExceptionInfo(raiseNode, exception));
-            return NodeExecResult.jump(tryNode.getExit());
-        }
-        else
-            return NodeExecResult.exception(exception);
-    }
-
-    @SuppressWarnings("unused")
-    private void exception(ClassInstance exception, boolean fromResume) {
-        if(!tryEnterNodes.isEmpty()) {
-            var tryNode = tryEnterNodes.peek();
-            exceptions.put(tryNode, new ExceptionInfo(entry, exception));
-            if(fromResume) {
-                entry = tryNode.getSuccessor();
-            }
-            else {
-                jumpTo(tryNode.getSuccessor());
-            }
+            setJumpTarget(tryNode.getExit());
+            return STATE_JUMP;
         }
         else {
-            state = FrameState.EXCEPTION;
             this.exception = exception;
+            return STATE_RAISE;
         }
     }
 
@@ -188,27 +146,31 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext, Closure
     public static final int MAX_STEPS = 100000;
 
     public @NotNull FlowExecResult execute() {
-        var outputs = this.outputs;
         var pc = entry;
         for(int i = 0; i < MAX_STEPS; i++) {
-//            log.debug("Executing node {}", pc.getName());
-            NodeExecResult result;
+//            log.debug("Executing node {}, stack size: {}", pc.getName(), top);
+            int state;
             try {
-                result = pc.execute(this);
+                state = pc.execute(this);
             }
             catch (Exception e) {
                 throw new InternalException("Failed to execute node " + pc.getName()
                         + " in flow " + pc.getFlow().getQualifiedName(), e);
             }
-            if(result.exception() != null)
-                return new FlowExecResult(null, result.exception());
-            var output = result.output();
-            if(result.next() == null)
-                return new FlowExecResult(output, null);
-            if(output != null)
-                outputs.put(pc, output);
-            lastNode = pc;
-            pc = result.next();
+            switch (state) {
+                case STATE_NEXT -> pc = Objects.requireNonNull(pc.getSuccessor());
+                case STATE_JUMP -> {
+                    pc = Objects.requireNonNull(jumpTarget);
+                    jumpTarget = null;
+                }
+                case STATE_RET -> {
+                    return new FlowExecResult(returnValue, null);
+                }
+                case STATE_RAISE -> {
+                    return new FlowExecResult(null, Objects.requireNonNull(exception));
+                }
+                default -> throw new IllegalStateException("Invalid execution state: " + state);
+            }
         }
         throw new FlowExecutionException(String.format("Flow execution steps exceed the limit: %d", MAX_STEPS));
     }
@@ -228,42 +190,12 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext, Closure
         }
     }
 
-    @Override
-    public Value evaluate(Expression expression) {
-        if (expression instanceof NodeExpression nodeExpression) {
-            return getOutput(nodeExpression.getNode());
-        } else {
-            throw new RuntimeException("context '" + this + "' doesn't support expression: " + expression);
-        }
-    }
-
-    @Override
-    public boolean isContextExpression(Expression expression) {
-        return expression instanceof NodeExpression;
-    }
-
     public @Nullable ClassInstance getSelf() {
         return self;
     }
 
     public List<Value> getArguments() {
         return Collections.unmodifiableList(arguments);
-    }
-
-    public List<Value> getLocals() {
-        return List.of(locals);
-    }
-
-    public void jumpTo(NodeRT node) {
-        this.entry = node;
-    }
-
-    public NodeRT getLastNode() {
-        return lastNode;
-    }
-
-    public FrameState getState() {
-        return state;
     }
 
     public ClassInstance getThrow() {
@@ -279,16 +211,20 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext, Closure
         return stack[--top];
     }
 
-    public void push(Value value) {
+    public Value peek() {
+        return stack[top - 1];
+    }
+
+    public void push(@NotNull Value value) {
         stack[top++] = value;
     }
 
-    public Value load(int index) {
-        return locals[index];
+    public void load(int index) {
+        push(locals[index]);
     }
 
-    public void store(int index, Value value) {
-        locals[index] = value;
+    public void store(int index) {
+        locals[index] = pop();
     }
 
     public ClosureContext getCapturingContext() {
@@ -299,8 +235,8 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext, Closure
         return getCapturingContext().getContextSlot(contextIndex, slotIndex);
     }
 
-    public void storeContextSlot(int contextIndex, int slotIndex, Value value) {
-        getCapturingContext().setContextSlot(contextIndex, slotIndex, value);
+    public void storeContextSlot(int contextIndex, int slotIndex) {
+        getCapturingContext().setContextSlot(contextIndex, slotIndex, pop());
     }
 
     public Value getContextSlot(int contextIndex, int slotIndex) {
@@ -317,6 +253,48 @@ public class MetaFrame implements EvaluationContext, Frame, CallContext, Closure
             locals[slotIndex] = value;
         else
             Objects.requireNonNull(containingFrame).setContextSlot(contextIndex - 1, slotIndex, value);
+    }
+
+    public void dup() {
+        stack[top] = stack[top++ - 1];
+    }
+
+    public void dupX1() {
+        var top = this.top;
+        var v = stack[top] = stack[top-1];
+        stack[top-1] = stack[top-2];
+        stack[top-2] = v;
+        this.top++;
+    }
+
+    public void dupX2() {
+        var top = this.top;
+        var v = stack[top] = stack[top-1];
+        stack[top-1] = stack[top-2];
+        stack[top-2] = stack[top-3];
+        stack[top-3] = v;
+        this.top++;
+    }
+
+    public Type getVariableType(int index) {
+        return Objects.requireNonNull(locals[index], () -> "Variable " + index + " is not initialized").getType();
+    }
+
+    public IndexKeyRT loadIndexKey(Index index) {
+        var values = new LinkedList<Value>();
+        var numFields = index.getFields().size();
+        for (int i = 0; i < numFields; i++) {
+            values.addFirst(pop());
+        }
+        return index.createIndexKey(values);
+    }
+
+    public void setJumpTarget(NodeRT target) {
+        this.jumpTarget = target;
+    }
+
+    public void setReturnValue(Value value) {
+        returnValue = value;
     }
 
 }

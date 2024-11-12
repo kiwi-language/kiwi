@@ -28,10 +28,6 @@ public class NodeFactory {
             NodeRT prev = nodeDTO.prevId() != null ? context.getNode(nodeDTO.prevId()) : scope.getLastNode();
             NodeRT node = context.getNode(nodeDTO.id());
             boolean isCreate = node == null;
-            if (node != null) {
-                node.setName(nodeDTO.name());
-                node.setCode(nodeDTO.code());
-            }
             try {
                 node = (NodeRT) ReflectionUtils.invoke(null, createMethod, nodeDTO, prev, scope, stage, context);
                 if(prev != null && prev.isSequential())

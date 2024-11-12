@@ -20,11 +20,17 @@ public class MaxesComputer extends StructuralVisitor<Void> {
     public Void visitMethod(Method method) {
         if(!method.isRootScopePresent())
             return null;
+//        if(method.getQualifiedName().equals("MyList.fromView")) {
+//            log.debug("Visiting method: {}", method.getQualifiedSignature());
+//            DebugEnv.flag = true;
+//        }
         var c = enterCallable(method);
         c.setMaxLocals(method.isStatic() ? method.getParameters().size() : method.getParameters().size() + 1);
         super.visitMethod(method);
+//        DebugEnv.flag = false;
         exitCallable();
         method.getScope().setMaxLocals(c.maxLocals);
+        method.getScope().setMaxStack(c.maxStacks);
         return null;
     }
 
@@ -37,6 +43,7 @@ public class MaxesComputer extends StructuralVisitor<Void> {
         super.visitFunction(function);
         exitCallable();
         function.getScope().setMaxLocals(c.maxLocals);
+        function.getScope().setMaxStack(c.maxStacks);
         return null;
     }
 
@@ -47,11 +54,22 @@ public class MaxesComputer extends StructuralVisitor<Void> {
         super.visitLambda(lambda);
         exitCallable();
         lambda.getScope().setMaxLocals(c.maxLocals);
+        lambda.getScope().setMaxStack(c.maxStacks);
+        return null;
+    }
+
+    @Override
+    public Void visitNode(NodeRT node) {
+        currentCallable().changeStack(node.getStackChange());
+//        if(DebugEnv.flag)
+//            log.debug("Stack size at " + node.getName() + ": {}, {}",
+//                    currentCallable().currentStacks, currentCallable().maxStacks);
         return null;
     }
 
     @Override
     public Void visitVariableAccessNode(VariableAccessNode node) {
+        super.visitVariableAccessNode(node);
         currentCallable().setMaxLocals(node.getIndex() + 1);
         return null;
     }
@@ -73,6 +91,7 @@ public class MaxesComputer extends StructuralVisitor<Void> {
         final Callable callable;
         private int maxLocals;
         private int maxStacks;
+        private int currentStacks;
 
         private CallableInfo(Callable callable, CallableInfo parent) {
             this.callable = callable;
@@ -82,6 +101,12 @@ public class MaxesComputer extends StructuralVisitor<Void> {
         public void setMaxLocals(int maxLocals) {
             this.maxLocals = Math.max(this.maxLocals, maxLocals);
         }
+
+        public void changeStack(int change) {
+            currentStacks += change;
+            maxStacks = Math.max(maxStacks, currentStacks);
+        }
+
     }
 
 }

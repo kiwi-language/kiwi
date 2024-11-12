@@ -4,11 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.FlowParsingContext;
-import org.metavm.flow.rest.LeftShiftNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.LongValue;
+import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
@@ -17,30 +16,16 @@ public class LeftShiftNode extends NodeRT {
 
     public static LeftShiftNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         LeftShiftNode node = (LeftShiftNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null) {
-            LeftShiftNodeParam param = nodeDTO.getParam();
-            var parsingContext = FlowParsingContext.create(scope, prev, context);
-            var first = ValueFactory.create(param.first(), parsingContext);
-            var second = ValueFactory.create(param.second(), parsingContext);
-            node = new LeftShiftNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(),
-                    prev, scope, first, second);
-        }
+        if (node == null)
+            node = new LeftShiftNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
         return node;
     }
 
-    private final Value first;
-    private final Value second;
-
     public LeftShiftNode(Long tmpId,
                          @NotNull String name,
-                         @Nullable String code,
                          @Nullable NodeRT previous,
-                         @NotNull ScopeRT scope,
-                         Value first,
-                         Value second) {
-        super(tmpId, name, code, Types.getLongType(), previous, scope);
-        this.first = first;
-        this.second = second;
+                         @NotNull ScopeRT scope) {
+        super(tmpId, name, null, previous, scope);
     }
 
     @Override
@@ -50,18 +35,30 @@ public class LeftShiftNode extends NodeRT {
 
     @Override
     protected Object getParam(SerializeContext serializeContext) {
-        return new LeftShiftNodeParam(first.toDTO(), second.toDTO());
+        return null;
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        var v1 = (LongValue) first.evaluate(frame);
-        var v2 = (LongValue) second.evaluate(frame);
-        return next(v1.leftShift(v2));
+    public int execute(MetaFrame frame) {
+        var v2 = (LongValue) frame.pop();
+        var v1 = (LongValue) frame.pop();
+        frame.push(v1.leftShift(v2));
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write(first.getText() + " << " + second.getText());
+        writer.write("shl");
+    }
+
+    @Override
+    public int getStackChange() {
+        return -1;
+    }
+
+    @NotNull
+    @Override
+    public Type getType() {
+        return Types.getLongType();
     }
 }

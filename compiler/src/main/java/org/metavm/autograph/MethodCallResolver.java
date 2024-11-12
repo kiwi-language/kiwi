@@ -1,7 +1,7 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.PsiMethodCallExpression;
-import org.metavm.flow.Value;
+import org.metavm.flow.NodeRT;
 
 import java.util.List;
 
@@ -9,8 +9,8 @@ public interface MethodCallResolver {
 
     List<MethodSignature> getSignatures();
 
-    Value resolve(PsiMethodCallExpression methodCallExpression,
-                  ExpressionResolver expressionResolver,
-                  MethodGenerator methodGenerator);
+    NodeRT resolve(PsiMethodCallExpression methodCallExpression,
+                   ExpressionResolver expressionResolver,
+                   MethodGenerator methodGenerator);
 
 }

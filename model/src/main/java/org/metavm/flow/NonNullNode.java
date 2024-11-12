@@ -6,9 +6,7 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.NullPointerExceptionNative;
-import org.metavm.expression.FlowParsingContext;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.flow.rest.NonNullNodeParam;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
@@ -19,22 +17,14 @@ import javax.annotation.Nullable;
 public class NonNullNode extends NodeRT {
 
     public static NonNullNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        NonNullNodeParam param = nodeDTO.getParam();
         var node = (NonNullNode) context.getNode(Id.parse(nodeDTO.id()));
-        var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var value = ValueFactory.create(param.value(), parsingContext);
-        var outputType = Types.getNonNullType(parsingContext.getExpressionType(value.getExpression()).getCertainUpperBound());
         if (node == null)
-            node = new NonNullNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), outputType, prev, scope, value);
+            node = new NonNullNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
         return node;
     }
 
-    private final Value value;
-
-    public NonNullNode(Long tmpId, @NotNull String name, @Nullable String code, Type outputType, @Nullable NodeRT previous, @NotNull ScopeRT scope,
-                       @NotNull Value value) {
-        super(tmpId, name, code, outputType, previous, scope);
-        this.value = value;
+    public NonNullNode(Long tmpId, @NotNull String name,  @Nullable NodeRT previous, @NotNull ScopeRT scope) {
+        super(tmpId, name, null, previous, scope);
     }
 
     @Override
@@ -43,13 +33,13 @@ public class NonNullNode extends NodeRT {
     }
 
     @Override
-    protected NonNullNodeParam getParam(SerializeContext serializeContext) {
-        return new NonNullNodeParam(value.toDTO());
+    protected Object getParam(SerializeContext serializeContext) {
+        return null;
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        var inst = value.evaluate(frame);
+    public int execute(MetaFrame frame) {
+        var inst = frame.peek();
         if(inst.isNull()) {
             var npe = ClassInstance.allocate(StdKlass.nullPointerException.type());
             var nat = new NullPointerExceptionNative(npe);
@@ -57,21 +47,22 @@ public class NonNullNode extends NodeRT {
             return frame.catchException(this, npe);
         }
         else
-            return next(inst);
-    }
-
-    public Value getValue() {
-        return value;
-    }
-
-    @NotNull
-    @Override
-    public Type getType() {
-        return Types.getNonNullType(value.getType());
+            return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write(value.getText() + "!!");
+        writer.write("nonnull");
+    }
+
+    @Override
+    public int getStackChange() {
+        return 0;
+    }
+
+    @Override
+    @NotNull
+    public Type getType() {
+        return Types.getAnyType();
     }
 }

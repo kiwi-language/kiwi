@@ -1,7 +1,10 @@
 package org.metavm.entity;
 
 import org.metavm.api.ValueObject;
-import org.metavm.flow.*;
+import org.metavm.flow.Method;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Nodes;
+import org.metavm.flow.Parameter;
 import org.metavm.object.type.ColumnStore;
 import org.metavm.object.type.TypeCategory;
 import org.metavm.util.NncUtils;
@@ -10,7 +13,6 @@ import org.metavm.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.List;
 
 public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> {
@@ -67,19 +69,20 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                 int i = 0;
                 for (var field : klass.getFields()) {
                    if(!field.isStatic()) {
-                       Nodes.setField(Values.node(Nodes.this_(scope)), field,
-                               Values.node(Nodes.argument(constructor, i++)), scope);
+                       Nodes.this_(scope);
+                       Nodes.argument(constructor, i++);
+                       Nodes.setField(field, scope);
                    }
                 }
-                Nodes.ret("return", scope, Values.node(Nodes.this_(scope)));
+                Nodes.this_(scope);
+                Nodes.ret(scope);
             }
             for (org.metavm.object.type.Field field : klass.getFields()) {
                 var accessor = klass.getMethodByCode(field.getCodeNotNull());
                 var scope = accessor.getScope();
                 scope.setStrictEphemeral(true);
-                Nodes.ret("return", scope,
-                        Values.node(Nodes.thisProperty(field, scope))
-                );
+                Nodes.thisProperty(field, scope);
+                Nodes.ret(scope);
             }
         }
     }

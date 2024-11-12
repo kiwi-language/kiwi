@@ -23,6 +23,11 @@ public class DummyCallable implements Callable {
     }
 
     @Override
+    public int getInputCount() {
+        return 0;
+    }
+
+    @Override
     public void setParameters(List<Parameter> parameters) {
 
     }

@@ -17,20 +17,20 @@ public class GotoNode extends JumpNode {
         var param = (GotoNodeParam) nodeDTO.getParam();
         var node = (GotoNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new GotoNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope);
+            node = new GotoNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
         if(stage == NodeSavingStage.FINALIZE)
             node.setTarget(Objects.requireNonNull(context.getNode(param.targetId())));
         return node;
     }
 
-    public GotoNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope,
+    public GotoNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope,
                     @Nullable NodeRT target) {
-        super(tmpId, name, code, null, previous, scope);
+        super(tmpId, name, null, previous, scope);
         setTarget(Objects.requireNonNullElse(target, this));
     }
 
-    public GotoNode(Long tmpId, @NotNull String name, @Nullable String code, @Nullable NodeRT previous, @NotNull ScopeRT scope) {
-        super(tmpId, name, code, null, previous, scope);
+    public GotoNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope) {
+        super(tmpId, name, null, previous, scope);
     }
 
     @Override
@@ -44,13 +44,19 @@ public class GotoNode extends JumpNode {
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        return NodeExecResult.jump(getTarget());
+    public int execute(MetaFrame frame) {
+        frame.setJumpTarget(getTarget());
+        return MetaFrame.STATE_JUMP;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
         writer.write("goto " + getTarget().getName());
+    }
+
+    @Override
+    public int getStackChange() {
+        return 0;
     }
 
     public void setTarget(@NotNull NodeRT target) {

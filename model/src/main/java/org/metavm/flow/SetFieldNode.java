@@ -4,15 +4,10 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.FlowParsingContext;
-import org.metavm.expression.ParsingContext;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.SetFieldNodeParam;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.FieldRef;
-
-import javax.annotation.Nullable;
 
 @EntityType
 public class SetFieldNode extends NodeRT {
@@ -21,51 +16,39 @@ public class SetFieldNode extends NodeRT {
         SetFieldNodeParam param = nodeDTO.getParam();
         var node = (SetFieldNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
-            ParsingContext parsingContext = FlowParsingContext.create(scope, prev, context);
-            var objectId = ValueFactory.create(param.objectId(), parsingContext);
             var fieldRef = FieldRef.create(param.fieldRef(), context);
-            var value = ValueFactory.create(param.value(), parsingContext);
-            node = new SetFieldNode(
-                    nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, objectId, fieldRef, value);
+            node = new SetFieldNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, fieldRef);
         }
         return node;
     }
 
-    private final Value object;
     private final FieldRef fieldRef;
-    private final Value value;
 
-    public SetFieldNode(Long tmpId, String name, @Nullable String code, NodeRT prev, ScopeRT scope, Value object, FieldRef fieldRef, Value value) {
-        super(tmpId, name, code, null, prev, scope);
-        this.object = object;
+    public SetFieldNode(Long tmpId, String name, NodeRT prev, ScopeRT scope, FieldRef fieldRef) {
+        super(tmpId, name, null, prev, scope);
         this.fieldRef = fieldRef;
-        this.value = value;
     }
-
-    public Value getObject() {
-        return object;
-    }
-
     @Override
     protected SetFieldNodeParam getParam(SerializeContext serializeContext) {
-        return new SetFieldNodeParam(
-                object.toDTO(),
-                fieldRef.toDTO(serializeContext),
-                value.toDTO()
-        );
+        return new SetFieldNodeParam(fieldRef.toDTO(serializeContext));
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        ClassInstance instance = object.evaluate(frame).resolveObject();
-        instance.setField(fieldRef.resolve(), value.evaluate(frame));
-        return next(null);
+    public int execute(MetaFrame frame) {
+        var value = frame.pop();
+        var instance = frame.pop().resolveObject();
+        instance.setField(fieldRef.resolve(), value);
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("setField " + object.getText() + " " + fieldRef.getRawField().getName() + " "
-                + value.getText());
+        writer.write("setField " + fieldRef.getRawField().getName());
+    }
+
+    @Override
+    public int getStackChange() {
+        return -2;
     }
 
     @Override

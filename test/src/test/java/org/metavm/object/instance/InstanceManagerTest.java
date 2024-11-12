@@ -7,17 +7,17 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.ModelDefRegistry;
-import org.metavm.entity.StdKlass;
-import org.metavm.flow.*;
+import org.metavm.flow.FlowExecutionService;
+import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.rest.FlowExecutionRequest;
 import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.mocks.*;
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.ClassInstanceBuilder;
+import org.metavm.object.instance.core.DefaultViewId;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
-import org.metavm.object.type.rest.dto.FieldDTOBuilder;
-import org.metavm.object.type.rest.dto.FieldRefDTO;
 import org.metavm.object.view.rest.dto.DirectMappingKey;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -289,118 +289,6 @@ public class InstanceManagerTest extends TestCase {
         Assert.assertEquals("true", reloadedHuman.getFieldValue(typeIds.humanThinkingFieldId()).getDisplayValue());
     }
 
-    public void testRemoveChildInUse() {
-        var childType = TestUtils.doInTransaction(() -> typeManager.saveType(
-                ClassTypeDTOBuilder.newBuilder("Child").tmpId(NncUtils.randomNonNegative()).build()
-        ));
-        var nullableChildType = TypeExpressions.getNullableType(TypeExpressions.getClassType(childType.id()));
-        var typeTmpId = TmpId.random().toString();
-        var typeExpr = TypeExpressions.getClassType(typeTmpId);
-        var childFieldTmpId = TmpId.random().toString();
-        var childRefFieldTmpId = TmpId.random().toString();
-        var parentType = TestUtils.doInTransaction(() -> typeManager.saveType(
-                ClassTypeDTOBuilder.newBuilder("Parent")
-                        .id(typeTmpId)
-                        .addField(
-                                FieldDTOBuilder.newBuilder("child", nullableChildType)
-                                        .code("child")
-                                        .id(childFieldTmpId)
-                                        .isChild(true)
-                                        .build()
-                        )
-                        .addField(
-                                FieldDTOBuilder.newBuilder("childRef", TypeExpressions.getClassType(childType.id()))
-                                        .code("childRef")
-                                        .id(childRefFieldTmpId)
-                                        .build()
-                        )
-                        .addMethod(
-                                MethodDTOBuilder.newBuilder(typeTmpId, "Parent")
-                                        .code("Parent")
-                                        .tmpId(NncUtils.randomNonNegative())
-                                        .returnType(typeExpr)
-                                        .isConstructor(true)
-                                        .addNode(
-                                                NodeDTOFactory.createThis(NncUtils.randomNonNegative(), "self", typeExpr)
-                                        )
-                                        .addNode(
-                                                NodeDTOFactory.createAddObjectNode(
-                                                        NncUtils.randomNonNegative(),
-                                                        "child",
-                                                        TypeExpressions.getClassType(childType.id()),
-                                                        List.of()
-                                                )
-                                        )
-                                        .addNode(
-                                                NodeDTOFactory.createSetFieldNode(
-                                                        NncUtils.randomNonNegative(),
-                                                        "init1",
-                                                        ValueDTOFactory.createReference("self"),
-                                                        new FieldRefDTO(
-                                                                typeExpr,
-                                                                childFieldTmpId
-                                                        ),
-                                                        ValueDTOFactory.createReference("child")
-                                                )
-                                        )
-                                        .addNode(
-                                                NodeDTOFactory.createSetFieldNode(
-                                                        NncUtils.randomNonNegative(),
-                                                        "init2",
-                                                        ValueDTOFactory.createReference("self"),
-                                                        new FieldRefDTO(
-                                                                typeExpr,
-                                                                childRefFieldTmpId
-                                                        ),
-                                                        ValueDTOFactory.createReference("child")
-                                                )
-                                        )
-                                        .addNode(
-                                                NodeDTOFactory.createReturnNode(
-                                                        NncUtils.randomNonNegative(),
-                                                        "return",
-                                                        ValueDTOFactory.createReference("self")
-                                                )
-                                        )
-                                        .build()
-                        )
-                        .build()
-        ));
-
-        var childFieldId = TestUtils.getFieldIdByCode(parentType, "child");
-        var childRefFieldId = TestUtils.getFieldIdByCode(parentType, "childRef");
-        var parentId = TestUtils.doInTransaction(() -> flowExecutionService.execute(
-                new FlowExecutionRequest(
-                        TestUtils.getMethodRefByCode(parentType, "Parent"),
-                        null,
-                        List.of()
-                )
-        )).id();
-        var parent = instanceManager.get(parentId, 1).instance();
-        var child = ((InstanceFieldValue) parent.getFieldValue(childFieldId)).getInstance();
-        try {
-            TestUtils.doInTransactionWithoutResult(() -> instanceManager.update(
-                    InstanceDTO.createClassInstance(
-                            parent.id(),
-                            TypeExpressions.getClassType(parentType.id()),
-                            List.of(
-                                    InstanceFieldDTO.create(
-                                            childFieldId,
-                                            PrimitiveFieldValue.createNull()
-                                    ),
-                                    InstanceFieldDTO.create(
-                                            childRefFieldId,
-                                            ReferenceFieldValue.create(child.id())
-                                    )
-                            )
-                    )
-            ));
-            Assert.fail("Should not be able to delete child in use");
-        } catch (BusinessException e) {
-            Assert.assertEquals(String.format("Object is referenced by others and cannot be deleted: Child-%s", child.title()), e.getMessage());
-        }
-    }
-
     public void testRemoveNonPersistedChild() {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
         MockUtils.assemble(parentChildMasm, typeManager, schedulerAndWorker);
@@ -445,41 +333,6 @@ public class InstanceManagerTest extends TestCase {
         var viewId = new DefaultViewId(false, mappingId, Id.parse(parent.id()));
 //        var parentMapping = instanceManager.get(viewId.toString(), 2);
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(viewId.toString()));
-    }
-
-    public void testValueInstance() {
-        var ref = new Object() {
-            Id id;
-        };
-        var classType = new ClassType(StdKlass.childList.get(), List.of(Types.getStringType()));
-        TestUtils.doInTransactionWithoutResult(() -> {
-            try (var context = newContext()) {
-                var klass = TestUtils.newKlassBuilder("Foo", null).build();
-                var method = MethodBuilder.newBuilder(klass, "test", null).build();
-                var methodCallNode = new MethodCallNode(
-                        null,
-                        "call",
-                        null,
-                        null,
-                        method.getScope(),
-                        null,
-                        new MethodRef(
-                                classType,
-                                StdKlass.childList.get().getMethodByCodeAndParamTypes("size", List.of()),
-                                List.of()
-                        ),
-                        List.of()
-                );
-
-                context.bind(klass);
-                context.finish();
-                ref.id = methodCallNode.getId();
-            }
-        });
-        try (var context = newContext()) {
-            var node = context.getEntity(MethodCallNode.class, ref.id);
-            Assert.assertEquals(classType, node.getFlowRef().getDeclaringType());
-        }
     }
 
     public void testRelocation() {

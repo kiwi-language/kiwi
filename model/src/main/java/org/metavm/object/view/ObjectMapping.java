@@ -6,18 +6,20 @@ import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.LocalKey;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.flow.*;
+import org.metavm.flow.Flow;
+import org.metavm.flow.Method;
+import org.metavm.flow.Nodes;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.rest.dto.ParameterizedTypeKey;
 import org.metavm.object.view.rest.dto.*;
+import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Objects;
 
 @EntityType
@@ -39,11 +41,9 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var scope = Objects.requireNonNull(mapper).newEphemeralRootScope();
         var actualSourceType = (ClassType) mapper.getParameter(0).getType();
         var readMethod = getSourceMethod(actualSourceType.resolve(), getReadMethod());
-        var view = Nodes.methodCall(
-                scope.nextNodeName("view"),
-                Values.node(Nodes.argument( mapper, 0)), readMethod, List.of(), scope
-        );
-        new ReturnNode(null, scope.nextNodeName("return"), null, scope.getLastNode(), scope, Values.node(view));
+        Nodes.argument(mapper, 0);
+        Nodes.methodCall(readMethod, scope);
+        Nodes.ret(scope);
         mapper.computeMaxes();
         return mapper;
     }
@@ -54,39 +54,23 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var fromViewMethod = findSourceMethod(actualSourceKlass, findFromViewMethod());
         var writeMethod = getSourceMethod(actualSourceKlass, getWriteMethod());
         var scope = unmapper.newEphemeralRootScope();
-        var isSourcePresent = Nodes.functionCall(
-                scope.nextNodeName("isSourcePresent"), scope,
-                StdFunction.isSourcePresent.get(),
-                List.of(Nodes.argument(StdFunction.isSourcePresent.get(), 0, Values.node(Nodes.argument(unmapper, 0))))
-        );
-        var view = Nodes.argument(unmapper, 0);
-        var ifNode = Nodes.ifNot(scope.nextNodeName("ifNot"),
-                Values.node(isSourcePresent), null, scope
-        );
-        var source = Nodes.functionCall(
-                scope.nextNodeName("source"), scope,
-                StdFunction.getSource.get(),
-                List.of(Nodes.argument(StdFunction.getSource.get(), 0, Values.node(view)))
-        );
-        var castedSource = Nodes.cast(scope.nextNodeName("castedSource"), getSourceType(), Values.node(source), scope);
-        Nodes.methodCall(
-                scope.nextNodeName("saveView"), Values.node(castedSource), writeMethod, List.of(Nodes.argument(writeMethod, 0, Values.node(view))), scope
-        );
-        Nodes.ret(scope.nextNodeName("return"), scope, Values.node(castedSource));
+        Nodes.argument(unmapper, 0);
+        Nodes.functionCall(scope, StdFunction.isSourcePresent.get());
+        var ifNode = Nodes.ifNot(null, scope);
+        Nodes.argument(unmapper, 0);
+        Nodes.functionCall(scope, StdFunction.getSource.get());
+        Nodes.cast(getSourceType(), scope);
+        Nodes.dup(scope);
+        Nodes.argument(unmapper, 0);
+        Nodes.methodCall(writeMethod, scope);
+        Nodes.ret(scope);
         if (fromViewMethod != null) {
-            var fromView = Nodes.methodCall(
-                    scope.nextNodeName("fromView"), null, fromViewMethod, List.of(
-                            Nodes.argument(fromViewMethod, 0, Values.node(view))
-                    ), scope
-            );
-            ifNode.setTarget(fromView);
-            Nodes.ret(scope.nextNodeName("return"), scope, Values.node(fromView));
+            ifNode.setTarget(Nodes.argument(unmapper, 0));
+            Nodes.methodCall(fromViewMethod, scope);
+            Nodes.ret(scope);
         } else {
-            ifNode.setTarget(Nodes.raise(
-                    scope.nextNodeName("fromViewNotSupported"),
-                    scope,
-                    Values.constantString("fromView not supported")
-            ));
+            ifNode.setTarget(Nodes.loadConstant(Instances.stringInstance("fromView not supported"), scope));
+            Nodes.raiseWithMessage(scope);
         }
         unmapper.computeMaxes();
         return unmapper;

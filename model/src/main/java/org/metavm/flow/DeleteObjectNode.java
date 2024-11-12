@@ -4,58 +4,43 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.expression.FlowParsingContext;
-import org.metavm.flow.rest.DeleteObjectNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Reference;
-
-import javax.annotation.Nullable;
 
 @EntityType
 public class DeleteObjectNode extends NodeRT {
 
     public static DeleteObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        DeleteObjectNodeParam param = nodeDTO.getParam();
-        var parsingContext = FlowParsingContext.create(scope, prev, context);
-        var objectId = ValueFactory.create(param.objectId(), parsingContext);
         DeleteObjectNode node = (DeleteObjectNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node != null)
-            node.setObject(objectId);
-        else
-            node = new DeleteObjectNode(nodeDTO.tmpId(), nodeDTO.name(), nodeDTO.code(), prev, scope, objectId);
+        if (node == null)
+            node = new DeleteObjectNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
         return node;
     }
 
-    private Value object;
-
-    public DeleteObjectNode(Long tmpId, String name, @Nullable String code,  NodeRT prev, ScopeRT scope, Value object) {
-        super(tmpId, name, code, null, prev, scope);
-        this.object = object;
-    }
-
-    public Value getObject() {
-        return object;
+    public DeleteObjectNode(Long tmpId, String name,  NodeRT prev, ScopeRT scope) {
+        super(tmpId, name, null, prev, scope);
     }
 
     @Override
-    protected DeleteObjectNodeParam getParam(SerializeContext serializeContext) {
-        return new DeleteObjectNodeParam(object.toDTO());
-    }
-
-    public void setObject(Value object) {
-        this.object = object;
+    protected Object getParam(SerializeContext serializeContext) {
+        return null;
     }
 
     @Override
-    public NodeExecResult execute(MetaFrame frame) {
-        frame.deleteInstance((Reference) object.evaluate(frame));
-        return next();
+    public int execute(MetaFrame frame) {
+        frame.deleteInstance((Reference) frame.pop());
+        return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("delete " + object.getText());
+        writer.write("delete");
+    }
+
+    @Override
+    public int getStackChange() {
+        return -1;
     }
 
     @Override

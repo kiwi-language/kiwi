@@ -16,7 +16,6 @@ import org.metavm.util.NamingUtils;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -131,24 +130,23 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     public void generateReadMethodCode() {
         var scope = Objects.requireNonNull(readMethod).newEphemeralRootScope();
-        List<FieldParam> fieldParams = new ArrayList<>();
         for (FieldMapping fieldMapping : fieldMappings)
-            fieldParams.add(fieldMapping.generateReadCode(readMethod.getScope()));
-        var view = new AddObjectNode(null, "view", null, false,
-                true, getTargetType(), scope.getLastNode(), scope);
-        fieldParams.forEach(view::addField);
-        new ReturnNode(null, "return", null, scope.getLastNode(), scope, Values.node(view));
+            fieldMapping.generateReadCode(readMethod.getScope());
+        Nodes.addObject(getTargetType(), true, scope);
+        Nodes.ret(scope);
         readMethod.computeMaxes();
     }
 
     public void generateWriteMethodCode() {
         var scope = Objects.requireNonNull(writeMethod).newEphemeralRootScope();
-        var viewNode = Nodes.load(1, getTargetType(), scope);
         for (FieldMapping fieldMapping : fieldMappings) {
             if (!fieldMapping.isReadonly())
-                fieldMapping.generateWriteCode(scope, viewNode);
+                fieldMapping.generateWriteCode(() -> {
+                    Nodes.argument(writeMethod, 0);
+                    return getTargetType();
+                }, scope);
         }
-        new ReturnNode(null, "return", null, scope.getLastNode(), scope, null);
+        Nodes.voidRet(scope);
         writeMethod.computeMaxes();
     }
 

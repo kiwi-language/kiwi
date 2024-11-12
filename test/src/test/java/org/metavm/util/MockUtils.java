@@ -4,9 +4,6 @@ import org.metavm.asm.AssemblerFactory;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.FlowSavingContext;
-import org.metavm.flow.MethodDTOBuilder;
-import org.metavm.flow.NodeDTOFactory;
-import org.metavm.flow.ValueDTOFactory;
 import org.metavm.mocks.Bar;
 import org.metavm.mocks.Baz;
 import org.metavm.mocks.Foo;
@@ -19,8 +16,6 @@ import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.BatchSaveRequest;
-import org.metavm.object.type.rest.dto.ClassTypeDTOBuilder;
-import org.metavm.object.type.rest.dto.FieldDTOBuilder;
 
 import java.util.List;
 import java.util.Map;
@@ -674,68 +669,14 @@ public class MockUtils {
     }
 
     public static UserTypeIds createUserTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        var platformUserTypeDTO = ClassTypeDTOBuilder.newBuilder("PlatformUser")
-                .code("PlatformUser")
-                .tmpId(NncUtils.randomNonNegative())
-                .titleFieldId(TmpId.of(NncUtils.randomNonNegative()).toString())
-                .searchable(true)
-                .addField(FieldDTOBuilder.newBuilder("loginName", "string")
-                        .code("loginName")
-                        .asTitle(true)
-                        .tmpId(NncUtils.randomNonNegative())
-                        .build()
-                )
-                .addField(FieldDTOBuilder.newBuilder("password", "password")
-                        .code("password")
-                        .tmpId(NncUtils.randomNonNegative())
-                        .build()
-                )
-                .build();
-        var applicationTypeTmpId = TmpId.random().toString();
-        var applicationTypeDTO = ClassTypeDTOBuilder.newBuilder("Application")
-                .id(applicationTypeTmpId)
-                .code("Application")
-                .titleFieldId(TmpId.random().toString())
-                .searchable(true)
-                .addField(FieldDTOBuilder.newBuilder("name", "string")
-                        .code("name")
-                        .asTitle(true)
-                        .tmpId(NncUtils.randomNonNegative())
-                        .build()
-                )
-                .addField(FieldDTOBuilder.newBuilder("owner", TypeExpressions.getClassType(platformUserTypeDTO.id()))
-                        .code("owner")
-                        .access(Access.PRIVATE.code())
-                        .tmpId(NncUtils.randomNonNegative())
-                        .build()
-                )
-                .addMethod(MethodDTOBuilder.newBuilder(applicationTypeTmpId, "getOwner")
-                        .tmpId(NncUtils.randomNonNegative())
-                        .code("getOwner")
-                        .returnType(TypeExpressions.getClassType(platformUserTypeDTO.id()))
-                        .addNode(NodeDTOFactory.createThis(
-                                NncUtils.randomNonNegative(),
-                                "self",
-                                TypeExpressions.getClassType(applicationTypeTmpId)
-                        ))
-                        .addNode(NodeDTOFactory.createReturnNode(
-                                NncUtils.randomNonNegative(),
-                                "return",
-                                ValueDTOFactory.createReference("self.owner")
-                        ))
-                        .build())
-                .build();
-        TestUtils.doInTransaction(() -> typeManager.batchSave(
-                new BatchSaveRequest(List.of(platformUserTypeDTO, applicationTypeDTO), List.of(), false)
-        ));
-        TestUtils.waitForDDLPrepared(schedulerAndWorker);
-        var applicationType = typeManager.getTypeByCode(applicationTypeDTO.code()).type();
+        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/User.masm", typeManager, schedulerAndWorker);
+        var applicationType = typeManager.getTypeByCode("Application").type();
         var applicationNameFieldId = TestUtils.getFieldIdByCode(applicationType, "name");
         var applicationOwnerFieldId = TestUtils.getFieldIdByCode(applicationType, "owner");
         // get the longName field id and password field id of the platform user type
-        var platformUserType = typeManager.getTypeByCode(platformUserTypeDTO.code()).type();
+        var platformUserType = typeManager.getTypeByCode("PlatformUser").type();
         var platformUserLoginNameFieldId = TestUtils.getFieldIdByCode(platformUserType, "loginName");
-        var platformUserPasswordFieldId = TestUtils.getFieldIdByCode(platformUserType, "password");
+        var platformUserPasswordFieldId = TestUtils.getFieldIdByCode(platformUserType, "passwd");
         return new UserTypeIds(platformUserType.id(), applicationType.id(), applicationNameFieldId, applicationOwnerFieldId, platformUserLoginNameFieldId,
                 platformUserPasswordFieldId);
     }

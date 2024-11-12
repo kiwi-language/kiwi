@@ -8,7 +8,10 @@ import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.mocks.MockNativeFunctionsInitializer;
-import org.metavm.flow.*;
+import org.metavm.flow.MaxesComputer;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Nodes;
+import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.mocks.MockInstanceRepository;
 import org.metavm.object.type.*;
@@ -79,7 +82,7 @@ public class MappingSaverTest extends TestCase {
                 .build();
 
         var barChildArrayType = new ArrayType(barType.getType(), ArrayKind.CHILD);
-        var barReadWriteArrayType = new ArrayType(barType.getType(), ArrayKind.READ_WRITE);
+        var barArrayType = new ArrayType(barType.getType(), ArrayKind.READ_WRITE);
 
         var fooBarsField = FieldBuilder.newBuilder("bars", "bars", fooType, barChildArrayType)
                 .access(Access.PRIVATE)
@@ -94,30 +97,36 @@ public class MappingSaverTest extends TestCase {
 
         // generate getBars method
         var getBarsMethod = MethodBuilder.newBuilder(fooType, "getBars", "getBars")
-                .returnType(barReadWriteArrayType)
+                .returnType(barArrayType)
                 .build();
         {
             var scope = getBarsMethod.getScope();
-            var barsNode = Nodes.newArray("newArray", null, barReadWriteArrayType,
-                    Values.node(Nodes.thisProperty(fooBarsField, scope)), null, scope);
-            Nodes.ret("return", scope, Values.node(barsNode));
+            Nodes.newArray(barArrayType, scope);
+            var barsVar = scope.nextVariableIndex();
+            Nodes.store(barsVar, scope);
+            Nodes.copyArray(
+                    () -> Nodes.thisProperty(fooBarsField, scope),
+                    () -> Nodes.load(barsVar, barArrayType, scope),
+                    scope
+            );
+            Nodes.load(barsVar, barArrayType, scope);
+            Nodes.ret(scope);
         }
 
         // generate setBars method
         var setBarsMethod = MethodBuilder.newBuilder(fooType, "setBars", "setBars")
-                .parameters(new Parameter(null, "bars", "bars", barReadWriteArrayType))
+                .parameters(new Parameter(null, "bars", "bars", barArrayType))
                 .build();
         {
             var scope = setBarsMethod.getScope();
-            Nodes.clearArray("clearBars", null, Values.node(Nodes.thisProperty(fooBarsField, scope)), scope);
-            var bars = Nodes.argument(setBarsMethod, 0);
-            Nodes.forEach(Values.node(bars),
-                    (bodyScope, element, index) -> {
-                        Nodes.addElement("addBar", null, Values.node(Nodes.thisProperty(fooBarsField, scope)),
-                                element, bodyScope);
-                    },
-                    scope);
-            Nodes.ret("return", scope, null);
+            Nodes.thisProperty(fooBarsField, scope);
+            Nodes.clearArray(scope);
+            Nodes.copyArray(
+                    () -> Nodes.argument(setBarsMethod, 0),
+                    () -> Nodes.thisProperty(fooBarsField, scope),
+                    scope
+            );
+            Nodes.voidRet(scope);
         }
         TestUtils.initEntityIds(fooType);
         fooType.accept(new MaxesComputer());
@@ -305,12 +314,16 @@ public class MappingSaverTest extends TestCase {
                 .build();
         {
             var scope = getSkuListMethod.getScope();
-            var skuList = Nodes.newArray(
-                    "skuList", "skuList", skuRwArrayType,
-                    Values.node(Nodes.thisProperty(skuListField, scope)),
-                    null, scope
+            Nodes.newArray(skuRwArrayType, scope);
+            var arrayVar = scope.nextVariableIndex();
+            Nodes.store(arrayVar, scope);
+            Nodes.copyArray(
+                    () -> Nodes.thisProperty(skuListField, scope),
+                    () -> Nodes.load(arrayVar, skuRwArrayType, scope),
+                    scope
             );
-            Nodes.ret("return", scope, Values.node(skuList));
+            Nodes.load(arrayVar, skuRwArrayType, scope);
+            Nodes.ret(scope);
         }
 
         var setSkuListMethod = MethodBuilder.newBuilder(productType, "setSkuList", "setSkuList")
@@ -318,16 +331,14 @@ public class MappingSaverTest extends TestCase {
                 .build();
         {
             var scope = setSkuListMethod.getScope();
-            Nodes.clearArray("clearArray", null, Values.node(Nodes.thisProperty(skuListField, scope)), scope);
-            var array = Nodes.argument(setSkuListMethod, 0);
-            Nodes.forEach(
-                     Values.node(array),
-                    (bodyScope, element, index) -> {
-                        Nodes.addElement("addElement", null,
-                                Values.node(Nodes.thisProperty(skuListField, scope)), element, bodyScope);
-                    },
+            Nodes.thisProperty(skuListField, scope);
+            Nodes.clearArray(scope);
+            Nodes.copyArray(
+                    () -> Nodes.argument(setSkuListMethod, 0),
+                    () -> Nodes.thisProperty(skuListField, scope),
                     scope
             );
+            Nodes.voidRet(scope);
         }
         TestUtils.initEntityIds(productType);
         productType.accept(new MaxesComputer());
@@ -508,7 +519,8 @@ public class MappingSaverTest extends TestCase {
                 .build();
         {
             var scope = getOwnerMethod.getScope();
-            Nodes.ret("return", scope, Values.node(Nodes.thisProperty(ownerField, scope)));
+            Nodes.thisProperty(ownerField, scope);
+            Nodes.ret(scope);
         }
         TestUtils.initEntityIds(applicationType);
 

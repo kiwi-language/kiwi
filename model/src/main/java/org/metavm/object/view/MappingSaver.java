@@ -17,7 +17,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -147,24 +150,6 @@ public class MappingSaver {
                             setter,
                             null);
                 }
-                case ComputedFieldMappingParam computedParam -> {
-                    var value = ValueFactory.create(computedParam.value(),
-                            createTypeParsingContext(containingMapping.getSourceKlass()));
-                    yield new ComputedFieldMapping(
-                            fieldMappingDTO.tmpId(),
-                            createTargetField(
-                                    containingMapping.getTargetKlass(),
-                                    fieldMappingDTO.name(),
-                                    fieldMappingDTO.code(),
-                                    getTargetFieldType(value.getType(), codeGenerator),
-                                    fieldMappingDTO.isChild(),
-                                    false,
-                                    true
-                            ).getRef(),
-                            containingMapping,
-                            codeGenerator,
-                            value);
-                }
                 default -> throw new IllegalStateException("Unexpected value: " + fieldMappingDTO);
             };
         } else {
@@ -185,13 +170,6 @@ public class MappingSaver {
                             getter,
                             setter,
                             getTargetFieldType(getter.getReturnType(), codeGenerator)
-                    );
-                }
-                case ComputedFieldMapping computedFieldMapping -> {
-                    var computedParam = (ComputedFieldMappingParam) param;
-                    computedFieldMapping.setValue(
-                            ValueFactory.create(computedParam.value(),
-                                    createTypeParsingContext(containingMapping.getSourceKlass()))
                     );
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + fieldMapping);
@@ -267,40 +245,19 @@ public class MappingSaver {
         if (generateCode) {
             fromView.clearContent();
             var scope = fromView.getScope();
-            var view = Nodes.load(0, viewType, scope);
-            var fieldValues = new HashMap<String, Value>();
             for (FieldMapping fieldMapping : mapping.getFieldMappings()) {
                 var nestedMapping = fieldMapping.getNestedMapping();
-                var target = Nodes.nodeProperty(view, fieldMapping.getTargetField(), scope);
+                Supplier<NodeRT> getTarget = () -> {
+                    Nodes.load(0, viewType, scope);
+                    return Nodes.getProperty(fieldMapping.getTargetField(), scope);
+                };
                 if (nestedMapping == null)
-                    fieldValues.put(fieldMapping.getTargetField().getCode(), Values.node(target));
-                else {
-                    var fieldValue = nestedMapping.generateUnmappingCode(
-                            Values.node(target),
-                            scope
-                    );
-                    fieldValues.put(fieldMapping.getTargetField().getCode(), fieldValue);
-                }
+                    getTarget.get();
+                else
+                    nestedMapping.generateUnmappingCode(getTarget, scope);
             }
-
-            var newNode = Nodes.newObject(
-                    scope.nextNodeName("newObject"),
-                    fromView.getScope(),
-                    canonicalConstructor,
-                    NncUtils.biMap(
-                            viewType.resolve().getAllFields(),
-                            canonicalConstructor.getParameters(),
-                            (f, p) -> new Argument(
-                                    null,
-                                    p.getRef(),
-                                    Objects.requireNonNull(fieldValues.get(p.getCode()),
-                                            () -> "Can not find field value for: " + p.getCode())
-                            )
-                    ),
-                    false,
-                    false
-            );
-            Nodes.ret(scope.nextNodeName("return"), scope, Values.node(newNode));
+            Nodes.newObject(fromView.getScope(), canonicalConstructor, false, false);
+            Nodes.ret(scope);
             fromView.computeMaxes();
         }
     }

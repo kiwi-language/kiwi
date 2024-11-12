@@ -53,12 +53,23 @@ public class HashMapLab {
         return map.get(createMap(entries));
     }
 
+//    private Map<Object, Object> createMap(List<MapEntry> entries) {
+//        var m = new HashMap<>();
+//        for (MapEntry entry : entries) {
+//            m.put(entry.key(), entry.value());
+//        }
+//        return m;
+//    }
+
+
     private Map<Object, Object> createMap(List<MapEntry> entries) {
         var m = new HashMap<>();
-        for (MapEntry entry : entries) {
+        int i = 0;
+        var list = entries;
+        while (i < list.size()) {
+            var entry = list.get(i++);
             m.put(entry.key(), entry.value());
         }
         return m;
     }
-
 }

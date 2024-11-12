@@ -5,14 +5,16 @@ import org.metavm.api.ValueList;
 import org.metavm.api.entity.MvObject;
 import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.flow.*;
+import org.metavm.flow.MaxesComputer;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Nodes;
+import org.metavm.flow.Parameter;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 
 import java.io.*;
-import java.lang.Error;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
@@ -458,7 +460,8 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .build();
         var scope = c.getScope();
-        Nodes.ret("ret", scope, Values.node(Nodes.this_(scope)));
+        Nodes.this_(scope);
+        Nodes.ret(scope);
         defContext.addDef(new DirectDef<>(MvObject.class, klass));
         klass.accept(new MaxesComputer());
         return klass;
