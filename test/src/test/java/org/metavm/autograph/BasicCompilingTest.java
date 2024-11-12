@@ -75,7 +75,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processLocalClass();
             processLocalClassNameConflict();
             processAnonymousClassSuperclassField();
-            processBitwiseComplement();
+            processBitNot();
             processPrefixOnParenthesized();
             processArrayIndexOutOfBounds();
             processModifyVariableInWhileCondition();
@@ -824,12 +824,12 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(0L, callMethod(className, "test", List.of()));
     }
 
-    private void processBitwiseComplement() {
-        var klassName = "operators.BitwiseComplementFoo";
+    private void processBitNot() {
+        var klassName = "operators.BitNotFoo";
         long v = NncUtils.random();
         Assert.assertEquals(
                 ~v,
-                callMethod(klassName, "bitwiseComplement", List.of(v))
+                callMethod(klassName, "bitNot", List.of(v))
         );
     }
 

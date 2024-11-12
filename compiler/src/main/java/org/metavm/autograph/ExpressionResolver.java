@@ -318,7 +318,7 @@ public class ExpressionResolver {
             return resolve(operand, context);
         } else if(op == JavaTokenType.TILDE) {
             resolve(operand, context);
-            return methodGenerator.createBitwiseComplement();
+            return methodGenerator.createBitNot();
         } else if (op == JavaTokenType.PLUSPLUS) {
             return resolveCompoundAssignment(operand, node -> {
                 methodGenerator.createLoadConstant(Instances.longInstance(1L));
@@ -387,11 +387,11 @@ public class ExpressionResolver {
         else if(op.equals(JavaTokenType.GTGTGT))
             node = methodGenerator.createUnsignedRightShift();
         else if(op.equals(JavaTokenType.OR))
-            node = methodGenerator.createBitwiseOr();
+            node = methodGenerator.createBitOr();
         else if(op.equals(JavaTokenType.AND))
-            node = methodGenerator.createBitwiseAnd();
+            node = methodGenerator.createBitAnd();
         else if(op.equals(JavaTokenType.XOR))
-            node = methodGenerator.createBitwiseXor();
+            node = methodGenerator.createBitXor();
         else if(op.equals(JavaTokenType.ANDAND))
             node = methodGenerator.createAnd();
         else if(op.equals(JavaTokenType.OROR))
@@ -655,9 +655,9 @@ public class ExpressionResolver {
                         } else if (op == JavaTokenType.DIVEQ) {
                             return methodGenerator.createDiv();
                         } else if (op == JavaTokenType.OREQ) {
-                            return methodGenerator.createBitwiseOr();
+                            return methodGenerator.createBitOr();
                         } else if (op == JavaTokenType.ANDEQ) {
-                            return methodGenerator.createBitwiseAnd();
+                            return methodGenerator.createBitAnd();
                         } else if (op == JavaTokenType.GTGTGTEQ)
                             return methodGenerator.createUnsignedRightShift();
                         else if (op == JavaTokenType.GTGTEQ)

@@ -46,7 +46,7 @@ public enum UnaryOperator {
     BITWISE_COMPLEMENT(37, "~", 1 , true, Long.class) {
         @Override
         public Value evaluate(Value operand) {
-            return ((LongValue) operand).bitwiseComplement();
+            return ((LongValue) operand).bitNot();
         }
     },
     IS_NULL(16, "is null", 6, false, Boolean.class) {

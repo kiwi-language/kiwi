@@ -42,12 +42,12 @@ public class NodeKindCodes {
     public static final int LEFT_SHIFT = 52;
     public static final int RIGHT_SHIFT = 53;
     public static final int UNSIGNED_RIGHT_SHIFT = 54;
-    public static final int BITWISE_OR = 55;
-    public static final int BITWISE_AND = 56;
-    public static final int BITWISE_XOR = 57;
+    public static final int BIT_OR = 55;
+    public static final int BIT_AND = 56;
+    public static final int BIT_XOR = 57;
     public static final int AND = 58;
     public static final int OR = 59;
-    public static final int BITWISE_COMPLEMENT = 60;
+    public static final int BIT_NOT = 60;
     public static final int NOT = 61;
     public static final int NEGATE = 62;
     public static final int REM = 63;

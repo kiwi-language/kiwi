@@ -324,28 +324,28 @@ public class Nodes {
         );
     }
 
-    public static NodeRT bitwiseOr(ScopeRT scope) {
-        return new BitwiseOrNode(
+    public static NodeRT bitOr(ScopeRT scope) {
+        return new BitOrNode(
                 null,
-                scope.nextNodeName("bitwiseOr"),
+                scope.nextNodeName("bitor"),
                 scope.getLastNode(),
                 scope
         );
     }
 
-    public static NodeRT bitwiseAnd(ScopeRT scope) {
-        return new BitwiseAndNode(
+    public static NodeRT bitAnd(ScopeRT scope) {
+        return new BitAndNode(
                 null,
-                scope.nextNodeName("bitwiseAnd"),
+                scope.nextNodeName("bitand"),
                 scope.getLastNode(),
                 scope
         );
     }
 
-    public static NodeRT bitwiseXor(ScopeRT scope) {
-        return new BitwiseXorNode(
+    public static NodeRT bitXor(ScopeRT scope) {
+        return new BitXorNode(
                 null,
-                scope.nextNodeName("bitwiseXor"),
+                scope.nextNodeName("bitxor"),
                 scope.getLastNode(),
                 scope
         );
@@ -369,8 +369,8 @@ public class Nodes {
         );
     }
 
-    public static NodeRT bitwiseComplement(ScopeRT scope) {
-        return new BitwiseComplementNode(
+    public static NodeRT bitNot(ScopeRT scope) {
+        return new BitNotNode(
                 null,
                 scope.nextNodeName("bitnot"),
                 scope.getLastNode(),

@@ -12,25 +12,25 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class BitwiseComplementNode extends NodeRT {
+public class BitAndNode extends NodeRT {
 
-    public static BitwiseComplementNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        BitwiseComplementNode node = (BitwiseComplementNode) context.getNode(Id.parse(nodeDTO.id()));
+    public static BitAndNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+        BitAndNode node = (BitAndNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new BitwiseComplementNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new BitAndNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
         return node;
     }
 
-    public BitwiseComplementNode(Long tmpId,
-                                 @NotNull String name,
-                                 @Nullable NodeRT previous,
-                                 @NotNull ScopeRT scope) {
+    public BitAndNode(Long tmpId,
+                      @NotNull String name,
+                      @Nullable NodeRT previous,
+                      @NotNull ScopeRT scope) {
         super(tmpId, name, null, previous, scope);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitBitwiseComplementNode(this);
+        return visitor.visitBitAndNode(this);
     }
 
     @Override
@@ -40,19 +40,20 @@ public class BitwiseComplementNode extends NodeRT {
 
     @Override
     public int execute(MetaFrame frame) {
-        var v = (LongValue) frame.pop();
-        frame.push(v.bitwiseComplement());
+        var v2 = (LongValue) frame.pop();
+        var v1 = (LongValue) frame.pop();
+        frame.push(v1.bitAnd(v2));
         return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("bitnot");
+        writer.write("bitand");
     }
 
     @Override
     public int getStackChange() {
-        return 0;
+        return -1;
     }
 
     @NotNull

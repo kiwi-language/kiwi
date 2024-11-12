@@ -12,25 +12,25 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class BitwiseAndNode extends NodeRT {
+public class BitNotNode extends NodeRT {
 
-    public static BitwiseAndNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        BitwiseAndNode node = (BitwiseAndNode) context.getNode(Id.parse(nodeDTO.id()));
+    public static BitNotNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+        BitNotNode node = (BitNotNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new BitwiseAndNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new BitNotNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
         return node;
     }
 
-    public BitwiseAndNode(Long tmpId,
-                          @NotNull String name,
-                          @Nullable NodeRT previous,
-                          @NotNull ScopeRT scope) {
+    public BitNotNode(Long tmpId,
+                      @NotNull String name,
+                      @Nullable NodeRT previous,
+                      @NotNull ScopeRT scope) {
         super(tmpId, name, null, previous, scope);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitBitwiseAndNode(this);
+        return visitor.visitBitNotNode(this);
     }
 
     @Override
@@ -40,20 +40,19 @@ public class BitwiseAndNode extends NodeRT {
 
     @Override
     public int execute(MetaFrame frame) {
-        var v2 = (LongValue) frame.pop();
-        var v1 = (LongValue) frame.pop();
-        frame.push(v1.bitwiseAnd(v2));
+        var v = (LongValue) frame.pop();
+        frame.push(v.bitNot());
         return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("bitand");
+        writer.write("bitnot");
     }
 
     @Override
     public int getStackChange() {
-        return -1;
+        return 0;
     }
 
     @NotNull

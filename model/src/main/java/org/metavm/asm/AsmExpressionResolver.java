@@ -289,15 +289,15 @@ class AsmExpressionResolver {
                 yield type;
             }
             case AssemblyParser.BITOR -> {
-                Nodes.bitwiseOr(scope);
+                Nodes.bitOr(scope);
                 yield Types.getLongType();
             }
             case AssemblyParser.BITAND -> {
-                Nodes.bitwiseAnd(scope);
+                Nodes.bitAnd(scope);
                 yield Types.getLongType();
             }
             case AssemblyParser.CARET -> {
-                Nodes.bitwiseXor(scope);
+                Nodes.bitXor(scope);
                 yield Types.getLongType();
             }
             case AssemblyParser.AND -> {
@@ -484,7 +484,7 @@ class AsmExpressionResolver {
                 yield type;
             }
             case AssemblyParser.TILDE -> {
-                Nodes.bitwiseComplement(scope);
+                Nodes.bitNot(scope);
                 yield Types.getLongType();
             }
             case AssemblyParser.BANG -> {

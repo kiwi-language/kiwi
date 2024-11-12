@@ -160,19 +160,19 @@ public enum BinaryOperator {
     BITWISE_AND(16, "&", 7, OperatorTypes.BINARY, Types.getLongType()) {
         @Override
         public Value evaluate(Value first, Value second) {
-            return ((LongValue) first).bitwiseAnd((LongValue) second);
+            return ((LongValue) first).bitAnd((LongValue) second);
         }
     },
     BITWISE_XOR(17, "^", 8, OperatorTypes.BINARY, Types.getLongType()) {
         @Override
         public Value evaluate(Value first, Value second) {
-            return ((LongValue) first).bitwiseXor((LongValue) second);
+            return ((LongValue) first).bitXor((LongValue) second);
         }
     },
     BITWISE_OR(18, "|", 9, OperatorTypes.BINARY, Types.getLongType()) {
         @Override
         public Value evaluate(Value first, Value second) {
-            return ((LongValue) first).bitwiseOr((LongValue) second);
+            return ((LongValue) first).bitOr((LongValue) second);
         }
     },
     AND(19, "and", 10, OperatorTypes.BINARY, Types.getBooleanType()) {

@@ -444,15 +444,15 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitBitwiseAndNode(BitwiseAndNode node) {
+    public R visitBitAndNode(BitAndNode node) {
         return visitNode(node);
     }
 
-    public R visitBitwiseOrNode(BitwiseOrNode node) {
+    public R visitBitOrNode(BitOrNode node) {
         return visitNode(node);
     }
 
-    public R visitBitwiseXorNode(BitwiseXorNode node) {
+    public R visitBitXorNode(BitXorNode node) {
         return visitNode(node);
     }
 
@@ -460,7 +460,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitBitwiseComplementNode(BitwiseComplementNode node) {
+    public R visitBitNotNode(BitNotNode node) {
         return visitNode(node);
     }
 

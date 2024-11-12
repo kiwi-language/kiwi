@@ -473,30 +473,30 @@ public class MethodGenerator {
         );
     }
 
-    BitwiseOrNode createBitwiseOr() {
-        return onNodeCreated(new BitwiseOrNode(
+    BitOrNode createBitOr() {
+        return onNodeCreated(new BitOrNode(
                         null,
-                        nextName("bitwiseOr"),
+                        nextName("bitor"),
                 scope().getLastNode(),
                         scope()
                 )
         );
     }
 
-    BitwiseAndNode createBitwiseAnd() {
-        return onNodeCreated(new BitwiseAndNode(
+    BitAndNode createBitAnd() {
+        return onNodeCreated(new BitAndNode(
                         null,
-                        nextName("bitwiseAnd"),
+                        nextName("bitand"),
                         scope().getLastNode(),
                         scope()
                 )
         );
     }
 
-    BitwiseXorNode createBitwiseXor() {
-        return onNodeCreated(new BitwiseXorNode(
+    BitXorNode createBitXor() {
+        return onNodeCreated(new BitXorNode(
                         null,
-                        nextName("bitwiseXor"),
+                        nextName("bitxor"),
                         scope().getLastNode(),
                         scope()
                 )
@@ -604,8 +604,8 @@ public class MethodGenerator {
         );
     }
 
-    BitwiseComplementNode createBitwiseComplement() {
-        return onNodeCreated(new BitwiseComplementNode(
+    BitNotNode createBitNot() {
+        return onNodeCreated(new BitNotNode(
                         null,
                         nextName("bitnot"),
                         scope().getLastNode(),

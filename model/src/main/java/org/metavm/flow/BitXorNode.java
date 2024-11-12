@@ -12,25 +12,25 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class BitwiseOrNode extends NodeRT {
+public class BitXorNode extends NodeRT {
 
-    public static BitwiseOrNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
-        BitwiseOrNode node = (BitwiseOrNode) context.getNode(Id.parse(nodeDTO.id()));
+    public static BitXorNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+        BitXorNode node = (BitXorNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new BitwiseOrNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new BitXorNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
         return node;
     }
 
-    public BitwiseOrNode(Long tmpId,
-                         @NotNull String name,
-                         @Nullable NodeRT previous,
-                         @NotNull ScopeRT scope) {
+    public BitXorNode(Long tmpId,
+                      @NotNull String name,
+                      @Nullable NodeRT previous,
+                      @NotNull ScopeRT scope) {
         super(tmpId, name, null, previous, scope);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitBitwiseOrNode(this);
+        return visitor.visitBitXorNode(this);
     }
 
     @Override
@@ -42,13 +42,13 @@ public class BitwiseOrNode extends NodeRT {
     public int execute(MetaFrame frame) {
         var v2 = (LongValue) frame.pop();
         var v1 = (LongValue) frame.pop();
-        frame.push(v1.bitwiseOr(v2));
+        frame.push(v1.bitXor(v2));
         return MetaFrame.STATE_NEXT;
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("bitor");
+        writer.write("bitxor");
     }
 
     @Override
