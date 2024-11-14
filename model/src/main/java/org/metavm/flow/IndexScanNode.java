@@ -11,8 +11,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Index;
-
-import static java.util.Objects.requireNonNull;
+import org.metavm.object.type.IndexRef;
 
 @EntityType
 public class IndexScanNode extends NodeRT {
@@ -21,51 +20,47 @@ public class IndexScanNode extends NodeRT {
         var node = (IndexScanNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var param = (IndexScanNodeParam) nodeDTO.param();
-            var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
-            node = new IndexScanNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, index);
+            var indexRef = IndexRef.create(param.indexRef(), context);
+            node = new IndexScanNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, indexRef);
         }
         return node;
     }
 
-    private Index index;
+    private final IndexRef indexRef;
 
-    public IndexScanNode(Long tmpId, String name, NodeRT previous, Code code, Index index) {
+    public IndexScanNode(Long tmpId, String name, NodeRT previous, Code code, IndexRef indexRef) {
         super(tmpId, name, null, previous, code);
-        this.index = index;
+        this.indexRef = indexRef;
     }
 
     @Override
     protected IndexScanNodeParam getParam(SerializeContext serializeContext) {
-        return new IndexScanNodeParam(serializeContext.getStringId(index));
+        return new IndexScanNodeParam(indexRef.toDTO(serializeContext));
     }
 
     @Override
     public ArrayType getType() {
-        return new ArrayType(index.getDeclaringType().getType(), ArrayKind.READ_ONLY);
-    }
-
-    public void setIndex(Index index) {
-        this.index = index;
+        return new ArrayType(getIndex().getDeclaringType().getType(), ArrayKind.READ_ONLY);
     }
 
     public Index getIndex() {
-        return index;
+        return indexRef.resolve();
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("indexScan(" + index.getName() + ")");
+        writer.write("indexScan(" + getIndex().getName() + ")");
     }
 
     @Override
     public int getStackChange() {
-        return 1 - (index.getFields().size() << 1);
+        return 1 - (getIndex().getFields().size() << 1);
     }
 
     @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.INDEX_SCAN);
-        output.writeConstant(index.getRef());
+        output.writeConstant(indexRef);
     }
 
     @Override

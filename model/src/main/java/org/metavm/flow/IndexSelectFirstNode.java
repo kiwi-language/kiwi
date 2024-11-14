@@ -10,6 +10,7 @@ import org.metavm.flow.rest.IndexSelectFirstNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Index;
+import org.metavm.object.type.IndexRef;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
@@ -19,56 +20,51 @@ import static java.util.Objects.requireNonNull;
 public class IndexSelectFirstNode extends NodeRT {
 
     public static IndexSelectFirstNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        var param = (IndexSelectFirstNodeParam) nodeDTO.param();
-        var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
         var node = (IndexSelectFirstNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null)
-            node = new IndexSelectFirstNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, index);
+        if (node == null) {
+            var param = (IndexSelectFirstNodeParam) nodeDTO.param();
+            var indexRef = IndexRef.create(param.indexRef(), context);
+            node = new IndexSelectFirstNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, indexRef);
+        }
         return node;
     }
 
-    private Index index;
+    private final IndexRef indexRef;
 
     public IndexSelectFirstNode(Long tmpId, String name, NodeRT previous, Code code,
-                                Index index) {
+                                IndexRef indexRef) {
         super(tmpId, name, null, previous, code);
-        this.index = index;
+        this.indexRef = indexRef;
     }
 
     @Override
     protected IndexSelectFirstNodeParam getParam(SerializeContext serializeContext) {
-        return new IndexSelectFirstNodeParam(
-                serializeContext.getStringId(index)
-        );
-    }
-
-    public void setIndex(Index index) {
-        this.index = index;
+        return new IndexSelectFirstNodeParam(indexRef.toDTO(serializeContext));
     }
 
     public Index getIndex() {
-        return index;
+        return indexRef.resolve();
     }
 
     @Override
     public Type getType() {
-        return Types.getNullableType(index.getDeclaringType().getType());
+        return Types.getNullableType(indexRef.resolve().getDeclaringType().getType());
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("indexSelectFirst(" + index.getName() + ", " +  ")");
+        writer.write("indexSelectFirst(" + indexRef.resolve().getName() + ", " +  ")");
     }
 
     @Override
     public int getStackChange() {
-        return 1 - index.getFields().size();
+        return 1 - indexRef.resolve().getFields().size();
     }
 
     @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.INDEX_SELECT_FIRST);
-        output.writeConstant(index.getRef());
+        output.writeConstant(indexRef);
     }
 
     @Override

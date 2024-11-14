@@ -560,7 +560,7 @@ public class Nodes {
                 code.nextNodeName("select"),
                 code.getLastNode(),
                 code,
-                index
+                index.getRef()
         );
     }
 
@@ -570,7 +570,7 @@ public class Nodes {
                 code.nextNodeName("select"),
                 code.getLastNode(),
                 code,
-                index
+                index.getRef()
         );
     }
 

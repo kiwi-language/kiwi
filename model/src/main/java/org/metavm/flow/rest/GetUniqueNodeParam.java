@@ -1,6 +1,8 @@
 package org.metavm.flow.rest;
 
+import org.metavm.object.type.rest.dto.IndexRefDTO;
+
 public record GetUniqueNodeParam(
-        String indexId
+        IndexRefDTO indexRef
 ) {
 }

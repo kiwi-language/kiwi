@@ -10,10 +10,9 @@ import org.metavm.flow.rest.IndexCountNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Index;
+import org.metavm.object.type.IndexRef;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
-
-import static java.util.Objects.requireNonNull;
 
 @EntityType
 public class IndexCountNode extends NodeRT {
@@ -22,46 +21,42 @@ public class IndexCountNode extends NodeRT {
         var node = (IndexCountNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var param = (IndexCountNodeParam) nodeDTO.param();
-            var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
-            node = new IndexCountNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, index);
+            var indexRef = IndexRef.create(param.indexRef(), context);
+            node = new IndexCountNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, indexRef);
         }
         return node;
     }
 
-    private Index index;
+    private final IndexRef indexRef;
 
-    public IndexCountNode(Long tmpId, String name, NodeRT previous, Code code, Index index) {
+    public IndexCountNode(Long tmpId, String name, NodeRT previous, Code code, IndexRef indexRef) {
         super(tmpId, name, null, previous, code);
-        this.index = index;
+        this.indexRef = indexRef;
     }
 
     @Override
     protected IndexCountNodeParam getParam(SerializeContext serializeContext) {
-        return new IndexCountNodeParam(serializeContext.getStringId(index));
-    }
-
-    public void setIndex(Index index) {
-        this.index = index;
+        return new IndexCountNodeParam(indexRef.toDTO(serializeContext));
     }
 
     public Index getIndex() {
-        return index;
+        return indexRef.resolve();
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("indexCount(" + index.getName() + ")");
+        writer.write("indexCount(" + getIndex().getName() + ")");
     }
 
     @Override
     public int getStackChange() {
-        return 1 - (index.getFields().size() << 1);
+        return 1 - (getIndex().getFields().size() << 1);
     }
 
     @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.INDEX_COUNT);
-        output.writeConstant(index.getRef());
+        output.writeConstant(indexRef);
     }
 
     @Override

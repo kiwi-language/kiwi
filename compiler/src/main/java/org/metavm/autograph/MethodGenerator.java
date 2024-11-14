@@ -272,28 +272,28 @@ public class MethodGenerator {
 
     IndexCountNode createIndexCount(Index index) {
         return onNodeCreated(new IndexCountNode(
-                null, nextName("IndexCount"), code().getLastNode(), code(), index
+                null, nextName("IndexCount"), code().getLastNode(), code(), index.getRef()
         ));
     }
 
     IndexScanNode createIndexScan(Index index) {
         return onNodeCreated(new IndexScanNode(
                 null, nextName("IndexScan"), code().getLastNode(),
-                code(), index
+                code(), index.getRef()
         ));
     }
 
     public IndexSelectNode createIndexSelect(Index index) {
         return onNodeCreated(new IndexSelectNode(
                 null, nextName("IndexSelect"),
-                code().getLastNode(), code(), index
+                code().getLastNode(), code(), index.getRef()
         ));
     }
 
     public IndexSelectFirstNode createIndexSelectFirst(Index index) {
         return onNodeCreated(new IndexSelectFirstNode(
                 null, nextName("IndexSelectFirst"),
-                code().getLastNode(), code(), index
+                code().getLastNode(), code(), index.getRef()
         ));
     }
 

@@ -1,4 +1,6 @@
 package org.metavm.flow.rest;
 
-public record IndexScanNodeParam(String indexId) {
+import org.metavm.object.type.rest.dto.IndexRefDTO;
+
+public record IndexScanNodeParam(IndexRefDTO indexRef) {
 }
