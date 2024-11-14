@@ -1476,4 +1476,12 @@ public class TranspileUtils {
         return idx;
     }
 
+    public static boolean isAnnotationInstanceOf(PsiAnnotation annotation, Class<? extends Annotation> klass) {
+        var aName = annotation.getQualifiedName();
+        if(aName != null)
+            return aName.equals(klass.getSimpleName()) || aName.equals(klass.getName());
+        else
+            return false;
+    }
+
 }
