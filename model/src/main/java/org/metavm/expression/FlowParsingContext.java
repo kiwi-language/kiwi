@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
 import org.metavm.entity.IEntityContext;
-import org.metavm.flow.NodeRT;
+import org.metavm.flow.Node;
 import org.metavm.flow.Code;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.InstanceProvider;
@@ -16,26 +16,26 @@ import java.util.*;
 
 public class FlowParsingContext extends BaseParsingContext {
 
-    public static FlowParsingContext create(NodeRT currentNode, IEntityContext entityContext) {
+    public static FlowParsingContext create(Node currentNode, IEntityContext entityContext) {
         return create(currentNode.getCode(), currentNode.getPredecessor(), entityContext);
     }
 
-    public static FlowParsingContext create(Code code, NodeRT prev, IEntityContext entityContext) {
+    public static FlowParsingContext create(Code code, Node prev, IEntityContext entityContext) {
         return new FlowParsingContext(
                 entityContext.getInstanceContext(),
                 new ContextTypeDefRepository(entityContext),
                 prev);
     }
 
-    private final NodeRT prev;
+    private final Node prev;
     private long lastBuiltVersion = -1L;
-    private final Map<Id, NodeRT> id2node = new HashMap<>();
-    private final Map<String, NodeRT> name2node = new HashMap<>();
+    private final Map<Id, Node> id2node = new HashMap<>();
+    private final Map<String, Node> name2node = new HashMap<>();
     private final ExpressionTypeMap expressionTypes;
 
     public FlowParsingContext(
             InstanceProvider instanceProvider, IndexedTypeDefProvider typeDefProvider,
-            NodeRT prev) {
+            Node prev) {
         super(instanceProvider, typeDefProvider);
         this.prev = prev;
         this.expressionTypes = prev != null ? prev.getNextExpressionTypes() : ExpressionTypeMap.EMPTY;
@@ -54,7 +54,7 @@ public class FlowParsingContext extends BaseParsingContext {
 
     @Override
     public Expression resolveVar(Var var) {
-        NodeRT node = getNode(var);
+        Node node = getNode(var);
         if (node != null) {
             return new NodeExpression(node);
         }
@@ -82,9 +82,9 @@ public class FlowParsingContext extends BaseParsingContext {
         if (prev == null) return;
         id2node.clear();
         name2node.clear();
-        Queue<NodeRT> queue = new LinkedList<>();
+        Queue<Node> queue = new LinkedList<>();
         queue.offer(prev);
-        Set<NodeRT> visited = new IdentitySet<>();
+        Set<Node> visited = new IdentitySet<>();
         while (!queue.isEmpty()) {
             var node = queue.poll();
             visited.add(node);
@@ -100,12 +100,12 @@ public class FlowParsingContext extends BaseParsingContext {
         lastBuiltVersion = prev.getFlow().getVersion();
     }
 
-    public NodeRT getNodeById(Id id) {
+    public Node getNodeById(Id id) {
         rebuildIfOutdated();
         return Objects.requireNonNull(id2node.get(id), () -> "Cannot find node with ID " + id);
     }
 
-    private NodeRT getNode(Var var) {
+    private Node getNode(Var var) {
         return switch (var.getType()) {
             case ID -> id2node.get(var.getId());
             case NAME -> name2node.get(var.getName());

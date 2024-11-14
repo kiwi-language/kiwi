@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
-import org.metavm.flow.NodeRT;
+import org.metavm.flow.Node;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 
@@ -14,13 +14,13 @@ import java.util.Objects;
 @EntityType
 public class NodeExpression extends Expression {
 
-    private final NodeRT node;
+    private final Node node;
 
-    public NodeExpression(@NotNull NodeRT node) {
+    public NodeExpression(@NotNull Node node) {
         this.node = node;
     }
 
-    public NodeRT getNode() {
+    public Node getNode() {
         return node;
     }
 

@@ -3,33 +3,15 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
-import javax.annotation.Nullable;
-
 @EntityType
-public class GetElementNode extends NodeRT {
+public class GetElementNode extends Node {
 
-    public static GetElementNode save(NodeDTO nodeDTO, @Nullable NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        GetElementNode node = (GetElementNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null)
-            node = new GetElementNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
-        return node;
-    }
-
-    public GetElementNode(Long tmpId, String name, NodeRT previous, Code code) {
+    public GetElementNode(Long tmpId, String name, Node previous, Code code) {
         super(tmpId, name, null, previous, code);
-    }
-
-    @Override
-    protected Object getParam(SerializeContext serializeContext) {
-        return null;
     }
 
     @Override

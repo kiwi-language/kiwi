@@ -3,41 +3,24 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
 import org.metavm.entity.LoadAware;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.LambdaNodeParam;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.Types;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
 @EntityType
-public class LambdaNode extends NodeRT implements LoadAware {
-
-    public static LambdaNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        var node = (LambdaNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null) {
-            LambdaNodeParam param = nodeDTO.getParam();
-            var lambda = context.getEntity(Lambda.class, param.lambdaId());
-            var funcInterface = (ClassType) NncUtils.get(param.functionalInterface(), t -> TypeParser.parseType(t, new ContextTypeDefRepository(context)));
-            node = new LambdaNode(
-                    nodeDTO.tmpId(), nodeDTO.name(), prev, code, lambda, funcInterface
-            );
-            node.createSAMImpl();
-        }
-        return node;
-    }
+public class LambdaNode extends Node implements LoadAware {
 
     private final Lambda lambda;
     private final @Nullable ClassType functionalInterface;
 
     private transient ClassType functionInterfaceImpl;
 
-    public LambdaNode(Long tmpId, String name, NodeRT previous, Code code,
+    public LambdaNode(Long tmpId, String name, Node previous, Code code,
                       @NotNull Lambda lambda, @Nullable ClassType functionalInterface) {
         super(tmpId, name, functionalInterface != null ? functionalInterface : lambda.getFunctionType(), previous, code);
         this.functionalInterface = functionalInterface;
@@ -53,14 +36,6 @@ public class LambdaNode extends NodeRT implements LoadAware {
     @Nullable
     public ClassType getFunctionalInterface() {
         return functionalInterface;
-    }
-
-    @Override
-    protected LambdaNodeParam getParam(SerializeContext serializeContext) {
-        return new LambdaNodeParam(
-                serializeContext.getStringId(lambda),
-                NncUtils.get(functionalInterface, t -> t.toExpression(serializeContext))
-        );
     }
 
     @Override

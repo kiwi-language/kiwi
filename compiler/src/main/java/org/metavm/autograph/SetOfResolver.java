@@ -6,7 +6,7 @@ import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiModifier;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
-import org.metavm.flow.NodeRT;
+import org.metavm.flow.Node;
 import org.metavm.object.type.ClassType;
 import org.metavm.util.NncUtils;
 
@@ -39,9 +39,9 @@ public class SetOfResolver implements MethodCallResolver {
     }
 
     @Override
-    public NodeRT resolve(PsiMethodCallExpression methodCallExpression,
-                          ExpressionResolver expressionResolver,
-                          MethodGenerator methodGenerator) {
+    public Node resolve(PsiMethodCallExpression methodCallExpression,
+                        ExpressionResolver expressionResolver,
+                        MethodGenerator methodGenerator) {
         var methodGenerics = methodCallExpression.resolveMethodGenerics();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var setType = (ClassType) expressionResolver.getTypeResolver().resolve(

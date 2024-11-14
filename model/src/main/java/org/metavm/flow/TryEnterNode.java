@@ -2,34 +2,18 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
 import org.metavm.entity.LoadAware;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 
 import java.util.Objects;
 
 @EntityType
-public class TryEnterNode extends NodeRT implements LoadAware {
-
-    public static TryEnterNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        var node = (TryEnterNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null)
-            node = new TryEnterNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
-        return node;
-    }
+public class TryEnterNode extends Node implements LoadAware {
 
     private transient TryExitNode exit;
 
-    public TryEnterNode(Long tmpId, String name, NodeRT previous, Code code) {
+    public TryEnterNode(Long tmpId, String name, Node previous, Code code) {
         super(tmpId, name, null, previous, code);
-    }
-
-    @Override
-    protected Object getParam(SerializeContext serializeContext) {
-        return null;
     }
 
     @Override

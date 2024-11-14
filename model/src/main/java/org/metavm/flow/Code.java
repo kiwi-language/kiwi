@@ -23,7 +23,7 @@ public class Code extends Element implements LoadAware {
     private final Callable callable;
     private final Flow flow;
     @ChildEntity
-    private ChildArray<NodeRT> nodes = addChild(new ChildArray<>(NodeRT.class), "nodes");
+    private ChildArray<Node> nodes = addChild(new ChildArray<>(Node.class), "nodes");
     private int maxLocals;
     private int maxStack;
     private String codeBase64 = EncodingUtils.encodeBase64(new byte[0]);
@@ -53,7 +53,7 @@ public class Code extends Element implements LoadAware {
             return false;
     }
 
-    public void addNode(NodeRT node) {
+    public void addNode(Node node) {
         onNodeChange();
         var prev = node.getPredecessor() != null ? node.getPredecessor() : null;
         if (prev != null) {
@@ -78,40 +78,40 @@ public class Code extends Element implements LoadAware {
         maxStack = 0;
     }
 
-    public void setNodes(List<NodeRT> nodes) {
+    public void setNodes(List<Node> nodes) {
         onNodeChange();
         this.nodes.resetChildren(nodes);
     }
 
-    public NodeRT getNode(long id) {
+    public Node getNode(long id) {
         return nodes.get(Entity::tryGetId, id);
     }
 
-    public NodeRT getNode(Id id) {
+    public Node getNode(Id id) {
         return nodes.get(Entity::tryGetId, id);
     }
 
-    public List<NodeRT> getNodes() {
+    public List<Node> getNodes() {
         return nodes.toList();
     }
 
-    public NodeRT getNodeById(long id) {
+    public Node getNodeById(long id) {
         return nodes.get(Entity::tryGetId, id);
     }
 
-    public NodeRT getNodeByName(String name) {
-        return nodes.get(NodeRT::getName, name);
+    public Node getNodeByName(String name) {
+        return nodes.get(Node::getName, name);
     }
 
-    public NodeRT getNodeByIndex(int index) {
+    public Node getNodeByIndex(int index) {
         return nodes.get(index);
     }
 
-    public NodeRT tryGetFirstNode() {
+    public Node tryGetFirstNode() {
         return nodes.isEmpty() ? null : nodes.get(0);
     }
 
-    public void removeNode(NodeRT node) {
+    public void removeNode(Node node) {
         onNodeChange();
         nodes.remove(node);
         flow.removeNode(node);
@@ -135,7 +135,7 @@ public class Code extends Element implements LoadAware {
     }
 
     @Nullable
-    public NodeRT getLastNode() {
+    public Node getLastNode() {
         return nodes.isEmpty() ? null : nodes.get(nodes.size() - 1);
     }
 
@@ -184,7 +184,7 @@ public class Code extends Element implements LoadAware {
     public void emitCode() {
         var tryEnters = new LinkedList<TryEnterNode>();
         int offset = 0;
-        for (NodeRT node : nodes) {
+        for (Node node : nodes) {
             node.setOffset(offset);
             offset += node.getLength();
             if(node instanceof TryEnterNode tryEnter)
@@ -201,7 +201,7 @@ public class Code extends Element implements LoadAware {
 
     @Override
     public void onLoadPrepare() {
-        nodes = addChild(new ChildArray<>(NodeRT.class), "nodes");
+        nodes = addChild(new ChildArray<>(Node.class), "nodes");
         nodes.setEphemeralEntity(true);
         code = EncodingUtils.decodeBase64(codeBase64);
     }

@@ -8,11 +8,9 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.*;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.ConstantPoolDTO;
 import org.metavm.object.type.rest.dto.CpEntryDTO;
-import org.metavm.util.BusinessException;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -125,9 +123,9 @@ public class FlowManager extends EntityContextFactoryAware {
             method.setReturnType(returnType);
             if (method.isAbstract()) {
                 if (creating) {
-                    createOverridingFlows(method, context);
+                    createOverridingFlows(method);
                 } else if (oldFuncType != method.getType()) {
-                    recreateOverridingFlows(method, context);
+                    recreateOverridingFlows(method);
                 }
             }
             flow = method;
@@ -150,11 +148,6 @@ public class FlowManager extends EntityContextFactoryAware {
         flow.setNative(flowDTO.isNative());
         flow.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), context::getTypeVariable));
         flow.setCapturedTypeVariables(NncUtils.map(flowDTO.capturedTypeIds(), context::getCapturedTypeVariable));
-//        if (flowDTO.horizontalInstances() != null) {
-//            for (FlowDTO templateInstance : flowDTO.horizontalInstances()) {
-//                save(templateInstance, declarationOnly, context);
-//            }
-//        }
         if (!declarationOnly)
             saveContent(flowDTO, flow, context);
         flow.check();
@@ -176,22 +169,22 @@ public class FlowManager extends EntityContextFactoryAware {
         }
     }
 
-    public void createOverridingFlows(Method overridden, IEntityContext context) {
+    public void createOverridingFlows(Method overridden) {
         NncUtils.requireTrue(overridden.isAbstract());
         for (Klass subType : overridden.getDeclaringType().getSubKlasses()) {
-            createOverridingFlows(overridden, subType, context);
+            createOverridingFlows(overridden, subType);
         }
     }
 
-    public void recreateOverridingFlows(Method method, IEntityContext context) {
-        createOverridingFlows(method, context);
+    public void recreateOverridingFlows(Method method) {
+        createOverridingFlows(method);
     }
 
-    public void createOverridingFlows(Method overridden, Klass type, IEntityContext context) {
+    public void createOverridingFlows(Method overridden, Klass type) {
         NncUtils.requireTrue(overridden.isAbstract());
         if (type.isEffectiveAbstract()) {
             for (Klass subType : type.getSubKlasses()) {
-                createOverridingFlows(overridden, subType, context);
+                createOverridingFlows(overridden, subType);
             }
         } else {
             var flow = type.tryResolveNonParameterizedMethod(overridden);
@@ -214,19 +207,11 @@ public class FlowManager extends EntityContextFactoryAware {
         }
     }
 
-    private void saveScope(CodeDTO scopeDTO, Code code, IEntityContext context) {
+    private void saveScope(CodeDTO scopeDTO, Code code) {
         code.clear();
         code.setMaxStack(scopeDTO.maxStack());
         code.setMaxLocals(scopeDTO.maxLocals());
         code.setCodeBase64(scopeDTO.codeBase64());
-    }
-
-    private NodeRT saveNode(NodeDTO nodeDTO, Code code, NodeSavingStage stage, IEntityContext context) {
-        if (nodeDTO.id() == null || Id.parse(nodeDTO.id()).tryGetTreeId() == null) {
-            return createNode(nodeDTO, code, stage, context);
-        } else {
-            return updateNode(nodeDTO, stage, context);
-        }
     }
 
     private void removeTransformedFlowsIfRequired(Flow flow, IEntityContext context) {
@@ -252,7 +237,7 @@ public class FlowManager extends EntityContextFactoryAware {
             if(flowDTO.constantPool() != null)
                 saveConstantPool(flow.getConstantPool(), flowDTO.constantPool(), context);
             if(flowDTO.code() != null)
-                saveScope(flowDTO.code(), flow.getCode(), context);
+                saveScope(flowDTO.code(), flow.getCode());
             for (LambdaDTO lambdaDTO : flowDTO.lambdas()) {
                 saveLambdaContent(lambdaDTO, context);
             }
@@ -268,7 +253,7 @@ public class FlowManager extends EntityContextFactoryAware {
 
     private void saveLambdaContent(LambdaDTO lambdaDTO, IEntityContext context) {
         var lambda = context.getEntity(Lambda.class, lambdaDTO.id());
-        saveScope(lambdaDTO.scope(), lambda.getCode(), context);
+        saveScope(lambdaDTO.scope(), lambda.getCode());
     }
 
     @Transactional
@@ -289,75 +274,6 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     @Transactional
-    public NodeDTO saveNode(NodeDTO nodeDTO) {
-        if (nodeDTO.id() == null || Id.parse(nodeDTO.id()) instanceof TmpId)
-            return createNode(nodeDTO);
-        else
-            return updateNode(nodeDTO);
-    }
-
-    @Transactional
-    public NodeDTO createNode(NodeDTO nodeDTO) {
-        try (var context = newContext();
-             var serContext = SerializeContext.enter()) {
-            Flow flow = context.getEntity(Flow.class, Id.parse(nodeDTO.flowId()));
-            if (flow == null) {
-                throw BusinessException.flowNotFound(nodeDTO.flowId());
-            }
-            var node = createNode(nodeDTO, context.getCode(Id.parse(nodeDTO.scopeId())), NodeSavingStage.INIT, context);
-            afterFlowChange(flow, context);
-            context.finish();
-            return node.toDTO(serContext);
-        }
-    }
-
-    private void afterFlowChange(Flow flow, IEntityContext context) {
-        try (var ignored1 = context.getProfiler().enter("afterFlowChange")) {
-            flow.analyze();
-            flow.check();
-            flow.computeMaxes();
-        }
-    }
-
-    private NodeRT createNode(NodeDTO nodeDTO, Code code, NodeSavingStage stage, IEntityContext context) {
-        try (var ignored = context.getProfiler().enter("createNode")) {
-            try (var ignored1 = context.getProfiler().enter("Flow.analyze", true)) {
-                code.getFlow().analyze();
-            }
-            return NodeFactory.save(nodeDTO, code, stage, context);
-        }
-    }
-
-    public NodeDTO getNode(String id) {
-        try (var context = newContext(); var serContext = SerializeContext.enter()) {
-            NodeRT node = context.getEntity(NodeRT.class, Id.parse(id));
-            return NncUtils.get(node, nodeRT -> nodeRT.toDTO(serContext));
-        }
-    }
-
-    @Transactional
-    public NodeDTO updateNode(NodeDTO nodeDTO) {
-        try (var context = newContext(); var serContext = SerializeContext.enter()) {
-            var node = updateNode(nodeDTO, NodeSavingStage.INIT, context);
-            afterFlowChange(node.getFlow(), context);
-            context.finish();
-            return node.toDTO(serContext);
-        }
-    }
-
-    NodeRT updateNode(NodeDTO nodeDTO, NodeSavingStage stage, IEntityContext context) {
-        nodeDTO.ensureIdSet();
-        NodeRT node = context.getEntity(NodeRT.class, Id.parse(nodeDTO.id()));
-        if (node == null) {
-            throw BusinessException.nodeNotFound(nodeDTO.id());
-        }
-        var code = context.getCode(Id.parse(nodeDTO.scopeId()));
-        code.getFlow().analyze();
-        NodeFactory.save(nodeDTO, code, stage, context);
-        return node;
-    }
-
-    @Transactional
     public GetFlowResponse check(String id) {
         try (var context = newContext()) {
             var flow = context.getFlow(Id.parse(id));
@@ -365,31 +281,6 @@ public class FlowManager extends EntityContextFactoryAware {
             context.finish();
             return makeFlowResponse(flow, true);
         }
-    }
-
-    @Transactional
-    public void moveMethod(String id, int ordinal) {
-        try (var context = newContext()) {
-            var flow = context.getMethod(Id.parse(id));
-            flow.getDeclaringType().moveMethod(flow, ordinal);
-            context.finish();
-        }
-    }
-
-    @Transactional
-    public void deleteNode(String nodeId) {
-        try (var context = newContext()) {
-            NodeRT node = context.getEntity(NodeRT.class, Id.parse(nodeId));
-            if (node == null) {
-                return;
-            }
-            deleteNode(node, context);
-            context.finish();
-        }
-    }
-
-    private void deleteNode(NodeRT node, IEntityContext context) {
-        context.remove(node);
     }
 
     public Page<FlowSummaryDTO> list(String typeId, int page, int pageSize, String searchText) {

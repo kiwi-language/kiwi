@@ -3,7 +3,7 @@ package org.metavm.object.view;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.flow.NodeRT;
+import org.metavm.flow.Node;
 import org.metavm.flow.Nodes;
 import org.metavm.flow.Code;
 import org.metavm.object.type.ArrayType;
@@ -28,7 +28,7 @@ public class ArrayNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Type generateMappingCode(Supplier<NodeRT> getSource, Code code) {
+    public Type generateMappingCode(Supplier<Node> getSource, Code code) {
         Nodes.newArray(targetType, code);
         var targetArrayVar = code.nextVariableIndex();
         Nodes.store(targetArrayVar, code);
@@ -50,7 +50,7 @@ public class ArrayNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Type generateUnmappingCode(Supplier<NodeRT> getView, Code code) {
+    public Type generateUnmappingCode(Supplier<Node> getView, Code code) {
         getView.get();
         Nodes.functionCall(code, StdFunction.isSourcePresent.get());
         Nodes.loadConstant(Instances.falseInstance(), code);

@@ -2,38 +2,21 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.GotoNodeParam;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class DupX1Node extends NodeRT {
+public class DupX1Node extends Node {
 
-    public static DupX1Node save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        var node = (DupX1Node) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null)
-            node = new DupX1Node(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
-        return node;
-    }
-
-    public DupX1Node(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code) {
+    public DupX1Node(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code) {
         super(tmpId, name, null, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitDupX1Node(this);
-    }
-
-    @Override
-    protected GotoNodeParam getParam(SerializeContext serializeContext) {
-        return null;
     }
 
     @Override

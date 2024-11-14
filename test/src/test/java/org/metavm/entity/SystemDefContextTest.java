@@ -5,7 +5,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.api.ValueObject;
 import org.metavm.expression.ConstantExpression;
-import org.metavm.flow.NodeRT;
+import org.metavm.flow.Node;
 import org.metavm.mocks.Bar;
 import org.metavm.mocks.Baz;
 import org.metavm.mocks.Foo;
@@ -86,7 +86,7 @@ public class SystemDefContextTest extends TestCase {
 
     public void testInheritance() {
         defContext.postProcess();
-        EntityDef<NodeRT> superDef = defContext.getEntityDef(new TypeReference<>() {
+        EntityDef<Node> superDef = defContext.getEntityDef(new TypeReference<>() {
         });
         Assert.assertEquals(Objects.requireNonNull(superDef.getKlass().getSuperType()).getSuperType(), StdKlass.entity.get().getType());
     }

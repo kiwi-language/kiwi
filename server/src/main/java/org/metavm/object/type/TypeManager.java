@@ -320,7 +320,7 @@ public class TypeManager extends EntityContextFactoryAware {
         for (KlassDTO klassDTO : batch.getTypeDTOs()) {
             var klass = context.getKlass(Id.parse(klassDTO.id()));
             klasses.add(klass);
-            createOverridingFlows(klass, context);
+            createOverridingFlows(klass);
             klass.updateParameterized();
         }
         beanManager.createBeans(klasses, BeanDefinitionRegistry.getInstance(context), context);
@@ -357,14 +357,14 @@ public class TypeManager extends EntityContextFactoryAware {
         sft.set(enumConstantDef.getField(), value.getReference());
     }
 
-    private void createOverridingFlows(Klass type, IEntityContext context) {
+    private void createOverridingFlows(Klass type) {
         if (type.isParameterized())
             return;
         for (var it : type.getInterfaces()) {
             var methods = it.resolve().getAllMethods();
             for (var overridden : methods) {
                 if (overridden.isAbstract())
-                    flowManager.createOverridingFlows(overridden, type, context);
+                    flowManager.createOverridingFlows(overridden, type);
             }
         }
     }
@@ -525,7 +525,7 @@ public class TypeManager extends EntityContextFactoryAware {
         var stage = withContent ? ResolutionStage.DECLARATION : ResolutionStage.INIT;
         var batch = SaveTypeBatch.create(context, List.of(classDTO), List.of());
         var type = Types.saveClass(classDTO, stage, batch);
-        createOverridingFlows(type, context);
+        createOverridingFlows(type);
         return type;
     }
 
@@ -533,7 +533,7 @@ public class TypeManager extends EntityContextFactoryAware {
         NncUtils.requireNonNull(klassDTO.name(), "class name required");
         var batch = SaveTypeBatch.create(context, List.of(klassDTO), List.of());
         Types.saveClass(klassDTO, ResolutionStage.DECLARATION, batch);
-        createOverridingFlows(type, context);
+        createOverridingFlows(type);
         return type;
     }
 

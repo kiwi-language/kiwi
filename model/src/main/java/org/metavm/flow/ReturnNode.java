@@ -4,31 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 
 @EntityType
 @Slf4j
-public class ReturnNode extends NodeRT {
+public class ReturnNode extends Node {
 
-    public static ReturnNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext entityContext) {
-        ReturnNode node = (ReturnNode) entityContext.getNode(Id.parse(nodeDTO.id()));
-        if (node == null)
-            node = new ReturnNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
-        return node;
-    }
-
-    public ReturnNode(Long tmpId, String name, NodeRT prev, Code code) {
+    public ReturnNode(Long tmpId, String name, Node prev, Code code) {
         super(tmpId, name, null, prev, code);
-    }
-
-    @Override
-    protected Object getParam(SerializeContext serializeContext) {
-        return null;
     }
 
     @Override

@@ -4,7 +4,7 @@ import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.flow.NodeRT;
+import org.metavm.flow.Node;
 import org.metavm.flow.Nodes;
 import org.metavm.flow.Code;
 import org.metavm.object.type.ClassType;
@@ -31,7 +31,7 @@ public class ListNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Type generateMappingCode(Supplier<NodeRT> getSource, Code code) {
+    public Type generateMappingCode(Supplier<Node> getSource, Code code) {
         var targetKlass = targetType.resolve();
         var constructor = targetKlass.isEffectiveAbstract() ?
                 StdKlass.arrayList.get().getParameterized(List.of(targetKlass.getFirstTypeArgument())).getDefaultConstructor() :
@@ -62,7 +62,7 @@ public class ListNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Type generateUnmappingCode(Supplier<NodeRT> viewSupplier, Code code) {
+    public Type generateUnmappingCode(Supplier<Node> viewSupplier, Code code) {
         var sourceKlass = sourceType.resolve();
         viewSupplier.get();
         Nodes.functionCall(code, StdFunction.isSourcePresent.get());

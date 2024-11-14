@@ -1,7 +1,6 @@
 package org.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import org.metavm.common.rest.dto.BaseDTO;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.InternalException;
@@ -16,7 +15,6 @@ public record NodeDTO(
         String prevId,
         String outputType,
         @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
-        @JsonTypeIdResolver(NodeParamTypeIdResolver.class)
         Object param,
         KlassDTO outputKlass,
         String scopeId,

@@ -5,11 +5,11 @@ import org.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 
-public abstract class VariableAccessNode extends NodeRT {
+public abstract class VariableAccessNode extends Node {
 
     protected final int index;
 
-    protected VariableAccessNode(Long tmpId, @NotNull String name, @Nullable Type outputType, @Nullable NodeRT previous, @NotNull Code code, int index) {
+    protected VariableAccessNode(Long tmpId, @NotNull String name, @Nullable Type outputType, @Nullable Node previous, @NotNull Code code, int index) {
         super(tmpId, name, outputType, previous, code);
         this.index = index;
     }

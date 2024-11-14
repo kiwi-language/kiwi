@@ -2,33 +2,17 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.LoadTypeNodeParam;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeParser;
 
 import javax.annotation.Nullable;
 
-public class LoadTypeNode extends NodeRT {
-
-    public static LoadTypeNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        var node = (LoadTypeNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null) {
-            var param = (LoadTypeNodeParam) nodeDTO.getParam();
-            var type = TypeParser.parseType(param.type(), context);
-            node = new LoadTypeNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, type);
-        }
-        return node;
-    }
+public class LoadTypeNode extends Node {
 
     private final Type type;
 
-    public LoadTypeNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code, Type type) {
+    public LoadTypeNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code, Type type) {
         super(tmpId, name, null, previous, code);
         this.type = type;
     }
@@ -36,11 +20,6 @@ public class LoadTypeNode extends NodeRT {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitLoadTypeNode(this);
-    }
-
-    @Override
-    protected Object getParam(SerializeContext serializeContext) {
-        return new LoadTypeNodeParam(type.toExpression(serializeContext));
     }
 
     @Override

@@ -3,30 +3,15 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.flow.rest.StoreContextSlotNodeParam;
-import org.metavm.object.instance.core.Id;
 
-public class StoreContextSlotNode extends NodeRT {
-
-    public static StoreContextSlotNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        StoreContextSlotNodeParam param = nodeDTO.getParam();
-        var node = (StoreContextSlotNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null) {
-            node = new StoreContextSlotNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code,
-                    param.contextIndex(), param.slotIndex());
-        }
-        return node;
-    }
+public class StoreContextSlotNode extends Node {
 
     private final int contextIndex;
     private final int slotIndex;
 
     public StoreContextSlotNode(Long tmpId, @NotNull String name,
-                                @Nullable NodeRT previous, @NotNull Code code, int contextIndex, int slotIndex) {
+                                @Nullable Node previous, @NotNull Code code, int contextIndex, int slotIndex) {
         super(tmpId, name, null, previous, code);
         this.contextIndex = contextIndex;
         this.slotIndex = slotIndex;
@@ -35,11 +20,6 @@ public class StoreContextSlotNode extends NodeRT {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitStoreContextSlotNode(this);
-    }
-
-    @Override
-    protected Object getParam(SerializeContext serializeContext) {
-        return new StoreContextSlotNodeParam(contextIndex, slotIndex);
     }
 
     @Override

@@ -88,7 +88,7 @@ public abstract class ElementVisitor<R> {
         return visitElement(code);
     }
 
-    public R visitNode(NodeRT node) {
+    public R visitNode(Node node) {
         return visitElement(node);
     }
 

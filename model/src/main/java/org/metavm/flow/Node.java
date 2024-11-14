@@ -5,11 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.BuildKeyContext;
+import org.metavm.entity.Element;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.LocalKey;
 import org.metavm.expression.ExpressionTypeMap;
-import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -18,34 +19,32 @@ import java.util.List;
 
 @Slf4j
 @EntityType
-public abstract class NodeRT extends Element implements LocalKey {
+public abstract class Node extends Element implements LocalKey {
 
     @EntityField(asTitle = true)
     private final String name;
-    private final NodeKind kind;
     private @Nullable Type outputType;
     private final @NotNull Code code;
     @Nullable
-    private NodeRT predecessor;
+    private Node predecessor;
     @Nullable
-    private NodeRT successor;
+    private Node successor;
     @Nullable
     private String error;
     private transient ExpressionTypeMap expressionTypes;
     private transient int offset;
 
-    protected NodeRT(
+    protected Node(
             Long tmpId,
             @NotNull String name,
             @Nullable Type outputType,
-            @Nullable NodeRT previous,
+            @Nullable Node previous,
             @NotNull Code code
     ) {
         super(tmpId);
         this.name = name;
         this.code = code;
         this.outputType = outputType;
-        this.kind = NodeKind.fromNodeClass(this.getClass());
         if (previous != null)
             previous.insertAfter(this);
         if (previous != null && previous.isSequential())
@@ -62,27 +61,23 @@ public abstract class NodeRT extends Element implements LocalKey {
         return name;
     }
 
-    public NodeKind getKind() {
-        return kind;
-    }
-
-    public @Nullable NodeRT getSuccessor() {
+    public @Nullable Node getSuccessor() {
         return successor;
     }
 
-    public @Nullable NodeRT getPredecessor() {
+    public @Nullable Node getPredecessor() {
         return predecessor;
     }
 
-    void setSuccessor(@Nullable NodeRT node) {
+    void setSuccessor(@Nullable Node node) {
         this.successor = node;
     }
 
-    void setPredecessor(@Nullable NodeRT node) {
+    void setPredecessor(@Nullable Node node) {
         this.predecessor = node;
     }
 
-    public void insertAfter(NodeRT next) {
+    public void insertAfter(Node next) {
         if (this.successor != null) {
             next.setSuccessor(this.successor);
             this.successor.setPredecessor(next);
@@ -91,7 +86,7 @@ public abstract class NodeRT extends Element implements LocalKey {
         next.setPredecessor(this);
     }
 
-    public void insertBefore(NodeRT prev) {
+    public void insertBefore(Node prev) {
         if (this.predecessor != null) {
             prev.setPredecessor(this.predecessor);
             this.predecessor.setSuccessor(prev);
@@ -133,25 +128,6 @@ public abstract class NodeRT extends Element implements LocalKey {
         this.outputType = outputType;
     }
 
-    public NodeDTO toDTO(SerializeContext serContext) {
-        return new NodeDTO(
-                serContext.getStringId(this),
-                getFlow().getStringId(),
-                name,
-                kind.code(),
-                NncUtils.get(predecessor, serContext::getStringId),
-                NncUtils.get(getType(), t -> t.toExpression(serContext)),
-                getParam(serContext),
-                getOutputKlassDTO(),
-                code.getStringId(),
-                error
-        );
-    }
-
-    protected KlassDTO getOutputKlassDTO() {
-        return null;
-    }
-
     public @NotNull Code getCode() {
         return code;
     }
@@ -167,8 +143,6 @@ public abstract class NodeRT extends Element implements LocalKey {
     public boolean isSequential() {
         return !isExit() && !isUnconditionalJump();
     }
-
-    protected abstract Object getParam(SerializeContext serializeContext);
 
     public final void check() {
         setError(check0());
@@ -197,13 +171,6 @@ public abstract class NodeRT extends Element implements LocalKey {
 
     public void setExpressionTypes(ExpressionTypeMap expressionTypes) {
         this.expressionTypes = expressionTypes;
-    }
-
-    public void mergeExpressionTypes(ExpressionTypeMap expressionTypes) {
-        if (this.expressionTypes == null)
-            this.expressionTypes = expressionTypes;
-        else
-            this.expressionTypes = this.expressionTypes.merge(expressionTypes);
     }
 
     @Override

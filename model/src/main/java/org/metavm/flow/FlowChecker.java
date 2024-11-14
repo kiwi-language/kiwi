@@ -47,7 +47,7 @@ public class FlowChecker extends StructuralVisitor<Boolean> {
     }
 
     @Override
-    public Boolean visitNode(NodeRT node) {
+    public Boolean visitNode(Node node) {
         node.check();
         if (node.getError() != null) {
             flow.setState(MetadataState.ERROR);

@@ -42,7 +42,7 @@ public class MethodGenerator {
         return method.getDeclaringType().getType();
     }
 
-    IfNode createIf( @Nullable NodeRT target) {
+    IfNode createIf( @Nullable Node target) {
         return onNodeCreated(new IfNode(null,
                 nextName("if"),
                 code().getLastNode(),
@@ -51,7 +51,7 @@ public class MethodGenerator {
         ));
     }
 
-    IfNotNode createIfNot(@Nullable NodeRT target) {
+    IfNotNode createIfNot(@Nullable Node target) {
         return onNodeCreated(new IfNotNode(null,
                 nextName("ifNot"),
                 code().getLastNode(),
@@ -60,7 +60,7 @@ public class MethodGenerator {
         ));
     }
 
-    GotoNode createGoto(NodeRT target) {
+    GotoNode createGoto(Node target) {
         return onNodeCreated(new GotoNode(
                 null,
                  nextName("goto"),
@@ -316,7 +316,7 @@ public class MethodGenerator {
         return onNodeCreated(node);
     }
 
-    NodeRT createTypeCast(Type targetType) {
+    Node createTypeCast(Type targetType) {
         targetType = Types.getNullableType(targetType);
         return createFunctionCall(StdFunction.typeCast.get().getParameterized(List.of(targetType)));
     }
@@ -353,7 +353,7 @@ public class MethodGenerator {
         return typeResolver;
     }
 
-    public <T extends NodeRT> T onNodeCreated(T node) {
+    public <T extends Node> T onNodeCreated(T node) {
 //        var scope = scope();
 //        var lastNode = scope.getLastNode();
 //        if (lastNode != null && lastNode.isSequential())
@@ -660,11 +660,11 @@ public class MethodGenerator {
         return new NoopNode(null, nextName("noop"), code().getLastNode(), code());
     }
 
-    public NodeRT createLoadThis() {
+    public Node createLoadThis() {
         return createLoad(0, getThisType());
     }
 
-    public NodeRT createLoad(int index, Type type) {
+    public Node createLoad(int index, Type type) {
         return onNodeCreated(new LoadNode(
                 null,
                 nextName("load"),
@@ -675,7 +675,7 @@ public class MethodGenerator {
         ));
     }
 
-    public NodeRT createStore(int index) {
+    public Node createStore(int index) {
         return onNodeCreated(new StoreNode(
                 null,
                 nextName("store"),
@@ -685,7 +685,7 @@ public class MethodGenerator {
         ));
     }
 
-    public NodeRT createLoadContextSlot(int contextIndex, int slotIndex, Type type) {
+    public Node createLoadContextSlot(int contextIndex, int slotIndex, Type type) {
         return onNodeCreated(new LoadContextSlotNode(
                 null,
                 nextName("store"),
@@ -697,7 +697,7 @@ public class MethodGenerator {
         ));
     }
 
-    public NodeRT createStoreContextSlot(int contextIndex, int slotIndex) {
+    public Node createStoreContextSlot(int contextIndex, int slotIndex) {
         return onNodeCreated(new StoreContextSlotNode(
                 null,
                 nextName("store"),
@@ -708,7 +708,7 @@ public class MethodGenerator {
         ));
     }
 
-    public NodeRT createLoadConstant(org.metavm.object.instance.core.Value value) {
+    public Node createLoadConstant(org.metavm.object.instance.core.Value value) {
         return onNodeCreated(new LoadConstantNode(
                 null,
                 nextName("ldc"),
@@ -718,35 +718,35 @@ public class MethodGenerator {
         ));
     }
 
-    public NodeRT createDup() {
+    public Node createDup() {
         return onNodeCreated(new DupNode(
                 null, nextName("dup"),
                 code().getLastNode(), code()
         ));
     }
 
-    public NodeRT createDupX1() {
+    public Node createDupX1() {
         return onNodeCreated(new DupX1Node(
                 null, nextName("dup_x1"),
                 code().getLastNode(), code()
         ));
     }
 
-    public NodeRT createDupX2() {
+    public Node createDupX2() {
         return onNodeCreated(new DupX2Node(
                 null, nextName("dup_x2"),
                 code().getLastNode(), code()
         ));
     }
 
-    public NodeRT createLoadType(Type type) {
+    public Node createLoadType(Type type) {
         return onNodeCreated(new LoadTypeNode(
                 null, nextName("loadType"),
                 code().getLastNode(), code(), type
         ));
     }
 
-    public void recordValue(NodeRT anchor, int variableIndex) {
+    public void recordValue(Node anchor, int variableIndex) {
         var dup = new DupNode(null, nextName("dup"), anchor, code());
         new StoreNode(null, nextName("store"), dup, code(), variableIndex);
     }

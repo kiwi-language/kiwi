@@ -14,9 +14,9 @@ import java.util.Objects;
 
 public class NodeValue extends Value {
 
-    private final NodeRT node;
+    private final Node node;
 
-    public NodeValue(@NotNull NodeRT node) {
+    public NodeValue(@NotNull Node node) {
         this.node = node;
     }
 

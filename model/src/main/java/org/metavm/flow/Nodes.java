@@ -57,7 +57,7 @@ public class Nodes {
                 type, code.getLastNode(), code);
     }
 
-    public static void copyArray(Supplier<NodeRT> getSourceArray, Supplier<NodeRT> getTargetArray, Code code) {
+    public static void copyArray(Supplier<Node> getSourceArray, Supplier<Node> getTargetArray, Code code) {
         forEach(getSourceArray,
                 (getElement, getIndex) -> {
                     getTargetArray.get();
@@ -66,20 +66,20 @@ public class Nodes {
                 }, code);
     }
 
-    public static void forEach(Supplier<NodeRT> arraySupplier,
-            BiConsumer<Supplier<NodeRT>, Supplier<NodeRT>> action,
+    public static void forEach(Supplier<Node> arraySupplier,
+            BiConsumer<Supplier<Node>, Supplier<Node>> action,
             Code code) {
         var i = code.nextVariableIndex();
         loadConstant(Instances.longInstance(0), code);
         Nodes.store(i, code);
         var entry = noop(code.nextNodeName("noop"), code);
-        Supplier<NodeRT> indexSupplier = () -> Nodes.load(i, Types.getLongType(), code);
+        Supplier<Node> indexSupplier = () -> Nodes.load(i, Types.getLongType(), code);
         indexSupplier.get();
         arraySupplier.get();
         arrayLength("len", code);
         Nodes.ge(code);
         var ifNode = if_(null, code);
-        Supplier<NodeRT> elementSupplier = () -> {
+        Supplier<Node> elementSupplier = () -> {
             arraySupplier.get();
             indexSupplier.get();
             return Nodes.getElement(code);
@@ -94,9 +94,9 @@ public class Nodes {
     }
 
     public static void listForEach(
-            Supplier<NodeRT> listSupplier,
+            Supplier<Node> listSupplier,
             ClassType listType,
-            BiConsumer<Supplier<NodeRT>, Supplier<NodeRT>> action,
+            BiConsumer<Supplier<Node>, Supplier<Node>> action,
             Code code) {
         var i = code.nextVariableIndex();
         loadConstant(Instances.longInstance(0), code);
@@ -104,14 +104,14 @@ public class Nodes {
         var listClass = listType.resolve();
         var sizeMethod = listClass.getMethodByNameAndParamTypes("size", List.of());
         var entry = noop(code);
-        Supplier<NodeRT> indexSupplier = () -> Nodes.load(i, Types.getLongType(), code);
+        Supplier<Node> indexSupplier = () -> Nodes.load(i, Types.getLongType(), code);
         indexSupplier.get();
         listSupplier.get();
         Nodes.methodCall(sizeMethod, code);
         ge(code);
         var ifNode = if_(null, code);
         var getMethod = listClass.getMethodByNameAndParamTypes("get", List.of(Types.getLongType()));
-        Supplier<NodeRT> elementSupplier = () -> {
+        Supplier<Node> elementSupplier = () -> {
             listSupplier.get();
             indexSupplier.get();
             return Nodes.methodCall(getMethod, code);
@@ -159,11 +159,11 @@ public class Nodes {
         return new CastNode(null, code.nextNodeName("cast"), outputType, code.getLastNode(), code);
     }
 
-    public static IfNode if_(@Nullable NodeRT target, Code code) {
+    public static IfNode if_(@Nullable Node target, Code code) {
         return if_(code.nextNodeName("if"), target, code);
     }
 
-    public static IfNode if_(String name,  @Nullable NodeRT target, Code code) {
+    public static IfNode if_(String name, @Nullable Node target, Code code) {
         return new IfNode(
                 null,
                 name,
@@ -173,11 +173,11 @@ public class Nodes {
         );
     }
 
-    public static IfNotNode ifNot(@Nullable NodeRT target, Code code) {
+    public static IfNotNode ifNot(@Nullable Node target, Code code) {
         return ifNot(code.nextNodeName("ifNot"), target, code);
     }
 
-    public static IfNotNode ifNot(String name, @Nullable NodeRT target, Code code) {
+    public static IfNotNode ifNot(String name, @Nullable Node target, Code code) {
         return new IfNotNode(
                 null,
                 name,
@@ -195,7 +195,7 @@ public class Nodes {
         return new GotoNode(null, name, code.getLastNode(), code);
     }
 
-    public static GotoNode goto_(NodeRT target, Code code) {
+    public static GotoNode goto_(Node target, Code code) {
         return new GotoNode(null, code.nextNodeName("goto"), code.getLastNode(), code, target);
     }
 
@@ -252,7 +252,7 @@ public class Nodes {
         return new NoopNode(null, name, code.getLastNode(), code);
     }
 
-    public static NodeRT add(Code code) {
+    public static Node add(Code code) {
         return new AddNode(
                 null,
                 code.nextNodeName("add"),
@@ -261,7 +261,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT sub(Code code) {
+    public static Node sub(Code code) {
         return new SubNode(
                 null,
                 code.nextNodeName("sub"),
@@ -270,7 +270,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT mul(Code code) {
+    public static Node mul(Code code) {
         return new MulNode(
                 null,
                 code.nextNodeName("mul"),
@@ -279,7 +279,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT div(Code code) {
+    public static Node div(Code code) {
         return new DivNode(
                 null,
                 code.nextNodeName("div"),
@@ -288,7 +288,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT leftShift(Code code) {
+    public static Node leftShift(Code code) {
         return new LeftShiftNode(
                 null,
                 code.nextNodeName("leftShift"),
@@ -297,7 +297,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT rightShift(Code code) {
+    public static Node rightShift(Code code) {
         return new RightShiftNode(
                 null,
                 code.nextNodeName("rightShift"),
@@ -306,7 +306,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT unsignedRightShift(Code code) {
+    public static Node unsignedRightShift(Code code) {
         return new UnsignedRightShiftNode(
                 null,
                 code.nextNodeName("unsignedRightShift"),
@@ -315,7 +315,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT bitOr(Code code) {
+    public static Node bitOr(Code code) {
         return new BitOrNode(
                 null,
                 code.nextNodeName("bitor"),
@@ -324,7 +324,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT bitAnd(Code code) {
+    public static Node bitAnd(Code code) {
         return new BitAndNode(
                 null,
                 code.nextNodeName("bitand"),
@@ -333,7 +333,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT bitXor(Code code) {
+    public static Node bitXor(Code code) {
         return new BitXorNode(
                 null,
                 code.nextNodeName("bitxor"),
@@ -342,7 +342,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT and(Code code) {
+    public static Node and(Code code) {
         return new AndNode(
                 null,
                 code.nextNodeName("and"),
@@ -351,7 +351,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT or(Code code) {
+    public static Node or(Code code) {
         return new OrNode(
                 null,
                 code.nextNodeName("or"),
@@ -360,7 +360,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT bitNot(Code code) {
+    public static Node bitNot(Code code) {
         return new BitNotNode(
                 null,
                 code.nextNodeName("bitnot"),
@@ -369,7 +369,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT not(Code code) {
+    public static Node not(Code code) {
         return new NotNode(
                 null,
                 code.nextNodeName("not"),
@@ -378,7 +378,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT negate(Code code) {
+    public static Node negate(Code code) {
         return new NegateNode(
                 null,
                 code.nextNodeName("negate"),
@@ -387,7 +387,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT rem(Code code) {
+    public static Node rem(Code code) {
         return new RemainderNode(
                 null,
                 code.nextNodeName("rem"),
@@ -396,7 +396,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT eq(Code code) {
+    public static Node eq(Code code) {
         return new EqNode(
                 null,
                 code.nextNodeName("eq"),
@@ -405,7 +405,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT ne(Code code) {
+    public static Node ne(Code code) {
         return new NeNode(
                 null,
                 code.nextNodeName("ne"),
@@ -414,7 +414,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT ge(Code code) {
+    public static Node ge(Code code) {
         return new GeNode(
                 null,
                 code.nextNodeName("ge"),
@@ -423,7 +423,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT gt(Code code) {
+    public static Node gt(Code code) {
         return new GtNode(
                 null,
                 code.nextNodeName("gt"),
@@ -432,7 +432,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT lt(Code code) {
+    public static Node lt(Code code) {
         return new LtNode(
                 null,
                 code.nextNodeName("lt"),
@@ -441,7 +441,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT le(Code code) {
+    public static Node le(Code code) {
         return new LeNode(
                 null,
                 code.nextNodeName("le"),
@@ -450,7 +450,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT instanceOf(Type targetType, Code code) {
+    public static Node instanceOf(Type targetType, Code code) {
         return new InstanceOfNode(
                 null,
                 code.nextNodeName("le"),
@@ -460,21 +460,21 @@ public class Nodes {
         );
     }
 
-    public static NodeRT this_(Code code) {
+    public static Node this_(Code code) {
         var type = ((Method) code.getFlow()).getDeclaringType().getType();
         return Nodes.load(0, type, code);
     }
 
-    public static NodeRT thisProperty(Property property, Code code) {
+    public static Node thisProperty(Property property, Code code) {
         this_(code);
         return getProperty(property, code);
     }
 
-    public static NodeRT getProperty(Property property, Code code) {
+    public static Node getProperty(Property property, Code code) {
         return getProperty(code.nextNodeName("property"), property, code);
     }
 
-    public static NodeRT getProperty(String name,Property property, Code code) {
+    public static Node getProperty(String name, Property property, Code code) {
         return new GetPropertyNode(
                 null,
                 name,
@@ -484,7 +484,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT getStatic(Property property, Code code) {
+    public static Node getStatic(Property property, Code code) {
         return new GetStaticNode(
                 null,
                 code.nextNodeName("getStatic"),
@@ -494,7 +494,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT store(int index, Code code) {
+    public static Node store(int index, Code code) {
         return new StoreNode(
                 null,
                 code.nextNodeName("store"),
@@ -504,12 +504,12 @@ public class Nodes {
         );
     }
 
-    public static NodeRT argument(Callable callable, int index) {
+    public static Node argument(Callable callable, int index) {
         var i = callable instanceof Method method && !method.isStatic() ? index + 1 : index;
         return load(i, callable.getParameters().get(index).getType(), callable.getCode());
     }
 
-    public static NodeRT load(int index, Type type, Code code) {
+    public static Node load(int index, Type type, Code code) {
         return new LoadNode(
                 null,
                 code.nextNodeName("load"),
@@ -520,7 +520,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT storeContextSlot(int contextIndex, int slotIndex, Code code) {
+    public static Node storeContextSlot(int contextIndex, int slotIndex, Code code) {
         return new StoreContextSlotNode(
                 null,
                 code.nextNodeName("storeContextSlot"),
@@ -531,7 +531,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT loadContextSlot(int contextIndex, int slotIndex, Type type, Code code) {
+    public static Node loadContextSlot(int contextIndex, int slotIndex, Type type, Code code) {
         return new LoadContextSlotNode(
                 null,
                 code.nextNodeName("loadContextSlot"),
@@ -543,7 +543,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT lambda(Lambda lambda, Code code) {
+    public static Node lambda(Lambda lambda, Code code) {
         return new LambdaNode(
                 null,
                 code.nextNodeName("lambda"),
@@ -554,7 +554,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT select(Index index, Code code) {
+    public static Node select(Index index, Code code) {
         return new IndexSelectNode(
                 null,
                 code.nextNodeName("select"),
@@ -564,7 +564,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT selectFirst(Index index, Code code) {
+    public static Node selectFirst(Index index, Code code) {
         return new IndexSelectFirstNode(
                 null,
                 code.nextNodeName("select"),
@@ -574,7 +574,7 @@ public class Nodes {
         );
     }
 
-    public static NodeRT loadConstant(org.metavm.object.instance.core.Value value, Code code) {
+    public static Node loadConstant(org.metavm.object.instance.core.Value value, Code code) {
         return new LoadConstantNode(
                 null,
                 code.nextNodeName("ldc"),
@@ -584,19 +584,19 @@ public class Nodes {
         );
     }
 
-    public static NodeRT dup(Code code) {
+    public static Node dup(Code code) {
         return new DupNode(null, code.nextNodeName("dup"), code.getLastNode(), code);
     }
 
-    public static NodeRT dupX1(Code code) {
+    public static Node dupX1(Code code) {
         return new DupX1Node(null, code.nextNodeName("dup_x1"), code.getLastNode(), code);
     }
 
-    public static NodeRT dupX2(Code code) {
+    public static Node dupX2(Code code) {
         return new DupX2Node(null, code.nextNodeName("dup_x2"), code.getLastNode(), code);
     }
 
-    public static NodeRT pop(Code code) {
+    public static Node pop(Code code) {
         return new PopNode(null, code.nextNodeName("pop"), code.getLastNode(), code);
     }
 }

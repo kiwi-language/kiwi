@@ -2,35 +2,19 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.GetStaticNodeParam;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.PropertyRef;
 import org.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 
-public class GetStaticNode extends NodeRT {
-
-    public static GetStaticNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        GetStaticNode node = (GetStaticNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null) {
-            GetStaticNodeParam param = nodeDTO.getParam();
-            var propertyRef = PropertyRef.create(param.propertyRef(), context);
-            node = new GetStaticNode(nodeDTO.tmpId(), nodeDTO.name(),
-                    prev, code, propertyRef);
-        }
-        return node;
-    }
+public class GetStaticNode extends Node {
 
     private final PropertyRef propertyRef;
 
     public GetStaticNode(Long tmpId,
                          @NotNull String name,
-                         @Nullable NodeRT previous,
+                         @Nullable Node previous,
                          @NotNull Code code,
                          PropertyRef propertyRef) {
         super(tmpId, name, null, previous, code);
@@ -46,11 +30,6 @@ public class GetStaticNode extends NodeRT {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitGetStaticNode(this);
-    }
-
-    @Override
-    protected Object getParam(SerializeContext serializeContext) {
-        return new GetStaticNodeParam( propertyRef.toDTO(serializeContext));
     }
 
     @Override

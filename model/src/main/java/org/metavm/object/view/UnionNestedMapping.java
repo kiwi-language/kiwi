@@ -43,7 +43,7 @@ public class UnionNestedMapping extends NestedMapping implements LoadAware {
     }
 
     @Override
-    public Type generateMappingCode(Supplier<NodeRT> getSource, Code code) {
+    public Type generateMappingCode(Supplier<Node> getSource, Code code) {
         JumpNode lastIfNode = null;
         GotoNode lastGoto = null;
         int i = -1;
@@ -75,7 +75,7 @@ public class UnionNestedMapping extends NestedMapping implements LoadAware {
     }
 
     @Override
-    public Type generateUnmappingCode(Supplier<NodeRT> viewSupplier, Code code) {
+    public Type generateUnmappingCode(Supplier<Node> viewSupplier, Code code) {
         var gotoNodes = new ArrayList<GotoNode>();
         JumpNode lastIfNode = null;
         GotoNode lastGoto = null;

@@ -2,36 +2,17 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.flow.rest.SetFieldNodeParam;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.FieldRef;
 
 @EntityType
-public class SetFieldNode extends NodeRT {
-
-    public static SetFieldNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        SetFieldNodeParam param = nodeDTO.getParam();
-        var node = (SetFieldNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null) {
-            var fieldRef = FieldRef.create(param.fieldRef(), context);
-            node = new SetFieldNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, fieldRef);
-        }
-        return node;
-    }
+public class SetFieldNode extends Node {
 
     private final FieldRef fieldRef;
 
-    public SetFieldNode(Long tmpId, String name, NodeRT prev, Code code, FieldRef fieldRef) {
+    public SetFieldNode(Long tmpId, String name, Node prev, Code code, FieldRef fieldRef) {
         super(tmpId, name, null, prev, code);
         this.fieldRef = fieldRef;
-    }
-    @Override
-    protected SetFieldNodeParam getParam(SerializeContext serializeContext) {
-        return new SetFieldNodeParam(fieldRef.toDTO(serializeContext));
     }
 
     @Override

@@ -2,29 +2,17 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class SubNode extends NodeRT {
-
-    public static SubNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        SubNode node = (SubNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null) {
-            node = new SubNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
-        }
-        return node;
-    }
+public class SubNode extends Node {
 
     public SubNode(Long tmpId,
                    @NotNull String name,
-                   @Nullable NodeRT previous,
+                   @Nullable Node previous,
                    @NotNull Code code
                    ) {
         super(tmpId, name, null, previous, code);
@@ -33,11 +21,6 @@ public class SubNode extends NodeRT {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitSubNode(this);
-    }
-
-    @Override
-    protected Object getParam(SerializeContext serializeContext) {
-        return null;
     }
 
     @Override

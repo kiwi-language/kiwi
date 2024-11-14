@@ -3,13 +3,8 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.IndexSelectNodeParam;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.IndexRef;
@@ -17,29 +12,14 @@ import org.metavm.object.type.IndexRef;
 import java.util.List;
 
 @EntityType
-public class IndexSelectNode extends NodeRT {
-
-    public static IndexSelectNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        var node = (IndexSelectNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null) {
-            var param = (IndexSelectNodeParam) nodeDTO.param();
-            var indexRef = IndexRef.create(param.indexRef(), context);
-            node = new IndexSelectNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, indexRef);
-        }
-        return node;
-    }
+public class IndexSelectNode extends Node {
 
     private final IndexRef indexRef;
 
-    public IndexSelectNode(Long tmpId, String name, NodeRT previous, Code code,
+    public IndexSelectNode(Long tmpId, String name, Node previous, Code code,
                            IndexRef indexRef) {
         super(tmpId, name, null, previous, code);
         this.indexRef = indexRef;
-    }
-
-    @Override
-    protected IndexSelectNodeParam getParam(SerializeContext serializeContext) {
-        return new IndexSelectNodeParam(indexRef.toDTO(serializeContext));
     }
 
     public Index getIndex() {

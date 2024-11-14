@@ -1,28 +1,12 @@
 package org.metavm.flow;
 
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 
-public class VoidReturnNode extends NodeRT {
+public class VoidReturnNode extends Node {
 
-    public static VoidReturnNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext entityContext) {
-        var node = (VoidReturnNode) entityContext.getNode(Id.parse(nodeDTO.id()));
-        if (node == null)
-            node = new VoidReturnNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
-        return node;
-    }
-
-    public VoidReturnNode(Long tmpId, String name, NodeRT prev, Code code) {
+    public VoidReturnNode(Long tmpId, String name, Node prev, Code code) {
         super(tmpId, name, null, prev, code);
-    }
-
-    @Override
-    protected Object getParam(SerializeContext serializeContext) {
-        return null;
     }
 
     @Override

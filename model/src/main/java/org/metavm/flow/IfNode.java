@@ -3,38 +3,18 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.expression.ExpressionTypeMap;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.IfNodeParam;
-import org.metavm.flow.rest.NodeDTO;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 @EntityType
 public class IfNode extends JumpNode {
 
-    public static IfNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        var node = (IfNode) context.getNode(nodeDTO.id());
-        if(node == null) {
-            node = new IfNode(
-                    nodeDTO.tmpId(), nodeDTO.name(),
-                    code.getLastNode(), code, null
-            );
-        }
-        if(stage == NodeSavingStage.FINALIZE) {
-            var param = (IfNodeParam) nodeDTO.getParam();
-            node.setTarget(Objects.requireNonNull(context.getNode(param.targetId())));
-        }
-        return node;
-    }
-
     private transient ExpressionTypeMap nextExpressionTypes;
 
-    public IfNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code,
-                  NodeRT target) {
+    public IfNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code,
+                  Node target) {
         super(tmpId, name, null, previous, code);
 //        var narrower = new TypeNarrower(getExpressionTypes()::getType);
 //        mergeExpressionTypes(narrower.narrowType(Expressions.not(condition.getExpression())));
@@ -45,11 +25,6 @@ public class IfNode extends JumpNode {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitIfNode(this);
-    }
-
-    @Override
-    protected IfNodeParam getParam(SerializeContext serializeContext) {
-        return new IfNodeParam(serializeContext.getStringId(getTarget()));
     }
 
     @Override

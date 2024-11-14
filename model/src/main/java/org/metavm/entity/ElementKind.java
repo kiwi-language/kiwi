@@ -16,7 +16,7 @@ public enum ElementKind {
     FIELD(3, Field.class),
     VALUE(4, Value.class),
     EXPRESSION(5, Expression.class),
-    NODE(6, NodeRT.class),
+    NODE(6, Node.class),
     METHOD(7, Method.class),
     FUNCTION(8, Function.class)
 

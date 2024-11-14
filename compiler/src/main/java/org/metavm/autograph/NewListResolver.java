@@ -4,7 +4,7 @@ import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiNewExpression;
 import org.metavm.api.ChildList;
 import org.metavm.common.ErrorCode;
-import org.metavm.flow.NodeRT;
+import org.metavm.flow.Node;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.ArrayType;
 import org.metavm.util.BusinessException;
@@ -31,7 +31,7 @@ public class NewListResolver implements NewResolver {
     }
 
     @Override
-    public NodeRT resolve(PsiNewExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
+    public Node resolve(PsiNewExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
         var methodGenerics = methodCallExpression.resolveMethodGenerics();
         var type = (PsiClassType) Objects.requireNonNull(methodCallExpression.getType());
         if (type.getParameters().length == 0)

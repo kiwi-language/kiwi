@@ -2,29 +2,13 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 
 @EntityType
-public class RaiseNode extends NodeRT {
+public class RaiseNode extends Node {
 
-    public static RaiseNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext entityContext) {
-        RaiseNode node = (RaiseNode) entityContext.getNode(Id.parse(nodeDTO.id()));
-        if (node == null)
-            node = new RaiseNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
-        return node;
-    }
-
-    public RaiseNode(Long tmpId, String name, NodeRT prev, Code code) {
+    public RaiseNode(Long tmpId, String name, Node prev, Code code) {
         super(tmpId, name, null, prev, code);
-    }
-
-    @Override
-    protected Object getParam(SerializeContext serializeContext) {
-        return null;
     }
 
     @Override

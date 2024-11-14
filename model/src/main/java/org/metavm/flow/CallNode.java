@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 @EntityType
-public abstract class CallNode extends NodeRT {
+public abstract class CallNode extends Node {
 
     public static final Logger logger = LoggerFactory.getLogger(CallNode.class);
 
@@ -21,7 +21,7 @@ public abstract class CallNode extends NodeRT {
     @ChildEntity
     protected final ReadWriteArray<Long> capturedVariableIndexes = addChild(new ReadWriteArray<>(Long.class), "capturedVariableIndexes");
 
-    public CallNode(Long tmpId, String name, NodeRT prev, Code code, @NotNull FlowRef flowRef) {
+    public CallNode(Long tmpId, String name, Node prev, Code code, @NotNull FlowRef flowRef) {
         super(tmpId, name, null, prev, code);
         this.flowRef = flowRef;
     }

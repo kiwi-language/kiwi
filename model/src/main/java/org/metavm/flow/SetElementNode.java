@@ -2,29 +2,13 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.flow.rest.SetElementNodeParam;
 
 @EntityType
-public class SetElementNode extends NodeRT {
+public class SetElementNode extends Node {
 
-    public static SetElementNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        SetElementNode node = (SetElementNode) context.getNode(nodeDTO.id());
-        if (node == null)
-            node = new SetElementNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
-        return node;
-    }
-
-    public SetElementNode(Long tmpId, String name, NodeRT previous, Code code) {
+    public SetElementNode(Long tmpId, String name, Node previous, Code code) {
         super(tmpId, name, null, previous, code);
-    }
-
-    @Override
-    protected SetElementNodeParam getParam(SerializeContext serializeContext) {
-        return null;
     }
 
     @Override

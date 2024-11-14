@@ -3,36 +3,21 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
-import org.metavm.flow.rest.AddObjectNodeParam;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeParser;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 
 @EntityType
-public class AddObjectNode extends NodeRT {
-
-    public static AddObjectNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        AddObjectNodeParam param = nodeDTO.getParam();
-        var klass = ((ClassType) TypeParser.parseType(param.getType(), context)).resolve();
-        AddObjectNode node = (AddObjectNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null)
-            node = new AddObjectNode(nodeDTO.tmpId(), nodeDTO.name(),  param.isEphemeral(), klass.getType(), prev, code);
-        return node;
-    }
+public class AddObjectNode extends Node {
 
     private boolean ephemeral;
 
-    public AddObjectNode(Long tmpId, String name, boolean ephemeral, ClassType type, NodeRT prev,
+    public AddObjectNode(Long tmpId, String name, boolean ephemeral, ClassType type, Node prev,
                          Code code) {
         super(tmpId, name, type, prev, code);
         this.ephemeral = ephemeral;
@@ -42,11 +27,6 @@ public class AddObjectNode extends NodeRT {
     @NotNull
     public ClassType getType() {
         return (ClassType) NncUtils.requireNonNull(super.getType());
-    }
-
-    @Override
-    protected AddObjectNodeParam getParam(SerializeContext serializeContext) {
-        return new AddObjectNodeParam(getType().toExpression(serializeContext), ephemeral);
     }
 
     @Override
@@ -86,7 +66,7 @@ public class AddObjectNode extends NodeRT {
 
     @Override
     @NotNull
-    public NodeRT getSuccessor() {
+    public Node getSuccessor() {
         return Objects.requireNonNull(super.getSuccessor());
     }
 

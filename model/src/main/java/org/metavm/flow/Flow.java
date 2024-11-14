@@ -65,7 +65,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     private ConstantPool constantPool;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
-    private transient List<NodeRT> nodes = new ArrayList<>();
+    private transient List<Node> nodes = new ArrayList<>();
     private transient Set<String> nodeNames = new HashSet<>();
 
     public Flow(Long tmpId,
@@ -127,7 +127,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         nodeNames = new HashSet<>();
         accept(new VoidStructuralVisitor() {
             @Override
-            public Void visitNode(NodeRT node) {
+            public Void visitNode(Node node) {
                 nodeNames.add(node.getName());
                 return super.visitNode(node);
             }
@@ -207,13 +207,13 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return isSynthetic;
     }
 
-    private List<NodeRT> nodes() {
+    private List<Node> nodes() {
         if (nodes == null) {
             nodes = new ArrayList<>();
             if (code != null) {
                 code.accept(new VoidStructuralVisitor() {
                     @Override
-                    public Void visitNode(NodeRT node) {
+                    public Void visitNode(Node node) {
                         nodes.add(node);
                         return super.visitNode(node);
                     }
@@ -260,17 +260,17 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     @SuppressWarnings("unused")
-    public List<NodeRT> getNodes() {
+    public List<Node> getNodes() {
         return nodes();
     }
 
-    void addNode(NodeRT node) {
+    void addNode(Node node) {
         nodeNames.add(node.getName());
         nodes().add(node);
         version++;
     }
 
-    void removeNode(NodeRT node) {
+    void removeNode(Node node) {
         nodeNames.remove(node.getName());
         nodes().remove(node);
         version++;
@@ -303,13 +303,13 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     @SuppressWarnings("unused")
-    public NodeRT getNodeByName(String nodeName) {
+    public Node getNodeByName(String nodeName) {
         return NncUtils.filterOneRequired(nodes(), n -> n.getName().equals(nodeName),
                 "Node '" + nodeName + "' does not exist");
     }
 
     @SuppressWarnings("unused")
-    public NodeRT findNodeByName(String nodeName) {
+    public Node findNodeByName(String nodeName) {
         return NncUtils.find(nodes(), n -> n.getName().equals(nodeName));
     }
 

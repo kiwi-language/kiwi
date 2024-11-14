@@ -41,7 +41,7 @@ public class Values {
         return new ConstantValue(Instances.nullInstance());
     }
 
-    public static Value node(NodeRT node) {
+    public static Value node(Node node) {
         return new NodeValue(node);
     }
 

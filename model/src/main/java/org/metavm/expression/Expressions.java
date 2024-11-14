@@ -1,6 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.flow.NodeRT;
+import org.metavm.flow.Node;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
@@ -150,11 +150,11 @@ public class Expressions {
         return new ArrayAccessExpression(array, index);
     }
 
-    public static Expression node(NodeRT node) {
+    public static Expression node(Node node) {
         return new NodeExpression(node);
     }
 
-    public static Expression nodeProperty(NodeRT node, Property property) {
+    public static Expression nodeProperty(Node node, Property property) {
         return property(new NodeExpression(node), property);
     }
 

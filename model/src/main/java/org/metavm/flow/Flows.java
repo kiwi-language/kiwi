@@ -26,7 +26,7 @@ public class Flows {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    public static Type getExpressionType(Expression expression, @Nullable NodeRT prev) {
+    public static Type getExpressionType(Expression expression, @Nullable Node prev) {
         var exprTypeMap = prev != null ? prev.getNextExpressionTypes() : ExpressionTypeMap.EMPTY;
         return exprTypeMap.getType(expression);
     }

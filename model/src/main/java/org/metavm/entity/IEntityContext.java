@@ -175,12 +175,12 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
         return getEntity(CapturedTypeVariable.class, id);
     }
 
-    default NodeRT getNode(Id id) {
-        return getEntity(NodeRT.class, id);
+    default Node getNode(Id id) {
+        return getEntity(Node.class, id);
     }
 
-    default NodeRT getNode(String id) {
-        return getEntity(NodeRT.class, id);
+    default Node getNode(String id) {
+        return getEntity(Node.class, id);
     }
 
     default Flow getFlow(Id id) {

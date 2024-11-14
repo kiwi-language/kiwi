@@ -3,7 +3,7 @@ package org.metavm.entity;
 import javassist.util.proxy.ProxyObject;
 import org.metavm.event.EventQueue;
 import org.metavm.flow.Flow;
-import org.metavm.flow.NodeRT;
+import org.metavm.flow.Node;
 import org.metavm.flow.Code;
 import org.metavm.object.instance.DefaultObjectInstanceMap;
 import org.metavm.object.instance.IndexKeyRT;
@@ -330,8 +330,8 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         return getEntity(Field.class, id);
     }
 
-    public NodeRT getNode(Id id) {
-        return getEntity(NodeRT.class, id);
+    public Node getNode(Id id) {
+        return getEntity(Node.class, id);
     }
 
 

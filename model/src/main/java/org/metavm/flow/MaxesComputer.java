@@ -59,7 +59,7 @@ public class MaxesComputer extends StructuralVisitor<Void> {
     }
 
     @Override
-    public Void visitNode(NodeRT node) {
+    public Void visitNode(Node node) {
         currentCallable().changeStack(node.getStackChange());
 //        if(DebugEnv.flag)
 //        log.debug("Stack size at " + node.getName() + ": {}, {}",

@@ -3,15 +3,9 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NewObjectNodeParam;
-import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.type.ClassType;
-import org.metavm.object.type.TypeParser;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,43 +16,16 @@ public class NewObjectNode extends CallNode {
 
     public static final Logger logger = LoggerFactory.getLogger(NewObjectNode.class);
 
-    public static NewObjectNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        var node = (NewObjectNode) context.getNode(nodeDTO.id());
-        if(node == null) {
-            NewObjectNodeParam param = nodeDTO.getParam();
-            var methodRef = MethodRef.createMethodRef(Objects.requireNonNull(param.getFlowRef()), context);
-            node = new NewObjectNode(nodeDTO.tmpId(), nodeDTO.name(), methodRef,
-                    prev, code, param.isEphemeral(), param.isUnbound());
-            node.setCapturedVariableTypes(NncUtils.map(param.getCapturedVariableTypes(), t -> TypeParser.parseType(t, context)));
-            node.setCapturedVariableIndexes(param.getCapturedVariableIndexes());
-        }
-        return node;
-    }
-
     private boolean ephemeral;
 
     private boolean unbound;
 
     public NewObjectNode(Long tmpId, String name, MethodRef methodRef,
-                         NodeRT prev, Code code,
+                         Node prev, Code code,
                          boolean ephemeral, boolean unbound) {
         super(tmpId, name, prev, code, methodRef);
         this.ephemeral = ephemeral;
         this.unbound = unbound;
-    }
-
-    @Override
-    protected NewObjectNodeParam getParam(SerializeContext serializeContext) {
-        return new NewObjectNodeParam(
-                getFlowRef().toDTO(serializeContext),
-                null,
-                null,
-                getFlowRef().getDeclaringType().toExpression(serializeContext),
-                ephemeral,
-                unbound,
-                NncUtils.map(capturedVariableTypes, t -> t.toExpression(serializeContext)),
-                capturedVariableIndexes.toList()
-        );
     }
 
     @Override

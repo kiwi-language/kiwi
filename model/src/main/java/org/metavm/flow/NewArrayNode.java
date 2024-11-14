@@ -3,37 +3,18 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.TypeParser;
 import org.metavm.util.NncUtils;
 
 @EntityType
-public class NewArrayNode extends NodeRT {
-
-    public static NewArrayNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        NewArrayNode node = (NewArrayNode) context.getNode(Id.parse(nodeDTO.id()));
-        if (node == null) {
-            var type = (ArrayType) TypeParser.parseType(nodeDTO.outputType(), context);
-            node = new NewArrayNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, code);
-        }
-        return node;
-    }
+public class NewArrayNode extends Node {
 
     public NewArrayNode(Long tmpId, String name,
                         ArrayType type,
-                        NodeRT previous,
+                        Node previous,
                         Code code) {
         super(tmpId, name, type, previous, code);
-    }
-
-    @Override
-    protected Object getParam(SerializeContext serializeContext) {
-        return null;
     }
 
     @Override

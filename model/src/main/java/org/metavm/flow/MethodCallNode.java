@@ -2,50 +2,17 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.MethodCallNodeParam;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.type.TypeParser;
-import org.metavm.util.NncUtils;
-
-import java.util.Objects;
 
 @EntityType
 public class MethodCallNode extends CallNode {
 
-    public static MethodCallNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        var node = (MethodCallNode) context.getNode(nodeDTO.id());
-        if (node == null) {
-            MethodCallNodeParam param = nodeDTO.getParam();
-            var methodRef = MethodRef.createMethodRef(Objects.requireNonNull(param.getFlowRef()), context);
-            node = new MethodCallNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, methodRef);
-            node.setCapturedVariableTypes(NncUtils.map(param.getCapturedVariableTypes(), t -> TypeParser.parseType(t, context)));
-            node.setCapturedVariableIndexes(param.getCapturedVariableIndexes());
-        }
-        return node;
-    }
-
     public MethodCallNode(Long tmpId,
                           String name,
-                          NodeRT prev,
+                          Node prev,
                           Code code,
                           MethodRef methodRef) {
         super(tmpId, name, prev, code, methodRef);
-    }
-
-    @Override
-    protected MethodCallNodeParam getParam(SerializeContext serializeContext) {
-        var method = getMethod();
-        return new MethodCallNodeParam(
-                getFlowRef().toDTO(serializeContext),
-                null,
-                null,
-                method.getDeclaringType().getType().toExpression(serializeContext),
-                NncUtils.map(capturedVariableTypes, t -> t.toExpression(serializeContext)),
-                capturedVariableIndexes.toList()
-        );
     }
 
     @Override

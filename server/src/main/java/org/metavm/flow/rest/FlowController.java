@@ -6,11 +6,8 @@ import org.metavm.common.Result;
 import org.metavm.flow.FlowExecutionService;
 import org.metavm.flow.FlowManager;
 import org.metavm.object.instance.rest.InstanceDTO;
-import org.metavm.object.type.rest.dto.MovePropertyRequest;
 import org.metavm.util.FlowExecutionException;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/flow")
@@ -58,28 +55,6 @@ public class FlowController {
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable("id") String id) {
         flowManager.remove(id);
-        return Result.success(null);
-    }
-
-    @PostMapping("/node")
-    public Result<NodeDTO> saveNode(@RequestBody NodeDTO node) {
-        return Result.success(flowManager.saveNode(node));
-    }
-
-    @PostMapping("/move")
-    public Result<Void> move(@RequestBody MovePropertyRequest request) {
-        flowManager.moveMethod(request.id(), request.ordinal());
-        return Result.voidSuccess();
-    }
-
-    @GetMapping("/node/{id}")
-    public Result<NodeDTO> getNode(@PathVariable("id") String nodeId) {
-        return Result.success(flowManager.getNode(nodeId));
-    }
-
-    @DeleteMapping("/node/{id}")
-    public Result<Void> deleteNode(@PathVariable("id") String nodeId) {
-        flowManager.deleteNode(nodeId);
         return Result.success(null);
     }
 

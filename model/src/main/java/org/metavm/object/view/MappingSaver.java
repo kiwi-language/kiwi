@@ -242,7 +242,7 @@ public class MappingSaver {
             var code = fromView.getCode();
             for (FieldMapping fieldMapping : mapping.getFieldMappings()) {
                 var nestedMapping = fieldMapping.getNestedMapping();
-                Supplier<NodeRT> getTarget = () -> {
+                Supplier<Node> getTarget = () -> {
                     Nodes.load(0, viewType, code);
                     return Nodes.getProperty(fieldMapping.getTargetField(), code);
                 };

@@ -5,19 +5,19 @@ import org.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 
-public abstract class JumpNode extends NodeRT {
+public abstract class JumpNode extends Node {
 
-    private NodeRT target = this;
+    private Node target = this;
 
-    protected JumpNode(Long tmpId, @NotNull String name, @Nullable Type outputType, @Nullable NodeRT previous, @NotNull Code code) {
+    protected JumpNode(Long tmpId, @NotNull String name, @Nullable Type outputType, @Nullable Node previous, @NotNull Code code) {
         super(tmpId, name, outputType, previous, code);
     }
 
-    public NodeRT getTarget() {
+    public Node getTarget() {
         return target;
     }
 
-    public void setTarget(NodeRT target) {
+    public void setTarget(Node target) {
         this.target = target;
     }
 }

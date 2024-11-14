@@ -731,7 +731,7 @@ public class MetaFrame implements Frame, CallContext {
     }
 
     @SuppressWarnings("unused")
-    private void checkResult(Value result, NodeRT node) {
+    private void checkResult(Value result, Node node) {
         Type outputType = node.getType();
         if (outputType == null || outputType.isVoid()) {
             if (result != null) {

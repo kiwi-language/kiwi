@@ -53,7 +53,7 @@ public class ExpressionResolver {
     private final MethodGenerator methodGenerator;
     private final TypeResolver typeResolver;
     private final VisitorBase visitor;
-    private final Map<PsiExpression, NodeRT> expression2node = new IdentityHashMap<>();
+    private final Map<PsiExpression, Node> expression2node = new IdentityHashMap<>();
     private final LinkedList<PsiLambdaExpression> lambdas = new LinkedList<>();
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
@@ -70,7 +70,7 @@ public class ExpressionResolver {
         this.visitor = visitor;
     }
 
-    public NodeRT resolve(PsiExpression psiExpression) {
+    public Node resolve(PsiExpression psiExpression) {
         ResolutionContext context = new ResolutionContext();
         try {
             return resolve(psiExpression, context);
@@ -80,8 +80,8 @@ public class ExpressionResolver {
         }
     }
 
-    private NodeRT resolve(PsiExpression psiExpression, ResolutionContext context) {
-        NodeRT resolved;
+    private Node resolve(PsiExpression psiExpression, ResolutionContext context) {
+        Node resolved;
         if (isBoolExpression(psiExpression)) {
             resolved = resolveBoolExpr(psiExpression, context);
         } else {
@@ -92,7 +92,7 @@ public class ExpressionResolver {
         return resolved;
     }
 
-    private NodeRT resolveNormal(PsiExpression psiExpression, ResolutionContext context) {
+    private Node resolveNormal(PsiExpression psiExpression, ResolutionContext context) {
         return switch (psiExpression) {
             case PsiBinaryExpression binaryExpression -> resolveBinary(binaryExpression, context);
             case PsiPolyadicExpression polyadicExpression -> resolvePolyadic(polyadicExpression, context);
@@ -117,22 +117,22 @@ public class ExpressionResolver {
         };
     }
 
-    private NodeRT resolveSuper(PsiSuperExpression ignored) {
+    private Node resolveSuper(PsiSuperExpression ignored) {
         return loadThis();
     }
 
-    private NodeRT resolveClassObjectAccess(PsiClassObjectAccessExpression classObjectAccessExpression, ResolutionContext ignored) {
+    private Node resolveClassObjectAccess(PsiClassObjectAccessExpression classObjectAccessExpression, ResolutionContext ignored) {
         var type = typeResolver.resolveTypeOnly(classObjectAccessExpression.getOperand().getType());
         return methodGenerator.createLoadType(type);
     }
 
-    private NodeRT resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {
+    private Node resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {
         resolve(typeCastExpression.getOperand(), context);
         var targetType = typeResolver.resolveDeclaration(requireNonNull(typeCastExpression.getCastType()).getType());
         return methodGenerator.createTypeCast(targetType);
     }
 
-    private NodeRT resolvePolyadic(PsiPolyadicExpression psiExpression, ResolutionContext context) {
+    private Node resolvePolyadic(PsiPolyadicExpression psiExpression, ResolutionContext context) {
         var op = psiExpression.getOperationTokenType();
         var operands = psiExpression.getOperands();
         var current = resolve(operands[0], context);
@@ -143,7 +143,7 @@ public class ExpressionResolver {
         return current;
     }
 
-    private NodeRT resolveInstanceOf(PsiInstanceOfExpression instanceOfExpression, ResolutionContext context) {
+    private Node resolveInstanceOf(PsiInstanceOfExpression instanceOfExpression, ResolutionContext context) {
         if (instanceOfExpression.getPattern() instanceof PsiTypeTestPattern pattern) {
             resolve(instanceOfExpression.getOperand(), context);
             var i = methodGenerator.getVariableIndex(Objects.requireNonNull(pattern.getPatternVariable()));
@@ -157,7 +157,7 @@ public class ExpressionResolver {
         );
     }
 
-    private NodeRT resolveArrayAccess(PsiArrayAccessExpression arrayAccessExpression, ResolutionContext context) {
+    private Node resolveArrayAccess(PsiArrayAccessExpression arrayAccessExpression, ResolutionContext context) {
         resolve(arrayAccessExpression.getArrayExpression(), context);
         Values.node(methodGenerator.createNonNull());
         resolve(arrayAccessExpression.getIndexExpression(), context);
@@ -173,11 +173,11 @@ public class ExpressionResolver {
         return psiExpression.getType() == PsiType.BOOLEAN;
     }
 
-    private NodeRT resolveThis(PsiThisExpression ignored) {
+    private Node resolveThis(PsiThisExpression ignored) {
         return methodGenerator.createLoadThis();
     }
 
-    private NodeRT resolveConditional(PsiConditionalExpression psiExpression, ResolutionContext context) {
+    private Node resolveConditional(PsiConditionalExpression psiExpression, ResolutionContext context) {
         var i = methodGenerator.nextVariableIndex();
         constructIf(psiExpression.getCondition(), false,
                 () -> {
@@ -193,11 +193,11 @@ public class ExpressionResolver {
         return methodGenerator.createLoad(i, typeResolver.resolveDeclaration(psiExpression.getType()));
     }
 
-    private NodeRT resolveParenthesized(PsiParenthesizedExpression psiExpression, ResolutionContext context) {
+    private Node resolveParenthesized(PsiParenthesizedExpression psiExpression, ResolutionContext context) {
         return resolve(requireNonNull(psiExpression.getExpression()), context);
     }
 
-    private NodeRT resolveLiteral(PsiLiteralExpression literalExpression) {
+    private Node resolveLiteral(PsiLiteralExpression literalExpression) {
         Object value = literalExpression.getValue();
         if (value == null) {
             return methodGenerator.createLoadConstant(Instances.nullInstance());
@@ -217,7 +217,7 @@ public class ExpressionResolver {
         return methodGenerator.createLoadConstant(instance);
     }
 
-    private NodeRT resolveReference(PsiReferenceExpression psiReferenceExpression, ResolutionContext context) {
+    private Node resolveReference(PsiReferenceExpression psiReferenceExpression, ResolutionContext context) {
         var target = psiReferenceExpression.resolve();
         switch (target) {
             case PsiField psiField -> {
@@ -292,7 +292,7 @@ public class ExpressionResolver {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    private NodeRT resolveQualifier(PsiExpression qualifier, ResolutionContext context) {
+    private Node resolveQualifier(PsiExpression qualifier, ResolutionContext context) {
         if (qualifier == null) {
             return loadThis();
         } else {
@@ -305,7 +305,7 @@ public class ExpressionResolver {
                 Objects.equals(requireNonNull(field.getContainingClass()).getName(), "__Array__");
     }
 
-    private NodeRT resolvePrefix(PsiPrefixExpression psiPrefixExpression, ResolutionContext context) {
+    private Node resolvePrefix(PsiPrefixExpression psiPrefixExpression, ResolutionContext context) {
         var operand = requireNonNull(psiPrefixExpression.getOperand());
         var op = psiPrefixExpression.getOperationSign().getTokenType();
         if (op == JavaTokenType.EXCL) {
@@ -334,7 +334,7 @@ public class ExpressionResolver {
         }
     }
 
-    private NodeRT resolveUnary(PsiUnaryExpression psiUnaryExpression, ResolutionContext context) {
+    private Node resolveUnary(PsiUnaryExpression psiUnaryExpression, ResolutionContext context) {
         if (psiUnaryExpression instanceof PsiPrefixExpression prefixExpression) {
             return resolvePrefix(prefixExpression, context);
         }
@@ -363,15 +363,15 @@ public class ExpressionResolver {
             throw new IllegalStateException("Unrecognized unary expression: " + psiUnaryExpression.getText());
     }
 
-    private NodeRT resolveBinary(PsiBinaryExpression psiExpression, ResolutionContext context) {
+    private Node resolveBinary(PsiBinaryExpression psiExpression, ResolutionContext context) {
         var op = psiExpression.getOperationSign().getTokenType();
         resolve(psiExpression.getLOperand(), context);
         resolve(psiExpression.getROperand(), context);
         return resolveBinary(op);
     }
 
-    private NodeRT resolveBinary(IElementType op) {
-        NodeRT node;
+    private Node resolveBinary(IElementType op) {
+        Node node;
         if(op.equals(JavaTokenType.PLUS))
             node = methodGenerator.createAdd();
         else if(op.equals(JavaTokenType.MINUS))
@@ -415,7 +415,7 @@ public class ExpressionResolver {
         return node;
     }
 
-    private NodeRT resolveMethodCall(PsiMethodCallExpression expression, ResolutionContext context) {
+    private Node resolveMethodCall(PsiMethodCallExpression expression, ResolutionContext context) {
         var methodCallResolver = getMethodCallResolver(expression);
         if (methodCallResolver != null)
             return methodCallResolver.resolve(expression, this, methodGenerator);
@@ -472,7 +472,7 @@ public class ExpressionResolver {
         }
     }
 
-    private NodeRT resolveFlowCall(PsiMethodCallExpression expression, ResolutionContext context) {
+    private Node resolveFlowCall(PsiMethodCallExpression expression, ResolutionContext context) {
         var ref = expression.getMethodExpression();
         var rawMethod = (PsiMethod) Objects.requireNonNull(ref.resolve());
         var klassName = requireNonNull(requireNonNull(rawMethod.getContainingClass()).getQualifiedName());
@@ -518,7 +518,7 @@ public class ExpressionResolver {
         var captureVariableTypes = NncUtils.map(
                 capturedPsiExpressions, e -> typeResolver.resolveDeclaration(e.getType()));
         var capturedVariableIndexes = new ArrayList<Long>();
-        for (NodeRT anchor : anchors) {
+        for (Node anchor : anchors) {
             var v = methodGenerator.nextVariableIndex();
             capturedVariableIndexes.add((long) v);
             methodGenerator.recordValue(anchor, v);
@@ -527,13 +527,13 @@ public class ExpressionResolver {
         node.setCapturedVariableTypes(captureVariableTypes);
     }
 
-    private NodeRT createSAMConversion(Klass samInterface) {
+    private Node createSAMConversion(Klass samInterface) {
         var func = StdFunction.functionToInstance.get().getParameterized(List.of(samInterface.getType()));
         return methodGenerator.createFunctionCall(func);
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    private NodeRT getQualifier(@Nullable PsiExpression qualifierExpression, ResolutionContext context) {
+    private Node getQualifier(@Nullable PsiExpression qualifierExpression, ResolutionContext context) {
         return qualifierExpression == null ? loadThis()
                 : resolve(requireNonNull(qualifierExpression), context);
     }
@@ -564,7 +564,7 @@ public class ExpressionResolver {
         return flow;
     }
 
-    private NodeRT resolveNew(PsiNewExpression expression, ResolutionContext context) {
+    private Node resolveNew(PsiNewExpression expression, ResolutionContext context) {
         if (expression.isArrayCreation()) {
             return resolveNewArray(expression, context);
         } else {
@@ -572,9 +572,9 @@ public class ExpressionResolver {
         }
     }
 
-    private NodeRT resolveNewArray(PsiNewExpression expression, ResolutionContext context) {
+    private Node resolveNewArray(PsiNewExpression expression, ResolutionContext context) {
         var type = (ArrayType) typeResolver.resolveDeclaration(expression.getType());
-        NodeRT node;
+        Node node;
         if (expression.getArrayInitializer() == null) {
             NncUtils.map(expression.getArrayDimensions(), d -> resolve(d, context));
             node = methodGenerator.createNewArrayWithDimensions(type, expression.getArrayDimensions().length);
@@ -589,7 +589,7 @@ public class ExpressionResolver {
         return node;
     }
 
-    private NodeRT resolveArrayInitialization(PsiArrayInitializerExpression arrayInitializerExpression, ResolutionContext context) {
+    private Node resolveArrayInitialization(PsiArrayInitializerExpression arrayInitializerExpression, ResolutionContext context) {
         var type = (ArrayType) typeResolver.resolveTypeOnly(arrayInitializerExpression.getType());
         var node = methodGenerator.createNewArray(type);
         for (PsiExpression initializer : arrayInitializerExpression.getInitializers()) {
@@ -600,7 +600,7 @@ public class ExpressionResolver {
         return node;
     }
 
-    private NodeRT resolveNewPojo(PsiNewExpression expression, ResolutionContext context) {
+    private Node resolveNewPojo(PsiNewExpression expression, ResolutionContext context) {
         var resolver = getNewResolver(expression);
         if (resolver != null)
             return resolver.resolve(expression, this, methodGenerator);
@@ -637,7 +637,7 @@ public class ExpressionResolver {
         return typeResolver.resolveNullable(substitutor.substitute(param.getType()), ResolutionStage.INIT);
     }
 
-    private NodeRT resolveAssignment(PsiAssignmentExpression expression, ResolutionContext context) {
+    private Node resolveAssignment(PsiAssignmentExpression expression, ResolutionContext context) {
         var op = expression.getOperationSign().getTokenType();
         if (op == JavaTokenType.EQ)
             return resolveDirectAssignment(expression.getLExpression(), expression.getRExpression(), context);
@@ -674,10 +674,10 @@ public class ExpressionResolver {
         }
     }
 
-    private NodeRT resolveDirectAssignment(PsiExpression assigned, PsiExpression assignment, ResolutionContext context) {
+    private Node resolveDirectAssignment(PsiExpression assigned, PsiExpression assignment, ResolutionContext context) {
         if(assigned instanceof PsiReferenceExpression refExpr) {
             var target = refExpr.resolve();
-            NodeRT node;
+            Node node;
             if (target instanceof PsiVariable variable) {
                 if (variable instanceof PsiField psiField) {
                     if (TranspileUtils.isStatic(psiField)) {
@@ -733,13 +733,13 @@ public class ExpressionResolver {
             throw new IllegalStateException("Unsupported assignment target: " + assigned);
     }
 
-    private NodeRT resolveCompoundAssignment(PsiExpression operand,
-                                             Function<NodeRT, NodeRT> action1,
-                                             Runnable action2,
-                                             ResolutionContext context) {
+    private Node resolveCompoundAssignment(PsiExpression operand,
+                                           Function<Node, Node> action1,
+                                           Runnable action2,
+                                           ResolutionContext context) {
         if(operand instanceof PsiReferenceExpression refExpr) {
             var target = refExpr.resolve();
-            NodeRT assignment;
+            Node assignment;
             if (target instanceof PsiVariable variable) {
                 if (variable instanceof PsiField psiField) {
                     if (TranspileUtils.isStatic(psiField)) {
@@ -800,7 +800,7 @@ public class ExpressionResolver {
             resolve(arrayAccess.getIndexExpression(), context);
             Values.node(methodGenerator.createNonNull());
             methodGenerator.createDupX1();
-            NodeRT assignment = methodGenerator.createGetElement();
+            Node assignment = methodGenerator.createGetElement();
             assignment = action1.apply(assignment);
             methodGenerator.createDupX2();
             action2.run();
@@ -820,11 +820,11 @@ public class ExpressionResolver {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public NodeRT constructIf(PsiExpression condition, Runnable thenAction, Runnable elseAction) {
+    public Node constructIf(PsiExpression condition, Runnable thenAction, Runnable elseAction) {
         return constructIf(condition, false, thenAction, elseAction, new ResolutionContext());
     }
 
-    public NodeRT constructIf(PsiExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
+    public Node constructIf(PsiExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
         return switch (condition) {
             case PsiBinaryExpression binaryExpression ->
                     constructBinaryIf(binaryExpression, negated, thenAction, elseAction, context);
@@ -835,11 +835,11 @@ public class ExpressionResolver {
         };
     }
 
-    private NodeRT constructUnaryIf(PsiUnaryExpression unaryExpression,
-                                          boolean negated,
-                                          Runnable thenAction,
-                                          Runnable elseAction,
-                                          ResolutionContext context) {
+    private Node constructUnaryIf(PsiUnaryExpression unaryExpression,
+                                  boolean negated,
+                                  Runnable thenAction,
+                                  Runnable elseAction,
+                                  ResolutionContext context) {
         var op = unaryExpression.getOperationSign().getTokenType();
         if (op == JavaTokenType.EXCL) {
             return constructIf(requireNonNull(unaryExpression.getOperand()), !negated, thenAction, elseAction, context);
@@ -848,7 +848,7 @@ public class ExpressionResolver {
         }
     }
 
-    private NodeRT constructBinaryIf(PsiBinaryExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
+    private Node constructBinaryIf(PsiBinaryExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
         var op = resolveOperator(condition.getOperationSign());
         if(op == BinaryOperator.AND || op == BinaryOperator.OR)
             return constructPolyadicIf(condition, negated, thenAction, elseAction, context);
@@ -856,7 +856,7 @@ public class ExpressionResolver {
             return constructAtomicIf(condition, negated, thenAction, elseAction, context);
     }
 
-    private NodeRT constructPolyadicIf(PsiPolyadicExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
+    private Node constructPolyadicIf(PsiPolyadicExpression condition, boolean negated, Runnable thenAction, Runnable elseAction, ResolutionContext context) {
         var op = resolveOperator(condition.getOperationTokenType());
         if (op == BinaryOperator.AND) {
             return constructAndPolyadicIf(condition.getOperands(),  0, negated, thenAction, elseAction, context);
@@ -867,12 +867,12 @@ public class ExpressionResolver {
         }
     }
 
-    private NodeRT constructAndPolyadicIf(PsiExpression[] items,
-                                                int index,
-                                                boolean negated,
-                                                Runnable thenAction,
-                                                Runnable elseAction,
-                                                ResolutionContext context
+    private Node constructAndPolyadicIf(PsiExpression[] items,
+                                        int index,
+                                        boolean negated,
+                                        Runnable thenAction,
+                                        Runnable elseAction,
+                                        ResolutionContext context
     ) {
         if(index == items.length - 1)
             return constructIf(items[index], negated, thenAction, elseAction, context);
@@ -894,17 +894,17 @@ public class ExpressionResolver {
         }
     }
 
-    private NodeRT constructOrPolyadicIf(PsiExpression[] items,
-                                               int index,
-                                               boolean negated,
-                                               Runnable thenAction, Runnable elseAction,
-                                               ResolutionContext context
+    private Node constructOrPolyadicIf(PsiExpression[] items,
+                                       int index,
+                                       boolean negated,
+                                       Runnable thenAction, Runnable elseAction,
+                                       ResolutionContext context
     ) {
         if(index == items.length - 1)
             return constructIf(items[index], negated, thenAction, elseAction, context);
         else {
             var ref = new Object() {
-                NodeRT target;
+                Node target;
             };
             return constructIf(items[index],
                     negated,
@@ -923,8 +923,8 @@ public class ExpressionResolver {
         }
     }
 
-    private NodeRT constructAtomicIf(PsiExpression condition, boolean negated, Runnable thenAction,
-                                           Runnable elseAction, ResolutionContext context) {
+    private Node constructAtomicIf(PsiExpression condition, boolean negated, Runnable thenAction,
+                                   Runnable elseAction, ResolutionContext context) {
         resolveNormal(condition, context);
         var ifNode = negated ? methodGenerator.createIf(null)
                 : methodGenerator.createIfNot(null);
@@ -937,7 +937,7 @@ public class ExpressionResolver {
         return join;
     }
 
-    public NodeRT resolveBoolExpr(PsiExpression expression, ResolutionContext context) {
+    public Node resolveBoolExpr(PsiExpression expression, ResolutionContext context) {
         var i = methodGenerator.nextVariableIndex();
          constructIf(expression, false,
                 () -> {
@@ -951,7 +951,7 @@ public class ExpressionResolver {
         return methodGenerator.createLoad(i, Types.getBooleanType());
     }
 
-    public NodeRT resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
+    public Node resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
         enterLambda(expression);
         var returnType = typeResolver.resolveNullable(TranspileUtils.getLambdaReturnType(expression), ResolutionStage.DECLARATION);
         var parameters = new ArrayList<Parameter>();
@@ -982,7 +982,7 @@ public class ExpressionResolver {
         return methodGenerator.createLambda(lambda, funcInterface);
     }
 
-    private NodeRT resolveSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
+    private Node resolveSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
         var y = methodGenerator.enterSwitchExpression();
         var switchVarIndex = methodGenerator.nextVariableIndex();
         resolve(psiSwitchExpression.getExpression(), context);
@@ -1077,7 +1077,7 @@ public class ExpressionResolver {
         return lambdas.peek();
     }
 
-    NodeRT loadThis() {
+    Node loadThis() {
         assert !methodGenerator.getMethod().isStatic();
         var lambda = currentLambda();
         if(lambda == null)

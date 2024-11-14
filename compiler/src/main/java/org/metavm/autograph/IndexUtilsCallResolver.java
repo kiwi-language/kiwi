@@ -5,7 +5,7 @@ import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import org.metavm.api.lang.Indices;
-import org.metavm.flow.NodeRT;
+import org.metavm.flow.Node;
 import org.metavm.object.type.Index;
 import org.metavm.util.ReflectionUtils;
 
@@ -64,7 +64,7 @@ public class IndexUtilsCallResolver implements org.metavm.autograph.MethodCallRe
     }
 
     @Override
-    public NodeRT resolve(PsiMethodCallExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
+    public Node resolve(PsiMethodCallExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
         var methodGenerics = methodCallExpression.resolveMethodGenerics();
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var indexPsiClassType = requireNonNull(((PsiClassType) requireNonNull(

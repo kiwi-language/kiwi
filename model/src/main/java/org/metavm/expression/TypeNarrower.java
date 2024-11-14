@@ -2,7 +2,7 @@ package org.metavm.expression;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.ModelDefRegistry;
-import org.metavm.flow.NodeRT;
+import org.metavm.flow.Node;
 import org.metavm.object.type.NeverType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.UnionType;
@@ -42,7 +42,7 @@ public class TypeNarrower {
         };
     }
 
-    private Map<Expression, Type> processNode(NodeRT node, boolean negated) {
+    private Map<Expression, Type> processNode(Node node, boolean negated) {
 //        return switch (node) {
 //            case NotNode notNode -> process(notNode.getOperand().getExpression(), !negated);
 //            case InstanceOfNode instanceOfNode -> processInstanceOf(

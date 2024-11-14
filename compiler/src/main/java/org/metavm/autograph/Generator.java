@@ -318,7 +318,7 @@ public class Generator extends VisitorBase {
         }
         requireNonNull(psiMethod.getBody(), "body is missing from method " +
                 TranspileUtils.getMethodQualifiedName(psiMethod)).accept(this);
-        NodeRT lastNode;
+        Node lastNode;
         if (psiMethod.isConstructor()) {
             builder.getThis();
             builder.createReturn();
@@ -631,7 +631,7 @@ public class Generator extends VisitorBase {
             builder().createPop();
     }
 
-    private NodeRT resolveExpression(PsiExpression expression) {
+    private Node resolveExpression(PsiExpression expression) {
         return builder().getExpressionResolver().resolve(expression);
     }
 

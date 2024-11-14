@@ -3,40 +3,22 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.Bytecodes;
-import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeParser;
 
 import java.util.Objects;
 
 @EntityType
-public class CastNode extends NodeRT {
-
-    public static CastNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
-        var node = (CastNode) context.getNode(Id.parse(nodeDTO.id()));
-        var type = TypeParser.parseType(nodeDTO.outputType(), context);
-        if (node == null)
-            node = new CastNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, code);
-        return node;
-    }
+public class CastNode extends Node {
 
     public CastNode(Long tmpId, String name, @NotNull Type outputType,
-                    NodeRT previous, Code code) {
+                    Node previous, Code code) {
         super(tmpId, name, outputType, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitCastNode(this);
-    }
-
-    @Override
-    protected Object getParam(SerializeContext serializeContext) {
-        return null;
     }
 
     public @NotNull Type getType() {
