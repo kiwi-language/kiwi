@@ -41,7 +41,7 @@ public class MetaContextCacheTest extends TestCase {
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID, metaContext)) {
                 var parent = Objects.requireNonNull(context.getParent());
-                Assert.assertTrue(parent.containsUniqueKey(Klass.UNIQUE_CODE, "Foo"));
+                Assert.assertTrue(parent.containsUniqueKey(Klass.UNIQUE_QUALIFIED_NAME, "Foo"));
                 var instCtx = context.getInstanceContext();
                 var fooKlass = context.getKlass(fooKlassId);
                 var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType()).build();

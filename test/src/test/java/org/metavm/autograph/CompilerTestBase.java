@@ -157,7 +157,7 @@ public abstract class CompilerTestBase extends TestCase  {
 
 
     protected KlassDTO queryClassType(String name) {
-        return typeManager.getTypeByCode(name).type();
+        return typeManager.getTypeByQualifiedName(name).type();
     }
 
     protected void assertNoError(KlassDTO klassDTO) {
@@ -181,7 +181,7 @@ public abstract class CompilerTestBase extends TestCase  {
     }
 
     protected KlassDTO getClassTypeByCode(String code) {
-        return typeManager.getTypeByCode(code).type();
+        return typeManager.getTypeByQualifiedName(code).type();
     }
 
     protected void compileTwice(String sourceRoot) {

@@ -10,7 +10,6 @@ import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.Types;
-import org.metavm.util.DebugEnv;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
@@ -64,7 +63,7 @@ public class StandardStaticMethods {
     public static void initialize(DefContext defContext, boolean local) {
         for (FunctionDef def : functionDefs) {
             var func = Objects.requireNonNull(
-                    defContext.selectFirstByKey(Function.UNIQUE_IDX_CODE, def.getName()),
+                    defContext.selectFirstByKey(Function.UNIQUE_NAME, def.getName()),
                     "Function not found: " + def.getName());
             if(local)
                 def.setLocal(func);
@@ -129,11 +128,11 @@ public class StandardStaticMethods {
             for (var p : method.getParameters()) {
                 params.add(Parameter.create(p.getName(), Types.fromJavaType(p.getParameterizedType())));
             }
-            var func = FunctionBuilder.newBuilder(name, name)
+            var func = FunctionBuilder.newBuilder(name)
                     .typeParameters(
                             NncUtils.map(
                                     method.getTypeParameters(),
-                                    tv -> new TypeVariable(null, tv.getName(), tv.getName(), DummyGenericDeclaration.INSTANCE)
+                                    tv -> new TypeVariable(null, tv.getName(), DummyGenericDeclaration.INSTANCE)
                             )
                     )
                     .parameters(params)

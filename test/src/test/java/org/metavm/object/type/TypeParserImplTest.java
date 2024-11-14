@@ -35,7 +35,7 @@ public class TypeParserImplTest extends TestCase {
 
     public void testMethodRef() {
         var fooKlass = TestUtils.newKlassBuilder("Foo", "Foo").build();
-        var testMethod = MethodBuilder.newBuilder(fooKlass, "test", "test").build();
+        var testMethod = MethodBuilder.newBuilder(fooKlass, "test").build();
         TestUtils.initEntityIds(fooKlass);
         var methodRef = TypeParser.parseMethodRef(
                 String.format("%s::%s", fooKlass.getType().toExpression(), Constants.ID_PREFIX + testMethod.getStringId()),
@@ -61,10 +61,10 @@ public class TypeParserImplTest extends TestCase {
     public void testParseFunction() {
         var functionSig = "T requireNonNull2<T>(T|null value, java.util.function.Supplier<string> messageSupplier)";
         var supplierKlass = TestUtils.newKlassBuilder(Supplier.class)
-                .typeParameters(new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE))
+                .typeParameters(new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE))
                 .build();
         var func = new TypeParserImpl((String name) -> {
-            if(name.equals(supplierKlass.getCode()))
+            if(name.equals(supplierKlass.getQualifiedName()))
                 return supplierKlass;
             else
                 throw new NullPointerException("No such class: " + name);
@@ -76,10 +76,8 @@ public class TypeParserImplTest extends TestCase {
         Assert.assertEquals(variableType, func.getReturnType());
         Assert.assertEquals(2, func.getParameters().size());
         Assert.assertEquals("value", func.getParameter(0).getName());
-        Assert.assertEquals("value", func.getParameter(0).getCode());
         Assert.assertEquals(new UnionType(Set.of(variableType, Types.getNullType())), func.getParameter(0).getType());
         Assert.assertEquals("messageSupplier", func.getParameter(1).getName());
-        Assert.assertEquals("messageSupplier", func.getParameter(1).getCode());
         Assert.assertEquals(supplierKlass.getParameterized(List.of(Types.getStringType())).getType(), func.getParameter(1).getType());
     }
 
@@ -104,12 +102,12 @@ public class TypeParserImplTest extends TestCase {
 
     public void testVariableType() {
         var klass = TestUtils.newKlassBuilder("Foo")
-                .typeParameters(new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE))
+                .typeParameters(new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE))
                 .build();
-        MethodBuilder.newBuilder(klass, "test1", "test1")
+        MethodBuilder.newBuilder(klass, "test1")
                 .build();
-        var m2 = MethodBuilder.newBuilder(klass, "test2", "test2")
-                .typeParameters(List.of(new TypeVariable(null, "E", "E", DummyGenericDeclaration.INSTANCE)))
+        var m2 = MethodBuilder.newBuilder(klass, "test2")
+                .typeParameters(List.of(new TypeVariable(null, "E", DummyGenericDeclaration.INSTANCE)))
                 .build();
         TestUtils.initEntityIds(klass);
         var pKlass = klass.getParameterized(List.of(Types.getLongType()));
@@ -138,8 +136,8 @@ public class TypeParserImplTest extends TestCase {
     }
 
     public void testFunctionRef() {
-        var func = FunctionBuilder.newBuilder("test", "test")
-                .typeParameters(List.of(new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE)))
+        var func = FunctionBuilder.newBuilder("test")
+                .typeParameters(List.of(new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE)))
                 .build();
         TestUtils.initEntityIds(func);
         var map = getEntityMap(func);

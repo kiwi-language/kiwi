@@ -11,36 +11,20 @@ public class NamingUtils {
             " ", "\b", "\t", "\n", "\r"/*, "$"*/
     };
 
-    private static final Pattern TYPE_CODE_PATTERN = Pattern.compile("^[\\[\\(a-zA-Z_$][&\\|,\\(\\)\\-\\.a-zA-Z_$0-9<>\\[\\]]*$");
+    private static final Pattern TYPE_NAME_PATTERN = Pattern.compile("^[\\[\\(a-zA-Z_$][&\\|,\\(\\)\\-\\.a-zA-Z_$0-9<>\\[\\]]*$");
 
-    private static final Pattern CODE_PATTERN = Pattern.compile("^[a-zA-Z_<$][a-zA-Z_$0-9]*>?$");
-
-    public static String ensureValidCode(@Nullable String code) {
-        return ensureValidCode(code, CODE_PATTERN);
+    public static String ensureValidTypeName(@Nullable String name) {
+        return ensureValidName(name, TYPE_NAME_PATTERN);
     }
 
-    public static String ensureValidTypeCode(@Nullable String code) {
-        return ensureValidCode(code, TYPE_CODE_PATTERN);
-    }
-
-    public static String ensureValidFlowCode(@Nullable String code) {
-        if (code == null || NncUtils.isBlank(code))
+    private static String ensureValidName(@Nullable String name, Pattern pattern) {
+        if (name == null || NncUtils.isBlank(name))
             return null;
-        code = removeSpaces(code);
-        if (TYPE_CODE_PATTERN.matcher(code).matches() || CODE_PATTERN.matcher(code).matches())
-            return code;
+        name = removeSpaces(name);
+        if (pattern.matcher(name).matches())
+            return name;
         else
-            throw new BusinessException(ErrorCode.INVALID_CODE, code);
-    }
-
-    private static String ensureValidCode(@Nullable String code, Pattern pattern) {
-        if (code == null || NncUtils.isBlank(code))
-            return null;
-        code = removeSpaces(code);
-        if (pattern.matcher(code).matches())
-            return code;
-        else
-            throw new BusinessException(ErrorCode.INVALID_CODE, code);
+            throw new BusinessException(ErrorCode.INVALID_CODE, name);
     }
 
 
@@ -76,16 +60,16 @@ public class NamingUtils {
         return buf.toString();
     }
 
-    public static @Nullable String getGetterName(@Nullable String code) {
-        return tryAddPrefix(code, "get");
+    public static @Nullable String getGetterName(@Nullable String name) {
+        return tryAddPrefix(name, "get");
     }
 
-    public static @Nullable String getSetterName(@Nullable String code) {
-        return tryAddPrefix(code, "set");
+    public static @Nullable String getSetterName(@Nullable String name) {
+        return tryAddPrefix(name, "set");
     }
 
-    public static @Nullable String tryAddPrefix(@Nullable String code, String prefix) {
-        return code != null ? prefix + firstCharToUpperCase(escapeTypeName(code)) : null;
+    public static @Nullable String tryAddPrefix(@Nullable String name, String prefix) {
+        return name != null ? prefix + firstCharToUpperCase(escapeTypeName(name)) : null;
     }
 
     private static String removeSpaces(String str) {

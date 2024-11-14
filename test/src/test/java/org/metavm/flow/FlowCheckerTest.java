@@ -20,10 +20,10 @@ public class FlowCheckerTest extends TestCase {
 
     public void testBranch() {
         var klass = TestUtils.newKlassBuilder("Foo").build();
-        var method = MethodBuilder.newBuilder(klass, "requireNonNull", "requireNonNull")
+        var method = MethodBuilder.newBuilder(klass, "requireNonNull")
                 .isStatic(true)
                 .returnType(Types.getAnyType())
-                .parameters(new Parameter(null, "value", "value", Types.getNullableAnyType()))
+                .parameters(new Parameter(null, "value", Types.getNullableAnyType()))
                 .build();
         var scope = method.getScope();
         Nodes.argument(method, 0);
@@ -42,10 +42,10 @@ public class FlowCheckerTest extends TestCase {
 
     public void testDirectCheck() {
         var klass = TestUtils.newKlassBuilder("Foo").build();
-        var method = MethodBuilder.newBuilder(klass, "requireNonNull", "requireNonNull")
+        var method = MethodBuilder.newBuilder(klass, "requireNonNull")
                 .isStatic(true)
                 .returnType(Types.getAnyType())
-                .parameters(new Parameter(null, "value", "value", Types.getNullableAnyType()))
+                .parameters(new Parameter(null, "value", Types.getNullableAnyType()))
                 .build();
         var scope = method.getScope();
         Nodes.argument(method, 0);

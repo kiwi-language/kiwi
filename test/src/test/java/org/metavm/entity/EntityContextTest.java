@@ -47,7 +47,7 @@ public class EntityContextTest extends TestCase {
     public void testContainsUniqueKey() {
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             Assert.assertNotNull(context.getParent());
-            Assert.assertTrue(context.getParent().containsUniqueKey(Klass.UNIQUE_CODE, Klass.class.getName()));
+            Assert.assertTrue(context.getParent().containsUniqueKey(Klass.UNIQUE_QUALIFIED_NAME, Klass.class.getName()));
         }
     }
 
@@ -55,9 +55,9 @@ public class EntityContextTest extends TestCase {
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                 var klass = TestUtils.newKlassBuilder("Foo")
-                        .typeParameters(new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE))
                         .build();
-                var m = MethodBuilder.newBuilder(klass, "test", "test").build();
+                var m = MethodBuilder.newBuilder(klass, "test").build();
                 Nodes.noop(m.getScope());
                 klass.setStage(ResolutionStage.DEFINITION);
                 context.bind(klass);

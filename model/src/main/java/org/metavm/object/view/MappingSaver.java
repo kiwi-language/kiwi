@@ -72,14 +72,12 @@ public class MappingSaver {
         var sourceType = klassProvider.getKlass(Id.parse(mappingDTO.sourceType()));
         FieldsObjectMapping mapping = (FieldsObjectMapping) sourceType.findMapping(Id.parse(mappingDTO.id()));
         if (mapping == null) {
-            var targetKlass = createTargetKlass(sourceType, "builtin", "builtin");
-            mapping = new FieldsObjectMapping(mappingDTO.tmpId(), mappingDTO.name(), mappingDTO.code(), sourceType, false,
+            var targetKlass = createTargetKlass(sourceType, "builtin");
+            mapping = new FieldsObjectMapping(mappingDTO.tmpId(), mappingDTO.name(), sourceType, false,
                     targetKlass.getType());
             mapping.generateDeclarations();
-        } else {
+        } else
             mapping.setName(mappingDTO.name());
-            mapping.setCode(mappingDTO.code());
-        }
         if (mappingDTO.isDefault())
             mapping.setDefault();
         var param = (FieldsObjectMappingParam) mappingDTO.param();
@@ -118,7 +116,6 @@ public class MappingSaver {
                             createTargetField(
                                     containingMapping.getTargetKlass(),
                                     fieldMappingDTO.name(),
-                                    fieldMappingDTO.code(),
                                     getTargetFieldType(sourceField.getType(), codeGenerator),
                                     fieldMappingDTO.isChild(),
                                     sourceField.isTitle(),
@@ -140,7 +137,6 @@ public class MappingSaver {
                             createTargetField(
                                     containingMapping.getTargetKlass(),
                                     fieldMappingDTO.name(),
-                                    fieldMappingDTO.code(),
                                     getTargetFieldType(getter.getReturnType(), objectNestedMapping),
                                     fieldMappingDTO.isChild(),
                                     false,
@@ -154,7 +150,6 @@ public class MappingSaver {
             };
         } else {
             fieldMapping.setName(fieldMappingDTO.name());
-            fieldMapping.setCode(fieldMappingDTO.code());
             fieldMapping.setNestedMapping(nestedMapping != null ? new ObjectNestedMapping(nestedMapping.getRef()) : null);
             var param = fieldMappingDTO.param();
             switch (fieldMapping) {
@@ -194,8 +189,8 @@ public class MappingSaver {
         NncUtils.requireTrue(klass.isClass() || klass.isValue());
         var mapping = (FieldsObjectMapping) NncUtils.find(klass.getMappings(), ObjectMapping::isBuiltin);
         if (mapping == null) {
-            var targetKlass = createTargetKlass(klass, "builtin", "builtin");
-            mapping = new FieldsObjectMapping(null, "builtin", "builtin", klass, true, targetKlass.getType());
+            var targetKlass = createTargetKlass(klass, "builtin");
+            mapping = new FieldsObjectMapping(null, "builtin", klass, true, targetKlass.getType());
             mapping.generateDeclarations();
         }
         retransformClassType(klass);
@@ -233,10 +228,10 @@ public class MappingSaver {
     private void saveFromViewMethod(Klass klass, FieldsObjectMapping mapping, boolean generateCode) {
         var viewType = mapping.getTargetType();
         var canonicalConstructor = getCanonicalConstructor(klass);
-        var fromView = klass.findMethodByCodeAndParamTypes("fromView", List.of(viewType));
+        var fromView = klass.findMethodByNameAndParamTypes("fromView", List.of(viewType));
         if (fromView == null) {
-            fromView = MethodBuilder.newBuilder(klass, "fromView", "fromView")
-                    .parameters(new Parameter(null, "view", "view", viewType))
+            fromView = MethodBuilder.newBuilder(klass, "fromView")
+                    .parameters(new Parameter(null, "view", viewType))
                     .returnType(klass.getType())
                     .isStatic(true)
                     .isSynthetic(true)
@@ -265,8 +260,8 @@ public class MappingSaver {
 
     private Method getCanonicalConstructor(Klass klass) {
         var fields = NncUtils.merge(
-                NncUtils.map(getVisibleFields(klass), f -> new NameAndType(f.getCodeNotNull(), f.getType())),
-                NncUtils.map(getAccessors(klass), a -> new NameAndType(requireNonNull(a.code), a.getter.getReturnType()))
+                NncUtils.map(getVisibleFields(klass), f -> new NameAndType(f.getName(), f.getType())),
+                NncUtils.map(getAccessors(klass), a -> new NameAndType(requireNonNull(a.name), a.getter.getReturnType()))
         );
         var fieldTypes = NncUtils.toMap(fields, f -> f.name, f -> f.type);
         var constructor = NncUtils.find(
@@ -302,14 +297,13 @@ public class MappingSaver {
         var fieldMapping = directFieldMappings.get(field);
         if (fieldMapping == null) {
             fieldMapping = new DirectFieldMapping(
-                    null, createTargetField(containingMapping.getTargetKlass(), field.getName(), field.getCode(),
+                    null, createTargetField(containingMapping.getTargetKlass(), field.getName(),
                     codeGenerator.getTargetType(),
                     field.isChild(), field.isTitle(), field.isReadonly()).getRef(),
                     containingMapping, codeGenerator, field
             );
         } else {
             fieldMapping.setName(field.getName());
-            fieldMapping.setCode(field.getCode());
             fieldMapping.update(field, field.isReadonly());
             fieldMapping.setTargetFieldType(codeGenerator.getTargetType());
             fieldMapping.setNestedMapping(codeGenerator);
@@ -321,23 +315,23 @@ public class MappingSaver {
         return FieldMapping.getTargetFieldType(targetFieldType, nestedMapping);
     }
 
-    private Klass createTargetKlass(Klass sourceKlass, String name, @Nullable String code) {
-        var viewTypeName = getTargetTypeName(sourceKlass, name);
-        var viewTypeCode = getTargetTypeCode(sourceKlass, code);
+    private Klass createTargetKlass(Klass sourceKlass, String name) {
+        var viewKlassName = getTargetTypeName(sourceKlass, name);
+        var viewKlassQualifiedName = getTargetTypeQualifiedName(sourceKlass, name);
         if (sourceKlass.isTemplate()) {
-            var template = KlassBuilder.newBuilder(viewTypeName, viewTypeCode)
+            var template = KlassBuilder.newBuilder(viewKlassName, viewKlassQualifiedName)
                     .isTemplate(true)
                     .ephemeral(true)
                     .struct(true)
                     .anonymous(true)
                     .typeParameters(NncUtils.map(
                             sourceKlass.getTypeParameters(),
-                            p -> new TypeVariable(null, p.getName(), p.getCode(), DummyGenericDeclaration.INSTANCE)
+                            p -> new TypeVariable(null, p.getName(), DummyGenericDeclaration.INSTANCE)
                     ))
                     .build();
             return template.getParameterized(NncUtils.map(sourceKlass.getTypeParameters(), TypeVariable::getType), ResolutionStage.INIT);
         } else {
-            return KlassBuilder.newBuilder(viewTypeName, viewTypeCode)
+            return KlassBuilder.newBuilder(viewKlassName, viewKlassQualifiedName)
                     .ephemeral(true)
                     .anonymous(true)
                     .struct(true)
@@ -351,15 +345,15 @@ public class MappingSaver {
         return NamingUtils.escapeTypeName(sourceType.getName()) + mappingName + "View";
     }
 
-    public static @Nullable String getTargetTypeCode(Klass sourceType, @Nullable String mappingCode) {
-        if (sourceType.getCode() == null || mappingCode == null)
+    public static @Nullable String getTargetTypeQualifiedName(Klass sourceType, @Nullable String mappingCode) {
+        if (sourceType.getQualifiedName() == null || mappingCode == null)
             return null;
         if (mappingCode.endsWith("View") && mappingCode.length() > 4)
             mappingCode = mappingCode.substring(0, mappingCode.length() - 4);
-        return sourceType.getCode() + mappingCode + "View";
+        return sourceType.getQualifiedName() + mappingCode + "View";
     }
 
-    private Field createTargetField(Klass targetKlass, String name, String code, Type type,
+    private Field createTargetField(Klass targetKlass, String name, Type type,
                                     boolean isChild, boolean asTitle, boolean readonly) {
         if (targetKlass.getTemplate() != null) {
             var template = requireNonNull(targetKlass.getTemplate());
@@ -370,7 +364,7 @@ public class MappingSaver {
             type = type.accept(typeSubst);
             var fieldTemplate = FieldBuilder
                     .newBuilder(NamingUtils.ensureValidName(name),
-                            NamingUtils.ensureValidCode(code), template, type)
+                            template, type)
                     .isChild(isChild)
                     .asTitle(asTitle)
                     .readonly(readonly)
@@ -381,7 +375,7 @@ public class MappingSaver {
         } else {
             return FieldBuilder
                     .newBuilder(NamingUtils.ensureValidName(name),
-                            NamingUtils.ensureValidCode(code), targetKlass, type)
+                            targetKlass, type)
                     .isChild(isChild)
                     .asTitle(asTitle)
                     .readonly(readonly)
@@ -451,7 +445,6 @@ public class MappingSaver {
                     createTargetField(
                             declaringMapping.getTargetKlass(),
                             property.name,
-                            property.code,
                             codeGenerator.getTargetType(),
                             property.isChild(),
                             false,
@@ -461,7 +454,6 @@ public class MappingSaver {
                     property.setter, null);
         } else {
             propertyMapping.setName(property.name);
-            propertyMapping.setCode(property.code);
             propertyMapping.setNestedMapping(codeGenerator);
             propertyMapping.setFlows(property.getter, property.setter, codeGenerator.getTargetType());
         }
@@ -470,7 +462,7 @@ public class MappingSaver {
 
     private static @Nullable Method getSetter(Klass type, String propertyCode, Type propertyType) {
         var flowCode = NamingUtils.getSetterName(propertyCode);
-        var setter = type.findMethodByCodeAndParamTypes(flowCode, List.of(propertyType));
+        var setter = type.findMethodByNameAndParamTypes(flowCode, List.of(propertyType));
         if (setter != null && setter.isPublic() && !setter.isSynthetic())
             return setter;
         else
@@ -493,7 +485,7 @@ public class MappingSaver {
     }
 
     public static ClassInstance getSource(ClassInstance view) {
-        var sourceField = view.getKlass().getFieldByCode("source");
+        var sourceField = view.getKlass().getFieldByName("source");
         return view.getField(sourceField).resolveObject();
     }
 
@@ -501,44 +493,35 @@ public class MappingSaver {
         if (!getter.isSynthetic() && getter.isPublic() && getter.getCode() != null
                 && !getter.getReturnType().isVoid() && getter.getParameters().isEmpty()) {
             for (Field field : getter.getDeclaringType().getFields()) {
-                if(getter.getCode().equals(field.getCode()))
-                    return new Accessor(getter, null, field, field.getName(), field.getCode());
+                if(getter.getName().equals(field.getName()))
+                    return new Accessor(getter, null, field, field.getName());
             }
-            var matcher = GETTER_CODE_PATTERN.matcher(getter.getCode());
+            var matcher = GETTER_CODE_PATTERN.matcher(getter.getName());
             if (matcher.matches()) {
-                return getAccessor0(matcher, getter, "get");
+                return getAccessor0(matcher, getter);
             }
             if (getter.getReturnType().isBoolean()) {
-                matcher = BOOL_GETTER_CODE_PATTERN.matcher(getter.getCode());
+                matcher = BOOL_GETTER_CODE_PATTERN.matcher(getter.getName());
                 if (matcher.matches()) {
-                    return getAccessor0(matcher, getter, "is");
+                    return getAccessor0(matcher, getter);
                 }
             }
         }
         return null;
     }
 
-    private static Accessor getAccessor0(Matcher matcher, Method getter, String getterPrefix) {
-        String propertyCode = NamingUtils.firstCharToLowerCase(matcher.group(1));
-        var setter = getSetter(getter.getDeclaringType(), propertyCode, getter.getReturnType());
-        var field = getter.getDeclaringType().findFieldByCode(propertyCode);
-        if (field != null)
-            return new Accessor(getter, setter, field, field.getName(), propertyCode);
-        else if (getter.getName().startsWith("get") && getter.getName().length() > 3)
-            return new Accessor(getter, setter, null, getter.getName().substring(2), propertyCode);
-        else if (getter.getName().startsWith(getterPrefix) && getter.getName().length() > getterPrefix.length())
-            return new Accessor(getter, setter, null,
-                    NamingUtils.firstCharToLowerCase(getter.getName().substring(getterPrefix.length())), propertyCode);
-        else
-            return new Accessor(getter, setter, null, getter.getName(), propertyCode);
+    private static Accessor getAccessor0(Matcher matcher, Method getter) {
+        String propertyName = NamingUtils.firstCharToLowerCase(matcher.group(1));
+        var setter = getSetter(getter.getDeclaringType(), propertyName, getter.getReturnType());
+        var field = getter.getDeclaringType().findFieldByName(propertyName);
+        return new Accessor(getter, setter, field, propertyName);
     }
 
     private record Accessor(
             Method getter,
             @Nullable Method setter,
             @Nullable Field underlyingField,
-            String name,
-            @Nullable String code
+            String name
     ) {
 
         public boolean isChild() {

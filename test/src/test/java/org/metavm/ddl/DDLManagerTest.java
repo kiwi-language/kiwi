@@ -67,7 +67,7 @@ public class DDLManagerTest extends TestCase {
 
     public void testPreUpgrade() {
         var fooKlass = ModelDefRegistry.getDefContext().getKlass(UpgradeFoo.class);
-        var field = fooKlass.getFieldByCode("bar");
+        var field = fooKlass.getFieldByName("bar");
         Assert.assertEquals(1, field.getSince());
         var barKlass = ModelDefRegistry.getDefContext().getKlass(UpgradeBar.class);
         Assert.assertEquals(1, barKlass.getSince());
@@ -128,7 +128,7 @@ public class DDLManagerTest extends TestCase {
 
     public void testPreUpgradeWithNewKlassField() {
         var klassKlass = ModelDefRegistry.getDefContext().getKlass(Klass.class);
-        var field = klassKlass.getFieldByCode("flags");
+        var field = klassKlass.getFieldByName("flags");
         Assert.assertEquals(1, field.getSince());
         var klassFlagsKlass = ModelDefRegistry.getDefContext().getKlass(KlassFlags.class);
         Assert.assertEquals(1, klassFlagsKlass.getSince());
@@ -211,15 +211,15 @@ public class DDLManagerTest extends TestCase {
         Assert.assertSame(k, kInst.getKlass());
         Assert.assertSame(defContext.getInstanceContext().get(ec.getId()), ec);
 
-        defContext.getIndexConstraint(Klass.UNIQUE_CODE);
+        defContext.getIndexConstraint(Klass.UNIQUE_QUALIFIED_NAME);
 
-        var setSourceFunc = defContext.selectFirstByKey(Function.UNIQUE_IDX_CODE, StdFunction.setSource.getName());
+        var setSourceFunc = defContext.selectFirstByKey(Function.UNIQUE_NAME, StdFunction.setSource.getName());
         Assert.assertNotNull(setSourceFunc);
         Assert.assertEquals(2, setSourceFunc.getParameters().size());
 
         Assert.assertSame(
                 defContext.getKlass(Klass.class),
-                defContext.selectFirstByKey(Klass.UNIQUE_CODE, klassKlass.getCodeNotNull()));
+                defContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klassKlass.getCodeNotNull()));
 
         try(var context1 = entityContextFactory.newContext(TestConstants.APP_ID, defContext)) {
             Assert.assertSame(context1.getDefContext(), defContext);

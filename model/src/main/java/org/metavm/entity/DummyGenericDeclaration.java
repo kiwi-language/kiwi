@@ -29,12 +29,12 @@ public enum DummyGenericDeclaration implements GenericDeclaration {
     }
 
     @Override
-    public String getName() {
+    public String getQualifiedName() {
         return "DUMMY";
     }
 
     @Override
-    public String getCode() {
+    public String getName() {
         return "DUMMY";
     }
 

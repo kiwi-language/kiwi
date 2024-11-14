@@ -24,9 +24,9 @@ public class TypeReducerTest extends TestCase {
         var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
         var nullableStringType = new UnionType(
                 Set.of(Types.getStringType(), Types.getNullType()));
-        var nameField = FieldBuilder.newBuilder("code", "code", fooType, nullableStringType)
+        var nameField = FieldBuilder.newBuilder("code", fooType, nullableStringType)
                 .build();
-        var amountField = FieldBuilder.newBuilder("amount", "amount", fooType, Types.getLongType())
+        var amountField = FieldBuilder.newBuilder("amount", fooType, Types.getLongType())
                 .build();
         assertTrue(nameField.getType().isNullable());
         var nameFieldExpr = new PropertyExpression(

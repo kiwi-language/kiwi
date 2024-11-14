@@ -11,7 +11,6 @@ import org.metavm.object.type.rest.dto.ConstraintParam;
 import org.metavm.util.NamingUtils;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 @EntityType
 public abstract class Constraint extends Element implements  ClassMember, LocalKey {
@@ -19,18 +18,15 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
     private final Klass declaringType;
     @EntityField(asTitle = true)
     private String name;
-    @Nullable
-    private String code;
     private final ConstraintKind kind;
     @Nullable
     private String message;
 
     public Constraint(ConstraintKind kind, @NotNull Klass declaringType,
-                      String name, @Nullable String code, @Nullable String message) {
+                      String name, @Nullable String message) {
         super(null);
         this.declaringType = declaringType;
         this.name =  NamingUtils.ensureValidName(name);
-        this.code = NamingUtils.ensureValidCode(code);
         this.kind = kind;
         this.message = message;
         declaringType.addConstraint(this);
@@ -62,17 +58,8 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
         return declaringType.getTypeDesc() + "." + getName();
     }
 
-    @Nullable
-    public String getCode() {
-        return code;
-    }
-
     public void setName(String name) {
         this.name = NamingUtils.ensureValidName(name);
-    }
-
-    public void setCode(@Nullable String code) {
-        this.code = NamingUtils.ensureValidCode(code);
     }
 
     public ConstraintDTO toDTO() {
@@ -82,7 +69,6 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
                     kind.code(),
                     serContext.getStringId(declaringType),
                     name,
-                    code,
                     message,
                     getParam()
             );
@@ -98,7 +84,6 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
 
     public void update(ConstraintDTO constraintDTO, IEntityContext context) {
         setName(constraintDTO.name());
-        setCode(constraintDTO.code());
         setMessage(constraintDTO.message());
         if(constraintDTO.param() != null)
             setParam(constraintDTO.getParam(), context);
@@ -106,11 +91,11 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
 
     @Override
     public boolean isValidLocalKey() {
-        return code != null;
+        return true;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return Objects.requireNonNull(code);
+        return name;
     }
 }

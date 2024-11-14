@@ -37,7 +37,6 @@ public class TypeVariableParser extends DefParser<Object, TypeVariableDef> {
         var declaringType = defMap.getPojoDef(declaringClass, INIT).getKlass();
         return type = new org.metavm.object.type.TypeVariable(
                 null,
-                EntityUtils.getMetaTypeVariableName(javaTypeVariable),
                 javaTypeVariable.getName(),
                 declaringType);
     }

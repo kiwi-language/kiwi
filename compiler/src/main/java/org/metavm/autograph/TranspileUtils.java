@@ -13,7 +13,6 @@ import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.*;
 import org.metavm.api.builtin.IndexDef;
-import org.metavm.entity.FlowParam;
 import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.object.type.Type;
@@ -828,7 +827,7 @@ public class TranspileUtils {
     }
 
     public static org.metavm.flow.Method getMethidByJavaMethod(Klass klass, PsiMethod psiMethod, TypeResolver typeResolver) {
-        return klass.getMethodByCodeAndParamTypes(
+        return klass.getMethodByNameAndParamTypes(
                 psiMethod.getName(),
                 NncUtils.map(
                         psiMethod.getParameterList().getParameters(),
@@ -909,11 +908,6 @@ public class TranspileUtils {
             current = current.getParent();
         }
         return false;
-    }
-
-    public static String getFlowParamName(PsiParameter psiParameter) {
-        String paramName = tryGetNameFromAnnotation(psiParameter, FlowParam.class);
-        return paramName != null ? paramName : psiParameter.getName();
     }
 
     public static String getEnumConstantName(PsiEnumConstant enumConstant) {

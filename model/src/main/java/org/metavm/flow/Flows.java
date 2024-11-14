@@ -119,7 +119,7 @@ public class Flows {
         assert klass.isEnum();
         var m = klass.findMethod(Flows::isValuesMethod);
         if(m == null) {
-            m = MethodBuilder.newBuilder(klass, "values", "values")
+            m = MethodBuilder.newBuilder(klass, "values")
                     .isStatic(true)
                     .returnType(new ArrayType(klass.getType(), ArrayKind.READ_WRITE))
                     .build();

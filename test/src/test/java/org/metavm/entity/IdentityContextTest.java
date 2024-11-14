@@ -30,15 +30,15 @@ public class IdentityContextTest extends TestCase {
                 .source(ClassSource.BUILTIN)
                 .build();
 
-        var fooNameField = FieldBuilder.newBuilder("name", "name", fooKlass, Types.getStringType())
+        var fooNameField = FieldBuilder.newBuilder("name", fooKlass, Types.getStringType())
                 .build();
 
-        var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
-        var method = MethodBuilder.newBuilder(fooKlass, "bar", "bar")
+        var typeVar = new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE);
+        var method = MethodBuilder.newBuilder(fooKlass, "bar")
                 .returnType(Types.getVoidType())
                 .typeParameters(List.of(typeVar))
                 .build();
-        method.setParameters(List.of(new Parameter(null, "t", "t", typeVar.getType())));
+        method.setParameters(List.of(new Parameter(null, "t", typeVar.getType())));
         var identities = new IdentityHashMap<Object, ModelIdentity>();
         EntityUtils.visitGraph(List.of(fooKlass),
                 entity -> {

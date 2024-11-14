@@ -63,7 +63,6 @@ public class Method extends Flow implements Property, GenericElement {
     public Method(Long tmpId,
                   @NotNull Klass declaringType,
                   String name,
-                  @Nullable String code,
                   boolean isConstructor,
                   boolean isAbstract,
                   boolean isNative,
@@ -78,7 +77,7 @@ public class Method extends Flow implements Property, GenericElement {
                   @Nullable CodeSource codeSource,
                   boolean hidden,
                   MetadataState state) {
-        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, List.of(), List.of(), horizontalTemplate, codeSource, state, isAbstract);
+        super(tmpId, name, isNative, isSynthetic, parameters, returnType, List.of(), List.of(), horizontalTemplate, codeSource, state, isAbstract);
         if (isStatic && isAbstract)
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.declaringType = declaringType;
@@ -135,7 +134,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     public boolean isValidLocalKey() {
-        return getCode() != null;
+        return true;
     }
 
     @Override
@@ -441,8 +440,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     protected Method createParameterized(List<? extends Type> typeArguments) {
-        var parameterized = MethodBuilder
-                .newBuilder(declaringType, getName(), getCode())
+        var parameterized = MethodBuilder.newBuilder(declaringType, getName())
 //                .tmpId(getCopyTmpId(method))
                 .horizontalTemplate(this)
                 .isSynthetic(isSynthetic())
@@ -471,16 +469,16 @@ public class Method extends Flow implements Property, GenericElement {
     public boolean isGetter() {
         if (!isPublic())
             return false;
-        var code = getCode();
-        return code != null && GETTER_PTN.matcher(code).matches() && getParameters().isEmpty() && !getReturnType().isVoid();
+        var name = getName();
+        return GETTER_PTN.matcher(name).matches() && getParameters().isEmpty() && !getReturnType().isVoid();
     }
 
     public String getPropertyName() {
-        var code = Objects.requireNonNull(getCode());
-        var matcher = GETTER_PTN.matcher(code);
+        var name = getName();
+        var matcher = GETTER_PTN.matcher(name);
         if (matcher.matches())
             return NamingUtils.firstCharToLowerCase(matcher.group(2));
-        matcher = SETTER_PTN.matcher(code);
+        matcher = SETTER_PTN.matcher(name);
         if(matcher.matches())
             return NamingUtils.firstCharToLowerCase(matcher.group(1));
         throw new IllegalStateException("Method " + getQualifiedName() + " is not a getter or setter");
@@ -489,8 +487,8 @@ public class Method extends Flow implements Property, GenericElement {
     public boolean isSetter() {
         if (!isPublic())
             return false;
-        var code = getCode();
-        return code != null && SETTER_PTN.matcher(code).matches() && getParameters().size() == 1;
+        var name = getName();
+        return SETTER_PTN.matcher(name).matches() && getParameters().size() == 1;
     }
 
     @Nullable

@@ -30,7 +30,7 @@ public class ListNative extends IterableNative {
 
     public ListNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByCode("array"));
+        arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByName("array"));
         if(instance.isFieldInitialized(arrayField)) {
             array = instance.getField(arrayField).resolveArray();
         }
@@ -48,7 +48,7 @@ public class ListNative extends IterableNative {
 
     public Value List(Value c, CallContext callContext) {
         if(c instanceof Reference collection) {
-            var thatArrayField = collection.resolveObject().getKlass().getFieldByCode("array");
+            var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
             var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
             array = new ArrayInstance((ArrayType) arrayField.getType(),
                     new InstanceParentRef(instance.getReference(), arrayField));
@@ -141,7 +141,7 @@ public class ListNative extends IterableNative {
 
     public BooleanValue addAll(Value c, CallContext callContext) {
         if(c instanceof Reference collection && collection.resolveObject().isList()) {
-            var thatArrayField = collection.resolveObject().getKlass().getFieldByCode("array");
+            var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
             var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
             array.addAll(thatArray);
             return Instances.trueInstance();

@@ -67,20 +67,20 @@ public class TranspileUtilsTest extends TestCase {
         var sig = TranspileUtils.getInternalName(getMethod);
 
         var fooType = TestUtils.newKlassBuilder(SignatureFoo.class).build();
-        var typeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
+        var typeVar = new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE);
 
-        var addMethod = MethodBuilder.newBuilder(fooType, "add", "add")
+        var addMethod = MethodBuilder.newBuilder(fooType, "add")
                 .typeParameters(List.of(typeVar))
                 .build();
 
         addMethod.setParameters(List.of(
-                new Parameter(null, "list", "list",
+                new Parameter(null, "list",
                         Types.getNullableType(
                                 StdKlass.list.get().getParameterized(List.of(
                                         new UncertainType(typeVar.getType(), Types.getAnyType()))).getType()
                         )
                 ),
-                new Parameter(null, "element", "element", Types.getNullableType(typeVar.getType()))
+                new Parameter(null, "element", Types.getNullableType(typeVar.getType()))
         ));
         var sig2 = addMethod.getInternalName(null);
         Assert.assertEquals(sig, sig2);

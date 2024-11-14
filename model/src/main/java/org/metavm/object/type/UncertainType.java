@@ -37,18 +37,6 @@ public class UncertainType extends CompositeType {
         this.upperBound = upperBound;
     }
 
-    private static String getName(Type lowerBound, Type upperBound) {
-        return "[" + lowerBound.getName() + "," + upperBound.getName() + "]";
-    }
-
-
-    private static @Nullable String getCode(Type lowerBound, Type upperBound) {
-        if (lowerBound.getCode() != null && upperBound.getCode() != null)
-            return "[" + lowerBound.getCode() + "," + upperBound.getCode() + "]";
-        else
-            return null;
-    }
-
     @Override
     public UncertainTypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return new UncertainTypeKey(lowerBound.toTypeKey(getTypeDefId), upperBound.toTypeKey(getTypeDefId));
@@ -110,14 +98,6 @@ public class UncertainType extends CompositeType {
     @Override
     public String getTypeDesc() {
         return "[" + lowerBound.getTypeDesc() + "," + upperBound.getTypeDesc() + "]";
-    }
-
-    @Nullable
-    @Override
-    public String getCode() {
-        if (lowerBound.getCode() == null || upperBound.getCode() == null)
-            return null;
-        return "[" + lowerBound.getCode() + "," + upperBound.getCode() + "]";
     }
 
     @Override

@@ -25,7 +25,7 @@ public class TreeSetNative extends SetNative {
 
     public TreeSetNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByCode("array"));
+        arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByName("array"));
         if (instance.isFieldInitialized(arrayField)) {
             var instCtx = Objects.requireNonNull(instance.getContext(), "InstanceContext is missing in " + instance);
             array = instance.getField(arrayField).resolveArray();
@@ -41,7 +41,7 @@ public class TreeSetNative extends SetNative {
 
     public Value TreeSet(Value c, CallContext callContext) {
         if(c instanceof Reference collection) {
-            var thatArrayField = collection.resolveObject().getKlass().getFieldByCode("array");
+            var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
             var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
             array = new ArrayInstance((ArrayType) arrayField.getType(),
                     new InstanceParentRef(instance.getReference(), arrayField));

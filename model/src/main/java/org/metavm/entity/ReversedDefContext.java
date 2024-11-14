@@ -348,8 +348,8 @@ public class ReversedDefContext extends DefContext {
 
     private void initFieldDefs(PojoDef<?> pojoDef, PojoDef<?> prototype) {
         for (var prototypeField : prototype.getKlass().getFields()) {
-            var field = pojoDef.getKlass().getSelfField(f -> f.getCodeNotNull().equals(prototypeField.getCodeNotNull()));
-            var javaField = ReflectionUtils.getField(pojoDef.getJavaClass(), field.getCodeNotNull());
+            var field = pojoDef.getKlass().getSelfField(f -> f.getName().equals(prototypeField.getName()));
+            var javaField = ReflectionUtils.getField(pojoDef.getJavaClass(), field.getName());
             if (javaField.getType() == Class.class)
                 new ClassFieldDef(pojoDef, field, javaField, this);
             else if(Value.class.isAssignableFrom(javaField.getType()))

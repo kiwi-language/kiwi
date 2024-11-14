@@ -81,7 +81,7 @@ public class EnumEditContext {
     }
 
     private void addEnumConstant(String name, ClassInstance instance) {
-        FieldBuilder.newBuilder(name, null, type, type.getType())
+        FieldBuilder.newBuilder(name, type, type.getType())
                 .isChild(true)
                 .isStatic(true)
                 .staticValue(instance.getReference())

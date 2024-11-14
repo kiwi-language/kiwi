@@ -14,8 +14,6 @@ public enum Func {
 
     private final FunctionDesc desc;
 
-    private final String code;
-
     private final List<Class<?>> parameterTypes;
 
 //    private final Class<?> resultType;
@@ -29,13 +27,7 @@ public enum Func {
         this.parameterTypes = parameterTypes;
 //        this.resultType = resultType;
 //        this.resultTypeFunc = resultTypeFunc;
-        code = extractCodeFromName(name());
         desc = new FunctionDesc(this);
-    }
-
-    private static String extractCodeFromName(String name) {
-        int dollarIndex = name.indexOf('$');
-        return dollarIndex == -1 ? name : name.substring(0 ,dollarIndex);
     }
 
     public static Func getByName(String name) {
@@ -57,7 +49,4 @@ public enum Func {
         return desc.evaluate(arguments);
     }
 
-    public String code() {
-        return code;
-    }
 }

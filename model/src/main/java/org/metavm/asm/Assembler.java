@@ -36,7 +36,7 @@ public class Assembler {
 
     private final Map<String, List<ClassType>> superTypes = new HashMap<>();
     private final List<KlassDTO> types = new ArrayList<>();
-    private final Map<String, Klass> code2klass = new HashMap<>();
+    private final Map<String, Klass> name2klass = new HashMap<>();
     private final List<TypeVariableDTO> typeVariables = new ArrayList<>();
     private final Map<ParserRuleContext, Map<AsmAttributeKey<?>, Object>> attributes = new HashMap<>();
     private final Function<String, Klass> klassProvider;
@@ -46,7 +46,7 @@ public class Assembler {
     public Assembler(Function<String, Klass> klassProvider, Consumer<Entity> binder) {
         for (StdKlass stdKlass : StdKlass.values()) {
             var klass = stdKlass.get();
-            code2klass.put(klass.getCodeNotNull(), klass);
+            name2klass.put(klass.getCodeNotNull(), klass);
         }
         this.klassProvider = klassProvider;
         this.binder = binder;
@@ -100,7 +100,6 @@ public class Assembler {
         return new Parameter(
                 NncUtils.randomNonNegative(),
                 name,
-                name,
                 type
         );
     }
@@ -143,8 +142,8 @@ public class Assembler {
                     return "this." + className;
                 var s = scope;
                 while (s != null) {
-                    if (NncUtils.anyMatch(s.getTypeParameters(), tv -> tv.getCodeNotNull().equals(className)))
-                        return s.getGenericDeclaration().getCodeNotNull() + "." + className;
+                    if (NncUtils.anyMatch(s.getTypeParameters(), tv -> tv.getName().equals(className)))
+                        return s.getGenericDeclaration().getQualifiedName() + "." + className;
                     s = scope.parent();
                 }
                 return className;
@@ -434,9 +433,9 @@ public class Assembler {
             var classInfo = (AsmKlass) scope;
             var klass = classInfo.getKlass();
             var isStatic = mods.contains(Modifiers.STATIC);
-            var field = isStatic ? klass.findSelfStaticFieldByCode(name) : klass.findSelfFieldByCode(name);
+            var field = isStatic ? klass.findSelfStaticFieldByName(name) : klass.findSelfFieldByName(name);
             if (field == null) {
-                field = FieldBuilder.newBuilder(name, name, klass, type)
+                field = FieldBuilder.newBuilder(name, klass, type)
                         .tmpId(NncUtils.randomNonNegative())
                         .isChild(mods.contains(Modifiers.CHILD))
                         .isStatic(isStatic)
@@ -467,14 +466,14 @@ public class Assembler {
             var name = ctx.IDENTIFIER().getText();
             var field = klass.findStaticField(f -> f.getName().equals(name));
             if (field == null) {
-                field = FieldBuilder.newBuilder(name, name, klass, klass.getType())
+                field = FieldBuilder.newBuilder(name, klass, klass.getType())
                         .tmpId(NncUtils.randomNonNegative())
                         .isStatic(true)
                         .build();
             }
             var enumConstantDef = klass.findEnumConstantDef(ec -> ec.getName().equals(name));
             if(enumConstantDef == null) {
-                var initializer = MethodBuilder.newBuilder(klass, "$" + name, "$" + name)
+                var initializer = MethodBuilder.newBuilder(klass, "$" + name)
                         .isStatic(true)
                         .returnType(klass.getType())
                         .build();
@@ -512,7 +511,7 @@ public class Assembler {
             if (method != null)
                 method.clearContent();
             else {
-                method = MethodBuilder.newBuilder(klass, name, name)
+                method = MethodBuilder.newBuilder(klass, name)
                         .tmpId(NncUtils.randomNonNegative())
                         .isConstructor(isConstructor)
                         .build();
@@ -529,7 +528,6 @@ public class Assembler {
                     nameParam = new Parameter(
                             NncUtils.randomNonNegative(),
                             "_name",
-                            "_name",
                             PrimitiveType.stringType
                     );
                 }
@@ -538,7 +536,6 @@ public class Assembler {
                 if (ordinalParam == null) {
                     ordinalParam = new Parameter(
                             NncUtils.randomNonNegative(),
-                            "_ordinal",
                             "_ordinal",
                             PrimitiveType.longType
                     );
@@ -560,7 +557,7 @@ public class Assembler {
             var name = ctx.IDENTIFIER().getText();
             var type = NncUtils.find(genericDecl.getTypeParameters(), tv -> tv.getName().equals(name));
             if(type == null)
-                type = new TypeVariable(NncUtils.randomNonNegative(), name, name, genericDecl);
+                type = new TypeVariable(NncUtils.randomNonNegative(), name, genericDecl);
             setAttribute(ctx, AsmAttributeKey.typeVariable, type);
             return super.visitTypeParameter(ctx);
         }
@@ -572,7 +569,7 @@ public class Assembler {
             var index = klass.findIndex(idx -> idx.getName().equals(name));
             var mods = currentMods();
             if (index == null)
-                index = new Index(klass, name, name, null, mods.contains("unique"));
+                index = new Index(klass, name, null, mods.contains("unique"));
             setAttribute(ctx, AsmAttributeKey.index, index);
             return null;
         }
@@ -616,11 +613,10 @@ public class Assembler {
                     && method.getParameters().isEmpty()
                     && method.getReturnType() instanceof ClassType indexType
                     && !method.isStatic()) {
-                Index index = NncUtils.find(klass.getIndices(), idx -> Objects.equals(idx.getCode(), name));
+                Index index = NncUtils.find(klass.getIndices(), idx -> Objects.equals(idx.getName(), name));
                 if (index == null) {
                     index = new Index(
                             klass,
-                            name,
                             name,
                             "",
                             name.startsWith("uniqueIdx"),
@@ -636,7 +632,7 @@ public class Assembler {
                     if(!field.isStatic() && !field.isTransient()) {
                         var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), field.getName()));
                         if (indexField == null)
-                            new IndexField(index, field.getName(), field.getName(), Values.nullValue());
+                            new IndexField(index, field.getName(), Values.nullValue());
                     }
                 }
             }
@@ -725,7 +721,7 @@ public class Assembler {
             if (cinit != null)
                 cinit.clearContent();
             else {
-                cinit = MethodBuilder.newBuilder(klass, "<cinit>", "<cinit>")
+                cinit = MethodBuilder.newBuilder(klass, "<cinit>")
                         .isStatic(true)
                         .tmpId(NncUtils.randomNonNegative())
                         .access(Access.PRIVATE)
@@ -781,7 +777,7 @@ public class Assembler {
                     while (!supers.isEmpty()) {
                         var s = supers.poll();
                         var overridden = s.resolve().findMethod(m -> {
-                            if (m.getName().equals(method.getName()) && Objects.equals(m.getCode(), method.getCode())
+                            if (m.getName().equals(method.getName())
                                     && m.getParameters().size() == method.getParameters().size()
                                     && m.getTypeParameters().size() == method.getTypeParameters().size()
                             ) {
@@ -1104,13 +1100,13 @@ public class Assembler {
         return requireNonNull(findKlass(name), () -> "Can not find class with name '" + name + "'");
     }
 
-    private @Nullable Klass findKlass(String code) {
-        return code2klass.computeIfAbsent(code, klassProvider);
+    private @Nullable Klass findKlass(String name) {
+        return name2klass.computeIfAbsent(name, klassProvider);
     }
 
-    private Klass createKlass(String name, String code, ClassKind kind) {
-        var klass = KlassBuilder.newBuilder(name, code).kind(kind).tmpId(NncUtils.randomNonNegative()).build();
-        code2klass.put(code, klass);
+    private Klass createKlass(String name, String qualifiedName, ClassKind kind) {
+        var klass = KlassBuilder.newBuilder(name, qualifiedName).kind(kind).tmpId(NncUtils.randomNonNegative()).build();
+        name2klass.put(qualifiedName, klass);
 //        binder.accept(klass);
         return klass;
     }

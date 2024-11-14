@@ -15,7 +15,7 @@ public class ObjectInputStreamNative extends NativeBase {
 
     public ObjectInputStreamNative(ClassInstance instance) {
         this.instance = instance;
-        readObjectOverride = instance.getKlass().getMethodByCodeAndParamTypes(
+        readObjectOverride = instance.getKlass().getMethodByNameAndParamTypes(
                 "readObjectOverride", List.of()
         );
     }

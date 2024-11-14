@@ -25,11 +25,11 @@ public class InstanceMemoryIndexTest extends TestCase {
 
         var fooType = TestUtils.newKlassBuilder("Foo", "Foo")
                         .build();
-        var nameField = FieldBuilder.newBuilder("name", "name", fooType, Types.getStringType())
+        var nameField = FieldBuilder.newBuilder("name", fooType, Types.getStringType())
                         .build();
 
         var index = new Index(
-                fooType, "idxName", "idxName", "name must be unique", true,
+                fooType, "idxName", "name must be unique", true,
                 List.of(nameField), null
         );
 

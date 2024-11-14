@@ -30,18 +30,6 @@ public class FunctionType extends CompositeType {
         this.returnType = returnType;
     }
 
-    private static String getName(List<Type> parameterTypes, Type returnType) {
-        return "(" + NncUtils.join(parameterTypes, Type::getName) + ")->" + returnType.getName();
-    }
-
-    private static @Nullable String getCode(List<Type> parameterTypes, Type returnType) {
-        if(returnType.getCode() != null && NncUtils.allMatch(parameterTypes, t -> t.getCode() != null))
-            return "(" + NncUtils.join(parameterTypes, Type::getCode) + ")->" + returnType.getCode();
-        else
-            return null;
-    }
-
-
     @Override
     public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return new FunctionTypeKey(NncUtils.map(parameterTypes, type -> type.toTypeKey(getTypeDefId)), returnType.toTypeKey(getTypeDefId));
@@ -87,14 +75,6 @@ public class FunctionType extends CompositeType {
     @Override
     public String getTypeDesc() {
         return "(" + NncUtils.join(parameterTypes, Type::getTypeDesc) + ")" + "->" + returnType.getTypeDesc();
-    }
-
-    @Nullable
-    @Override
-    public String getCode() {
-        if(returnType.getCode() == null || NncUtils.anyMatch(parameterTypes, t -> t.getCode() == null))
-            return null;
-        return "(" + NncUtils.join(parameterTypes, Type::getCode) + ")->" + returnType.getCode();
     }
 
     @Override

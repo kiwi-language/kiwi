@@ -2,14 +2,10 @@ package org.metavm.object.type;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.Entity;
-import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
-import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.CreatingFieldDTO;
-import org.metavm.object.type.rest.dto.FieldDTO;
 import org.metavm.util.Column;
-import org.metavm.util.Instances;
 
 import javax.annotation.Nullable;
 
@@ -18,21 +14,7 @@ public class FieldData extends Entity {
 
     public static final IndexDef<FieldData> IDX_DECLARING_TYPE = IndexDef.create(FieldData.class, "declaringType");
 
-    public static FieldData fromFieldDTO(FieldDTO fieldDTO, IEntityContext context) {
-        var declaringType = context.getKlass(fieldDTO.declaringTypeId());
-        var fieldType = TypeParser.parseType(fieldDTO.type(), context);
-        var defaultValue = InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context);
-        var column = declaringType.allocateColumn(fieldType, null);
-        return new FieldData(
-                fieldDTO.tmpId(),
-                fieldDTO.name(), fieldDTO.code(), column, fieldDTO.unique(),
-                declaringType, Access.getByCode(fieldDTO.access()), fieldType, fieldDTO.isChild(),
-                fieldDTO.isStatic(), Instances.nullInstance(), defaultValue);
-    }
-
     private final String name;
-    @Nullable
-    private final String code;
     private final Column column;
     private final boolean unique;
     private final Klass declaringType;
@@ -44,10 +26,9 @@ public class FieldData extends Entity {
     @Nullable
     private final Value defaultValue;
 
-    public FieldData(Long tmpId, String name, @Nullable String code, Column column, boolean unique, Klass declaringType, Access access, Type type, boolean isChild, boolean isStatic, Value staticValue, @Nullable Value defaultValue) {
+    public FieldData(Long tmpId, String name, Column column, boolean unique, Klass declaringType, Access access, Type type, boolean isChild, boolean isStatic, Value staticValue, @Nullable Value defaultValue) {
         super(tmpId);
         this.name = name;
-        this.code = code;
         this.column = column;
         this.unique = unique;
         this.declaringType = declaringType;
@@ -61,11 +42,6 @@ public class FieldData extends Entity {
 
     public String getName() {
         return name;
-    }
-
-    @Nullable
-    public String getCode() {
-        return code;
     }
 
     public Column getColumn() {
@@ -108,7 +84,6 @@ public class FieldData extends Entity {
     public CreatingFieldDTO toDTO() {
         return new CreatingFieldDTO(
                 name,
-                code,
                 type.getStringId(),
                 type.getName(),
                 unique

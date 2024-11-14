@@ -97,7 +97,7 @@ public class TypeParsingContext extends BaseParsingContext {
 
     public static Field getField(Klass type, Var var) {
         return switch (var.getType()) {
-            case NAME -> type.tryGetFieldByName(var.getName());
+            case NAME -> type.findFieldByName(var.getName());
             case ID -> type.getField(var.getId());
         };
     }

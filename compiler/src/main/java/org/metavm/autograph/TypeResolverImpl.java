@@ -294,7 +294,7 @@ public class TypeResolverImpl implements TypeResolver {
         PsiType declaringType = TranspileUtils.getElementFactory().createType(
                 requireNonNull(field.getContainingClass()));
         Klass klass = ((ClassType) resolve(declaringType)).resolve();
-        return klass.findFieldByCode(field.getName());
+        return klass.findFieldByName(field.getName());
     }
 
     private GenericDeclaration tryResolveGenericDeclaration(PsiTypeParameterListOwner typeParameterListOwner) {
@@ -364,9 +364,9 @@ public class TypeResolverImpl implements TypeResolver {
         var genericDeclaration = tryResolveGenericDeclaration(typeParameter.getOwner());
         if (genericDeclaration != null)
             typeVariable = NncUtils.find(genericDeclaration.getTypeParameters(),
-                    tv -> Objects.equals(tv.getCode(), typeParameter.getName()));
+                    tv -> Objects.equals(tv.getName(), typeParameter.getName()));
         if (typeVariable == null)
-            typeVariable = new TypeVariable(null, Objects.requireNonNull(typeParameter.getName()), typeParameter.getName(),
+            typeVariable = new TypeVariable(null, Objects.requireNonNull(typeParameter.getName()),
                     genericDeclaration != null ? genericDeclaration : DummyGenericDeclaration.INSTANCE);
         typeParameter.putUserData(Keys.TYPE_VARIABLE, typeVariable);
         generatedTypeDefs.add(typeVariable);
@@ -422,12 +422,12 @@ public class TypeResolverImpl implements TypeResolver {
             var tag = (int) TranspileUtils.getEntityAnnotationAttr(psiClass, "tag", -1);
             Klass klass;
             if(tag == -1)
-                klass = context.selectFirstByKey(Klass.UNIQUE_CODE, code);
+                klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, code);
             else
                 klass = context.selectFirstByKey(Klass.UNIQUE_SOURCE_CODE_TAG, tag);
             if (klass != null) {
                 klass.setName(name);
-                klass.setCode(code);
+                klass.setQualifiedName(code);
                 if (klass.isTemplate() != isTemplate)
                     throw new BusinessException(ErrorCode.CHANGING_IS_TEMPLATE);
                 if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)

@@ -4,27 +4,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.FieldDTO;
-import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 public class MethodBuilder {
 
-    public static MethodBuilder newBuilder(Klass declaringType, String name, String code) {
-        return new MethodBuilder(declaringType, name, code);
+    public static MethodBuilder newBuilder(Klass declaringType, String name) {
+        return new MethodBuilder(declaringType, name);
     }
 
     private final Klass declaringType;
     private final String name;
-    @Nullable
-    private final String code;
     private Long tmpId;
     private boolean isConstructor;
     private boolean isAbstract;
@@ -47,10 +41,9 @@ public class MethodBuilder {
     private final List<Attribute> attributes = new ArrayList<>();
     private MetadataState state;
 
-    private MethodBuilder(Klass declaringType, String name, @Nullable String code) {
+    private MethodBuilder(Klass declaringType, String name) {
         this.declaringType = declaringType;
         this.name = name;
-        this.code = code;
     }
 
     public MethodBuilder isAbstract(boolean isAbstract) {
@@ -176,7 +169,6 @@ public class MethodBuilder {
                     effectiveTmpId,
                     declaringType,
                     name,
-                    code,
                     isConstructor,
                     isAbstract,
                     isNative,
@@ -195,7 +187,6 @@ public class MethodBuilder {
         } else {
             method = existing;
             existing.setName(name);
-            existing.setCode(code);
             existing.setParameters(parameters);
             existing.setReturnType(returnType);
             existing.setTypeParameters(typeParameters);
@@ -206,19 +197,6 @@ public class MethodBuilder {
         }
         method.setAttributes(attributes);
         return method;
-    }
-
-    public static Map<String, Long> getFieldTmpIds(@Nullable KlassDTO klassDTO) {
-        if (klassDTO == null) {
-            return Map.of();
-        }
-        Map<String, Long> code2tmpId = new HashMap<>();
-        for (FieldDTO field : klassDTO.fields()) {
-            if (field.code() != null) {
-                code2tmpId.put(field.code(), field.tmpId());
-            }
-        }
-        return code2tmpId;
     }
 
     public MethodBuilder existing(Method existing) {

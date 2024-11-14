@@ -23,8 +23,8 @@ public class DirectoryAllocatorStore implements AllocatorStore {
     }
 
     @Override
-    public String getFileName(String code) {
-        return ID_FILE_DIR + "/" + code + ".properties";
+    public String getFileName(String typeName) {
+        return ID_FILE_DIR + "/" + typeName + ".properties";
     }
 
     public List<String> getFileNames() {

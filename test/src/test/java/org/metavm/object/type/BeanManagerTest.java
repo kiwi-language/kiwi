@@ -47,11 +47,11 @@ public class BeanManagerTest extends TestCase {
 
             var barServiceKlass = TestUtils.newKlassBuilder("BarService", "BarService")
                     .build();
-            var field = FieldBuilder.newBuilder("fooService", "fooService", barServiceKlass, fooServiceKlass.getType())
+            var field = FieldBuilder.newBuilder("fooService", barServiceKlass, fooServiceKlass.getType())
                     .build();
-            var constructor = MethodBuilder.newBuilder(barServiceKlass, "BarService", "BarService")
+            var constructor = MethodBuilder.newBuilder(barServiceKlass, "BarService")
                     .isConstructor(true)
-                    .parameters(new Parameter(null, "fooService", "fooService", fooServiceKlass.getType()))
+                    .parameters(new Parameter(null, "fooService", fooServiceKlass.getType()))
                     .returnType(barServiceKlass.getType())
                     .build();
             {
@@ -62,9 +62,9 @@ public class BeanManagerTest extends TestCase {
                 Nodes.setField(field, scope);
                 Nodes.ret(scope);
             }
-            var factoryMethod = MethodBuilder.newBuilder(configKlass, "barService", "barService")
+            var factoryMethod = MethodBuilder.newBuilder(configKlass, "barService")
                     .addAttribute(AttributeNames.BEAN_NAME, "barService")
-                    .parameters(new Parameter(null, "fooService", "fooService", fooServiceKlass.getType()))
+                    .parameters(new Parameter(null, "fooService", fooServiceKlass.getType()))
                     .returnType(barServiceKlass.getType())
                     .build();
             {
@@ -94,7 +94,7 @@ public class BeanManagerTest extends TestCase {
     }
 
     private void addSimpleConstructor(Klass klass) {
-        var constructor = MethodBuilder.newBuilder(klass, "FooService", "FooService")
+        var constructor = MethodBuilder.newBuilder(klass, "FooService")
                 .isConstructor(true)
                 .returnType(klass.getType())
                 .build();

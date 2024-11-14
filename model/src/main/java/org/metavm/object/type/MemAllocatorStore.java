@@ -17,8 +17,8 @@ public class MemAllocatorStore implements AllocatorStore {
     private final Map<String, Properties> propertiesMap = new HashMap<>();
 
     @Override
-    public String getFileName(String code) {
-        return "/id/" + code + ".properties";
+    public String getFileName(String typeName) {
+        return "/id/" + typeName + ".properties";
     }
 
     @Override

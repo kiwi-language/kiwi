@@ -381,7 +381,7 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                 var superClass =Objects.requireNonNull(klass.getSuperType()).resolve();
                 for (Field field : superClass.getAllFields()) {
                     if(Instances.getDefaultValue(field, context) == null)
-                        throw new BusinessException(ErrorCode.MISSING_SUPER_INITIALIZER, klass.getCode());
+                        throw new BusinessException(ErrorCode.MISSING_SUPER_INITIALIZER, klass.getName());
                 }
             }
         }

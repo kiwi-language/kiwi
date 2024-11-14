@@ -78,12 +78,6 @@ public class CapturedType extends Type {
         return variable.getScope().getScopeName() + "_" + getName();
     }
 
-    @Nullable
-    @Override
-    public String getCode() {
-        return null;
-    }
-
     @Override
     public TypeCategory getCategory() {
         return TypeCategory.CAPTURED;

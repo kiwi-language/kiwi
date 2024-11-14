@@ -27,8 +27,6 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     @CopyIgnore
     protected Mapping copySource;
     private String name;
-    @Nullable
-    private String code;
     protected final Type sourceType;
     protected final Type targetType;
     protected @Nullable Method mapper;
@@ -37,10 +35,9 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
     // TODO add NotNull annotation to required parameters
-    public Mapping(@Nullable Long tmpId, String name, @Nullable String code, Type sourceType, Type targetType) {
+    public Mapping(@Nullable Long tmpId, String name, Type sourceType, Type targetType) {
         super(tmpId);
         this.name = NamingUtils.ensureValidName(name);
-        this.code = NamingUtils.ensureValidCode(code);
         this.sourceType = sourceType;
         this.targetType = targetType;
     }
@@ -146,17 +143,8 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
         return name;
     }
 
-    @Nullable
-    public String getCode() {
-        return code;
-    }
-
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void setCode(@Nullable String code) {
-        this.code = code;
     }
 
     public Method getMapper() {
@@ -187,10 +175,9 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     public void generateDeclarations() {
         var declaringType = getClassTypeForDeclaration();
         mapper = MethodBuilder
-                .newBuilder(declaringType, "map$" + getQualifiedName(),
-                        "map$" + getQualifiedCode())
+                .newBuilder(declaringType, "map$" + getQualifiedName())
                 .parameters(mapper != null ? mapper.getParameters().get(0) :
-                        new Parameter(null, "source", "source", sourceType))
+                        new Parameter(null, "source", sourceType))
                 .existing(mapper)
                 .codeSource(this)
                 .isSynthetic(true)
@@ -198,15 +185,13 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
                 .returnType(targetType)
                 .build();
         unmapper = MethodBuilder.newBuilder(
-                        declaringType, "unmap$" + getQualifiedName(),
-                        "unmap$" + getQualifiedCode()
-                )
+                        declaringType, "unmap$" + getQualifiedName())
                 .existing(unmapper)
                 .isSynthetic(true)
                 .codeSource(this)
                 .isStatic(true)
                 .parameters(unmapper != null ? unmapper.getParameters().get(0) :
-                        new Parameter(null, "view", "view", targetType))
+                        new Parameter(null, "view", targetType))
                 .returnType(sourceType)
                 .build();
         stage = ResolutionStage.DECLARATION;
@@ -245,7 +230,5 @@ public abstract class Mapping extends Element implements CodeSource, StagedEntit
     public abstract MappingDTO toDTO(SerializeContext context);
 
     public abstract String getQualifiedName();
-
-    public abstract @Nullable String getQualifiedCode();
 
 }

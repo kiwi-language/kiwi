@@ -126,11 +126,11 @@ public class TypeManager extends EntityContextFactoryAware {
         }
     }
 
-    public GetTypeResponse getTypeByCode(String code) {
+    public GetTypeResponse getTypeByQualifiedName(String qualifiedName) {
         try (IEntityContext context = newContext()) {
-            var type = context.selectFirstByKey(Klass.UNIQUE_CODE, code);
+            var type = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, qualifiedName);
             if (type == null) {
-                throw BusinessException.typeNotFound(code);
+                throw BusinessException.typeNotFound(qualifiedName);
             }
             try (var serContext = SerializeContext.enter()) {
                 return new GetTypeResponse(type.toDTO(serContext), List.of());
@@ -156,7 +156,7 @@ public class TypeManager extends EntityContextFactoryAware {
         return entityQueryService.query(
                 EntityQueryBuilder.newBuilder(Klass.class)
                         .searchText(query.searchText())
-                        .searchFields(List.of("code"))
+                        .searchFields(List.of("qualifiedName"))
                         .addField("kind", kinds)
                         .addFieldIf(!query.includeAnonymous(), "anonymous", false)
                         .addFieldIfNotNull("templateFlag", query.isTemplate())
@@ -251,7 +251,7 @@ public class TypeManager extends EntityContextFactoryAware {
     }
 
     private void initClass(Klass klass, IEntityContext context) {
-        var classInit = klass.findMethodByCode("<cinit>");
+        var classInit = klass.findMethodByName("<cinit>");
         if (classInit != null) {
             flowExecutionService.executeInternal(
                     classInit, null,
@@ -456,13 +456,13 @@ public class TypeManager extends EntityContextFactoryAware {
             if (instanceDTO.isNew()) {
                 instanceDTO = setOrdinal(instanceDTO, klass.getEnumConstantDefs().size(), klass);
                 instance = (ClassInstance) instanceManager.create(instanceDTO, instanceContext);
-                FieldBuilder.newBuilder(instance.getTitle(), null, klass, klass.getType())
+                FieldBuilder.newBuilder(instance.getTitle(), klass, klass.getType())
                         .isStatic(true)
                         .staticValue(instance.getReference())
                         .build();
             } else {
                 instance = (ClassInstance) instanceContext.get(instanceDTO.parseId());
-                var ordinalField = klass.findFieldByCode("ordinal");
+                var ordinalField = klass.findFieldByName("ordinal");
                 int ordinal = instance.getLongField(ordinalField).getValue().intValue();
                 instanceDTO = setOrdinal(instanceDTO, ordinal, klass);
                 var field = klass.getStaticFieldByName(instance.getTitle());
@@ -475,7 +475,7 @@ public class TypeManager extends EntityContextFactoryAware {
     }
 
     private InstanceDTO setOrdinal(InstanceDTO instanceDTO, int ordinal, Klass klass) {
-        var ordinalField = klass.getFieldByCode("ordinal");
+        var ordinalField = klass.getFieldByName("ordinal");
         var param = (ClassInstanceParam) instanceDTO.param();
         return instanceDTO.copyWithParam(
                 param.copyWithNewField(
@@ -626,7 +626,7 @@ public class TypeManager extends EntityContextFactoryAware {
             var templateInstances = context.selectByKey(Klass.TEMPLATE_IDX, field.getDeclaringType());
             for (Klass templateInstance : templateInstances) {
                 templateInstance.removeField(
-                        templateInstance.tryGetFieldByName(field.getName())
+                        templateInstance.findFieldByName(field.getName())
                 );
             }
         }
@@ -718,7 +718,7 @@ public class TypeManager extends EntityContextFactoryAware {
 
     public boolean isFlag1(String name) {
         try(var context = newContext()) {
-            var klass = context.selectFirstByKey(Klass.UNIQUE_CODE, name);
+            var klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, name);
             if(klass == null)
                 throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, name);
             return klass.isFlag1();

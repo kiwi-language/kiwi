@@ -16,7 +16,7 @@ import java.util.Objects;
 public record KlassDTO(
         String id,
         String name,
-        @Nullable String code,
+        String qualifiedName,
         int kind,
         boolean ephemeral,
         boolean anonymous,
@@ -47,11 +47,6 @@ public record KlassDTO(
         @Nullable Integer sourceCodeTag,
         List<ErrorDTO> errors
 ) implements TypeDefDTO, GenericDeclarationDTO {
-
-    @JsonIgnore
-    public String getCodeNotNull() {
-        return Objects.requireNonNull(code, "Code is not set for " + this);
-    }
 
     @Override
     public int getDefKind() {

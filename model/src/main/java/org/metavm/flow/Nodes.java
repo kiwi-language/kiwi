@@ -102,7 +102,7 @@ public class Nodes {
         loadConstant(Instances.longInstance(0), scope);
         store(i, scope);
         var listClass = listType.resolve();
-        var sizeMethod = listClass.getMethodByCodeAndParamTypes("size", List.of());
+        var sizeMethod = listClass.getMethodByNameAndParamTypes("size", List.of());
         var entry = noop(scope);
         Supplier<NodeRT> indexSupplier = () -> Nodes.load(i, Types.getLongType(), scope);
         indexSupplier.get();
@@ -110,7 +110,7 @@ public class Nodes {
         Nodes.methodCall(sizeMethod, scope);
         ge(scope);
         var ifNode = if_(null, scope);
-        var getMethod = listClass.getMethodByCodeAndParamTypes("get", List.of(Types.getLongType()));
+        var getMethod = listClass.getMethodByNameAndParamTypes("get", List.of(Types.getLongType()));
         Supplier<NodeRT> elementSupplier = () -> {
             listSupplier.get();
             indexSupplier.get();

@@ -34,9 +34,9 @@ public class Index extends Constraint implements LocalKey, GenericElement {
     private transient IndexDef<?> indexDef;
     private transient Index copySource;
 
-    public Index(Klass type, String name, @Nullable String code, String message, boolean unique, List<Field> fields,
+    public Index(Klass type, String name, String message, boolean unique, List<Field> fields,
                  @Nullable Method method) {
-        super(ConstraintKind.UNIQUE, type, name, code, message);
+        super(ConstraintKind.UNIQUE, type, name, message);
         this.unique = unique;
         this.method = method;
         for (Field field : fields) {
@@ -44,8 +44,8 @@ public class Index extends Constraint implements LocalKey, GenericElement {
         }
     }
 
-    public Index(Klass type, String name, @Nullable String code, String message, boolean unique) {
-        super(ConstraintKind.UNIQUE, type, name, code, message);
+    public Index(Klass type, String name, String message, boolean unique) {
+        super(ConstraintKind.UNIQUE, type, name, message);
         this.unique = unique;
     }
 
@@ -175,8 +175,6 @@ public class Index extends Constraint implements LocalKey, GenericElement {
                     var field = fields.get(Entity::getStringId, fieldDTO.id());
                     if (fieldDTO.name() != null)
                         field.setName(fieldDTO.name());
-                    if (fieldDTO.code() != null)
-                        field.setCode(fieldDTO.code());
                 }
             }
         }

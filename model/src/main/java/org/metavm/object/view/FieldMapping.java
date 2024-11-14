@@ -56,16 +56,8 @@ public abstract class FieldMapping extends Element {
         return getTargetField().getName();
     }
 
-    public @Nullable String getCode() {
-        return getTargetField().getCode();
-    }
-
     public void setName(String name) {
         getTargetField().setName(name);
-    }
-
-    public void setCode(String code) {
-        getTargetField().setCode(code);
     }
 
     public abstract FieldMapping getCopySource();
@@ -78,7 +70,6 @@ public abstract class FieldMapping extends Element {
         return new FieldMappingDTO(
                 serializeContext.getStringId(this),
                 getName(),
-                getCode(),
                 getType().toExpression(),
                 isChild(),
                 isReadonly(),
@@ -170,11 +161,11 @@ public abstract class FieldMapping extends Element {
     }
 
     public boolean isValidLocalKey() {
-        return getCode() != null;
+        return true;
     }
 
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return Objects.requireNonNull(getCode());
+        return getName();
     }
 
     public String getText() {

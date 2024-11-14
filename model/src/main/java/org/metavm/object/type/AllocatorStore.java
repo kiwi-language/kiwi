@@ -5,7 +5,7 @@ import java.util.Properties;
 
 public interface AllocatorStore {
 
-    String getFileName(String code);
+    String getFileName(String typeName);
 
     List<String> getFileNames();
 

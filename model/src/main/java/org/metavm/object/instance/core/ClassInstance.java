@@ -438,11 +438,11 @@ public class ClassInstance extends Instance {
 
     public Value getInstanceField(String fieldName) {
         ensureLoaded();
-        return field(klass.tryGetFieldByName(fieldName)).getValue();
+        return field(klass.findFieldByName(fieldName)).getValue();
     }
 
     public void setField(String fieldCode, Value value) {
-        var field = klass.getFieldByCode(fieldCode);
+        var field = klass.getFieldByName(fieldCode);
         setField(field, value);
     }
 
@@ -638,7 +638,7 @@ public class ClassInstance extends Instance {
             var map = new HashMap<String, Object>();
             forEachField((f, v) -> {
                 if (f.isPublic())
-                    map.put(f.getCode(), v.toJson(context));
+                    map.put(f.getName(), v.toJson(context));
             });
             getKlass().forEachMethod(m -> {
                 if (m.isGetter())

@@ -124,9 +124,9 @@ public class WALTest extends TestCase {
                 String fieldId;
                 try (var walContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
                     var klass = walContext.getKlass(klassId);
-                    var field = FieldBuilder.newBuilder("version", "version", klass, PrimitiveType.longType)
+                    var field = FieldBuilder.newBuilder("version", klass, PrimitiveType.longType)
                             .build();
-                    var init = MethodBuilder.newBuilder(klass, "__version__", "__version__")
+                    var init = MethodBuilder.newBuilder(klass, "__version__")
                             .returnType(PrimitiveType.longType)
                             .build();
                     Nodes.loadConstant(Instances.longZero(), init.getScope());
@@ -148,9 +148,9 @@ public class WALTest extends TestCase {
             var wal = context.getEntity(WAL.class, walId);
             try (var walContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
                 var klass = walContext.getKlass(klassId);
-                var field = klass.findFieldByCode("version");
+                var field = klass.findFieldByName("version");
                 Assert.assertNotNull(field);
-                var init = klass.findMethodByCode("__version__");
+                var init = klass.findMethodByName("__version__");
                 Assert.assertNotNull(init);
                 Assert.assertEquals(4, init.getScope().getCode().length);
             }
@@ -206,7 +206,7 @@ public class WALTest extends TestCase {
         try (var context = newContext()) {
             var wal = context.getEntity(WAL.class, walId);
             try (var loadedContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
-                var klass = loadedContext.selectFirstByKey(Klass.UNIQUE_CODE, className);
+                var klass = loadedContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, className);
                 Assert.assertNotNull(klass);
             }
         }
@@ -218,7 +218,7 @@ public class WALTest extends TestCase {
         });
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
-                var klass = context.selectFirstByKey(Klass.UNIQUE_CODE, className);
+                var klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, className);
                 Assert.assertNotNull(klass);
                 var wal = context.bind(new WAL(context.getAppId()));
                 try (var bufContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
@@ -226,7 +226,7 @@ public class WALTest extends TestCase {
                     bufContext.finish();
                 }
                 try (var loadedContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
-                    Assert.assertNull(loadedContext.selectFirstByKey(Klass.UNIQUE_CODE, className));
+                    Assert.assertNull(loadedContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, className));
                 }
                 context.finish();
             }

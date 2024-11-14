@@ -33,9 +33,9 @@ public class FieldsObjectMapping extends ObjectMapping {
     @Nullable
     private Method writeMethod;
 
-    public FieldsObjectMapping(Long tmpId, String name, @Nullable String code, Klass sourceType, boolean builtin,
+    public FieldsObjectMapping(Long tmpId, String name, Klass sourceType, boolean builtin,
                                @NotNull ClassType targetType) {
-        super(tmpId, name, code, sourceType, targetType, builtin);
+        super(tmpId, name, sourceType, targetType, builtin);
         sourceType.addMapping(this);
         this.builtinTargetType = addChild(targetType.resolve().getEffectiveTemplate(), "builtinTargetType");
     }
@@ -44,21 +44,6 @@ public class FieldsObjectMapping extends ObjectMapping {
         if (mappingName.endsWith("View") && mappingName.length() > 4)
             mappingName = mappingName.substring(0, mappingName.length() - 4);
         return NamingUtils.escapeTypeName(sourceType.getName()) + mappingName + "View";
-    }
-
-    public static @Nullable String getTargetTypeCode(Klass sourceType, @Nullable String mappingCode) {
-        if (sourceType.getCode() == null || mappingCode == null)
-            return null;
-        if (mappingCode.endsWith("View") && mappingCode.length() > 4)
-            mappingCode = mappingCode.substring(0, mappingCode.length() - 4);
-        return NamingUtils.escapeTypeName(sourceType.getCode())
-                + NamingUtils.firstCharToUpperCase(mappingCode) + "View";
-    }
-
-    public void setCode(@Nullable String code) {
-        super.setCode(code);
-        if (builtinTargetType != null)
-            builtinTargetType.setCode(getTargetTypeCode(getSourceKlass(), code));
     }
 
     @Override
@@ -104,8 +89,7 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     private void generateReadMethodDeclaration() {
         readMethod = MethodBuilder.newBuilder(getSourceKlass(),
-                        "getView$" + getName(),
-                        NncUtils.get(getCode(), c -> "getView$" + c)
+                        "getView$" + getName()
                 )
                 .existing(readMethod)
                 .codeSource(this)
@@ -116,20 +100,19 @@ public class FieldsObjectMapping extends ObjectMapping {
 
     private void generateWriteMethodDeclaration() {
         writeMethod = MethodBuilder.newBuilder(getSourceKlass(),
-                        "saveView$" + getName(),
-                        NncUtils.get(getCode(), c -> "saveView$" + c)
+                        "saveView$" + getName()
                 )
                 .existing(writeMethod)
                 .codeSource(this)
                 .returnType(Types.getVoidType())
                 .isSynthetic(true)
                 .parameters(writeMethod != null ? writeMethod.getParameter(0) :
-                        new Parameter(null, "view", "view", getTargetType()))
+                        new Parameter(null, "view", getTargetType()))
                 .build();
     }
 
     public void generateReadMethodCode() {
-        var scope = Objects.requireNonNull(readMethod).newEphemeralRootScope();
+        var scope = Objects.requireNonNull(readMethod).newEphemeralCode();
         for (FieldMapping fieldMapping : fieldMappings)
             fieldMapping.generateReadCode(readMethod.getScope());
         Nodes.addObject(getTargetType(), true, scope);
@@ -138,7 +121,7 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     public void generateWriteMethodCode() {
-        var scope = Objects.requireNonNull(writeMethod).newEphemeralRootScope();
+        var scope = Objects.requireNonNull(writeMethod).newEphemeralCode();
         for (FieldMapping fieldMapping : fieldMappings) {
             if (!fieldMapping.isReadonly())
                 fieldMapping.generateWriteCode(() -> {

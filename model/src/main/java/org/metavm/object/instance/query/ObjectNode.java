@@ -21,7 +21,7 @@ public class ObjectNode extends InstanceNode<Reference> {
         for (PathTree child : path.getChildren()) {
             children.put(
                     child.getName(),
-                    InstanceNode.create(child, type.tryGetFieldByName(child.getName()).getType())
+                    InstanceNode.create(child, type.findFieldByName(child.getName()).getType())
             );
         }
     }

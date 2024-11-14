@@ -295,7 +295,7 @@ public class Types {
                 }
             }, null);
         }
-        var typeParams = NncUtils.map(typeVars, tv -> new TypeVariable(null, tv.getName(), tv.getCode(), DummyGenericDeclaration.INSTANCE));
+        var typeParams = NncUtils.map(typeVars, tv -> new TypeVariable(null, tv.getName(), DummyGenericDeclaration.INSTANCE));
         var klass = KlassBuilder.newBuilder(functionalInterface.getKlass().getName() + "Impl", null)
                 .typeParameters(typeParams)
                 .ephemeral(true)
@@ -309,9 +309,9 @@ public class Types {
         klass.setEphemeralEntity(true);
         var sam = getSAM(substInterface.resolve());
         var funcType = new FunctionType(sam.getParameterTypes(), sam.getReturnType());
-        var funcField = FieldBuilder.newBuilder("func", "func", klass, funcType).build();
+        var funcField = FieldBuilder.newBuilder("func", klass, funcType).build();
 
-        var flow = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode())
+        var flow = MethodBuilder.newBuilder(klass, sam.getName())
                 .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
                 .returnType(sam.getReturnType())
                 .build();
@@ -355,7 +355,7 @@ public class Types {
                 sam.getReturnType()
         );
         methodStaticType.setEphemeralEntity(true);
-        var method = MethodBuilder.newBuilder(klass, sam.getName(), sam.getCode())
+        var method = MethodBuilder.newBuilder(klass, sam.getName())
                 .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
                 .returnType(sam.getReturnType())
                 .type(sam.getType())
@@ -574,38 +574,11 @@ public class Types {
         }
     }
 
-    public static String getParameterizedCode(String templateCode, Type... typeArguments) {
-        return getParameterizedCode(templateCode, List.of(typeArguments));
-    }
-
-    public static String getParameterizedCode(String templateCode, List<? extends Type> typeArguments) {
-        if (templateCode == null)
-            return null;
-        if (typeArguments.isEmpty())
-            return templateCode;
-        boolean allTypeArgCodeNotNull = NncUtils.allMatch(typeArguments, arg -> getTypeArgumentCode(arg) != null);
-        return allTypeArgCodeNotNull ?
-                parameterizedName(templateCode, NncUtils.map(typeArguments, Types::getTypeArgumentCode)) : null;
-    }
-
     private static String getTypeArgumentName(Type typeArgument) {
         if (typeArgument instanceof VariableType vt) {
             return vt.getVariable().getGenericDeclaration().getName() + "_" + vt.getName();
         } else {
             return typeArgument.getName();
-        }
-    }
-
-    private static String getTypeArgumentCode(Type typeArgument) {
-        if (typeArgument instanceof VariableType vt) {
-            var genericDeclCode = vt.getVariable().getGenericDeclaration().getCode();
-            if (genericDeclCode != null) {
-                return genericDeclCode + "_" + vt.getCode();
-            } else {
-                return null;
-            }
-        } else {
-            return typeArgument.getCode();
         }
     }
 
@@ -673,8 +646,8 @@ public class Types {
         };
     }
 
-    public static String getConstructorCode(Klass classType) {
-        var typeCode = Objects.requireNonNull(classType.getEffectiveTemplate().getCode());
+    public static String getConstructorName(Klass classType) {
+        var typeCode = Objects.requireNonNull(classType.getEffectiveTemplate().getName());
         var dotIdx = typeCode.lastIndexOf('.');
         return dotIdx >= 0 ? typeCode.substring(dotIdx + 1) : typeCode;
     }
@@ -833,11 +806,11 @@ public class Types {
     }
 
     public static Field getEnumNameField(Klass classType) {
-        return classType.getFieldByCode("name");
+        return classType.getFieldByName("name");
     }
 
     public static Field getEnumOrdinalField(Klass classType) {
-        return classType.getFieldByCode("ordinal");
+        return classType.getFieldByName("ordinal");
     }
 
     public static UnionType getNullableStringType() {

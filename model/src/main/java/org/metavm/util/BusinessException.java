@@ -108,8 +108,8 @@ public class BusinessException extends RuntimeException {
         throw new BusinessException(ErrorCode.TYPE_NOT_FOUND, typeId);
     }
 
-    public static BusinessException typeNotFound(String code) {
-        throw new BusinessException(ErrorCode.TYPE_NOT_FOUND, code);
+    public static BusinessException typeNotFound(String qualifiedName) {
+        throw new BusinessException(ErrorCode.TYPE_NOT_FOUND, qualifiedName);
     }
 
     public static BusinessException fieldNotFound(long fieldId) {

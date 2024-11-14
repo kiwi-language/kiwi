@@ -31,17 +31,6 @@ public class IntersectionType extends CompositeType {
         this.types = new ValueArray<>(Type.class, types);
     }
 
-    private static String getName(Iterable<Type> types) {
-        return NncUtils.join(types, Type::getName, "&");
-    }
-
-    private static @Nullable String getCode(Iterable<Type> types) {
-        if(NncUtils.allMatch(types, t -> t.getCode() != null))
-            return NncUtils.join(types, Type::getCode, "&");
-        else
-            return null;
-    }
-
     @Override
     public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return new IntersectionTypeKey(new HashSet<>(NncUtils.map(types, type -> type.toTypeKey(getTypeDefId))));
@@ -75,14 +64,6 @@ public class IntersectionType extends CompositeType {
     @Override
     public String getTypeDesc() {
         return NncUtils.join(types, Type::getTypeDesc, "&");
-    }
-
-    @Nullable
-    @Override
-    public String getCode() {
-        if(NncUtils.anyMatch(types, t -> t.getCode() == null))
-            return null;
-        return NncUtils.join(types, Type::getCode, "&");
     }
 
     @Override

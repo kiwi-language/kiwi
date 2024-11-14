@@ -174,7 +174,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     @SuppressWarnings("unused")
     public java.lang.reflect.Field getJavaField(Field field) {
         Class<?> javaClass = getJavaClass(field.getDeclaringType().getType());
-        return ReflectionUtils.getDeclaredFieldByName(javaClass, field.getCode());
+        return ReflectionUtils.getDeclaredFieldByName(javaClass, field.getName());
     }
 
     public Field getField(Class<?> javaType, String javaFieldName) {

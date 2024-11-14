@@ -23,13 +23,9 @@ public interface GenericDeclaration {
 
     void addTypeParameter(TypeVariable typeParameter);
 
+    String getQualifiedName();
+
     String getName();
-
-    @Nullable String getCode();
-
-    default String getCodeNotNull() {
-        return Objects.requireNonNull(getCode(), () -> "Code is not set for " + this);
-    }
 
     String getTypeDesc();
 

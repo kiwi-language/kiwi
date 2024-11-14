@@ -3,9 +3,7 @@ package org.metavm.entity;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.flow.Method;
-import org.metavm.flow.MethodRef;
 import org.metavm.object.type.Klass;
-import org.metavm.object.type.VariableType;
 import org.metavm.util.NncUtils;
 import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
@@ -36,11 +34,11 @@ public class ReflectDefinerTest extends TestCase {
             Assert.assertEquals(TreeSet.class.getSimpleName(), c.getCode());
         }
         var absCollKlass = getKlass(AbstractCollection.class);
-        Assert.assertEquals(TreeSet.class.getName(), treeSetKlass.getCode());
-        var addMethod = treeSetKlass.getMethodByCode("add");
+        Assert.assertEquals(TreeSet.class.getName(), treeSetKlass.getQualifiedName());
+        var addMethod = treeSetKlass.getMethodByName("add");
         var pAbsCollKlass = treeSetKlass.findAncestorKlassByTemplate(absCollKlass);
         Assert.assertNotNull(pAbsCollKlass);
-        var absCollAddMethod = pAbsCollKlass.getMethodByCode("add");
+        var absCollAddMethod = pAbsCollKlass.getMethodByName("add");
         Assert.assertTrue(treeSetKlass.isOverrideOf(addMethod, absCollAddMethod));
         for (Method method : treeSetKlass.getMethods()) {
 //            logger.debug("Method: {} {}, overridden: {}", method.getReturnType().getTypeDesc(), method.getQualifiedSignature(),
@@ -48,15 +46,15 @@ public class ReflectDefinerTest extends TestCase {
             Assert.assertTrue(method.isNative());
         }
         var listKlass = getKlass(List.class);
-        var sortMethod = listKlass.getMethodByCode("sort");
+        var sortMethod = listKlass.getMethodByName("sort");
         var arrayListKlass = getKlass(ArrayList.class);
-        var sortMethod1 = arrayListKlass.getMethodByCode("sort");
+        var sortMethod1 = arrayListKlass.getMethodByName("sort");
         Assert.assertTrue(ReflectDefiner.isOverride(sortMethod1, sortMethod));
 
         var comparatorKlass = getKlass(Comparator.class);
         Assert.assertEquals(10, comparatorKlass.getMethods().size());
 
-        var toArray = arrayListKlass.getMethodByCode("toArray");
+        var toArray = arrayListKlass.getMethodByName("toArray");
 //        var overridden = toArray.getOverridden();
 //        Assert.assertEquals(2, overridden.size());
 

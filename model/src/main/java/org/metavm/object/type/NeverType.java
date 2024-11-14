@@ -1,6 +1,5 @@
 package org.metavm.object.type;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
@@ -30,11 +29,6 @@ public class NeverType extends Type {
 
     @Override
     public String getName() {
-        return "Never";
-    }
-
-    @Override
-    public @NotNull String getCode() {
         return "Never";
     }
 

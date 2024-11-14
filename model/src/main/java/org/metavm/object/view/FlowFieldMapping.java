@@ -119,12 +119,12 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
 
     @Override
     public boolean isValidLocalKey() {
-        return getGetter().getCode() != null;
+        return true;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return getGetter().getCodeNotNull();
+        return getGetter().getName();
     }
 
 }

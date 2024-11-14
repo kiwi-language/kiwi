@@ -21,8 +21,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     @EntityField(asTitle = true)
     private String name;
-    @Nullable
-    private String code;
     private final Klass declaringType;
     private Access access;
     private boolean _static;
@@ -48,7 +46,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     public Field(
             Long tmpId,
             String name,
-            @Nullable String code,
             Klass declaringType,
             @NotNull Type type,
             Access access,
@@ -59,7 +56,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             boolean isChild,
             boolean isStatic,
             boolean lazy,
-            Value staticValue,
             @Nullable Column column,
             int tag,
             @Nullable Integer sourceCodeTag,
@@ -70,7 +66,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         if(isChild && type.isPrimitive())
             throw new BusinessException(ErrorCode.CHILD_FIELD_CAN_NOT_BE_PRIMITIVE_TYPED);
         this.name = NamingUtils.ensureValidName(name);
-        this.code = NamingUtils.ensureValidCode(code);
         this.declaringType = Objects.requireNonNull(declaringType);
         this._static = isStatic;
         this.access = access;
@@ -121,7 +116,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         if (update.type() != null && !Objects.equals(getType().toExpression(), update.type()))
             throw BusinessException.invalidField(this, "Can not change field type");
         setName(update.name());
-        setCode(update.code());
         setAccess(Access.getByCode(update.access()));
         setUnique(update.unique());
     }
@@ -151,7 +145,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             declaringType.removeConstraint(constraint);
         }
         if (constraint == null && unique) {
-            ConstraintFactory.newUniqueConstraint(getName(), getCode(), List.of(this));
+            ConstraintFactory.newUniqueConstraint(getName(), List.of(this));
         }
     }
 
@@ -292,7 +286,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             return new FieldDTO(
                     serContext.getStringId(this),
                     getName(),
-                    getCode(),
                     getAccess().code(),
                     defaultValue.toFieldValueDTO(),
                     isUnique(),
@@ -371,12 +364,12 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     @Override
     public boolean isValidLocalKey() {
-        return getCode() != null;
+        return true;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return getCodeNotNull();
+        return name;
     }
 
     public GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {
@@ -409,17 +402,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     @Override
     public void setAccess(Access access) {
         this.access = access;
-    }
-
-    @Nullable
-    @Override
-    public String getCode() {
-        return code;
-    }
-
-    @Override
-    public void setCode(@Nullable String code) {
-        this.code = NamingUtils.ensureValidCode(code);
     }
 
     @Override

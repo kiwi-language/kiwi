@@ -23,8 +23,8 @@ public class CheckConstraint extends Constraint {
 
     private transient ConstraintDef<?> constraintDef;
 
-    public CheckConstraint(Klass type, String name, @Nullable String code, String message, Value condition) {
-        super(ConstraintKind.CHECK, type, name, code, message);
+    public CheckConstraint(Klass type, String name, String message, Value condition) {
+        super(ConstraintKind.CHECK, type, name, message);
         this.condition = condition;
     }
 

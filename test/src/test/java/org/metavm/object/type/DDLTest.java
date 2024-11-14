@@ -88,8 +88,8 @@ public class DDLTest extends TestCase {
         ));
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var commit = context.getEntity(Commit.class, commitId);
-            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, "Product"));
-            Assert.assertNull(klass.findFieldByCode("version"));
+            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "Product"));
+            Assert.assertNull(klass.findFieldByName("version"));
             try (var cachingContext = entityContextFactory.newLoadedContext(TestConstants.APP_ID, commit.getWal())) {
                 var hat = (ClassInstance) cachingContext.getInstanceContext().get(Id.parse(hatId));
                 var ver = hat.getField("version").resolveObject();
@@ -97,7 +97,7 @@ public class DDLTest extends TestCase {
             }
         }
         TestUtils.waitForDDLPrepared(schedulerAndWorker);
-        var productType = typeManager.getTypeByCode("Product").type();
+        var productType = typeManager.getTypeByQualifiedName("Product").type();
         Assert.assertTrue(productType.getFieldByName("inventory").isChild());
         var shoes1 = apiClient.getObject(shoesId);
         var hat = apiClient.getObject(hatId);
@@ -259,8 +259,8 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var commit = context.getEntity(Commit.class, commitId);
             try(var walContext = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.readWAL(commit.getWal()))) {
-                var productKlass = Objects.requireNonNull(walContext.selectFirstByKey(Klass.UNIQUE_CODE, "Product"));
-                availableField = productKlass.getFieldByCode("available");
+                var productKlass = Objects.requireNonNull(walContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "Product"));
+                availableField = productKlass.getFieldByName("available");
             }
         }
         TestUtils.waitForDDLState(s -> s == CommitState.ABORTED, 16, schedulerAndWorker);
@@ -280,9 +280,9 @@ public class DDLTest extends TestCase {
 
     public void testEntityToValueConversion() {
         assemble("value_ddl_before.masm");
-        var currencyKlass = typeManager.getTypeByCode("Currency").type();
-        var priceKlass = typeManager.getTypeByCode("Price").type();
-        var productKlass = typeManager.getTypeByCode("Product").type();
+        var currencyKlass = typeManager.getTypeByQualifiedName("Currency").type();
+        var priceKlass = typeManager.getTypeByQualifiedName("Price").type();
+        var productKlass = typeManager.getTypeByQualifiedName("Product").type();
         var yuanId = typeManager.getEnumConstant(currencyKlass.id(), "YUAN").getIdNotNull();
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
@@ -310,15 +310,15 @@ public class DDLTest extends TestCase {
                 var instCtx = context.getInstanceContext();
                 var price = ClassInstanceBuilder.newBuilder(priceKlass1.getType())
                         .data(Map.of(
-                                priceKlass1.getFieldByCode("amount"),
+                                priceKlass1.getFieldByName("amount"),
                                 Instances.doubleInstance(100.0),
-                                priceKlass1.getFieldByCode("currency"),
+                                priceKlass1.getFieldByName("currency"),
                                 yuan.getReference()
                         ))
                         .build();
                 instCtx.bind(price);
-                var nameField = productKlass1.getFieldByCode("name");
-                var priceField = productKlass1.getFieldByCode("price");
+                var nameField = productKlass1.getFieldByName("name");
+                var priceField = productKlass1.getFieldByName("price");
                 var products = new ArrayList<ClassInstance>();
                 for (int i = 0; i < 16; i++) {
                     var product = ClassInstanceBuilder.newBuilder(productKlass1.getType())
@@ -345,7 +345,7 @@ public class DDLTest extends TestCase {
                 context.finish();
             }
         });
-        var priceKlass2 = typeManager.getTypeByCode("Price").type();
+        var priceKlass2 = typeManager.getTypeByQualifiedName("Price").type();
         TestUtils.waitForDDLCompleted(schedulerAndWorker);
         Assert.assertEquals(ClassKind.VALUE.code(), priceKlass2.kind());
         for (String productId : productIds) {
@@ -364,7 +364,7 @@ public class DDLTest extends TestCase {
             var commit = context.getEntity(Commit.class, commitId);
             Assert.assertEquals(CommitState.RELOCATING, commit.getState());
         }
-        var priceKlass3 = typeManager.getTypeByCode("Price").type();
+        var priceKlass3 = typeManager.getTypeByQualifiedName("Price").type();
         Assert.assertEquals(ClassKind.CLASS.code(), priceKlass3.kind());
         for (String productId : productIds) {
             var product = apiClient.getObject(productId);
@@ -376,7 +376,7 @@ public class DDLTest extends TestCase {
             Assert.assertEquals(CommitState.COMPLETED, commit.getState());
             var instCtx = context.getInstanceContext();
             var productKlass1 = context.getKlass(productKlass.id());
-            var priceField = productKlass1.getFieldByCode("price");
+            var priceField = productKlass1.getFieldByName("price");
             for (String productId : productIds) {
                 var productInst = (ClassInstance) instCtx.get(Id.parse(productId));
                 var priceRef = (Reference) productInst.getField(priceField);
@@ -389,7 +389,7 @@ public class DDLTest extends TestCase {
 
     public void testRollbackEntityToValueConversion() {
         assemble("value_ddl_before.masm");
-        var currencyKlass = typeManager.getTypeByCode("Currency").type();
+        var currencyKlass = typeManager.getTypeByQualifiedName("Currency").type();
         var yuanId = typeManager.getEnumConstant(currencyKlass.id(), "YUAN").getIdNotNull();
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
@@ -424,7 +424,7 @@ public class DDLTest extends TestCase {
 
     public void testRollbackValueToEntityConversion() {
         assemble("value_ddl_after.masm");
-        var currencyKlass = typeManager.getTypeByCode("Currency").type();
+        var currencyKlass = typeManager.getTypeByQualifiedName("Currency").type();
         var yuanId = typeManager.getEnumConstant(currencyKlass.id(), "YUAN").getIdNotNull();
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
@@ -481,7 +481,7 @@ public class DDLTest extends TestCase {
         var kindId0 = apiClient.getObject(shoesId).getString("kind");
         assemble("enum_ddl_after.masm", false);
         TestUtils.waitForDDLCompleted(schedulerAndWorker);
-        var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
+        var productKindKlass = typeManager.getTypeByQualifiedName("ProductKind").type();
         var nameField = NncUtils.find(productKindKlass.fields(), f -> f.name().equals("name") && f.state() == MetadataState.REMOVED.code());
         Assert.assertNotNull(nameField);
         var isDefaultProduct = TestUtils.doInTransaction(() -> apiClient.callMethod(shoesId, "isDefaultKind", List.of()));
@@ -549,7 +549,7 @@ public class DDLTest extends TestCase {
 
     public void testValueToChildConversion() {
         assemble("value_to_child_ddl_before.masm");
-        var currencyKlass = typeManager.getTypeByCode("Currency").type();
+        var currencyKlass = typeManager.getTypeByQualifiedName("Currency").type();
         var yuanId = typeManager.getEnumConstant(currencyKlass.id(), "YUAN").getIdNotNull();
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
@@ -589,7 +589,7 @@ public class DDLTest extends TestCase {
         ));
         var kindId = apiClient.getObject(shoesId).getObject("kind").getString("$id");
         assemble("child_to_enum_ddl_after.masm");
-        var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
+        var productKindKlass = typeManager.getTypeByQualifiedName("ProductKind").type();
         Assert.assertEquals(ClassKind.ENUM.code(), productKindKlass.kind());
         var defaultKindId = typeManager.getEnumConstant(productKindKlass.id(), "DEFAULT").id();
         try(var context = newContext()) {
@@ -632,7 +632,7 @@ public class DDLTest extends TestCase {
 
     public void testEnumToChildConversionAbortion() {
         assemble("enum_to_child_ddl.masm");
-        var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
+        var productKindKlass = typeManager.getTypeByQualifiedName("ProductKind").type();
         var defaultKindId = Objects.requireNonNull(typeManager.getEnumConstant(productKindKlass.id(), "DEFAULT").id());
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
@@ -661,7 +661,7 @@ public class DDLTest extends TestCase {
                 )
         ));
         assemble("value_to_enum_ddl_after.masm");
-        var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
+        var productKindKlass = typeManager.getTypeByQualifiedName("ProductKind").type();
         var defaultKindId = typeManager.getEnumConstant(productKindKlass.id(), "DEFAULT").id();
         var shoes = apiClient.getObject(shoesId);
         var kind = shoes.get("kind");
@@ -698,7 +698,7 @@ public class DDLTest extends TestCase {
 
     public void testAbortingEnumToValueConversion() {
         assemble("enum_to_value_ddl.masm");
-        var productKindKlass = typeManager.getTypeByCode("ProductKind").type();
+        var productKindKlass = typeManager.getTypeByQualifiedName("ProductKind").type();
         var defaultKindId = Objects.requireNonNull(typeManager.getEnumConstant(productKindKlass.id(), "DEFAULT").id());
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
@@ -792,12 +792,12 @@ public class DDLTest extends TestCase {
                 try (var context = newContext()) {
                     var instCtx = context.getInstanceContext();
                     var invInst = instCtx.get(Id.parse(inventoryId));
-                    var boxKlass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, "Box"));
+                    var boxKlass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "Box"));
                     var boxOfInvKlass = boxKlass.getParameterized(List.of(invInst.getType()));
                     var boxInst = ClassInstanceBuilder.newBuilder(boxOfInvKlass.getType())
                             .data(Map.of(
-                                    boxOfInvKlass.getFieldByCode("item"), invInst.getReference(),
-                                    boxOfInvKlass.getFieldByCode("count"), Instances.longInstance(1)
+                                    boxOfInvKlass.getFieldByName("item"), invInst.getReference(),
+                                    boxOfInvKlass.getFieldByName("count"), Instances.longInstance(1)
                             ))
                             .build();
                     instCtx.bind(boxInst);
@@ -812,7 +812,6 @@ public class DDLTest extends TestCase {
                         context.finish();
                     } catch (SessionTimeoutException e) {
                         ref.timeout = true;
-                        throw e;
                     }
                 }
             }));
@@ -843,7 +842,7 @@ public class DDLTest extends TestCase {
 
     public void testCreateBeans() {
         assemble("bean_ddl_before.masm");
-        var klass = typeManager.getTypeByCode("FooService").type();
+        var klass = typeManager.getTypeByQualifiedName("FooService").type();
         Assert.assertEquals(BeanKinds.COMPONENT, klass.attributes().get(AttributeNames.BEAN_KIND));
         Assert.assertEquals(NamingUtils.firstCharToLowerCase(klass.name()), klass.attributes().get(AttributeNames.BEAN_NAME));
         Id fooServiceId;
@@ -874,7 +873,7 @@ public class DDLTest extends TestCase {
         assemble("enum_add_field_before.masm");
         assemble("enum_add_field_after.masm");
         try(var context = newContext()) {
-            var currencyKlass = context.selectFirstByKey(Klass.UNIQUE_CODE, "Currency");
+            var currencyKlass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "Currency");
             Assert.assertNotNull(currencyKlass);
             var sft = StaticFieldTable.getInstance(currencyKlass, context);
             var yuan = sft.getEnumConstants().get(0);

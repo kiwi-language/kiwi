@@ -17,7 +17,7 @@ public class ObjectOutputStreamNative extends NativeBase {
 
     public ObjectOutputStreamNative(ClassInstance instance) {
         this.instance = instance;
-        writeObjectOverride = instance.getKlass().getMethodByCodeAndParamTypes(
+        writeObjectOverride = instance.getKlass().getMethodByNameAndParamTypes(
                 "writeObjectOverride", List.of(Types.getNullableAnyType())
         );
     }

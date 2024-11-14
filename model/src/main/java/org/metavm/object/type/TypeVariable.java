@@ -14,14 +14,12 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 
 @EntityType
 public class TypeVariable extends TypeDef implements LocalKey, GenericElement, GlobalKey, LoadAware {
 
     @EntityField(asTitle = true)
     private String name;
-    private @Nullable String code;
     @ChildEntity
     private final ReadWriteArray<Type> bounds = addChild(new ReadWriteArray<>(Type.class), "bounds");
     private @NotNull GenericDeclaration genericDeclaration;
@@ -32,10 +30,9 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     private transient Type bound;
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
-    public TypeVariable(Long tmpId, @NotNull String name, @Nullable String code, @NotNull GenericDeclaration genericDeclaration) {
+    public TypeVariable(Long tmpId, @NotNull String name, @NotNull GenericDeclaration genericDeclaration) {
         setTmpId(tmpId);
         this.name = name;
-        this.code = code;
         this.genericDeclaration = genericDeclaration;
         genericDeclaration.addTypeParameter(this);
     }
@@ -65,18 +62,6 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public @Nullable String getCode() {
-        return code;
-    }
-
-    public void setCode(@Nullable String code) {
-        this.code = code;
-    }
-
-    public String getCodeNotNull() {
-        return Objects.requireNonNull(code, () -> "Code is not set for " + this);
     }
 
     public void setBounds(List<Type> bounds) {
@@ -125,11 +110,11 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     }
 
     public String getInternalName(@Nullable Flow current) {
-        return genericDeclaration.getInternalName(current) + "." + getCodeNotNull();
+        return genericDeclaration.getInternalName(current) + "." + getName();
     }
 
     public TypeVariable copy() {
-        var copy = new TypeVariable(null, name, null, DummyGenericDeclaration.INSTANCE);
+        var copy = new TypeVariable(null, name, DummyGenericDeclaration.INSTANCE);
         copy.setBounds(getBounds());
         return copy;
     }
@@ -148,7 +133,6 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
         return new TypeVariableDTO(
                 serializeContext.getStringId(this),
                 name,
-                code,
                 serializeContext.getStringId(genericDeclaration),
                 genericDeclaration.getTypeParameterIndex(this),
                 NncUtils.map(bounds, type1 -> type1.toExpression(serializeContext, null))
@@ -166,12 +150,12 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
 
     @Override
     public boolean isValidLocalKey() {
-        return getCode() != null;
+        return true;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return getCodeNotNull();
+        return name;
     }
 
     public @NotNull VariableType getType() {

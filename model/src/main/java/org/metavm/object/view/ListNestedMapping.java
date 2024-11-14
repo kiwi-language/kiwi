@@ -47,7 +47,7 @@ public class ListNestedMapping extends NestedMapping {
                 getSource,
                 sourceType,
                 (bodyScope, getElement, getIndex) -> {
-                    var addMethod = targetKlass.getMethodByCodeAndParamTypes("add", List.of(
+                    var addMethod = targetKlass.getMethodByNameAndParamTypes("add", List.of(
                             Types.getNullableType(targetType.getFirstTypeArgument())
                     ));
                     Nodes.load(targetListVar, targetType, scope);
@@ -85,7 +85,7 @@ public class ListNestedMapping extends NestedMapping {
         ifNode.setTarget(newSource);
         Nodes.store(i, scope);
         g.setTarget(Nodes.noop(scope));
-        var clearMethod = sourceKlass.getMethodByCodeAndParamTypes("clear", List.of());
+        var clearMethod = sourceKlass.getMethodByNameAndParamTypes("clear", List.of());
         Nodes.load(i, sourceType, scope);
         Nodes.methodCall(clearMethod, scope);
         Nodes.listForEach(
@@ -94,7 +94,7 @@ public class ListNestedMapping extends NestedMapping {
                 (bodyScope, getElement, getIndex) -> {
                     Nodes.load(i, sourceType, scope);
                     elementNestedMapping.generateUnmappingCode(getElement, bodyScope);
-                    var addMethod = sourceKlass.getMethodByCodeAndParamTypes("add",
+                    var addMethod = sourceKlass.getMethodByNameAndParamTypes("add",
                             List.of(Types.getNullableType(sourceType.getFirstTypeArgument())));
                     Nodes.methodCall(addMethod, bodyScope);
                     Nodes.pop(scope);

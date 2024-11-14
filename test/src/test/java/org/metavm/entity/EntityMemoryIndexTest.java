@@ -14,7 +14,7 @@ public class EntityMemoryIndexTest extends TestCase {
         var fooArrayType = new ArrayType(fooType.getType(), ArrayKind.READ_WRITE);
         var fooViewArrayType = new ArrayType(fooViewType.getType(), ArrayKind.CHILD);
         var fooMapping = new FieldsObjectMapping(
-                null, "FooBuiltinMapping", "FooBuiltinMapping", fooType,
+                null, "FooBuiltinMapping", fooType,
                 true, fooViewType.getType()
         );
     }

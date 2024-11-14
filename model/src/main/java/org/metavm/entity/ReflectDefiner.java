@@ -73,7 +73,7 @@ public class ReflectDefiner {
             var mod = javaConstructor.getModifiers();
             if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod) || javaConstructor.isSynthetic())
                 continue;
-            var constructor = MethodBuilder.newBuilder(klass, javaClass.getSimpleName(), javaClass.getSimpleName())
+            var constructor = MethodBuilder.newBuilder(klass, javaClass.getSimpleName())
                     .returnType(klass.getType())
                     .isNative(true)
                     .isConstructor(true)
@@ -93,7 +93,7 @@ public class ReflectDefiner {
                     continue;
             }
             var abs = Modifier.isAbstract(javaMethod.getModifiers());
-            var method = MethodBuilder.newBuilder(klass, javaMethod.getName(), javaMethod.getName())
+            var method = MethodBuilder.newBuilder(klass, javaMethod.getName())
                     .isAbstract(abs)
                     .isStatic(Modifier.isStatic(javaMethod.getModifiers()))
                     .isNative(!abs && kind != ClassKind.INTERFACE)
@@ -119,7 +119,7 @@ public class ReflectDefiner {
     }
 
     public void defineField(Field javaField, Klass klass) {
-        var field = FieldBuilder.newBuilder(javaField.getName(), javaField.getName(), klass, resolveNullableType(javaField.getGenericType()))
+        var field = FieldBuilder.newBuilder(javaField.getName(), klass, resolveNullableType(javaField.getGenericType()))
                 .isStatic(Modifier.isStatic(javaField.getModifiers()))
                 .readonly(Modifier.isFinal(javaField.getModifiers()))
                 .access(getAccess(javaField.getModifiers()))
@@ -185,7 +185,7 @@ public class ReflectDefiner {
     }
 
     private TypeVariable defineTypeVariable(java.lang.reflect.TypeVariable<?> typeVariable, GenericDeclaration genericDeclaration) {
-        var tv = new TypeVariable(null, typeVariable.getName(), typeVariable.getName(), genericDeclaration);
+        var tv = new TypeVariable(null, typeVariable.getName(), genericDeclaration);
         typeVariableMap.put(typeVariable, tv);
         tv.setBounds(NncUtils.map(typeVariable.getBounds(), this::resolveType));
         return tv;

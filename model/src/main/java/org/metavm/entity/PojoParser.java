@@ -215,7 +215,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
         IndexDef<?> indexDef = (IndexDef<?>) ReflectionUtils.get(null, indexDefField);
         var uniqueConstraint = new Index(
                 declaringTypeDef.getKlass(),
-                EntityUtils.getMetaConstraintName(indexDefField), indexDefField.getName(), null, indexDef.isUnique(), NncUtils.map(indexDef.getFieldNames(), this::getFiled),
+                EntityUtils.getMetaConstraintName(indexDefField), null, indexDef.isUnique(), NncUtils.map(indexDef.getFieldNames(), this::getFiled),
                 null
         );
         new IndexConstraintDef(
@@ -232,7 +232,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 TypeParsingContext.create(declaringTypeDef.getKlass(), defContext)
         );
         CheckConstraint checkConstraint = new CheckConstraint(
-                declaringTypeDef.getKlass(), EntityUtils.getMetaConstraintName(constraintField), constraintField.getName(), "", value
+                declaringTypeDef.getKlass(), EntityUtils.getMetaConstraintName(constraintField), "", value
         );
         new CheckConstraintDef(
                 checkConstraint,
@@ -259,7 +259,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
         var colAndTag = columnStore.getColumn(javaType, javaField, fieldType.getSQLType());
         var field = FieldBuilder.newBuilder(
                         EntityUtils.getMetaFieldName(javaField),
-                        javaField.getName(), declaringType, fieldType)
+                        declaringType, fieldType)
                 .unique(unique)
                 .lazy(lazy)
                 .readonly(Modifier.isFinal(javaField.getModifiers()))
@@ -319,7 +319,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
 
     protected TypeVariable createTypeVariable(java.lang.reflect.TypeVariable<?> javaTypeVariable) {
         return new TypeVariable(
-                null, javaTypeVariable.getName(), javaTypeVariable.getName(),
+                null, javaTypeVariable.getName(),
                 DummyGenericDeclaration.INSTANCE
         );
     }
@@ -343,7 +343,6 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
         return new Parameter(
                 null,
                 javaParameter.getName(),
-                javaParameter.getName(),
                 type
         );
     }
@@ -353,7 +352,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 defContext.getType(javaMethod.getGenericReturnType())
                 : defContext.getNullableType(javaMethod.getGenericReturnType());
         var klass = get().klass;
-        var method = MethodBuilder.newBuilder(klass, javaMethod.getName(), javaMethod.getName())
+        var method = MethodBuilder.newBuilder(klass, javaMethod.getName())
                 .parameters(NncUtils.map(javaMethod.getParameters(), this::createParameter))
                 .typeParameters(NncUtils.map(javaMethod.getTypeParameters(), this::createTypeVariable))
                 .returnType(returnType)

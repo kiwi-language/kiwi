@@ -44,17 +44,6 @@ public class UnionType extends CompositeType {
         this.members = new ValueArray<>(Type.class, sortedMembers);
     }
 
-    private static String getName(Set<Type> members) {
-        return NncUtils.join(members, Type::getName, "|");
-    }
-
-    private static @Nullable String getCode(Set<Type> members) {
-        if (NncUtils.allMatch(members, m -> m.getCode() != null))
-            return NncUtils.join(members, Type::getCode, "|");
-        else
-            return null;
-    }
-
     public Set<Type> getMembers() {
         return new HashSet<>(members.toList());
     }
@@ -147,14 +136,6 @@ public class UnionType extends CompositeType {
     @Override
     public String getTypeDesc() {
         return NncUtils.join(members, Type::getTypeDesc, "|");
-    }
-
-    @Nullable
-    @Override
-    public String getCode() {
-        if(NncUtils.anyMatch(members, t -> t.getCode() == null))
-            return null;
-        return NncUtils.join(members, Type::getCode, "|");
     }
 
     @Override

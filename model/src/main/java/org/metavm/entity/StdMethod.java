@@ -61,7 +61,7 @@ public enum StdMethod implements ValueHolderOwner<Method> {
 
     public void init(DefContext defContext, boolean local) {
         var klass = defContext.getKlass(javaClass);
-        var method = klass.getMethodByCodeAndParamTypes(
+        var method = klass.getMethodByNameAndParamTypes(
                 methodName,
                 NncUtils.map(parameterTypes, defContext::getNullableType)
         );

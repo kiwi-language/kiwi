@@ -35,7 +35,7 @@ public enum StdField implements ValueHolderOwner<Field> {
 
     public void init(DefContext defContext, boolean local) {
         var klass = defContext.getKlass(javaClass);
-        var field = klass.getFieldByCode(fieldName);
+        var field = klass.getFieldByName(fieldName);
         if(local)
             setLocal(field);
         else

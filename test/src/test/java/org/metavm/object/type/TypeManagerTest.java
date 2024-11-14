@@ -131,11 +131,11 @@ public class TypeManagerTest extends TestCase {
     public void testAddFieldWithDefaultValueToTemplate() {
 //        var nodeTypeIds = MockUtils.createNodeTypes(typeManager);
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Node.masm", typeManager, schedulerAndWorker);
-        var nodeType = typeManager.getTypeByCode("Node").type();
+        var nodeType = typeManager.getTypeByQualifiedName("Node").type();
 //        var nodeType = typeManager.getType(new GetTypeRequest(nodeTypeIds.nodeTypeId(), false)).type();
         var pNodeType = TypeExpressions.getParameterizedType(nodeType.id(), "string");
-        var labelFieldId = TestUtils.getFieldIdByCode(nodeType, "label");
-        var valueFieldId = TestUtils.getFieldIdByCode(nodeType, "value");
+        var labelFieldId = TestUtils.getFieldIdByName(nodeType, "label");
+        var valueFieldId = TestUtils.getFieldIdByName(nodeType, "value");
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.create(new InstanceDTO(
                 null,
                 pNodeType,
@@ -151,7 +151,6 @@ public class TypeManagerTest extends TestCase {
         )));
         TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(FieldDTOBuilder.newBuilder("code", "string")
                 .declaringTypeId(nodeType.id())
-                .code("code")
                 .defaultValue(PrimitiveFieldValue.createString("000"))
                 .build()));
     }
@@ -168,11 +167,10 @@ public class TypeManagerTest extends TestCase {
         var updatedFieldDTO = FieldDTOBuilder.newBuilder("name", "string")
                 .id(savedTypeDTO.fields().get(0).id())
                 .declaringTypeId(savedTypeDTO.id())
-                .code("name")
                 .build();
         TestUtils.doInTransactionWithoutResult(() -> typeManager.saveField(updatedFieldDTO));
         var loadedTypeDTO = typeManager.getType(new GetTypeRequest(savedTypeDTO.id(), true)).type();
-        Assert.assertEquals("name", loadedTypeDTO.fields().get(0).code());
+        Assert.assertEquals("name", loadedTypeDTO.fields().get(0).name());
     }
 
     public void testAddField() {
@@ -268,8 +266,8 @@ public class TypeManagerTest extends TestCase {
     public void testHashMap() {
         var defContext = ModelDefRegistry.getDefContext();
         var klass = defContext.getKlass(HashMap.class);
-        Assert.assertEquals(HashMap.class.getName(), klass.getCode());
-        Assert.assertEquals(HashSet.class.getName(), defContext.getKlass(HashSet.class).getCode());
+        Assert.assertEquals(HashMap.class.getName(), klass.getQualifiedName());
+        Assert.assertEquals(HashSet.class.getName(), defContext.getKlass(HashSet.class).getQualifiedName());
     }
 
     public void testChangeStaticFields() {
@@ -279,7 +277,7 @@ public class TypeManagerTest extends TestCase {
         var value = TestUtils.doInTransaction(() -> apiClient.callMethod("UpdateStaticFoo", "get", List.of()));
         Assert.assertEquals(2L, value);
 
-        var optionKlass = typeManager.getTypeByCode("Option").type();
+        var optionKlass = typeManager.getTypeByQualifiedName("Option").type();
         var opt1Id = typeManager.getEnumConstant(optionKlass.id(), "opt1").id();
         TestUtils.doInTransaction(() -> apiClient.callMethod(opt1Id, "setValue", List.of(1)));
         metaContextCache.invalidate(TestConstants.APP_ID, null);
@@ -291,8 +289,8 @@ public class TypeManagerTest extends TestCase {
         var fieldId = TestUtils.doInTransaction(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                 var klass = context.bind(TestUtils.newKlassBuilder("Foo").build());
-                var field = FieldBuilder.newBuilder("name", "name", klass, Types.getStringType()).build();
-                new Index(klass, "nameIndex", null, "Duplicate name", true, List.of(field), null);
+                var field = FieldBuilder.newBuilder("name", klass, Types.getStringType()).build();
+                new Index(klass, "nameIndex", "Duplicate name", true, List.of(field), null);
                 context.finish();
                 return field.getId();
             }

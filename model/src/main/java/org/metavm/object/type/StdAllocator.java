@@ -22,8 +22,8 @@ public class StdAllocator {
 
     private final AllocatorStore store;
     private final String fileName;
-    private final Map<String, Id> code2id = new LinkedHashMap<>();
-    private final Map<Id, String> id2code = new LinkedHashMap<>();
+    private final Map<String, Id> name2id = new LinkedHashMap<>();
+    private final Map<Id, String> id2name = new LinkedHashMap<>();
     private final Map<String, Long> code2nextNodeId = new HashMap<>();
     private final Type javaType;
 
@@ -38,9 +38,9 @@ public class StdAllocator {
         Properties properties = store.load(fileName);
         javaType = TypeParser.parse(properties.getProperty(TYPE_CODE_PROP_KEY));
         this.fileName = fileName;
-        for (String code : properties.stringPropertyNames()) {
-            if(!code.startsWith(SYSTEM_PROP_PREFIX)) {
-                var idStr = properties.getProperty(code);
+        for (String name : properties.stringPropertyNames()) {
+            if(!name.startsWith(SYSTEM_PROP_PREFIX)) {
+                var idStr = properties.getProperty(name);
                 var idx = idStr.indexOf(':');
                 Id id;
                 Long nextNodeId;
@@ -52,25 +52,25 @@ public class StdAllocator {
                     id = Id.parse(idStr.substring(0, idx));
                     nextNodeId = Long.parseLong(idStr.substring(idx + 1));
                 }
-                putId(code, id, nextNodeId);
+                putId(name, id, nextNodeId);
             }
         }
     }
 
-    public Id getId(String code) {
-        return code2id.get(code);
+    public Id getId(String name) {
+        return name2id.get(name);
     }
 
-    public @Nullable Long getNextNodeId(String code) {
-        return code2nextNodeId.get(code);
+    public @Nullable Long getNextNodeId(String name) {
+        return code2nextNodeId.get(name);
     }
 
     public void buildIdMap(Map<String, Id> ids) {
-        code2id.forEach((code, id) -> ids.put(javaType.getTypeName() + "." + code, id));
+        name2id.forEach((code, id) -> ids.put(javaType.getTypeName() + "." + code, id));
     }
 
     public boolean contains(Id id) {
-        return id2code.containsKey(id);
+        return id2name.containsKey(id);
     }
 
     public Type getJavaType() {
@@ -80,7 +80,7 @@ public class StdAllocator {
     public void save() {
         Properties properties = new Properties();
         properties.put(TYPE_CODE_PROP_KEY, javaType.getTypeName());
-        code2id.forEach((code, id) -> {
+        name2id.forEach((code, id) -> {
             var nextNodeId = code2nextNodeId.get(code);
             var idStr = nextNodeId == null ? id.toString() : id.toString() + ":" + nextNodeId;
             properties.put(code, idStr);
@@ -92,11 +92,11 @@ public class StdAllocator {
         return fileName;
     }
 
-    public void putId(@NotNull String code, @NotNull Id id, @Nullable Long nextNodeId) {
-        code2id.put(code, id);
-        id2code.put(id, code);
+    public void putId(@NotNull String name, @NotNull Id id, @Nullable Long nextNodeId) {
+        name2id.put(name, id);
+        id2name.put(id, name);
         if(nextNodeId != null)
-            code2nextNodeId.put(code, nextNodeId);
+            code2nextNodeId.put(name, nextNodeId);
     }
 
     public boolean isReadWriteArray() {

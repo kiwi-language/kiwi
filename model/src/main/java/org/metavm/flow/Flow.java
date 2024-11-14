@@ -34,8 +34,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     @EntityField(asTitle = true)
     private @NotNull String name;
-    @Nullable
-    private String code;
     private boolean isNative;
     private final boolean isSynthetic;
     @ChildEntity
@@ -72,7 +70,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public Flow(Long tmpId,
                 @NotNull String name,
-                @Nullable String code,
                 boolean isNative,
                 boolean isSynthetic,
                 List<Parameter> parameters,
@@ -88,7 +85,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         if (horizontalTemplate == null && typeParameters.isEmpty() && !typeArguments.isEmpty())
             throw new InternalException("Missing flow template");
         this.name = NamingUtils.ensureValidName(name);
-        this.code = NamingUtils.ensureValidFlowCode(code);
         this.isNative = isNative;
         this.isSynthetic = isSynthetic;
         this.returnType = returnType;
@@ -143,8 +139,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         }
     }
 
-    public boolean matches(String code, List<Type> argumentTypes) {
-        if (this.code != null && this.code.equals(code)) {
+    public boolean matches(String name, List<Type> argumentTypes) {
+        if (this.name.equals(name)) {
             if (parameters.size() == argumentTypes.size()) {
                 for (int i = 0; i < parameters.size(); i++) {
                     var paramType = parameters.get(i).getType();
@@ -165,7 +161,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return new FlowDTO(
                 serContext.getStringId(this),
                 getName(),
-                getCode(),
                 isNative,
                 isSynthetic,
                 includeCode && isRootScopePresent() ? getScope().toDTO(serContext) : null,
@@ -195,7 +190,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public void clearContent() {
         clearNodes();
-        constantPool.clear();
+        if(constantPool != null)
+            constantPool.clear();
         capturedTypeVariables.clear();
     }
 
@@ -243,10 +239,9 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
             return name + "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">";
     }
 
-    @Override
     @Nullable
     public String getCode() {
-        return code;
+        return name;
     }
 
     public @NotNull MetadataState getState() {
@@ -255,10 +250,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public void setName(@NotNull String name) {
         this.name = name;
-    }
-
-    public void setCode(@Nullable String code) {
-        this.code = code;
     }
 
     public boolean check() {
@@ -298,10 +289,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return horizontalTemplate != null;
     }
 
-    public Parameter getParameterByCode(String code) {
-        return parameters.get(Parameter::getCode, code);
-    }
-
     public Parameter getParameterByName(String name) {
         return parameters.get(Parameter::getName, name);
     }
@@ -311,11 +298,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return getType();
     }
 
-    public NodeRT getRootNode() {
-        return getScope().tryGetFirstNode();
-    }
-
-    public ScopeRT newEphemeralRootScope() {
+    public ScopeRT newEphemeralCode() {
         NncUtils.requireTrue(codeSource != null);
         constantPool = addChild(new ConstantPool(), "constantPool");
         constantPool.setEphemeralEntity(true);
@@ -398,7 +381,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
 
     public String getCodeNotNull() {
-        return Objects.requireNonNull(code);
+        return name;
     }
 
     public void setReturnType(Type returnType) {
@@ -479,7 +462,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public String getSignatureString() {
         var name = isParameterized() ?
-                getCode() + "<" + NncUtils.join(getTypeArguments(), Type::getTypeDesc) + ">" : getCode();
+                getName() + "<" + NncUtils.join(getTypeArguments(), Type::getTypeDesc) + ">" : getName();
         return name + "(" + NncUtils.join(getParameterTypes(), Type::getTypeDesc) + ")";
     }
 
@@ -666,7 +649,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     public void resolveConstantPool() {
-        if(isRootScopePresent())
+        if(constantPool != null)
             constantPool.resolve();
     }
 

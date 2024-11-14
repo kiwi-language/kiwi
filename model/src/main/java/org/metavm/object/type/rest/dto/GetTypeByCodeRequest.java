@@ -4,14 +4,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.metavm.common.Request;
 
 public final class GetTypeByCodeRequest extends Request {
-    private final String code;
+    private final String qualifiedName;
 
-    public GetTypeByCodeRequest(@JsonProperty("code") String code) {
-        this.code = code;
+    public GetTypeByCodeRequest(@JsonProperty("qualifiedName") String qualifiedName) {
+        this.qualifiedName = qualifiedName;
     }
 
-    public String getCode() {
-        return code;
+    public String getQualifiedName() {
+        return qualifiedName;
     }
 
 }

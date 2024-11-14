@@ -14,7 +14,6 @@ import org.metavm.util.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 import static org.metavm.util.TestUtils.doInTransaction;
@@ -51,7 +50,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 var roundHalfUp = typeManager.getEnumConstant(roundingRuleType.id(), "ROUND_HALF_UP");
                 var unitType = getClassTypeByCode("org.metavm.manufacturing.material.Unit");
                 var unitId = doInTransaction(() -> apiClient.newInstance(
-                        unitType.getCodeNotNull(),
+                        unitType.qualifiedName(),
                         Arrays.asList("meter", "meter", roundHalfUp.getIdNotNull(), 2, null)
                 ));
                 var materialKindType = getClassTypeByCode("org.metavm.manufacturing.material.MaterialKind");
@@ -99,7 +98,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 // reload the material object
                 var material = instanceManager.get(materialId, 1).instance();
                 // assert that the feedQualityInspectionStates field of the material object contains the QUALIFIED constant
-                var feedQualityInspectionStates = material.getFieldValue(TestUtils.getFieldIdByCode(materialType, "feedQualityInspectionStates"));
+                var feedQualityInspectionStates = material.getFieldValue(TestUtils.getFieldIdByName(materialType, "feedQualityInspectionStates"));
                 Assert.assertTrue(feedQualityInspectionStates instanceof InstanceFieldValue);
                 var feedQualityInspectionStatesList = ((InstanceFieldValue) feedQualityInspectionStates).getInstance().getElements();
                 Assert.assertEquals(1, feedQualityInspectionStatesList.size());
@@ -120,7 +119,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 // reload the material view object
                 var reloadedMaterialView = instanceManager.get(materialView.id(), 1).instance();
                 // check the feedQualityInspectionStates field and assert that it didn't change
-                var reloadedFeedQualityInspectionStates = reloadedMaterialView.getFieldValue(TestUtils.getFieldIdByCode(materialViewType, "feedQualityInspectionStates"));
+                var reloadedFeedQualityInspectionStates = reloadedMaterialView.getFieldValue(TestUtils.getFieldIdByName(materialViewType, "feedQualityInspectionStates"));
                 Assert.assertTrue(reloadedFeedQualityInspectionStates instanceof InstanceFieldValue);
                 var reloadedFeedQualityInspectionStatesList = ((InstanceFieldValue) reloadedFeedQualityInspectionStates).getInstance().getElements();
                 Assert.assertEquals(1, reloadedFeedQualityInspectionStatesList.size());
@@ -237,7 +236,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         var initialBizState = typeManager.getEnumConstant(inventoryBizStateType.id(), "INITIAL");
         // create an inventory object
         var inventoryId = doInTransaction(() -> apiClient.newInstance(
-                inventoryType.getCodeNotNull(),
+                inventoryType.qualifiedName(),
                 Arrays.asList(
                         material.getIdNotNull(),
                         position.getIdNotNull(),
@@ -281,7 +280,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
 
         // decrease the inventory by 100 and asserts that the inventory is removed
         doInTransaction(() -> apiClient.callMethod(
-                Objects.requireNonNull(inventoryType.code()),
+                inventoryType.qualifiedName(),
                 "decreaseQuantity",
                 Arrays.asList(
                         material.getIdNotNull(),
@@ -319,7 +318,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         var inboundOrderType = getClassTypeByCode("org.metavm.manufacturing.storage.InboundOrder");
         // create an inbound order
         var inboundOrderId = doInTransaction(() -> apiClient.newInstance(
-                inboundOrderType.getCodeNotNull(),
+                inboundOrderType.qualifiedName(),
                 Arrays.asList(
                         "inboundOrder1",
                         purchase.getIdNotNull(),
@@ -329,7 +328,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         ));
         var inboundOrderItemType = getClassTypeByCode("org.metavm.manufacturing.storage.InboundOrderItem");
         var inboundOrderItemId = doInTransaction(() -> apiClient.newInstance(
-                inboundOrderItemType.getCodeNotNull(),
+                inboundOrderItemType.qualifiedName(),
                 Arrays.asList(
                         inboundOrderId,
                         material.getIdNotNull(),
@@ -363,7 +362,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         ));
         // reload the inbound order item and check the actualQuantity field
         var reloadedInboundOrderItem = instanceManager.get(inboundOrderItemId, 1).instance();
-        var actualQuantity = reloadedInboundOrderItem.getFieldValue(TestUtils.getFieldIdByCode(inboundOrderItemType, "actualQuantity"));
+        var actualQuantity = reloadedInboundOrderItem.getFieldValue(TestUtils.getFieldIdByName(inboundOrderItemType, "actualQuantity"));
         Assert.assertEquals(100L, ((PrimitiveFieldValue) actualQuantity).getValue());
 
         // inbound by spec
@@ -394,7 +393,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         ));
 
         reloadedInboundOrderItem = instanceManager.get(inboundOrderItemId, 1).instance();
-        actualQuantity = reloadedInboundOrderItem.getFieldValue(TestUtils.getFieldIdByCode(inboundOrderItemType, "actualQuantity"));
+        actualQuantity = reloadedInboundOrderItem.getFieldValue(TestUtils.getFieldIdByName(inboundOrderItemType, "actualQuantity"));
         Assert.assertEquals(135L, ((PrimitiveFieldValue) actualQuantity).getValue());
     }
 
@@ -425,7 +424,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         var InventoryBizStateType = getClassTypeByCode("org.metavm.manufacturing.storage.InventoryBizState");
         var initialBizState = typeManager.getEnumConstant(InventoryBizStateType.id(), "INITIAL");
         var inventoryId = doInTransaction(() -> apiClient.newInstance(
-                inventoryType.getCodeNotNull(),
+                inventoryType.qualifiedName(),
                 Arrays.asList(
                         material.getIdNotNull(),
                         storageObjects.position.getIdNotNull(),
@@ -466,7 +465,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         ));
         // assert that the transfer has taken place
         var reloadedInventory = instanceManager.get(inventoryId, 1).instance();
-        assertEquals(PrimitiveFieldValue.createLong(80L), reloadedInventory.getFieldValue(TestUtils.getFieldIdByCode(inventoryType, "quantity")));
+        assertEquals(PrimitiveFieldValue.createLong(80L), reloadedInventory.getFieldValue(TestUtils.getFieldIdByName(inventoryType, "quantity")));
     }
 
     private record RoutingObjects(
@@ -484,7 +483,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         var qcProcess = "org.metavm.manufacturing.production.Process";
         var processId = doInTransaction(() -> apiClient.newInstance(qcProcess, List.of("process1")));
         var routingId = (String) doInTransaction(() -> apiClient.saveInstance(
-                routingKlass.getCodeNotNull(),
+                routingKlass.qualifiedName(),
                 Map.of(
                         "name", "routing001",
                         "product", material.getIdNotNull(),
@@ -514,7 +513,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
 //        var itemView = processListView.getElementInstance(0);
 //        var successionListView = reloadedRoutingView.getInstance("successions");
         doInTransactionWithoutResult(() -> apiClient.saveInstance(
-                routingKlass.getCodeNotNull(),
+                routingKlass.qualifiedName(),
                 Map.of(
                         ApiService.KEY_ID, routing.getIdNotNull(),
                         "name", "routing001",
@@ -536,7 +535,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         ));
         // assert that the update is successful
         var reloadedRoutingView2 = instanceManager.getDefaultView(routing.id()).instance();
-        var itemListView2 = (InstanceFieldValue) reloadedRoutingView2.getFieldValue(TestUtils.getFieldIdByCode(routingViewKlass, "processes"));
+        var itemListView2 = (InstanceFieldValue) reloadedRoutingView2.getFieldValue(TestUtils.getFieldIdByName(routingViewKlass, "processes"));
         var itemView2 = ((InstanceFieldValue) TestUtils.getListElement(itemListView2, 0)).getInstance();
         var itemView3 = ((InstanceFieldValue) TestUtils.getListElement(itemListView2, 1)).getInstance();
         Assert.assertEquals(2, ((ListInstanceParam) itemListView2.getInstance().param()).elements().size());
@@ -555,7 +554,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         var enabledGeneralState = typeManager.getEnumConstant(generalStateType.id(), "ENABLED");
         var qualifiedInspectionState = typeManager.getEnumConstant(qualityInspectionStateType.id(), "QUALIFIED");
         var bomId = doInTransaction(() -> apiClient.saveInstance(
-                bomKlass.getCodeNotNull(),
+                bomKlass.qualifiedName(),
                 Map.of(
                         "product", material.getIdNotNull(),
                         "unit", unit.getIdNotNull(),
@@ -602,8 +601,8 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         );
         var productionOrder = instanceManager.get(productionOrderId, 2).instance();
         var productionOrderType = getClassTypeByCode("org.metavm.manufacturing.production.ProductionOrder");
-        var orderStartTimeFieldId = TestUtils.getFieldIdByCode(productionOrderType, "plannedStartTime");
-        var orderIngredientsFieldId = TestUtils.getFieldIdByCode(productionOrderType, "ingredients");
+        var orderStartTimeFieldId = TestUtils.getFieldIdByName(productionOrderType, "plannedStartTime");
+        var orderIngredientsFieldId = TestUtils.getFieldIdByName(productionOrderType, "ingredients");
         var loadedStartTime = (long) ((PrimitiveFieldValue) productionOrder.getFieldValue(orderStartTimeFieldId)).getValue();
         var ingredients = ((InstanceFieldValue) productionOrder.getFieldValue(orderIngredientsFieldId)).getInstance();
         Assert.assertEquals(startTime, loadedStartTime);

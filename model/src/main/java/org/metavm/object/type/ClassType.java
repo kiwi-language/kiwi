@@ -203,18 +203,9 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
     @Override
     public String getName() {
         if (typeArguments == null)
-            return klass.getName();
+            return klass.getQualifiedName();
         else
             return Types.getParameterizedName(klass.getName(), typeArguments.toList());
-    }
-
-    @Nullable
-    @Override
-    public String getCode() {
-        if (typeArguments == null)
-            return klass.getCode();
-        else
-            return Types.getParameterizedCode(klass.getCode(), typeArguments.toList());
     }
 
     @Override

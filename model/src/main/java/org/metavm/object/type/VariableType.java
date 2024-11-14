@@ -125,12 +125,6 @@ public class VariableType extends Type implements IVariableType {
         return getVariable().getTypeDesc();
     }
 
-    @Nullable
-    @Override
-    public String getCode() {
-        return getVariable().getCode();
-    }
-
     @Override
     public TypeCategory getCategory() {
         return TypeCategory.VARIABLE;

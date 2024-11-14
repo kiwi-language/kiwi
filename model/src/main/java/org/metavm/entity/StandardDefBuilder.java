@@ -83,7 +83,7 @@ public class StandardDefBuilder {
 
         defContext.addDef(entityDef);
 
-        var enumTypeParam = new TypeVariable(null, "EnumType", "EnumType",
+        var enumTypeParam = new TypeVariable(null, "EnumType",
                 DummyGenericDeclaration.INSTANCE);
         var enumKlass = newKlassBuilder(Enum.class)
                 .source(ClassSource.BUILTIN)
@@ -222,11 +222,11 @@ public class StandardDefBuilder {
     }
 
     private void createEnumMethods(Klass enumKlass) {
-        MethodBuilder.newBuilder(enumKlass, "name", "name")
+        MethodBuilder.newBuilder(enumKlass, "name")
                 .isNative(true)
                 .returnType(Types.getStringType())
                 .build();
-        MethodBuilder.newBuilder(enumKlass, "ordinal", "ordinal")
+        MethodBuilder.newBuilder(enumKlass, "ordinal")
                 .isNative(true)
                 .returnType(Types.getLongType())
                 .build();
@@ -302,7 +302,6 @@ public class StandardDefBuilder {
                                                      Klass declaringType) {
         return FieldBuilder.newBuilder(
                         EntityUtils.getMetaFieldName(javaField),
-                        javaField.getName(),
                         declaringType, type)
                 .asTitle(asTitle)
                 .column(column)
@@ -377,11 +376,11 @@ public class StandardDefBuilder {
     public Klass createStringBuilderKlass() {
         var klass = parseKlass(StringBuilder.class);
         klass.setEphemeral(true);
-        FieldBuilder.newBuilder("array", "array", klass,
+        FieldBuilder.newBuilder("array", klass,
                 new ArrayType(Types.getNullableAnyType(), ArrayKind.READ_WRITE))
                 .isChild(true)
                 .build();
-        MethodBuilder.newBuilder(klass, "isEmpty", "isEmpty")
+        MethodBuilder.newBuilder(klass, "isEmpty")
                 .returnType(Types.getBooleanType())
                 .isNative(true)
                 .build();
@@ -391,7 +390,7 @@ public class StandardDefBuilder {
     public Klass createListImplKlass(Class<?> javaClass, ClassKind kind, ArrayKind arrayKind) {
         var listImplType = parseKlass(javaClass);
         var elementType = listImplType.getTypeParameters().get(0);
-        FieldBuilder.newBuilder("array", "array", listImplType,
+        FieldBuilder.newBuilder("array", listImplType,
                         new ArrayType(Types.getNullableType(elementType.getType()), arrayKind))
                 .access(Access.PRIVATE)
                 .isChild(kind != ClassKind.VALUE)
@@ -402,7 +401,7 @@ public class StandardDefBuilder {
     public Klass createHashSetKlass() {
         var klass = parseKlass(HashSet.class);
         var elementType = klass.getTypeParameters().get(0);
-        FieldBuilder.newBuilder("array", "array", klass,
+        FieldBuilder.newBuilder("array", klass,
                         new ArrayType(Types.getNullableType(elementType.getType()), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
                 .isChild(true)
@@ -413,7 +412,7 @@ public class StandardDefBuilder {
     private Klass createTreeSetKlass() {
         var klass = parseKlass(TreeSet.class);
         var elementType = klass.getTypeParameters().get(0);
-        FieldBuilder.newBuilder("array", "array", klass,
+        FieldBuilder.newBuilder("array", klass,
                         new ArrayType(elementType.getType(), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
                 .isChild(true)
@@ -438,12 +437,12 @@ public class StandardDefBuilder {
         var keyTypeVar = mapImplKlass.getTypeParameters().get(0);
         var valueTypeVar = mapImplKlass.getTypeParameters().get(1);
 
-        FieldBuilder.newBuilder("keyArray", "keyArray", mapImplKlass,
+        FieldBuilder.newBuilder("keyArray", mapImplKlass,
                         new ArrayType(Types.getNullableType(keyTypeVar.getType()), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
                 .isChild(kind != ClassKind.VALUE)
                 .build();
-        FieldBuilder.newBuilder("valueArray", "valueArray", mapImplKlass,
+        FieldBuilder.newBuilder("valueArray", mapImplKlass,
                         new ArrayType(Types.getNullableType(valueTypeVar.getType()), valueArrayKind))
                 .access(Access.PRIVATE)
                 .isChild(kind != ClassKind.VALUE)
@@ -455,7 +454,7 @@ public class StandardDefBuilder {
         var klass = newKlassBuilder(MvObject.class)
                 .source(ClassSource.BUILTIN)
                 .build();
-        var c = MethodBuilder.newBuilder(klass, "MvObject", "MvObject")
+        var c = MethodBuilder.newBuilder(klass, "MvObject")
                 .isConstructor(true)
                 .build();
         var scope = c.getScope();
@@ -467,48 +466,48 @@ public class StandardDefBuilder {
     }
 
     private void createThrowableFlows(Klass throwableType) {
-        MethodBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+        MethodBuilder.newBuilder(throwableType, "Throwable")
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(throwableType.getType())
                 .build();
 
-        MethodBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+        MethodBuilder.newBuilder(throwableType, "Throwable")
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(throwableType.getType())
-                .parameters(new Parameter(null, "message", "message", Types.getStringType()))
+                .parameters(new Parameter(null, "message", Types.getStringType()))
                 .build();
 
-        MethodBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+        MethodBuilder.newBuilder(throwableType, "Throwable")
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(throwableType.getType())
-                .parameters(new Parameter(null, "cause", "cause", throwableType.getType()))
+                .parameters(new Parameter(null, "cause", throwableType.getType()))
                 .build();
 
-        MethodBuilder.newBuilder(throwableType, "Throwable", "Throwable")
+        MethodBuilder.newBuilder(throwableType, "Throwable")
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(throwableType.getType())
                 .parameters(
-                        new Parameter(null, "message", "message", Types.getStringType()),
-                        new Parameter(null, "cause", "cause", throwableType.getType())
+                        new Parameter(null, "message", Types.getStringType()),
+                        new Parameter(null, "cause", throwableType.getType())
                 )
                 .build();
 
-        MethodBuilder.newBuilder(throwableType, "getMessage", "getMessage")
+        MethodBuilder.newBuilder(throwableType, "getMessage")
                 .isNative(true)
                 .returnType(Types.getNullableType(Types.getStringType()))
                 .build();
     }
 
     private void createExceptionFlows(Klass exceptionType) {
-        createExceptionFlows(exceptionType.getName(), exceptionType.getName(), exceptionType);
+        createExceptionFlows(exceptionType.getName(), exceptionType);
     }
 
     private void createArrayIndexOutOfBoundsExceptionFlows(Klass klass) {
-        MethodBuilder.newBuilder(klass, klass.getName(), klass.getName())
+        MethodBuilder.newBuilder(klass, klass.getName())
                 .isConstructor(true)
                 .isNative(true)
                 .parameters(Parameter.create("index", Types.getLongType()))
@@ -516,34 +515,34 @@ public class StandardDefBuilder {
                 .build();
     }
 
-    private void createExceptionFlows(String name, String code, Klass runtimeExceptionType) {
-        MethodBuilder.newBuilder(runtimeExceptionType, name, code)
+    private void createExceptionFlows(String name, Klass runtimeExceptionType) {
+        MethodBuilder.newBuilder(runtimeExceptionType, name)
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
                 .build();
 
-        MethodBuilder.newBuilder(runtimeExceptionType, name, code)
+        MethodBuilder.newBuilder(runtimeExceptionType, name)
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
-                .parameters(new Parameter(null, "message", "message", Types.getNullableStringType()))
+                .parameters(new Parameter(null, "message", Types.getNullableStringType()))
                 .build();
 
-        MethodBuilder.newBuilder(runtimeExceptionType, name, code)
+        MethodBuilder.newBuilder(runtimeExceptionType, name)
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
-                .parameters(new Parameter(null, "cause", "cause", Types.getNullableType(throwableKlass.getType())))
+                .parameters(new Parameter(null, "cause", Types.getNullableType(throwableKlass.getType())))
                 .build();
 
-        MethodBuilder.newBuilder(runtimeExceptionType, name, code)
+        MethodBuilder.newBuilder(runtimeExceptionType, name)
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
                 .parameters(
-                        new Parameter(null, "message", "message", Types.getNullableStringType()),
-                        new Parameter(null, "cause", "cause", Types.getNullableType(throwableKlass.getType()))
+                        new Parameter(null, "message", Types.getNullableStringType()),
+                        new Parameter(null, "cause", Types.getNullableType(throwableKlass.getType()))
                 )
                 .build();
     }

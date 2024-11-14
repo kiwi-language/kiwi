@@ -41,7 +41,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public static final IndexDef<Klass> IDX_NAME = IndexDef.create(Klass.class, "name");
 
-    public static final IndexDef<Klass> UNIQUE_CODE = IndexDef.createUnique(Klass.class, "code");
+    public static final IndexDef<Klass> UNIQUE_QUALIFIED_NAME = IndexDef.createUnique(Klass.class, "qualifiedName");
 
     public static final IndexDef<Klass> UNIQUE_SOURCE_CODE_TAG = IndexDef.createUnique(Klass.class, "sourceCodeTag");
 
@@ -49,8 +49,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     @EntityField(asTitle = true)
     private String name;
-    @Nullable
-    private String code;
+    private String qualifiedName;
     private ClassKind kind;
     private boolean anonymous;
     private boolean ephemeral;
@@ -163,7 +162,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public Klass(
             Long tmpId,
             String name,
-            @Nullable String code,
+            @Nullable String qualifiedName,
             @Nullable ClassType superType,
             List<ClassType> interfaces,
             @NotNull ClassKind kind,
@@ -182,7 +181,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             @Nullable Integer sourceCodeTag,
             int since) {
         this.name = name;
-        this.code = code;
+        this.qualifiedName = qualifiedName;
         this.kind = kind;
         setTmpId(tmpId);
         setSuperType(superType);
@@ -288,7 +287,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public String getCodeNotNull() {
-        return Objects.requireNonNull(code);
+        return Objects.requireNonNull(qualifiedName);
     }
 
     public void forEachField(Consumer<Field> action) {
@@ -415,7 +414,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     //<editor-fold desc="method">
 
     public Method getDefaultConstructor() {
-        return getMethodByCodeAndParamTypes(Types.getConstructorCode(this), List.of());
+        return getMethodByNameAndParamTypes(Types.getConstructorName(this), List.of());
     }
 
     public void sortFields(Comparator<Field> comparator) {
@@ -535,19 +534,19 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         );
     }
 
-    public @Nullable Method findMethodByCodeAndParamTypes(String code, List<Type> parameterTypes) {
+    public @Nullable Method findMethodByNameAndParamTypes(String name, List<Type> parameterTypes) {
         var method = NncUtils.find(methods,
-                f -> Objects.equals(f.getCode(), code) && f.getParameterTypes().equals(parameterTypes));
+                f -> Objects.equals(f.getName(), name) && f.getParameterTypes().equals(parameterTypes));
         if (method != null)
             return method;
         if (superType != null) {
-            var m = superType.resolve().findMethodByCodeAndParamTypes(code, parameterTypes);
+            var m = superType.resolve().findMethodByNameAndParamTypes(name, parameterTypes);
             if (m != null)
                 return m;
         }
         if (isEffectiveAbstract()) {
             for (var it : interfaces) {
-                var m = it.resolve().findMethodByCodeAndParamTypes(code, parameterTypes);
+                var m = it.resolve().findMethodByNameAndParamTypes(name, parameterTypes);
                 if (m != null)
                     return m;
             }
@@ -555,25 +554,25 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return null;
     }
 
-    public Method getMethodByCodeAndParamTypes(String code, List<Type> parameterTypes) {
-        var found = findMethodByCodeAndParamTypes(code, parameterTypes);
+    public Method getMethodByNameAndParamTypes(String name, List<Type> parameterTypes) {
+        var found = findMethodByNameAndParamTypes(name, parameterTypes);
         if(found == null) {
             throw new NullPointerException(String.format("Can not find method %s(%s) in klass %s",
-                    code, NncUtils.join(parameterTypes, Type::getTypeDesc, ","), getTypeDesc()));
+                    name, NncUtils.join(parameterTypes, Type::getTypeDesc, ","), getTypeDesc()));
         }
         return found;
     }
 
-    public Method getMethodByCode(String code) {
-        return Objects.requireNonNull(findMethodByCode(code), () -> "Can not find method with code '" + code + "' in type '" + name + "'");
+    public Method getMethodByName(String name) {
+        return Objects.requireNonNull(findMethodByName(name), () -> "Can not find method with name '" + name + "' in class '" + this.name + "'");
     }
 
-    public @Nullable Method findMethodByCode(String code) {
-        return findMethod(Method::getCode, code);
+    public @Nullable Method findMethodByName(String name) {
+        return findMethod(Method::getName, name);
     }
 
-    public @Nullable Method findSelfMethodByCode(String code) {
-        return methods.get(Flow::getCode, code);
+    public @Nullable Method findSelfMethodByName(String name) {
+        return methods.get(Flow::getName, name);
     }
 
     public @Nullable Method findMethodByVerticalTemplate(Method template) {
@@ -662,9 +661,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         if (findSelfField(f -> f.getName().equals(field.getName())) != null
                 || findSelfStaticField(f -> f.getName().equals(field.getName())) != null)
             throw BusinessException.invalidField(field, "Field name '" + field.getName() + "' is already used in class " + getName());
-        if (field.getCode() != null &&
-                (findSelfFieldByCode(field.getCode()) != null || findSelfStaticFieldByCode(field.getCode()) != null))
-            throw BusinessException.invalidField(field, "Field code " + field.getCode() + " is already used in class " + getName());
         if (field.isStatic())
             staticFields.addChild(field);
         else
@@ -847,17 +843,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return null;
     }
 
-    public Field tryGetFieldByName(String fieldName) {
-        if (superType != null) {
-            Field superField = superType.resolve().tryGetFieldByName(fieldName);
-            if (superField != null)
-                return superField;
-        }
-        return fields.get(Field::getName, fieldName);
-    }
-
     public Field getFieldByName(String fieldName) {
-        return NncUtils.requireNonNull(tryGetFieldByName(fieldName));
+        return NncUtils.requireNonNull(findFieldByName(fieldName));
     }
 
     public Field tryGetStaticFieldByName(String fieldName) {
@@ -922,12 +909,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     @Nullable
-    public Field findFieldByCode(String code) {
-        var field = fields.get(Field::getCode, code);
+    public Field findFieldByName(String name) {
+        var field = fields.get(Field::getName, name);
         if (field != null)
             return field;
         if (superType != null)
-            return superType.resolve().findFieldByCode(code);
+            return superType.resolve().findFieldByName(name);
         return null;
     }
 
@@ -975,30 +962,24 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return NncUtils.concatList(fields.toList(), methods.toList());
     }
 
-    public Field getFieldByCode(String code) {
-        return NncUtils.requireNonNull(findFieldByCode(code),
-                String.format("Can not find field with code '%s' in type '%s'", code, name));
-    }
-
-
     @Nullable
-    public Field findSelfFieldByCode(String code) {
-        return fields.get(Property::getCode, code);
+    public Field findSelfFieldByName(String name) {
+        return fields.get(Property::getName, name);
     }
 
     @Nullable
-    public Field findSelfStaticFieldByCode(String code) {
-        return staticFields.get(Property::getCode, code);
+    public Field findSelfStaticFieldByName(String name) {
+        return staticFields.get(Property::getName, name);
     }
 
     @Nullable
-    public Field findStaticFieldByCode(String code) {
+    public Field findStaticFieldByName(String name) {
         if (superType != null) {
-            Field superField = superType.resolve().findStaticFieldByCode(code);
+            Field superField = superType.resolve().findStaticFieldByName(name);
             if (superField != null)
                 return superField;
         }
-        return staticFields.get(Field::getCode, code);
+        return staticFields.get(Field::getName, name);
     }
 
     @Nullable
@@ -1020,7 +1001,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Field getFieldByJavaField(java.lang.reflect.Field javaField) {
         String fieldName = EntityUtils.getMetaFieldName(javaField);
-        return requireNonNull(tryGetFieldByName(fieldName),
+        return requireNonNull(findFieldByName(fieldName),
                 "Can not find field for java field " + javaField);
     }
 
@@ -1057,7 +1038,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Field getFieldNyName(String fieldName) {
         return NncUtils.requireNonNull(
-                tryGetFieldByName(fieldName), "field not found: " + fieldName
+                findFieldByName(fieldName), "field not found: " + fieldName
         );
     }
 
@@ -1144,7 +1125,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     private Klass createParameterized(List<? extends Type> typeArguments) {
-        var copy = KlassBuilder.newBuilder(name, null)
+        var copy = KlassBuilder.newBuilder(name, qualifiedName)
                 .kind(getKind())
                 .typeArguments(typeArguments)
                 .anonymous(true)
@@ -1218,7 +1199,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return new KlassDTO(
                 serializeContext.getStringId(this),
                 name,
-                code,
+                qualifiedName,
                 kind.code(),
                 ephemeral,
                 anonymous,
@@ -1336,8 +1317,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         interfaces.forEach(it -> it.resolve().forEachMethod(action));
     }
 
-    public Method resolveMethod(String code, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly) {
-        var found = tryResolveMethod(code, argumentTypes, typeArguments, staticOnly);
+    public Method resolveMethod(String name, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly) {
+        var found = tryResolveMethod(name, argumentTypes, typeArguments, staticOnly);
         if (found != null)
             return found;
         if (DebugEnv.resolveVerbose) {
@@ -1347,13 +1328,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         throw new NullPointerException(
                 String.format("Can not find method %s%s(%s) in type %s",
                         NncUtils.isNotEmpty(typeArguments) ? "<" + NncUtils.join(typeArguments, Type::getName) + ">" : "",
-                        code,
+                        name,
                         NncUtils.join(argumentTypes, Type::getName, ","), getName()));
     }
 
-    public @Nullable Method tryResolveMethod(String code, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly) {
+    public @Nullable Method tryResolveMethod(String name, List<Type> argumentTypes, List<Type> typeArguments, boolean staticOnly) {
         var candidates = new ArrayList<Method>();
-        getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates);
+        getCallCandidates(name, argumentTypes, typeArguments, staticOnly, candidates);
         out:
         for (Method m1 : candidates) {
             for (Method m2 : candidates) {
@@ -1365,26 +1346,26 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return null;
     }
 
-    private void getCallCandidates(String code,
+    private void getCallCandidates(String name,
                                    List<Type> argumentTypes,
                                    List<Type> typeArguments,
                                    boolean staticOnly,
                                    List<Method> candidates) {
         methods.forEach(m -> {
-            if ((m.isStatic() || !staticOnly) && code.equals(m.getCode()) && m.getParameters().size() == argumentTypes.size()) {
+            if ((m.isStatic() || !staticOnly) && name.equals(m.getName()) && m.getParameters().size() == argumentTypes.size()) {
                 if (NncUtils.isNotEmpty(typeArguments)) {
                     if (m.getTypeParameters().size() == typeArguments.size()) {
                         var pMethod = (Method) m.getParameterized(typeArguments);
-                        if (pMethod.matches(code, argumentTypes))
+                        if (pMethod.matches(name, argumentTypes))
                             candidates.add(pMethod);
                     }
                 } else {
-                    if (m.matches(code, argumentTypes))
+                    if (m.matches(name, argumentTypes))
                         candidates.add(m);
                 }
             }
         });
-        forEachSuper(k -> k.getCallCandidates(code, argumentTypes, typeArguments, staticOnly, candidates));
+        forEachSuper(k -> k.getCallCandidates(name, argumentTypes, typeArguments, staticOnly, candidates));
     }
 
     @Nullable
@@ -1453,14 +1434,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.name = name;
     }
 
-    @Nullable
     @Override
-    public String getCode() {
-        return code;
+    public String getQualifiedName() {
+        return qualifiedName;
     }
 
-    public void setCode(@Nullable String code) {
-        this.code = code;
+    public void setQualifiedName(@Nullable String qualifiedName) {
+        this.qualifiedName = qualifiedName;
     }
 
     public ClassKind getKind() {
@@ -1931,7 +1911,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Klass getArrayKlass() {
        if(arrayKlass == null) {
-           arrayKlass = KlassBuilder.newBuilder(name + "[]", NncUtils.get(code, c -> c + "[]")).build();
+           arrayKlass = KlassBuilder.newBuilder(name + "[]", NncUtils.get(qualifiedName, c -> c + "[]")).build();
            arrayKlass.setEphemeralEntity(true);
            arrayKlass.componentKlass = this;
        }

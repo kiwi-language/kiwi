@@ -36,6 +36,6 @@ public class StaticFieldTableEntry extends Entity implements LocalKey {
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return field.getCodeNotNull();
+        return field.getName();
     }
 }

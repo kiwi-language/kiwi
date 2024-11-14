@@ -14,7 +14,7 @@ public class StringBuilderNative extends NativeBase {
 
     public StringBuilderNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByCode("array"));
+        arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByName("array"));
         if(instance.isFieldInitialized(arrayField)) {
             array = instance.getField(arrayField).resolveArray();
         }

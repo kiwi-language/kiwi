@@ -81,11 +81,11 @@ public class ClassInstanceTest extends TestCase {
     public void test_add_not_null_field() {
         Klass type = TestUtils.newKlassBuilder("Lab", null).build();
         Field titleField = FieldBuilder
-                .newBuilder("title", null, type, Types.getStringType())
+                .newBuilder("title", type, Types.getStringType())
                 .build();
         type.setTitleField(titleField);
         Field statusField = FieldBuilder
-                .newBuilder("status", null, type, Types.getLongType())
+                .newBuilder("status", type, Types.getLongType())
                 .defaultValue(Instances.longInstance(0L))
                 .state(MetadataState.READY)
                 .build();
@@ -112,7 +112,7 @@ public class ClassInstanceTest extends TestCase {
         var flowType = TestUtils.newKlassBuilder("Flow", "Flow").build();
         var scopeType = TestUtils.newKlassBuilder("Scope", "Scope").build();
         var nullableScopeType = new UnionType(Set.of(Types.getNullType(), scopeType.getType()));
-        var rootScopeField = FieldBuilder.newBuilder("rootScope", "rootScope", flowType, nullableScopeType)
+        var rootScopeField = FieldBuilder.newBuilder("rootScope", flowType, nullableScopeType)
                 .isChild(true)
                 .build();
 
@@ -173,9 +173,9 @@ public class ClassInstanceTest extends TestCase {
         var derivedKlass = TestUtils.newKlassBuilder("Derived")
                 .superType(baseKlass.getType())
                 .build();
-        var f1 = FieldBuilder.newBuilder("f1", "f1", baseKlass, PrimitiveType.longType).build();
-        var f2 = FieldBuilder.newBuilder("f2", "f2", derivedKlass, PrimitiveType.longType).build();
-        var f3 = FieldBuilder.newBuilder("f3", "f3", baseKlass, PrimitiveType.longType).build();
+        var f1 = FieldBuilder.newBuilder("f1", baseKlass, PrimitiveType.longType).build();
+        var f2 = FieldBuilder.newBuilder("f2", derivedKlass, PrimitiveType.longType).build();
+        var f3 = FieldBuilder.newBuilder("f3", baseKlass, PrimitiveType.longType).build();
         Assert.assertEquals(0, f1.getOffset());
         Assert.assertEquals(2, f2.getOffset());
         Assert.assertEquals(1, f3.getOffset());

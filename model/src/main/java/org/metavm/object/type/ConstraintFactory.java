@@ -35,7 +35,7 @@ public class ConstraintFactory {
         String message = constraintDTO.message();
         if (constraintDTO.param() instanceof IndexParam) {
             var index = createIndexConstraint(constraintDTO.tmpId(), constraintDTO.getParam(), type,
-                    constraintDTO.name(), constraintDTO.code(),
+                    constraintDTO.name(),
                     message, parsingContext, entityContext);
             entityContext.bind(index);
             return index;
@@ -44,7 +44,7 @@ public class ConstraintFactory {
             var constraint = createCheckConstraint(
                     constraintDTO.tmpId(),
                     constraintDTO.getParam(), type,
-                    constraintDTO.name(), constraintDTO.code(),
+                    constraintDTO.name(),
                     message, parsingContext);
             entityContext.bind(constraint);
             return constraint;
@@ -57,18 +57,16 @@ public class ConstraintFactory {
             IndexParam param,
             Klass type,
             String name,
-            @Nullable String code,
             String message,
             ParsingContext parsingContext,
             IEntityContext entityContext) {
         var method =  NncUtils.get(param.methodId(), entityContext::getMethod);
-        var index = new Index(type, name, code, message, param.unique(), List.of(), method);
+        var index = new Index(type, name, message, param.unique(), List.of(), method);
         index.setTmpId(tmpId);
         for (IndexFieldDTO fieldDTO : param.fields()) {
             var indexField = new IndexField(
                     index,
                     fieldDTO.name(),
-                    fieldDTO.code(),
                     ValueFactory.create(fieldDTO.value(), parsingContext)
             );
             indexField.setTmpId(fieldDTO.tmpId());
@@ -81,10 +79,9 @@ public class ConstraintFactory {
             CheckConstraintParam param,
             Klass type,
             String name,
-            @Nullable String code,
             String message,
             ParsingContext parsingContext) {
-        var constraint = new CheckConstraint(type, name, code, message, ValueFactory.create(param.value(), parsingContext));
+        var constraint = new CheckConstraint(type, name, message, ValueFactory.create(param.value(), parsingContext));
         constraint.setTmpId(tmpId);
         return constraint;
     }
@@ -108,11 +105,10 @@ public class ConstraintFactory {
         for (IndexFieldDTO fieldDTO : param.fields()) {
             Value value = ValueFactory.create(fieldDTO.value(), parsingContext);
             if (fieldDTO.id() == null) {
-                new IndexField(index, fieldDTO.name(), fieldDTO.code(), value);
+                new IndexField(index, fieldDTO.name(), value);
             } else {
                 IndexField item = index.getField(Id.parse(fieldDTO.id()));
                 item.setName(fieldDTO.name());
-                item.setCode(fieldDTO.code());
                 item.setValue(value);
             }
         }
@@ -124,11 +120,11 @@ public class ConstraintFactory {
         checkConstraint.setCondition(ValueFactory.create(param.value(), parsingContext));
     }
 
-    public static Index newUniqueConstraint(String name, @Nullable String code, List<Field> fields) {
+    public static Index newUniqueConstraint(String name, List<Field> fields) {
         NncUtils.requireNotEmpty(fields, "fields can not empty");
         Klass type = fields.get(0).getDeclaringType();
         String message = "Duplicate field '" + NncUtils.join(fields, Field::getQualifiedName) + "'";
-        return new Index(type, name, code, message, true, fields, null);
+        return new Index(type, name, message, true, fields, null);
     }
 
 }

@@ -233,7 +233,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 else {
                     var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
-                    var getMethod = messageSupplier.getKlass().getMethodByCodeAndParamTypes("get", List.of());
+                    var getMethod = messageSupplier.getKlass().getMethodByNameAndParamTypes("get", List.of());
                     var getResult = getMethod.execute(messageSupplier, List.of(), ctx);
                     if (getResult.exception() != null)
                         return FlowExecResult.ofException(getResult.exception());
@@ -701,7 +701,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
     public static void initializeFromDefContext(DefContext defContext, boolean local) {
         for (StdFunction def : values()) {
             var func = requireNonNull(
-                    defContext.selectFirstByKey(Function.UNIQUE_IDX_CODE, def.getName()),
+                    defContext.selectFirstByKey(Function.UNIQUE_NAME, def.getName()),
                     "Function not found: " + def.getName());
             if(local)
                 def.setLocal(func);

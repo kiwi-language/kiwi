@@ -26,15 +26,6 @@ public interface Property extends ClassMember, LocalKey {
 
     void setAccess(Access access);
 
-    @Nullable
-    String getCode();
-
-    void setCode(@Nullable String code);
-
-    default String getCodeNotNull() {
-        return NncUtils.requireNonNull(getCode(), "Code is not set for " + this);
-    }
-
     Type getType();
 
 //    void setType(Type type);

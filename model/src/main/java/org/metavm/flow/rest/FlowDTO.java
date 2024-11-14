@@ -12,7 +12,6 @@ import java.util.Map;
 public record FlowDTO(
         String id,
         String name,
-        String code,
         boolean isNative,
         boolean synthetic,
         @Nullable ScopeDTO rootScope,

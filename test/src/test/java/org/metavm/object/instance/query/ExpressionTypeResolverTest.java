@@ -35,7 +35,7 @@ public class ExpressionTypeResolverTest extends TestCase {
         var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
         TestUtils.initEntityIds(fooType);
         typeDefRepository.save(List.of(fooType));
-        FieldBuilder.newBuilder("name", "name", fooType, Types.getStringType()).build();
+        FieldBuilder.newBuilder("name", fooType, Types.getStringType()).build();
         String exprString = "this.name = \"Big Foo\"";
         var expression = ExpressionParser.parse(exprString, createTypeParsingContext(fooType));
         Assert.assertNotNull(expression);
@@ -47,9 +47,9 @@ public class ExpressionTypeResolverTest extends TestCase {
         var classTypeType = TestUtils.newKlassBuilder("ClassType", "ClassType").build();
         var fieldType = TestUtils.newKlassBuilder("Field", "Field").build();
         var fieldChildArrayType = new ArrayType(fieldType.getType(), ArrayKind.CHILD);
-        FieldBuilder.newBuilder("visibleFields", "visibleFields", listViewType, fieldChildArrayType).build();
-        FieldBuilder.newBuilder("type", "type", listViewType, classTypeType.getType()).build();
-        FieldBuilder.newBuilder("declaringType", "declaringType", fieldType, classTypeType.getType()).build();
+        FieldBuilder.newBuilder("visibleFields", listViewType, fieldChildArrayType).build();
+        FieldBuilder.newBuilder("type", listViewType, classTypeType.getType()).build();
+        FieldBuilder.newBuilder("declaringType", fieldType, classTypeType.getType()).build();
         TestUtils.initEntityIds(listViewType);
         typeDefRepository.save(List.of(listViewType, classTypeType, fieldType));
 

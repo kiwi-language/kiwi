@@ -15,13 +15,11 @@ import java.util.Objects;
 public class Parameter extends AttributedElement implements GenericElement, LocalKey {
 
     public static Parameter create(String name, Type type) {
-        return new Parameter(null, name, name, type);
+        return new Parameter(null, name, type);
     }
 
     @EntityField(asTitle = true)
     private String name;
-    @EntityField(asKey = true)
-    private @Nullable String code;
     private Type type;
     @Nullable
     private Value condition;
@@ -30,13 +28,12 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
     @CopyIgnore
     private Parameter copySource;
 
-    public Parameter(Long tmpId, String name, @Nullable String code, Type type) {
-        this(tmpId, name, code, type, null, null, DummyCallable.INSTANCE);
+    public Parameter(Long tmpId, String name, Type type) {
+        this(tmpId, name, type, null, null, DummyCallable.INSTANCE);
     }
 
     public Parameter(Long tmpId,
                      String name,
-                     @Nullable String code,
                      Type type,
                      @Nullable Value condition,
                      @Nullable Parameter copySource,
@@ -44,7 +41,6 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
         setTmpId(tmpId);
         this.callable = callable;
         this.name = name;
-        this.code = code;
         this.type = type;
         this.copySource = copySource;
         setCondition(condition);
@@ -66,10 +62,6 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
         this.name = name;
     }
 
-    public void setCode(@Nullable String code) {
-        this.code = code;
-    }
-
     public void setType(Type type) {
         this.type = type;
     }
@@ -78,17 +70,12 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
         return name;
     }
 
-    @Nullable
-    public String getCode() {
-        return code;
-    }
-
     public Type getType() {
         return type;
     }
 
     public Parameter copy() {
-        return new Parameter(null, name, code, type, condition, null, DummyCallable.INSTANCE);
+        return new Parameter(null, name, type, condition, null, DummyCallable.INSTANCE);
     }
 
     public ParameterDTO toDTO() {
@@ -96,7 +83,6 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
             return new ParameterDTO(
                     serContext.getStringId(this),
                     name,
-                    code,
                     type.toExpression(serContext),
                     NncUtils.get(condition, Value::toDTO),
                     NncUtils.get(copySource, serContext::getStringId),
@@ -154,12 +140,12 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
 
     @Override
     public boolean isValidLocalKey() {
-        return code != null;
+        return true;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return Objects.requireNonNull(code);
+        return name;
     }
 
     public String getText() {

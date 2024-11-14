@@ -6,10 +6,10 @@ import org.junit.Assert;
 public class NamingUtilsTest extends TestCase {
 
     public void testEnsureValidTypeCode() {
-        NamingUtils.ensureValidTypeCode("[Never,Element]");
-        NamingUtils.ensureValidTypeCode("String&Integer");
-        NamingUtils.ensureValidTypeCode("String|Integer");
-        NamingUtils.ensureValidTypeCode("String[]");
+        NamingUtils.ensureValidTypeName("[Never,Element]");
+        NamingUtils.ensureValidTypeName("String&Integer");
+        NamingUtils.ensureValidTypeName("String|Integer");
+        NamingUtils.ensureValidTypeName("String[]");
     }
 
     public void testEscape() {

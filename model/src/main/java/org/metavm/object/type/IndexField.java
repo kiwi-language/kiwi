@@ -1,11 +1,9 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
-import org.metavm.expression.Expressions;
 import org.metavm.expression.PropertyExpression;
 import org.metavm.expression.ThisExpression;
 import org.metavm.flow.Values;
@@ -14,9 +12,6 @@ import org.metavm.object.type.rest.dto.IndexFieldDTO;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 
-import javax.annotation.Nullable;
-import java.util.Objects;
-
 @EntityType
 public class IndexField extends Entity implements LocalKey {
 
@@ -24,21 +19,16 @@ public class IndexField extends Entity implements LocalKey {
         return new IndexField(
                 constraint,
                 field.getName(),
-                field.getCode(),
                 Values.property(field)
         );
     }
 
     private final Index index;
     private String name;
-    @EntityField(asKey = true)
-    @Nullable
-    private String code;
     private org.metavm.flow.Value value;
 
-    public IndexField(Index index, String name, @Nullable String code, org.metavm.flow.Value value) {
+    public IndexField(Index index, String name, org.metavm.flow.Value value) {
         setName(name);
-        setCode(code);
         this.index = index;
         this.value = value;
         index.addField(this);
@@ -52,11 +42,6 @@ public class IndexField extends Entity implements LocalKey {
         return index.getDeclaringType().getName() + "." + index.getName() + "." + name;
     }
 
-    @Nullable
-    public String getCode() {
-        return code;
-    }
-
     public org.metavm.flow.Value getValue() {
         return value;
     }
@@ -67,10 +52,6 @@ public class IndexField extends Entity implements LocalKey {
 
     public void setValue(org.metavm.flow.Value value) {
         this.value = value;
-    }
-
-    public void setCode(@Nullable String code) {
-        this.code = code;
     }
 
     public Index getIndex() {
@@ -95,7 +76,6 @@ public class IndexField extends Entity implements LocalKey {
             return new IndexFieldDTO(
                     serializeContext.getStringId(this),
                     name,
-                    code,
                     value.toDTO()
             );
         }
@@ -115,11 +95,11 @@ public class IndexField extends Entity implements LocalKey {
 
     @Override
     public boolean isValidLocalKey() {
-        return code != null;
+        return true;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return Objects.requireNonNull(code);
+        return name;
     }
 }

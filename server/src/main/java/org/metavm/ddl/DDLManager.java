@@ -148,7 +148,7 @@ public class DDLManager extends EntityContextFactoryAware {
     }
 
     private Klass tryGetInitializerKlass(Klass klass, IEntityContext context) {
-        return context.selectFirstByKey(Klass.UNIQUE_CODE, klass.getCodeNotNull() + "Initializer");
+        return context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klass.getCodeNotNull() + "Initializer");
     }
 
     private Method getSystemFieldInitializer(SaveTypeBatch batch, Klass klass, String fieldName) {

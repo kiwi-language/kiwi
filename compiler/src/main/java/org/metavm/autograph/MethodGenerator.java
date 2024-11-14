@@ -298,7 +298,7 @@ public class MethodGenerator {
     }
 
     public Field newTemporaryField(Klass klass, String name, Type type) {
-        return FieldBuilder.newBuilder(name, null, klass, type).build();
+        return FieldBuilder.newBuilder(name, klass, type).build();
     }
 
     MethodCallNode createMethodCall(Method method) {

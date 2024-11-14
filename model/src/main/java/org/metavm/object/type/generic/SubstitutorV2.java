@@ -104,7 +104,7 @@ public class SubstitutorV2 extends CopyVisitor {
             return field;
         else
             return Objects.requireNonNull(type.findSelfField(f -> f.getEffectiveTemplate() == field.getEffectiveTemplate()),
-                    () -> "Cannot find field with template " + field.getEffectiveTemplate().getQualifiedName() + " in klass " + type.getCode() +
+                    () -> "Cannot find field with template " + field.getEffectiveTemplate().getQualifiedName() + " in klass " + type.getQualifiedName() +
                     ", root: " + root + ", type arguments: " + typeSubstitutor.getVariableMap());
     }
 

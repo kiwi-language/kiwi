@@ -30,15 +30,15 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
     private final boolean builtin;
     private final Klass sourceKlass;
 
-    public ObjectMapping(Long tmpId, String name, @Nullable String code, Klass sourceKlass, ClassType targetType, boolean builtin) {
-        super(tmpId, name, code, sourceKlass.getType(), targetType);
+    public ObjectMapping(Long tmpId, String name, Klass sourceKlass, ClassType targetType, boolean builtin) {
+        super(tmpId, name, sourceKlass.getType(), targetType);
         this.builtin = builtin;
         this.sourceKlass = sourceKlass;
     }
 
     @Override
     protected Flow generateMappingCode(boolean generateReadMethod) {
-        var scope = Objects.requireNonNull(mapper).newEphemeralRootScope();
+        var scope = Objects.requireNonNull(mapper).newEphemeralCode();
         var actualSourceType = (ClassType) mapper.getParameter(0).getType();
         var readMethod = getSourceMethod(actualSourceType.resolve(), getReadMethod());
         Nodes.argument(mapper, 0);
@@ -53,7 +53,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var actualSourceKlass = ((ClassType) unmapper.getReturnType()).resolve();
         var fromViewMethod = findSourceMethod(actualSourceKlass, findFromViewMethod());
         var writeMethod = getSourceMethod(actualSourceKlass, getWriteMethod());
-        var scope = unmapper.newEphemeralRootScope();
+        var scope = unmapper.newEphemeralCode();
         Nodes.argument(unmapper, 0);
         Nodes.functionCall(scope, StdFunction.isSourcePresent.get());
         var ifNode = Nodes.ifNot(null, scope);
@@ -151,7 +151,6 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         return new ObjectMappingDTO(
                 serializeContext.getStringId(this),
                 getName(),
-                getCode(),
                 getSourceType().toExpression(serializeContext, null),
                 getTargetType().toExpression(serializeContext, null),
                 isDefault(),
@@ -188,11 +187,11 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
     }
 
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return Objects.requireNonNull(getCode());
+        return getName();
     }
 
     public boolean isValidLocalKey() {
-        return getCode() != null;
+        return true;
     }
 
     @Override
@@ -200,11 +199,4 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         return getSourceType().getName().replace('.', '_') + "_" + getName();
     }
 
-    @Override
-    public @Nullable String getQualifiedCode() {
-        if (getCode() != null && getSourceType().getCode() != null)
-            return getSourceType().getCode().replace('.', '_') + "_" + getCode();
-        else
-            return null;
-    }
 }

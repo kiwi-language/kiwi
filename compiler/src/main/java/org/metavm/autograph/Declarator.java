@@ -54,22 +54,22 @@ public class Declarator extends VisitorBase {
         klass.setStage(ResolutionStage.DECLARATION);
         var classInfo = new ClassInfo(klass);
         if (!klass.isInterface()) {
-            if (klass.findSelfMethodByCode("<init>") == null) {
-                MethodBuilder.newBuilder(klass, "<init>", "<init>")
+            if (klass.findSelfMethodByName("<init>") == null) {
+                MethodBuilder.newBuilder(klass, "<init>")
                         .access(Access.PRIVATE)
                         .build();
             }
-            var initMethod = Objects.requireNonNull(klass.findSelfMethodByCode("<init>"));
+            var initMethod = Objects.requireNonNull(klass.findSelfMethodByName("<init>"));
             initMethod.clearContent();
             classInfo.visitedMethods.add(initMethod);
         }
-        if (klass.findSelfMethodByCode("<cinit>") == null) {
-            MethodBuilder.newBuilder(klass, "<cinit>", "<cinit>")
+        if (klass.findSelfMethodByName("<cinit>") == null) {
+            MethodBuilder.newBuilder(klass, "<cinit>")
                     .isStatic(true)
                     .access(Access.PRIVATE)
                     .build();
         }
-        var cinitMethod = Objects.requireNonNull(klass.findSelfMethodByCode("<cinit>"));
+        var cinitMethod = Objects.requireNonNull(klass.findSelfMethodByName("<cinit>"));
         cinitMethod.clearContent();
         classInfo.visitedMethods.add(cinitMethod);
         klass.clearAttributes();
@@ -97,7 +97,7 @@ public class Declarator extends VisitorBase {
         for (int i = 0; i < psiClass.getFields().length; i++) {
             fieldIndices.put(psiClass.getFields()[i].getName(), i);
         }
-        klass.sortFields(Comparator.comparingInt(f -> fieldIndices.getOrDefault(f.getCode(), Integer.MAX_VALUE)));
+        klass.sortFields(Comparator.comparingInt(f -> fieldIndices.getOrDefault(f.getName(), Integer.MAX_VALUE)));
         var methodIndices = new HashMap<Method, Integer>();
         for (int i = 0; i < psiClass.getMethods().length; i++) {
             var method = psiClass.getMethods()[i].getUserData(Keys.Method);
@@ -136,7 +136,7 @@ public class Declarator extends VisitorBase {
         var isStatic = method.getModifierList().hasModifierProperty(PsiModifier.STATIC);
         var isAbstract = method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT);
         if (flow == null) {
-            flow = MethodBuilder.newBuilder(klass, getFlowName(method), getFlowCode(method))
+            flow = MethodBuilder.newBuilder(klass, getFlowName(method))
                     .isConstructor(method.isConstructor())
                     .isStatic(isStatic)
                     .access(access)
@@ -145,7 +145,6 @@ public class Declarator extends VisitorBase {
             method.putUserData(Keys.Method, flow);
         } else {
             flow.setName(getFlowName(method));
-            flow.setCode(getFlowCode(method));
             flow.setAccess(access);
             flow.setStatic(isStatic);
             flow.setAbstract(isAbstract);
@@ -169,11 +168,10 @@ public class Declarator extends VisitorBase {
         }
         currentClass().visitedMethods.add(flow);
         if (TranspileUtils.hasAnnotation(method, EntityIndex.class)) {
-            Index index = NncUtils.find(klass.getIndices(), idx -> Objects.equals(idx.getCode(), method.getName()));
+            Index index = NncUtils.find(klass.getIndices(), idx -> Objects.equals(idx.getName(), method.getName()));
             if (index == null) {
                 index = new Index(
                         klass,
-                        TranspileUtils.getIndexName(method),
                         method.getName(),
                         "",
                         TranspileUtils.isUniqueIndex(method),
@@ -189,7 +187,7 @@ public class Declarator extends VisitorBase {
                 if(!TranspileUtils.isStatic(field) && !TranspileUtils.isTransient(field)) {
                     var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), field.getName()));
                     if (indexField == null)
-                        new IndexField(index, getBizFieldName(field), field.getName(), Values.nullValue());
+                        new IndexField(index, field.getName(), Values.nullValue());
                 }
             }
             indexKlass.putUserData(Keys.INDEX, index);
@@ -205,12 +203,12 @@ public class Declarator extends VisitorBase {
     }
 
     private List<Parameter> getEnumConstructorParams(Method method) {
-        var nameParam = method.findParameter(p -> "__name__".equals(p.getCode()));
+        var nameParam = method.findParameter(p -> "__name__".equals(p.getName()));
         if(nameParam == null)
-            nameParam = new Parameter(null, "name", "__name__", Types.getStringType());
-        var ordinalParam = method.findParameter(p -> "__ordinal__".equals(p.getCode()));
+            nameParam = new Parameter(null, "name", Types.getStringType());
+        var ordinalParam = method.findParameter(p -> "__ordinal__".equals(p.getName()));
         if(ordinalParam == null)
-            ordinalParam = new Parameter(null, "ordinal", "__ordinal__", Types.getLongType());
+            ordinalParam = new Parameter(null, "ordinal", Types.getLongType());
         return List.of(nameParam, ordinalParam);
     }
 
@@ -218,11 +216,11 @@ public class Declarator extends VisitorBase {
         return NncUtils.map(
                 parameterList.getParameters(),
                 param -> {
-                    var p = method.findParameter(p1 -> param.getName().equals(p1.getCode()));
-                    var name = getFlowParamName(param);
+                    var p = method.findParameter(p1 -> param.getName().equals(p1.getName()));
+                    var name = param.getName();
                     var type = resolveParameterType(param);
                     if(p == null)
-                        p = new Parameter(null, name, param.getName(), type);
+                        p = new Parameter(null, name, type);
                     else {
                         p.setName(name);
                         p.setType(type);
@@ -247,7 +245,7 @@ public class Declarator extends VisitorBase {
             var index = requireNonNull(currentIndex);
             var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), psiField.getName()));
             if (indexField == null)
-                new IndexField(index, getBizFieldName(psiField), psiField.getName(), Values.nullValue());
+                new IndexField(index, psiField.getName(), Values.nullValue());
             return;
         }
         var type = resolveNullableType(psiField.getType());
@@ -256,8 +254,8 @@ public class Declarator extends VisitorBase {
         var fieldTag = (int) TranspileUtils.getFieldAnnotationAttribute(psiField, "tag", -1);
         Field field;
         if(fieldTag == -1) {
-            field = isStatic ? klass.findSelfStaticFieldByCode(psiField.getName())
-                    :klass.findSelfFieldByCode(psiField.getName());
+            field = isStatic ? klass.findSelfStaticFieldByName(psiField.getName())
+                    :klass.findSelfFieldByName(psiField.getName());
         }
         else {
             field = isStatic ? klass.findSelfStaticField(f -> Objects.equals(f.getSourceCodeTag(), fieldTag))
@@ -267,7 +265,7 @@ public class Declarator extends VisitorBase {
         var isTransient = modList.hasModifierProperty(PsiModifier.TRANSIENT);
         if (field == null) {
             field = FieldBuilder
-                    .newBuilder(getBizFieldName(psiField), psiField.getName(), klass, type)
+                    .newBuilder(psiField.getName(), klass, type)
                     .access(getAccess(psiField))
                     .unique(TranspileUtils.isUnique(psiField))
                     .isChild(TranspileUtils.isChild(psiField))
@@ -277,7 +275,6 @@ public class Declarator extends VisitorBase {
                     .build();
         } else {
             field.setName(getBizFieldName(psiField));
-            field.setCode(psiField.getName());
             field.setType(type);
             field.setAccess(getAccess(psiField));
             field.setUnique(TranspileUtils.isUnique(psiField));
@@ -300,10 +297,10 @@ public class Declarator extends VisitorBase {
     public void visitEnumConstant(PsiEnumConstant enumConstant) {
         var classInfo = currentClass();
         var klass = classInfo.klass;
-        var field = klass.findSelfStaticFieldByCode(enumConstant.getName());
+        var field = klass.findSelfStaticFieldByName(enumConstant.getName());
         if (field == null) {
             field = FieldBuilder
-                    .newBuilder(getEnumConstantName(enumConstant), enumConstant.getName(), klass, klass.getType())
+                    .newBuilder(enumConstant.getName(), klass, klass.getType())
                     .isChild(true)
                     .isStatic(true)
                     .build();
@@ -312,7 +309,7 @@ public class Declarator extends VisitorBase {
         var ecd = klass.findEnumConstantDef(e -> e.getName().equals(enumConstant.getName()));
         if(ecd == null) {
             var name = enumConstant.getName();
-            var initializer = MethodBuilder.newBuilder(klass, "$" + name, "$" + name)
+            var initializer = MethodBuilder.newBuilder(klass, "$" + name)
                     .isStatic(true)
                     .returnType(klass.getType())
                     .build();

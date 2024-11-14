@@ -75,7 +75,7 @@ public class BootstrapTest extends TestCase {
         var klass = defContext.getKlass(HttpRequestImpl.class);
         for (Method javaMethod : HttpRequestImpl.class.getDeclaredMethods()) {
             if (Modifier.isPublic(javaMethod.getModifiers()) && !Modifier.isStatic(javaMethod.getModifiers())) {
-                var method = klass.findMethodByCode(javaMethod.getName());
+                var method = klass.findMethodByName(javaMethod.getName());
                 Assert.assertNotNull("Method " + javaMethod.getName() + " does not exist", method);
                 Assert.assertTrue(method.isNative());
                 Assert.assertEquals(javaMethod, method.getJavaMethod());

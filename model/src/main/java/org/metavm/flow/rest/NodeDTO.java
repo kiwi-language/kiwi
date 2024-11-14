@@ -38,10 +38,6 @@ public record NodeDTO(
         return (T) param;
     }
 
-    public String code() {
-        return name;
-    }
-
 }
 
 

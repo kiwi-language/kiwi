@@ -270,7 +270,7 @@ public class MetaFrame implements Frame, CallContext {
                                 // TODO Pre-generate functional interface implementation
                                 var functionInterfaceImpl = Types.createFunctionalClass(functionalInterface);
                                 var funcImplKlass = functionInterfaceImpl.resolve();
-                                var funcField = funcImplKlass.getFieldByCode("func");
+                                var funcField = funcImplKlass.getFieldByName("func");
                                 stack[top++] = ClassInstance.create(Map.of(funcField, func), functionInterfaceImpl).getReference();
                                 pc += 6;
                             }

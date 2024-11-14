@@ -60,7 +60,7 @@ public class InstanceContextTest extends TestCase {
     public void test() {
         var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
         fooType.initId(PhysicalId.of(101L, 0L, TestUtils.mockClassType()));
-        var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, Types.getStringType())
+        var fooNameField = FieldBuilder.newBuilder("name", fooType, Types.getStringType())
                 .build();
         fooNameField.initId(PhysicalId.of(111L, 0L, TestUtils.mockClassType()));
 

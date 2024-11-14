@@ -23,9 +23,9 @@ public class FunctionDesc {
                 function.getParameterTypes(),
                 Instances::getInstanceClassByJavaClass
         );
-        method = ReflectionUtils.getMethod(FunctionMethods.class, function.code(), instanceParamTypes);
+        method = ReflectionUtils.getMethod(FunctionMethods.class, function.name(), instanceParamTypes);
         resultTypeResolverMethod =
-                EntityUtils.tryGetMethodByName(FunctionDesc.class, typeResolverMethodName(function.code()));
+                EntityUtils.tryGetMethodByName(FunctionDesc.class, typeResolverMethodName(function.name()));
     }
 
     private static String typeResolverMethodName(String functionName) {

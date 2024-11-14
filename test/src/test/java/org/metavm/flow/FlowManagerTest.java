@@ -32,7 +32,7 @@ public class FlowManagerTest extends TestCase {
         var methodId = TestUtils.doInTransaction(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                 var klass = TestUtils.newKlassBuilder("Foo").build();
-                var method = MethodBuilder.newBuilder(klass, "test", "test")
+                var method = MethodBuilder.newBuilder(klass, "test")
                         .parameters(Parameter.create("value", Types.getBooleanType()))
                         .returnType(Types.getBooleanType())
                         .isStatic(true)

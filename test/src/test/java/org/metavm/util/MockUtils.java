@@ -35,8 +35,8 @@ public class MockUtils {
         var enumKlass = StdKlass.enum_.get();
         var couponStateEnumKlas = enumKlass.getParameterized(List.of(couponStateType.getType()));
         couponStateType.setSuperType(couponStateEnumKlas.getType());
-        var enumNameField = couponStateEnumKlas.getFieldByCode("name");
-        var enumOrdinalField = couponStateEnumKlas.getFieldByCode("ordinal");
+        var enumNameField = couponStateEnumKlas.getFieldByName("name");
+        var enumOrdinalField = couponStateEnumKlas.getFieldByName("ordinal");
         var couponNormalState = ClassInstanceBuilder.newBuilder(couponStateType.getType())
                 .data(Map.of(
                         enumNameField,
@@ -57,36 +57,36 @@ public class MockUtils {
                 .build();
         createEnumConstantField(couponNormalState);
         createEnumConstantField(couponUsedState);
-        var productTitleField = FieldBuilder.newBuilder("title", "title", productType, Types.getStringType())
+        var productTitleField = FieldBuilder.newBuilder("title", productType, Types.getStringType())
                 .asTitle()
                 .build();
         var skuChildArrayType = new ArrayType(skuType.getType(), ArrayKind.CHILD);
-        var productSkuListField = FieldBuilder.newBuilder("skuList", "skuList", productType, skuChildArrayType)
+        var productSkuListField = FieldBuilder.newBuilder("skuList", productType, skuChildArrayType)
                 .isChild(true)
                 .build();
-        var skuTitleField = FieldBuilder.newBuilder("title", "title", skuType, Types.getStringType())
+        var skuTitleField = FieldBuilder.newBuilder("title", skuType, Types.getStringType())
                 .asTitle()
                 .build();
-        var skuPriceField = FieldBuilder.newBuilder("price", "price", skuType, Types.getDoubleType())
+        var skuPriceField = FieldBuilder.newBuilder("price", skuType, Types.getDoubleType())
                 .build();
-        var skuAmountField = FieldBuilder.newBuilder("amount", "amount", skuType, Types.getLongType())
+        var skuAmountField = FieldBuilder.newBuilder("amount", skuType, Types.getLongType())
                 .access(Access.PRIVATE)
                 .build();
-        var orderCodeField = FieldBuilder.newBuilder("code", "code", orderType, Types.getStringType())
+        var orderCodeField = FieldBuilder.newBuilder("code", orderType, Types.getStringType())
                 .asTitle()
                 .build();
-        var orderProductField = FieldBuilder.newBuilder("product", "product", orderType, productType.getType()).build();
-        var orderCouponsField = FieldBuilder.newBuilder("coupons", "coupons", orderType, couponArrayType)
+        var orderProductField = FieldBuilder.newBuilder("product", orderType, productType.getType()).build();
+        var orderCouponsField = FieldBuilder.newBuilder("coupons", orderType, couponArrayType)
                 .isChild(true).build();
-        var orderAmountField = FieldBuilder.newBuilder("amount", "amount", orderType, Types.getLongType()).build();
-        var orderPriceField = FieldBuilder.newBuilder("price", "price", orderType, Types.getDoubleType()).build();
-        var orderTimeField = FieldBuilder.newBuilder("time", "time", orderType, Types.getTimeType()).build();
-        var couponTitleField = FieldBuilder.newBuilder("title", "title", couponType, Types.getStringType())
+        var orderAmountField = FieldBuilder.newBuilder("amount", orderType, Types.getLongType()).build();
+        var orderPriceField = FieldBuilder.newBuilder("price", orderType, Types.getDoubleType()).build();
+        var orderTimeField = FieldBuilder.newBuilder("time", orderType, Types.getTimeType()).build();
+        var couponTitleField = FieldBuilder.newBuilder("title", couponType, Types.getStringType())
                 .asTitle()
                 .build();
-        var couponDiscountField = FieldBuilder.newBuilder("discount", "discount", couponType, Types.getDoubleType())
+        var couponDiscountField = FieldBuilder.newBuilder("discount", couponType, Types.getDoubleType())
                 .build();
-        var couponStateField = FieldBuilder.newBuilder("state", "state", couponType, couponStateType.getType())
+        var couponStateField = FieldBuilder.newBuilder("state", couponType, couponStateType.getType())
                 .defaultValue(couponNormalState.getReference())
                 .build();
 
@@ -364,12 +364,12 @@ public class MockUtils {
 
     public static ListTypeIds createListType(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
         saveListTypes(typeManager, schedulerAndWorker);
-        var listType = typeManager.getTypeByCode("MyList").type();
+        var listType = typeManager.getTypeByQualifiedName("MyList").type();
         return new ListTypeIds(
                 listType.id(),
                 listType.typeParameterIds().get(0),
-                TestUtils.getFieldIdByCode(listType, "label"),
-                TestUtils.getFieldIdByCode(listType, "nodes"),
+                TestUtils.getFieldIdByName(listType, "label"),
+                TestUtils.getFieldIdByName(listType, "nodes"),
                 getNodeTypeIds(typeManager)
         );
     }
@@ -379,20 +379,20 @@ public class MockUtils {
     }
 
     private static NodeTypeIds getNodeTypeIds(TypeManager typeManager) {
-        var nodeType = typeManager.getTypeByCode("Node").type();
+        var nodeType = typeManager.getTypeByQualifiedName("Node").type();
         return new NodeTypeIds(
                 nodeType.id(),
                 nodeType.typeParameterIds().get(0),
-                TestUtils.getFieldIdByCode(nodeType, "label"),
-                TestUtils.getFieldIdByCode(nodeType, "value")
+                TestUtils.getFieldIdByName(nodeType, "label"),
+                TestUtils.getFieldIdByName(nodeType, "value")
         );
     }
 
     private static Field createEnumConstantField(ClassInstance enumConstant) {
         var enumType = enumConstant.getKlass();
-        var nameField = enumType.getFieldByCode("name");
+        var nameField = enumType.getFieldByName("name");
         var name = enumConstant.getStringField(nameField).getValue();
-        return FieldBuilder.newBuilder(name, null, enumType, enumType.getType())
+        return FieldBuilder.newBuilder(name, enumType, enumType.getType())
                 .isStatic(true)
                 .staticValue(enumConstant.getReference())
                 .build();
@@ -400,11 +400,11 @@ public class MockUtils {
 
     public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
         assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm", typeManager, schedulerAndWorker);
-        var productType = typeManager.getTypeByCode("Product").type();
-        var skuType = typeManager.getTypeByCode("SKU").type();
-        var couponType = typeManager.getTypeByCode("Coupon").type();
-        var couponStateType = typeManager.getTypeByCode("CouponState").type();
-        var orderType = typeManager.getTypeByCode("Order").type();
+        var productType = typeManager.getTypeByQualifiedName("Product").type();
+        var skuType = typeManager.getTypeByQualifiedName("SKU").type();
+        var couponType = typeManager.getTypeByQualifiedName("Coupon").type();
+        var couponStateType = typeManager.getTypeByQualifiedName("CouponState").type();
+        var orderType = typeManager.getTypeByQualifiedName("Order").type();
         var skuChildListType = TypeExpressions.getChildListType(TypeExpressions.getClassType(skuType.id()));
         var couponListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(couponType.id()));
         return new ShoppingTypeIds(
@@ -415,22 +415,22 @@ public class MockUtils {
                 orderType.id(),
                 skuChildListType,
                 couponListType,
-                TestUtils.getFieldIdByCode(productType, "name"),
-                TestUtils.getFieldIdByCode(productType, "skuList"),
-                TestUtils.getFieldIdByCode(skuType, "name"),
-                TestUtils.getFieldIdByCode(skuType, "price"),
-                TestUtils.getFieldIdByCode(skuType, "quantity"),
+                TestUtils.getFieldIdByName(productType, "name"),
+                TestUtils.getFieldIdByName(productType, "skuList"),
+                TestUtils.getFieldIdByName(skuType, "name"),
+                TestUtils.getFieldIdByName(skuType, "price"),
+                TestUtils.getFieldIdByName(skuType, "quantity"),
                 TestUtils.getMethodIdByCode(skuType, "decQuantity"),
                 TestUtils.getMethodIdByCode(skuType, "buy"),
-                TestUtils.getFieldIdByCode(couponType, "name"),
-                TestUtils.getFieldIdByCode(couponType, "discount"),
-                TestUtils.getFieldIdByCode(couponType, "state"),
-                TestUtils.getFieldIdByCode(orderType, "code"),
-                TestUtils.getFieldIdByCode(orderType, "sku"),
-                TestUtils.getFieldIdByCode(orderType, "quantity"),
-                TestUtils.getFieldIdByCode(orderType, "price"),
-                TestUtils.getFieldIdByCode(orderType, "orderTime"),
-                TestUtils.getFieldIdByCode(orderType, "coupons"),
+                TestUtils.getFieldIdByName(couponType, "name"),
+                TestUtils.getFieldIdByName(couponType, "discount"),
+                TestUtils.getFieldIdByName(couponType, "state"),
+                TestUtils.getFieldIdByName(orderType, "code"),
+                TestUtils.getFieldIdByName(orderType, "sku"),
+                TestUtils.getFieldIdByName(orderType, "quantity"),
+                TestUtils.getFieldIdByName(orderType, "price"),
+                TestUtils.getFieldIdByName(orderType, "orderTime"),
+                TestUtils.getFieldIdByName(orderType, "coupons"),
                 typeManager.getEnumConstant(couponStateType.id(), "NORMAL").id(),
                 typeManager.getEnumConstant(couponStateType.id(), "USED").id()
         );
@@ -438,22 +438,22 @@ public class MockUtils {
 
     public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
         assemble("/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm", typeManager, schedulerAndWorker);
-        var livingBeingType = typeManager.getTypeByCode("LivingBeing").type();
-        var animalType = typeManager.getTypeByCode("Animal").type();
-        var humanType = typeManager.getTypeByCode("Human").type();
-        var sentientType = typeManager.getTypeByCode("Sentient").type();
+        var livingBeingType = typeManager.getTypeByQualifiedName("LivingBeing").type();
+        var animalType = typeManager.getTypeByQualifiedName("Animal").type();
+        var humanType = typeManager.getTypeByQualifiedName("Human").type();
+        var sentientType = typeManager.getTypeByQualifiedName("Sentient").type();
         return new LivingBeingTypeIds(
                 livingBeingType.id(),
                 animalType.id(),
                 humanType.id(),
                 sentientType.id(),
-                TestUtils.getFieldIdByCode(livingBeingType, "age"),
-                TestUtils.getFieldIdByCode(livingBeingType, "extra"),
-                TestUtils.getFieldIdByCode(livingBeingType, "offsprings"),
-                TestUtils.getFieldIdByCode(livingBeingType, "ancestors"),
-                TestUtils.getFieldIdByCode(animalType, "intelligence"),
-                TestUtils.getFieldIdByCode(humanType, "occupation"),
-                TestUtils.getFieldIdByCode(humanType, "thinking"),
+                TestUtils.getFieldIdByName(livingBeingType, "age"),
+                TestUtils.getFieldIdByName(livingBeingType, "extra"),
+                TestUtils.getFieldIdByName(livingBeingType, "offsprings"),
+                TestUtils.getFieldIdByName(livingBeingType, "ancestors"),
+                TestUtils.getFieldIdByName(animalType, "intelligence"),
+                TestUtils.getFieldIdByName(humanType, "occupation"),
+                TestUtils.getFieldIdByName(humanType, "thinking"),
                 TestUtils.getMethodIdByCode(livingBeingType, "LivingBeing"),
                 TestUtils.getMethodIdByCode(animalType, "Animal"),
                 TestUtils.getMethodIdByCode(humanType, "Human"),
@@ -488,26 +488,26 @@ public class MockUtils {
 
     public static FooTypes createFooTypes(boolean initIds) {
         var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
-        var fooNameField = FieldBuilder.newBuilder("name", "name", fooType, Types.getStringType())
+        var fooNameField = FieldBuilder.newBuilder("name", fooType, Types.getStringType())
                 .asTitle().build();
-        var fooCodeField = FieldBuilder.newBuilder("code", "code", fooType, Types.getNullableStringType())
+        var fooCodeField = FieldBuilder.newBuilder("code", fooType, Types.getNullableStringType())
                 .build();
         var barType = TestUtils.newKlassBuilder("Bar", "Bar").build();
-        var barCodeField = FieldBuilder.newBuilder("code", "code", barType, Types.getStringType())
+        var barCodeField = FieldBuilder.newBuilder("code", barType, Types.getStringType())
                 .asTitle().build();
         var barChildArrayType = new ArrayType(barType.getType(), ArrayKind.CHILD);
         var barArrayType = new ArrayType(barType.getType(), ArrayKind.READ_WRITE);
 //        var nullableBarType = new UnionType(null, Set.of(barType, getNullType()));
-        var fooBarsField = FieldBuilder.newBuilder("bars", "bars", fooType, barChildArrayType)
+        var fooBarsField = FieldBuilder.newBuilder("bars", fooType, barChildArrayType)
                 .isChild(true).build();
         var bazType = TestUtils.newKlassBuilder("Baz", "Baz").build();
         var bazArrayType = new ArrayType(bazType.getType(), ArrayKind.READ_WRITE);
-        var bazBarsField = FieldBuilder.newBuilder("bars", "bars", bazType, barArrayType).build();
-        var fooBazListField = FieldBuilder.newBuilder("bazList", "bazList", fooType, bazArrayType).build();
+        var bazBarsField = FieldBuilder.newBuilder("bars", bazType, barArrayType).build();
+        var fooBazListField = FieldBuilder.newBuilder("bazList", fooType, bazArrayType).build();
         var quxType = TestUtils.newKlassBuilder("Qux", "Qux").build();
-        var quxAmountField = FieldBuilder.newBuilder("amount", "amount", quxType, Types.getLongType()).build();
+        var quxAmountField = FieldBuilder.newBuilder("amount", quxType, Types.getLongType()).build();
         var nullableQuxType = new UnionType(Set.of(quxType.getType(), Types.getNullType()));
-        var fooQuxField = FieldBuilder.newBuilder("qux", "qux", fooType, nullableQuxType).build();
+        var fooQuxField = FieldBuilder.newBuilder("qux", fooType, nullableQuxType).build();
         if (initIds)
             TestUtils.initEntityIds(fooType);
         return new FooTypes(fooType, barType, quxType, bazType, barArrayType, barChildArrayType, bazArrayType, fooNameField,
@@ -516,26 +516,26 @@ public class MockUtils {
 
     public static LivingBeingTypes createLivingBeingTypes(boolean initIds) {
         var livingBeingType = TestUtils.newKlassBuilder("LivingBeing", "LivingBeing").build();
-        var livingBeingAgeField = FieldBuilder.newBuilder("age", "age", livingBeingType, Types.getLongType())
+        var livingBeingAgeField = FieldBuilder.newBuilder("age", livingBeingType, Types.getLongType())
                 .build();
-        var livingBeingExtraInfoField = FieldBuilder.newBuilder("extraInfo", "extraInfo", livingBeingType, Types.getAnyType())
+        var livingBeingExtraInfoField = FieldBuilder.newBuilder("extraInfo", livingBeingType, Types.getAnyType())
                 .build();
         var livingBeingArrayType = new ArrayType(livingBeingType.getType(), ArrayKind.READ_WRITE);
-        var livingBeingOffspringsField = FieldBuilder.newBuilder("offsprings", "offsprings", livingBeingType, livingBeingArrayType)
+        var livingBeingOffspringsField = FieldBuilder.newBuilder("offsprings", livingBeingType, livingBeingArrayType)
                 .isChild(true)
                 .build();
-        var livingBeingAncestorsField = FieldBuilder.newBuilder("ancestors", "ancestors", livingBeingType, livingBeingArrayType)
+        var livingBeingAncestorsField = FieldBuilder.newBuilder("ancestors", livingBeingType, livingBeingArrayType)
                 .isChild(true)
                 .build();
         var animalType = TestUtils.newKlassBuilder("Animal", "Animal")
                 .superType(livingBeingType.getType())
                 .build();
-        var animalIntelligenceField = FieldBuilder.newBuilder("intelligence", "intelligence", animalType, Types.getLongType())
+        var animalIntelligenceField = FieldBuilder.newBuilder("intelligence", animalType, Types.getLongType())
                 .build();
         var humanType = TestUtils.newKlassBuilder("Human", "Human")
                 .superType(animalType.getType())
                 .build();
-        var humanOccupationField = FieldBuilder.newBuilder("occupation", "occupation", humanType, Types.getStringType())
+        var humanOccupationField = FieldBuilder.newBuilder("occupation", humanType, Types.getStringType())
                 .build();
         if (initIds)
             TestUtils.initEntityIds(humanType);
@@ -670,13 +670,13 @@ public class MockUtils {
 
     public static UserTypeIds createUserTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
         assemble("/Users/leen/workspace/object/test/src/test/resources/asm/User.masm", typeManager, schedulerAndWorker);
-        var applicationType = typeManager.getTypeByCode("Application").type();
-        var applicationNameFieldId = TestUtils.getFieldIdByCode(applicationType, "name");
-        var applicationOwnerFieldId = TestUtils.getFieldIdByCode(applicationType, "owner");
+        var applicationType = typeManager.getTypeByQualifiedName("Application").type();
+        var applicationNameFieldId = TestUtils.getFieldIdByName(applicationType, "name");
+        var applicationOwnerFieldId = TestUtils.getFieldIdByName(applicationType, "owner");
         // get the longName field id and password field id of the platform user type
-        var platformUserType = typeManager.getTypeByCode("PlatformUser").type();
-        var platformUserLoginNameFieldId = TestUtils.getFieldIdByCode(platformUserType, "loginName");
-        var platformUserPasswordFieldId = TestUtils.getFieldIdByCode(platformUserType, "passwd");
+        var platformUserType = typeManager.getTypeByQualifiedName("PlatformUser").type();
+        var platformUserLoginNameFieldId = TestUtils.getFieldIdByName(platformUserType, "loginName");
+        var platformUserPasswordFieldId = TestUtils.getFieldIdByName(platformUserType, "passwd");
         return new UserTypeIds(platformUserType.id(), applicationType.id(), applicationNameFieldId, applicationOwnerFieldId, platformUserLoginNameFieldId,
                 platformUserPasswordFieldId);
     }

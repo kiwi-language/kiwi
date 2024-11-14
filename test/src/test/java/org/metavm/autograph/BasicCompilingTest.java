@@ -108,7 +108,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(0, utilsType.errors().size());
         var labType = getClassTypeByCode("capturedtypes.CtLab");
         var labId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
-                        labType.getCodeNotNull(),
+                        labType.qualifiedName(),
                         Map.of(
                                 "foos", List.of(
                                         Map.of("name", "foo001"),
@@ -137,7 +137,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processGenericOverride() {
         var subType = getClassTypeByCode("genericoverride.Sub");
-        var subId = TestUtils.doInTransaction(() -> apiClient.saveInstance(subType.getCodeNotNull(), Map.of()));
+        var subId = TestUtils.doInTransaction(() -> apiClient.saveInstance(subType.qualifiedName(), Map.of()));
         var result = TestUtils.doInTransaction(() -> apiClient.callMethod(
                 subId,
                 "containsAny<string>",
@@ -156,7 +156,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var currencyKindKlass = getClassTypeByCode("valuetypes.CurrencyKind");
         var currencyKindYuan = typeManager.getEnumConstant(currencyKindKlass.id(), "YUAN");
         var productId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
-                productKlass.getCodeNotNull(),
+                productKlass.qualifiedName(),
                 Map.of(
                         "name", "Shoes",
                         "price", Map.of(
@@ -374,9 +374,9 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processAsterisk() {
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE,
+            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
                     "asterisk.AsteriskTypeFoo"));
-            var method = klass.getMethodByCode("getInstance");
+            var method = klass.getMethodByName("getInstance");
             var serializableKlass = StdKlass.serializable.get();
             var expectedType = Types.getNullableType(klass.getParameterized(
                     List.of(new UncertainType(Types.getNeverType(), serializableKlass.getType()))
@@ -387,8 +387,8 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processDefaultMethod() {
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID))  {
-            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, "defaultmethod.IFoo"));
-            var method = klass.getMethodByCode("foo");
+            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "defaultmethod.IFoo"));
+            var method = klass.getMethodByName("foo");
             Assert.assertTrue(method.isRootScopePresent());
         }
         var fooId = TestUtils.doInTransaction(() -> apiClient.saveInstance("defaultmethod.Foo", Map.of()));

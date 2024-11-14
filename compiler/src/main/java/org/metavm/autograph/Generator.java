@@ -50,15 +50,15 @@ public class Generator extends VisitorBase {
         if (klass.getStage().isAfterOrAt(ResolutionStage.DEFINITION))
             return;
         klass.setStage(ResolutionStage.DEFINITION);
-        klass.setCode(psiClass.getQualifiedName());
+        klass.setQualifiedName(psiClass.getQualifiedName());
         MethodGenerator initFlowBuilder;
         Method initFlow;
         if(!psiClass.isInterface()) {
-            initFlow = klass.getMethodByCodeAndParamTypes("<init>", List.of());
+            initFlow = klass.getMethodByNameAndParamTypes("<init>", List.of());
             initFlowBuilder = new MethodGenerator(initFlow, typeResolver, this);
             initFlowBuilder.enterScope(initFlowBuilder.getMethod().getScope());
             if (klass.getSuperType() != null) {
-                var superInit = klass.getSuperType().resolve().findSelfMethodByCode("<init>");
+                var superInit = klass.getSuperType().resolve().findSelfMethodByName("<init>");
                 if (superInit != null) {
                     initFlowBuilder.getThis();
                     initFlowBuilder.createMethodCall(superInit);
@@ -69,11 +69,11 @@ public class Generator extends VisitorBase {
             initFlowBuilder = null;
             initFlow = null;
         }
-        var classInit = klass.getMethodByCodeAndParamTypes("<cinit>", List.of());
+        var classInit = klass.getMethodByNameAndParamTypes("<cinit>", List.of());
         var classInitFlowBuilder = new MethodGenerator(classInit, typeResolver, this);
         classInitFlowBuilder.enterScope(classInitFlowBuilder.getMethod().getScope());
         if (klass.getSuperType() != null) {
-            var superCInit = klass.getSuperType().resolve().findSelfMethodByCode("<cinit>");
+            var superCInit = klass.getSuperType().resolve().findSelfMethodByName("<cinit>");
             if (superCInit != null)
                 classInitFlowBuilder.createMethodCall(superCInit);
         }
@@ -149,19 +149,19 @@ public class Generator extends VisitorBase {
                     .getInitializers();
             for (PsiExpression fieldName : fieldNames) {
                 var fieldCode = (String) ((PsiLiteralExpression) fieldName).getValue();
-                fields.add(type.getFieldByCode(fieldCode));
+                fields.add(type.getFieldByName(fieldCode));
             }
             var method = (PsiMethod) requireNonNull(initializer.getMethodExpression().resolve());
             var unique = method.getName().equals("createUnique");
             var index = (Index) NncUtils.find(type.getConstraints(), c -> c instanceof Index idx &&
-                    Objects.equals(idx.getCode(), psiField.getName()));
+                    Objects.equals(idx.getName(), psiField.getName()));
             if (index == null)
-                index = new Index(type, psiField.getName(), psiField.getName(), "", unique, fields, null);
-            var code2IndexField = new HashMap<String, IndexField>();
-            index.getFields().forEach(f -> code2IndexField.put(f.getCode(), f));
+                index = new Index(type, psiField.getName(), "", unique, fields, null);
+            var name2indexField = new HashMap<String, IndexField>();
+            index.getFields().forEach(f -> name2indexField.put(f.getName(), f));
             var indexFields = new ArrayList<IndexField>();
             for (Field field : fields) {
-                var indexField = code2IndexField.get(field.getCode());
+                var indexField = name2indexField.get(field.getName());
                 if (indexField == null)
                     indexField = IndexField.createFieldItem(index, field);
                 indexFields.add(indexField);
@@ -309,10 +309,10 @@ public class Generator extends VisitorBase {
                     var enumClass = requireNonNull(klass.getSuperType()).resolve();
                     builder.getThis();
                     builder.createLoad(1, Types.getStringType());
-                    builder.createSetField(enumClass.getFieldByCode("name"));
+                    builder.createSetField(enumClass.getFieldByName("name"));
                     builder.getThis();
                     builder.createLoad(2, Types.getLongType());
-                    builder.createSetField(enumClass.getFieldByCode("ordinal"));
+                    builder.createSetField(enumClass.getFieldByName("ordinal"));
                 }
             }
         }
@@ -552,7 +552,7 @@ public class Generator extends VisitorBase {
             var collType = Types.resolveKlass(iteratedType);
             typeResolver.ensureDeclared(collType);
             builder().createLoad(iteratedVar, iteratedType);
-            var iteratorMethod = Objects.requireNonNull(collType.findMethodByCode("iterator"));
+            var iteratorMethod = Objects.requireNonNull(collType.findMethodByName("iterator"));
             builder().createMethodCall(iteratorMethod);
             builder().createNonNull();
             var itVar = builder().nextVariableIndex();

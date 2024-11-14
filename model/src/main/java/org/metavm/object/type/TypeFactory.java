@@ -26,15 +26,13 @@ public abstract class TypeFactory {
             var context = batch.getContext();
             var type = batch.getContext().getTypeVariable(Id.parse(typeVariableDTO.id()));
             if (type == null) {
-                type = new TypeVariable(typeVariableDTO.tmpId(), typeVariableDTO.name(), typeVariableDTO.code(),
+                type = new TypeVariable(typeVariableDTO.tmpId(), typeVariableDTO.name(),
                         context.getEntity(GenericDeclaration.class, typeVariableDTO.genericDeclarationId()));
                 context.bind(type);
                 var retrieved = context.getEntity(TypeVariable.class, type.getId());
                 assert retrieved != null : "Fail to save type variable " + type.getId();
-            } else if (type.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
+            } else if (type.getStage().isBeforeOrAt(ResolutionStage.INIT))
                 type.setName(typeVariableDTO.name());
-                type.setCode(typeVariableDTO.code());
-            }
             var curStage = type.setStage(stage);
             if (stage.isAfterOrAt(ResolutionStage.DECLARATION) && curStage.isBefore(ResolutionStage.DECLARATION))
                 type.setBounds(NncUtils.map(typeVariableDTO.bounds(), bound -> TypeParser.parseType(bound, batch.getContext())));
@@ -65,7 +63,7 @@ public abstract class TypeFactory {
             var context = batch.getContext();
             var kind = ClassKind.fromCode(klassDTO.kind());
             if (klass == null) {
-                klass = KlassBuilder.newBuilder(klassDTO.name(), klassDTO.code())
+                klass = KlassBuilder.newBuilder(klassDTO.name(), klassDTO.qualifiedName())
                         .tmpId(klassDTO.tmpId())
                         .kind(kind)
                         .ephemeral(klassDTO.ephemeral())
@@ -83,7 +81,7 @@ public abstract class TypeFactory {
                         .build();
                 context.bind(klass);
             } else if (klass.getStage().isBeforeOrAt(ResolutionStage.INIT)) {
-                klass.setCode(klassDTO.code());
+                klass.setQualifiedName(klassDTO.qualifiedName());
                 klass.setName(klassDTO.name());
                 klass.setDesc(klassDTO.desc());
                 klass.setSearchable(klassDTO.searchable());
@@ -189,7 +187,7 @@ public abstract class TypeFactory {
         var defaultValue = InstanceFactory.resolveValue(fieldDTO.defaultValue(), fieldType, context);
         var access = Access.getByCode(fieldDTO.access());
         if (field == null) {
-            field = FieldBuilder.newBuilder(fieldDTO.name(), fieldDTO.code(), declaringType, fieldType)
+            field = FieldBuilder.newBuilder(fieldDTO.name(), declaringType, fieldType)
                     .tmpId(fieldDTO.tmpId())
                     .access(access)
                     .unique(fieldDTO.unique())
@@ -207,7 +205,6 @@ public abstract class TypeFactory {
             context.bind(field);
         } else {
             field.setName(fieldDTO.name());
-            field.setCode(fieldDTO.code());
             field.setUnique(fieldDTO.unique());
             field.setTransient(fieldDTO.isTransient());
             if(fieldDTO.isChild() != field.isChild()) {
@@ -245,7 +242,7 @@ public abstract class TypeFactory {
         var access= Access.findByCode(param.access());
         if (method == null) {
             var declaringType = batch.getKlass(param.declaringTypeId());
-            method = MethodBuilder.newBuilder(declaringType, flowDTO.name(), flowDTO.code())
+            method = MethodBuilder.newBuilder(declaringType, flowDTO.name())
                     .access(access)
                     .isStatic(param.isStatic())
                     .tmpId(flowDTO.tmpId())
@@ -255,7 +252,6 @@ public abstract class TypeFactory {
             if (method.isSynthetic())
                 throw new BusinessException(ErrorCode.MODIFYING_SYNTHETIC_FLOW, method.getQualifiedName());
             method.setName(flowDTO.name());
-            method.setCode(flowDTO.code());
             method.setAccess(access);
         }
         if (flowDTO.attributes() != null)
@@ -321,13 +317,12 @@ public abstract class TypeFactory {
         var context = batch.getContext();
         var function = context.getFunction(Id.parse(flowDTO.id()));
         if (function == null) {
-            function = FunctionBuilder.newBuilder(flowDTO.name(), flowDTO.code())
+            function = FunctionBuilder.newBuilder(flowDTO.name())
                     .tmpId(flowDTO.tmpId())
                     .build();
             context.bind(function);
         } else {
             function.setName(flowDTO.name());
-            function.setCode(flowDTO.code());
         }
         function.setNative(flowDTO.isNative());
         function.setTypeParameters(NncUtils.map(flowDTO.typeParameterIds(), batch::getTypeVariable));
@@ -344,13 +339,10 @@ public abstract class TypeFactory {
             param = new Parameter(
                     parameterDTO.tmpId(),
                     parameterDTO.name(),
-                    parameterDTO.code(),
                     TypeParser.parseType(parameterDTO.type(), context)
             );
-        } else {
+        } else
             param.setName(parameterDTO.name());
-            param.setCode(parameterDTO.code());
-        }
         if (parameterDTO.attributes() != null)
             param.setAttributes(Attribute.fromMap(parameterDTO.attributes()));
         return param;

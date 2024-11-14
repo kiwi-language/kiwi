@@ -350,8 +350,8 @@ public class TestUtils {
         }
     }
 
-    public static String getFieldIdByCode(KlassDTO klassDTO, String fieldCode) {
-        return NncUtils.findRequired(klassDTO.fields(), f -> fieldCode.equals(f.code())).id();
+    public static String getFieldIdByName(KlassDTO klassDTO, String name) {
+        return NncUtils.findRequired(klassDTO.fields(), f -> name.equals(f.name())).id();
     }
 
     public static FieldDTO getFieldByName(KlassDTO klassDTO, String name) {
@@ -380,7 +380,7 @@ public class TestUtils {
     }
 
     public static String getMethodIdByCode(KlassDTO klassDTO, String methodCode) {
-        return NncUtils.findRequired(klassDTO.flows(), f -> methodCode.equals(f.code())).id();
+        return NncUtils.findRequired(klassDTO.flows(), f -> methodCode.equals(f.name())).id();
     }
 
     public static MethodRefDTO getMethodRefByCode(KlassDTO klassDTO, String methodCode) {
@@ -396,18 +396,18 @@ public class TestUtils {
     }
 
     public static FlowDTO getMethodByCode(KlassDTO klassDTO, String methodCode) {
-        return NncUtils.findRequired(klassDTO.flows(), f -> methodCode.equals(f.code()));
+        return NncUtils.findRequired(klassDTO.flows(), f -> methodCode.equals(f.name()));
     }
 
     public static String getStaticMethodIdByCode(KlassDTO klassDTO, String methodCode) {
         return NncUtils.findRequired(klassDTO.flows(),
-                f -> methodCode.equals(f.code()) && ((MethodParam) f.param()).isStatic()
+                f -> methodCode.equals(f.name()) && ((MethodParam) f.param()).isStatic()
         ).id();
     }
 
     public static MethodRefDTO getStaticMethodRefByCode(KlassDTO klassDTO, String methodCode) {
         var method = NncUtils.findRequired(klassDTO.flows(),
-                f -> methodCode.equals(f.code()) && ((MethodParam) f.param()).isStatic()
+                f -> methodCode.equals(f.name()) && ((MethodParam) f.param()).isStatic()
         );
         return createMethodRef(klassDTO.id(), method.id());
     }
@@ -415,7 +415,7 @@ public class TestUtils {
     public static String getStaticMethod(KlassDTO klassDTO, String code, String... parameterTypes) {
         var paramTypeList = List.of(parameterTypes);
         return NncUtils.findRequired(klassDTO.flows(),
-                f -> code.equals(f.code()) &&
+                f -> code.equals(f.name()) &&
                         ((MethodParam) f.param()).isStatic() &&
                         paramTypeList.equals(NncUtils.map(f.parameters(), ParameterDTO::type)),
                 () -> "Can not find static method " + code + "(" + String.join(",", paramTypeList) + ") in type " + klassDTO.name()
@@ -429,7 +429,7 @@ public class TestUtils {
     public static String getMethodId(KlassDTO klassDTO, String code, String... parameterTypeIds) {
         var paramTypeidList = List.of(parameterTypeIds);
         return NncUtils.findRequired(klassDTO.flows(),
-                f -> code.equals(f.code()) && paramTypeidList.equals(
+                f -> code.equals(f.name()) && paramTypeidList.equals(
                         NncUtils.map(f.parameters(), ParameterDTO::type)
                 )
         ).id();

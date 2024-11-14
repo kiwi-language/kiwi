@@ -9,7 +9,6 @@ public record ConstraintDTO(
         int kind,
         String typeId,
         String name,
-        @Nullable String code,
         String message,
         ConstraintParam param
 ) implements BaseDTO  {

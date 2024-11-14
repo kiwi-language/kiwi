@@ -27,7 +27,7 @@ public class DDLCompilingTest extends CompilerTestBase {
         submit(() -> {
             ref.stateKlassId = getClassTypeByCode("ProductState").id();
             var productKlass = getClassTypeByCode("Product");
-            ref.stateFieldId = TestUtils.getFieldIdByCode(productKlass, "state");
+            ref.stateFieldId = TestUtils.getFieldIdByName(productKlass, "state");
             ref.derivedInstanceId = saveInstance("swapsuper.Derived",
                     Map.of("value1", 1, "value2", 2, "value3", 3));
         });
@@ -41,7 +41,7 @@ public class DDLCompilingTest extends CompilerTestBase {
             var productKlass = getClassTypeByCode("Product");
             var descField = TestUtils.getFieldByName(productKlass, "description");
             Assert.assertEquals(MetadataState.REMOVED.code(), descField.state());
-            var statusFieldId = TestUtils.getFieldIdByCode(productKlass, "status");
+            var statusFieldId = TestUtils.getFieldIdByName(productKlass, "status");
             Assert.assertEquals(ref.stateFieldId, statusFieldId);
             var productStatusKlass = getClassTypeByCode("ProductStatus");
             Assert.assertEquals(ref.stateKlassId, productStatusKlass.id());

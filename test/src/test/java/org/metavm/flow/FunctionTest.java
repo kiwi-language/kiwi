@@ -17,11 +17,11 @@ public class FunctionTest extends TestCase {
     }
 
     public void testGeneric() {
-        var typeVar = new TypeVariable(null, "T", null, DummyGenericDeclaration.INSTANCE);
-        var function = FunctionBuilder.newBuilder("test", "test")
+        var typeVar = new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE);
+        var function = FunctionBuilder.newBuilder("test")
                 .typeParameters(List.of(typeVar))
                 .build();
-        function.setParameters(List.of(new Parameter(null, "p1", "p1", typeVar.getType())));
+        function.setParameters(List.of(new Parameter(null, "p1", typeVar.getType())));
         Assert.assertFalse(function.getTypeParameters().isEmpty());
         var parameterizedFunc = function.getParameterized(List.of(Types.getStringType()));
         Assert.assertSame(function, parameterizedFunc.getHorizontalTemplate());

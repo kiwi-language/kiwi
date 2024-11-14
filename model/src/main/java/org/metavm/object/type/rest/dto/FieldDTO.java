@@ -9,7 +9,6 @@ import javax.annotation.Nullable;
 public record FieldDTO(
         String id,
         String name,
-        String code,
         int access,
         FieldValue defaultValue,
         boolean unique,

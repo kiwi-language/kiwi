@@ -369,7 +369,7 @@ class AsmExpressionResolver {
                 var qualifierType = (ClassType) resolve0(qualifierCtx);
                 resolve0(ctx.expression(1));
                 Nodes.dupX1(scope);
-                var field = qualifierType.resolve().getFieldByCode(fieldName);
+                var field = qualifierType.resolve().getFieldByName(fieldName);
                 Nodes.setField(field, scope);
                 return field.getType();
             }
@@ -438,7 +438,7 @@ class AsmExpressionResolver {
         } else {
             assert type instanceof ClassType;
             var klass = ((ClassType) type).resolve();
-            var field = klass.getFieldByCode(name);
+            var field = klass.getFieldByName(name);
             Nodes.getProperty(field, scope);
             return field.getType();
         }
@@ -563,7 +563,6 @@ class AsmExpressionResolver {
         }
         return new Parameter(
                 NncUtils.randomNonNegative(),
-                name,
                 name,
                 type
         );

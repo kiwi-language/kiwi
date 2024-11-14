@@ -109,7 +109,7 @@ public class FlowManager extends EntityContextFactoryAware {
             boolean creating = method == null;
             if (method == null) {
                 method = MethodBuilder
-                        .newBuilder(context.getKlass(methodParam.declaringTypeId()), flowDTO.name(), flowDTO.code())
+                        .newBuilder(context.getKlass(methodParam.declaringTypeId()), flowDTO.name())
                         .flowDTO(flowDTO)
                         .access(Access.getByCode(methodParam.access()))
                         .isStatic(methodParam.isStatic())
@@ -119,7 +119,6 @@ public class FlowManager extends EntityContextFactoryAware {
             Type oldFuncType = method.getType();
             Type returnType = getReturnType(flowDTO, declaringType, context);
             method.setName(flowDTO.name());
-            method.setCode(flowDTO.code());
             method.setConstructor(flowDTO.isConstructor());
             method.setAbstract(declaringType.isInterface() || methodParam.isAbstract());
             method.setParameters(parameters);
@@ -135,7 +134,7 @@ public class FlowManager extends EntityContextFactoryAware {
         } else if (flowDTO.param() instanceof FunctionParam) {
             var function = context.getFunction(flowDTO.id());
             if (function == null) {
-                function = FunctionBuilder.newBuilder(flowDTO.name(), flowDTO.code())
+                function = FunctionBuilder.newBuilder(flowDTO.name())
                         .tmpId(flowDTO.tmpId())
                         .build();
                 context.bind(function);
@@ -166,14 +165,12 @@ public class FlowManager extends EntityContextFactoryAware {
         var parameter = context.getEntity(Parameter.class, parameterDTO.id());
         if (parameter != null) {
             parameter.setName(parameterDTO.name());
-            parameter.setCode(parameterDTO.code());
             parameter.setType(TypeParser.parseType(parameterDTO.type(), context));
             return parameter;
         } else {
             return new Parameter(
                     parameterDTO.tmpId(),
                     parameterDTO.name(),
-                    parameterDTO.code(),
                     TypeParser.parseType(parameterDTO.type(), context)
             );
         }
@@ -205,7 +202,7 @@ public class FlowManager extends EntityContextFactoryAware {
                                 && overridden.getReturnType().isAssignableFrom(f.getReturnType())
                 );
                 if (candidate == null) {
-                    MethodBuilder.newBuilder(type, overridden.getName(), overridden.getCode())
+                    MethodBuilder.newBuilder(type, overridden.getName())
                             .returnType(overridden.getReturnType())
                             .type(overridden.getType())
                             .access(overridden.getAccess())

@@ -94,28 +94,28 @@ public class ClassTypeTest extends TestCase {
     public void testResolveMethod() {
         var baseType = TestUtils.newKlassBuilder("Base", "Base").build();
 
-        MethodBuilder.newBuilder(baseType, "test", "test")
-                .parameters(new Parameter(null, "p1", "p1", Types.getStringType()))
+        MethodBuilder.newBuilder(baseType, "test")
+                .parameters(new Parameter(null, "p1", Types.getStringType()))
                 .build();
 
-        var m1 = MethodBuilder.newBuilder(baseType, "test", "test")
-                .parameters(new Parameter(null, "p1", "p1", Types.getBooleanType()))
+        var m1 = MethodBuilder.newBuilder(baseType, "test")
+                .parameters(new Parameter(null, "p1", Types.getBooleanType()))
                 .build();
 
         var fooType = TestUtils.newKlassBuilder("Foo", "Foo")
                 .superType(baseType.getType())
                 .build();
 
-        var m2 = MethodBuilder.newBuilder(fooType, "test", "test")
-                .parameters(new Parameter(null, "p1", "p1", Types.getAnyType()))
+        var m2 = MethodBuilder.newBuilder(fooType, "test")
+                .parameters(new Parameter(null, "p1", Types.getAnyType()))
                 .build();
 
-        var m3 = MethodBuilder.newBuilder(fooType, "test", "test")
-                .parameters(new Parameter(null, "p1", "p1", Types.getStringType()))
+        var m3 = MethodBuilder.newBuilder(fooType, "test")
+                .parameters(new Parameter(null, "p1", Types.getStringType()))
                 .build();
 
-        var m4 = MethodBuilder.newBuilder(fooType, "test", "test")
-                .parameters(new Parameter(null, "p1", "p1", Types.getDoubleType()))
+        var m4 = MethodBuilder.newBuilder(fooType, "test")
+                .parameters(new Parameter(null, "p1", Types.getDoubleType()))
                 .build();
 
         Assert.assertSame(m1, fooType.resolveMethod("test", List.of(Types.getBooleanType()), List.of(), false));
@@ -125,18 +125,18 @@ public class ClassTypeTest extends TestCase {
 
     public void testNestedParameterizedType() {
         var listKlass = TestUtils.newKlassBuilder("List")
-                .typeParameters(new TypeVariable(null, "E", "E", DummyGenericDeclaration.INSTANCE))
+                .typeParameters(new TypeVariable(null, "E", DummyGenericDeclaration.INSTANCE))
                 .build();
         var fooKlass = TestUtils.newKlassBuilder("Foo")
                 .typeParameters(
-                        new TypeVariable(null, "K", "K", DummyGenericDeclaration.INSTANCE),
-                        new TypeVariable(null, "V", "V", DummyGenericDeclaration.INSTANCE)
+                        new TypeVariable(null, "K", DummyGenericDeclaration.INSTANCE),
+                        new TypeVariable(null, "V", DummyGenericDeclaration.INSTANCE)
                 )
                 .build();
         var entryKlass = TestUtils.newKlassBuilder("Entry")
                 .typeParameters(
-                        new TypeVariable(null, "K", "K", DummyGenericDeclaration.INSTANCE),
-                        new TypeVariable(null, "V", "V", DummyGenericDeclaration.INSTANCE)
+                        new TypeVariable(null, "K", DummyGenericDeclaration.INSTANCE),
+                        new TypeVariable(null, "V", DummyGenericDeclaration.INSTANCE)
                 )
                 .build();
         TestUtils.initEntityIds(listKlass);

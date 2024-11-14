@@ -4,18 +4,14 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.util.Column;
 import org.metavm.util.Instances;
 
-import javax.annotation.Nullable;
-
 public class FieldBuilder {
 
 
-    public static FieldBuilder newBuilder(String name, @Nullable String code, Klass declaringType, Type type) {
-        return new FieldBuilder(name, code, declaringType, type);
+    public static FieldBuilder newBuilder(String name, Klass declaringType, Type type) {
+        return new FieldBuilder(name, declaringType, type);
     }
 
     private final String name;
-    @Nullable
-    private final String code;
     private final Klass declaringType;
     private final Type type;
     private Column column;
@@ -37,9 +33,8 @@ public class FieldBuilder {
     private Integer sourceCodeTag;
     private int since;
 
-    private FieldBuilder(String name, @Nullable String code, Klass declaringType, Type type) {
+    private FieldBuilder(String name, Klass declaringType, Type type) {
         this.name = name;
-        this.code = code;
         this.declaringType = declaringType;
         this.type = type;
     }
@@ -153,7 +148,6 @@ public class FieldBuilder {
             field = new Field(
                     tmpId,
                     name,
-                    code,
                     declaringType,
                     type,
                     access,
@@ -164,7 +158,6 @@ public class FieldBuilder {
                     isChild,
                     isStatic,
                     lazy,
-                    staticValue,
                     column,
                     tag,
                     sourceCodeTag,
@@ -175,7 +168,6 @@ public class FieldBuilder {
             field = existing;
             existing.setTmpId(tmpId);
             existing.setName(name);
-            existing.setCode(code);
             existing.setType(type);
             existing.setAccess(access);
             existing.setUnique(unique);

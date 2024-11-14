@@ -117,7 +117,7 @@ public class Main {
         var fieldName = name.substring(idx + 1);
         var klass = CompilerHttpUtils.post("/type/get-by-code", new GetTypeByCodeRequest(klassName), new TypeReference<GetTypeResponse>() {
         }).type();
-        var field = NncUtils.find(klass.fields(), f -> fieldName.equals(f.code()));
+        var field = NncUtils.find(klass.fields(), f -> fieldName.equals(f.name()));
         if(field == null) {
             System.out.println("Field not found");
             return;

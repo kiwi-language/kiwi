@@ -115,14 +115,14 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
             instance = (ClassInstance) defContext.getInstanceContext().get(id);
         }
         instance.setField(
-                klass.getFieldByCode("name"),
+                klass.getFieldByName("name"),
                 new StringValue(
                         EntityUtils.getMetaEnumConstantName(value),
                         PrimitiveType.stringType
                 )
         );
         var enumConstant = createEnumConstant(instance);
-        FieldBuilder.newBuilder(enumConstant.getName(), javaField.getName(), klass, klass.getType())
+        FieldBuilder.newBuilder(enumConstant.getName(), klass, klass.getType())
                 .defaultValue(new NullValue(PrimitiveType.nullType))
                 .isChild(true)
                 .isStatic(true)

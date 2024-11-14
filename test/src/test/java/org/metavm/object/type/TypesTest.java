@@ -75,8 +75,8 @@ public class TypesTest extends TestCase {
         var nullableStringType = Types.getNullableStringType();
         Assert.assertEquals(Types.getStringType(), Types.getNonNullType(nullableStringType));
 
-        var typeVar1 = new TypeVariable(null, "T1", null, DummyGenericDeclaration.INSTANCE);
-        var typeVar2 = new TypeVariable(null, "T1", null, DummyGenericDeclaration.INSTANCE);
+        var typeVar1 = new TypeVariable(null, "T1", DummyGenericDeclaration.INSTANCE);
+        var typeVar2 = new TypeVariable(null, "T1", DummyGenericDeclaration.INSTANCE);
         typeVar2.setBounds(List.of(Types.getNullableAnyType()));
         TestUtils.newKlassBuilder("Foo")
                         .typeParameters(typeVar1, typeVar2)

@@ -37,7 +37,7 @@ public class NativeMethods {
                 args[i + 1] = arguments.get(i);
             }
             args[arguments.size() + 1] = callContext;
-            var javaMethod = ReflectionUtils.getMethod(nativeClass, method.getCode(), paramTypes);
+            var javaMethod = ReflectionUtils.getMethod(nativeClass, method.getName(), paramTypes);
             var result = (Value) ReflectionUtils.invoke(null, javaMethod, args);
             if (method.getReturnType().isVoid()) {
                 return new FlowExecResult(null, null);
@@ -55,7 +55,7 @@ public class NativeMethods {
                     args[i] = arguments.get(i);
                 }
                 args[arguments.size()] = callContext;
-                var javaMethod = ReflectionUtils.getMethod(instanceClass, method.getCode(), paramTypes);
+                var javaMethod = ReflectionUtils.getMethod(instanceClass, method.getName(), paramTypes);
                 var result = (Value) ReflectionUtils.invoke(nativeObject, javaMethod, args);
                 if (method.getReturnType().isVoid()) {
                     return new FlowExecResult(null, null);

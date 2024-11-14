@@ -5,7 +5,6 @@ import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.Types;
-import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -13,8 +12,8 @@ import java.util.List;
 
 public class FunctionBuilder {
 
-    public static FunctionBuilder newBuilder(String name, @Nullable String code) {
-        return new FunctionBuilder(name, code);
+    public static FunctionBuilder newBuilder(String name) {
+        return new FunctionBuilder(name);
     }
 
     @Nullable
@@ -22,8 +21,6 @@ public class FunctionBuilder {
     @Nullable
     private Long tmpId;
     private @NotNull String name;
-    @Nullable
-    private String code;
     private boolean isNative;
     private boolean isSynthetic;
     private List<Parameter> parameters = new ArrayList<>();
@@ -35,9 +32,8 @@ public class FunctionBuilder {
     private CodeSource codeSource;
     private MetadataState state = MetadataState.READY;
 
-    public FunctionBuilder(@NotNull String name, @Nullable String code) {
+    public FunctionBuilder(@NotNull String name) {
         this.name = name;
-        this.code = code;
     }
 
 
@@ -86,11 +82,6 @@ public class FunctionBuilder {
         return this;
     }
 
-    public FunctionBuilder code(@Nullable String code) {
-        this.code = code;
-        return this;
-    }
-
     public FunctionBuilder returnType(Type returnType) {
         this.returnType = returnType;
         return this;
@@ -120,7 +111,6 @@ public class FunctionBuilder {
             return new Function(
                     tmpId,
                     name,
-                    code,
                     isNative,
                     isSynthetic,
                     parameters,
@@ -133,7 +123,6 @@ public class FunctionBuilder {
             );
         } else {
             existing.setName(name);
-            existing.setCode(code);
             existing.setTypeParameters(typeParameters);
             if (typeParameters.isEmpty())
                 existing.setTypeArguments(typeArguments);

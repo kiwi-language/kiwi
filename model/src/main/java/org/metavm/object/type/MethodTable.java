@@ -26,12 +26,12 @@ public class MethodTable {
     }
 
     public void rebuild() {
-        hashCodeMethod = classType.findMethod(m -> "hashCode".equals(m.getCode()) && m.getParameters().isEmpty());
-        equalsMethod = classType.findMethod(m -> "equals".equals(m.getCode()) && m.getParameterTypes().equals(List.of(Types.getNullableAnyType())));
-        toStringMethod = classType.findMethod(m -> "toString".equals(m.getCode()) && m.getParameters().isEmpty());
-        writeObjectMethod = classType.findSelfMethod(m -> "writeObject".equals(m.getCode())
+        hashCodeMethod = classType.findMethod(m -> "hashCode".equals(m.getName()) && m.getParameters().isEmpty());
+        equalsMethod = classType.findMethod(m -> "equals".equals(m.getName()) && m.getParameterTypes().equals(List.of(Types.getNullableAnyType())));
+        toStringMethod = classType.findMethod(m -> "toString".equals(m.getName()) && m.getParameters().isEmpty());
+        writeObjectMethod = classType.findSelfMethod(m -> "writeObject".equals(m.getName())
                 && m.getParameters().size() == 1);
-        readObjectMethod = classType.findSelfMethod(m -> "readObject".equals(m.getCode())
+        readObjectMethod = classType.findSelfMethod(m -> "readObject".equals(m.getName())
                 && m.getParameters().size() == 1);
         verticalTemplateIndex.clear();
         overriddenIndex.clear();

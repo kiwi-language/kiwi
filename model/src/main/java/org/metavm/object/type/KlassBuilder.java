@@ -10,14 +10,13 @@ import java.util.List;
 
 public class KlassBuilder {
 
-    public static KlassBuilder newBuilder(String name, @Nullable String code) {
-        return new KlassBuilder(name, code);
+    public static KlassBuilder newBuilder(String name, String qualifiedName) {
+        return new KlassBuilder(name, qualifiedName);
     }
 
     private Long tmpId;
     private final String name;
-    @Nullable
-    private final String code;
+    private final String qualifiedName;
     private ClassType superType;
     private ClassSource source = ClassSource.RUNTIME;
     private ClassKind kind = ClassKind.CLASS;
@@ -41,9 +40,9 @@ public class KlassBuilder {
     private final List<Attribute> attributes = new ArrayList<>();
     private int since = 0;
 
-    private KlassBuilder(String name, @Nullable String code) {
+    private KlassBuilder(String name, @Nullable String qualifiedName) {
         this.name = name;
-        this.code = code;
+        this.qualifiedName = qualifiedName;
     }
 
     public KlassBuilder superType(ClassType superType) {
@@ -188,7 +187,7 @@ public class KlassBuilder {
         }
         Klass klass;
         String effectiveName = suffix != null ? name + "_" + suffix : name;
-        String effectiveCode = code != null ? (suffix != null ? code + "_" + suffix : code) : null;
+        String effectiveCode = qualifiedName != null ? (suffix != null ? qualifiedName + "_" + suffix : qualifiedName) : null;
         if (existing == null) {
             klass = new Klass(
                     tmpId,
@@ -214,7 +213,7 @@ public class KlassBuilder {
         } else {
             klass = existing;
             existing.setName(effectiveName);
-            existing.setCode(effectiveCode);
+            existing.setQualifiedName(effectiveCode);
             existing.setSuperType(superType);
             existing.setInterfaces(interfaces);
             existing.setSource(source);

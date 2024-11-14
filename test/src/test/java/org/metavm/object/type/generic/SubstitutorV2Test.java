@@ -29,15 +29,15 @@ public class SubstitutorV2Test extends TestCase {
         var nullType = PrimitiveType.nullType;
         var voidType = PrimitiveType.voidType;
 
-        var typeVar = new TypeVariable(null, "E", "E", DummyGenericDeclaration.INSTANCE);
+        var typeVar = new TypeVariable(null, "E", DummyGenericDeclaration.INSTANCE);
         Klass foo = TestUtils.newKlassBuilder("Foo", "Foo")
                 .typeParameters(typeVar)
                 .build();
 
-        var valueField = FieldBuilder.newBuilder("value", "value", foo, typeVar.getType())
+        var valueField = FieldBuilder.newBuilder("value", foo, typeVar.getType())
                 .build();
         {
-            var getValueFlow = MethodBuilder.newBuilder(foo, "getValue", "getValue")
+            var getValueFlow = MethodBuilder.newBuilder(foo, "getValue")
                     .type(new FunctionType(List.of(), typeVar.getType()))
                     .staticType(new FunctionType(List.of(foo.getType()), typeVar.getType()))
                     .returnType(typeVar.getType())
@@ -48,11 +48,11 @@ public class SubstitutorV2Test extends TestCase {
         }
 
         {
-            var flow = MethodBuilder.newBuilder(foo, "setValue", "setValue")
+            var flow = MethodBuilder.newBuilder(foo, "setValue")
                     .type(new FunctionType(List.of(typeVar.getType()), voidType))
                     .staticType(new FunctionType(List.of(foo.getType(), typeVar.getType()), voidType))
                     .returnType(voidType)
-                    .parameters(new Parameter(null, "value", "value", typeVar.getType()))
+                    .parameters(new Parameter(null, "value", typeVar.getType()))
                     .build();
             var scope = flow.getScope();
             Nodes.this_(scope);
@@ -81,9 +81,9 @@ public class SubstitutorV2Test extends TestCase {
 
     public void testFlow() {
         var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
-        var barMethod = MethodBuilder.newBuilder(fooType, "bar", "bar")
+        var barMethod = MethodBuilder.newBuilder(fooType, "bar")
                 .typeParameters(List.of(
-                        new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE)
+                        new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE)
                 ))
                 .build();
         var bar1 = barMethod.getParameterized(List.of(Types.getStringType()));

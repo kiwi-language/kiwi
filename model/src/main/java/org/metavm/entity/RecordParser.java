@@ -41,16 +41,16 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
     public void generateDeclaration() {
         super.generateDeclaration();
         if (isSystemAPI()) {
-            MethodBuilder.newBuilder(get().getKlass(), javaClass.getSimpleName(), javaClass.getSimpleName())
+            MethodBuilder.newBuilder(get().getKlass(), javaClass.getSimpleName())
                     .isConstructor(true)
                     .parameters(NncUtils.map(
                             javaClass.getRecordComponents(),
-                            c -> new Parameter(null, c.getName(), c.getName(), defContext.getType(c.getGenericType()))
+                            c -> new Parameter(null, c.getName(), defContext.getType(c.getGenericType()))
                     ))
                     .returnType(get().getType())
                     .build();
             for (RecordComponent recordComponent : javaClass.getRecordComponents()) {
-                MethodBuilder.newBuilder(get().getKlass(), recordComponent.getName(), recordComponent.getName())
+                MethodBuilder.newBuilder(get().getKlass(), recordComponent.getName())
                         .returnType(defContext.getType(recordComponent.getGenericType()))
                         .build();
             }
@@ -78,7 +78,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                 Nodes.ret(scope);
             }
             for (org.metavm.object.type.Field field : klass.getFields()) {
-                var accessor = klass.getMethodByCode(field.getCodeNotNull());
+                var accessor = klass.getMethodByName(field.getName());
                 var scope = accessor.getScope();
                 scope.setStrictEphemeral(true);
                 Nodes.thisProperty(field, scope);

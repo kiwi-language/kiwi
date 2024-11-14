@@ -731,11 +731,11 @@ public class Instances {
 
     public static @Nullable Method findFieldInitializer(Field field, boolean includeFromEnum) {
         var klass = field.getDeclaringType();
-        var initMethodName = "__" + field.getCodeNotNull() + "__";
-        var found = klass.findMethodByCodeAndParamTypes(initMethodName, List.of());
+        var initMethodName = "__" + field.getName() + "__";
+        var found = klass.findMethodByNameAndParamTypes(initMethodName, List.of());
         if(found != null || !includeFromEnum)
             return found;
-        return klass.findMethodByCodeAndParamTypes(initMethodName, List.of(Types.getStringType(), Types.getLongType()));
+        return klass.findMethodByNameAndParamTypes(initMethodName, List.of(Types.getStringType(), Types.getLongType()));
     }
 
     public static @Nullable Value getDefaultValue(Field field, IEntityContext context) {
@@ -784,7 +784,7 @@ public class Instances {
 
     public static @Nullable Method findTypeConverter(Field field) {
         var klass = field.getDeclaringType();
-        var initMethodName = "__" + field.getCodeNotNull() + "__";
+        var initMethodName = "__" + field.getName() + "__";
         return klass.findMethod(
                 m -> initMethodName.equals(m.getCode())
                         && m.getParameters().size() == 1

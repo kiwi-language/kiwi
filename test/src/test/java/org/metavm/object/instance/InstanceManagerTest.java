@@ -152,7 +152,7 @@ public class InstanceManagerTest extends TestCase {
 
     public void testUtils() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Utils.masm", typeManager, schedulerAndWorker);
-        var utilsType = typeManager.getTypeByCode("Utils").type();
+        var utilsType = typeManager.getTypeByQualifiedName("Utils").type();
         var contains = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
                         TestUtils.getMethodRefByCode(utilsType, "test"),
@@ -204,8 +204,8 @@ public class InstanceManagerTest extends TestCase {
 
     public void testGenericOverloading() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/GenericOverloading.masm", typeManager, schedulerAndWorker);
-        var baseType = typeManager.getTypeByCode("Base").type();
-        var subType = typeManager.getTypeByCode("Sub").type();
+        var baseType = typeManager.getTypeByQualifiedName("Base").type();
+        var subType = typeManager.getTypeByQualifiedName("Sub").type();
         var testMethodId = TestUtils.getMethodByCode(baseType, "test").id();
         var subId = TestUtils.doInTransaction(() -> instanceManager.create(
                 InstanceDTO.createClassInstance(
@@ -229,7 +229,7 @@ public class InstanceManagerTest extends TestCase {
 
     public void testLambda() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Lambda.masm", typeManager, schedulerAndWorker);
-        var utilsType = typeManager.getTypeByCode("Utils").type();
+        var utilsType = typeManager.getTypeByQualifiedName("Utils").type();
         var result = TestUtils.doInTransaction(() -> flowExecutionService.execute(
                 new FlowExecutionRequest(
                         TestUtils.getMethodRefByCode(utilsType, "findGt"),
@@ -292,7 +292,7 @@ public class InstanceManagerTest extends TestCase {
     public void testRemoveNonPersistedChild() {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
         MockUtils.assemble(parentChildMasm, typeManager, schedulerAndWorker);
-        var parentType = typeManager.getTypeByCode("Parent").type();
+        var parentType = typeManager.getTypeByQualifiedName("Parent").type();
         var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
                 TestUtils.getMethodRefByCode(parentType, "Parent"),
                 null,
@@ -304,7 +304,7 @@ public class InstanceManagerTest extends TestCase {
                 List.of()
         )));
         var reloadedParent = instanceManager.get(parent.id(), 2).instance();
-        var parentChildrenFieldId = TestUtils.getFieldIdByCode(parentType, "children");
+        var parentChildrenFieldId = TestUtils.getFieldIdByName(parentType, "children");
         var children = ((InstanceFieldValue) reloadedParent.getFieldValue(parentChildrenFieldId)).getInstance();
         Assert.assertEquals(0, children.getListSize());
 
@@ -323,7 +323,7 @@ public class InstanceManagerTest extends TestCase {
     public void testRemoveRoot() {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
         MockUtils.assemble(parentChildMasm, typeManager, schedulerAndWorker);
-        var parentType = typeManager.getTypeByCode("Parent").type();
+        var parentType = typeManager.getTypeByQualifiedName("Parent").type();
         var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
                 TestUtils.getMethodRefByCode(parentType, "Parent"),
                 null,
@@ -340,10 +340,10 @@ public class InstanceManagerTest extends TestCase {
             try (var context = newContext()) {
                 var productKlass = context.bind(TestUtils.newKlassBuilder("Product").build());
                 var inventoryKlass = context.bind(TestUtils.newKlassBuilder("Inventory").build());
-                FieldBuilder.newBuilder("inventory", "inventory", productKlass, Types.getNullableType(inventoryKlass.getType()))
+                FieldBuilder.newBuilder("inventory", productKlass, Types.getNullableType(inventoryKlass.getType()))
                         .isChild(true)
                         .build();
-                FieldBuilder.newBuilder("quantity", "quantity", inventoryKlass, PrimitiveType.longType)
+                FieldBuilder.newBuilder("quantity", inventoryKlass, PrimitiveType.longType)
                         .build();
                 context.finish();
                 return new Id[]{productKlass.getId(), inventoryKlass.getId()};
@@ -359,7 +359,7 @@ public class InstanceManagerTest extends TestCase {
                 context.getInstanceContext().bind(product);
                 var inventory = ClassInstance.create(
                         Map.of(
-                                inventoryKlass.getFieldByCode("quantity"),
+                                inventoryKlass.getFieldByName("quantity"),
                                 Instances.longInstance(0L)
                         ),
                         inventoryKlass.getType()
@@ -376,7 +376,7 @@ public class InstanceManagerTest extends TestCase {
                 var product = (ClassInstance) context.getInstanceContext().get(productId);
                 var inventory = context.getInstanceContext().get(inventoryId);
 //                context.getInstanceContext().remove(product);
-                product.setField(product.getKlass().getFieldByCode("inventory"), inventory.getReference());
+                product.setField(product.getKlass().getFieldByName("inventory"), inventory.getReference());
                 context.finish();
                 Assert.assertEquals(inventory, inventory.getRoot());
                 Assert.assertEquals(inventory.getTreeId(), inventory.getTreeId());
@@ -423,7 +423,7 @@ public class InstanceManagerTest extends TestCase {
         var klassId = TestUtils.doInTransaction(() -> {
             try(var context = newContext()) {
                 var klass = TestUtils.newKlassBuilder("Foo").build();
-                FieldBuilder.newBuilder("name", "name", klass, Types.getStringType()).build();
+                FieldBuilder.newBuilder("name", klass, Types.getStringType()).build();
                 context.bind(klass);
                 context.finish();
                 return klass.getId();
@@ -435,7 +435,7 @@ public class InstanceManagerTest extends TestCase {
                 var instCtx = context.getInstanceContext();
                 var inst = ClassInstanceBuilder.newBuilder(klass.getType())
                         .data(Map.of(
-                                klass.getFieldByCode("name"),
+                                klass.getFieldByName("name"),
                                 Instances.stringInstance("Leen")
                         )).build();
                 instCtx.bind(inst);
@@ -446,7 +446,7 @@ public class InstanceManagerTest extends TestCase {
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var klass = context.getKlass(klassId);
-                var nameField = klass.getFieldByCode("name");
+                var nameField = klass.getFieldByName("name");
                 nameField.setMetadataRemoved();
                 context.finish();
             }
@@ -454,7 +454,7 @@ public class InstanceManagerTest extends TestCase {
         var instId2 = TestUtils.doInTransaction(() -> {
             try(var context = newContext()) {
                 var klass = context.getKlass(klassId);
-                var nameField = klass.getFieldByCode("name");
+                var nameField = klass.getFieldByName("name");
                 Assert.assertTrue(nameField.isMetadataRemoved());
                 var instCtx = context.getInstanceContext();
                 var inst = (ClassInstance) instCtx.get(instId);
@@ -470,7 +470,7 @@ public class InstanceManagerTest extends TestCase {
         });
         try(var context = newContext()) {
             var klass = context.getKlass(klassId);
-            var nameField = klass.getFieldByCode("name");
+            var nameField = klass.getFieldByName("name");
             var instCtx = context.getInstanceContext();
             var inst = (ClassInstance) instCtx.get(instId);
             Assert.assertEquals(Instances.stringInstance("Leen2"), inst.getField(nameField));

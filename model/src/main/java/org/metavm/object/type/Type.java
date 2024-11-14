@@ -34,9 +34,6 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
         return getName();
     }
 
-    @Nullable
-    public abstract String getCode();
-
     public abstract TypeCategory getCategory();
 
     public abstract boolean isEphemeral();

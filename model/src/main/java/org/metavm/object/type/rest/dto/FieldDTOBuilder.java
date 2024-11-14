@@ -13,7 +13,6 @@ public class FieldDTOBuilder {
     }
 
     private final String name;
-    private String code;
     private final String type;
     private String id;
     private Long tmpId;
@@ -44,11 +43,6 @@ public class FieldDTOBuilder {
 
     public FieldDTOBuilder tmpId(long tmpId) {
         this.tmpId = tmpId;
-        return this;
-    }
-
-    public FieldDTOBuilder code(String code) {
-        this.code = code;
         return this;
     }
 
@@ -128,7 +122,6 @@ public class FieldDTOBuilder {
         return new FieldDTO(
                 id,
                 name,
-                code,
                 access,
                 defaultValue,
                 unique,

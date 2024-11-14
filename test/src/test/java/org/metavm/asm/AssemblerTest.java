@@ -79,7 +79,7 @@ public class AssemblerTest extends TestCase {
     public void testCreateArray() {
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/CreateArray.masm");
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, "Utils"));
+            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "Utils"));
             klass.resolveConstantPool();
             var method = klass.getMethod("createArray", List.of());
             var result = Flows.invoke(method, null, List.of(), context);

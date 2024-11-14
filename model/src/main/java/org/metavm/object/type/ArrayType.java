@@ -36,15 +36,6 @@ public class ArrayType extends CompositeType {
             return elementType.getName() + kind.getSuffix();
     }
 
-    private static @Nullable String getArrayTypeCode(Type elementType, ArrayKind kind) {
-        if (elementType.getCode() == null)
-            return null;
-        if (elementType instanceof UnionType)
-            return "(" + elementType.getCode() + ")" + kind.getSuffix();
-        else
-            return elementType.getCode() + kind.getSuffix();
-    }
-
     @Override
     public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return new ArrayTypeKey(kind.code(), elementType.toTypeKey(getTypeDefId));
@@ -129,12 +120,6 @@ public class ArrayType extends CompositeType {
             return "(" + elementType.getTypeDesc()  + ")" + kind.getSuffix();
         else
             return elementType.getTypeDesc()  + kind.getSuffix();
-    }
-
-    @Nullable
-    @Override
-    public String getCode() {
-        return getArrayTypeCode(elementType, kind);
     }
 
     @Override

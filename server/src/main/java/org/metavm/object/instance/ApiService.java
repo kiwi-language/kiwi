@@ -151,7 +151,7 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private Klass getKlass(String classCode, IEntityContext context) {
-        ParserTypeDefProvider typeDefProvider = name -> context.selectFirstByKey(Klass.UNIQUE_CODE, name);
+        ParserTypeDefProvider typeDefProvider = name -> context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, name);
         var type = (ClassType) new TypeParserImpl(typeDefProvider).parseType(classCode);
         var klass = type.resolve();
         if (klass == null)
@@ -252,8 +252,8 @@ public class ApiService extends EntityContextFactoryAware {
         var id = instance.getStringId();
         if (id != null)
             map.put(KEY_ID, id);
-        map.put(KEY_CLASS, instance.getType().resolve().getCode());
-        instance.forEachField((field, value) -> map.put(field.getCode(), formatInstance(value, field.isChild())));
+        map.put(KEY_CLASS, instance.getType().resolve().getQualifiedName());
+        instance.forEachField((field, value) -> map.put(field.getName(), formatInstance(value, field.isChild())));
         return map;
     }
 
@@ -290,7 +290,7 @@ public class ApiService extends EntityContextFactoryAware {
             }
             k.getInterfaces().forEach(t -> queue.offer(t.resolve()));
         } while (!queue.isEmpty());
-        throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, klass.getCode() + "." + methodCode,
+        throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, klass.getQualifiedName() + "." + methodCode,
                 rawArguments);
     }
 
@@ -498,7 +498,7 @@ public class ApiService extends EntityContextFactoryAware {
     private ClassInstance createObject(Map<?, ?> map, ClassType type, IEntityContext context) {
         var klassCode = map.get("$class");
         var actualType = klassCode != null ?
-                Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_CODE, klassCode)).getType() : type;
+                Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klassCode)).getType() : type;
         var r = resolveConstructor(actualType.resolve(), map, context);
         var self = ClassInstance.allocate(actualType);
         context.getInstanceContext().bind(self);
@@ -511,7 +511,7 @@ public class ApiService extends EntityContextFactoryAware {
             if (k instanceof String s)
                 updateMap.put(s, v);
         });
-        r.method.getParameters().forEach(p -> updateMap.remove(p.getCode()));
+        r.method.getParameters().forEach(p -> updateMap.remove(p.getName()));
         updateObject(self, updateMap, context);
         return self;
     }
@@ -522,7 +522,7 @@ public class ApiService extends EntityContextFactoryAware {
         var klass = instance.getKlass();
         instance.setDirectlyModified(true);
         map.forEach((k, v) -> {
-            var field = klass.findFieldByCode(k);
+            var field = klass.findFieldByName(k);
             if (field != null) {
                 if (!field.isReadonly())
                     instance.setField(field, resolveValue(v, field.getType(), false, instance.getField(field), context));
@@ -551,7 +551,7 @@ public class ApiService extends EntityContextFactoryAware {
     private List<Value> tryResolveConstructor(Method method, Map<?, ?> map, IEntityContext context) {
         var arguments = new ArrayList<Value>();
         for (Parameter parameter : method.getParameters()) {
-            var v = map.get(parameter.getCode());
+            var v = map.get(parameter.getName());
             var r = tryResolveValue(v, parameter.getType(), false, null, context);
             if (r.successful)
                 arguments.add(r.resolved);

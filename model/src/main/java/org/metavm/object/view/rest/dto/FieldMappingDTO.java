@@ -8,7 +8,6 @@ import javax.annotation.Nullable;
 public record FieldMappingDTO(
         String id,
         String name,
-        @Nullable String code,
         String type,
         boolean isChild,
         boolean readonly,

@@ -18,7 +18,7 @@ public enum ErrorCode {
     DUPLICATE_CHOICE_OPTION(208, "Duplicate option, ID: {}, Name: {}, Serial number: {}"),
     DUPLICATE_CHOICE_OPTION_PROP(209, "Duplicate option {}: {}"),
     ERROR_DELETING_TYPE(209, "Deletion failed: {}"),
-    TYPE_NOT_FOUND(210, "Type not found, ID: {}"),
+    TYPE_NOT_FOUND(210, "Type not found: {}"),
     INVALID_COLUMN(211, "Invalid configuration for column '{}': {}"),
     INVALID_TYPE_PATH(307, "Invalid path: {}"),
     STATIC_FIELD_CAN_NOT_BE_NULL(308, "Static field '{}' cannot be null"),

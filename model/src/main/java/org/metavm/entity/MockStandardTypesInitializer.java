@@ -23,31 +23,31 @@ public class MockStandardTypesInitializer {
                 newKlassBuilder(List.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "E", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.arrayList.set(
                 newKlassBuilder(ArrayList.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ReadWriteListElement", "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.childList.set(
                 newKlassBuilder(ChildList.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ChildListElement", "ChildListElement", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ChildListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.valueList.set(
                 newKlassBuilder(ValueList.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ValueListElement", "ValueListElement", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "ValueListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        var enumTypeParam = new TypeVariable(NncUtils.randomNonNegative(), "EnumType", "EnumType",
+        var enumTypeParam = new TypeVariable(NncUtils.randomNonNegative(), "EnumType",
                 DummyGenericDeclaration.INSTANCE);
         var enumType = newKlassBuilder(Enum.class)
                 .source(ClassSource.BUILTIN)
@@ -55,8 +55,8 @@ public class MockStandardTypesInitializer {
                 .tmpId(NncUtils.randomNonNegative())
                 .build();
         enumTypeParam.setBounds(List.of(enumType.getType()));
-        FieldBuilder.newBuilder("name", "name", enumType, Types.getStringType()).build();
-        FieldBuilder.newBuilder("ordinal", "ordinal", enumType, Types.getLongType()).build();
+        FieldBuilder.newBuilder("name", enumType, Types.getStringType()).build();
+        FieldBuilder.newBuilder("ordinal", enumType, Types.getLongType()).build();
         StdKlass.enum_.set(enumType);
         StdKlass.entity.set(newKlassBuilder(Entity.class)
                 .source(ClassSource.BUILTIN)
@@ -65,14 +65,14 @@ public class MockStandardTypesInitializer {
                 newKlassBuilder(Predicate.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "T", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.consumer.set(
                 newKlassBuilder(Consumer.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", "T", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "Element", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.throwable.set(
@@ -92,7 +92,7 @@ public class MockStandardTypesInitializer {
                 .tmpId(NncUtils.randomNonNegative())
                 .build();
         {
-            var constructor = MethodBuilder.newBuilder(runtimeExceptionKlass, runtimeExceptionKlass.getName(), runtimeExceptionKlass.getName())
+            var constructor = MethodBuilder.newBuilder(runtimeExceptionKlass, runtimeExceptionKlass.getName())
                     .isConstructor(true)
                     .parameters(Parameter.create("message", Types.getNullableStringType()))
                     .build();
@@ -105,14 +105,14 @@ public class MockStandardTypesInitializer {
                 newKlassBuilder(Iterable.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "T", "T", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.iterator.set(
                 newKlassBuilder(Iterator.class)
                         .source(ClassSource.BUILTIN)
                         .tmpId(NncUtils.randomNonNegative())
-                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "T", "T", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(NncUtils.randomNonNegative(), "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
     }

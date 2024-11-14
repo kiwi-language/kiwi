@@ -27,8 +27,7 @@ public class ClassTypeDTOBuilder {
     private String id;
     @Nullable
     private Long tmpId;
-    @Nullable
-    private String code;
+    private String qualifiedName;
     @Nullable
     private String desc;
     @Nullable
@@ -64,6 +63,7 @@ public class ClassTypeDTOBuilder {
 
     private ClassTypeDTOBuilder(String name) {
         this.name = name;
+        this.qualifiedName = name;
     }
 
     public ClassTypeDTOBuilder id(String id) {
@@ -76,8 +76,8 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder code(String code) {
-        this.code = code;
+    public ClassTypeDTOBuilder qualifiedName(String qualifiedName) {
+        this.qualifiedName = qualifiedName;
         return this;
     }
 
@@ -272,7 +272,7 @@ public class ClassTypeDTOBuilder {
         return new KlassDTO(
                 id,
                 name,
-                code,
+                qualifiedName,
                 kind,
                 ephemeral,
                 anonymous,

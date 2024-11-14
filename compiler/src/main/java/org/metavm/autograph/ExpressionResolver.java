@@ -235,7 +235,7 @@ public class ExpressionResolver {
                                 return methodGenerator.createLoadConstant(Instances.fromConstant(PrimitiveStaticFields.getConstant(javaField)));
                         }
                         var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass))).resolve();
-                        field = Objects.requireNonNull(klass.findStaticFieldByCode(psiField.getName()));
+                        field = Objects.requireNonNull(klass.findStaticFieldByName(psiField.getName()));
                         return methodGenerator.createGetStatic(field);
                     } else {
                         var qualifierExpr = psiReferenceExpression.getQualifierExpression();
@@ -245,7 +245,7 @@ public class ExpressionResolver {
                                 typeResolver.resolve(qualifierExpr.getType()) : methodGenerator.getThisType();
                         Klass klass = Types.resolveKlass(qualifierType);
                         typeResolver.ensureDeclared(klass);
-                        field = klass.getFieldByCode(psiField.getName());
+                        field = klass.getFieldByName(psiField.getName());
                         return methodGenerator.createGetProperty(field);
                     }
                 }
@@ -551,7 +551,7 @@ public class ExpressionResolver {
                 psiParameters,
                 param -> typeResolver.resolveNullable(param.getType(), ResolutionStage.DECLARATION)
         );
-        var templateMethod = template.getMethodByCodeAndParamTypes(method.getName(), rawParamTypes).getEffectiveVerticalTemplate();
+        var templateMethod = template.getMethodByNameAndParamTypes(method.getName(), rawParamTypes).getEffectiveVerticalTemplate();
         Method piFlow = Objects.requireNonNull(template != declaringType ? declaringType.findMethodByVerticalTemplate(templateMethod) : templateMethod);
         Method flow;
         if (piFlow.getTypeParameters().isEmpty()) {
@@ -622,7 +622,7 @@ public class ExpressionResolver {
                         requireNonNull(method.getParameterList()).getParameters(),
                         param -> resolveParameterType(param, substitutor)
                 );
-                var flow = klass.getMethodByCodeAndParamTypes(Types.getConstructorCode(klass), paramTypes);
+                var flow = klass.getMethodByNameAndParamTypes(Types.getConstructorName(klass), paramTypes);
                 node = methodGenerator.createNew(flow, false, false);
             }
             setCapturedVariables(node);
@@ -698,7 +698,7 @@ public class ExpressionResolver {
                             instanceType = methodGenerator.getThisType();
                         }
                         var instanceKlass = instanceType.resolve();
-                        var field = instanceKlass.getFieldByCode(psiField.getName());
+                        var field = instanceKlass.getFieldByName(psiField.getName());
                         node = resolve(assignment, context);
                         methodGenerator.createDupX1();
                         methodGenerator.createSetField(field);
@@ -763,7 +763,7 @@ public class ExpressionResolver {
                         }
                         methodGenerator.createDup();
                         var instanceKlass = instanceType.resolve();
-                        var field = instanceKlass.getFieldByCode(psiField.getName());
+                        var field = instanceKlass.getFieldByName(psiField.getName());
                         assignment = methodGenerator.createGetProperty(field);
                         assignment = action1.apply(assignment);
                         methodGenerator.createDupX1();
@@ -1060,7 +1060,7 @@ public class ExpressionResolver {
 
     private Parameter resolveParameter(PsiParameter psiParameter) {
         return new Parameter(
-                null, TranspileUtils.getFlowParamName(psiParameter), psiParameter.getName(),
+                null, psiParameter.getName(),
                 typeResolver.resolveNullable(psiParameter.getType(), ResolutionStage.DECLARATION)
         );
     }

@@ -89,15 +89,15 @@ public class MappingTest extends TestCase {
         var productDefaultMapping = NncUtils.findRequired(productTypeDTO.mappings(),
                 m -> Objects.equals(m.id(), productTypeDTO.defaultMappingId()));
         var productViewTypeDTO = getTypeFromExpr(productDefaultMapping.targetType());
-        var productViewTitleFieldId = TestUtils.getFieldIdByCode(productViewTypeDTO, "name");
-        var productViewSkuListFieldId = TestUtils.getFieldIdByCode(productViewTypeDTO, "skuList");
+        var productViewTitleFieldId = TestUtils.getFieldIdByName(productViewTypeDTO, "name");
+        var productViewSkuListFieldId = TestUtils.getFieldIdByName(productViewTypeDTO, "skuList");
         var skuDefaultMapping = NncUtils.findRequired(
                 skuTypeDTO.mappings(),
                 m -> Objects.equals(skuTypeDTO.defaultMappingId(), m.id()));
         var skuViewTypeDTO = getTypeFromExpr(skuDefaultMapping.targetType());
-        var skuViewTitleFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "name");
-        var skuViewPriceFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "price");
-        var skuViewAmountFieldId = TestUtils.getFieldIdByCode(skuViewTypeDTO, "quantity");
+        var skuViewTitleFieldId = TestUtils.getFieldIdByName(skuViewTypeDTO, "name");
+        var skuViewPriceFieldId = TestUtils.getFieldIdByName(skuViewTypeDTO, "price");
+        var skuViewAmountFieldId = TestUtils.getFieldIdByName(skuViewTypeDTO, "quantity");
         var skuViewChildListType = TypeExpressions.getChildListType(TypeExpressions.getClassType(skuViewTypeDTO));
 
         var productId = saveInstance(InstanceDTO.createClassInstance(
@@ -393,15 +393,15 @@ public class MappingTest extends TestCase {
                         new ClassInstanceParam(
                                 List.of(
                                         InstanceFieldDTO.create(
-                                                TestUtils.getFieldIdByCode(skuViewTypeDTO, "name"),
+                                                TestUtils.getFieldIdByName(skuViewTypeDTO, "name"),
                                                 PrimitiveFieldValue.createString("40")
                                         ),
                                         InstanceFieldDTO.create(
-                                                TestUtils.getFieldIdByCode(skuViewTypeDTO, "price"),
+                                                TestUtils.getFieldIdByName(skuViewTypeDTO, "price"),
                                                 PrimitiveFieldValue.createDouble(100.0)
                                         ),
                                         InstanceFieldDTO.create(
-                                                TestUtils.getFieldIdByCode(skuViewTypeDTO, "quantity"),
+                                                TestUtils.getFieldIdByName(skuViewTypeDTO, "quantity"),
                                                 PrimitiveFieldValue.createLong(100)
                                         )
                                 )
@@ -438,11 +438,11 @@ public void testGeneric() {
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(listViewKlass, "label"),
+                                        TestUtils.getFieldIdByName(listViewKlass, "label"),
                                         PrimitiveFieldValue.createString("list001")
                                 ),
                                 InstanceFieldDTO.create(
-                                        TestUtils.getFieldIdByCode(listViewKlass, "nodes"),
+                                        TestUtils.getFieldIdByName(listViewKlass, "nodes"),
                                         InstanceFieldValue.of(
                                                 InstanceDTO.createListInstance(
                                                         nodeViewOfStrChildListType,
@@ -453,11 +453,11 @@ public void testGeneric() {
                                                                                 nodeViewOfStrType,
                                                                                 List.of(
                                                                                         InstanceFieldDTO.create(
-                                                                                                TestUtils.getFieldIdByCode(nodeViewKlass, "label"),
+                                                                                                TestUtils.getFieldIdByName(nodeViewKlass, "label"),
                                                                                                 PrimitiveFieldValue.createString("node001")
                                                                                         ),
                                                                                         InstanceFieldDTO.create(
-                                                                                                TestUtils.getFieldIdByCode(nodeViewKlass, "value"),
+                                                                                                TestUtils.getFieldIdByName(nodeViewKlass, "value"),
                                                                                                 PrimitiveFieldValue.createString("hello")
                                                                                         )
                                                                                 )
@@ -468,11 +468,11 @@ public void testGeneric() {
                                                                                 nodeViewOfStrType,
                                                                                 List.of(
                                                                                         InstanceFieldDTO.create(
-                                                                                                TestUtils.getFieldIdByCode(nodeViewKlass, "label"),
+                                                                                                TestUtils.getFieldIdByName(nodeViewKlass, "label"),
                                                                                                 PrimitiveFieldValue.createString("node002")
                                                                                         ),
                                                                                         InstanceFieldDTO.create(
-                                                                                                TestUtils.getFieldIdByCode(nodeViewKlass, "value"),
+                                                                                                TestUtils.getFieldIdByName(nodeViewKlass, "value"),
                                                                                                 PrimitiveFieldValue.createString("world")
                                                                                         )
                                                                                 )

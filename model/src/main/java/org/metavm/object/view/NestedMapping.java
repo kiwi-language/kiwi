@@ -23,12 +23,12 @@ public abstract class NestedMapping extends Entity implements LocalKey {
 
     @Override
     public boolean isValidLocalKey() {
-        return getTargetType().getCode() != null;
+        return true;
     }
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return Objects.requireNonNull(getTargetType().getCode());
+        return getTargetType().getName();
     }
 
     public abstract String getText();

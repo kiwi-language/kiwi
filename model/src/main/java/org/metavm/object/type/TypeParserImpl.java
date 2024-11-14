@@ -103,7 +103,7 @@ public class TypeParserImpl implements TypeParser {
 
     private Function parseFunction(org.metavm.object.type.antlr.TypeParser.FunctionSignatureContext ctx) {
         var name = ctx.IDENTIFIER().getText();
-        var func =  FunctionBuilder.newBuilder(name, name)
+        var func =  FunctionBuilder.newBuilder(name)
                 .typeParameters(
                         ctx.typeParameterList() != null ?
                                 NncUtils.map(ctx.typeParameterList().typeParameter(), this::parseTypeParameter) : List.of()
@@ -119,12 +119,12 @@ public class TypeParserImpl implements TypeParser {
 
     private Parameter parseParameter(org.metavm.object.type.antlr.TypeParser.ParameterContext ctx) {
         var name = ctx.IDENTIFIER().getText();
-        return new Parameter(null, name, name, parseType(ctx.type()));
+        return new Parameter(null, name, parseType(ctx.type()));
     }
 
     private TypeVariable parseTypeParameter(org.metavm.object.type.antlr.TypeParser.TypeParameterContext ctx) {
         var name = ctx.IDENTIFIER().getText();
-        var typeVar =  new TypeVariable(null, name, name, DummyGenericDeclaration.INSTANCE);
+        var typeVar =  new TypeVariable(null, name, DummyGenericDeclaration.INSTANCE);
         typeParameters.put(name, typeVar);
         return typeVar;
     }

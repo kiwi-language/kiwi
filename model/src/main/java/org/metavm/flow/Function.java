@@ -22,11 +22,8 @@ public class Function extends Flow implements GlobalKey {
 
     public static final IndexDef<Function> IDX_ALL_FLAG = IndexDef.create(Function.class, "allFlag");
 
-    public static final IndexDef<Function> IDX_NAME =
-            IndexDef.create(Function.class, "name");
-
-    public static final IndexDef<Function> UNIQUE_IDX_CODE =
-            IndexDef.createUnique(Function.class, "code");
+    public static final IndexDef<Function> UNIQUE_NAME =
+            IndexDef.createUnique(Function.class, "name");
 
     @SuppressWarnings({"FieldMayBeFinal", "unused"})
     private boolean allFlag = true;
@@ -35,7 +32,6 @@ public class Function extends Flow implements GlobalKey {
 
     public Function(Long tmpId,
                     String name,
-                    @Nullable String code,
                     boolean isNative,
                     boolean isSynthetic,
                     List<Parameter> parameters,
@@ -45,7 +41,7 @@ public class Function extends Flow implements GlobalKey {
                     @Nullable Function horizontalTemplate,
                     @Nullable CodeSource codeSource,
                     MetadataState state) {
-        super(tmpId, name, code, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, horizontalTemplate, codeSource, state, false);
+        super(tmpId, name, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, horizontalTemplate, codeSource, state, false);
     }
 
     @Override
@@ -54,13 +50,8 @@ public class Function extends Flow implements GlobalKey {
     }
 
     @Override
-    public boolean isValidGlobalKey() {
-        return getCode() != null;
-    }
-
-    @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
-        return getCodeNotNull();
+        return getName();
     }
 
     protected String toString0() {
@@ -96,8 +87,7 @@ public class Function extends Flow implements GlobalKey {
 
     @Override
     protected Function createParameterized(List<? extends Type> typeArguments) {
-        var parameterized = FunctionBuilder
-                .newBuilder(getName(), getCode())
+        var parameterized = FunctionBuilder.newBuilder(getName())
 //                .tmpId(getCopyTmpId(function))
                 .horizontalTemplate(this)
                 .typeArguments(typeArguments)

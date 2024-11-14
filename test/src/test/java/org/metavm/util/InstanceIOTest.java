@@ -96,7 +96,7 @@ public class InstanceIOTest extends TestCase {
     public void testArrayChildField() {
         var fooKlass = TestUtils.newKlassBuilder("Foo").build();
         var stringArrayType = new ArrayType(Types.getStringType(), ArrayKind.READ_WRITE);
-        var namesField = FieldBuilder.newBuilder("names", "names", fooKlass, stringArrayType)
+        var namesField = FieldBuilder.newBuilder("names", fooKlass, stringArrayType)
                 .isChild(true)
                 .build();
         TestUtils.initEntityIds(fooKlass);
@@ -118,9 +118,9 @@ public class InstanceIOTest extends TestCase {
 
     public void testInheritance() {
         var baseKlass = TestUtils.newKlassBuilder("Base").build();
-        var nameField = FieldBuilder.newBuilder("name", "name", baseKlass, Types.getStringType()).build();
+        var nameField = FieldBuilder.newBuilder("name", baseKlass, Types.getStringType()).build();
         var derivedKlass = TestUtils.newKlassBuilder("Derived").superType(baseKlass.getType()).build();
-        var codeField = FieldBuilder.newBuilder("code", "code", derivedKlass, Types.getLongType()).build();
+        var codeField = FieldBuilder.newBuilder("code", derivedKlass, Types.getLongType()).build();
         TestUtils.initEntityIds(derivedKlass);
         var inst = ClassInstanceBuilder.newBuilder(derivedKlass.getType())
                 .data(Map.of(
@@ -146,20 +146,20 @@ public class InstanceIOTest extends TestCase {
         quxType.initId(PhysicalId.of(10003L, 0L, TestUtils.mockClassType()));
 
         Field nameField = FieldBuilder
-                .newBuilder("name", "name", fooType, Types.getStringType()).build();
+                .newBuilder("name", fooType, Types.getStringType()).build();
         nameField.initId(PhysicalId.of(10001L, 1L, TestUtils.mockClassType()));
         Field barField = FieldBuilder
-                .newBuilder("bar", "bar", fooType, barType.getType()).isChild(true).build();
+                .newBuilder("bar", fooType, barType.getType()).isChild(true).build();
         barField.initId(PhysicalId.of(10001L, 2L, TestUtils.mockClassType()));
-        Field quxField = FieldBuilder.newBuilder("qux", "qux", fooType, quxType.getType()).build();
+        Field quxField = FieldBuilder.newBuilder("qux", fooType, quxType.getType()).build();
         quxField.initId(PhysicalId.of(10001L, 3L, TestUtils.mockClassType()));
 
         Field barCodeField = FieldBuilder
-                .newBuilder("code", "code", barType, Types.getStringType()).build();
+                .newBuilder("code", barType, Types.getStringType()).build();
         barCodeField.initId(PhysicalId.of(10002L, 1L, TestUtils.mockClassType()));
 
         Field quxNameField = FieldBuilder
-                .newBuilder("name", "name", quxType, Types.getStringType()).build();
+                .newBuilder("name", quxType, Types.getStringType()).build();
         quxNameField.initId(PhysicalId.of(10003L, 1L, TestUtils.mockClassType()));
 
         var barInst = new ClassInstance(

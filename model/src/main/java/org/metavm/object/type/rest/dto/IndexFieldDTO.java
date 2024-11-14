@@ -8,7 +8,6 @@ import javax.annotation.Nullable;
 public record IndexFieldDTO(
         String id,
         String name,
-        @Nullable String code,
         ValueDTO value
 ) implements BaseDTO {
 }
