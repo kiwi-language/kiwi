@@ -14,11 +14,11 @@ import javax.annotation.Nullable;
 
 public class LtNode extends NodeRT {
 
-    public static LtNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static LtNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         LtNode node = (LtNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             node = new LtNode(nodeDTO.tmpId(), nodeDTO.name(),
-                    prev, scope);
+                    prev, code);
         }
         return node;
     }
@@ -26,8 +26,8 @@ public class LtNode extends NodeRT {
     public LtNode(Long tmpId,
                   @NotNull String name,
                   @Nullable NodeRT previous,
-                  @NotNull ScopeRT scope) {
-        super(tmpId, name, Types.getBooleanType(), previous, scope);
+                  @NotNull Code code) {
+        super(tmpId, name, Types.getBooleanType(), previous, code);
     }
 
     @Override

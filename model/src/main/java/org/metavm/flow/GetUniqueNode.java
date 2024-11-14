@@ -15,21 +15,21 @@ import org.metavm.object.type.UnionType;
 @EntityType
 public class GetUniqueNode extends NodeRT {
 
-    public static GetUniqueNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static GetUniqueNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         GetUniqueNode node = (GetUniqueNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             GetUniqueNodeParam param = nodeDTO.getParam();
             Index index = context.getEntity(Index.class, Id.parse(param.indexId()));
             var type = Types.getNullableType(index.getDeclaringType().getType());
-            node = new GetUniqueNode(nodeDTO.tmpId(), nodeDTO.name(), (UnionType) type, index, prev, scope);
+            node = new GetUniqueNode(nodeDTO.tmpId(), nodeDTO.name(), (UnionType) type, index, prev, code);
         }
         return node;
     }
 
     private Index index;
 
-    public GetUniqueNode(Long tmpId, String name, UnionType type, Index index, NodeRT previous, ScopeRT scope) {
-        super(tmpId, name, type, previous, scope);
+    public GetUniqueNode(Long tmpId, String name, UnionType type, Index index, NodeRT previous, Code code) {
+        super(tmpId, name, type, previous, code);
         this.index = index;
     }
 

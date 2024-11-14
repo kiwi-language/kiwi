@@ -221,9 +221,9 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
     @Override
     public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
         if (isParameterized())
-            return klass.getCodeNotNull() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
+            return klass.getQualifiedName() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
         else
-            return klass.getCodeNotNull();
+            return klass.getQualifiedName();
 
     }
 

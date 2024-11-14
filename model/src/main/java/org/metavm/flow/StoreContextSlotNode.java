@@ -12,11 +12,11 @@ import org.metavm.object.instance.core.Id;
 
 public class StoreContextSlotNode extends NodeRT {
 
-    public static StoreContextSlotNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static StoreContextSlotNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         StoreContextSlotNodeParam param = nodeDTO.getParam();
         var node = (StoreContextSlotNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
-            node = new StoreContextSlotNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope,
+            node = new StoreContextSlotNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code,
                     param.contextIndex(), param.slotIndex());
         }
         return node;
@@ -26,8 +26,8 @@ public class StoreContextSlotNode extends NodeRT {
     private final int slotIndex;
 
     public StoreContextSlotNode(Long tmpId, @NotNull String name,
-                                @Nullable NodeRT previous, @NotNull ScopeRT scope, int contextIndex, int slotIndex) {
-        super(tmpId, name, null, previous, scope);
+                                @Nullable NodeRT previous, @NotNull Code code, int contextIndex, int slotIndex) {
+        super(tmpId, name, null, previous, code);
         this.contextIndex = contextIndex;
         this.slotIndex = slotIndex;
     }

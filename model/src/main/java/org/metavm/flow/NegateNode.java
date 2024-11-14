@@ -14,19 +14,19 @@ import javax.annotation.Nullable;
 
 public class NegateNode extends NodeRT {
 
-    public static NegateNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static NegateNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         NegateNode node = (NegateNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new NegateNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new NegateNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
     public NegateNode(Long tmpId,
                       @NotNull String name,
                       @Nullable NodeRT previous,
-                      @NotNull ScopeRT scope
+                      @NotNull Code code
                       ) {
-        super(tmpId, name, null, previous, scope);
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

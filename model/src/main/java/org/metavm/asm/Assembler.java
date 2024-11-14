@@ -46,7 +46,7 @@ public class Assembler {
     public Assembler(Function<String, Klass> klassProvider, Consumer<Entity> binder) {
         for (StdKlass stdKlass : StdKlass.values()) {
             var klass = stdKlass.get();
-            name2klass.put(klass.getCodeNotNull(), klass);
+            name2klass.put(klass.getQualifiedName(), klass);
         }
         this.klassProvider = klassProvider;
         this.binder = binder;
@@ -506,7 +506,7 @@ public class Assembler {
                 paramTypeNames.add("Long");
             }
             params.forEach(p -> paramTypeNames.add(getInternalName(p.typeType(), typeParamNames, scope)));
-            var internalName = klass.getCodeNotNull() + "." + name + "(" + String.join(",", paramTypeNames) + ")";
+            var internalName = klass.getQualifiedName() + "." + name + "(" + String.join(",", paramTypeNames) + ")";
             var method = klass.findMethod(m -> m.getInternalName(null).equals(internalName));
             if (method != null)
                 method.clearContent();
@@ -733,7 +733,7 @@ public class Assembler {
                 Flows.generateValuesMethodBody(klass);
             cinits.push(cinit);
             processBody.run();
-            Nodes.voidRet(cinit.getScope());
+            Nodes.voidRet(cinit.getCode());
             exitScope();
             cinits.pop();
             klass.emitCode();
@@ -797,27 +797,27 @@ public class Assembler {
                 }
                 var currentClass = currentClass();
                 if (block != null) {
-                    var rootScope = method.getScope();
+                    var code = method.getCode();
                     if (isConstructor && currentClass.isEnum) {
-                        Values.node(Nodes.this_(rootScope));
-                        Values.node(Nodes.load(1, Types.getStringType(), rootScope));
+                        Values.node(Nodes.this_(code));
+                        Values.node(Nodes.load(1, Types.getStringType(), code));
                         Nodes.setField(
                             klass.getField(f -> f.getEffectiveTemplate() == StdField.enumName.get()),
-                            rootScope
+                                code
                         );
-                        Values.node(Nodes.this_(rootScope));
-                        Values.node(Nodes.load(2, Types.getLongType(), rootScope));
+                        Values.node(Nodes.this_(code));
+                        Values.node(Nodes.load(2, Types.getLongType(), code));
                         Nodes.setField(
                                 klass.getField(f -> f.getEffectiveTemplate() == StdField.enumOrdinal.get()),
-                                rootScope
+                                code
                         );
                     }
-                    processBlock(block, method.getScope());
+                    processBlock(block, method.getCode());
                     if (isConstructor) {
-                        Values.node(Nodes.this_(rootScope));
-                        Nodes.ret(rootScope);
+                        Values.node(Nodes.this_(code));
+                        Nodes.ret(code);
                     } else if (Objects.requireNonNull(returnType).VOID() != null)
-                        Nodes.voidRet(rootScope);
+                        Nodes.voidRet(code);
                 }
                 if (typeParameters != null)
                     typeParameters.accept(this);
@@ -832,7 +832,7 @@ public class Assembler {
             var asmKlass = currentClass();
             var cinit = Objects.requireNonNull(cinits.peek());
             enterScope(asmKlass.getClassInitializer());
-            processBlock(ctx.block(), cinit.getScope());
+            processBlock(ctx.block(), cinit.getCode());
             exitScope();
             return null;
         }
@@ -848,23 +848,23 @@ public class Assembler {
             var initializer = enumConstantDef.getInitializer();
             initializer.clearContent();
             enterScope(new AsmMethod(classInfo, initializer));
-            var scope = initializer.getScope();
-            Nodes.loadConstant(Instances.stringInstance(name), scope);
-            Nodes.loadConstant(Instances.longInstance(enumConstantDef.getOrdinal()), scope);
+            var code = initializer.getCode();
+            Nodes.loadConstant(Instances.stringInstance(name), code);
+            Nodes.loadConstant(Instances.longInstance(enumConstantDef.getOrdinal()), code);
             var types = NncUtils.merge(
                     List.of(Types.getStringType(), Types.getLongType()),
                     NncUtils.map(argCtx, this::parseExpression)
             );
             var constructor = klass.resolveMethod(klass.getName(), types, List.of(), false);
-            Nodes.newObject(scope, constructor, false, false);
-            Nodes.ret(scope);
+            Nodes.newObject(code, constructor, false, false);
+            Nodes.ret(code);
             exitScope();
             return super.visitEnumConstant(ctx);
         }
 
-        public void processBlock(AssemblyParser.BlockContext block, ScopeRT scope) {
+        public void processBlock(AssemblyParser.BlockContext block, Code code) {
             for (var stmt : block.statement()) {
-                processStatement(stmt, scope);
+                processStatement(stmt, code);
             }
         }
 
@@ -876,45 +876,45 @@ public class Assembler {
             return prefix + nextNodeNum++;
         }
 
-        private void parseBlockNodes(AssemblyParser.BlockContext block, ScopeRT scope) {
-            block.statement().forEach(s -> processStatement(s, scope));
+        private void parseBlockNodes(AssemblyParser.BlockContext block, Code code) {
+            block.statement().forEach(s -> processStatement(s, code));
         }
 
-        private void processStatement(AssemblyParser.StatementContext statement, ScopeRT scope) {
+        private void processStatement(AssemblyParser.StatementContext statement, Code code) {
             try {
                 if (statement.RETURN() != null) {
                     if(statement.expression() != null) {
                         parseExpression(statement.expression());
-                        Nodes.ret(scope);
+                        Nodes.ret(code);
                     }
                     else
-                        Nodes.voidRet(scope);
+                        Nodes.voidRet(code);
                 }
                 else if(statement.statementExpression != null) {
                     var type = parseExpression(statement.statementExpression);
                     if (type != null && !type.isVoid())
-                        Nodes.pop(scope);
+                        Nodes.pop(code);
                 } else if (statement.THROW() != null) {
                     parseExpression(statement.expression());
-                    Nodes.raise(scope);
+                    Nodes.raise(code);
                 } else if (statement.IF() != null) {
                     parseExpression(statement.parExpression().expression());
-                    var ifNode = Nodes.ifNot(null, scope);
-                    parseBlockNodes(statement.block(0), scope);
-                    var g = Nodes.goto_(scope);
-                    ifNode.setTarget(Nodes.noop(scope));
+                    var ifNode = Nodes.ifNot(null, code);
+                    parseBlockNodes(statement.block(0), code);
+                    var g = Nodes.goto_(code);
+                    ifNode.setTarget(Nodes.noop(code));
                     if (statement.ELSE() != null)
-                        parseBlockNodes(statement.block(1), scope);
-                    g.setTarget(Nodes.noop(scope));
+                        parseBlockNodes(statement.block(1), code);
+                    g.setTarget(Nodes.noop(code));
                 }
                 else if (statement.WHILE() != null) {
-                    var entry = Nodes.noop(scope);
+                    var entry = Nodes.noop(code);
                     parseExpression(statement.parExpression().expression());
-                    var ifNode = Nodes.ifNot(null, scope);
-                    parseBlockNodes(statement.block(0), scope);
-                    var g = Nodes.goto_(scope);
+                    var ifNode = Nodes.ifNot(null, code);
+                    parseBlockNodes(statement.block(0), code);
+                    var g = Nodes.goto_(code);
                     g.setTarget(entry);
-                    var exit = Nodes.noop(scope);
+                    var exit = Nodes.noop(code);
                     ifNode.setTarget(exit);
                 }
                 else if(statement.localVariableDeclaration() != null) {
@@ -924,7 +924,7 @@ public class Assembler {
                     if(decl.VAR() != null) {
                         var type = parseExpression(decl.expression());
                         var v = callable.declareVariable(name, type);
-                        Nodes.store(v.index(), scope);
+                        Nodes.store(v.index(), code);
                     } else {
                         var type = parseType(decl.typeType(), callable, callable.getCompilationUnit());
                         var v = callable.declareVariable(name, type);
@@ -932,7 +932,7 @@ public class Assembler {
                             var type1 = parseExpression(decl.expression());
                             if(!type.isAssignableFrom(type1))
                                 throw new IllegalStateException("Invalid initializer for variable: " + name);
-                            Nodes.store(v.index(), scope);
+                            Nodes.store(v.index(), code);
                         }
                     }
                 }
@@ -943,8 +943,8 @@ public class Assembler {
             }
         }
 
-        private Type getExpressionType(Expression expression, ScopeRT scope) {
-            var lastNode = scope.getLastNode();
+        private Type getExpressionType(Expression expression, Code code) {
+            var lastNode = code.getLastNode();
             return lastNode != null ? lastNode.getNextExpressionTypes().getType(expression) : expression.getType();
         }
 

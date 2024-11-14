@@ -11,15 +11,15 @@ import org.metavm.object.instance.core.Id;
 @EntityType
 public class DeleteObjectNode extends NodeRT {
 
-    public static DeleteObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static DeleteObjectNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         DeleteObjectNode node = (DeleteObjectNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new DeleteObjectNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new DeleteObjectNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
-    public DeleteObjectNode(Long tmpId, String name,  NodeRT prev, ScopeRT scope) {
-        super(tmpId, name, null, prev, scope);
+    public DeleteObjectNode(Long tmpId, String name,  NodeRT prev, Code code) {
+        super(tmpId, name, null, prev, code);
     }
 
     @Override

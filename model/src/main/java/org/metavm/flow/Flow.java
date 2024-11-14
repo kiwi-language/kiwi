@@ -40,7 +40,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
     private @NotNull Type returnType;
     @ChildEntity
-    private @Nullable ScopeRT rootScope;
+    private @Nullable Code code;
     private transient long version;
     // Don't remove, for search
     @SuppressWarnings("unused")
@@ -90,7 +90,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.returnType = returnType;
         this.type = new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
         if(!noCode && codeSource == null && !isNative ) {
-            rootScope = addChild(new ScopeRT(this, this), "rootScope");
+            code = addChild(new Code(this, this), "code");
             constantPool = addChild(new ConstantPool(), "constantPool");
         }
         setTypeParameters(typeParameters);
@@ -113,12 +113,12 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     @Override
-    public @NotNull ScopeRT getScope() {
-        return Objects.requireNonNull(rootScope, () -> "Root scope not present in flow: " + getQualifiedName());
+    public @NotNull Code getCode() {
+        return Objects.requireNonNull(code, () -> "Root scope not present in flow: " + getQualifiedName());
     }
 
     public boolean isRootScopePresent() {
-        return rootScope != null;
+        return code != null;
     }
 
     @Override
@@ -163,7 +163,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                 getName(),
                 isNative,
                 isSynthetic,
-                includeCode && isRootScopePresent() ? getScope().toDTO(serContext) : null,
+                includeCode && isRootScopePresent() ? getCode().toDTO(serContext) : null,
                 returnType.toExpression(serContext),
                 NncUtils.map(parameters, Parameter::toDTO),
                 type.toExpression(serContext),
@@ -198,8 +198,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     public void clearNodes() {
         if (nodes != null)
             nodes.clear();
-        if (rootScope != null)
-            rootScope.clear();
+        if (code != null)
+            code.clear();
         nodeNames.clear();
     }
 
@@ -210,8 +210,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     private List<NodeRT> nodes() {
         if (nodes == null) {
             nodes = new ArrayList<>();
-            if (rootScope != null) {
-                rootScope.accept(new VoidStructuralVisitor() {
+            if (code != null) {
+                code.accept(new VoidStructuralVisitor() {
                     @Override
                     public Void visitNode(NodeRT node) {
                         nodes.add(node);
@@ -237,11 +237,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
             return name;
         else
             return name + "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">";
-    }
-
-    @Nullable
-    public String getCode() {
-        return name;
     }
 
     public @NotNull MetadataState getState() {
@@ -298,13 +293,13 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return getType();
     }
 
-    public ScopeRT newEphemeralCode() {
+    public Code newEphemeralCode() {
         NncUtils.requireTrue(codeSource != null);
         constantPool = addChild(new ConstantPool(), "constantPool");
         constantPool.setEphemeralEntity(true);
-        rootScope = addChild(new ScopeRT(this, this), "rootScope");
-        rootScope.setEphemeralEntity(true);
-        return rootScope;
+        code = addChild(new Code(this, this), "code");
+        code.setEphemeralEntity(true);
+        return code;
     }
 
     @SuppressWarnings("unused")
@@ -377,11 +372,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     public Parameter getParameter(Predicate<Parameter> predicate) {
         return Objects.requireNonNull(findParameter(predicate),
                 "Can not find parameter in flow " + this + " with predicate");
-    }
-
-
-    public String getCodeNotNull() {
-        return name;
     }
 
     public void setReturnType(Type returnType) {
@@ -562,7 +552,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                         + ": " + getReturnType().getName()
         );
         if (isRootScopePresent())
-            getScope().writeCode(writer);
+            getCode().writeCode(writer);
         else
             writer.write(";");
     }
@@ -660,7 +650,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public void emitCode() {
         if(isRootScopePresent())
-            getScope().emitCode();
+            getCode().emitCode();
         for (Lambda lambda : lambdas) {
             lambda.emitCode();
         }

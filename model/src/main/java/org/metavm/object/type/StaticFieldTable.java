@@ -129,7 +129,7 @@ public class StaticFieldTable extends Entity implements LoadAware, GlobalKey {
 
     @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
-        return klass.getCodeNotNull();
+        return klass.getQualifiedName();
     }
 
 }

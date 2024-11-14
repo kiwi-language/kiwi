@@ -14,24 +14,24 @@ import java.util.Objects;
 
 public class GotoNode extends JumpNode {
 
-    public static GotoNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static GotoNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var param = (GotoNodeParam) nodeDTO.getParam();
         var node = (GotoNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new GotoNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new GotoNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         if(stage == NodeSavingStage.FINALIZE)
             node.setTarget(Objects.requireNonNull(context.getNode(param.targetId())));
         return node;
     }
 
-    public GotoNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope,
+    public GotoNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code,
                     @Nullable NodeRT target) {
-        super(tmpId, name, null, previous, scope);
+        super(tmpId, name, null, previous, code);
         setTarget(Objects.requireNonNullElse(target, this));
     }
 
-    public GotoNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+    public GotoNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

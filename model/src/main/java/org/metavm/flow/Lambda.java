@@ -21,14 +21,14 @@ public class Lambda extends Element implements Callable {
     private Type returnType;
     private FunctionType functionType;
     @ChildEntity
-    private final ScopeRT scope;
+    private final Code code;
 
     public Lambda(Long tmpId, List<Parameter> parameters, @NotNull Type returnType, Flow flow) {
         super(tmpId);
         this.returnType = returnType;
         setParameters(parameters, false);
         this.functionType = Types.getFunctionType(parameters, returnType);
-        this.scope = addChild(new ScopeRT(this, flow), "scope");
+        this.code = addChild(new Code(this, flow), "code");
         flow.addLambda(this);
     }
 
@@ -83,12 +83,12 @@ public class Lambda extends Element implements Callable {
         return new LambdaRef(this);
     }
 
-    public ScopeRT getScope() {
-        return scope;
+    public Code getCode() {
+        return code;
     }
 
     public void emitCode() {
-        scope.emitCode();
+        code.emitCode();
     }
 
     public LambdaDTO toDTO(SerializeContext serializeContext) {
@@ -96,7 +96,7 @@ public class Lambda extends Element implements Callable {
                 serializeContext.getStringId(this),
                 NncUtils.map(parameters, Parameter::toDTO),
                 returnType.toExpression(serializeContext),
-                scope.toDTO(serializeContext)
+                code.toDTO(serializeContext)
         );
     }
 
@@ -118,7 +118,7 @@ public class Lambda extends Element implements Callable {
                         + ")"
                         + ": " + getReturnType().getName()
         );
-        getScope().writeCode(writer);
+        getCode().writeCode(writer);
     }
 
 }

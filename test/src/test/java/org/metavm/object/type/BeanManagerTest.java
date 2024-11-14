@@ -55,12 +55,12 @@ public class BeanManagerTest extends TestCase {
                     .returnType(barServiceKlass.getType())
                     .build();
             {
-                var scope = constructor.getScope();
-                Nodes.this_(scope);
-                Nodes.dup(scope);
+                var code = constructor.getCode();
+                Nodes.this_(code);
+                Nodes.dup(code);
                 Nodes.argument(constructor, 0);
-                Nodes.setField(field, scope);
-                Nodes.ret(scope);
+                Nodes.setField(field, code);
+                Nodes.ret(code);
             }
             var factoryMethod = MethodBuilder.newBuilder(configKlass, "barService")
                     .addAttribute(AttributeNames.BEAN_NAME, "barService")
@@ -70,12 +70,12 @@ public class BeanManagerTest extends TestCase {
             {
                 Nodes.argument(factoryMethod, 0);
                 Nodes.newObject(
-                        factoryMethod.getScope(),
+                        factoryMethod.getCode(),
                         constructor,
                         false,
                         false
                 );
-                Nodes.ret(factoryMethod.getScope());
+                Nodes.ret(factoryMethod.getCode());
             }
             var registry = BeanDefinitionRegistry.getInstance(context);
             configKlass.emitCode();
@@ -98,9 +98,9 @@ public class BeanManagerTest extends TestCase {
                 .isConstructor(true)
                 .returnType(klass.getType())
                 .build();
-        var scope = constructor.getScope();
-        Nodes.this_(scope);
-        Nodes.ret(scope);
+        var code = constructor.getCode();
+        Nodes.this_(code);
+        Nodes.ret(code);
     }
 
 }

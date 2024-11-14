@@ -14,16 +14,16 @@ import org.metavm.util.BusinessException;
 @EntityType
 public class ClearArrayNode extends NodeRT {
 
-    public static ClearArrayNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static ClearArrayNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (ClearArrayNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new ClearArrayNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new ClearArrayNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
     public ClearArrayNode(Long tmpId, String name,
-                          NodeRT previous, ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+                          NodeRT previous, Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

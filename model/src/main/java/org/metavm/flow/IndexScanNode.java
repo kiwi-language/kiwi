@@ -17,20 +17,20 @@ import static java.util.Objects.requireNonNull;
 @EntityType
 public class IndexScanNode extends NodeRT {
 
-    public static IndexScanNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static IndexScanNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (IndexScanNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var param = (IndexScanNodeParam) nodeDTO.param();
             var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
-            node = new IndexScanNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, index);
+            node = new IndexScanNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, index);
         }
         return node;
     }
 
     private Index index;
 
-    public IndexScanNode(Long tmpId, String name, NodeRT previous, ScopeRT scope, Index index) {
-        super(tmpId, name, null, previous, scope);
+    public IndexScanNode(Long tmpId, String name, NodeRT previous, Code code, Index index) {
+        super(tmpId, name, null, previous, code);
         this.index = index;
     }
 

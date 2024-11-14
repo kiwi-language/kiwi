@@ -50,7 +50,7 @@ public class IdentityContextTest extends TestCase {
         Assert.assertTrue(identities.containsKey(fooNameField));
         Assert.assertTrue(identities.containsKey(method));
         Assert.assertTrue(identities.containsKey(method.getParameters().get(0)));
-        Assert.assertTrue(identities.containsKey(method.getScope()));
+        Assert.assertTrue(identities.containsKey(method.getCode()));
     }
 
 }

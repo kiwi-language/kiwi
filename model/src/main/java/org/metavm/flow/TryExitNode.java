@@ -12,19 +12,19 @@ import org.metavm.object.instance.core.Id;
 @EntityType
 public class TryExitNode extends NodeRT {
 
-    public static TryExitNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static TryExitNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (TryExitNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var param = (TryExitNodeParam) nodeDTO.param();
-            node = new TryExitNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, param.variableIndex());
+            node = new TryExitNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, param.variableIndex());
         }
         return node;
     }
 
     private final int variableIndex;
 
-    public TryExitNode(Long tmpId, String name, NodeRT previous, ScopeRT scope, int variableIndex) {
-        super(tmpId, name, null, previous, scope);
+    public TryExitNode(Long tmpId, String name, NodeRT previous, Code code, int variableIndex) {
+        super(tmpId, name, null, previous, code);
         this.variableIndex = variableIndex;
     }
 

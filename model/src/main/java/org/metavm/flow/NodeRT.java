@@ -24,7 +24,7 @@ public abstract class NodeRT extends Element implements LocalKey {
     private final String name;
     private final NodeKind kind;
     private @Nullable Type outputType;
-    private final @NotNull ScopeRT scope;
+    private final @NotNull Code code;
     @Nullable
     private NodeRT predecessor;
     @Nullable
@@ -39,23 +39,23 @@ public abstract class NodeRT extends Element implements LocalKey {
             @NotNull String name,
             @Nullable Type outputType,
             @Nullable NodeRT previous,
-            @NotNull ScopeRT scope
+            @NotNull Code code
     ) {
         super(tmpId);
         this.name = name;
-        this.scope = scope;
+        this.code = code;
         this.outputType = outputType;
         this.kind = NodeKind.fromNodeClass(this.getClass());
         if (previous != null)
             previous.insertAfter(this);
         if (previous != null && previous.isSequential())
             setExpressionTypes(previous.getNextExpressionTypes());
-        this.scope.addNode(this);
+        this.code.addNode(this);
     }
 
     @JsonIgnore
     public Flow getFlow() {
-        return scope.getFlow();
+        return code.getFlow();
     }
 
     public String getName() {
@@ -121,7 +121,7 @@ public abstract class NodeRT extends Element implements LocalKey {
         }
         this.predecessor = null;
         this.successor = null;
-        scope.removeNode(this);
+        code.removeNode(this);
         return cascade;
     }
 
@@ -143,7 +143,7 @@ public abstract class NodeRT extends Element implements LocalKey {
                 NncUtils.get(getType(), t -> t.toExpression(serContext)),
                 getParam(serContext),
                 getOutputKlassDTO(),
-                scope.getStringId(),
+                code.getStringId(),
                 error
         );
     }
@@ -152,8 +152,8 @@ public abstract class NodeRT extends Element implements LocalKey {
         return null;
     }
 
-    public @NotNull ScopeRT getScope() {
-        return scope;
+    public @NotNull Code getCode() {
+        return code;
     }
 
     public boolean isExit() {

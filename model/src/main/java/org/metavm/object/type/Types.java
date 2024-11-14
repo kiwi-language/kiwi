@@ -315,17 +315,17 @@ public class Types {
                 .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
                 .returnType(sam.getReturnType())
                 .build();
-        var scope = flow.getScope();
-        Nodes.thisProperty(funcField, scope);
+        var code = flow.getCode();
+        Nodes.thisProperty(funcField, code);
         int numParams = flow.getParameters().size();
         for (int i = 0; i < numParams; i++) {
             Nodes.argument(flow, i);
         }
-        Nodes.function(scope, funcType);
+        Nodes.function(code, funcType);
         if(flow.getReturnType().isVoid())
-            Nodes.voidRet(scope);
+            Nodes.voidRet(code);
         else
-            Nodes.ret(scope);
+            Nodes.ret(code);
         klass.emitCode();
         return klass.getParameterized(NncUtils.map(typeVars, TypeVariable::getType)).getType();
     }
@@ -361,21 +361,21 @@ public class Types {
                 .type(sam.getType())
                 .staticType(methodStaticType)
                 .build();
-        var scope = method.getScope();
-        Nodes.loadConstant(function, scope);
+        var code = method.getCode();
+        Nodes.loadConstant(function, code);
         var paramTypeIt = function.getType().getParameterTypes().iterator();
         int i = 1;
         for (var methodParam : method.getParameters()) {
             var paramType = paramTypeIt.next();
-            Nodes.load(i++, methodParam.getType(), scope);
+            Nodes.load(i++, methodParam.getType(), code);
             if(methodParam.getType().isNullable() && paramType.isNotNull())
-                Nodes.nonNull(scope);
+                Nodes.nonNull(code);
         }
-        Nodes.function(scope, function.getType());
+        Nodes.function(code, function.getType());
         if (sam.getReturnType().isVoid())
-            Nodes.voidRet(scope);
+            Nodes.voidRet(code);
         else
-            Nodes.ret(scope);
+            Nodes.ret(code);
         klass.emitCode();
         return klass;
     }

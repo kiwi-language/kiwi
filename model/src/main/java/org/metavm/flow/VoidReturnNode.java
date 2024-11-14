@@ -9,15 +9,15 @@ import org.metavm.object.instance.core.Id;
 
 public class VoidReturnNode extends NodeRT {
 
-    public static VoidReturnNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext entityContext) {
+    public static VoidReturnNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext entityContext) {
         var node = (VoidReturnNode) entityContext.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new VoidReturnNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new VoidReturnNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
-    public VoidReturnNode(Long tmpId, String name, NodeRT prev, ScopeRT scope) {
-        super(tmpId, name, null, prev, scope);
+    public VoidReturnNode(Long tmpId, String name, NodeRT prev, Code code) {
+        super(tmpId, name, null, prev, code);
     }
 
     @Override

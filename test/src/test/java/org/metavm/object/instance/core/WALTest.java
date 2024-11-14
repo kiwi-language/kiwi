@@ -129,8 +129,8 @@ public class WALTest extends TestCase {
                     var init = MethodBuilder.newBuilder(klass, "__version__")
                             .returnType(PrimitiveType.longType)
                             .build();
-                    Nodes.loadConstant(Instances.longZero(), init.getScope());
-                    Nodes.ret(init.getScope());
+                    Nodes.loadConstant(Instances.longZero(), init.getCode());
+                    Nodes.ret(init.getCode());
                     klass.emitCode();
                     walContext.finish();
                     fieldId = field.getStringId();
@@ -152,7 +152,7 @@ public class WALTest extends TestCase {
                 Assert.assertNotNull(field);
                 var init = klass.findMethodByName("__version__");
                 Assert.assertNotNull(init);
-                Assert.assertEquals(4, init.getScope().getCode().length);
+                Assert.assertEquals(4, init.getCode().getCode().length);
             }
         }
         // create a new instance and check that its version field has been initialized by log service

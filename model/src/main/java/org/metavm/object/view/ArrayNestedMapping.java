@@ -5,7 +5,7 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.NodeRT;
 import org.metavm.flow.Nodes;
-import org.metavm.flow.ScopeRT;
+import org.metavm.flow.Code;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
@@ -28,55 +28,55 @@ public class ArrayNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Type generateMappingCode(Supplier<NodeRT> getSource, ScopeRT scope) {
-        Nodes.newArray(targetType, scope);
-        var targetArrayVar = scope.nextVariableIndex();
-        Nodes.store(targetArrayVar, scope);
+    public Type generateMappingCode(Supplier<NodeRT> getSource, Code code) {
+        Nodes.newArray(targetType, code);
+        var targetArrayVar = code.nextVariableIndex();
+        Nodes.store(targetArrayVar, code);
         var setSourceFunc = StdFunction.setSource.get();
-        Nodes.load(targetArrayVar, targetType, scope);
+        Nodes.load(targetArrayVar, targetType, code);
         getSource.get();
-        Nodes.functionCall(scope, setSourceFunc);
+        Nodes.functionCall(code, setSourceFunc);
         Nodes.forEach(
                 getSource,
-                (bodyScope, getElement, getIndex) -> {
-                    Nodes.load(targetArrayVar, targetType, bodyScope);
-                    elementNestedMapping.generateMappingCode(getElement, bodyScope);
-                    Nodes.addElement(bodyScope);
+                (getElement, getIndex) -> {
+                    Nodes.load(targetArrayVar, targetType, code);
+                    elementNestedMapping.generateMappingCode(getElement, code);
+                    Nodes.addElement(code);
                 },
-                scope
+                code
         );
-        Nodes.load(targetArrayVar, targetType, scope);
+        Nodes.load(targetArrayVar, targetType, code);
         return targetType;
     }
 
     @Override
-    public Type generateUnmappingCode(Supplier<NodeRT> getView, ScopeRT scope) {
+    public Type generateUnmappingCode(Supplier<NodeRT> getView, Code code) {
         getView.get();
-        Nodes.functionCall(scope, StdFunction.isSourcePresent.get());
-        Nodes.loadConstant(Instances.falseInstance(), scope);
-        Nodes.eq(scope);
-        var ifNode = Nodes.if_(null, scope);
+        Nodes.functionCall(code, StdFunction.isSourcePresent.get());
+        Nodes.loadConstant(Instances.falseInstance(), code);
+        Nodes.eq(code);
+        var ifNode = Nodes.if_(null, code);
         getView.get();
-        Nodes.functionCall(scope, StdFunction.getSource.get());
-        var sourceVar = scope.nextVariableIndex();
-        Nodes.store(sourceVar, scope);
-        var g = Nodes.goto_(scope);
-        var newSource = Nodes.newArray(sourceType, scope);
+        Nodes.functionCall(code, StdFunction.getSource.get());
+        var sourceVar = code.nextVariableIndex();
+        Nodes.store(sourceVar, code);
+        var g = Nodes.goto_(code);
+        var newSource = Nodes.newArray(sourceType, code);
         ifNode.setTarget(newSource);
-        Nodes.store(sourceVar, scope);
-        g.setTarget(Nodes.noop(scope));
-        Nodes.load(sourceVar, sourceType, scope);
-        Nodes.clearArray(scope);
+        Nodes.store(sourceVar, code);
+        g.setTarget(Nodes.noop(code));
+        Nodes.load(sourceVar, sourceType, code);
+        Nodes.clearArray(code);
         Nodes.forEach(
                 getView,
-                (bodyScope, element, index) -> {
-                    Nodes.load(sourceVar, sourceType, bodyScope);
-                    elementNestedMapping.generateUnmappingCode(element, bodyScope);
-                    Nodes.addElement(bodyScope);
+                (element, index) -> {
+                    Nodes.load(sourceVar, sourceType, code);
+                    elementNestedMapping.generateUnmappingCode(element, code);
+                    Nodes.addElement(code);
                 },
-                scope
+                code
         );
-        Nodes.load(sourceVar, sourceType, scope);
+        Nodes.load(sourceVar, sourceType, code);
         return sourceType;
     }
 

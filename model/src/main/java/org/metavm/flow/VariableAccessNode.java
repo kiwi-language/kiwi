@@ -9,8 +9,8 @@ public abstract class VariableAccessNode extends NodeRT {
 
     protected final int index;
 
-    protected VariableAccessNode(Long tmpId, @NotNull String name, @Nullable Type outputType, @Nullable NodeRT previous, @NotNull ScopeRT scope, int index) {
-        super(tmpId, name, outputType, previous, scope);
+    protected VariableAccessNode(Long tmpId, @NotNull String name, @Nullable Type outputType, @Nullable NodeRT previous, @NotNull Code code, int index) {
+        super(tmpId, name, outputType, previous, code);
         this.index = index;
     }
 

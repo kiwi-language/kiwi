@@ -21,20 +21,20 @@ import java.util.Objects;
 @EntityType
 public class AddObjectNode extends NodeRT {
 
-    public static AddObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static AddObjectNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         AddObjectNodeParam param = nodeDTO.getParam();
         var klass = ((ClassType) TypeParser.parseType(param.getType(), context)).resolve();
         AddObjectNode node = (AddObjectNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new AddObjectNode(nodeDTO.tmpId(), nodeDTO.name(),  param.isEphemeral(), klass.getType(), prev, scope);
+            node = new AddObjectNode(nodeDTO.tmpId(), nodeDTO.name(),  param.isEphemeral(), klass.getType(), prev, code);
         return node;
     }
 
     private boolean ephemeral;
 
     public AddObjectNode(Long tmpId, String name, boolean ephemeral, ClassType type, NodeRT prev,
-                         ScopeRT scope) {
-        super(tmpId, name, type, prev, scope);
+                         Code code) {
+        super(tmpId, name, type, prev, code);
         this.ephemeral = ephemeral;
     }
 

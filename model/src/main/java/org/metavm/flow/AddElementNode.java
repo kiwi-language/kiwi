@@ -10,15 +10,15 @@ import org.metavm.flow.rest.NodeDTO;
 @EntityType
 public class AddElementNode extends NodeRT {
 
-    public static AddElementNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static AddElementNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         AddElementNode node = (AddElementNode) context.getNode(nodeDTO.id());
         if (node == null)
-            node = new AddElementNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new AddElementNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
-    public AddElementNode(Long tmpId, String name,  NodeRT previous, ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+    public AddElementNode(Long tmpId, String name,  NodeRT previous, Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

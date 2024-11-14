@@ -219,7 +219,7 @@ public class DDLManagerTest extends TestCase {
 
         Assert.assertSame(
                 defContext.getKlass(Klass.class),
-                defContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klassKlass.getCodeNotNull()));
+                defContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klassKlass.getQualifiedName()));
 
         try(var context1 = entityContextFactory.newContext(TestConstants.APP_ID, defContext)) {
             Assert.assertSame(context1.getDefContext(), defContext);

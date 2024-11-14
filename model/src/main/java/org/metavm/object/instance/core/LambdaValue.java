@@ -46,7 +46,7 @@ public class LambdaValue extends FunctionValue {
     public FlowExecResult execute(List<? extends Value> arguments, CallContext callContext) {
         try {
             return createFrame(callContext.instanceRepository()).execute(
-                    lambda.getScope(),
+                    lambda.getCode(),
                     arguments.toArray(Value[]::new),
                     closureContext
             );

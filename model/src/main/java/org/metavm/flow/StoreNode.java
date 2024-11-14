@@ -13,16 +13,16 @@ import javax.annotation.Nullable;
 
 public class StoreNode extends VariableAccessNode {
 
-    public static StoreNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static StoreNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         StoreNodeParam param = nodeDTO.getParam();
         var node = (StoreNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new StoreNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, param.index());
+            node = new StoreNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, param.index());
         return node;
     }
 
-    public StoreNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope, int index) {
-        super(tmpId, name, null, previous, scope, index);
+    public StoreNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code, int index) {
+        super(tmpId, name, null, previous, code, index);
     }
 
     @Override

@@ -29,8 +29,8 @@ public class MaxesComputer extends StructuralVisitor<Void> {
         super.visitMethod(method);
 //        DebugEnv.flag = false;
         exitCallable();
-        method.getScope().setMaxLocals(c.maxLocals);
-        method.getScope().setMaxStack(c.maxStacks);
+        method.getCode().setMaxLocals(c.maxLocals);
+        method.getCode().setMaxStack(c.maxStacks);
         return null;
     }
 
@@ -42,8 +42,8 @@ public class MaxesComputer extends StructuralVisitor<Void> {
         c.setMaxLocals(function.getParameters().size());
         super.visitFunction(function);
         exitCallable();
-        function.getScope().setMaxLocals(c.maxLocals);
-        function.getScope().setMaxStack(c.maxStacks);
+        function.getCode().setMaxLocals(c.maxLocals);
+        function.getCode().setMaxStack(c.maxStacks);
         return null;
     }
 
@@ -53,8 +53,8 @@ public class MaxesComputer extends StructuralVisitor<Void> {
         c.setMaxLocals(lambda.getParameters().size());
         super.visitLambda(lambda);
         exitCallable();
-        lambda.getScope().setMaxLocals(c.maxLocals);
-        lambda.getScope().setMaxStack(c.maxStacks);
+        lambda.getCode().setMaxLocals(c.maxLocals);
+        lambda.getCode().setMaxStack(c.maxStacks);
         return null;
     }
 

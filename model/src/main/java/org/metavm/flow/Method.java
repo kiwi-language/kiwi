@@ -121,7 +121,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
-        return getCodeNotNull() + "("
+        return getName() + "("
                 + NncUtils.join(getParameterTypes(),
                 t -> t.toExpression(typeDef -> context.getModelName(typeDef, this)))
                 + ")";
@@ -324,7 +324,7 @@ public class Method extends Flow implements Property, GenericElement {
                         }
                     }
                     result = new MetaFrame(callContext.instanceRepository()).execute(
-                            getScope(),
+                            getCode(),
                             argArray,
                             null
                     );
@@ -394,7 +394,7 @@ public class Method extends Flow implements Property, GenericElement {
     public String getInternalName(@Nullable Flow current) {
         if (current == this)
             return "this";
-        return declaringType.getInternalName(null) + "." + getCodeNotNull() + "(" +
+        return declaringType.getInternalName(null) + "." + getName() + "(" +
                 NncUtils.join(getParameterTypes(), type -> type.getInternalName(this)) + ")";
     }
 

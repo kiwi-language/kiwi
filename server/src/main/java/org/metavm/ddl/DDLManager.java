@@ -80,12 +80,12 @@ public class DDLManager extends EntityContextFactoryAware {
     private KlassDTO buildInitializerKlass(Klass klass) {
         var klassDTO = tryBuildInitializerKlass(klass);
         if(klassDTO == null)
-            throw new InternalException("Initializer assembly file is missing for class: " + klass.getCodeNotNull());
+            throw new InternalException("Initializer assembly file is missing for class: " + klass.getQualifiedName());
         return klassDTO;
     }
 
     private @Nullable KlassDTO tryBuildInitializerKlass(Klass klass) {
-        var asmFile = "/initializers/" + klass.getCodeNotNull().replace('.', '/') + ".masm";
+        var asmFile = "/initializers/" + klass.getQualifiedName().replace('.', '/') + ".masm";
         try(var input = Klass.class.getResourceAsStream(asmFile)) {
             if(input == null)
                 return null;
@@ -148,7 +148,7 @@ public class DDLManager extends EntityContextFactoryAware {
     }
 
     private Klass tryGetInitializerKlass(Klass klass, IEntityContext context) {
-        return context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klass.getCodeNotNull() + "Initializer");
+        return context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klass.getQualifiedName() + "Initializer");
     }
 
     private Method getSystemFieldInitializer(SaveTypeBatch batch, Klass klass, String fieldName) {
@@ -158,7 +158,7 @@ public class DDLManager extends EntityContextFactoryAware {
         var methodName = "__" + fieldName +"__";
         var method = initializerKlass.findMethod(m -> m.isStatic() && m.getName().equals(methodName) && m.getParameterTypes().equals(List.of(klass.getType())));
         if(method == null)
-            throw new InternalException("Cannot find initializer for field " + klass.getCodeNotNull() + "." + fieldName);
+            throw new InternalException("Cannot find initializer for field " + klass.getQualifiedName() + "." + fieldName);
         return method;
     }
 

@@ -109,18 +109,18 @@ public class ClassInstanceTest extends TestCase {
     }
 
     public void testEphemeral() {
-        var flowType = TestUtils.newKlassBuilder("Flow", "Flow").build();
-        var scopeType = TestUtils.newKlassBuilder("Scope", "Scope").build();
-        var nullableScopeType = new UnionType(Set.of(Types.getNullType(), scopeType.getType()));
-        var rootScopeField = FieldBuilder.newBuilder("rootScope", flowType, nullableScopeType)
+        var flowKlass = TestUtils.newKlassBuilder("Flow", "Flow").build();
+        var codeKlass = TestUtils.newKlassBuilder("Code", "Code").build();
+        var nullableScopeType = new UnionType(Set.of(Types.getNullType(), codeKlass.getType()));
+        var codeField = FieldBuilder.newBuilder("code", flowKlass, nullableScopeType)
                 .isChild(true)
                 .build();
 
-        TestUtils.initEntityIds(flowType);
-        var flow = ClassInstanceBuilder.newBuilder(flowType.getType())
+        TestUtils.initEntityIds(flowKlass);
+        var flow = ClassInstanceBuilder.newBuilder(flowKlass.getType())
                 .data(Map.of(
-                        rootScopeField,
-                        ClassInstanceBuilder.newBuilder(scopeType.getType())
+                        codeField,
+                        ClassInstanceBuilder.newBuilder(codeKlass.getType())
                                 .ephemeral(true)
                                 .build().getReference()
                 ))
@@ -139,15 +139,15 @@ public class ClassInstanceTest extends TestCase {
         },
                 i -> {},
                 id -> {
-                    if (flowType.idEquals(id))
-                        return flowType;
-                    if (scopeType.idEquals(id))
-                        return scopeType;
+                    if (flowKlass.idEquals(id))
+                        return flowKlass;
+                    if (codeKlass.idEquals(id))
+                        return codeKlass;
                     throw new NullPointerException("Can not find type def for id: " + id);
                 }, id -> null);
         var loadedFlow = (ClassInstance) input.readSingleMessageGrove();
         loadedFlow.logFields();
-        Assert.assertTrue(loadedFlow.getField(rootScopeField).isNull());
+        Assert.assertTrue(loadedFlow.getField(codeField).isNull());
     }
 
     public void testReadWrite() {

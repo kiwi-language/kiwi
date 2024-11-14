@@ -63,7 +63,7 @@ public class MetaFrame implements Frame, CallContext {
     public static final int MAX_STEPS = 100000;
 
     @SuppressWarnings("DuplicatedCode")
-    public @NotNull FlowExecResult execute(ScopeRT scope,
+    public @NotNull FlowExecResult execute(Code code,
                                            Value[] arguments,
                                            @Nullable ClosureContext closureContext) {
 //        if(DebugEnv.flag) {
@@ -74,12 +74,12 @@ public class MetaFrame implements Frame, CallContext {
 //            log.debug("Constants: {}", Arrays.toString(scope.getConstantPool().getResolvedValues()));
 //        }
         var pc = 0;
-        var bytes = scope.getCode();
-        var constants = scope.getFlow().getConstantPool().getResolvedValues();
-        var locals = new Value[scope.getMaxLocals()];
+        var bytes = code.getCode();
+        var constants = code.getFlow().getConstantPool().getResolvedValues();
+        var locals = new Value[code.getMaxLocals()];
         System.arraycopy(arguments, 0, locals, 0, arguments.length);
         var top = 0;
-        var stack = new Value[scope.getMaxStack()];
+        var stack = new Value[code.getMaxStack()];
         try {
             for (int s = 0; s < MAX_STEPS; s++) {
                 var b = bytes[pc] & 0xff;
@@ -675,7 +675,7 @@ public class MetaFrame implements Frame, CallContext {
                     }
                 } catch (Exception e) {
                     throw new InternalException("Failed to execute node " + Bytecodes.getBytecodeName(b) +  " at " + pc
-                            + " in flow " + scope.getFlow().getQualifiedName(), e);
+                            + " in flow " + code.getFlow().getQualifiedName(), e);
                 }
             }
             throw new FlowExecutionException(String.format("Flow execution steps exceed the limit: %d", MAX_STEPS));

@@ -20,20 +20,20 @@ import static java.util.Objects.requireNonNull;
 @EntityType
 public class IndexSelectNode extends NodeRT {
 
-    public static IndexSelectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static IndexSelectNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var param = (IndexSelectNodeParam) nodeDTO.param();
         var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
         var node = (IndexSelectNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new IndexSelectNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, index);
+            node = new IndexSelectNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, index);
         return node;
     }
 
     private Index index;
 
-    public IndexSelectNode(Long tmpId, String name, NodeRT previous, ScopeRT scope,
+    public IndexSelectNode(Long tmpId, String name, NodeRT previous, Code code,
                            Index index) {
-        super(tmpId, name, null, previous, scope);
+        super(tmpId, name, null, previous, code);
         this.index = index;
     }
 

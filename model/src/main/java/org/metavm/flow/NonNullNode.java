@@ -14,15 +14,15 @@ import javax.annotation.Nullable;
 
 public class NonNullNode extends NodeRT {
 
-    public static NonNullNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static NonNullNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (NonNullNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new NonNullNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new NonNullNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
-    public NonNullNode(Long tmpId, @NotNull String name,  @Nullable NodeRT previous, @NotNull ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+    public NonNullNode(Long tmpId, @NotNull String name,  @Nullable NodeRT previous, @NotNull Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

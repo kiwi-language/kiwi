@@ -131,18 +131,18 @@ public class Flows {
         assert klass.isEnum();
         var valuesMethod = klass.getMethod(Flows::isValuesMethod);
         valuesMethod.clearContent();
-        var scope = valuesMethod.getScope();
+        var code = valuesMethod.getCode();
         var arrayType = new ArrayType(klass.getType(), ArrayKind.READ_WRITE);
-        Nodes.newArray(arrayType, scope);
-        var arrayVar = scope.nextVariableIndex();
-        Nodes.store(arrayVar, scope);
+        Nodes.newArray(arrayType, code);
+        var arrayVar = code.nextVariableIndex();
+        Nodes.store(arrayVar, code);
         for (var ecd : klass.getEnumConstantDefs()) {
-            Nodes.load(arrayVar, arrayType, scope);
-            Nodes.getStatic(ecd.getField(), scope);
-            Nodes.addElement(scope);
+            Nodes.load(arrayVar, arrayType, code);
+            Nodes.getStatic(ecd.getField(), code);
+            Nodes.addElement(code);
         }
-        Nodes.load(arrayVar, arrayType, scope);
-        Nodes.ret(scope);
+        Nodes.load(arrayVar, arrayType, code);
+        Nodes.ret(code);
     }
 
 }

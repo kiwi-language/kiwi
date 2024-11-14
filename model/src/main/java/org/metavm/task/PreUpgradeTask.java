@@ -83,7 +83,7 @@ public class PreUpgradeTask extends ScanTask {
     }
 
     private Klass tryGetInitializerKlass(Klass klass, IEntityContext context) {
-        return context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klass.getCodeNotNull() + "Initializer");
+        return context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klass.getQualifiedName() + "Initializer");
     }
 
     @Nullable

@@ -18,20 +18,20 @@ import static java.util.Objects.requireNonNull;
 @EntityType
 public class IndexCountNode extends NodeRT {
 
-    public static IndexCountNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static IndexCountNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (IndexCountNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var param = (IndexCountNodeParam) nodeDTO.param();
             var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
-            node = new IndexCountNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, index);
+            node = new IndexCountNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, index);
         }
         return node;
     }
 
     private Index index;
 
-    public IndexCountNode(Long tmpId, String name, NodeRT previous, ScopeRT scope, Index index) {
-        super(tmpId, name, null, previous, scope);
+    public IndexCountNode(Long tmpId, String name, NodeRT previous, Code code, Index index) {
+        super(tmpId, name, null, previous, code);
         this.index = index;
     }
 

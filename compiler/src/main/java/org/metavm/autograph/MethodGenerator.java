@@ -45,8 +45,8 @@ public class MethodGenerator {
     IfNode createIf( @Nullable NodeRT target) {
         return onNodeCreated(new IfNode(null,
                 nextName("if"),
-                scope().getLastNode(),
-                scope(),
+                code().getLastNode(),
+                code(),
                 target
         ));
     }
@@ -54,8 +54,8 @@ public class MethodGenerator {
     IfNotNode createIfNot(@Nullable NodeRT target) {
         return onNodeCreated(new IfNotNode(null,
                 nextName("ifNot"),
-                scope().getLastNode(),
-                scope(),
+                code().getLastNode(),
+                code(),
                 target
         ));
     }
@@ -64,8 +64,8 @@ public class MethodGenerator {
         return onNodeCreated(new GotoNode(
                 null,
                  nextName("goto"),
-                scope().getLastNode(),
-                scope(),
+                code().getLastNode(),
+                code(),
                 target
         ));
     }
@@ -74,13 +74,13 @@ public class MethodGenerator {
         return onNodeCreated(new GotoNode(
                 null,
                 nextName("goto"),
-                scope().getLastNode(),
-                scope()
+                code().getLastNode(),
+                code()
         ));
     }
 
     TryEnterNode createTryEnter() {
-        return onNodeCreated(new TryEnterNode(null, nextName("tryEnter"), scope().getLastNode(), scope()));
+        return onNodeCreated(new TryEnterNode(null, nextName("tryEnter"), code().getLastNode(), code()));
     }
 
     String nextVarName(String name) {
@@ -92,8 +92,8 @@ public class MethodGenerator {
     TryExitNode createTryExit() {
         return onNodeCreated(new TryExitNode(
                 null, nextName("tryExit"),
-                scope().getLastNode(),
-                scope(),
+                code().getLastNode(),
+                code(),
                 nextVariableIndex()
         ));
     }
@@ -103,21 +103,21 @@ public class MethodGenerator {
         return onNodeCreated(new NonNullNode(
                         null,
                         nextName("nonnull"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
 
     TargetNode createTarget() {
-        return onNodeCreated(new TargetNode(null, nextName("target"), scope().getLastNode(), scope()));
+        return onNodeCreated(new TargetNode(null, nextName("target"), code().getLastNode(), code()));
     }
 
     NewArrayNode createNewArray(ArrayType type) {
         return onNodeCreated(new NewArrayNode(
                 null, nextName("NewArray"),
                 type,
-                scope().getLastNode(), scope()
+                code().getLastNode(), code()
         ));
     }
 
@@ -125,7 +125,7 @@ public class MethodGenerator {
         return onNodeCreated(new NewArrayWithDimsNode(
                 null, nextName("NewArray"),
                 type,
-                scope().getLastNode(), scope(),
+                code().getLastNode(), code(),
                 dimensions
         ));
     }
@@ -133,8 +133,8 @@ public class MethodGenerator {
     ArrayLengthNode createArrayLength() {
         return new ArrayLengthNode(
                 null, nextName("length"),
-                scope().getLastNode(),
-                scope()
+                code().getLastNode(),
+                code()
         );
     }
 
@@ -164,8 +164,8 @@ public class MethodGenerator {
         return new NodeValue(createLoadThis());
     }
 
-    ScopeInfo enterScope(ScopeRT scope) {
-        var scopeInfo = new ScopeInfo(scope);
+    ScopeInfo enterScope(Code code) {
+        var scopeInfo = new ScopeInfo(code);
         scopes.push(scopeInfo);
         return scopeInfo;
     }
@@ -178,7 +178,7 @@ public class MethodGenerator {
         if (scopes.isEmpty()) {
             return expression.getType();
         } else {
-            var lastNode = scope().getLastNode();
+            var lastNode = code().getLastNode();
             if (lastNode == null) {
                 return expression.getType();
             } else {
@@ -187,12 +187,12 @@ public class MethodGenerator {
         }
     }
 
-    ScopeRT scope() {
-        return currentScope().scope;
+    Code code() {
+        return currentScope().code;
     }
 
     int nextVariableIndex() {
-        return scope().nextVariableIndex();
+        return code().nextVariableIndex();
     }
 
     int getVariableIndex(PsiVariable variable) {
@@ -200,7 +200,7 @@ public class MethodGenerator {
         var i = variable.getUserData(Keys.VARIABLE_INDEX);
         if(i != null)
             return i;
-        i = scope().nextVariableIndex();
+        i = code().nextVariableIndex();
         variable.putUserData(Keys.VARIABLE_INDEX, i);
         return i;
     }
@@ -208,15 +208,15 @@ public class MethodGenerator {
     SetFieldNode createSetField(Field field) {
         return onNodeCreated(new SetFieldNode(null,
                 nextName("Update"),
-                scope().getLastNode(),
-                scope(),
+                code().getLastNode(),
+                code(),
                 field.getRef()));
     }
 
     SetStaticNode createSetStatic(Field field) {
         return onNodeCreated(new SetStaticNode(
                 null, nextName("UpdateStatic"),
-                scope().getLastNode(), scope(),
+                code().getLastNode(), code(),
                 field.getRef()));
     }
 
@@ -225,8 +225,8 @@ public class MethodGenerator {
                 new AddElementNode(
                         null,
                         nextName("AddElement"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -236,8 +236,8 @@ public class MethodGenerator {
                 new RemoveElementNode(
                         null,
                         nextName("RemoveElement"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -247,8 +247,8 @@ public class MethodGenerator {
                 new GetElementNode(
                         null,
                         nextName("GetElement"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -257,43 +257,43 @@ public class MethodGenerator {
     VoidReturnNode createVoidReturn() {
         return onNodeCreated(new VoidReturnNode(null,
                 nextName("Exit"),
-                scope().getLastNode(),
-                scope()
+                code().getLastNode(),
+                code()
         ));
     }
 
     ReturnNode createReturn() {
         return onNodeCreated(new ReturnNode(null,
                 nextName("Exit"),
-                scope().getLastNode(),
-                scope()
+                code().getLastNode(),
+                code()
         ));
     }
 
     IndexCountNode createIndexCount(Index index) {
         return onNodeCreated(new IndexCountNode(
-                null, nextName("IndexCount"), scope().getLastNode(), scope(), index
+                null, nextName("IndexCount"), code().getLastNode(), code(), index
         ));
     }
 
     IndexScanNode createIndexScan(Index index) {
         return onNodeCreated(new IndexScanNode(
-                null, nextName("IndexScan"), scope().getLastNode(),
-                scope(), index
+                null, nextName("IndexScan"), code().getLastNode(),
+                code(), index
         ));
     }
 
     public IndexSelectNode createIndexSelect(Index index) {
         return onNodeCreated(new IndexSelectNode(
                 null, nextName("IndexSelect"),
-                scope().getLastNode(), scope(), index
+                code().getLastNode(), code(), index
         ));
     }
 
     public IndexSelectFirstNode createIndexSelectFirst(Index index) {
         return onNodeCreated(new IndexSelectFirstNode(
                 null, nextName("IndexSelectFirst"),
-                scope().getLastNode(), scope(), index
+                code().getLastNode(), code(), index
         ));
     }
 
@@ -309,7 +309,7 @@ public class MethodGenerator {
                                     List<Type> capturedExpressionTypes,
                                     List<Long> capturedVariables) {
         var node = new MethodCallNode(null, nextName(method.getName()),
-                scope().getLastNode(), scope(),
+                code().getLastNode(), code(),
                 method.getRef());
         node.setCapturedVariableIndexes(capturedVariables);
         node.setCapturedVariableTypes(capturedExpressionTypes);
@@ -326,13 +326,13 @@ public class MethodGenerator {
         return onNodeCreated(new FunctionCallNode(
                 null,
                 nextName(functionRef.getRawFlow().getName()),
-                scope().getLastNode(), scope(),
+                code().getLastNode(), code(),
                 functionRef));
     }
 
     LambdaNode createLambda(Lambda lambda, Klass functionalInterface) {
         var node = onNodeCreated(new LambdaNode(
-                null, nextName("lambda"), scope().getLastNode(), scope(),
+                null, nextName("lambda"), code().getLastNode(), code(),
                 lambda, functionalInterface.getType()
         ));
         node.createSAMImpl();
@@ -342,7 +342,7 @@ public class MethodGenerator {
     NewObjectNode createNew(Method method, boolean ephemeral, boolean unbound) {
         var methodRef = method.getRef();
         return onNodeCreated(new NewObjectNode(null, nextName(methodRef.resolve().getName()), methodRef,
-                scope().getLastNode(), scope(), ephemeral, unbound));
+                code().getLastNode(), code(), ephemeral, unbound));
     }
 
     ExpressionResolver getExpressionResolver() {
@@ -383,7 +383,7 @@ public class MethodGenerator {
         return onNodeCreated(new RaiseNode(
                 null,
                 nextName("Error"),
-                scope().getLastNode(), scope()
+                code().getLastNode(), code()
         ));
     }
 
@@ -394,21 +394,21 @@ public class MethodGenerator {
     public ClearArrayNode createClearArray() {
         return onNodeCreated(new ClearArrayNode(
                 null, nextName("ClearArray"),
-                scope().getLastNode(), scope()
+                code().getLastNode(), code()
         ));
     }
 
     public SetElementNode createSetElement() {
         return onNodeCreated(new SetElementNode(null, nextName("SetElement"),
-                scope().getLastNode(), scope()));
+                code().getLastNode(), code()));
     }
 
     AddNode createAdd() {
         return onNodeCreated(new AddNode(
                         null,
                         nextName("add"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -417,8 +417,8 @@ public class MethodGenerator {
         return onNodeCreated(new SubNode(
                         null,
                         nextName("sub"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -427,8 +427,8 @@ public class MethodGenerator {
         return onNodeCreated(new MulNode(
                         null,
                         nextName("mul"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -437,8 +437,8 @@ public class MethodGenerator {
         return onNodeCreated(new DivNode(
                         null,
                         nextName("div"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -447,8 +447,8 @@ public class MethodGenerator {
         return onNodeCreated(new LeftShiftNode(
                         null,
                         nextName("leftShift"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -457,8 +457,8 @@ public class MethodGenerator {
         return onNodeCreated(new RightShiftNode(
                         null,
                         nextName("rightShift"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -467,8 +467,8 @@ public class MethodGenerator {
         return onNodeCreated(new UnsignedRightShiftNode(
                         null,
                         nextName("unsignedRightShift"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -477,8 +477,8 @@ public class MethodGenerator {
         return onNodeCreated(new BitOrNode(
                         null,
                         nextName("bitor"),
-                scope().getLastNode(),
-                        scope()
+                code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -487,8 +487,8 @@ public class MethodGenerator {
         return onNodeCreated(new BitAndNode(
                         null,
                         nextName("bitand"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -497,8 +497,8 @@ public class MethodGenerator {
         return onNodeCreated(new BitXorNode(
                         null,
                         nextName("bitxor"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -507,8 +507,8 @@ public class MethodGenerator {
         return onNodeCreated(new AndNode(
                         null,
                         nextName("and"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -517,8 +517,8 @@ public class MethodGenerator {
         return onNodeCreated(new OrNode(
                         null,
                         nextName("or"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -527,8 +527,8 @@ public class MethodGenerator {
         return onNodeCreated(new RemainderNode(
                         null,
                         nextName("rem"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -537,8 +537,8 @@ public class MethodGenerator {
         return onNodeCreated(new EqNode(
                         null,
                         nextName("eq"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -547,8 +547,8 @@ public class MethodGenerator {
         return onNodeCreated(new NeNode(
                         null,
                         nextName("ne"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -557,8 +557,8 @@ public class MethodGenerator {
         return onNodeCreated(new GeNode(
                         null,
                         nextName("ge"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -567,8 +567,8 @@ public class MethodGenerator {
         return onNodeCreated(new GtNode(
                         null,
                         nextName("gt"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -577,8 +577,8 @@ public class MethodGenerator {
         return onNodeCreated(new LtNode(
                         null,
                         nextName("lt"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -587,8 +587,8 @@ public class MethodGenerator {
         return onNodeCreated(new LeNode(
                         null,
                         nextName("le"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -597,8 +597,8 @@ public class MethodGenerator {
         return onNodeCreated(new InstanceOfNode(
                         null,
                         nextName("instanceOf"),
-                        scope().getLastNode(),
-                        scope(),
+                        code().getLastNode(),
+                        code(),
                         type
                 )
         );
@@ -608,8 +608,8 @@ public class MethodGenerator {
         return onNodeCreated(new BitNotNode(
                         null,
                         nextName("bitnot"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -618,8 +618,8 @@ public class MethodGenerator {
         return onNodeCreated(new NotNode(
                         null,
                         nextName("not"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -628,8 +628,8 @@ public class MethodGenerator {
         return onNodeCreated(new NegateNode(
                         null,
                         nextName("negate"),
-                        scope().getLastNode(),
-                        scope()
+                        code().getLastNode(),
+                        code()
                 )
         );
     }
@@ -638,8 +638,8 @@ public class MethodGenerator {
         return onNodeCreated(new GetPropertyNode(
                         null,
                         nextName("property"),
-                        scope().getLastNode(),
-                        scope(),
+                        code().getLastNode(),
+                        code(),
                         property.getRef()
                 )
         );
@@ -649,15 +649,15 @@ public class MethodGenerator {
         return onNodeCreated(new GetStaticNode(
                         null,
                         nextName("static"),
-                        scope().getLastNode(),
-                        scope(),
+                        code().getLastNode(),
+                        code(),
                         property.getRef()
                 )
         );
     }
 
     NoopNode createNoop() {
-        return new NoopNode(null, nextName("noop"), scope().getLastNode(), scope());
+        return new NoopNode(null, nextName("noop"), code().getLastNode(), code());
     }
 
     public NodeRT createLoadThis() {
@@ -669,8 +669,8 @@ public class MethodGenerator {
                 null,
                 nextName("load"),
                 type,
-                scope().getLastNode(),
-                scope(),
+                code().getLastNode(),
+                code(),
                 index
         ));
     }
@@ -679,8 +679,8 @@ public class MethodGenerator {
         return onNodeCreated(new StoreNode(
                 null,
                 nextName("store"),
-                scope().getLastNode(),
-                scope(),
+                code().getLastNode(),
+                code(),
                 index
         ));
     }
@@ -690,8 +690,8 @@ public class MethodGenerator {
                 null,
                 nextName("store"),
                 type,
-                scope().getLastNode(),
-                scope(),
+                code().getLastNode(),
+                code(),
                 contextIndex,
                 slotIndex
         ));
@@ -701,8 +701,8 @@ public class MethodGenerator {
         return onNodeCreated(new StoreContextSlotNode(
                 null,
                 nextName("store"),
-                scope().getLastNode(),
-                scope(),
+                code().getLastNode(),
+                code(),
                 contextIndex,
                 slotIndex
         ));
@@ -712,8 +712,8 @@ public class MethodGenerator {
         return onNodeCreated(new LoadConstantNode(
                 null,
                 nextName("ldc"),
-                scope().getLastNode(),
-                scope(),
+                code().getLastNode(),
+                code(),
                 value
         ));
     }
@@ -721,52 +721,44 @@ public class MethodGenerator {
     public NodeRT createDup() {
         return onNodeCreated(new DupNode(
                 null, nextName("dup"),
-                scope().getLastNode(), scope()
+                code().getLastNode(), code()
         ));
     }
 
     public NodeRT createDupX1() {
         return onNodeCreated(new DupX1Node(
                 null, nextName("dup_x1"),
-                scope().getLastNode(), scope()
+                code().getLastNode(), code()
         ));
     }
 
     public NodeRT createDupX2() {
         return onNodeCreated(new DupX2Node(
                 null, nextName("dup_x2"),
-                scope().getLastNode(), scope()
+                code().getLastNode(), code()
         ));
     }
 
     public NodeRT createLoadType(Type type) {
         return onNodeCreated(new LoadTypeNode(
                 null, nextName("loadType"),
-                scope().getLastNode(), scope(), type
+                code().getLastNode(), code(), type
         ));
     }
 
     public void recordValue(NodeRT anchor, int variableIndex) {
-        var dup = new DupNode(null, nextName("dup"), anchor, scope());
-        new StoreNode(null, nextName("store"), dup, scope(), variableIndex);
+        var dup = new DupNode(null, nextName("dup"), anchor, code());
+        new StoreNode(null, nextName("store"), dup, code(), variableIndex);
     }
 
     public PopNode createPop() {
         return onNodeCreated(new PopNode(
                 null, nextName("pop"),
-                scope().getLastNode(), scope()
+                code().getLastNode(), code()
         ));
     }
 
-    private static final class ScopeInfo {
-        private final ScopeRT scope;
-//        private Map<Expression, Type> expressionTypes;
-
-        private ScopeInfo(ScopeRT scope/*, Map<Expression, Type> expressionTypes*/) {
-            this.scope = scope;
-//            this.expressionTypes = expressionTypes;
-        }
-
+    private record ScopeInfo(Code code) {
     }
 
 }

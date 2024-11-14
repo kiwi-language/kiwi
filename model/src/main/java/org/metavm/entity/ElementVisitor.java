@@ -84,8 +84,8 @@ public abstract class ElementVisitor<R> {
         return visitElement(parameter);
     }
 
-    public R visitScope(ScopeRT scope) {
-        return visitElement(scope);
+    public R visitScope(Code code) {
+        return visitElement(code);
     }
 
     public R visitNode(NodeRT node) {

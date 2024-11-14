@@ -18,20 +18,20 @@ import static java.util.Objects.requireNonNull;
 @EntityType
 public class IndexSelectFirstNode extends NodeRT {
 
-    public static IndexSelectFirstNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static IndexSelectFirstNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var param = (IndexSelectFirstNodeParam) nodeDTO.param();
         var index = requireNonNull(context.getEntity(Index.class, Id.parse(param.indexId())));
         var node = (IndexSelectFirstNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new IndexSelectFirstNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, index);
+            node = new IndexSelectFirstNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, index);
         return node;
     }
 
     private Index index;
 
-    public IndexSelectFirstNode(Long tmpId, String name, NodeRT previous, ScopeRT scope,
+    public IndexSelectFirstNode(Long tmpId, String name, NodeRT previous, Code code,
                                 Index index) {
-        super(tmpId, name, null, previous, scope);
+        super(tmpId, name, null, previous, code);
         this.index = index;
     }
 

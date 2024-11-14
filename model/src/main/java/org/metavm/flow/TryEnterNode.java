@@ -14,17 +14,17 @@ import java.util.Objects;
 @EntityType
 public class TryEnterNode extends NodeRT implements LoadAware {
 
-    public static TryEnterNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static TryEnterNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (TryEnterNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new TryEnterNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new TryEnterNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
     private transient TryExitNode exit;
 
-    public TryEnterNode(Long tmpId, String name, NodeRT previous, ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+    public TryEnterNode(Long tmpId, String name, NodeRT previous, Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

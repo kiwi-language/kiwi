@@ -23,7 +23,7 @@ import static org.metavm.asm.Assembler.parseArrayKind;
 
 class AsmExpressionResolver {
 
-    private final ScopeRT scope;
+    private final Code code;
     private final AsmCallable callable;
     private final Function<AssemblyParser.TypeTypeContext, Type> parseTypeFunc;
     private final Function<AssemblyParser.ClassOrInterfaceTypeContext, Type> parseClassTypeFunc;
@@ -35,7 +35,7 @@ class AsmExpressionResolver {
                           AsmCodeGenerator codeGenerator,
                           Function<String, Klass> findKlassFunc) {
         this.callable = (AsmCallable) codeGenerator.scopeNotNull();
-        this.scope = callable.getCallable().getScope();
+        this.code = callable.getCallable().getCode();
         this.parseTypeFunc = parseTypeFunc;
         this.parseClassTypeFunc = parseClassTypeFunc;
         this.codeGenerator = codeGenerator;
@@ -86,7 +86,7 @@ class AsmExpressionResolver {
         var p = postfix.getType();
         var type = resolve0(operand);
         if(p == AssemblyParser.BANGBANG) {
-            Nodes.nonNull(scope);
+            Nodes.nonNull(code);
             return type.getUnderlyingType();
         }
         throw new IllegalStateException("Unrecognized postfix " + postfix.getText());
@@ -99,11 +99,11 @@ class AsmExpressionResolver {
                 () -> "Cannot find index with name " + indexName + " class " + klass.getTypeDesc());
         NncUtils.map(ctx.expression(), this::resolve0);
         if (ctx.SELECT() != null) {
-            Nodes.select(index, scope);
+            Nodes.select(index, code);
             return new ClassType(StdKlass.arrayList.get(), List.of(index.getDeclaringType().getType()));
         }
         else {
-            Nodes.selectFirst(index, scope);
+            Nodes.selectFirst(index, code);
             return Types.getNullableType(index.getDeclaringType().getType());
         }
     }
@@ -111,7 +111,7 @@ class AsmExpressionResolver {
     private Type resolveCast(AssemblyParser.ExpressionContext operand, AssemblyParser.TypeTypeContext type) {
         resolve0(operand);
         var t = parseType(type);
-        Nodes.cast(t, scope);
+        Nodes.cast(t, code);
         return t;
     }
 
@@ -131,16 +131,16 @@ class AsmExpressionResolver {
             else {
                 var value = Objects.requireNonNull(Instances.getDefaultValue(field.getType()),
                         () -> "Value for field '" + field.getName() + "' is missing in the allocate expression");
-                Nodes.loadConstant(value, scope);
+                Nodes.loadConstant(value, code);
             }
         }
         new AddObjectNode(
                 null,
-                scope.nextNodeName("addObject"),
+                code.nextNodeName("addObject"),
                 false,
                 type,
-                scope.getLastNode(),
-                scope
+                code.getLastNode(),
+                code
         );
         return type;
     }
@@ -148,16 +148,16 @@ class AsmExpressionResolver {
     private Type resolveLambdaExpression(AssemblyParser.LambdaExpressionContext ctx) {
         var params = parseParameterList(ctx.lambdaParameters().formalParameterList(), null);
         var returnType = parseType(ctx.typeTypeOrVoid());
-        var lambda = new Lambda(null, params, returnType, scope.getFlow());
-        var lambdaScope = lambda.getScope();
+        var lambda = new Lambda(null, params, returnType, this.code.getFlow());
+        var code = lambda.getCode();
         var asmLambda = new AsmLambda((AsmCallable) codeGenerator.scopeNotNull(), lambda);
         params.forEach(p -> asmLambda.declareVariable(p.getName(), p.getType()));
         codeGenerator.enterScope(asmLambda);
-        codeGenerator.processBlock(ctx.lambdaBody().block(), lambdaScope);
+        codeGenerator.processBlock(ctx.lambdaBody().block(), code);
         codeGenerator.exitScope();
         if (ctx.typeTypeOrVoid().VOID() != null)
-            Nodes.voidRet(lambdaScope);
-        Nodes.lambda(lambda, scope);
+            Nodes.voidRet(code);
+        Nodes.lambda(lambda, this.code);
         return lambda.getFunctionType();
     }
 
@@ -167,7 +167,7 @@ class AsmExpressionResolver {
             var elementType = parseType(creator.typeType());
             var arrayKind = parseArrayKind(creator.arrayKind());
             var type = new ArrayType(elementType, arrayKind);
-            Nodes.newArray(type, scope);
+            Nodes.newArray(type, code);
             return type;
         }
         else {
@@ -185,7 +185,7 @@ class AsmExpressionResolver {
             var constructor = targetKlass.resolveMethod(
                     targetKlass.getEffectiveTemplate().getName(), argTypes, typeArgs, false
             );
-            Nodes.newObject(scope, constructor, ctx.UNEW() != null, ctx.ENEW() != null);
+            Nodes.newObject(code, constructor, ctx.UNEW() != null, ctx.ENEW() != null);
             return targetKlass.getType();
         }
     }
@@ -194,11 +194,11 @@ class AsmExpressionResolver {
         resolve0(ctx.expression(0));
         resolve0(ctx.expression(1));
         if(ctx.LT().size() == 2)
-            Nodes.leftShift(scope);
+            Nodes.leftShift(code);
         else if(ctx.GT().size() == 2)
-            Nodes.rightShift(scope);
+            Nodes.rightShift(code);
         else if(ctx.GT().size() == 3)
-            Nodes.unsignedRightShift(scope);
+            Nodes.unsignedRightShift(code);
         else
             throw new IllegalStateException("Invalid shift expression: " + ctx.getText());
         return Types.getLongType();
@@ -223,9 +223,9 @@ class AsmExpressionResolver {
     private Type loadVariable(AsmVariable v) {
         var cIdx = v.getContextIndex(callable);
         if(cIdx == -1)
-            Nodes.load(v.index(), v.type(), scope);
+            Nodes.load(v.index(), v.type(), code);
         else
-            Nodes.loadContextSlot(cIdx, v.index(), v.type(), scope);
+            Nodes.loadContextSlot(cIdx, v.index(), v.type(), code);
         return v.type();
     }
 
@@ -246,7 +246,7 @@ class AsmExpressionResolver {
             value = Instances.nullInstance();
         else
             throw new IllegalStateException("Unrecognized literal: " + text);
-        Nodes.loadConstant(value, scope);
+        Nodes.loadConstant(value, code);
         return value.getType();
     }
 
@@ -273,67 +273,67 @@ class AsmExpressionResolver {
         var type = Types.getCompatibleType(firstType, secondType);
         return switch (bop) {
             case AssemblyParser.ADD -> {
-                Nodes.add(scope);
+                Nodes.add(code);
                 yield type;
             }
             case AssemblyParser.SUB -> {
-                Nodes.sub(scope);
+                Nodes.sub(code);
                 yield type;
             }
             case AssemblyParser.MUL -> {
-                Nodes.mul(scope);
+                Nodes.mul(code);
                 yield type;
             }
             case AssemblyParser.DIV -> {
-                Nodes.div(scope);
+                Nodes.div(code);
                 yield type;
             }
             case AssemblyParser.BITOR -> {
-                Nodes.bitOr(scope);
+                Nodes.bitOr(code);
                 yield Types.getLongType();
             }
             case AssemblyParser.BITAND -> {
-                Nodes.bitAnd(scope);
+                Nodes.bitAnd(code);
                 yield Types.getLongType();
             }
             case AssemblyParser.CARET -> {
-                Nodes.bitXor(scope);
+                Nodes.bitXor(code);
                 yield Types.getLongType();
             }
             case AssemblyParser.AND -> {
-                Nodes.and(scope);
+                Nodes.and(code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.OR -> {
-                Nodes.or(scope);
+                Nodes.or(code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.MOD -> {
-                Nodes.rem(scope);
+                Nodes.rem(code);
                 yield type;
             }
             case AssemblyParser.EQUAL -> {
-                Nodes.eq(scope);
+                Nodes.eq(code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.NOTEQUAL -> {
-                Nodes.ne(scope);
+                Nodes.ne(code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.GE -> {
-                Nodes.ge(scope);
+                Nodes.ge(code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.GT -> {
-                Nodes.gt(scope);
+                Nodes.gt(code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.LT -> {
-                Nodes.lt(scope);
+                Nodes.lt(code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.LE -> {
-                Nodes.le(scope);
+                Nodes.le(code);
                 yield Types.getBooleanType();
             }
             default -> throw new IllegalStateException("Unrecognized operator: " + ctx.bop.getText());
@@ -347,11 +347,11 @@ class AsmExpressionResolver {
             var v = callable.resolveVariable(assigned.primary().IDENTIFIER().getText());
             var cIdx = v.getContextIndex(callable);
             resolve0(ctx.expression(1));
-            Nodes.dup(scope);
+            Nodes.dup(code);
             if(cIdx == -1)
-                Nodes.store(v.index(), scope);
+                Nodes.store(v.index(), code);
             else
-                Nodes.storeContextSlot(cIdx, v.index(), scope);
+                Nodes.storeContextSlot(cIdx, v.index(), code);
             return v.type();
         }
         else if(assigned.bop.getType() == AssemblyParser.DOT && assigned.IDENTIFIER() != null) {
@@ -361,16 +361,16 @@ class AsmExpressionResolver {
             if(klass != null) {
                 var field = klass.getStaticFieldByName(fieldName);
                 resolve0(ctx.expression(1));
-                Nodes.dup(scope);
-                Nodes.setStatic(field, scope);
+                Nodes.dup(code);
+                Nodes.setStatic(field, code);
                 return field.getType();
             }
             else {
                 var qualifierType = (ClassType) resolve0(qualifierCtx);
                 resolve0(ctx.expression(1));
-                Nodes.dupX1(scope);
+                Nodes.dupX1(code);
                 var field = qualifierType.resolve().getFieldByName(fieldName);
-                Nodes.setField(field, scope);
+                Nodes.setField(field, code);
                 return field.getType();
             }
         }
@@ -378,8 +378,8 @@ class AsmExpressionResolver {
             var arrayType = (ArrayType) resolve0(assigned.expression(0));
             resolve0(assigned.expression(1));
             resolve0(assignment);
-            Nodes.dupX2(scope);
-            Nodes.setElement(scope);
+            Nodes.dupX2(code);
+            Nodes.setElement(code);
             return arrayType.getElementType();
         }
         else
@@ -400,7 +400,7 @@ class AsmExpressionResolver {
         List<Type> argTypes = methodCall.expressionList() != null ?
                 NncUtils.map(methodCall.expressionList().expression(), this::resolve0) : List.of();
         Method method = type.resolve().resolveMethod(methodName, argTypes, typeArgs, false);
-        Nodes.methodCall(method, scope);
+        Nodes.methodCall(method, code);
         return method.getReturnType();
     }
 
@@ -410,7 +410,7 @@ class AsmExpressionResolver {
         List<Type> argTypes = expressionList != null ?
                 NncUtils.map(expressionList.expression(), this::resolve0) : List.of();
         Method method = type.resolve().resolveMethod(methodName, argTypes, List.of(), false);
-        Nodes.methodCall(method, scope);
+        Nodes.methodCall(method, code);
         return null;
     }
 
@@ -420,26 +420,26 @@ class AsmExpressionResolver {
         List<Type> argTypes = expressionList != null ?
                 NncUtils.map(expressionList.expression(), this::resolve0) : List.of();
         Method method = type.resolve().resolveMethod(methodName, argTypes, List.of(), false);
-        Nodes.methodCall(method, scope);
+        Nodes.methodCall(method, code);
         return null;
     }
 
     private Type resolveGetStatic(Klass klass, String name) {
         var field = klass.getStaticFieldByName(name);
-        Nodes.getStatic(field, scope);
+        Nodes.getStatic(field, code);
         return field.getType();
     }
 
     private Type resolveGetField(AssemblyParser.ExpressionContext qualifier, String name) {
         var type = resolve0(qualifier);
         if(type instanceof ArrayType && name.equals("length")) {
-            Nodes.arrayLength(scope.nextNodeName("length"), scope);
+            Nodes.arrayLength(code.nextNodeName("length"), code);
             return Types.getLongType();
         } else {
             assert type instanceof ClassType;
             var klass = ((ClassType) type).resolve();
             var field = klass.getFieldByName(name);
-            Nodes.getProperty(field, scope);
+            Nodes.getProperty(field, code);
             return field.getType();
         }
     }
@@ -449,30 +449,30 @@ class AsmExpressionResolver {
                                     AssemblyParser.ExpressionContext second) {
         var i = callable.nextVariableIndex();
         resolve0(condition);
-        var ifNot = Nodes.ifNot(null, scope);
+        var ifNot = Nodes.ifNot(null, code);
         var type1 = resolve0(first);
-        Nodes.store(i, scope);
-        var g = Nodes.goto_(scope);
-        ifNot.setTarget(Nodes.noop(scope));
+        Nodes.store(i, code);
+        var g = Nodes.goto_(code);
+        ifNot.setTarget(Nodes.noop(code));
         var type2 = resolve0(second);
-        Nodes.store(i, scope);
-        g.setTarget(Nodes.noop(scope));
+        Nodes.store(i, code);
+        g.setTarget(Nodes.noop(code));
         var type = Types.getCompatibleType(type1, type2);
-        Nodes.load(i, type, scope);
+        Nodes.load(i, type, code);
         return type;
     }
 
     private Type resolveInstanceOf(AssemblyParser.ExpressionContext operand,
                                     AssemblyParser.TypeTypeContext type) {
         resolve0(operand);
-        Nodes.instanceOf(parseType(type), scope);
+        Nodes.instanceOf(parseType(type), code);
         return Types.getBooleanType();
     }
 
     private Type resolveArrayAccess(AssemblyParser.ExpressionContext array, AssemblyParser.ExpressionContext index) {
         var arrayType = (ArrayType) resolve0(array);
         resolve0(index);
-        Nodes.getElement(scope);
+        Nodes.getElement(code);
         return arrayType.getElementType();
     }
 
@@ -480,15 +480,15 @@ class AsmExpressionResolver {
         var type = resolve0(operand);
          return switch (prefix.getType()) {
             case AssemblyParser.SUB -> {
-                Nodes.negate(scope);
+                Nodes.negate(code);
                 yield type;
             }
             case AssemblyParser.TILDE -> {
-                Nodes.bitNot(scope);
+                Nodes.bitNot(code);
                 yield Types.getLongType();
             }
             case AssemblyParser.BANG -> {
-                Nodes.not(scope);
+                Nodes.not(code);
                 yield Types.getBooleanType();
             }
             default -> throw new IllegalStateException("Unrecognized operator: " + prefix.getText());
@@ -502,14 +502,14 @@ class AsmExpressionResolver {
             var funcType = (FunctionType) loadVariable(v);
             if(exprListCtx != null)
                 NncUtils.map(exprListCtx.expression(), this::resolve0);
-            Nodes.function(scope, funcType);
+            Nodes.function(code, funcType);
             return funcType.getReturnType();
         }
         else {
             var func = StdFunction.valueOf(name).get();
             if(exprListCtx != null)
                 NncUtils.map(exprListCtx.expression(), this::resolve0);
-            Nodes.functionCall(scope, func);
+            Nodes.functionCall(code, func);
             return func.getReturnType();
         }
     }
@@ -531,16 +531,16 @@ class AsmExpressionResolver {
     }
 
     private Klass currentKlass() {
-        return ((Method) scope.getFlow()).getDeclaringType();
+        return ((Method) code.getFlow()).getDeclaringType();
     }
 
     private ClassType getThis() {
         var cIdx = callable.getMethodContextIndex();
         var thisType = callable.getDeclaringKlass().getType();
         if (cIdx == -1)
-            Nodes.load(0, thisType, scope);
+            Nodes.load(0, thisType, code);
         else
-            Nodes.loadContextSlot(cIdx, 0, thisType, scope);
+            Nodes.loadContextSlot(cIdx, 0, thisType, code);
         return thisType;
     }
 
@@ -569,7 +569,7 @@ class AsmExpressionResolver {
     }
 
     private Type getExpressionType(Expression expression) {
-        var lastNode = scope.getLastNode();
+        var lastNode = code.getLastNode();
         return lastNode != null ? lastNode.getNextExpressionTypes().getType(expression) : expression.getType();
     }
 

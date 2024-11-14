@@ -457,9 +457,9 @@ public class StandardDefBuilder {
         var c = MethodBuilder.newBuilder(klass, "MvObject")
                 .isConstructor(true)
                 .build();
-        var scope = c.getScope();
-        Nodes.this_(scope);
-        Nodes.ret(scope);
+        var code = c.getCode();
+        Nodes.this_(code);
+        Nodes.ret(code);
         defContext.addDef(new DirectDef<>(MvObject.class, klass));
         klass.emitCode();
         return klass;

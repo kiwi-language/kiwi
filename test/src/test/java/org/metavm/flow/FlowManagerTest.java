@@ -37,18 +37,18 @@ public class FlowManagerTest extends TestCase {
                         .returnType(Types.getBooleanType())
                         .isStatic(true)
                         .build();
-                var scope = method.getScope();
+                var code = method.getCode();
                 Nodes.argument(method, 0);
-                var if_ = Nodes.if_(null, scope);
-                var i = scope.nextVariableIndex();
-                Nodes.loadConstant(Instances.falseInstance(), scope);
-                Nodes.store(i, scope);
-                var g = Nodes.goto_(scope);
-                if_.setTarget(Nodes.loadConstant(Instances.trueInstance(), scope));
-                Nodes.store(i, scope);
-                g.setTarget(Nodes.noop(scope));
-                Nodes.load(i, Types.getBooleanType(), scope);
-                Nodes.ret(scope);
+                var if_ = Nodes.if_(null, code);
+                var i = code.nextVariableIndex();
+                Nodes.loadConstant(Instances.falseInstance(), code);
+                Nodes.store(i, code);
+                var g = Nodes.goto_(code);
+                if_.setTarget(Nodes.loadConstant(Instances.trueInstance(), code));
+                Nodes.store(i, code);
+                g.setTarget(Nodes.noop(code));
+                Nodes.load(i, Types.getBooleanType(), code);
+                Nodes.ret(code);
                 context.bind(klass);
                 klass.accept(new FlowAnalyzer());
                 klass.emitCode();

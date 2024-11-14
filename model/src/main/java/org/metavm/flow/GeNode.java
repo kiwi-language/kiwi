@@ -14,18 +14,18 @@ import javax.annotation.Nullable;
 
 public class GeNode extends NodeRT {
 
-    public static GeNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static GeNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         GeNode node = (GeNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new GeNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new GeNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
     public GeNode(Long tmpId,
                   @NotNull String name,
                   @Nullable NodeRT previous,
-                  @NotNull ScopeRT scope) {
-        super(tmpId, name, Types.getBooleanType(), previous, scope);
+                  @NotNull Code code) {
+        super(tmpId, name, Types.getBooleanType(), previous, code);
     }
 
     @Override

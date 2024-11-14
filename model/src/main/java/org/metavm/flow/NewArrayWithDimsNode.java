@@ -16,13 +16,13 @@ import org.metavm.util.NncUtils;
 @EntityType
 public class NewArrayWithDimsNode extends NodeRT {
 
-    public static NewArrayWithDimsNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static NewArrayWithDimsNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var param = (NewArrayWithDimsNodeParam) nodeDTO.getParam();
         var type = (ArrayType) TypeParser.parseType(nodeDTO.outputType(), context);
         var dims = param.dimensions();
         NewArrayWithDimsNode node = (NewArrayWithDimsNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new NewArrayWithDimsNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, scope, dims);
+            node = new NewArrayWithDimsNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, code, dims);
         return node;
     }
 
@@ -31,9 +31,9 @@ public class NewArrayWithDimsNode extends NodeRT {
     public NewArrayWithDimsNode(Long tmpId, String name,
                                 ArrayType type,
                                 NodeRT previous,
-                                ScopeRT scope,
+                                Code code,
                                 int dimensions) {
-        super(tmpId, name, type, previous, scope);
+        super(tmpId, name, type, previous, code);
         this.dimensions = dimensions;
     }
 

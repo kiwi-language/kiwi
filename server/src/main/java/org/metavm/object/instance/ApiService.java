@@ -280,7 +280,7 @@ public class ApiService extends EntityContextFactoryAware {
         do {
             var k = Objects.requireNonNull(queue.poll());
             for (Method method : k.getMethods()) {
-                if (method.isPublic() && !method.isAbstract() && (methodRef == null || methodRef.name().equals(method.getCode())) && method.getParameters().size() == rawArguments.size()
+                if (method.isPublic() && !method.isAbstract() && (methodRef == null || methodRef.name().equals(method.getName())) && method.getParameters().size() == rawArguments.size()
                         && _static == method.isStatic() && constructor == method.isConstructor()) {
                     method = methodRef != null ? method.getParameterized(methodRef.typeArguments()) : method;
                     var resolvedArgs = tryResolveArguments(method, rawArguments, context);

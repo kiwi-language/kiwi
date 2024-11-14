@@ -112,7 +112,7 @@ public class Declarator extends VisitorBase {
     }
 
     private String getDefaultBeanName(Klass klass) {
-        var klassName = klass.getCodeNotNull();
+        var klassName = klass.getQualifiedName();
         var idx = klassName.lastIndexOf('.');
         var simpleName = idx == -1 ? klassName : klassName.substring(idx + 1);
         return NamingUtils.firstCharToLowerCase(simpleName);
@@ -163,7 +163,7 @@ public class Declarator extends VisitorBase {
         flow.clearAttributes();
         var beanAnnotation = TranspileUtils.getAnnotation(method, Bean.class);
         if (beanAnnotation != null) {
-            var beanName = (String) TranspileUtils.getAnnotationAttribute(beanAnnotation, "value", flow.getCodeNotNull());
+            var beanName = (String) TranspileUtils.getAnnotationAttribute(beanAnnotation, "value", flow.getName());
             flow.setAttribute(AttributeNames.BEAN_NAME, beanName);
         }
         currentClass().visitedMethods.add(flow);

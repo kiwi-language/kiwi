@@ -14,18 +14,18 @@ import javax.annotation.Nullable;
 
 public class NeNode extends NodeRT {
 
-    public static NeNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static NeNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         NeNode node = (NeNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new NeNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new NeNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
     public NeNode(Long tmpId,
                   @NotNull String name,
                   @Nullable NodeRT previous,
-                  @NotNull ScopeRT scope) {
-        super(tmpId, name, Types.getBooleanType(), previous, scope);
+                  @NotNull Code code) {
+        super(tmpId, name, Types.getBooleanType(), previous, code);
     }
 
     @Override

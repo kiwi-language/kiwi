@@ -58,7 +58,7 @@ public class EntityContextTest extends TestCase {
                         .typeParameters(new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE))
                         .build();
                 var m = MethodBuilder.newBuilder(klass, "test").build();
-                Nodes.noop(m.getScope());
+                Nodes.noop(m.getCode());
                 klass.setStage(ResolutionStage.DEFINITION);
                 context.bind(klass);
                 var pKlass = klass.getParameterized(List.of(Types.getStringType()));

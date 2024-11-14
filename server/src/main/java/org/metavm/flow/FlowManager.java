@@ -214,16 +214,16 @@ public class FlowManager extends EntityContextFactoryAware {
         }
     }
 
-    private void saveScope(ScopeDTO scopeDTO, ScopeRT scope, IEntityContext context) {
-        scope.clear();
-        scope.setMaxStack(scopeDTO.maxStack());
-        scope.setMaxLocals(scopeDTO.maxLocals());
-        scope.setCodeBase64(scopeDTO.codeBase64());
+    private void saveScope(CodeDTO scopeDTO, Code code, IEntityContext context) {
+        code.clear();
+        code.setMaxStack(scopeDTO.maxStack());
+        code.setMaxLocals(scopeDTO.maxLocals());
+        code.setCodeBase64(scopeDTO.codeBase64());
     }
 
-    private NodeRT saveNode(NodeDTO nodeDTO, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    private NodeRT saveNode(NodeDTO nodeDTO, Code code, NodeSavingStage stage, IEntityContext context) {
         if (nodeDTO.id() == null || Id.parse(nodeDTO.id()).tryGetTreeId() == null) {
-            return createNode(nodeDTO, scope, stage, context);
+            return createNode(nodeDTO, code, stage, context);
         } else {
             return updateNode(nodeDTO, stage, context);
         }
@@ -251,8 +251,8 @@ public class FlowManager extends EntityContextFactoryAware {
                 return;
             if(flowDTO.constantPool() != null)
                 saveConstantPool(flow.getConstantPool(), flowDTO.constantPool(), context);
-            if(flowDTO.rootScope() != null)
-                saveScope(flowDTO.rootScope(), flow.getScope(), context);
+            if(flowDTO.code() != null)
+                saveScope(flowDTO.code(), flow.getCode(), context);
             for (LambdaDTO lambdaDTO : flowDTO.lambdas()) {
                 saveLambdaContent(lambdaDTO, context);
             }
@@ -268,7 +268,7 @@ public class FlowManager extends EntityContextFactoryAware {
 
     private void saveLambdaContent(LambdaDTO lambdaDTO, IEntityContext context) {
         var lambda = context.getEntity(Lambda.class, lambdaDTO.id());
-        saveScope(lambdaDTO.scope(), lambda.getScope(), context);
+        saveScope(lambdaDTO.scope(), lambda.getCode(), context);
     }
 
     @Transactional
@@ -304,7 +304,7 @@ public class FlowManager extends EntityContextFactoryAware {
             if (flow == null) {
                 throw BusinessException.flowNotFound(nodeDTO.flowId());
             }
-            var node = createNode(nodeDTO, context.getScope(Id.parse(nodeDTO.scopeId())), NodeSavingStage.INIT, context);
+            var node = createNode(nodeDTO, context.getCode(Id.parse(nodeDTO.scopeId())), NodeSavingStage.INIT, context);
             afterFlowChange(flow, context);
             context.finish();
             return node.toDTO(serContext);
@@ -319,12 +319,12 @@ public class FlowManager extends EntityContextFactoryAware {
         }
     }
 
-    private NodeRT createNode(NodeDTO nodeDTO, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    private NodeRT createNode(NodeDTO nodeDTO, Code code, NodeSavingStage stage, IEntityContext context) {
         try (var ignored = context.getProfiler().enter("createNode")) {
             try (var ignored1 = context.getProfiler().enter("Flow.analyze", true)) {
-                scope.getFlow().analyze();
+                code.getFlow().analyze();
             }
-            return NodeFactory.save(nodeDTO, scope, stage, context);
+            return NodeFactory.save(nodeDTO, code, stage, context);
         }
     }
 
@@ -351,9 +351,9 @@ public class FlowManager extends EntityContextFactoryAware {
         if (node == null) {
             throw BusinessException.nodeNotFound(nodeDTO.id());
         }
-        var scope = context.getScope(Id.parse(nodeDTO.scopeId()));
-        scope.getFlow().analyze();
-        NodeFactory.save(nodeDTO, scope, stage, context);
+        var code = context.getCode(Id.parse(nodeDTO.scopeId()));
+        code.getFlow().analyze();
+        NodeFactory.save(nodeDTO, code, stage, context);
         return node;
     }
 
@@ -397,8 +397,7 @@ public class FlowManager extends EntityContextFactoryAware {
             Klass type = context.getKlass(Id.parse(typeId));
             var methods = type.getAllMethods();
             if (searchText != null) {
-                methods = NncUtils.filter(methods, flow -> flow.getName().contains(searchText)
-                        || flow.getCode() != null && flow.getCode().contains(searchText));
+                methods = NncUtils.filter(methods, flow -> flow.getName().contains(searchText));
             }
             int start = Math.min((page - 1) * pageSize, methods.size());
             int end = Math.min(page * pageSize, methods.size());

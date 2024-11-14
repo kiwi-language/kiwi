@@ -65,7 +65,7 @@ public abstract class AsmCallable implements AsmScope {
     }
 
     public Klass getDeclaringKlass() {
-        return ((Method) callable.getScope().getFlow()).getDeclaringType();
+        return ((Method) callable.getCode().getFlow()).getDeclaringType();
     }
 
     public Callable getCallable() {

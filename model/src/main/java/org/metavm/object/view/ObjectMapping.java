@@ -38,12 +38,12 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
 
     @Override
     protected Flow generateMappingCode(boolean generateReadMethod) {
-        var scope = Objects.requireNonNull(mapper).newEphemeralCode();
+        var code = Objects.requireNonNull(mapper).newEphemeralCode();
         var actualSourceType = (ClassType) mapper.getParameter(0).getType();
         var readMethod = getSourceMethod(actualSourceType.resolve(), getReadMethod());
         Nodes.argument(mapper, 0);
-        Nodes.methodCall(readMethod, scope);
-        Nodes.ret(scope);
+        Nodes.methodCall(readMethod, code);
+        Nodes.ret(code);
         mapper.computeMaxes();
         return mapper;
     }
@@ -53,24 +53,24 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
         var actualSourceKlass = ((ClassType) unmapper.getReturnType()).resolve();
         var fromViewMethod = findSourceMethod(actualSourceKlass, findFromViewMethod());
         var writeMethod = getSourceMethod(actualSourceKlass, getWriteMethod());
-        var scope = unmapper.newEphemeralCode();
+        var code = unmapper.newEphemeralCode();
         Nodes.argument(unmapper, 0);
-        Nodes.functionCall(scope, StdFunction.isSourcePresent.get());
-        var ifNode = Nodes.ifNot(null, scope);
+        Nodes.functionCall(code, StdFunction.isSourcePresent.get());
+        var ifNode = Nodes.ifNot(null, code);
         Nodes.argument(unmapper, 0);
-        Nodes.functionCall(scope, StdFunction.getSource.get());
-        Nodes.cast(getSourceType(), scope);
-        Nodes.dup(scope);
+        Nodes.functionCall(code, StdFunction.getSource.get());
+        Nodes.cast(getSourceType(), code);
+        Nodes.dup(code);
         Nodes.argument(unmapper, 0);
-        Nodes.methodCall(writeMethod, scope);
-        Nodes.ret(scope);
+        Nodes.methodCall(writeMethod, code);
+        Nodes.ret(code);
         if (fromViewMethod != null) {
             ifNode.setTarget(Nodes.argument(unmapper, 0));
-            Nodes.methodCall(fromViewMethod, scope);
-            Nodes.ret(scope);
+            Nodes.methodCall(fromViewMethod, code);
+            Nodes.ret(code);
         } else {
-            ifNode.setTarget(Nodes.loadConstant(Instances.stringInstance("fromView not supported"), scope));
-            Nodes.raiseWithMessage(scope);
+            ifNode.setTarget(Nodes.loadConstant(Instances.stringInstance("fromView not supported"), code));
+            Nodes.raiseWithMessage(code);
         }
         unmapper.computeMaxes();
         return unmapper;
@@ -117,7 +117,7 @@ public abstract class ObjectMapping extends Mapping implements LocalKey {
 
     private boolean isFromViewMethod(Method method) {
         return method.isStatic() &&
-                Objects.equals(method.getCode(), "fromView") &&
+                Objects.equals(method.getName(), "fromView") &&
                 method.getReturnType().equals(getSourceType()) &&
                 method.getParameters().size() == 1 && method.getParameters().get(0).getType().equals(getTargetType());
     }

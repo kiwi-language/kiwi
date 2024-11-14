@@ -14,18 +14,18 @@ import javax.annotation.Nullable;
 
 public class BitXorNode extends NodeRT {
 
-    public static BitXorNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static BitXorNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         BitXorNode node = (BitXorNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new BitXorNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new BitXorNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
     public BitXorNode(Long tmpId,
                       @NotNull String name,
                       @Nullable NodeRT previous,
-                      @NotNull ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+                      @NotNull Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

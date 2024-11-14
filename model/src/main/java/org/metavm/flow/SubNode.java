@@ -14,10 +14,10 @@ import javax.annotation.Nullable;
 
 public class SubNode extends NodeRT {
 
-    public static SubNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static SubNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         SubNode node = (SubNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
-            node = new SubNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new SubNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         }
         return node;
     }
@@ -25,9 +25,9 @@ public class SubNode extends NodeRT {
     public SubNode(Long tmpId,
                    @NotNull String name,
                    @Nullable NodeRT previous,
-                   @NotNull ScopeRT scope
+                   @NotNull Code code
                    ) {
-        super(tmpId, name, null, previous, scope);
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

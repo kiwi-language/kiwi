@@ -1,14 +1,14 @@
 package org.metavm.asm;
 
 import org.metavm.asm.antlr.AssemblyParser;
-import org.metavm.flow.ScopeRT;
+import org.metavm.flow.Code;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 
 public interface AsmCodeGenerator {
 
-    void processBlock(AssemblyParser.BlockContext block, ScopeRT scope);
+    void processBlock(AssemblyParser.BlockContext block, Code code);
 
     void enterScope(AsmScope scope);
 

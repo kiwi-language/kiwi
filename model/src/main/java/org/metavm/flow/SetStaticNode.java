@@ -17,20 +17,20 @@ public class SetStaticNode extends NodeRT {
 
     public static final Logger logger = LoggerFactory.getLogger(SetStaticNode.class);
 
-    public static SetStaticNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static SetStaticNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         SetStaticNodeParam param = nodeDTO.getParam();
         var node = (SetStaticNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var fieldRef = FieldRef.create(param.fieldRef(), context);
-            node = new SetStaticNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope,  fieldRef);
+            node = new SetStaticNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code,  fieldRef);
         }
         return node;
     }
 
     private final FieldRef fieldRef;
 
-    public SetStaticNode(Long tmpId, String name, NodeRT previous, ScopeRT scope, FieldRef fieldRef) {
-        super(tmpId, name, null, previous, scope);
+    public SetStaticNode(Long tmpId, String name, NodeRT previous, Code code, FieldRef fieldRef) {
+        super(tmpId, name, null, previous, code);
         this.fieldRef = fieldRef;
     }
 

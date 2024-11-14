@@ -280,14 +280,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
         if (template == null) {
-            return getCodeNotNull();
+            return getQualifiedName();
         } else {
             throw new InternalException("Getting global key for parameterized type: " + getTypeDesc() + ", method: " + ((Method) DebugEnv.object).getQualifiedSignature());
         }
-    }
-
-    public String getCodeNotNull() {
-        return Objects.requireNonNull(qualifiedName);
     }
 
     public void forEachField(Consumer<Field> action) {
@@ -858,7 +854,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public Field getStaticFieldByName(String fieldName) {
         return NncUtils.requireNonNull(tryGetStaticFieldByName(fieldName),
-                () -> "Static field " + fieldName + " not found in class " + getCodeNotNull());
+                () -> "Static field " + fieldName + " not found in class " + getQualifiedName());
     }
 
     /**
@@ -1758,9 +1754,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @Override
     public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
         if (isParameterized())
-            return requireNonNull(template).getCodeNotNull() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
+            return requireNonNull(template).getQualifiedName() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
         else
-            return getCodeNotNull();
+            return getQualifiedName();
     }
 
     @Override

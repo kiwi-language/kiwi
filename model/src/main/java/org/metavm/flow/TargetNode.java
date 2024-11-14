@@ -18,11 +18,11 @@ import java.util.Objects;
 
 public class TargetNode extends NodeRT {
 
-    public static TargetNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static TargetNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var param = (TargetNodeParam) nodeDTO.getParam();
         var node = (TargetNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new TargetNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new TargetNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         if(stage == NodeSavingStage.FINALIZE) {
             node.setSources(
                     NncUtils.map(
@@ -37,8 +37,8 @@ public class TargetNode extends NodeRT {
     @ChildEntity
     private final ReadWriteArray<GotoNode> sources = addChild(new ReadWriteArray<>(GotoNode.class), "sources");
 
-    public TargetNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+    public TargetNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

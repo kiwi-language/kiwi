@@ -14,18 +14,18 @@ import javax.annotation.Nullable;
 
 public class RightShiftNode extends NodeRT {
 
-    public static RightShiftNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static RightShiftNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         RightShiftNode node = (RightShiftNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new RightShiftNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new RightShiftNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
     public RightShiftNode(Long tmpId,
                           @NotNull String name,
                           @Nullable NodeRT previous,
-                          @NotNull ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+                          @NotNull Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

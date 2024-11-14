@@ -6,18 +6,17 @@ import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.Entity;
 import org.metavm.entity.LocalKey;
 import org.metavm.flow.NodeRT;
-import org.metavm.flow.ScopeRT;
+import org.metavm.flow.Code;
 import org.metavm.object.type.Type;
 
-import java.util.Objects;
 import java.util.function.Supplier;
 
 @EntityType
 public abstract class NestedMapping extends Entity implements LocalKey {
 
-    public abstract Type generateMappingCode(Supplier<NodeRT> getSource, ScopeRT scope);
+    public abstract Type generateMappingCode(Supplier<NodeRT> getSource, Code code);
 
-    public abstract Type generateUnmappingCode(Supplier<NodeRT> viewSupplier, ScopeRT scope);
+    public abstract Type generateUnmappingCode(Supplier<NodeRT> viewSupplier, Code code);
 
     public abstract Type getTargetType();
 

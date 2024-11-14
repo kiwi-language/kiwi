@@ -112,24 +112,24 @@ public class FieldsObjectMapping extends ObjectMapping {
     }
 
     public void generateReadMethodCode() {
-        var scope = Objects.requireNonNull(readMethod).newEphemeralCode();
+        var code = Objects.requireNonNull(readMethod).newEphemeralCode();
         for (FieldMapping fieldMapping : fieldMappings)
-            fieldMapping.generateReadCode(readMethod.getScope());
-        Nodes.addObject(getTargetType(), true, scope);
-        Nodes.ret(scope);
+            fieldMapping.generateReadCode(readMethod.getCode());
+        Nodes.addObject(getTargetType(), true, code);
+        Nodes.ret(code);
         readMethod.emitCode();
     }
 
     public void generateWriteMethodCode() {
-        var scope = Objects.requireNonNull(writeMethod).newEphemeralCode();
+        var code = Objects.requireNonNull(writeMethod).newEphemeralCode();
         for (FieldMapping fieldMapping : fieldMappings) {
             if (!fieldMapping.isReadonly())
                 fieldMapping.generateWriteCode(() -> {
                     Nodes.argument(writeMethod, 0);
                     return getTargetType();
-                }, scope);
+                }, code);
         }
-        Nodes.voidRet(scope);
+        Nodes.voidRet(code);
         writeMethod.emitCode();
     }
 

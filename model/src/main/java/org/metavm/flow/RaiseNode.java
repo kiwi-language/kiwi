@@ -11,15 +11,15 @@ import org.metavm.object.instance.core.Id;
 @EntityType
 public class RaiseNode extends NodeRT {
 
-    public static RaiseNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext entityContext) {
+    public static RaiseNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext entityContext) {
         RaiseNode node = (RaiseNode) entityContext.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new RaiseNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new RaiseNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
-    public RaiseNode(Long tmpId, String name, NodeRT prev, ScopeRT scope) {
-        super(tmpId, name, null, prev, scope);
+    public RaiseNode(Long tmpId, String name, NodeRT prev, Code code) {
+        super(tmpId, name, null, prev, code);
     }
 
     @Override

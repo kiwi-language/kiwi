@@ -18,19 +18,19 @@ import java.util.Objects;
 @Slf4j
 public class LoadNode extends VariableAccessNode {
 
-    public static LoadNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static LoadNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         LoadNodeParam param = nodeDTO.getParam();
         var node = (LoadNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var type = TypeParser.parseType(nodeDTO.outputType(), context);
-            node = new LoadNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, scope, param.index());
+            node = new LoadNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, code, param.index());
         }
         return node;
     }
 
     public LoadNode(Long tmpId, @NotNull String name, Type outputType,
-                    @Nullable NodeRT previous, @NotNull ScopeRT scope, int index) {
-        super(tmpId, name, outputType, previous, scope, index);
+                    @Nullable NodeRT previous, @NotNull Code code, int index) {
+        super(tmpId, name, outputType, previous, code, index);
     }
 
     @Override

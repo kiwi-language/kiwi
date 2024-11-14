@@ -17,19 +17,19 @@ public class NodeFactory {
 
     public static final Logger logger = LoggerFactory.getLogger(NodeFactory.class);
 
-    public static NodeRT save(NodeDTO nodeDTO, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static NodeRT save(NodeDTO nodeDTO, Code code, NodeSavingStage stage, IEntityContext context) {
         try (var ignored = context.getProfiler().enter("NodeFactory.save")) {
             NodeKind nodeType = NodeKind.fromCode(nodeDTO.kind());
             Class<? extends NodeRT> klass = nodeType.getNodeClass();
             Method createMethod = tryGetStaticMethod(
-                    klass, "save", NodeDTO.class, NodeRT.class, ScopeRT.class, NodeSavingStage.class, IEntityContext.class);
+                    klass, "save", NodeDTO.class, NodeRT.class, Code.class, NodeSavingStage.class, IEntityContext.class);
             if(createMethod == null)
                 throw new NullPointerException("Failed to find save method for class: " + klass.getName());
-            NodeRT prev = nodeDTO.prevId() != null ? context.getNode(nodeDTO.prevId()) : scope.getLastNode();
+            NodeRT prev = nodeDTO.prevId() != null ? context.getNode(nodeDTO.prevId()) : code.getLastNode();
             NodeRT node = context.getNode(nodeDTO.id());
             boolean isCreate = node == null;
             try {
-                node = (NodeRT) ReflectionUtils.invoke(null, createMethod, nodeDTO, prev, scope, stage, context);
+                node = (NodeRT) ReflectionUtils.invoke(null, createMethod, nodeDTO, prev, code, stage, context);
                 if(prev != null && prev.isSequential())
                     node.mergeExpressionTypes(prev.getNextExpressionTypes());
                 if (isCreate)

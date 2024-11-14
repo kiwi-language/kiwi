@@ -14,18 +14,18 @@ import javax.annotation.Nullable;
 
 public class GtNode extends NodeRT {
 
-    public static GtNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static GtNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         GtNode node = (GtNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new GtNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new GtNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
     public GtNode(Long tmpId,
                   @NotNull String name,
                   @Nullable NodeRT previous,
-                  @NotNull ScopeRT scope) {
-        super(tmpId, name, Types.getBooleanType(), previous, scope);
+                  @NotNull Code code) {
+        super(tmpId, name, Types.getBooleanType(), previous, code);
     }
 
     @Override

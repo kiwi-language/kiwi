@@ -16,21 +16,21 @@ import org.metavm.object.view.ObjectMappingRef;
 @EntityType
 public class MapNode extends NodeRT {
 
-    public static MapNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static MapNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (MapNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var param = (MapNodeParam) nodeDTO.param();
             var mappingRef = ObjectMappingRef.create(param.mappingRef(), context);
-            node = new MapNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, mappingRef);
+            node = new MapNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, mappingRef);
         }
         return node;
     }
 
     private final ObjectMappingRef mappingRef;
 
-    public MapNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope,
+    public MapNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code,
                    ObjectMappingRef mappingRef) {
-        super(tmpId, name, null, previous, scope);
+        super(tmpId, name, null, previous, code);
         this.mappingRef = mappingRef;
     }
 

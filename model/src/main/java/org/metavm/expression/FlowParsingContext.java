@@ -2,7 +2,7 @@ package org.metavm.expression;
 
 import org.metavm.entity.IEntityContext;
 import org.metavm.flow.NodeRT;
-import org.metavm.flow.ScopeRT;
+import org.metavm.flow.Code;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.InstanceProvider;
 import org.metavm.object.instance.core.Value;
@@ -17,10 +17,10 @@ import java.util.*;
 public class FlowParsingContext extends BaseParsingContext {
 
     public static FlowParsingContext create(NodeRT currentNode, IEntityContext entityContext) {
-        return create(currentNode.getScope(), currentNode.getPredecessor(), entityContext);
+        return create(currentNode.getCode(), currentNode.getPredecessor(), entityContext);
     }
 
-    public static FlowParsingContext create(ScopeRT scope, NodeRT prev, IEntityContext entityContext) {
+    public static FlowParsingContext create(Code code, NodeRT prev, IEntityContext entityContext) {
         return new FlowParsingContext(
                 entityContext.getInstanceContext(),
                 new ContextTypeDefRepository(entityContext),

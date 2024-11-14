@@ -239,20 +239,20 @@ public class MappingSaver {
         }
         if (generateCode) {
             fromView.clearContent();
-            var scope = fromView.getScope();
+            var code = fromView.getCode();
             for (FieldMapping fieldMapping : mapping.getFieldMappings()) {
                 var nestedMapping = fieldMapping.getNestedMapping();
                 Supplier<NodeRT> getTarget = () -> {
-                    Nodes.load(0, viewType, scope);
-                    return Nodes.getProperty(fieldMapping.getTargetField(), scope);
+                    Nodes.load(0, viewType, code);
+                    return Nodes.getProperty(fieldMapping.getTargetField(), code);
                 };
                 if (nestedMapping == null)
                     getTarget.get();
                 else
-                    nestedMapping.generateUnmappingCode(getTarget, scope);
+                    nestedMapping.generateUnmappingCode(getTarget, code);
             }
-            Nodes.newObject(fromView.getScope(), canonicalConstructor, false, false);
-            Nodes.ret(scope);
+            Nodes.newObject(fromView.getCode(), canonicalConstructor, false, false);
+            Nodes.ret(code);
             fromView.computeMaxes();
             fromView.emitCode();
         }
@@ -490,7 +490,7 @@ public class MappingSaver {
     }
 
     private static @Nullable Accessor getAccessor(Method getter) {
-        if (!getter.isSynthetic() && getter.isPublic() && getter.getCode() != null
+        if (!getter.isSynthetic() && getter.isPublic()
                 && !getter.getReturnType().isVoid() && getter.getParameters().isEmpty()) {
             for (Field field : getter.getDeclaringType().getFields()) {
                 if(getter.getName().equals(field.getName()))

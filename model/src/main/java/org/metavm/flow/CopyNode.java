@@ -14,15 +14,15 @@ import org.metavm.object.type.Types;
 @EntityType
 public class CopyNode extends NodeRT {
 
-    public static CopyNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static CopyNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         CopyNode node = (CopyNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new CopyNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new CopyNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
-    protected CopyNode(Long tmpId, String name, NodeRT previous, ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+    protected CopyNode(Long tmpId, String name, NodeRT previous, Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

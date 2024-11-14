@@ -5,7 +5,7 @@ import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.flow.Nodes;
-import org.metavm.flow.ScopeRT;
+import org.metavm.flow.Code;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Type;
@@ -58,16 +58,16 @@ public class DirectFieldMapping extends FieldMapping implements LocalKey, Generi
     }
 
     @Override
-    public Type generateReadCode0(ScopeRT scope) {
-        Nodes.thisProperty(getSourceField(), scope);
+    public Type generateReadCode0(Code code) {
+        Nodes.thisProperty(getSourceField(), code);
         return getSourceField().getType();
     }
 
     @Override
-    protected void generateWriteCode0(Supplier<Type> getFieldValue, ScopeRT scope) {
-        Nodes.this_(scope);
+    protected void generateWriteCode0(Supplier<Type> getFieldValue, Code code) {
+        Nodes.this_(code);
         getFieldValue.get();
-        Nodes.setField(getSourceField(), scope);
+        Nodes.setField(getSourceField(), code);
     }
 
     @Override

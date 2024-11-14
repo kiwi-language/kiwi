@@ -70,18 +70,18 @@ public class FlowFieldMapping extends FieldMapping implements LocalKey, GenericE
     }
 
     @Override
-    public Type generateReadCode0(ScopeRT scope) {
+    public Type generateReadCode0(Code code) {
         var getter = getterRef.resolve();
-        Nodes.this_(scope);
-        Nodes.methodCall(getter, scope);
+        Nodes.this_(code);
+        Nodes.methodCall(getter, code);
         return getter.getReturnType();
     }
 
     @Override
-    protected void generateWriteCode0(Supplier<Type> getFieldValue, ScopeRT scope) {
-        Nodes.this_(scope);
+    protected void generateWriteCode0(Supplier<Type> getFieldValue, Code code) {
+        Nodes.this_(code);
         getFieldValue.get();
-        Nodes.methodCall(getSetter(), scope);
+        Nodes.methodCall(getSetter(), code);
     }
 
     @Override

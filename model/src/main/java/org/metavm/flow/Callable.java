@@ -38,7 +38,7 @@ public interface Callable {
 
     CallableRef getRef();
 
-    ScopeRT getScope();
+    Code getCode();
 
     default int getMinLocals() {
         return getParameters().size();

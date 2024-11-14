@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
-import org.metavm.flow.rest.ScopeDTO;
+import org.metavm.flow.rest.CodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.EncodingUtils;
@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 @EntityType
-public class ScopeRT extends Element implements LoadAware {
+public class Code extends Element implements LoadAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
@@ -29,15 +29,15 @@ public class ScopeRT extends Element implements LoadAware {
     private String codeBase64 = EncodingUtils.encodeBase64(new byte[0]);
     private transient byte[] code;
 
-    public ScopeRT(Callable callable, Flow flow) {
+    public Code(Callable callable, Flow flow) {
         super(null, null);
         this.callable = callable;
         this.flow = flow;
         nodes.setEphemeralEntity(true);
     }
 
-    public ScopeDTO toDTO(SerializeContext serializeContext) {
-        return new ScopeDTO(
+    public CodeDTO toDTO(SerializeContext serializeContext) {
+        return new CodeDTO(
                 serializeContext.getStringId(this),
                 codeBase64,
                 maxLocals,

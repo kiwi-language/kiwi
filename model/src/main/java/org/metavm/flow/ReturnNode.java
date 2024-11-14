@@ -15,15 +15,15 @@ import org.metavm.object.type.Type;
 @Slf4j
 public class ReturnNode extends NodeRT {
 
-    public static ReturnNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext entityContext) {
+    public static ReturnNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext entityContext) {
         ReturnNode node = (ReturnNode) entityContext.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new ReturnNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new ReturnNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
-    public ReturnNode(Long tmpId, String name, NodeRT prev, ScopeRT scope) {
-        super(tmpId, name, null, prev, scope);
+    public ReturnNode(Long tmpId, String name, NodeRT prev, Code code) {
+        super(tmpId, name, null, prev, code);
     }
 
     @Override
@@ -54,7 +54,7 @@ public class ReturnNode extends NodeRT {
     @Override
     @NotNull
     public Type getType() {
-        return getScope().getCallable().getReturnType();
+        return getCode().getCallable().getReturnType();
     }
 
     @Override

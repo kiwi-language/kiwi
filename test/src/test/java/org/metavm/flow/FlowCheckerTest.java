@@ -25,16 +25,16 @@ public class FlowCheckerTest extends TestCase {
                 .returnType(Types.getAnyType())
                 .parameters(new Parameter(null, "value", Types.getNullableAnyType()))
                 .build();
-        var scope = method.getScope();
+        var code = method.getCode();
         Nodes.argument(method, 0);
-        Nodes.loadConstant(Instances.nullInstance(), scope);
-        Nodes.ne(scope);
-        var ifNode = Nodes.if_( null, scope);
-        Nodes.loadConstant(Instances.stringInstance("Value required"), scope);
-        Nodes.raiseWithMessage(scope);
+        Nodes.loadConstant(Instances.nullInstance(), code);
+        Nodes.ne(code);
+        var ifNode = Nodes.if_( null, code);
+        Nodes.loadConstant(Instances.stringInstance("Value required"), code);
+        Nodes.raiseWithMessage(code);
         ifNode.setTarget(Nodes.argument(method, 0));
-        Nodes.nonNull(scope);
-        Nodes.ret(scope);
+        Nodes.nonNull(code);
+        Nodes.ret(code);
         klass.accept(new FlowAnalyzer());
         klass.accept(new FlowChecker());
         Assert.assertEquals(0, klass.getErrors().size());
@@ -47,15 +47,15 @@ public class FlowCheckerTest extends TestCase {
                 .returnType(Types.getAnyType())
                 .parameters(new Parameter(null, "value", Types.getNullableAnyType()))
                 .build();
-        var scope = method.getScope();
+        var code = method.getCode();
         Nodes.argument(method, 0);
-        Nodes.loadConstant(Instances.nullInstance(), scope);
-        Nodes.eq(scope);
-        var ifNode = Nodes.if_(null, scope);
+        Nodes.loadConstant(Instances.nullInstance(), code);
+        Nodes.eq(code);
+        var ifNode = Nodes.if_(null, code);
         Nodes.argument(method, 0);
-        Nodes.ret(scope);
-        ifNode.setTarget(Nodes.loadConstant(Instances.stringInstance("Value required"), scope));
-        Nodes.raiseWithMessage(scope);
+        Nodes.ret(code);
+        ifNode.setTarget(Nodes.loadConstant(Instances.stringInstance("Value required"), code));
+        Nodes.raiseWithMessage(code);
         klass.accept(new FlowChecker());
         Assert.assertEquals(0, klass.getErrors().size());
     }

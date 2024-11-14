@@ -2,7 +2,7 @@ package org.metavm.flow.rest;
 
 import org.metavm.common.rest.dto.BaseDTO;
 
-public record ScopeDTO(
+public record CodeDTO(
         String id,
         String codeBase64,
         int maxLocals,

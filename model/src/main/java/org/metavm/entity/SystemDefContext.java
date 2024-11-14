@@ -4,7 +4,7 @@ import org.metavm.api.ValueObject;
 import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Function;
-import org.metavm.flow.ScopeRT;
+import org.metavm.flow.Code;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.DefaultObjectInstanceMap;
 import org.metavm.object.instance.ObjectInstanceMap;
@@ -379,7 +379,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
 //        instanceMapping.putAll(def.getInstanceMapping());
     }
 
-    public final Map<org.metavm.flow.Function, ScopeRT> originalScopes = new IdentityHashMap<>();
+    public final Map<org.metavm.flow.Function, Code> originalScopes = new IdentityHashMap<>();
 
     private void writeEntityIfNotPresent(Object entity) {
         if (!entities.contains(entity))

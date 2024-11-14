@@ -22,13 +22,13 @@ public class NewObjectNode extends CallNode {
 
     public static final Logger logger = LoggerFactory.getLogger(NewObjectNode.class);
 
-    public static NewObjectNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static NewObjectNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (NewObjectNode) context.getNode(nodeDTO.id());
         if(node == null) {
             NewObjectNodeParam param = nodeDTO.getParam();
             var methodRef = MethodRef.createMethodRef(Objects.requireNonNull(param.getFlowRef()), context);
             node = new NewObjectNode(nodeDTO.tmpId(), nodeDTO.name(), methodRef,
-                    prev, scope, param.isEphemeral(), param.isUnbound());
+                    prev, code, param.isEphemeral(), param.isUnbound());
             node.setCapturedVariableTypes(NncUtils.map(param.getCapturedVariableTypes(), t -> TypeParser.parseType(t, context)));
             node.setCapturedVariableIndexes(param.getCapturedVariableIndexes());
         }
@@ -40,9 +40,9 @@ public class NewObjectNode extends CallNode {
     private boolean unbound;
 
     public NewObjectNode(Long tmpId, String name, MethodRef methodRef,
-                         NodeRT prev, ScopeRT scope,
+                         NodeRT prev, Code code,
                          boolean ephemeral, boolean unbound) {
-        super(tmpId, name, prev, scope, methodRef);
+        super(tmpId, name, prev, code, methodRef);
         this.ephemeral = ephemeral;
         this.unbound = unbound;
     }

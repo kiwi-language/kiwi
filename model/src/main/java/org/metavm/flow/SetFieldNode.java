@@ -13,20 +13,20 @@ import org.metavm.object.type.FieldRef;
 @EntityType
 public class SetFieldNode extends NodeRT {
 
-    public static SetFieldNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static SetFieldNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         SetFieldNodeParam param = nodeDTO.getParam();
         var node = (SetFieldNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var fieldRef = FieldRef.create(param.fieldRef(), context);
-            node = new SetFieldNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, fieldRef);
+            node = new SetFieldNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, fieldRef);
         }
         return node;
     }
 
     private final FieldRef fieldRef;
 
-    public SetFieldNode(Long tmpId, String name, NodeRT prev, ScopeRT scope, FieldRef fieldRef) {
-        super(tmpId, name, null, prev, scope);
+    public SetFieldNode(Long tmpId, String name, NodeRT prev, Code code, FieldRef fieldRef) {
+        super(tmpId, name, null, prev, code);
         this.fieldRef = fieldRef;
     }
     @Override

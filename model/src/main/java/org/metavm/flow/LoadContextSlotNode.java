@@ -16,12 +16,12 @@ import java.util.Objects;
 
 public class LoadContextSlotNode extends NodeRT {
 
-    public static LoadContextSlotNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static LoadContextSlotNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         LoadContextSlotNodeParam param = nodeDTO.getParam();
         var node = (LoadContextSlotNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var type = TypeParser.parseType(nodeDTO.outputType(), context);
-            node = new LoadContextSlotNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, scope,
+            node = new LoadContextSlotNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, code,
                     param.contextIndex(), param.slotIndex());
         }
         return node;
@@ -31,8 +31,8 @@ public class LoadContextSlotNode extends NodeRT {
     private final int slotIndex;
 
     public LoadContextSlotNode(Long tmpId, @NotNull String name, Type outputType,
-                               @Nullable NodeRT previous, @NotNull ScopeRT scope, int contextIndex, int slotIndex) {
-        super(tmpId, name, outputType, previous, scope);
+                               @Nullable NodeRT previous, @NotNull Code code, int contextIndex, int slotIndex) {
+        super(tmpId, name, outputType, previous, code);
         this.contextIndex = contextIndex;
         this.slotIndex = slotIndex;
     }

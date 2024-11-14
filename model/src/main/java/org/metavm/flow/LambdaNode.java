@@ -18,14 +18,14 @@ import javax.annotation.Nullable;
 @EntityType
 public class LambdaNode extends NodeRT implements LoadAware {
 
-    public static LambdaNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static LambdaNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (LambdaNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             LambdaNodeParam param = nodeDTO.getParam();
             var lambda = context.getEntity(Lambda.class, param.lambdaId());
             var funcInterface = (ClassType) NncUtils.get(param.functionalInterface(), t -> TypeParser.parseType(t, new ContextTypeDefRepository(context)));
             node = new LambdaNode(
-                    nodeDTO.tmpId(), nodeDTO.name(), prev, scope, lambda, funcInterface
+                    nodeDTO.tmpId(), nodeDTO.name(), prev, code, lambda, funcInterface
             );
             node.createSAMImpl();
         }
@@ -37,9 +37,9 @@ public class LambdaNode extends NodeRT implements LoadAware {
 
     private transient ClassType functionInterfaceImpl;
 
-    public LambdaNode(Long tmpId, String name, NodeRT previous, ScopeRT scope,
+    public LambdaNode(Long tmpId, String name, NodeRT previous, Code code,
                       @NotNull Lambda lambda, @Nullable ClassType functionalInterface) {
-        super(tmpId, name, functionalInterface != null ? functionalInterface : lambda.getFunctionType(), previous, scope);
+        super(tmpId, name, functionalInterface != null ? functionalInterface : lambda.getFunctionType(), previous, code);
         this.functionalInterface = functionalInterface;
         this.lambda = lambda;
     }

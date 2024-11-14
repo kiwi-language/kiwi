@@ -15,12 +15,12 @@ import java.util.Objects;
 @EntityType
 public class MethodCallNode extends CallNode {
 
-    public static MethodCallNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static MethodCallNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (MethodCallNode) context.getNode(nodeDTO.id());
         if (node == null) {
             MethodCallNodeParam param = nodeDTO.getParam();
             var methodRef = MethodRef.createMethodRef(Objects.requireNonNull(param.getFlowRef()), context);
-            node = new MethodCallNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, methodRef);
+            node = new MethodCallNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, methodRef);
             node.setCapturedVariableTypes(NncUtils.map(param.getCapturedVariableTypes(), t -> TypeParser.parseType(t, context)));
             node.setCapturedVariableIndexes(param.getCapturedVariableIndexes());
         }
@@ -30,9 +30,9 @@ public class MethodCallNode extends CallNode {
     public MethodCallNode(Long tmpId,
                           String name,
                           NodeRT prev,
-                          ScopeRT scope,
+                          Code code,
                           MethodRef methodRef) {
-        super(tmpId, name, prev, scope, methodRef);
+        super(tmpId, name, prev, code, methodRef);
     }
 
     @Override

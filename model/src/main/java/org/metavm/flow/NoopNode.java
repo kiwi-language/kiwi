@@ -11,15 +11,15 @@ import org.metavm.object.instance.core.Id;
 @EntityType
 public class NoopNode extends NodeRT {
 
-    public static NoopNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static NoopNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (NoopNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new NoopNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new NoopNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
-    public NoopNode(Long tmpId, String name, NodeRT previous, ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+    public NoopNode(Long tmpId, String name, NodeRT previous, Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

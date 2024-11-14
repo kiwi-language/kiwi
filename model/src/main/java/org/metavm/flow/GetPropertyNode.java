@@ -15,13 +15,13 @@ import javax.annotation.Nullable;
 
 public class GetPropertyNode extends NodeRT {
 
-    public static GetPropertyNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static GetPropertyNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         GetPropertyNode node = (GetPropertyNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             GetPropertyNodeParam param = nodeDTO.getParam();
             var propertyRef = PropertyRef.create(param.propertyRef(), context);
             node = new GetPropertyNode(nodeDTO.tmpId(), nodeDTO.name(),
-                    prev, scope, propertyRef);
+                    prev, code, propertyRef);
         }
         return node;
     }
@@ -31,9 +31,9 @@ public class GetPropertyNode extends NodeRT {
     public GetPropertyNode(Long tmpId,
                            @NotNull String name,
                            @Nullable NodeRT previous,
-                           @NotNull ScopeRT scope,
+                           @NotNull Code code,
                            PropertyRef propertyRef) {
-        super(tmpId, name, null, previous, scope);
+        super(tmpId, name, null, previous, code);
         this.propertyRef = propertyRef;
     }
 

@@ -16,15 +16,15 @@ import javax.annotation.Nullable;
 @EntityType
 public class GetElementNode extends NodeRT {
 
-    public static GetElementNode save(NodeDTO nodeDTO, @Nullable NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static GetElementNode save(NodeDTO nodeDTO, @Nullable NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         GetElementNode node = (GetElementNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new GetElementNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new GetElementNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
-    public GetElementNode(Long tmpId, String name, NodeRT previous, ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+    public GetElementNode(Long tmpId, String name, NodeRT previous, Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

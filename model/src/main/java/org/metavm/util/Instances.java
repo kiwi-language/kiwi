@@ -786,7 +786,7 @@ public class Instances {
         var klass = field.getDeclaringType();
         var initMethodName = "__" + field.getName() + "__";
         return klass.findMethod(
-                m -> initMethodName.equals(m.getCode())
+                m -> initMethodName.equals(m.getName())
                         && m.getParameters().size() == 1
                         && m.getReturnType().equals(field.getType())
         );
@@ -807,7 +807,7 @@ public class Instances {
         var superKlass = requireNonNull(klass.getSuperType()).resolve();
         var initMethodName = "__" + superKlass.getName() + "__";
         return klass.findMethod(
-                m -> initMethodName.equals(m.getCode())
+                m -> initMethodName.equals(m.getName())
                         && m.getParameters().isEmpty()
                         && m.getReturnType().equals(superKlass.getType())
         );

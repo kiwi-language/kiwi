@@ -225,7 +225,7 @@ public class SubstitutorV2 extends CopyVisitor {
             copy.setConstructor(method.isConstructor());
             addCopy(method, copy);
             if(method.isRootScopePresent())
-                addCopy(method.getScope(), copy.getScope());
+                addCopy(method.getCode(), copy.getCode());
             enterElement(copy);
             copy.setParameters(NncUtils.map(method.getParameters(), p -> (Parameter) copy0(p)));
             copy.setReturnType(substituteType(method.getReturnType()));
@@ -249,7 +249,7 @@ public class SubstitutorV2 extends CopyVisitor {
                 copy.setNativeCode(function.getNativeCode());
             addCopy(function, copy);
             if (function.isRootScopePresent())
-                addCopy(function.getScope(), copy.getScope());
+                addCopy(function.getCode(), copy.getCode());
             enterElement(copy);
             copy.setParameters(NncUtils.map(function.getParameters(), p -> (Parameter) copy0(p)));
             copy.setReturnType(substituteType(function.getReturnType()));
@@ -277,9 +277,9 @@ public class SubstitutorV2 extends CopyVisitor {
                 copy.addCapturedFlow((Flow) copy0(capturedFlow));
             for (CpEntry cpEntry : flow.getConstantPool().getEntries())
                 copy.getConstantPool().addEntry((CpEntry) copy0(cpEntry));
-            copy.getScope().setCode(flow.getScope().getCode());
-            copy.getScope().setMaxLocals(flow.getScope().getMaxLocals());
-            copy.getScope().setMaxStack(flow.getScope().getMaxStack());
+            copy.getCode().setCode(flow.getCode().getCode());
+            copy.getCode().setMaxLocals(flow.getCode().getMaxLocals());
+            copy.getCode().setMaxStack(flow.getCode().getMaxStack());
         }
     }
 

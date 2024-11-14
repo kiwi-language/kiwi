@@ -16,17 +16,17 @@ import java.util.Objects;
 @EntityType
 public class CastNode extends NodeRT {
 
-    public static CastNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static CastNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (CastNode) context.getNode(Id.parse(nodeDTO.id()));
         var type = TypeParser.parseType(nodeDTO.outputType(), context);
         if (node == null)
-            node = new CastNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, scope);
+            node = new CastNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, code);
         return node;
     }
 
     public CastNode(Long tmpId, String name, @NotNull Type outputType,
-                    NodeRT previous, ScopeRT scope) {
-        super(tmpId, name, outputType, previous, scope);
+                    NodeRT previous, Code code) {
+        super(tmpId, name, outputType, previous, code);
     }
 
     @Override

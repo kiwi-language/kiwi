@@ -31,7 +31,6 @@ public class ReflectDefinerTest extends TestCase {
         Assert.assertEquals(4, constructors.size());
         for (Method c : constructors) {
             Assert.assertEquals(TreeSet.class.getSimpleName(), c.getName());
-            Assert.assertEquals(TreeSet.class.getSimpleName(), c.getCode());
         }
         var absCollKlass = getKlass(AbstractCollection.class);
         Assert.assertEquals(TreeSet.class.getName(), treeSetKlass.getQualifiedName());

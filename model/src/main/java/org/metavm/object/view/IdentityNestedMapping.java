@@ -2,7 +2,7 @@ package org.metavm.object.view;
 
 import org.metavm.api.EntityType;
 import org.metavm.flow.NodeRT;
-import org.metavm.flow.ScopeRT;
+import org.metavm.flow.Code;
 import org.metavm.object.type.Type;
 
 import java.util.Objects;
@@ -18,13 +18,13 @@ public class IdentityNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Type generateMappingCode(Supplier<NodeRT> getSource, ScopeRT scope) {
+    public Type generateMappingCode(Supplier<NodeRT> getSource, Code code) {
         getSource.get();
         return type;
     }
 
     @Override
-    public Type generateUnmappingCode(Supplier<NodeRT> viewSupplier, ScopeRT scope) {
+    public Type generateUnmappingCode(Supplier<NodeRT> viewSupplier, Code code) {
         viewSupplier.get();
         return type;
     }

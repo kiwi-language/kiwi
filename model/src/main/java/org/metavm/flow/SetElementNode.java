@@ -11,15 +11,15 @@ import org.metavm.flow.rest.SetElementNodeParam;
 @EntityType
 public class SetElementNode extends NodeRT {
 
-    public static SetElementNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static SetElementNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         SetElementNode node = (SetElementNode) context.getNode(nodeDTO.id());
         if (node == null)
-            node = new SetElementNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new SetElementNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
-    public SetElementNode(Long tmpId, String name, NodeRT previous, ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+    public SetElementNode(Long tmpId, String name, NodeRT previous, Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

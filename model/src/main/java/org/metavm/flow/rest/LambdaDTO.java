@@ -8,6 +8,6 @@ public record LambdaDTO(
     String id,
     List<ParameterDTO> parameters,
     String returnType,
-    ScopeDTO scope
+    CodeDTO scope
 ) implements BaseDTO {
 }

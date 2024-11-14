@@ -70,7 +70,6 @@ public class TypeParserImplTest extends TestCase {
                 throw new NullPointerException("No such class: " + name);
         }).parseFunction(functionSig);
         Assert.assertEquals("requireNonNull2", func.getName());
-        Assert.assertEquals("requireNonNull2", func.getCode());
         Assert.assertEquals(1, func.getTypeParameters().size());
         var variableType = func.getTypeParameters().get(0).getType();
         Assert.assertEquals(variableType, func.getReturnType());

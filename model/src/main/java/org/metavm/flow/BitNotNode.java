@@ -14,18 +14,18 @@ import javax.annotation.Nullable;
 
 public class BitNotNode extends NodeRT {
 
-    public static BitNotNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static BitNotNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         BitNotNode node = (BitNotNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new BitNotNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new BitNotNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
     public BitNotNode(Long tmpId,
                       @NotNull String name,
                       @Nullable NodeRT previous,
-                      @NotNull ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+                      @NotNull Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override

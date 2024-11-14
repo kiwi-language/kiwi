@@ -16,20 +16,20 @@ import javax.annotation.Nullable;
 
 public class LoadTypeNode extends NodeRT {
 
-    public static LoadTypeNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static LoadTypeNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (LoadTypeNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var param = (LoadTypeNodeParam) nodeDTO.getParam();
             var type = TypeParser.parseType(param.type(), context);
-            node = new LoadTypeNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, type);
+            node = new LoadTypeNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, type);
         }
         return node;
     }
 
     private final Type type;
 
-    public LoadTypeNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope, Type type) {
-        super(tmpId, name, null, previous, scope);
+    public LoadTypeNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code, Type type) {
+        super(tmpId, name, null, previous, code);
         this.type = type;
     }
 

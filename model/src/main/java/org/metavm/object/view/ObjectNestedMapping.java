@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.flow.NodeRT;
 import org.metavm.flow.Nodes;
-import org.metavm.flow.ScopeRT;
+import org.metavm.flow.Code;
 import org.metavm.object.type.Type;
 
 import java.util.Objects;
@@ -20,18 +20,18 @@ public class ObjectNestedMapping extends NestedMapping {
     }
 
     @Override
-    public Type generateMappingCode(Supplier<NodeRT> getSource, ScopeRT scope) {
+    public Type generateMappingCode(Supplier<NodeRT> getSource, Code code) {
         getSource.get();
         var mapping = mappingRef.resolve();
-        Nodes.map(scope, mapping);
+        Nodes.map(code, mapping);
         return mapping.getTargetType();
     }
 
     @Override
-    public Type generateUnmappingCode(Supplier<NodeRT> viewSupplier, ScopeRT scope) {
+    public Type generateUnmappingCode(Supplier<NodeRT> viewSupplier, Code code) {
         viewSupplier.get();
         var mapping = mappingRef.resolve();
-        Nodes.unmap(scope, mapping);
+        Nodes.unmap(code, mapping);
         return mapping.getSourceType();
     }
 

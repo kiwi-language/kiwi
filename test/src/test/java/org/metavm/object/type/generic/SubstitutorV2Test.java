@@ -42,9 +42,9 @@ public class SubstitutorV2Test extends TestCase {
                     .staticType(new FunctionType(List.of(foo.getType()), typeVar.getType()))
                     .returnType(typeVar.getType())
                     .build();
-            var scope = getValueFlow.getScope();
-            Nodes.thisProperty(valueField, scope);
-            Nodes.ret(scope);
+            var code = getValueFlow.getCode();
+            Nodes.thisProperty(valueField, code);
+            Nodes.ret(code);
         }
 
         {
@@ -54,11 +54,11 @@ public class SubstitutorV2Test extends TestCase {
                     .returnType(voidType)
                     .parameters(new Parameter(null, "value", typeVar.getType()))
                     .build();
-            var scope = flow.getScope();
-            Nodes.this_(scope);
+            var code = flow.getCode();
+            Nodes.this_(code);
             Nodes.argument(flow, 0);
-            Nodes.setField(valueField, scope);
-            Nodes.voidRet(scope);
+            Nodes.setField(valueField, code);
+            Nodes.voidRet(code);
         }
 
         var stringType = PrimitiveType.stringType;

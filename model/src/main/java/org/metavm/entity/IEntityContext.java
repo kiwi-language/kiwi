@@ -191,12 +191,12 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
         return getEntity(Flow.class, id);
     }
 
-    default ScopeRT getScope(Id id) {
-        return getEntity(ScopeRT.class, id);
+    default Code getCode(Id id) {
+        return getEntity(Code.class, id);
     }
 
-    default ScopeRT getScope(String id) {
-        return getEntity(ScopeRT.class, id);
+    default Code getCode(String id) {
+        return getEntity(Code.class, id);
     }
 
     default Method getMethod(Id id) {

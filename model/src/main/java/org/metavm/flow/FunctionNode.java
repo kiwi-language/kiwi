@@ -19,20 +19,20 @@ import java.util.List;
 @EntityType
 public class FunctionNode extends NodeRT {
 
-    public static FunctionNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static FunctionNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (FunctionNode) context.getNode(nodeDTO.id());
         if (node == null) {
             var param = (FunctionNodeParam) nodeDTO.param();
             var funcType = (FunctionType) TypeParser.parseType(param.functionType(), context);
-            node = new FunctionNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, funcType);
+            node = new FunctionNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, funcType);
         }
         return node;
     }
 
     private final FunctionType functionType;
 
-    public FunctionNode(Long tmpId, String name, NodeRT previous, ScopeRT scope, FunctionType functionType) {
-        super(tmpId, name, null, previous, scope);
+    public FunctionNode(Long tmpId, String name, NodeRT previous, Code code, FunctionType functionType) {
+        super(tmpId, name, null, previous, code);
         this.functionType = functionType;
     }
 

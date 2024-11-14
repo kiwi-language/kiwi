@@ -17,20 +17,20 @@ import java.util.Objects;
 @EntityType
 public class FunctionCallNode extends CallNode {
 
-    public static FunctionCallNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static FunctionCallNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (FunctionCallNode) context.getNode(Id.parse(nodeDTO.id()));
         if(node == null) {
             var param = (FunctionCallNodeParam) nodeDTO.param();
             var functionRef = FunctionRef.create(Objects.requireNonNull(param.getFlowRef()), context);
-            node = new FunctionCallNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope, functionRef);
+            node = new FunctionCallNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code, functionRef);
             node.setCapturedVariableTypes(NncUtils.map(param.getCapturedVariableTypes(), t -> TypeParser.parseType(t, context)));
             node.setCapturedVariableIndexes(param.getCapturedVariableIndexes());
         }
         return node;
     }
 
-    public FunctionCallNode(Long tmpId, String name, NodeRT prev, ScopeRT scope, FunctionRef functionRef) {
-        super(tmpId, name,  prev, scope, functionRef);
+    public FunctionCallNode(Long tmpId, String name, NodeRT prev, Code code, FunctionRef functionRef) {
+        super(tmpId, name,  prev, code, functionRef);
     }
 
     @Override

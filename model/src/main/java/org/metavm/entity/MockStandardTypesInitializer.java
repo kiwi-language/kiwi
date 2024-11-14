@@ -96,9 +96,9 @@ public class MockStandardTypesInitializer {
                     .isConstructor(true)
                     .parameters(Parameter.create("message", Types.getNullableStringType()))
                     .build();
-            var scope = constructor.getScope();
-            Nodes.this_(scope);
-            Nodes.ret(scope);
+            var code = constructor.getCode();
+            Nodes.this_(code);
+            Nodes.ret(code);
         }
         StdKlass.runtimeException.set(runtimeExceptionKlass);
         StdKlass.iterable.set(

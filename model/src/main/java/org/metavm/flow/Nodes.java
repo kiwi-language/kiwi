@@ -5,607 +5,598 @@ import org.metavm.entity.StdKlass;
 import org.metavm.object.type.*;
 import org.metavm.object.view.ObjectMapping;
 import org.metavm.util.Instances;
-import org.metavm.util.TriConsumer;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 @Slf4j
 public class Nodes {
 
-    public static RaiseNode raiseWithMessage(ScopeRT scope) {
+    public static RaiseNode raiseWithMessage(Code code) {
         var klass = StdKlass.runtimeException.get();
         var constructor = klass.resolveMethod(klass.getName(), List.of(Types.getNullableStringType()), List.of(), false);
-        Nodes.newObject(scope, constructor, true, true);
-        return raise(scope);
+        Nodes.newObject(code, constructor, true, true);
+        return raise(code);
     }
 
-    public static RaiseNode raise(ScopeRT scope) {
-        return new RaiseNode(null, scope.nextNodeName("raise"), scope.getLastNode(), scope
+    public static RaiseNode raise(Code code) {
+        return new RaiseNode(null, code.nextNodeName("raise"), code.getLastNode(), code
         );
     }
 
-    public static NewArrayNode newArray(ArrayType type, ScopeRT scope) {
-        return new NewArrayNode(null, scope.nextNodeName("newArray"), type, scope.getLastNode(), scope);
+    public static NewArrayNode newArray(ArrayType type, Code code) {
+        return new NewArrayNode(null, code.nextNodeName("newArray"), type, code.getLastNode(), code);
     }
 
-    public static ArrayLengthNode arrayLength(String name, ScopeRT scope) {
-        return new ArrayLengthNode(null, name, scope.getLastNode(), scope);
+    public static ArrayLengthNode arrayLength(String name, Code code) {
+        return new ArrayLengthNode(null, name, code.getLastNode(), code);
     }
 
-    public static GetElementNode getElement(ScopeRT scope) {
-        return new GetElementNode(null, scope.nextNodeName("getElement"),
-                scope.getLastNode(), scope);
+    public static GetElementNode getElement(Code code) {
+        return new GetElementNode(null, code.nextNodeName("getElement"),
+                code.getLastNode(), code);
     }
 
-    public static NewObjectNode newObject(ScopeRT scope, Method constructor, boolean ephemeral, boolean unbound) {
-        return new NewObjectNode(null, scope.nextNodeName("newObject"),
-                constructor.getRef(), scope.getLastNode(), scope, ephemeral, unbound);
+    public static NewObjectNode newObject(Code code, Method constructor, boolean ephemeral, boolean unbound) {
+        return new NewObjectNode(null, code.nextNodeName("newObject"),
+                constructor.getRef(), code.getLastNode(), code, ephemeral, unbound);
     }
 
-    public static VoidReturnNode voidRet(ScopeRT scope) {
-        return new VoidReturnNode(null, scope.nextNodeName("voidRet"), scope.getLastNode(), scope);
+    public static VoidReturnNode voidRet(Code code) {
+        return new VoidReturnNode(null, code.nextNodeName("voidRet"), code.getLastNode(), code);
     }
 
-    public static ReturnNode ret(ScopeRT scope) {
-        return new ReturnNode(null, scope.nextNodeName("ret"), scope.getLastNode(), scope);
+    public static ReturnNode ret(Code code) {
+        return new ReturnNode(null, code.nextNodeName("ret"), code.getLastNode(), code);
     }
 
-    public static AddObjectNode addObject(ClassType type, boolean ephemeral, ScopeRT scope) {
-        return new AddObjectNode(null, scope.nextNodeName("addObject"), ephemeral,
-                type, scope.getLastNode(), scope);
+    public static AddObjectNode addObject(ClassType type, boolean ephemeral, Code code) {
+        return new AddObjectNode(null, code.nextNodeName("addObject"), ephemeral,
+                type, code.getLastNode(), code);
     }
 
-    public static void copyArray(Supplier<NodeRT> getSourceArray, Supplier<NodeRT> getTargetArray, ScopeRT scope) {
+    public static void copyArray(Supplier<NodeRT> getSourceArray, Supplier<NodeRT> getTargetArray, Code code) {
         forEach(getSourceArray,
-                (bodyScope, getElement, getIndex) -> {
+                (getElement, getIndex) -> {
                     getTargetArray.get();
                     getElement.get();
-                    Nodes.addElement(bodyScope);
-                }, scope);
+                    Nodes.addElement(code);
+                }, code);
     }
 
     public static void forEach(Supplier<NodeRT> arraySupplier,
-            TriConsumer<ScopeRT, Supplier<NodeRT>, Supplier<NodeRT>> action,
-            ScopeRT scope) {
-        var i = scope.nextVariableIndex();
-        loadConstant(Instances.longInstance(0), scope);
-        Nodes.store(i, scope);
-        var entry = noop(scope.nextNodeName("noop"), scope);
-        Supplier<NodeRT> indexSupplier = () -> Nodes.load(i, Types.getLongType(), scope);
+            BiConsumer<Supplier<NodeRT>, Supplier<NodeRT>> action,
+            Code code) {
+        var i = code.nextVariableIndex();
+        loadConstant(Instances.longInstance(0), code);
+        Nodes.store(i, code);
+        var entry = noop(code.nextNodeName("noop"), code);
+        Supplier<NodeRT> indexSupplier = () -> Nodes.load(i, Types.getLongType(), code);
         indexSupplier.get();
         arraySupplier.get();
-        arrayLength("len", scope);
-        Nodes.ge(scope);
-        var ifNode = if_(null, scope);
+        arrayLength("len", code);
+        Nodes.ge(code);
+        var ifNode = if_(null, code);
         Supplier<NodeRT> elementSupplier = () -> {
             arraySupplier.get();
             indexSupplier.get();
-            return Nodes.getElement(scope);
+            return Nodes.getElement(code);
         };
-        action.accept(scope, elementSupplier, indexSupplier);
+        action.accept(elementSupplier, indexSupplier);
         indexSupplier.get();
-        loadConstant(Instances.longInstance(1), scope);
-        add(scope);
-        Nodes.store(i, scope);
-        goto_(entry, scope);
-        ifNode.setTarget(noop(scope));
+        loadConstant(Instances.longInstance(1), code);
+        add(code);
+        Nodes.store(i, code);
+        goto_(entry, code);
+        ifNode.setTarget(noop(code));
     }
 
     public static void listForEach(
             Supplier<NodeRT> listSupplier,
             ClassType listType,
-            TriConsumer<ScopeRT, Supplier<NodeRT>, Supplier<NodeRT>> action,
-            ScopeRT scope) {
-        var i = scope.nextVariableIndex();
-        loadConstant(Instances.longInstance(0), scope);
-        store(i, scope);
+            BiConsumer<Supplier<NodeRT>, Supplier<NodeRT>> action,
+            Code code) {
+        var i = code.nextVariableIndex();
+        loadConstant(Instances.longInstance(0), code);
+        store(i, code);
         var listClass = listType.resolve();
         var sizeMethod = listClass.getMethodByNameAndParamTypes("size", List.of());
-        var entry = noop(scope);
-        Supplier<NodeRT> indexSupplier = () -> Nodes.load(i, Types.getLongType(), scope);
+        var entry = noop(code);
+        Supplier<NodeRT> indexSupplier = () -> Nodes.load(i, Types.getLongType(), code);
         indexSupplier.get();
         listSupplier.get();
-        Nodes.methodCall(sizeMethod, scope);
-        ge(scope);
-        var ifNode = if_(null, scope);
+        Nodes.methodCall(sizeMethod, code);
+        ge(code);
+        var ifNode = if_(null, code);
         var getMethod = listClass.getMethodByNameAndParamTypes("get", List.of(Types.getLongType()));
         Supplier<NodeRT> elementSupplier = () -> {
             listSupplier.get();
             indexSupplier.get();
-            return Nodes.methodCall(getMethod, scope);
+            return Nodes.methodCall(getMethod, code);
         };
-        action.accept(scope, elementSupplier, indexSupplier);
+        action.accept(elementSupplier, indexSupplier);
         indexSupplier.get();
-        loadConstant(Instances.longInstance(1), scope);
-        Nodes.add(scope);
-        Nodes.store(i, scope);
-        goto_(entry, scope);
-        ifNode.setTarget(noop(scope));
+        loadConstant(Instances.longInstance(1), code);
+        Nodes.add(code);
+        Nodes.store(i, code);
+        goto_(entry, code);
+        ifNode.setTarget(noop(code));
     }
 
-    public static MapNode map(ScopeRT scope, ObjectMapping mapping) {
-        return new MapNode(null, scope.nextNodeName("map"), scope.getLastNode(), scope, mapping.getRef());
+    public static MapNode map(Code code, ObjectMapping mapping) {
+        return new MapNode(null, code.nextNodeName("map"), code.getLastNode(), code, mapping.getRef());
     }
 
-    public static UnmapNode unmap(ScopeRT scope, ObjectMapping mapping) {
-        return new UnmapNode(null, scope.nextNodeName("unmap"), scope.getLastNode(), scope, mapping.getRef());
+    public static UnmapNode unmap(Code code, ObjectMapping mapping) {
+        return new UnmapNode(null, code.nextNodeName("unmap"), code.getLastNode(), code, mapping.getRef());
     }
 
-    public static CastNode castNode(Type type, ScopeRT scope) {
-        return new CastNode(null, scope.nextNodeName("cast"), type, scope.getLastNode(), scope);
+    public static CastNode castNode(Type type, Code code) {
+        return new CastNode(null, code.nextNodeName("cast"), type, code.getLastNode(), code);
     }
 
-    public static FunctionCallNode functionCall(ScopeRT scope, Function function) {
-        return new FunctionCallNode(null, scope.nextNodeName("functionCall"), scope.getLastNode(), scope, function.getRef());
+    public static FunctionCallNode functionCall(Code code, Function function) {
+        return new FunctionCallNode(null, code.nextNodeName("functionCall"), code.getLastNode(), code, function.getRef());
     }
 
-    public static MethodCallNode methodCall(Method method, ScopeRT scope) {
-        return methodCall(scope.nextNodeName("methodCall") ,
+    public static MethodCallNode methodCall(Method method, Code code) {
+        return methodCall(code.nextNodeName("methodCall") ,
                 method,
-                scope);
+                code);
     }
 
-    public static MethodCallNode methodCall(String name, Method method, ScopeRT scope) {
-        return new MethodCallNode(null, name, scope.getLastNode(), scope, method.getRef());
+    public static MethodCallNode methodCall(String name, Method method, Code code) {
+        return new MethodCallNode(null, name, code.getLastNode(), code, method.getRef());
     }
 
-    public static FunctionNode function(ScopeRT scope, FunctionType functionType) {
-        return new FunctionNode(null, scope.nextNodeName("func"), scope.getLastNode(), scope, functionType);
+    public static FunctionNode function(Code code, FunctionType functionType) {
+        return new FunctionNode(null, code.nextNodeName("func"), code.getLastNode(), code, functionType);
     }
 
-    public static CastNode cast(Type outputType, ScopeRT scope) {
-        return new CastNode(null, scope.nextNodeName("cast"), outputType, scope.getLastNode(), scope);
+    public static CastNode cast(Type outputType, Code code) {
+        return new CastNode(null, code.nextNodeName("cast"), outputType, code.getLastNode(), code);
     }
 
-    public static IfNode if_(@Nullable NodeRT target, ScopeRT scope) {
-        return if_(scope.nextNodeName("if"), target, scope);
+    public static IfNode if_(@Nullable NodeRT target, Code code) {
+        return if_(code.nextNodeName("if"), target, code);
     }
 
-    public static IfNode if_(String name,  @Nullable NodeRT target, ScopeRT scope) {
+    public static IfNode if_(String name,  @Nullable NodeRT target, Code code) {
         return new IfNode(
                 null,
                 name,
-                scope.getLastNode(),
-                scope,
+                code.getLastNode(),
+                code,
                 target
         );
     }
 
-    public static IfNotNode ifNot(@Nullable NodeRT target, ScopeRT scope) {
-        return ifNot(scope.nextNodeName("ifNot"), target, scope);
+    public static IfNotNode ifNot(@Nullable NodeRT target, Code code) {
+        return ifNot(code.nextNodeName("ifNot"), target, code);
     }
 
-    public static IfNotNode ifNot(String name, @Nullable NodeRT target, ScopeRT scope) {
+    public static IfNotNode ifNot(String name, @Nullable NodeRT target, Code code) {
         return new IfNotNode(
                 null,
                 name,
-                scope.getLastNode(),
-                scope,
+                code.getLastNode(),
+                code,
                 target
         );
     }
 
-    public static GotoNode goto_(ScopeRT scope) {
-        return goto_(scope.nextNodeName("goto"), scope);
+    public static GotoNode goto_(Code code) {
+        return goto_(code.nextNodeName("goto"), code);
     }
 
-    public static GotoNode goto_(String name, ScopeRT scope) {
-        return new GotoNode(null, name, scope.getLastNode(), scope);
+    public static GotoNode goto_(String name, Code code) {
+        return new GotoNode(null, name, code.getLastNode(), code);
     }
 
-    public static GotoNode goto_(NodeRT target, ScopeRT scope) {
-        return new GotoNode(null, scope.nextNodeName("goto"), scope.getLastNode(), scope, target);
+    public static GotoNode goto_(NodeRT target, Code code) {
+        return new GotoNode(null, code.nextNodeName("goto"), code.getLastNode(), code, target);
     }
 
-    public static AddElementNode addElement(ScopeRT scope) {
-        return new AddElementNode(null, scope.nextNodeName("arrayadd"), scope.getLastNode(), scope);
+    public static AddElementNode addElement(Code code) {
+        return new AddElementNode(null, code.nextNodeName("arrayadd"), code.getLastNode(), code);
     }
 
-    public static SetElementNode setElement(ScopeRT scope) {
-        return new SetElementNode(null, scope.nextNodeName("arrayset"), scope.getLastNode(), scope);
+    public static SetElementNode setElement(Code code) {
+        return new SetElementNode(null, code.nextNodeName("arrayset"), code.getLastNode(), code);
     }
 
-    public static ClearArrayNode clearArray(ScopeRT scope) {
-        return new ClearArrayNode(null, scope.nextNodeName("arrayclear"), scope.getLastNode(), scope);
+    public static ClearArrayNode clearArray(Code code) {
+        return new ClearArrayNode(null, code.nextNodeName("arrayclear"), code.getLastNode(), code);
     }
 
-//    public static void setSource(Value view, Value source, ScopeRT scope) {
-//        var setSourceFunc = StdFunction.setSource.get();
-//        new FunctionCallNode(null, scope.nextNodeName("setSource"), scope.getLastNode(), scope,
-//                setSourceFunc.getRef(), List.of(
-//                Nodes.argument(setSourceFunc, 0, view),
-//                Nodes.argument(setSourceFunc, 1, source)
-//        ));
-//    }
-
-    public static SetFieldNode setField(String name, Field field, ScopeRT scope) {
+    public static SetFieldNode setField(String name, Field field, Code code) {
         return new SetFieldNode(
                 null,
                 name,
-                scope.getLastNode(),
-                scope,
+                code.getLastNode(),
+                code,
                 field.getRef()
         );
     }
 
-    public static SetFieldNode setField(Field field, ScopeRT scope) {
-        return setField(scope.nextNodeName("setField"),  field, scope);
+    public static SetFieldNode setField(Field field, Code code) {
+        return setField(code.nextNodeName("setField"),  field, code);
     }
 
-    public static SetStaticNode setStatic(Field field, ScopeRT scope) {
+    public static SetStaticNode setStatic(Field field, Code code) {
         return new SetStaticNode(
                 null,
-                scope.nextNodeName("setStatic"),
+                code.nextNodeName("setStatic"),
 
-                scope.getLastNode(),
-                scope,
+                code.getLastNode(),
+                code,
                 field.getRef()
         );
     }
 
-    public static NonNullNode nonNull(ScopeRT scope) {
-        return nonNull(scope.nextNodeName("nonnull"), scope);
+    public static NonNullNode nonNull(Code code) {
+        return nonNull(code.nextNodeName("nonnull"), code);
     }
 
-    public static NonNullNode nonNull(String name, ScopeRT scope) {
-        return new NonNullNode(null, name, scope.getLastNode(), scope);
+    public static NonNullNode nonNull(String name, Code code) {
+        return new NonNullNode(null, name, code.getLastNode(), code);
     }
 
-    public static NoopNode noop(ScopeRT scope) {
-        return noop(scope.nextNodeName("noop"), scope);
+    public static NoopNode noop(Code code) {
+        return noop(code.nextNodeName("noop"), code);
     }
 
-    public static NoopNode noop(String name, ScopeRT scope) {
-        return new NoopNode(null, name,scope.getLastNode(), scope);
+    public static NoopNode noop(String name, Code code) {
+        return new NoopNode(null, name, code.getLastNode(), code);
     }
 
-    public static NodeRT add(ScopeRT scope) {
+    public static NodeRT add(Code code) {
         return new AddNode(
                 null,
-                scope.nextNodeName("add"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("add"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT sub(ScopeRT scope) {
+    public static NodeRT sub(Code code) {
         return new SubNode(
                 null,
-                scope.nextNodeName("sub"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("sub"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT mul(ScopeRT scope) {
+    public static NodeRT mul(Code code) {
         return new MulNode(
                 null,
-                scope.nextNodeName("mul"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("mul"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT div(ScopeRT scope) {
+    public static NodeRT div(Code code) {
         return new DivNode(
                 null,
-                scope.nextNodeName("div"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("div"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT leftShift(ScopeRT scope) {
+    public static NodeRT leftShift(Code code) {
         return new LeftShiftNode(
                 null,
-                scope.nextNodeName("leftShift"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("leftShift"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT rightShift(ScopeRT scope) {
+    public static NodeRT rightShift(Code code) {
         return new RightShiftNode(
                 null,
-                scope.nextNodeName("rightShift"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("rightShift"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT unsignedRightShift(ScopeRT scope) {
+    public static NodeRT unsignedRightShift(Code code) {
         return new UnsignedRightShiftNode(
                 null,
-                scope.nextNodeName("unsignedRightShift"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("unsignedRightShift"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT bitOr(ScopeRT scope) {
+    public static NodeRT bitOr(Code code) {
         return new BitOrNode(
                 null,
-                scope.nextNodeName("bitor"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("bitor"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT bitAnd(ScopeRT scope) {
+    public static NodeRT bitAnd(Code code) {
         return new BitAndNode(
                 null,
-                scope.nextNodeName("bitand"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("bitand"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT bitXor(ScopeRT scope) {
+    public static NodeRT bitXor(Code code) {
         return new BitXorNode(
                 null,
-                scope.nextNodeName("bitxor"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("bitxor"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT and(ScopeRT scope) {
+    public static NodeRT and(Code code) {
         return new AndNode(
                 null,
-                scope.nextNodeName("and"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("and"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT or(ScopeRT scope) {
+    public static NodeRT or(Code code) {
         return new OrNode(
                 null,
-                scope.nextNodeName("or"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("or"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT bitNot(ScopeRT scope) {
+    public static NodeRT bitNot(Code code) {
         return new BitNotNode(
                 null,
-                scope.nextNodeName("bitnot"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("bitnot"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT not(ScopeRT scope) {
+    public static NodeRT not(Code code) {
         return new NotNode(
                 null,
-                scope.nextNodeName("not"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("not"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT negate(ScopeRT scope) {
+    public static NodeRT negate(Code code) {
         return new NegateNode(
                 null,
-                scope.nextNodeName("negate"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("negate"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT rem(ScopeRT scope) {
+    public static NodeRT rem(Code code) {
         return new RemainderNode(
                 null,
-                scope.nextNodeName("rem"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("rem"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT eq(ScopeRT scope) {
+    public static NodeRT eq(Code code) {
         return new EqNode(
                 null,
-                scope.nextNodeName("eq"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("eq"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT ne(ScopeRT scope) {
+    public static NodeRT ne(Code code) {
         return new NeNode(
                 null,
-                scope.nextNodeName("ne"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("ne"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT ge(ScopeRT scope) {
+    public static NodeRT ge(Code code) {
         return new GeNode(
                 null,
-                scope.nextNodeName("ge"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("ge"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT gt(ScopeRT scope) {
+    public static NodeRT gt(Code code) {
         return new GtNode(
                 null,
-                scope.nextNodeName("gt"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("gt"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT lt(ScopeRT scope) {
+    public static NodeRT lt(Code code) {
         return new LtNode(
                 null,
-                scope.nextNodeName("lt"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("lt"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT le(ScopeRT scope) {
+    public static NodeRT le(Code code) {
         return new LeNode(
                 null,
-                scope.nextNodeName("le"),
-                scope.getLastNode(),
-                scope
+                code.nextNodeName("le"),
+                code.getLastNode(),
+                code
         );
     }
 
-    public static NodeRT instanceOf(Type targetType, ScopeRT scope) {
+    public static NodeRT instanceOf(Type targetType, Code code) {
         return new InstanceOfNode(
                 null,
-                scope.nextNodeName("le"),
-                scope.getLastNode(),
-                scope,
+                code.nextNodeName("le"),
+                code.getLastNode(),
+                code,
                 targetType
         );
     }
 
-    public static NodeRT this_(ScopeRT scope) {
-        var type = ((Method) scope.getFlow()).getDeclaringType().getType();
-        return Nodes.load(0, type, scope);
+    public static NodeRT this_(Code code) {
+        var type = ((Method) code.getFlow()).getDeclaringType().getType();
+        return Nodes.load(0, type, code);
     }
 
-    public static NodeRT thisProperty(Property property, ScopeRT scope) {
-        this_(scope);
-        return getProperty(property, scope);
+    public static NodeRT thisProperty(Property property, Code code) {
+        this_(code);
+        return getProperty(property, code);
     }
 
-    public static NodeRT getProperty(Property property, ScopeRT scope) {
-        return getProperty(scope.nextNodeName("property"), property, scope);
+    public static NodeRT getProperty(Property property, Code code) {
+        return getProperty(code.nextNodeName("property"), property, code);
     }
 
-    public static NodeRT getProperty(String name,Property property, ScopeRT scope) {
+    public static NodeRT getProperty(String name,Property property, Code code) {
         return new GetPropertyNode(
                 null,
                 name,
-                scope.getLastNode(),
-                scope,
+                code.getLastNode(),
+                code,
                 property.getRef()
         );
     }
 
-    public static NodeRT getStatic(Property property, ScopeRT scope) {
+    public static NodeRT getStatic(Property property, Code code) {
         return new GetStaticNode(
                 null,
-                scope.nextNodeName("getStatic"),
-                scope.getLastNode(),
-                scope,
+                code.nextNodeName("getStatic"),
+                code.getLastNode(),
+                code,
                 property.getRef()
         );
     }
 
-    public static NodeRT store(int index, ScopeRT scope) {
+    public static NodeRT store(int index, Code code) {
         return new StoreNode(
                 null,
-                scope.nextNodeName("store"),
-                scope.getLastNode(),
-                scope,
+                code.nextNodeName("store"),
+                code.getLastNode(),
+                code,
                 index
         );
     }
 
     public static NodeRT argument(Callable callable, int index) {
         var i = callable instanceof Method method && !method.isStatic() ? index + 1 : index;
-        return load(i, callable.getParameters().get(index).getType(), callable.getScope());
+        return load(i, callable.getParameters().get(index).getType(), callable.getCode());
     }
 
-    public static NodeRT load(int index, Type type, ScopeRT scope) {
+    public static NodeRT load(int index, Type type, Code code) {
         return new LoadNode(
                 null,
-                scope.nextNodeName("load"),
+                code.nextNodeName("load"),
                 type,
-                scope.getLastNode(),
-                scope,
+                code.getLastNode(),
+                code,
                 index
         );
     }
 
-    public static NodeRT storeContextSlot(int contextIndex, int slotIndex, ScopeRT scope) {
+    public static NodeRT storeContextSlot(int contextIndex, int slotIndex, Code code) {
         return new StoreContextSlotNode(
                 null,
-                scope.nextNodeName("storeContextSlot"),
-                scope.getLastNode(),
-                scope,
+                code.nextNodeName("storeContextSlot"),
+                code.getLastNode(),
+                code,
                 contextIndex,
                 slotIndex
         );
     }
 
-    public static NodeRT loadContextSlot(int contextIndex, int slotIndex, Type type, ScopeRT scope) {
+    public static NodeRT loadContextSlot(int contextIndex, int slotIndex, Type type, Code code) {
         return new LoadContextSlotNode(
                 null,
-                scope.nextNodeName("loadContextSlot"),
+                code.nextNodeName("loadContextSlot"),
                 type,
-                scope.getLastNode(),
-                scope,
+                code.getLastNode(),
+                code,
                 contextIndex,
                 slotIndex
         );
     }
 
-    public static NodeRT lambda(Lambda lambda, ScopeRT scope) {
+    public static NodeRT lambda(Lambda lambda, Code code) {
         return new LambdaNode(
                 null,
-                scope.nextNodeName("lambda"),
-                scope.getLastNode(),
-                scope,
+                code.nextNodeName("lambda"),
+                code.getLastNode(),
+                code,
                 lambda,
                 null
         );
     }
 
-    public static NodeRT select(Index index, ScopeRT scope) {
+    public static NodeRT select(Index index, Code code) {
         return new IndexSelectNode(
                 null,
-                scope.nextNodeName("select"),
-                scope.getLastNode(),
-                scope,
+                code.nextNodeName("select"),
+                code.getLastNode(),
+                code,
                 index
         );
     }
 
-    public static NodeRT selectFirst(Index index, ScopeRT scope) {
+    public static NodeRT selectFirst(Index index, Code code) {
         return new IndexSelectFirstNode(
                 null,
-                scope.nextNodeName("select"),
-                scope.getLastNode(),
-                scope,
+                code.nextNodeName("select"),
+                code.getLastNode(),
+                code,
                 index
         );
     }
 
-    public static NodeRT loadConstant(org.metavm.object.instance.core.Value value, ScopeRT scope) {
+    public static NodeRT loadConstant(org.metavm.object.instance.core.Value value, Code code) {
         return new LoadConstantNode(
                 null,
-                scope.nextNodeName("ldc"),
-                scope.getLastNode(),
-                scope,
+                code.nextNodeName("ldc"),
+                code.getLastNode(),
+                code,
                 value
         );
     }
 
-    public static NodeRT dup(ScopeRT scope) {
-        return new DupNode(null, scope.nextNodeName("dup"), scope.getLastNode(), scope);
+    public static NodeRT dup(Code code) {
+        return new DupNode(null, code.nextNodeName("dup"), code.getLastNode(), code);
     }
 
-    public static NodeRT dupX1(ScopeRT scope) {
-        return new DupX1Node(null, scope.nextNodeName("dup_x1"), scope.getLastNode(), scope);
+    public static NodeRT dupX1(Code code) {
+        return new DupX1Node(null, code.nextNodeName("dup_x1"), code.getLastNode(), code);
     }
 
-    public static NodeRT dupX2(ScopeRT scope) {
-        return new DupX2Node(null, scope.nextNodeName("dup_x2"), scope.getLastNode(), scope);
+    public static NodeRT dupX2(Code code) {
+        return new DupX2Node(null, code.nextNodeName("dup_x2"), code.getLastNode(), code);
     }
 
-    public static NodeRT pop(ScopeRT scope) {
-        return new PopNode(null, scope.nextNodeName("pop"), scope.getLastNode(), scope);
+    public static NodeRT pop(Code code) {
+        return new PopNode(null, code.nextNodeName("pop"), code.getLastNode(), code);
     }
 }

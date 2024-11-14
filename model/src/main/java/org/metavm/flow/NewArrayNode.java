@@ -15,11 +15,11 @@ import org.metavm.util.NncUtils;
 @EntityType
 public class NewArrayNode extends NodeRT {
 
-    public static NewArrayNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static NewArrayNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         NewArrayNode node = (NewArrayNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             var type = (ArrayType) TypeParser.parseType(nodeDTO.outputType(), context);
-            node = new NewArrayNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, scope);
+            node = new NewArrayNode(nodeDTO.tmpId(), nodeDTO.name(), type, prev, code);
         }
         return node;
     }
@@ -27,8 +27,8 @@ public class NewArrayNode extends NodeRT {
     public NewArrayNode(Long tmpId, String name,
                         ArrayType type,
                         NodeRT previous,
-                        ScopeRT scope) {
-        super(tmpId, name, type, previous, scope);
+                        Code code) {
+        super(tmpId, name, type, previous, code);
     }
 
     @Override

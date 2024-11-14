@@ -16,12 +16,12 @@ import java.util.Objects;
 @EntityType
 public class IfNode extends JumpNode {
 
-    public static IfNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static IfNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (IfNode) context.getNode(nodeDTO.id());
         if(node == null) {
             node = new IfNode(
                     nodeDTO.tmpId(), nodeDTO.name(),
-                    scope.getLastNode(), scope, null
+                    code.getLastNode(), code, null
             );
         }
         if(stage == NodeSavingStage.FINALIZE) {
@@ -33,9 +33,9 @@ public class IfNode extends JumpNode {
 
     private transient ExpressionTypeMap nextExpressionTypes;
 
-    public IfNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope,
+    public IfNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code,
                   NodeRT target) {
-        super(tmpId, name, null, previous, scope);
+        super(tmpId, name, null, previous, code);
 //        var narrower = new TypeNarrower(getExpressionTypes()::getType);
 //        mergeExpressionTypes(narrower.narrowType(Expressions.not(condition.getExpression())));
         if(target != null)

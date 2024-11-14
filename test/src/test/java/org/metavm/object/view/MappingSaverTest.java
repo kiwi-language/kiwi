@@ -99,17 +99,17 @@ public class MappingSaverTest extends TestCase {
                 .returnType(barArrayType)
                 .build();
         {
-            var scope = getBarsMethod.getScope();
-            Nodes.newArray(barArrayType, scope);
-            var barsVar = scope.nextVariableIndex();
-            Nodes.store(barsVar, scope);
+            var code = getBarsMethod.getCode();
+            Nodes.newArray(barArrayType, code);
+            var barsVar = code.nextVariableIndex();
+            Nodes.store(barsVar, code);
             Nodes.copyArray(
-                    () -> Nodes.thisProperty(fooBarsField, scope),
-                    () -> Nodes.load(barsVar, barArrayType, scope),
-                    scope
+                    () -> Nodes.thisProperty(fooBarsField, code),
+                    () -> Nodes.load(barsVar, barArrayType, code),
+                    code
             );
-            Nodes.load(barsVar, barArrayType, scope);
-            Nodes.ret(scope);
+            Nodes.load(barsVar, barArrayType, code);
+            Nodes.ret(code);
         }
 
         // generate setBars method
@@ -117,15 +117,15 @@ public class MappingSaverTest extends TestCase {
                 .parameters(new Parameter(null, "bars", barArrayType))
                 .build();
         {
-            var scope = setBarsMethod.getScope();
-            Nodes.thisProperty(fooBarsField, scope);
-            Nodes.clearArray(scope);
+            var code = setBarsMethod.getCode();
+            Nodes.thisProperty(fooBarsField, code);
+            Nodes.clearArray(code);
             Nodes.copyArray(
                     () -> Nodes.argument(setBarsMethod, 0),
-                    () -> Nodes.thisProperty(fooBarsField, scope),
-                    scope
+                    () -> Nodes.thisProperty(fooBarsField, code),
+                    code
             );
-            Nodes.voidRet(scope);
+            Nodes.voidRet(code);
         }
         TestUtils.initEntityIds(fooType);
         fooType.emitCode();
@@ -312,32 +312,32 @@ public class MappingSaverTest extends TestCase {
                 .returnType(skuRwArrayType)
                 .build();
         {
-            var scope = getSkuListMethod.getScope();
-            Nodes.newArray(skuRwArrayType, scope);
-            var arrayVar = scope.nextVariableIndex();
-            Nodes.store(arrayVar, scope);
+            var code = getSkuListMethod.getCode();
+            Nodes.newArray(skuRwArrayType, code);
+            var arrayVar = code.nextVariableIndex();
+            Nodes.store(arrayVar, code);
             Nodes.copyArray(
-                    () -> Nodes.thisProperty(skuListField, scope),
-                    () -> Nodes.load(arrayVar, skuRwArrayType, scope),
-                    scope
+                    () -> Nodes.thisProperty(skuListField, code),
+                    () -> Nodes.load(arrayVar, skuRwArrayType, code),
+                    code
             );
-            Nodes.load(arrayVar, skuRwArrayType, scope);
-            Nodes.ret(scope);
+            Nodes.load(arrayVar, skuRwArrayType, code);
+            Nodes.ret(code);
         }
 
         var setSkuListMethod = MethodBuilder.newBuilder(productType, "setSkuList")
                 .parameters(new Parameter(null, "skuList", skuRwArrayType))
                 .build();
         {
-            var scope = setSkuListMethod.getScope();
-            Nodes.thisProperty(skuListField, scope);
-            Nodes.clearArray(scope);
+            var code = setSkuListMethod.getCode();
+            Nodes.thisProperty(skuListField, code);
+            Nodes.clearArray(code);
             Nodes.copyArray(
                     () -> Nodes.argument(setSkuListMethod, 0),
-                    () -> Nodes.thisProperty(skuListField, scope),
-                    scope
+                    () -> Nodes.thisProperty(skuListField, code),
+                    code
             );
-            Nodes.voidRet(scope);
+            Nodes.voidRet(code);
         }
         TestUtils.initEntityIds(productType);
         productType.emitCode();
@@ -520,9 +520,9 @@ public class MappingSaverTest extends TestCase {
                 .returnType(platformUserType.getType())
                 .build();
         {
-            var scope = getOwnerMethod.getScope();
-            Nodes.thisProperty(ownerField, scope);
-            Nodes.ret(scope);
+            var code = getOwnerMethod.getCode();
+            Nodes.thisProperty(ownerField, code);
+            Nodes.ret(code);
         }
         TestUtils.initEntityIds(applicationType);
 

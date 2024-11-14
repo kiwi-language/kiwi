@@ -962,7 +962,7 @@ public class ExpressionResolver {
         }
         var funcInterface = Types.resolveKlass(typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType()));
         var lambda = new Lambda(null, parameters, returnType, methodGenerator.getMethod());
-        methodGenerator.enterScope(lambda.getScope());
+        methodGenerator.enterScope(lambda.getCode());
         if (expression.getBody() instanceof PsiExpression bodyExpr) {
             resolve(bodyExpr, context);
             if(returnType.isVoid())
@@ -972,7 +972,7 @@ public class ExpressionResolver {
         } else {
             requireNonNull(expression.getBody()).accept(visitor);
             if (lambda.getReturnType().isVoid()) {
-                var lastNode = methodGenerator.scope().getLastNode();
+                var lastNode = methodGenerator.code().getLastNode();
                 if (lastNode == null || !lastNode.isExit())
                     methodGenerator.createVoidReturn();
             }
@@ -1011,7 +1011,7 @@ public class ExpressionResolver {
                 lastIfNodes = ifNodes;
                 var caseBody = requireNonNull(labeledRuleStatement.getBody());
                 processSwitchCaseBody(caseBody, context);
-                var lastNode = Objects.requireNonNull(methodGenerator.scope().getLastNode());
+                var lastNode = Objects.requireNonNull(methodGenerator.code().getLastNode());
                 if(lastNode.isExit())
                     lastGoto = null;
                 else

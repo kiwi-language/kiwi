@@ -14,18 +14,18 @@ import javax.annotation.Nullable;
 
 public class EqNode extends NodeRT {
 
-    public static EqNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static EqNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         EqNode node = (EqNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new EqNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new EqNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
     public EqNode(Long tmpId,
                   @NotNull String name,
                   @Nullable NodeRT previous,
-                  @NotNull ScopeRT scope) {
-        super(tmpId, name, Types.getBooleanType(), previous, scope);
+                  @NotNull Code code) {
+        super(tmpId, name, Types.getBooleanType(), previous, code);
     }
 
     @Override

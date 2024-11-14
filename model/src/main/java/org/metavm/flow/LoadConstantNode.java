@@ -16,11 +16,11 @@ import javax.annotation.Nullable;
 
 public class LoadConstantNode extends NodeRT {
 
-    public static LoadConstantNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static LoadConstantNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var param = (LoadConstantNodeParam) nodeDTO.getParam();
         var node = (LoadConstantNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
-            node = new LoadConstantNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope,
+            node = new LoadConstantNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code,
                     Instances.fromFieldValue(param.value(), id -> context.getInstanceContext().get(id).getReference()));
         }
         return node;
@@ -28,8 +28,8 @@ public class LoadConstantNode extends NodeRT {
 
     private final Value value;
 
-    public LoadConstantNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope, Value value) {
-        super(tmpId, name, null, previous, scope);
+    public LoadConstantNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code, Value value) {
+        super(tmpId, name, null, previous, code);
         this.value = value;
     }
 

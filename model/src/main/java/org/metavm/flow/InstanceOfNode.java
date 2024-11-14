@@ -16,13 +16,13 @@ import javax.annotation.Nullable;
 
 public class InstanceOfNode extends NodeRT {
 
-    public static InstanceOfNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static InstanceOfNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         InstanceOfNode node = (InstanceOfNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null) {
             InstanceOfNodeParam param = nodeDTO.getParam();
             var type = TypeParser.parseType(param.type(), context);
             node = new InstanceOfNode(nodeDTO.tmpId(), nodeDTO.name(),
-                    prev, scope, type);
+                    prev, code, type);
         }
         return node;
     }
@@ -32,9 +32,9 @@ public class InstanceOfNode extends NodeRT {
     public InstanceOfNode(Long tmpId,
                           @NotNull String name,
                           @Nullable NodeRT previous,
-                          @NotNull ScopeRT scope,
+                          @NotNull Code code,
                           Type targetType) {
-        super(tmpId, name, Types.getBooleanType(), previous, scope);
+        super(tmpId, name, Types.getBooleanType(), previous, code);
        this.targetType = targetType;
     }
 

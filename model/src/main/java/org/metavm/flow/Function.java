@@ -69,7 +69,7 @@ public class Function extends Flow implements GlobalKey {
         }
         else
             return new MetaFrame(callContext.instanceRepository()).execute(
-                    getScope(),
+                    getCode(),
                     arguments.toArray(Value[]::new),
                     null
             );
@@ -106,7 +106,7 @@ public class Function extends Flow implements GlobalKey {
     public String getInternalName(@Nullable Flow current) {
         if (current == this)
             return "this";
-        return getCodeNotNull() + "(" +
+        return getName() + "(" +
                 NncUtils.join(getParameterTypes(), t -> t.getInternalName(this), ",") + ")";
     }
 

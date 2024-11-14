@@ -56,7 +56,7 @@ public class Generator extends VisitorBase {
         if(!psiClass.isInterface()) {
             initFlow = klass.getMethodByNameAndParamTypes("<init>", List.of());
             initFlowBuilder = new MethodGenerator(initFlow, typeResolver, this);
-            initFlowBuilder.enterScope(initFlowBuilder.getMethod().getScope());
+            initFlowBuilder.enterScope(initFlowBuilder.getMethod().getCode());
             if (klass.getSuperType() != null) {
                 var superInit = klass.getSuperType().resolve().findSelfMethodByName("<init>");
                 if (superInit != null) {
@@ -71,7 +71,7 @@ public class Generator extends VisitorBase {
         }
         var classInit = klass.getMethodByNameAndParamTypes("<cinit>", List.of());
         var classInitFlowBuilder = new MethodGenerator(classInit, typeResolver, this);
-        classInitFlowBuilder.enterScope(classInitFlowBuilder.getMethod().getScope());
+        classInitFlowBuilder.enterScope(classInitFlowBuilder.getMethod().getCode());
         if (klass.getSuperType() != null) {
             var superCInit = klass.getSuperType().resolve().findSelfMethodByName("<cinit>");
             if (superCInit != null)
@@ -94,7 +94,7 @@ public class Generator extends VisitorBase {
             if (!hasConstructor) {
                 var constructor = klass.getDefaultConstructor();
                 var constructorGen = new MethodGenerator(constructor, typeResolver, this);
-                constructorGen.enterScope(constructor.getScope());
+                constructorGen.enterScope(constructor.getCode());
                 constructorGen.getThis();
                 constructorGen.createMethodCall(initFlow);
                 constructorGen.getThis();
@@ -122,7 +122,7 @@ public class Generator extends VisitorBase {
         var initializer = ecd.getInitializer();
         initializer.clearContent();
         var builder = new MethodGenerator(initializer, typeResolver, this);
-        builder.enterScope(initializer.getScope());
+        builder.enterScope(initializer.getCode());
         builder.createLoadConstant(Instances.stringInstance(ecd.getName()));
         builder.createLoadConstant(Instances.longInstance(ecd.getOrdinal()));
         var argTypes = NncUtils.merge(
@@ -290,7 +290,7 @@ public class Generator extends VisitorBase {
         method.clearContent();
         MethodGenerator builder = new MethodGenerator(method, typeResolver, this);
         builders.push(builder);
-        builder.enterScope(method.getScope());
+        builder.enterScope(method.getCode());
         if (TranspileUtils.isStatic(psiMethod)) {
             processParameters(psiMethod.getParameterList(), method);
         } else {
@@ -323,7 +323,7 @@ public class Generator extends VisitorBase {
             builder.getThis();
             builder.createReturn();
         } else if (method.getReturnType().isVoid() &&
-                ((lastNode = method.getScope().getLastNode()) == null || !lastNode.isExit())) {
+                ((lastNode = method.getCode().getLastNode()) == null || !lastNode.isExit())) {
             builder.createVoidReturn();
         }
         builder.exitScope();

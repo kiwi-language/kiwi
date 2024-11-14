@@ -12,15 +12,15 @@ import javax.annotation.Nullable;
 
 public class PopNode extends NodeRT {
 
-    public static PopNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
+    public static PopNode save(NodeDTO nodeDTO, NodeRT prev, Code code, NodeSavingStage stage, IEntityContext context) {
         var node = (PopNode) context.getNode(Id.parse(nodeDTO.id()));
         if (node == null)
-            node = new PopNode(nodeDTO.tmpId(), nodeDTO.name(), prev, scope);
+            node = new PopNode(nodeDTO.tmpId(), nodeDTO.name(), prev, code);
         return node;
     }
 
-    public PopNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull ScopeRT scope) {
-        super(tmpId, name, null, previous, scope);
+    public PopNode(Long tmpId, @NotNull String name, @Nullable NodeRT previous, @NotNull Code code) {
+        super(tmpId, name, null, previous, code);
     }
 
     @Override
