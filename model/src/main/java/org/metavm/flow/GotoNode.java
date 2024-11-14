@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.GotoNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
@@ -44,12 +45,6 @@ public class GotoNode extends JumpNode {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        frame.setJumpTarget(getTarget());
-        return MetaFrame.STATE_JUMP;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("goto " + getTarget().getName());
     }
@@ -57,6 +52,17 @@ public class GotoNode extends JumpNode {
     @Override
     public int getStackChange() {
         return 0;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.GOTO);
+        output.writeShort(getTarget().getOffset());
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
     public void setTarget(@NotNull NodeRT target) {

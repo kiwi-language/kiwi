@@ -3,10 +3,9 @@ package org.metavm.flow;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
-
-import javax.annotation.Nullable;
 
 public class VoidReturnNode extends NodeRT {
 
@@ -27,12 +26,6 @@ public class VoidReturnNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        frame.setReturnValue(null);
-        return MetaFrame.STATE_RET;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("void-ret");
     }
@@ -40,6 +33,16 @@ public class VoidReturnNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 0;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.VOID_RETURN);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
     }
 
     @Override

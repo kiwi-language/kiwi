@@ -4,6 +4,7 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.SetFieldNodeParam;
 import org.metavm.object.instance.core.Id;
@@ -34,14 +35,6 @@ public class SetFieldNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var value = frame.pop();
-        var instance = frame.pop().resolveObject();
-        instance.setField(fieldRef.resolve(), value);
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("setField " + fieldRef.getRawField().getName());
     }
@@ -49,6 +42,17 @@ public class SetFieldNode extends NodeRT {
     @Override
     public int getStackChange() {
         return -2;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.SET_FIELD);
+        output.writeConstant(fieldRef);
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
     @Override

@@ -8,7 +8,6 @@ import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.mocks.MockNativeFunctionsInitializer;
-import org.metavm.flow.MaxesComputer;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Nodes;
 import org.metavm.flow.Parameter;
@@ -129,8 +128,8 @@ public class MappingSaverTest extends TestCase {
             Nodes.voidRet(scope);
         }
         TestUtils.initEntityIds(fooType);
-        fooType.accept(new MaxesComputer());
-        barType.accept(new MaxesComputer());
+        fooType.emitCode();
+        barType.emitCode();
 
         var typeDefRepository = new MockTypeDefRepository();
         typeDefRepository.save(fooType);
@@ -145,12 +144,11 @@ public class MappingSaverTest extends TestCase {
 
         var barMapping = saver.saveBuiltinMapping(barType, true);
         var fooMapping = saver.saveBuiltinMapping(fooType, true);
+        barType.emitCode();
+        fooType.emitCode();
+
         var fooViewType = fooMapping.getTargetKlass();
-        var barsFieldMapping = fooMapping.getFieldMappingByTargetField(fooViewType.getFieldByCode("bars"));
-//        var barArrayMapping = Objects.requireNonNull(barsFieldMapping.getNestedMapping());
-//        fooMapping.initId(3001L);
-//        barArrayMapping.initId(3002L);
-//        barMapping.initId(3003L);
+        fooMapping.getFieldMappingByTargetField(fooViewType.getFieldByCode("bars"));
 
         var barInst = ClassInstanceBuilder.newBuilder(barType.getType())
                 .data(Map.of(
@@ -243,6 +241,7 @@ public class MappingSaverTest extends TestCase {
                 typeProviders.entityRepository
         );
         var orderMapping = (FieldsObjectMapping) saver.saveBuiltinMapping(shoppingTypes.orderType(), true);
+        shoppingTypes.orderType().emitCode();
         TestUtils.initEntityIds(shoppingTypes.orderType());
 
         var order = ClassInstanceBuilder.newBuilder(shoppingTypes.orderType().getType())
@@ -341,7 +340,7 @@ public class MappingSaverTest extends TestCase {
             Nodes.voidRet(scope);
         }
         TestUtils.initEntityIds(productType);
-        productType.accept(new MaxesComputer());
+        productType.emitCode();
         var typeDefRepository = new MockTypeDefRepository();
         typeDefRepository.save(productType);
         typeDefRepository.save(skuType);
@@ -355,6 +354,8 @@ public class MappingSaverTest extends TestCase {
         saver.saveBuiltinMapping(skuType, true);
         var productMapping = saver.saveBuiltinMapping(productType, true);
         TestUtils.initEntityIds(productType);
+        productType.emitCode();
+        skuType.emitCode();
         var sku = ClassInstanceBuilder.newBuilder(skuType.getType())
                 .data(Map.of())
                 .build();
@@ -404,6 +405,8 @@ public class MappingSaverTest extends TestCase {
         var flowViewScopesField = flowViewType.getFieldByCode("scopes");
 
         TestUtils.initEntityIds(flowType);
+        flowType.emitCode();
+        scopeType.emitCode();
 
 //        logger.info(flowMapping.getReadMethod().getText());
 //        logger.info(flowMapping.getMapper().getText());
@@ -457,21 +460,20 @@ public class MappingSaverTest extends TestCase {
                 .build();
         FieldBuilder.newBuilder("value", "value", nodeType, nodeType.getTypeParameters().get(0).getType())
                 .build();
+        saver.saveBuiltinMapping(nodeType, true);
+        nodeType.emitCode();
 
-        var nodeMapping = saver.saveBuiltinMapping(nodeType, true);
         var listTypeVar = new TypeVariable(null, "T", "T", DummyGenericDeclaration.INSTANCE);
         var listKlass = TestUtils.newKlassBuilder("List", "List")
                 .typeParameters(listTypeVar)
                 .build();
         var pNodeType = nodeType.getParameterized(List.of(listTypeVar.getType()), ResolutionStage.DEFINITION);
         var pNodeChildArrayType = new ArrayType(pNodeType.getType(), ArrayKind.CHILD);
-        var listNodeField = FieldBuilder.newBuilder("nodes", "nodes", listKlass, pNodeChildArrayType).isChild(true).build();
-
+        FieldBuilder.newBuilder("nodes", "nodes", listKlass, pNodeChildArrayType).isChild(true).build();
         TestUtils.initEntityIds(listKlass);
-
         typeDefRepository.save(listKlass);
-
-        var listMapping = saver.saveBuiltinMapping(listKlass, true);
+        saver.saveBuiltinMapping(listKlass, true);
+        listKlass.emitCode();
 
         var listOfStrType = listKlass.getParameterized(List.of(Types.getStringType()), ResolutionStage.DEFINITION);
         TestUtils.initEntityIds(listOfStrType);
@@ -507,10 +509,10 @@ public class MappingSaverTest extends TestCase {
 
     public void testApplication() {
         var platformUserType = TestUtils.newKlassBuilder("PlatformUser", "PlatformUser").build();
-        var loginNameField = FieldBuilder.newBuilder("loginName", "loginName", platformUserType, getStringType()).asTitle().build();
+        FieldBuilder.newBuilder("loginName", "loginName", platformUserType, getStringType()).asTitle().build();
 
         var applicationType = TestUtils.newKlassBuilder("Application", "Application").build();
-        var nameField = FieldBuilder.newBuilder("name", "name", applicationType, getStringType()).asTitle().build();
+        FieldBuilder.newBuilder("name", "name", applicationType, getStringType()).asTitle().build();
         var ownerField = FieldBuilder.newBuilder("owner", "owner", applicationType, platformUserType.getType())
                 .access(Access.PRIVATE).build();
         // create getOwner method

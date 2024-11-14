@@ -4,9 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.NumberValue;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
@@ -41,14 +41,6 @@ public class LtNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var v2 = (NumberValue) frame.pop();
-        var v1 = (NumberValue) frame.pop();
-        frame.push(v1.lt(v2));
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("lt");
     }
@@ -56,6 +48,16 @@ public class LtNode extends NodeRT {
     @Override
     public int getStackChange() {
         return -1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.LT);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
     }
 
     @NotNull

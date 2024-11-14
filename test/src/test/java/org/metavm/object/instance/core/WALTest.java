@@ -6,7 +6,6 @@ import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
-import org.metavm.flow.MaxesComputer;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Nodes;
 import org.metavm.mocks.Bar;
@@ -132,7 +131,7 @@ public class WALTest extends TestCase {
                             .build();
                     Nodes.loadConstant(Instances.longZero(), init.getScope());
                     Nodes.ret(init.getScope());
-                    klass.accept(new MaxesComputer());
+                    klass.emitCode();
                     walContext.finish();
                     fieldId = field.getStringId();
                 }
@@ -153,7 +152,7 @@ public class WALTest extends TestCase {
                 Assert.assertNotNull(field);
                 var init = klass.findMethodByCode("__version__");
                 Assert.assertNotNull(init);
-                Assert.assertEquals(2, init.getScope().getNodes().size());
+                Assert.assertEquals(4, init.getScope().getCode().length);
             }
         }
         // create a new instance and check that its version field has been initialized by log service

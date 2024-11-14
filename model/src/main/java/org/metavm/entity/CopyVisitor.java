@@ -2,13 +2,15 @@ package org.metavm.entity;
 
 import org.metavm.api.ValueObject;
 import org.metavm.object.type.Klass;
-import org.metavm.util.*;
+import org.metavm.util.IdentitySet;
+import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
+import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.LinkedList;
 import java.util.function.Consumer;
 
 public class CopyVisitor extends ElementVisitor<Element> {
@@ -96,12 +98,25 @@ public class CopyVisitor extends ElementVisitor<Element> {
             case List<?> list -> copyList(list);
             case Set<?> set -> copySet(set);
             case Map<?, ?> m -> copyMap(m);
+            case Object[] array -> copyArray(array);
             case null, default -> {
                 if (descendants.contains(object))
                     yield Objects.requireNonNullElseGet(map.get(object), () -> addDummy(object, setter));
                 yield substituteReference(object);
             }
         };
+    }
+
+    private Object[] copyArray(Object[] array) {
+        var componentType = array.getClass().getComponentType();
+        if(componentType.isPrimitive() || componentType == String.class)
+            return array;
+        var copy = (Object[]) java.lang.reflect.Array.newInstance(componentType, array.length);
+        for (int i = 0; i < array.length; i++) {
+            int _i = i;
+            copy[i] = getValue(array[i], v -> copy[_i] = v);
+        }
+        return copy;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -175,6 +190,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     protected final Object defaultCopy(Object entity, @Nullable Object existing) {
+//        logger.debug("Copying {}", entity.getClass().getSimpleName());
         var t = map.get(entity);
         if (t != null)
             return t;

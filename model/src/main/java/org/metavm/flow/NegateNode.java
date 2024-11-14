@@ -4,9 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.NumberValue;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
@@ -40,13 +40,6 @@ public class NegateNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var v = (NumberValue) frame.pop();
-        frame.push(v.negate());
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("neg");
     }
@@ -54,6 +47,16 @@ public class NegateNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 0;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.NEGATE);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
     }
 
     @NotNull

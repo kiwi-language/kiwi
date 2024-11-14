@@ -5,10 +5,9 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NewObjectNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.ClassInstanceBuilder;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.TypeParser;
 import org.metavm.util.InternalException;
@@ -63,18 +62,6 @@ public class NewObjectNode extends CallNode {
     }
 
     @Override
-    protected ClassInstance getSelf(MetaFrame frame) {
-        var methodRef = getFlowRef();
-        var type = methodRef.getDeclaringType();
-        var instance = ClassInstanceBuilder.newBuilder(type)
-                .ephemeral(ephemeral)
-                .build();
-        if (!instance.isEphemeral() && !unbound)
-            frame.addInstance(instance);
-        return instance;
-    }
-
-    @Override
     public MethodRef getFlowRef() {
         return (MethodRef) super.getFlowRef();
     }
@@ -98,6 +85,19 @@ public class NewObjectNode extends CallNode {
         super.writeContent(writer);
         if (ephemeral)
             writer.write(" ephemeral");
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.NEW);
+        writeCallCode(output);
+        output.writeBoolean(ephemeral);
+        output.writeBoolean(unbound);
+    }
+
+    @Override
+    public int getLength() {
+        return super.getLength() + 2;
     }
 
     public boolean isEphemeral() {

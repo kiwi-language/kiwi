@@ -1,7 +1,8 @@
 package org.metavm.flow;
 
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.LambdaRefDTO;
 
@@ -9,6 +10,10 @@ import java.util.Objects;
 
 @EntityType
 public class LambdaRef extends CallableRef  {
+
+    public static LambdaRef fromDTO(LambdaRefDTO lambdaRefDTO, IEntityContext context) {
+        return new LambdaRef(context.getEntity(Lambda.class, lambdaRefDTO.lambdaNodeId()));
+    }
 
     private final Lambda lambda;
 

@@ -3,15 +3,14 @@ package org.metavm.flow;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.LoadAware;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.TryExitNodeParam;
 import org.metavm.object.instance.core.Id;
-import org.metavm.util.Instances;
 
 @EntityType
-public class TryExitNode extends NodeRT implements LoadAware {
+public class TryExitNode extends NodeRT {
 
     public static TryExitNode save(NodeDTO nodeDTO, NodeRT prev, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
         var node = (TryExitNode) context.getNode(Id.parse(nodeDTO.id()));
@@ -23,46 +22,15 @@ public class TryExitNode extends NodeRT implements LoadAware {
     }
 
     private final int variableIndex;
-    private transient TryEnterNode entry;
 
     public TryExitNode(Long tmpId, String name, NodeRT previous, ScopeRT scope, int variableIndex) {
         super(tmpId, name, null, previous, scope);
-        findEntry();
         this.variableIndex = variableIndex;
-    }
-
-    private void findEntry() {
-        int numExits = 0;
-        for(var n = getPredecessor(); n != null; n = n.getPredecessor()) {
-            if(n instanceof TryEnterNode t) {
-                if(numExits == 0) {
-                    this.entry = t;
-                    return;
-                }
-                numExits--;
-            }
-            else if(n instanceof TryExitNode)
-                numExits++;
-        }
-        throw new IllegalStateException("Cannot find the matching entry node for TryExitNode " + getName());
     }
 
     @Override
     protected TryExitNodeParam getParam(SerializeContext serializeContext) {
         return new TryExitNodeParam(variableIndex);
-    }
-
-    @Override
-    public int execute(MetaFrame frame) {
-        var tryNode = frame.exitTrySection();
-        assert tryNode == entry;
-        var exceptionInfo = frame.getExceptionInfo(entry);
-        if (exceptionInfo != null)
-            frame.push(exceptionInfo.exception().getReference());
-        else
-            frame.push(Instances.nullInstance());
-        frame.store(variableIndex);
-        return MetaFrame.STATE_NEXT;
     }
 
     @Override
@@ -76,13 +44,19 @@ public class TryExitNode extends NodeRT implements LoadAware {
     }
 
     @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitTryExitNode(this);
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.TRY_EXIT);
+        output.writeShort(variableIndex);
     }
 
     @Override
-    public void onLoad() {
-        findEntry();
+    public int getLength() {
+        return 3;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitTryExitNode(this);
     }
 
     public int getVariableIndex() {

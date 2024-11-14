@@ -4,9 +4,9 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.MethodCallNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.type.TypeParser;
 import org.metavm.util.NncUtils;
 
@@ -59,12 +59,14 @@ public class MethodCallNode extends CallNode {
         writer.write("invoke " + method.getQualifiedSignature());
     }
 
-    private Method getMethod() {
-        return (Method) super.getFlowRef().resolve();
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.METHOD_CALL);
+        writeCallCode(output);
     }
 
-    protected ClassInstance getSelf(MetaFrame frame) {
-        return getFlowRef().resolve().isStatic() ? null : frame.pop().resolveObject();
+    private Method getMethod() {
+        return (Method) super.getFlowRef().resolve();
     }
 
     @Override

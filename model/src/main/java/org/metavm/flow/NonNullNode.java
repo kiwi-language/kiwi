@@ -4,10 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
-import org.metavm.entity.natives.NullPointerExceptionNative;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
@@ -38,19 +36,6 @@ public class NonNullNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var inst = frame.peek();
-        if(inst.isNull()) {
-            var npe = ClassInstance.allocate(StdKlass.nullPointerException.type());
-            var nat = new NullPointerExceptionNative(npe);
-            nat.NullPointerException(frame);
-            return frame.catchException(this, npe);
-        }
-        else
-            return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("nonnull");
     }
@@ -58,6 +43,16 @@ public class NonNullNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 0;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.NON_NULL);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
     }
 
     @Override

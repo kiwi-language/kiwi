@@ -90,7 +90,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
     @ChildEntity
     private final ChildArray<Error> errors = addChild(new ChildArray<>(Error.class), "errors");
-
     private boolean error;
 
     // For unit test. Do not remove
@@ -1959,5 +1958,19 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void setOldSuperType(ClassType oldSuperType) {
         this.oldSuperType = oldSuperType;
     }
+
+    public void emitCode() {
+        accept(new MaxesComputer());
+        for (Method method : methods) {
+            method.emitCode();
+        }
+    }
+
+    public void resolveConstantPool() {
+        for (Method method : methods) {
+            method.resolveConstantPool();
+        }
+    }
+
 }
 

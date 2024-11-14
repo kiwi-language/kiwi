@@ -6,9 +6,9 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.expression.ExpressionTypeMap;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.IfNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.BooleanValue;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -53,16 +53,6 @@ public class IfNode extends JumpNode {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        if(((BooleanValue) frame.pop()).getValue()) {
-            frame.setJumpTarget(getTarget());
-            return MetaFrame.STATE_JUMP;
-        }
-        else
-            return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("if " + getTarget().getName());
     }
@@ -80,6 +70,17 @@ public class IfNode extends JumpNode {
     @Override
     public int getStackChange() {
         return -1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.IF);
+        output.writeShort(getTarget().getOffset());
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
 }

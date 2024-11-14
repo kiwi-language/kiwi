@@ -85,6 +85,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                 Nodes.ret(scope);
             }
         }
+        get().klass.emitCode();
     }
 
     @Override

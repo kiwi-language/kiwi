@@ -59,12 +59,10 @@ public class EncodingUtils {
     }
 
     public static String decrypt(String text, PrivateKey privateKey) {
-        try (var entry = ContextUtil.getProfiler().enter("decrypt")) {
+        try {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
-            try(var entry1 = ContextUtil.getProfiler().enter("cipher.doFinal")) {
-                return new String(cipher.doFinal(decodeBase64(text)), StandardCharsets.UTF_8);
-            }
+            return new String(cipher.doFinal(decodeBase64(text)), StandardCharsets.UTF_8);
         } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException |
                  BadPaddingException e) {
             throw new RuntimeException(e);
@@ -93,15 +91,11 @@ public class EncodingUtils {
     }
 
     public static String encodeBase64(byte[] bytes) {
-        try(var ignored = ContextUtil.getProfiler().enter("encodeBase64")) {
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        }
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     public static byte[] decodeBase64(String text) {
-        try(var ignored = ContextUtil.getProfiler().enter("decodeBase64")) {
-            return Base64.getUrlDecoder().decode(text);
-        }
+        return Base64.getUrlDecoder().decode(text);
     }
 
     public static String encodeStringBase64(String str) {

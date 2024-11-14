@@ -288,6 +288,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
+//        logger.debug("Executing method: {}", getQualifiedSignature());
         try (var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName() + "." + getName())) {
             if (DebugEnv.debugging) {
                 var methodName = getDeclaringType().getName() + "." + getNameWithTypeArguments();
@@ -311,13 +312,23 @@ public class Method extends Flow implements Property, GenericElement {
             else {
                 if (!isRootScopePresent())
                     throw new InternalException("fail to invoke method: " + getQualifiedName() + ". root scope not present");
-                if(getRootNode() == null)
-                    throw new IllegalStateException("Failed to invoke method " + getQualifiedSignature() + ": empty method body");
                 try {
-                    result = new MetaFrame(this.getRootNode(), declaringType, self,
-                            arguments, callContext.instanceRepository(), null, getScope().getMaxLocals(),
-                            getScope().getMaxStack()
-                    ).execute();
+                    Value[] argArray;
+                    if(self == null)
+                        argArray = arguments.toArray(Value[]::new);
+                    else {
+                        argArray = new Value[arguments.size() + 1];
+                        argArray[0] = self.getReference();
+                        int i = 1;
+                        for (Value argument : arguments) {
+                            argArray[i++] = argument;
+                        }
+                    }
+                    result = new MetaFrame(callContext.instanceRepository()).execute(
+                            getScope(),
+                            argArray,
+                            null
+                    );
                 } catch (Exception e) {
                     logger.info("Fail to execute method {}", getQualifiedName());
                     logger.info(getText());

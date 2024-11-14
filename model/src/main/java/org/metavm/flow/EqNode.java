@@ -4,11 +4,11 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
-import org.metavm.util.Instances;
 
 import javax.annotation.Nullable;
 
@@ -39,14 +39,6 @@ public class EqNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var v2 = frame.pop();
-        var v1 = frame.pop();
-        frame.push(Instances.equals(v1, v2));
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("eq");
     }
@@ -54,6 +46,16 @@ public class EqNode extends NodeRT {
     @Override
     public int getStackChange() {
         return -1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.EQ);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
     }
 
     @NotNull

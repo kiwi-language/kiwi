@@ -153,6 +153,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 defContext.ensureStage(f.getType().getUnderlyingType(), DECLARATION));
         getConstraintDefFields().forEach(f -> parseCheckConstraint(f, def));
 //        saveBuiltinMapping(true);
+        klass.emitCode();
         klass.setStage(DEFINITION);
     }
 

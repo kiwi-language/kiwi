@@ -21,7 +21,7 @@ public class MaxesComputer extends StructuralVisitor<Void> {
         if(!method.isRootScopePresent())
             return null;
 //        if(method.getQualifiedName().equals("MyList.fromView")) {
-//            log.debug("Visiting method: {}", method.getQualifiedSignature());
+//        log.debug("Visiting method: {}", method.getQualifiedSignature());
 //            DebugEnv.flag = true;
 //        }
         var c = enterCallable(method);
@@ -62,8 +62,8 @@ public class MaxesComputer extends StructuralVisitor<Void> {
     public Void visitNode(NodeRT node) {
         currentCallable().changeStack(node.getStackChange());
 //        if(DebugEnv.flag)
-//            log.debug("Stack size at " + node.getName() + ": {}, {}",
-//                    currentCallable().currentStacks, currentCallable().maxStacks);
+//        log.debug("Stack size at " + node.getName() + ": {}, {}",
+//                currentCallable().currentStacks, currentCallable().maxStacks);
         return null;
     }
 
@@ -71,6 +71,8 @@ public class MaxesComputer extends StructuralVisitor<Void> {
     public Void visitVariableAccessNode(VariableAccessNode node) {
         super.visitVariableAccessNode(node);
         currentCallable().setMaxLocals(node.getIndex() + 1);
+//        log.debug("Max locals at " + node.getName() + ":  {}",
+//                currentCallable().maxLocals);
         return null;
     }
 

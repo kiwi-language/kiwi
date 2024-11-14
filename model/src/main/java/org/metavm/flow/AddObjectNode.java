@@ -6,15 +6,13 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.AddObjectNodeParam;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.ClassInstanceBuilder;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeParser;
-import org.metavm.util.LinkedList;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -61,24 +59,6 @@ public class AddObjectNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var instance = ClassInstanceBuilder.newBuilder(getType())
-                .ephemeral(ephemeral)
-                .build();
-        var fieldValues = new LinkedList<Value>();
-        var fields = getKlass().getAllFields();
-        int numFields = fields.size();
-        for (int i = 0; i < numFields; i++) {
-            fieldValues.addFirst(frame.pop());
-        }
-        NncUtils.biForEach(fields, fieldValues, instance::initField);
-        if (!instance.isEphemeral())
-            frame.addInstance(instance);
-        frame.push(instance.getReference());
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("allocate " + getType().getName());
     }
@@ -86,6 +66,18 @@ public class AddObjectNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 1 - getKlass().getAllFields().size();
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.ADD_OBJECT);
+        output.writeConstant(getType());
+        output.writeBoolean(ephemeral);
+    }
+
+    @Override
+    public int getLength() {
+        return 4;
     }
 
     public void setEphemeral(boolean ephemeral) {

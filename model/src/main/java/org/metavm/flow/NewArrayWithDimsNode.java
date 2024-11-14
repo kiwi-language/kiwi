@@ -5,17 +5,13 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NewArrayWithDimsNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.TypeParser;
-import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
-
-import javax.annotation.Nullable;
 
 @EntityType
 public class NewArrayWithDimsNode extends NodeRT {
@@ -53,18 +49,6 @@ public class NewArrayWithDimsNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var array = new ArrayInstance(getType());
-        var dims = new int[dimensions];
-        for (int i = dimensions - 1; i >= 0; i--) {
-            dims[i] = ((LongValue)frame.pop()).getValue().intValue();
-        }
-        Instances.initArray(array, dims, 0);
-        frame.push(array.getReference());
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("new " + getType().getName() + " dimensions = " + dimensions);
     }
@@ -72,6 +56,18 @@ public class NewArrayWithDimsNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 1 - dimensions;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.NEW_ARRAY_WITH_DIMS);
+        output.writeConstant(getType());
+        output.writeShort(dimensions);
+    }
+
+    @Override
+    public int getLength() {
+        return 5;
     }
 
     @Override

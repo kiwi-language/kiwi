@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.LoadConstantNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
@@ -43,12 +44,6 @@ public class LoadConstantNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        frame.push(value);
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("ldc " + value.getText());
     }
@@ -56,6 +51,17 @@ public class LoadConstantNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.LOAD_CONSTANT);
+        output.writeConstant(value);
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
     @Override

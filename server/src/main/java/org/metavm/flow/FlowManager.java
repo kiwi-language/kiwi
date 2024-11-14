@@ -10,6 +10,8 @@ import org.metavm.flow.rest.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
+import org.metavm.object.type.rest.dto.ConstantPoolDTO;
+import org.metavm.object.type.rest.dto.CpEntryDTO;
 import org.metavm.util.BusinessException;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
@@ -215,14 +217,11 @@ public class FlowManager extends EntityContextFactoryAware {
         }
     }
 
-    private void saveNodes(ScopeDTO scopeDTO, ScopeRT scope, IEntityContext context) {
-        scope.clearNodes();
-        for (NodeDTO nodeDTO : scopeDTO.nodes()) {
-            saveNode(nodeDTO, scope, NodeSavingStage.INIT, context);
-        }
-        for (NodeDTO nodeDTO : scopeDTO.nodes()) {
-            saveNode(nodeDTO, scope, NodeSavingStage.FINALIZE, context);
-        }
+    private void saveScope(ScopeDTO scopeDTO, ScopeRT scope, IEntityContext context) {
+        scope.clear();
+        scope.setMaxStack(scopeDTO.maxStack());
+        scope.setMaxLocals(scopeDTO.maxLocals());
+        scope.setCodeBase64(scopeDTO.codeBase64());
     }
 
     private NodeRT saveNode(NodeDTO nodeDTO, ScopeRT scope, NodeSavingStage stage, IEntityContext context) {
@@ -248,24 +247,31 @@ public class FlowManager extends EntityContextFactoryAware {
     }
 
     public void saveContent(FlowDTO flowDTO, Flow flow, IEntityContext context) {
-//        log.debug("Saving content of flow: {}", flow.getQualifiedName());
         try (var ignored = context.getProfiler().enter("FlowManager.saveContent")) {
             if (DebugEnv.debugging)
                 DebugEnv.logger.info("FlowManager.saveContent flow: {}", flow.getQualifiedName());
             if (flow.isNative() || (flow instanceof Method method && method.isAbstract()))
                 return;
+            if(flowDTO.constantPool() != null)
+                saveConstantPool(flow.getConstantPool(), flowDTO.constantPool(), context);
             if(flowDTO.rootScope() != null)
-                saveNodes(flowDTO.rootScope(), flow.getScope(), context);
+                saveScope(flowDTO.rootScope(), flow.getScope(), context);
             for (LambdaDTO lambdaDTO : flowDTO.lambdas()) {
                 saveLambdaContent(lambdaDTO, context);
             }
-            afterFlowChange(flow, context);
+        }
+    }
+
+    private void saveConstantPool(ConstantPool constantPool, ConstantPoolDTO constantPoolDTO, IEntityContext context) {
+        constantPool.clear();
+        for (CpEntryDTO entryDTO : constantPoolDTO.entries()) {
+            constantPool.addEntry(CpEntry.fromDTO(entryDTO, context));
         }
     }
 
     private void saveLambdaContent(LambdaDTO lambdaDTO, IEntityContext context) {
         var lambda = context.getEntity(Lambda.class, lambdaDTO.id());
-        saveNodes(lambdaDTO.scope(), lambda.getScope(), context);
+        saveScope(lambdaDTO.scope(), lambda.getScope(), context);
     }
 
     @Transactional

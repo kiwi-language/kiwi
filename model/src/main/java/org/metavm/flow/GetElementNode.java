@@ -5,9 +5,9 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
@@ -33,14 +33,6 @@ public class GetElementNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var indexInst = (LongValue) frame.pop();
-        var arrayInst = frame.pop().resolveArray();
-        frame.push(arrayInst.get(indexInst.getValue().intValue()));
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("array-load");
     }
@@ -48,6 +40,16 @@ public class GetElementNode extends NodeRT {
     @Override
     public int getStackChange() {
         return -1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.GET_ELEMENT);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
     }
 
     @Override

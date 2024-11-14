@@ -259,6 +259,7 @@ public class MappingSaver {
             Nodes.newObject(fromView.getScope(), canonicalConstructor, false, false);
             Nodes.ret(scope);
             fromView.computeMaxes();
+            fromView.emitCode();
         }
     }
 

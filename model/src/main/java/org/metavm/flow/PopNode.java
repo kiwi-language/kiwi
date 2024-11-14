@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 
@@ -33,12 +34,6 @@ public class PopNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        frame.pop();
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("pop");
     }
@@ -46,5 +41,15 @@ public class PopNode extends NodeRT {
     @Override
     public int getStackChange() {
         return -1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.POP);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
     }
 }

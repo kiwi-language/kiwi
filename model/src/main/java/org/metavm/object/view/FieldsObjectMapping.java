@@ -134,7 +134,7 @@ public class FieldsObjectMapping extends ObjectMapping {
             fieldMapping.generateReadCode(readMethod.getScope());
         Nodes.addObject(getTargetType(), true, scope);
         Nodes.ret(scope);
-        readMethod.computeMaxes();
+        readMethod.emitCode();
     }
 
     public void generateWriteMethodCode() {
@@ -147,7 +147,7 @@ public class FieldsObjectMapping extends ObjectMapping {
                 }, scope);
         }
         Nodes.voidRet(scope);
-        writeMethod.computeMaxes();
+        writeMethod.emitCode();
     }
 
     public void setName(String name) {

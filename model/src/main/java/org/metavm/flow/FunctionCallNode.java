@@ -4,15 +4,14 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.FunctionCallNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeParser;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 @EntityType
@@ -40,11 +39,6 @@ public class FunctionCallNode extends CallNode {
     }
 
     @Override
-    protected @Nullable ClassInstance getSelf(MetaFrame frame) {
-        return null;
-    }
-
-    @Override
     protected FunctionCallNodeParam getParam(SerializeContext serializeContext) {
         return new FunctionCallNodeParam(
                 getFlowRef().toDTO(serializeContext),
@@ -52,6 +46,12 @@ public class FunctionCallNode extends CallNode {
                 NncUtils.map(capturedVariableTypes, t -> t.toExpression(serializeContext)),
                 capturedVariableIndexes.toList()
         );
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.FUNCTION_CALL);
+        writeCallCode(output);
     }
 
     @Override

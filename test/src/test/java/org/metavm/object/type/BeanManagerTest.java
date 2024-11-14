@@ -6,7 +6,6 @@ import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.flow.MaxesComputer;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Nodes;
 import org.metavm.flow.Parameter;
@@ -79,9 +78,9 @@ public class BeanManagerTest extends TestCase {
                 Nodes.ret(factoryMethod.getScope());
             }
             var registry = BeanDefinitionRegistry.getInstance(context);
-            configKlass.accept(new MaxesComputer());
-            fooServiceKlass.accept(new MaxesComputer());
-            barServiceKlass.accept(new MaxesComputer());
+            configKlass.emitCode();
+            fooServiceKlass.emitCode();
+            barServiceKlass.emitCode();
             beanManager.createBeans(List.of(configKlass, fooServiceKlass), registry, context);
             var fooService = registry.getBean("fooService");
             Assert.assertTrue(fooServiceKlass.getType().isInstance(fooService.getReference()));

@@ -51,7 +51,6 @@ public class Generator extends VisitorBase {
             return;
         klass.setStage(ResolutionStage.DEFINITION);
         klass.setCode(psiClass.getQualifiedName());
-
         MethodGenerator initFlowBuilder;
         Method initFlow;
         if(!psiClass.isInterface()) {
@@ -107,6 +106,14 @@ public class Generator extends VisitorBase {
             Flows.generateValuesMethodBody(klass);
         exitClass();
         klass.setStage(ResolutionStage.DEFINITION);
+        klass.emitCode();
+//        for (Method method : klass.getMethods()) {
+//            if(method.isRootScopePresent()) {
+//                logger.debug("Emitted code for method {}. Constant pool size: {}, code length: {}",
+//                        method.getQualifiedSignature(), method.getConstantPool().getEntries().size(),
+//                        method.getScope().getCode() == null ? 0 : method.getScope().getCode().length);
+//            }
+//        }
     }
 
     @Override
@@ -257,12 +264,6 @@ public class Generator extends VisitorBase {
         if2.setTarget(exit);
     }
 
-    private JumpNode createExceptionCheck(int exceptionVar, PsiType catchType) {
-        builder().createLoad(exceptionVar, StdKlass.exception.type());
-        Values.node(builder().createInstanceOf(resolveType(catchType)));
-        return builder().createIfNot(null);
-    }
-
     @Override
     public void visitMethod(PsiMethod psiMethod) {
         if (CompilerConfig.isMethodBlacklisted(psiMethod))
@@ -328,6 +329,8 @@ public class Generator extends VisitorBase {
         builder.exitScope();
         builders.pop();
         CompositeTypeEventRegistry.removeListener(capturedTypeListener);
+//        if(method.getName().equals("Warehouse"))
+//            logger.debug("{}", method.getText());
     }
 
     private boolean isEnumType(Klass classType) {

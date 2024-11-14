@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.LoadContextSlotNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
@@ -53,12 +54,6 @@ public class LoadContextSlotNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        frame.push(frame.loadContextSlot(contextIndex, slotIndex));
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("loadContextSlot " + contextIndex + " " + slotIndex);
     }
@@ -66,6 +61,18 @@ public class LoadContextSlotNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+       output.write(Bytecodes.LOAD_CONTEXT_SLOT);
+       output.writeShort(contextIndex);
+       output.writeShort(slotIndex);
+    }
+
+    @Override
+    public int getLength() {
+        return 5;
     }
 
 }

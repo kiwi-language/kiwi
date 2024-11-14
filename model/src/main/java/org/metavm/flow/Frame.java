@@ -1,11 +1,6 @@
 package org.metavm.flow;
 
-import javax.annotation.Nullable;
-
 public interface Frame {
-
-    @Nullable
-    FlowExecResult execute();
 
 //    Instance getRet();
 

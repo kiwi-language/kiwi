@@ -5,6 +5,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.LoadAware;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 
@@ -32,12 +33,6 @@ public class TryEnterNode extends NodeRT implements LoadAware {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        frame.enterTrySection(this);
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("try-enter");
     }
@@ -45,6 +40,17 @@ public class TryEnterNode extends NodeRT implements LoadAware {
     @Override
     public int getStackChange() {
         return 0;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.TRY_ENTER);
+        output.writeShort(exit.getOffset());
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
     @Override
@@ -73,5 +79,9 @@ public class TryEnterNode extends NodeRT implements LoadAware {
     @Override
     public void onLoad() {
         getExit();
+    }
+
+    void setExit(TryExitNode exit) {
+        this.exit = exit;
     }
 }

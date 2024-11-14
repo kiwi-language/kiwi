@@ -4,14 +4,13 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.GetUniqueNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.Types;
 import org.metavm.object.type.UnionType;
-import org.metavm.util.Instances;
 
 @EntityType
 public class GetUniqueNode extends NodeRT {
@@ -48,15 +47,6 @@ public class GetUniqueNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        Value result = frame.instanceRepository().selectFirstByKey(frame.loadIndexKey(index));
-        if (result == null)
-            result = Instances.nullInstance();
-        frame.push(result);
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("getUnique(" + index.getName() + ")");
     }
@@ -64,6 +54,17 @@ public class GetUniqueNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 1 - index.getFields().size();
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.GET_UNIQUE);
+        output.writeConstant(index.getRef());
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
     @Override

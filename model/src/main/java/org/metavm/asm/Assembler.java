@@ -134,7 +134,7 @@ public class Assembler {
             return Types.getNeverType().getInternalName(null);
         else if (typeType.classOrInterfaceType() != null) {
             var classType = typeType.classOrInterfaceType();
-            var className = classType.qualifiedName().getText();
+            var className = scope.getCompilationUnit().getReferenceName(classType.qualifiedName().getText());
             var typeArgs = classType.typeArguments();
             if (typeArgs != null)
                 return className + "<" + NncUtils.join(typeArgs.typeType(), t -> getInternalName(t, typeParameters, scope)) + ">";
@@ -509,9 +509,8 @@ public class Assembler {
             params.forEach(p -> paramTypeNames.add(getInternalName(p.typeType(), typeParamNames, scope)));
             var internalName = klass.getCodeNotNull() + "." + name + "(" + String.join(",", paramTypeNames) + ")";
             var method = klass.findMethod(m -> m.getInternalName(null).equals(internalName));
-            if (method != null) {
-                method.clearNodes();
-            }
+            if (method != null)
+                method.clearContent();
             else {
                 method = MethodBuilder.newBuilder(klass, name, name)
                         .tmpId(NncUtils.randomNonNegative())
@@ -721,11 +720,12 @@ public class Assembler {
                 klass.setSuperType(null);
             if (interfaces != null)
                 klass.setInterfaces(NncUtils.map(interfaces.typeType(), t -> (ClassType) parseType(t, scope, getCompilationUnit())));
-            var cinit = klass.findMethodByCodeAndParamTypes("<cinit>", List.of());
+            var cinit = klass.findSelfMethod(m -> m.getName().equals("<cinit>")
+                    && m.isStatic() && m.getParameters().isEmpty());
             if (cinit != null)
-                cinit.clearNodes();
+                cinit.clearContent();
             else {
-                cinit = MethodBuilder.newBuilder(currentClass.getKlass(), "<cinit>", "<cinit>")
+                cinit = MethodBuilder.newBuilder(klass, "<cinit>", "<cinit>")
                         .isStatic(true)
                         .tmpId(NncUtils.randomNonNegative())
                         .access(Access.PRIVATE)
@@ -740,6 +740,7 @@ public class Assembler {
             Nodes.voidRet(cinit.getScope());
             exitScope();
             cinits.pop();
+            klass.emitCode();
         }
 
         private Method cinit() {
@@ -824,6 +825,7 @@ public class Assembler {
                 }
                 if (typeParameters != null)
                     typeParameters.accept(this);
+//                logger.debug("{}", method.getText());
             } finally {
                 exitScope();
             }

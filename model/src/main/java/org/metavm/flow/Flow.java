@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 @EntityType
@@ -61,6 +62,9 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     private final ChildArray<CapturedTypeVariable> capturedTypeVariables = addChild(new ChildArray<>(CapturedTypeVariable.class), "capturedTypeVariables");
     @ChildEntity
     private final ChildArray<Lambda> lambdas = addChild(new ChildArray<>(Lambda.class), "lambdas");
+    @ChildEntity
+    @Nullable
+    private ConstantPool constantPool;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient List<NodeRT> nodes = new ArrayList<>();
@@ -89,7 +93,10 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.isSynthetic = isSynthetic;
         this.returnType = returnType;
         this.type = new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
-        rootScope = !noCode && codeSource == null && !isNative ? addChild(new ScopeRT(this, this), "rootScope") : null;
+        if(!noCode && codeSource == null && !isNative ) {
+            rootScope = addChild(new ScopeRT(this, this), "rootScope");
+            constantPool = addChild(new ConstantPool(), "constantPool");
+        }
         setTypeParameters(typeParameters);
         if(typeParameters.isEmpty())
             setTypeArguments(typeArguments);
@@ -131,7 +138,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         });
         if (codeSource != null) {
             codeSource.generateCode(this);
-            accept(new MaxesComputer());
+            computeMaxes();
+            emitCode();
         }
     }
 
@@ -160,7 +168,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                 getCode(),
                 isNative,
                 isSynthetic,
-                includeCode && isRootScopePresent() ? getScope().toDTO(true, serContext) : null,
+                includeCode && isRootScopePresent() ? getScope().toDTO(serContext) : null,
                 returnType.toExpression(serContext),
                 NncUtils.map(parameters, Parameter::toDTO),
                 type.toExpression(serContext),
@@ -174,6 +182,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                 isTemplate(),
                 getAttributesMap(),
                 getState().code(),
+                includeCode && constantPool != null ? constantPool.toDTO(serContext) : null,
                 getParam(includeCode, serContext)
         );
     }
@@ -186,16 +195,15 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public void clearContent() {
         clearNodes();
-//        capturedFlows.clear();
+        constantPool.clear();
         capturedTypeVariables.clear();
-//        capturedCompositeTypes.clear();
     }
 
     public void clearNodes() {
         if (nodes != null)
             nodes.clear();
         if (rootScope != null)
-            rootScope.clearNodes();
+            rootScope.clear();
         nodeNames.clear();
     }
 
@@ -309,7 +317,11 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public ScopeRT newEphemeralRootScope() {
         NncUtils.requireTrue(codeSource != null);
-        return rootScope = addChild(new ScopeRT(this, this, true), "rootScope");
+        constantPool = addChild(new ConstantPool(), "constantPool");
+        constantPool.setEphemeralEntity(true);
+        rootScope = addChild(new ScopeRT(this, this), "rootScope");
+        rootScope.setEphemeralEntity(true);
+        return rootScope;
     }
 
     @SuppressWarnings("unused")
@@ -647,6 +659,28 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public void setLambdas(List<Lambda> lambdas) {
         this.lambdas.resetChildren(lambdas);
+    }
+
+    public void forEachParameterized(Consumer<Flow> action) {
+        ParameterizedStore.forEach(this, (k,v) -> action.accept((Flow) v));
+    }
+
+    public void resolveConstantPool() {
+        if(isRootScopePresent())
+            constantPool.resolve();
+    }
+
+    public ConstantPool getConstantPool() {
+        return Objects.requireNonNull(constantPool,
+                () -> "Constant pool is not initialized for flow " + getQualifiedName());
+    }
+
+    public void emitCode() {
+        if(isRootScopePresent())
+            getScope().emitCode();
+        for (Lambda lambda : lambdas) {
+            lambda.emitCode();
+        }
     }
 
 }

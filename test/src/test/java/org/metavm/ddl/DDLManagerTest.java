@@ -231,8 +231,10 @@ public class DDLManagerTest extends TestCase {
         for (StdFunction stdFunc : StdFunction.values()) {
             var func = stdFunc.get();
             func.forEachDescendant(e -> {
-                Assert.assertTrue(defContext.containsEntity(e));
-                defContext.getInstance(e);
+                if(!e.isEphemeralEntity()) {
+                    Assert.assertTrue(defContext.containsEntity(e));
+                    defContext.getInstance(e);
+                }
             });
         }
         defContext.close();

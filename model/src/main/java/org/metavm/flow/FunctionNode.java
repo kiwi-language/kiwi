@@ -5,14 +5,13 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.FunctionNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.FunctionValue;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeParser;
 import org.metavm.util.BusinessException;
-import org.metavm.util.LinkedList;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -63,24 +62,6 @@ public class FunctionNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var args = new LinkedList<org.metavm.object.instance.core.Value>();
-        var numArgs = functionType.getParameterTypes().size();
-        for (int i = 0; i < numArgs; i++) {
-            args.addFirst(frame.pop());
-        }
-        var funcInst = (FunctionValue) frame.pop();
-        var result = funcInst.execute(args, frame);
-        if(result.exception() != null)
-            frame.catchException(this, result.exception());
-        else {
-            if(result.ret() != null)
-                frame.push(result.ret());
-        }
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("call " + functionType.toExpression());
     }
@@ -89,6 +70,17 @@ public class FunctionNode extends NodeRT {
     public int getStackChange() {
         var paramCount = functionType.getParameterTypes().size();
         return functionType.isVoid() ? -paramCount - 1 : paramCount;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.FUNC);
+        output.writeConstant(functionType);
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
     @Override

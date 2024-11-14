@@ -5,14 +5,13 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.IndexSelectFirstNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
-import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
 
 import static java.util.Objects.requireNonNull;
 
@@ -57,13 +56,6 @@ public class IndexSelectFirstNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var result = frame.instanceRepository().selectFirstByKey(frame.loadIndexKey(index));
-        frame.push(NncUtils.orElse(result, Instances.nullInstance()));
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("indexSelectFirst(" + index.getName() + ", " +  ")");
     }
@@ -71,6 +63,17 @@ public class IndexSelectFirstNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 1 - index.getFields().size();
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.INDEX_SELECT_FIRST);
+        output.writeConstant(index.getRef());
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
     @Override

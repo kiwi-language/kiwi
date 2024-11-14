@@ -6,10 +6,9 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.StdKlass;
-import org.metavm.entity.natives.ListNative;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.IndexSelectNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Index;
@@ -60,17 +59,6 @@ public class IndexSelectNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var result = frame.instanceRepository().indexSelect(frame.loadIndexKey(index));
-        var list = ClassInstance.allocate(getType());
-        var listNative = new ListNative(list);
-        listNative.List(frame);
-        result.forEach(e -> listNative.add(e, frame));
-        frame.push(list.getReference());
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("indexSelect(" + index.getName() + ")");
     }
@@ -78,6 +66,17 @@ public class IndexSelectNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 1 - index.getFields().size();
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.INDEX_SELECT);
+        output.writeConstant(index.getRef());
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
     @Override

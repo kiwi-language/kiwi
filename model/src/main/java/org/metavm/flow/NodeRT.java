@@ -31,8 +31,8 @@ public abstract class NodeRT extends Element implements LocalKey {
     private NodeRT successor;
     @Nullable
     private String error;
-
     private transient ExpressionTypeMap expressionTypes;
+    private transient int offset;
 
     protected NodeRT(
             Long tmpId,
@@ -191,8 +191,6 @@ public abstract class NodeRT extends Element implements LocalKey {
         return outputType;
     }
 
-    public abstract int execute(MetaFrame frame);
-
     public ExpressionTypeMap getExpressionTypes() {
         return NncUtils.orElse(expressionTypes, () -> ExpressionTypeMap.EMPTY);
     }
@@ -232,4 +230,15 @@ public abstract class NodeRT extends Element implements LocalKey {
 
     public abstract int getStackChange();
 
+    public abstract void writeCode(CodeOutput output);
+
+    public abstract int getLength();
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
 }

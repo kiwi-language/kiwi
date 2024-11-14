@@ -5,13 +5,12 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.StdKlass;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.LoadTypeNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeParser;
-import org.metavm.object.type.Types;
-import org.metavm.util.ContextUtil;
 
 import javax.annotation.Nullable;
 
@@ -45,13 +44,6 @@ public class LoadTypeNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var klass = Types.getKlass(type);
-        frame.push(ContextUtil.getEntityContext().getInstance(klass.getEffectiveTemplate()).getReference());
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("loadType " + type.toExpression());
     }
@@ -59,6 +51,17 @@ public class LoadTypeNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.LOAD_TYPE);
+        output.writeConstant(type);
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
     @NotNull

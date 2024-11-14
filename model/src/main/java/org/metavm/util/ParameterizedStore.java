@@ -1,11 +1,11 @@
 package org.metavm.util;
 
 import org.metavm.entity.GenericDeclaration;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class ParameterizedStore {
 
@@ -24,9 +24,9 @@ public class ParameterizedStore {
             return map().put(genericDeclaration, typeArguments, parameterized);
     }
 
-    public static void forEach(Klass rawKlass, BiConsumer<List<? extends Type>, Object> action) {
-        sharedMap.forEach(rawKlass, action);
-        map().forEach(rawKlass, action);
+    public static void forEach(GenericDeclaration template, BiConsumer<List<? extends Type>, Object> action) {
+        sharedMap.forEach(template, action);
+        map().forEach(template, action);
     }
 
     public static void setMap(ParameterizedMap parameterizedMap) {

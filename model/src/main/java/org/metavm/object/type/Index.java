@@ -25,13 +25,14 @@ import java.util.function.Predicate;
 import static java.util.Objects.requireNonNull;
 
 @EntityType
-public class Index extends Constraint implements LocalKey {
+public class Index extends Constraint implements LocalKey, GenericElement {
 
     @ChildEntity
     private final ChildArray<IndexField> fields = addChild(new ChildArray<>(IndexField.class), "fields");
     private final boolean unique;
     private @Nullable Method method;
     private transient IndexDef<?> indexDef;
+    private transient Index copySource;
 
     public Index(Klass type, String name, @Nullable String code, String message, boolean unique, List<Field> fields,
                  @Nullable Method method) {
@@ -228,5 +229,23 @@ public class Index extends Constraint implements LocalKey {
 
     public void setFields(List<IndexField> fields) {
         this.fields.resetChildren(fields);
+    }
+
+    @Override
+    public Object getCopySource() {
+        return copySource;
+    }
+
+    @Override
+    public void setCopySource(Object copySource) {
+        this.copySource = (Index) copySource;
+    }
+
+    public Index getEffectiveTemplate() {
+        return getDeclaringType().isParameterized() ? Objects.requireNonNull(copySource) : this;
+    }
+
+    public IndexRef getRef() {
+        return new IndexRef(getDeclaringType().getType(), getEffectiveTemplate());
     }
 }

@@ -4,15 +4,12 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.GetStaticNodeParam;
 import org.metavm.flow.rest.NodeDTO;
-import org.metavm.object.instance.core.FlowValue;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.Field;
 import org.metavm.object.type.PropertyRef;
-import org.metavm.object.type.StaticFieldTable;
 import org.metavm.object.type.Type;
-import org.metavm.util.ContextUtil;
 
 import javax.annotation.Nullable;
 
@@ -57,20 +54,6 @@ public class GetStaticNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var property = propertyRef.resolve();
-        if(property instanceof Field field) {
-            var staticFieldTable = StaticFieldTable.getInstance(field.getDeclaringType(), ContextUtil.getEntityContext());
-            frame.push(staticFieldTable.get(field));
-        }
-        else if (property instanceof Method method) {
-            frame.push(new FlowValue(method, null));
-        } else
-            throw new IllegalStateException("Unknown property type: " + property);
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write(propertyRef.resolve().getQualifiedName());
     }
@@ -78,6 +61,17 @@ public class GetStaticNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.GET_STATIC);
+        output.writeConstant(propertyRef);
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
 }

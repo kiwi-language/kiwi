@@ -4,6 +4,7 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 
@@ -27,11 +28,6 @@ public class RaiseNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        return frame.catchException(this, frame.pop().resolveObject());
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("raise");
     }
@@ -39,6 +35,16 @@ public class RaiseNode extends NodeRT {
     @Override
     public int getStackChange() {
         return -1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.RAISE);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
     }
 
     @Override

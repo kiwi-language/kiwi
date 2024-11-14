@@ -7,41 +7,39 @@ import org.metavm.entity.*;
 import org.metavm.flow.rest.ScopeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.DebugEnv;
-import org.metavm.util.NncUtils;
-import org.metavm.util.TypeReference;
+import org.metavm.util.EncodingUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.util.LinkedList;
 import java.util.List;
 
 @EntityType
-public class ScopeRT extends Element {
+public class ScopeRT extends Element implements LoadAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private final Callable callable;
     private final Flow flow;
     @ChildEntity
-    private final ChildArray<NodeRT> nodes = addChild(new ChildArray<>(new TypeReference<>() {
-    }), "nodes");
+    private ChildArray<NodeRT> nodes = addChild(new ChildArray<>(NodeRT.class), "nodes");
     private int maxLocals;
     private int maxStack;
+    private String codeBase64 = EncodingUtils.encodeBase64(new byte[0]);
+    private transient byte[] code;
 
     public ScopeRT(Callable callable, Flow flow) {
-        this(callable, flow, false);
-    }
-
-    public ScopeRT(Callable callable, Flow flow, boolean ephemeral) {
-        super(null, null, ephemeral);
+        super(null, null);
         this.callable = callable;
         this.flow = flow;
+        nodes.setEphemeralEntity(true);
     }
 
-    public ScopeDTO toDTO(boolean withNodes, SerializeContext serializeContext) {
+    public ScopeDTO toDTO(SerializeContext serializeContext) {
         return new ScopeDTO(
                 serializeContext.getStringId(this),
-                withNodes ? NncUtils.map(getNodes(), nodeRT -> nodeRT.toDTO(serializeContext)) : List.of(),
+                codeBase64,
                 maxLocals,
                 maxStack
         );
@@ -71,9 +69,13 @@ public class ScopeRT extends Element {
         flow.addNode(node);
     }
 
-    public void clearNodes() {
+    public void clear() {
         onNodeChange();
         this.nodes.clear();
+        codeBase64 = EncodingUtils.encodeBase64(new byte[0]);
+        code = null;
+        maxLocals = 0;
+        maxStack = 0;
     }
 
     public void setNodes(List<NodeRT> nodes) {
@@ -177,6 +179,48 @@ public class ScopeRT extends Element {
         var i = Math.max(callable.getMinLocals(), maxLocals);
         maxLocals = i + 1;
         return i;
+    }
+
+    public void emitCode() {
+        var tryEnters = new LinkedList<TryEnterNode>();
+        int offset = 0;
+        for (NodeRT node : nodes) {
+            node.setOffset(offset);
+            offset += node.getLength();
+            if(node instanceof TryEnterNode tryEnter)
+                tryEnters.push(tryEnter);
+            else if(node instanceof TryExitNode tryExit)
+                tryEnters.pop().setExit(tryExit);
+        }
+        assert tryEnters.isEmpty();
+        var output = new CodeOutput(flow.getConstantPool());
+        nodes.forEach(node -> node.writeCode(output));
+        code = output.toByteArray();
+        codeBase64 = EncodingUtils.encodeBase64(code);
+    }
+
+    @Override
+    public void onLoadPrepare() {
+        nodes = addChild(new ChildArray<>(NodeRT.class), "nodes");
+        nodes.setEphemeralEntity(true);
+        code = EncodingUtils.decodeBase64(codeBase64);
+    }
+
+    @Override
+    public void onLoad() {
+    }
+
+    public void setCodeBase64(String codebase64) {
+        this.codeBase64 = codebase64;
+        this.code = EncodingUtils.decodeBase64(codebase64);
+    }
+
+    public byte[] getCode() {
+        return code;
+    }
+
+    public void setCode(byte[] code) {
+        this.code = code;
     }
 
 }

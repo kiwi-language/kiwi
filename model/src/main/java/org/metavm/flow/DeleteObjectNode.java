@@ -4,9 +4,9 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Reference;
 
 @EntityType
 public class DeleteObjectNode extends NodeRT {
@@ -28,12 +28,6 @@ public class DeleteObjectNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        frame.deleteInstance((Reference) frame.pop());
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("delete");
     }
@@ -41,6 +35,16 @@ public class DeleteObjectNode extends NodeRT {
     @Override
     public int getStackChange() {
         return -1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.DELETE_OBJECT);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
     }
 
     @Override

@@ -591,4 +591,8 @@ public abstract class ElementVisitor<R> {
     public R visitDupX1Node(DupX1Node node) {
         return visitNode(node);
     }
+
+    public R visitIndexRef(IndexRef indexRef) {
+        return visitElement(indexRef);
+    }
 }

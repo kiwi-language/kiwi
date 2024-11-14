@@ -79,7 +79,7 @@ public class Lambda extends Element implements Callable {
     }
 
     @Override
-    public CallableRef getRef() {
+    public LambdaRef getRef() {
         return new LambdaRef(this);
     }
 
@@ -87,12 +87,16 @@ public class Lambda extends Element implements Callable {
         return scope;
     }
 
+    public void emitCode() {
+        scope.emitCode();
+    }
+
     public LambdaDTO toDTO(SerializeContext serializeContext) {
         return new LambdaDTO(
                 serializeContext.getStringId(this),
                 NncUtils.map(parameters, Parameter::toDTO),
                 returnType.toExpression(serializeContext),
-                scope.toDTO(true, serializeContext)
+                scope.toDTO(serializeContext)
         );
     }
 

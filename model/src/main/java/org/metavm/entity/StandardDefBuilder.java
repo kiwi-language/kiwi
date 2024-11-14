@@ -5,7 +5,6 @@ import org.metavm.api.ValueList;
 import org.metavm.api.entity.MvObject;
 import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.flow.MaxesComputer;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Nodes;
 import org.metavm.flow.Parameter;
@@ -463,7 +462,7 @@ public class StandardDefBuilder {
         Nodes.this_(scope);
         Nodes.ret(scope);
         defContext.addDef(new DirectDef<>(MvObject.class, klass));
-        klass.accept(new MaxesComputer());
+        klass.emitCode();
         return klass;
     }
 

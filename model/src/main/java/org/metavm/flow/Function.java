@@ -77,10 +77,11 @@ public class Function extends Flow implements GlobalKey {
             ).run(this, arguments, callContext);
         }
         else
-            return new MetaFrame(this.getRootNode(), null, null,
-                    arguments, callContext.instanceRepository(), null, getScope().getMaxLocals(),
-                    getScope().getMaxStack()
-            ).execute();
+            return new MetaFrame(callContext.instanceRepository()).execute(
+                    getScope(),
+                    arguments.toArray(Value[]::new),
+                    null
+            );
     }
 
     @Override

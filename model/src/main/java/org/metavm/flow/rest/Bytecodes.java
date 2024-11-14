@@ -1,12 +1,17 @@
 package org.metavm.flow.rest;
 
-public class NodeKindCodes {
+import org.metavm.util.ReflectionUtils;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
+public class Bytecodes {
 
     public static final int ADD_OBJECT = 3;
     public static final int SET_FIELD = 4;
     public static final int DELETE_OBJECT = 5;
     public static final int RETURN = 9;
-    public static final int EXCEPTION = 10;
+    public static final int RAISE = 10;
     public static final int METHOD_CALL = 12;
     public static final int GET_UNIQUE = 13;
     public static final int NEW = 15;
@@ -74,4 +79,20 @@ public class NodeKindCodes {
     public static final int POP = 84;
     public static final int DUP_X1 = 85;
     public static final int DUP_X2 = 86;
+
+    private static final String[] names = new String[256];
+
+    public static String getBytecodeName(int code) {
+        return names[code];
+    }
+
+    static {
+        for (Field field : Bytecodes.class.getFields()) {
+            if(Modifier.isStatic(field.getModifiers()) && field.getType() == int.class) {
+                var code = ReflectionUtils.getIntField(field, null);
+                names[code] = field.getName();
+            }
+        }
+    }
+
 }

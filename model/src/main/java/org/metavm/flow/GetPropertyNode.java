@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.GetPropertyNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
@@ -52,14 +53,6 @@ public class GetPropertyNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var i = frame.pop().resolveObject();
-        var p = propertyRef.resolve();
-        frame.push(i.getProperty(p));
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("getProperty " + propertyRef.resolve().getName());
     }
@@ -67,5 +60,16 @@ public class GetPropertyNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 0;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.GET_PROPERTY);
+        output.writeConstant(propertyRef);
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 }

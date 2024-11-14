@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.StoreNodeParam;
 import org.metavm.object.instance.core.Id;
@@ -35,12 +36,6 @@ public class StoreNode extends VariableAccessNode {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        frame.store(index);
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("store " + index);
     }
@@ -48,6 +43,17 @@ public class StoreNode extends VariableAccessNode {
     @Override
     public int getStackChange() {
         return -1;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.STORE);
+        output.writeShort(index);
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
     public int getIndex() {

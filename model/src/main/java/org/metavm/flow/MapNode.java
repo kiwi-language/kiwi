@@ -6,10 +6,10 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.MapNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.Type;
 import org.metavm.object.view.ObjectMappingRef;
 
@@ -51,13 +51,6 @@ public class MapNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var sourceInst = (Reference) frame.pop();
-        frame.push(mappingRef.resolve().map(sourceInst.resolve(), frame).getReference());
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("map " + mappingRef.resolve().getName());
     }
@@ -65,6 +58,17 @@ public class MapNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 0;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.MAP);
+        output.writeConstant(mappingRef);
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
 }

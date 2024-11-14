@@ -2,6 +2,7 @@ package org.metavm.flow.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.common.rest.dto.BaseDTO;
+import org.metavm.object.type.rest.dto.ConstantPoolDTO;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -28,6 +29,7 @@ public record FlowDTO(
         boolean isTemplate,
         Map<String, String> attributes,
         int state,
+        ConstantPoolDTO constantPool,
         FlowParam param
 ) implements BaseDTO, GenericDeclarationDTO {
 

@@ -5,13 +5,13 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.IndexCountNodeParam;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
-import org.metavm.util.Instances;
 
 import static java.util.Objects.requireNonNull;
 
@@ -49,15 +49,6 @@ public class IndexCountNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var to = frame.loadIndexKey(index);
-        var from = frame.loadIndexKey(index);
-        var count = frame.instanceRepository().indexCount(from, to);
-        frame.push(Instances.longInstance(count));
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("indexCount(" + index.getName() + ")");
     }
@@ -65,6 +56,17 @@ public class IndexCountNode extends NodeRT {
     @Override
     public int getStackChange() {
         return 1 - (index.getFields().size() << 1);
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.INDEX_COUNT);
+        output.writeConstant(index.getRef());
+    }
+
+    @Override
+    public int getLength() {
+        return 3;
     }
 
     @Override

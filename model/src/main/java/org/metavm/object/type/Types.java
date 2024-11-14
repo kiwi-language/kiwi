@@ -105,7 +105,10 @@ public class Types {
             case ClassType classType -> {
                 if (classType.isParameterized() && actualType instanceof ClassType actualClassType) {
                     var formalTypeArguments = classType.getTypeArguments();
-                    var alignedActualClassType = Objects.requireNonNull(actualClassType.findAncestor(classType.getEffectiveTemplate().getKlass()));
+                    var alignedActualClassType = Objects.requireNonNull(actualClassType.findAncestor(classType.getEffectiveTemplate().getKlass()),
+                            () -> "Cannot find ancestor with template " + classType.getEffectiveTemplate().getKlass()
+                                    + " in class type " + actualClassType
+                    );
                     var actualTypeArguments = alignedActualClassType.getTypeArguments();
                     for (int i = 0; i < formalTypeArguments.size(); i++) {
                         extractCapturedType(formalTypeArguments.get(i), actualTypeArguments.get(i), setCaptureType);
@@ -323,7 +326,7 @@ public class Types {
             Nodes.voidRet(scope);
         else
             Nodes.ret(scope);
-        klass.accept(new MaxesComputer());
+        klass.emitCode();
         return klass.getParameterized(NncUtils.map(typeVars, TypeVariable::getType)).getType();
     }
 
@@ -373,7 +376,7 @@ public class Types {
             Nodes.voidRet(scope);
         else
             Nodes.ret(scope);
-        klass.accept(new MaxesComputer());
+        klass.emitCode();
         return klass;
     }
 

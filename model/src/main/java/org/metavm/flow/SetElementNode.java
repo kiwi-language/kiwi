@@ -4,9 +4,9 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.Bytecodes;
 import org.metavm.flow.rest.NodeDTO;
 import org.metavm.flow.rest.SetElementNodeParam;
-import org.metavm.object.instance.core.LongValue;
 
 @EntityType
 public class SetElementNode extends NodeRT {
@@ -28,15 +28,6 @@ public class SetElementNode extends NodeRT {
     }
 
     @Override
-    public int execute(MetaFrame frame) {
-        var e = frame.pop();
-        var i = ((LongValue) frame.pop()).getValue().intValue();
-        var a = frame.pop().resolveArray();
-        a.setElement(i, e);
-        return MetaFrame.STATE_NEXT;
-    }
-
-    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("astore");
     }
@@ -44,6 +35,16 @@ public class SetElementNode extends NodeRT {
     @Override
     public int getStackChange() {
         return -3;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.SET_ELEMENT);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
     }
 
     @Override

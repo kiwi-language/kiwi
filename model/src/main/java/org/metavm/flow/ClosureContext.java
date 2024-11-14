@@ -2,10 +2,33 @@ package org.metavm.flow;
 
 import org.metavm.object.instance.core.Value;
 
-public interface ClosureContext {
+import javax.annotation.Nullable;
+import java.util.Objects;
 
-    Value getContextSlot(int contextIndex, int slotIndex);
+public class ClosureContext {
 
-    void setContextSlot(int contextIndex, int slotIndex, Value value);
+    private final @Nullable ClosureContext parent;
+    private final Value[] slots;
+
+    public ClosureContext(ClosureContext parent, Value[] slots) {
+        this.parent = parent;
+        this.slots = slots;
+    }
+
+    public Value get(int contextIndex, int slotIndex) {
+        assert contextIndex >= 0;
+        if(contextIndex == 0)
+            return slots[slotIndex];
+        else
+            return Objects.requireNonNull(parent).get(contextIndex - 1, slotIndex);
+    }
+
+    public void set(int contextIndex, int slotIndex, Value value) {
+        assert contextIndex >= 0;
+        if(contextIndex == 0)
+            slots[slotIndex] = value;
+        else
+            Objects.requireNonNull(parent).set(contextIndex - 1, slotIndex, value);
+    }
 
 }

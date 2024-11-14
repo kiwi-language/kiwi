@@ -103,7 +103,9 @@ public class SubstitutorV2 extends CopyVisitor {
         if (type == field.getDeclaringType())
             return field;
         else
-            return NncUtils.requireNonNull(type.findSelfField(f -> f.getCopySource() == field.getEffectiveTemplate()));
+            return Objects.requireNonNull(type.findSelfField(f -> f.getEffectiveTemplate() == field.getEffectiveTemplate()),
+                    () -> "Cannot find field with template " + field.getEffectiveTemplate().getQualifiedName() + " in klass " + type.getCode() +
+                    ", root: " + root + ", type arguments: " + typeSubstitutor.getVariableMap());
     }
 
     private Method substituteMethod(Method method) {
@@ -111,9 +113,19 @@ public class SubstitutorV2 extends CopyVisitor {
         Method subst;
         if (type == method.getDeclaringType())
             subst = method;
-        else
-            subst = NncUtils.requireNonNull(type.findSelfMethod(
-                    m -> m.getEffectiveVerticalTemplate() == method.getEffectiveVerticalTemplate()));
+        else {
+            var found = type.findSelfMethod(
+                    m -> m.getEffectiveVerticalTemplate() == method.getUltimateTemplate());
+            if(found == null) {
+                logger.debug("Substituted method: {}", method.getQualifiedSignature());
+                type.forEachMethod(m -> logger.debug("Method: {}", m.getQualifiedSignature()));
+            }
+            subst = Objects.requireNonNull(found,
+                    () -> "Cannot find method with vertical template " + method.getUltimateTemplate().getQualifiedSignature()
+                            + " in klass " + type.getTypeDesc()
+                            + ", root: " + root + ", type arguments: " + typeSubstitutor.getVariableMap()
+            );
+        }
         var typeArgs = NncUtils.map(method.getTypeArguments(), this::substituteType);
         if (subst.getTypeArguments().equals(typeArgs))
             return subst;
@@ -204,21 +216,7 @@ public class SubstitutorV2 extends CopyVisitor {
     @Override
     public Element visitMethod(Method method) {
         if (method == getRoot()) {
-            var typeArgs = NncUtils.map(NncUtils.map(method.getTypeParameters(), TypeVariable::getType), this::substituteType);
             var copy = (Method) Objects.requireNonNull(getExistingCopy(method));
-//            if (copy == null) {
-//                copy = MethodBuilder
-//                        .newBuilder(currentClass(), method.getName(), method.getCode())
-//                        .tmpId(getCopyTmpId(method))
-//                        .horizontalTemplate(method)
-//                        .isSynthetic(method.isSynthetic())
-//                        .access(method.getAccess())
-//                        .isStatic(method.isStatic())
-//                        .typeArguments(typeArgs)
-//                        .build();
-//                copy.setStrictEphemeral(true);
-//                method.addParameterized(copy);
-//            }
             copy.setStage(stage);
             copy.setAbstract(method.isAbstract());
             copy.setNative(method.isNative());
@@ -226,16 +224,13 @@ public class SubstitutorV2 extends CopyVisitor {
                 copy.setJavaMethod(method.getJavaMethod());
             copy.setConstructor(method.isConstructor());
             addCopy(method, copy);
-            if(method.isRootScopePresent()) {
+            if(method.isRootScopePresent())
                 addCopy(method.getScope(), copy.getScope());
-                copy.getScope().setMaxLocals(method.getScope().getMaxLocals());
-                copy.getScope().setMaxStack(method.getScope().getMaxStack());
-            }
             enterElement(copy);
             copy.setParameters(NncUtils.map(method.getParameters(), p -> (Parameter) copy0(p)));
             copy.setReturnType(substituteType(method.getReturnType()));
-            processFlowBody(method, copy);
             copy.setLambdas(NncUtils.map(method.getLambdas(), l -> (Lambda) copy0(l)));
+            processFlowBody(method, copy);
             exitElement();
             check();
             return copy;
@@ -248,19 +243,6 @@ public class SubstitutorV2 extends CopyVisitor {
         if (function == getRoot()) {
             var typeArgs = NncUtils.map(function.getEffectiveTypeArguments(), this::substituteType);
             var copy = (Function) Objects.requireNonNull(getExistingCopy(function));
-//            if (copy == null) {
-//                var name = Types.getParameterizedName(function.getName(), typeArgs);
-//                var code = Types.getParameterizedCode(function.getCode(), typeArgs);
-//                copy = FunctionBuilder
-//                        .newBuilder(name, code)
-//                        .tmpId(getCopyTmpId(function))
-//                        .horizontalTemplate(function)
-//                        .typeArguments(typeArgs)
-//                        .isSynthetic(function.isSynthetic())
-//                        .build();
-//                copy.setStrictEphemeral(true);
-//                function.addParameterized(copy);
-//            }
             copy.setStage(stage);
             copy.setNative(function.isNative());
             if(copy.isNative())
@@ -271,6 +253,7 @@ public class SubstitutorV2 extends CopyVisitor {
             enterElement(copy);
             copy.setParameters(NncUtils.map(function.getParameters(), p -> (Parameter) copy0(p)));
             copy.setReturnType(substituteType(function.getReturnType()));
+            copy.setLambdas(NncUtils.map(function.getLambdas(), l -> (Lambda) copy0(l)));
             processFlowBody(function, copy);
             exitElement();
             check();
@@ -288,17 +271,15 @@ public class SubstitutorV2 extends CopyVisitor {
         if (stage.isAfterOrAt(DEFINITION) && flow.isRootScopePresent()) {
             copy.clearContent();
             copy.setCapturedTypeVariables(NncUtils.map(flow.getCapturedTypeVariables(), ct -> (CapturedTypeVariable) copy0(ct)));
-//            for (var ct : flow.getCapturedTypeVariables()) {
-//                var ctCopy = (CapturedType) getCopy(ct);
-//                ctCopy.setCapturedCompositeTypes(NncUtils.map(ct.getCapturedCompositeTypes(), this::substituteType));
-//                ctCopy.setCapturedFlows(NncUtils.map(ct.getCapturedFlows(), this::substituteFlow));
-//            }
-            for (NodeRT node : flow.getScope().getNodes())
-                copy.getScope().addNode((NodeRT) copy0(node));
             for (Type capturedCompositeType : flow.getCapturedCompositeTypes())
                 copy.addCapturedCompositeType((Type) copy0(capturedCompositeType));
             for (Flow capturedFlow : flow.getCapturedFlows())
                 copy.addCapturedFlow((Flow) copy0(capturedFlow));
+            for (CpEntry cpEntry : flow.getConstantPool().getEntries())
+                copy.getConstantPool().addEntry((CpEntry) copy0(cpEntry));
+            copy.getScope().setCode(flow.getScope().getCode());
+            copy.getScope().setMaxLocals(flow.getScope().getMaxLocals());
+            copy.getScope().setMaxStack(flow.getScope().getMaxStack());
         }
     }
 
@@ -424,6 +405,8 @@ public class SubstitutorV2 extends CopyVisitor {
             exitElement();
             check();
             copy.rebuildMethodTable();
+//            if(stage.isAfterOrAt(DEFINITION))
+//                copy.resolveConstantPool();
             return copy;
         } else {
             return super.visitKlass(klass);
