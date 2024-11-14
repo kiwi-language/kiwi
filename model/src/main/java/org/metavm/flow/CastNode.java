@@ -11,9 +11,9 @@ import java.util.Objects;
 @EntityType
 public class CastNode extends Node {
 
-    public CastNode(Long tmpId, String name, @NotNull Type outputType,
+    public CastNode(String name, @NotNull Type outputType,
                     Node previous, Code code) {
-        super(tmpId, name, outputType, previous, code);
+        super(name, outputType, previous, code);
     }
 
     @Override

@@ -8,8 +8,8 @@ import org.metavm.object.type.Types;
 @EntityType
 public class RemoveElementNode extends Node {
 
-    public RemoveElementNode(Long tmpId, String name, Node previous, Code code) {
-        super(tmpId, name, Types.getBooleanType(), previous, code);
+    public RemoveElementNode(String name, Node previous, Code code) {
+        super(name, Types.getBooleanType(), previous, code);
     }
 
     @Override

@@ -11,8 +11,8 @@ import org.metavm.object.type.Type;
 @Slf4j
 public class ReturnNode extends Node {
 
-    public ReturnNode(Long tmpId, String name, Node prev, Code code) {
-        super(tmpId, name, null, prev, code);
+    public ReturnNode(String name, Node prev, Code code) {
+        super(name, null, prev, code);
     }
 
     @Override

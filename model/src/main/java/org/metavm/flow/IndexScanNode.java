@@ -13,8 +13,8 @@ public class IndexScanNode extends Node {
 
     private final IndexRef indexRef;
 
-    public IndexScanNode(Long tmpId, String name, Node previous, Code code, IndexRef indexRef) {
-        super(tmpId, name, null, previous, code);
+    public IndexScanNode(String name, Node previous, Code code, IndexRef indexRef) {
+        super(name, null, previous, code);
         this.indexRef = indexRef;
     }
 

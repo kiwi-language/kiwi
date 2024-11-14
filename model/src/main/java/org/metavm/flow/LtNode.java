@@ -10,11 +10,10 @@ import javax.annotation.Nullable;
 
 public class LtNode extends Node {
 
-    public LtNode(Long tmpId,
-                  @NotNull String name,
+    public LtNode(String name,
                   @Nullable Node previous,
                   @NotNull Code code) {
-        super(tmpId, name, Types.getBooleanType(), previous, code);
+        super(name, Types.getBooleanType(), previous, code);
     }
 
     @Override

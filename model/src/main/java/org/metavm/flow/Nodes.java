@@ -22,38 +22,38 @@ public class Nodes {
     }
 
     public static RaiseNode raise(Code code) {
-        return new RaiseNode(null, code.nextNodeName("raise"), code.getLastNode(), code
+        return new RaiseNode(code.nextNodeName("raise"), code.getLastNode(), code
         );
     }
 
     public static NewArrayNode newArray(ArrayType type, Code code) {
-        return new NewArrayNode(null, code.nextNodeName("newArray"), type, code.getLastNode(), code);
+        return new NewArrayNode(code.nextNodeName("newArray"), type, code.getLastNode(), code);
     }
 
     public static ArrayLengthNode arrayLength(String name, Code code) {
-        return new ArrayLengthNode(null, name, code.getLastNode(), code);
+        return new ArrayLengthNode(name, code.getLastNode(), code);
     }
 
     public static GetElementNode getElement(Code code) {
-        return new GetElementNode(null, code.nextNodeName("getElement"),
+        return new GetElementNode(code.nextNodeName("getElement"),
                 code.getLastNode(), code);
     }
 
     public static NewObjectNode newObject(Code code, Method constructor, boolean ephemeral, boolean unbound) {
-        return new NewObjectNode(null, code.nextNodeName("newObject"),
+        return new NewObjectNode(code.nextNodeName("newObject"),
                 constructor.getRef(), code.getLastNode(), code, ephemeral, unbound);
     }
 
     public static VoidReturnNode voidRet(Code code) {
-        return new VoidReturnNode(null, code.nextNodeName("voidRet"), code.getLastNode(), code);
+        return new VoidReturnNode(code.nextNodeName("voidRet"), code.getLastNode(), code);
     }
 
     public static ReturnNode ret(Code code) {
-        return new ReturnNode(null, code.nextNodeName("ret"), code.getLastNode(), code);
+        return new ReturnNode(code.nextNodeName("ret"), code.getLastNode(), code);
     }
 
     public static AddObjectNode addObject(ClassType type, boolean ephemeral, Code code) {
-        return new AddObjectNode(null, code.nextNodeName("addObject"), ephemeral,
+        return new AddObjectNode(code.nextNodeName("addObject"), ephemeral,
                 type, code.getLastNode(), code);
     }
 
@@ -67,8 +67,8 @@ public class Nodes {
     }
 
     public static void forEach(Supplier<Node> arraySupplier,
-            BiConsumer<Supplier<Node>, Supplier<Node>> action,
-            Code code) {
+                               BiConsumer<Supplier<Node>, Supplier<Node>> action,
+                               Code code) {
         var i = code.nextVariableIndex();
         loadConstant(Instances.longInstance(0), code);
         Nodes.store(i, code);
@@ -126,37 +126,37 @@ public class Nodes {
     }
 
     public static MapNode map(Code code, ObjectMapping mapping) {
-        return new MapNode(null, code.nextNodeName("map"), code.getLastNode(), code, mapping.getRef());
+        return new MapNode(code.nextNodeName("map"), code.getLastNode(), code, mapping.getRef());
     }
 
     public static UnmapNode unmap(Code code, ObjectMapping mapping) {
-        return new UnmapNode(null, code.nextNodeName("unmap"), code.getLastNode(), code, mapping.getRef());
+        return new UnmapNode(code.nextNodeName("unmap"), code.getLastNode(), code, mapping.getRef());
     }
 
     public static CastNode castNode(Type type, Code code) {
-        return new CastNode(null, code.nextNodeName("cast"), type, code.getLastNode(), code);
+        return new CastNode(code.nextNodeName("cast"), type, code.getLastNode(), code);
     }
 
     public static FunctionCallNode functionCall(Code code, Function function) {
-        return new FunctionCallNode(null, code.nextNodeName("functionCall"), code.getLastNode(), code, function.getRef());
+        return new FunctionCallNode(code.nextNodeName("functionCall"), code.getLastNode(), code, function.getRef());
     }
 
     public static MethodCallNode methodCall(Method method, Code code) {
-        return methodCall(code.nextNodeName("methodCall") ,
+        return methodCall(code.nextNodeName("methodCall"),
                 method,
                 code);
     }
 
     public static MethodCallNode methodCall(String name, Method method, Code code) {
-        return new MethodCallNode(null, name, code.getLastNode(), code, method.getRef());
+        return new MethodCallNode(name, code.getLastNode(), code, method.getRef());
     }
 
     public static FunctionNode function(Code code, FunctionType functionType) {
-        return new FunctionNode(null, code.nextNodeName("func"), code.getLastNode(), code, functionType);
+        return new FunctionNode(code.nextNodeName("func"), code.getLastNode(), code, functionType);
     }
 
     public static CastNode cast(Type outputType, Code code) {
-        return new CastNode(null, code.nextNodeName("cast"), outputType, code.getLastNode(), code);
+        return new CastNode(code.nextNodeName("cast"), outputType, code.getLastNode(), code);
     }
 
     public static IfNode if_(@Nullable Node target, Code code) {
@@ -165,7 +165,6 @@ public class Nodes {
 
     public static IfNode if_(String name, @Nullable Node target, Code code) {
         return new IfNode(
-                null,
                 name,
                 code.getLastNode(),
                 code,
@@ -179,7 +178,6 @@ public class Nodes {
 
     public static IfNotNode ifNot(String name, @Nullable Node target, Code code) {
         return new IfNotNode(
-                null,
                 name,
                 code.getLastNode(),
                 code,
@@ -192,28 +190,27 @@ public class Nodes {
     }
 
     public static GotoNode goto_(String name, Code code) {
-        return new GotoNode(null, name, code.getLastNode(), code);
+        return new GotoNode(name, code.getLastNode(), code);
     }
 
     public static GotoNode goto_(Node target, Code code) {
-        return new GotoNode(null, code.nextNodeName("goto"), code.getLastNode(), code, target);
+        return new GotoNode(code.nextNodeName("goto"), code.getLastNode(), code, target);
     }
 
     public static AddElementNode addElement(Code code) {
-        return new AddElementNode(null, code.nextNodeName("arrayadd"), code.getLastNode(), code);
+        return new AddElementNode(code.nextNodeName("arrayadd"), code.getLastNode(), code);
     }
 
     public static SetElementNode setElement(Code code) {
-        return new SetElementNode(null, code.nextNodeName("arrayset"), code.getLastNode(), code);
+        return new SetElementNode(code.nextNodeName("arrayset"), code.getLastNode(), code);
     }
 
     public static ClearArrayNode clearArray(Code code) {
-        return new ClearArrayNode(null, code.nextNodeName("arrayclear"), code.getLastNode(), code);
+        return new ClearArrayNode(code.nextNodeName("arrayclear"), code.getLastNode(), code);
     }
 
     public static SetFieldNode setField(String name, Field field, Code code) {
         return new SetFieldNode(
-                null,
                 name,
                 code.getLastNode(),
                 code,
@@ -222,12 +219,11 @@ public class Nodes {
     }
 
     public static SetFieldNode setField(Field field, Code code) {
-        return setField(code.nextNodeName("setField"),  field, code);
+        return setField(code.nextNodeName("setField"), field, code);
     }
 
     public static SetStaticNode setStatic(Field field, Code code) {
         return new SetStaticNode(
-                null,
                 code.nextNodeName("setStatic"),
 
                 code.getLastNode(),
@@ -241,7 +237,7 @@ public class Nodes {
     }
 
     public static NonNullNode nonNull(String name, Code code) {
-        return new NonNullNode(null, name, code.getLastNode(), code);
+        return new NonNullNode(name, code.getLastNode(), code);
     }
 
     public static NoopNode noop(Code code) {
@@ -249,12 +245,11 @@ public class Nodes {
     }
 
     public static NoopNode noop(String name, Code code) {
-        return new NoopNode(null, name, code.getLastNode(), code);
+        return new NoopNode(name, code.getLastNode(), code);
     }
 
     public static Node add(Code code) {
         return new AddNode(
-                null,
                 code.nextNodeName("add"),
                 code.getLastNode(),
                 code
@@ -263,7 +258,6 @@ public class Nodes {
 
     public static Node sub(Code code) {
         return new SubNode(
-                null,
                 code.nextNodeName("sub"),
                 code.getLastNode(),
                 code
@@ -272,7 +266,6 @@ public class Nodes {
 
     public static Node mul(Code code) {
         return new MulNode(
-                null,
                 code.nextNodeName("mul"),
                 code.getLastNode(),
                 code
@@ -281,7 +274,6 @@ public class Nodes {
 
     public static Node div(Code code) {
         return new DivNode(
-                null,
                 code.nextNodeName("div"),
                 code.getLastNode(),
                 code
@@ -290,7 +282,6 @@ public class Nodes {
 
     public static Node leftShift(Code code) {
         return new LeftShiftNode(
-                null,
                 code.nextNodeName("leftShift"),
                 code.getLastNode(),
                 code
@@ -299,7 +290,6 @@ public class Nodes {
 
     public static Node rightShift(Code code) {
         return new RightShiftNode(
-                null,
                 code.nextNodeName("rightShift"),
                 code.getLastNode(),
                 code
@@ -308,7 +298,6 @@ public class Nodes {
 
     public static Node unsignedRightShift(Code code) {
         return new UnsignedRightShiftNode(
-                null,
                 code.nextNodeName("unsignedRightShift"),
                 code.getLastNode(),
                 code
@@ -317,7 +306,6 @@ public class Nodes {
 
     public static Node bitOr(Code code) {
         return new BitOrNode(
-                null,
                 code.nextNodeName("bitor"),
                 code.getLastNode(),
                 code
@@ -326,7 +314,6 @@ public class Nodes {
 
     public static Node bitAnd(Code code) {
         return new BitAndNode(
-                null,
                 code.nextNodeName("bitand"),
                 code.getLastNode(),
                 code
@@ -335,7 +322,6 @@ public class Nodes {
 
     public static Node bitXor(Code code) {
         return new BitXorNode(
-                null,
                 code.nextNodeName("bitxor"),
                 code.getLastNode(),
                 code
@@ -344,7 +330,6 @@ public class Nodes {
 
     public static Node and(Code code) {
         return new AndNode(
-                null,
                 code.nextNodeName("and"),
                 code.getLastNode(),
                 code
@@ -353,7 +338,6 @@ public class Nodes {
 
     public static Node or(Code code) {
         return new OrNode(
-                null,
                 code.nextNodeName("or"),
                 code.getLastNode(),
                 code
@@ -362,7 +346,6 @@ public class Nodes {
 
     public static Node bitNot(Code code) {
         return new BitNotNode(
-                null,
                 code.nextNodeName("bitnot"),
                 code.getLastNode(),
                 code
@@ -371,7 +354,6 @@ public class Nodes {
 
     public static Node not(Code code) {
         return new NotNode(
-                null,
                 code.nextNodeName("not"),
                 code.getLastNode(),
                 code
@@ -380,7 +362,6 @@ public class Nodes {
 
     public static Node negate(Code code) {
         return new NegateNode(
-                null,
                 code.nextNodeName("negate"),
                 code.getLastNode(),
                 code
@@ -389,7 +370,6 @@ public class Nodes {
 
     public static Node rem(Code code) {
         return new RemainderNode(
-                null,
                 code.nextNodeName("rem"),
                 code.getLastNode(),
                 code
@@ -398,7 +378,6 @@ public class Nodes {
 
     public static Node eq(Code code) {
         return new EqNode(
-                null,
                 code.nextNodeName("eq"),
                 code.getLastNode(),
                 code
@@ -407,7 +386,6 @@ public class Nodes {
 
     public static Node ne(Code code) {
         return new NeNode(
-                null,
                 code.nextNodeName("ne"),
                 code.getLastNode(),
                 code
@@ -416,7 +394,6 @@ public class Nodes {
 
     public static Node ge(Code code) {
         return new GeNode(
-                null,
                 code.nextNodeName("ge"),
                 code.getLastNode(),
                 code
@@ -425,7 +402,6 @@ public class Nodes {
 
     public static Node gt(Code code) {
         return new GtNode(
-                null,
                 code.nextNodeName("gt"),
                 code.getLastNode(),
                 code
@@ -434,7 +410,6 @@ public class Nodes {
 
     public static Node lt(Code code) {
         return new LtNode(
-                null,
                 code.nextNodeName("lt"),
                 code.getLastNode(),
                 code
@@ -443,7 +418,6 @@ public class Nodes {
 
     public static Node le(Code code) {
         return new LeNode(
-                null,
                 code.nextNodeName("le"),
                 code.getLastNode(),
                 code
@@ -452,7 +426,6 @@ public class Nodes {
 
     public static Node instanceOf(Type targetType, Code code) {
         return new InstanceOfNode(
-                null,
                 code.nextNodeName("le"),
                 code.getLastNode(),
                 code,
@@ -476,7 +449,6 @@ public class Nodes {
 
     public static Node getProperty(String name, Property property, Code code) {
         return new GetPropertyNode(
-                null,
                 name,
                 code.getLastNode(),
                 code,
@@ -486,7 +458,6 @@ public class Nodes {
 
     public static Node getStatic(Property property, Code code) {
         return new GetStaticNode(
-                null,
                 code.nextNodeName("getStatic"),
                 code.getLastNode(),
                 code,
@@ -496,7 +467,6 @@ public class Nodes {
 
     public static Node store(int index, Code code) {
         return new StoreNode(
-                null,
                 code.nextNodeName("store"),
                 code.getLastNode(),
                 code,
@@ -511,7 +481,6 @@ public class Nodes {
 
     public static Node load(int index, Type type, Code code) {
         return new LoadNode(
-                null,
                 code.nextNodeName("load"),
                 type,
                 code.getLastNode(),
@@ -522,7 +491,6 @@ public class Nodes {
 
     public static Node storeContextSlot(int contextIndex, int slotIndex, Code code) {
         return new StoreContextSlotNode(
-                null,
                 code.nextNodeName("storeContextSlot"),
                 code.getLastNode(),
                 code,
@@ -533,7 +501,6 @@ public class Nodes {
 
     public static Node loadContextSlot(int contextIndex, int slotIndex, Type type, Code code) {
         return new LoadContextSlotNode(
-                null,
                 code.nextNodeName("loadContextSlot"),
                 type,
                 code.getLastNode(),
@@ -545,7 +512,6 @@ public class Nodes {
 
     public static Node lambda(Lambda lambda, Code code) {
         return new LambdaNode(
-                null,
                 code.nextNodeName("lambda"),
                 code.getLastNode(),
                 code,
@@ -556,7 +522,6 @@ public class Nodes {
 
     public static Node select(Index index, Code code) {
         return new IndexSelectNode(
-                null,
                 code.nextNodeName("select"),
                 code.getLastNode(),
                 code,
@@ -566,7 +531,6 @@ public class Nodes {
 
     public static Node selectFirst(Index index, Code code) {
         return new IndexSelectFirstNode(
-                null,
                 code.nextNodeName("select"),
                 code.getLastNode(),
                 code,
@@ -576,7 +540,6 @@ public class Nodes {
 
     public static Node loadConstant(org.metavm.object.instance.core.Value value, Code code) {
         return new LoadConstantNode(
-                null,
                 code.nextNodeName("ldc"),
                 code.getLastNode(),
                 code,
@@ -585,18 +548,18 @@ public class Nodes {
     }
 
     public static Node dup(Code code) {
-        return new DupNode(null, code.nextNodeName("dup"), code.getLastNode(), code);
+        return new DupNode(code.nextNodeName("dup"), code.getLastNode(), code);
     }
 
     public static Node dupX1(Code code) {
-        return new DupX1Node(null, code.nextNodeName("dup_x1"), code.getLastNode(), code);
+        return new DupX1Node(code.nextNodeName("dup_x1"), code.getLastNode(), code);
     }
 
     public static Node dupX2(Code code) {
-        return new DupX2Node(null, code.nextNodeName("dup_x2"), code.getLastNode(), code);
+        return new DupX2Node(code.nextNodeName("dup_x2"), code.getLastNode(), code);
     }
 
     public static Node pop(Code code) {
-        return new PopNode(null, code.nextNodeName("pop"), code.getLastNode(), code);
+        return new PopNode(code.nextNodeName("pop"), code.getLastNode(), code);
     }
 }

@@ -10,11 +10,10 @@ import javax.annotation.Nullable;
 
 public class UnsignedRightShiftNode extends Node {
 
-    public UnsignedRightShiftNode(Long tmpId,
-                                  @NotNull String name,
+    public UnsignedRightShiftNode(String name,
                                   @Nullable Node previous,
                                   @NotNull Code code) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
     }
 
     @Override

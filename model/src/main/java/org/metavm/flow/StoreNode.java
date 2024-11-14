@@ -8,8 +8,8 @@ import javax.annotation.Nullable;
 
 public class StoreNode extends VariableAccessNode {
 
-    public StoreNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code, int index) {
-        super(tmpId, name, null, previous, code, index);
+    public StoreNode(@NotNull String name, @Nullable Node previous, @NotNull Code code, int index) {
+        super(name, null, previous, code, index);
     }
 
     @Override

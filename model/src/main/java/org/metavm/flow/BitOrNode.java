@@ -10,11 +10,10 @@ import javax.annotation.Nullable;
 
 public class BitOrNode extends Node {
 
-    public BitOrNode(Long tmpId,
-                     @NotNull String name,
+    public BitOrNode(String name,
                      @Nullable Node previous,
                      @NotNull Code code) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
     }
 
     @Override

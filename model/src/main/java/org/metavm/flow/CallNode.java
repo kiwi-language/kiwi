@@ -21,8 +21,8 @@ public abstract class CallNode extends Node {
     @ChildEntity
     protected final ReadWriteArray<Long> capturedVariableIndexes = addChild(new ReadWriteArray<>(Long.class), "capturedVariableIndexes");
 
-    public CallNode(Long tmpId, String name, Node prev, Code code, @NotNull FlowRef flowRef) {
-        super(tmpId, name, null, prev, code);
+    public CallNode(String name, Node prev, Code code, @NotNull FlowRef flowRef) {
+        super(name, null, prev, code);
         this.flowRef = flowRef;
     }
 

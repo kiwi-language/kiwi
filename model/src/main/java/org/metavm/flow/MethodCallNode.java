@@ -7,12 +7,11 @@ import org.metavm.flow.rest.Bytecodes;
 @EntityType
 public class MethodCallNode extends CallNode {
 
-    public MethodCallNode(Long tmpId,
-                          String name,
+    public MethodCallNode(String name,
                           Node prev,
                           Code code,
                           MethodRef methodRef) {
-        super(tmpId, name, prev, code, methodRef);
+        super(name, prev, code, methodRef);
     }
 
     @Override

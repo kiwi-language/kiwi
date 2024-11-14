@@ -8,8 +8,8 @@ import javax.annotation.Nullable;
 
 public class PopNode extends Node {
 
-    public PopNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code) {
-        super(tmpId, name, null, previous, code);
+    public PopNode(@NotNull String name, @Nullable Node previous, @NotNull Code code) {
+        super(name, null, previous, code);
     }
 
     @Override

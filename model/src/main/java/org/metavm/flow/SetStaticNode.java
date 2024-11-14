@@ -14,8 +14,8 @@ public class SetStaticNode extends Node {
 
     private final FieldRef fieldRef;
 
-    public SetStaticNode(Long tmpId, String name, Node previous, Code code, FieldRef fieldRef) {
-        super(tmpId, name, null, previous, code);
+    public SetStaticNode(String name, Node previous, Code code, FieldRef fieldRef) {
+        super(name, null, previous, code);
         this.fieldRef = fieldRef;
     }
 

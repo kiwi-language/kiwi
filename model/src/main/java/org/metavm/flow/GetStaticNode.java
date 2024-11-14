@@ -12,12 +12,11 @@ public class GetStaticNode extends Node {
 
     private final PropertyRef propertyRef;
 
-    public GetStaticNode(Long tmpId,
-                         @NotNull String name,
+    public GetStaticNode(String name,
                          @Nullable Node previous,
                          @NotNull Code code,
                          PropertyRef propertyRef) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
         this.propertyRef = propertyRef;
     }
 

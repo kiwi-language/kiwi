@@ -13,9 +13,9 @@ public class IfNode extends JumpNode {
 
     private transient ExpressionTypeMap nextExpressionTypes;
 
-    public IfNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code,
+    public IfNode(@NotNull String name, @Nullable Node previous, @NotNull Code code,
                   Node target) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
 //        var narrower = new TypeNarrower(getExpressionTypes()::getType);
 //        mergeExpressionTypes(narrower.narrowType(Expressions.not(condition.getExpression())));
         if(target != null)

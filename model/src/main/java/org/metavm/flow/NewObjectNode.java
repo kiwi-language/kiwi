@@ -20,10 +20,10 @@ public class NewObjectNode extends CallNode {
 
     private boolean unbound;
 
-    public NewObjectNode(Long tmpId, String name, MethodRef methodRef,
+    public NewObjectNode(String name, MethodRef methodRef,
                          Node prev, Code code,
                          boolean ephemeral, boolean unbound) {
-        super(tmpId, name, prev, code, methodRef);
+        super(name, prev, code, methodRef);
         this.ephemeral = ephemeral;
         this.unbound = unbound;
     }

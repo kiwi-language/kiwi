@@ -9,8 +9,8 @@ public abstract class JumpNode extends Node {
 
     private Node target = this;
 
-    protected JumpNode(Long tmpId, @NotNull String name, @Nullable Type outputType, @Nullable Node previous, @NotNull Code code) {
-        super(tmpId, name, outputType, previous, code);
+    protected JumpNode(@NotNull String name, @Nullable Type outputType, @Nullable Node previous, @NotNull Code code) {
+        super(name, outputType, previous, code);
     }
 
     public Node getTarget() {

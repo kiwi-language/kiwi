@@ -10,11 +10,10 @@ import javax.annotation.Nullable;
 
 public class MulNode extends Node {
 
-    public MulNode(Long tmpId,
-                   @NotNull String name,
+    public MulNode(String name,
                    @Nullable Node previous,
                    @NotNull Code code) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
     }
 
     @Override

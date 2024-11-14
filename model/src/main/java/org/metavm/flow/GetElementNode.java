@@ -10,8 +10,8 @@ import org.metavm.object.type.Types;
 @EntityType
 public class GetElementNode extends Node {
 
-    public GetElementNode(Long tmpId, String name, Node previous, Code code) {
-        super(tmpId, name, null, previous, code);
+    public GetElementNode(String name, Node previous, Code code) {
+        super(name, null, previous, code);
     }
 
     @Override

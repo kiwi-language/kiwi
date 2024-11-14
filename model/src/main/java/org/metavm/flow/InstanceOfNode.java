@@ -12,12 +12,11 @@ public class InstanceOfNode extends Node {
 
     private final Type targetType;
 
-    public InstanceOfNode(Long tmpId,
-                          @NotNull String name,
+    public InstanceOfNode(String name,
                           @Nullable Node previous,
                           @NotNull Code code,
                           Type targetType) {
-        super(tmpId, name, Types.getBooleanType(), previous, code);
+        super(name, Types.getBooleanType(), previous, code);
        this.targetType = targetType;
     }
 

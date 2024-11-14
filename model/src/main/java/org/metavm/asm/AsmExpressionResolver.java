@@ -135,7 +135,6 @@ class AsmExpressionResolver {
             }
         }
         new AddObjectNode(
-                null,
                 code.nextNodeName("addObject"),
                 false,
                 type,

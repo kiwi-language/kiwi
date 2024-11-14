@@ -16,8 +16,8 @@ public class FunctionNode extends Node {
 
     private final FunctionType functionType;
 
-    public FunctionNode(Long tmpId, String name, Node previous, Code code, FunctionType functionType) {
-        super(tmpId, name, null, previous, code);
+    public FunctionNode(String name, Node previous, Code code, FunctionType functionType) {
+        super(name, null, previous, code);
         this.functionType = functionType;
     }
 

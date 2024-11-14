@@ -13,9 +13,9 @@ public class UnmapNode extends Node {
 
     private final ObjectMappingRef mappingRef;
 
-    public UnmapNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code,
+    public UnmapNode(@NotNull String name, @Nullable Node previous, @NotNull Code code,
                      ObjectMappingRef mappingRef) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
         this.mappingRef = mappingRef;
     }
 

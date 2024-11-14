@@ -7,8 +7,8 @@ import org.metavm.flow.rest.Bytecodes;
 @EntityType
 public class SetElementNode extends Node {
 
-    public SetElementNode(Long tmpId, String name, Node previous, Code code) {
-        super(tmpId, name, null, previous, code);
+    public SetElementNode(String name, Node previous, Code code) {
+        super(name, null, previous, code);
     }
 
     @Override

@@ -12,8 +12,8 @@ public class GetUniqueNode extends Node {
 
     private final IndexRef indexRef;
 
-    public GetUniqueNode(Long tmpId, String name, UnionType type, IndexRef indexRef, Node previous, Code code) {
-        super(tmpId, name, type, previous, code);
+    public GetUniqueNode(String name, UnionType type, IndexRef indexRef, Node previous, Code code) {
+        super(name, type, previous, code);
         this.indexRef = indexRef;
     }
 

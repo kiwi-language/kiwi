@@ -10,8 +10,8 @@ import javax.annotation.Nullable;
 
 public class DupX2Node extends Node {
 
-    public DupX2Node(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code) {
-        super(tmpId, name, null, previous, code);
+    public DupX2Node(@NotNull String name, @Nullable Node previous, @NotNull Code code) {
+        super(name, null, previous, code);
     }
 
     @Override

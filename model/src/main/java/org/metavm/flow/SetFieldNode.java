@@ -10,8 +10,8 @@ public class SetFieldNode extends Node {
 
     private final FieldRef fieldRef;
 
-    public SetFieldNode(Long tmpId, String name, Node prev, Code code, FieldRef fieldRef) {
-        super(tmpId, name, null, prev, code);
+    public SetFieldNode(String name, Node prev, Code code, FieldRef fieldRef) {
+        super(name, null, prev, code);
         this.fieldRef = fieldRef;
     }
 

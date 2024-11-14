@@ -9,8 +9,8 @@ public abstract class VariableAccessNode extends Node {
 
     protected final int index;
 
-    protected VariableAccessNode(Long tmpId, @NotNull String name, @Nullable Type outputType, @Nullable Node previous, @NotNull Code code, int index) {
-        super(tmpId, name, outputType, previous, code);
+    protected VariableAccessNode(@NotNull String name, @Nullable Type outputType, @Nullable Node previous, @NotNull Code code, int index) {
+        super(name, outputType, previous, code);
         this.index = index;
     }
 

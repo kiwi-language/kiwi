@@ -14,8 +14,8 @@ public class TargetNode extends Node {
     @ChildEntity
     private final ReadWriteArray<GotoNode> sources = addChild(new ReadWriteArray<>(GotoNode.class), "sources");
 
-    public TargetNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code) {
-        super(tmpId, name, null, previous, code);
+    public TargetNode(@NotNull String name, @Nullable Node previous, @NotNull Code code) {
+        super(name, null, previous, code);
     }
 
     @Override

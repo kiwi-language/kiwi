@@ -9,8 +9,8 @@ public class TryExitNode extends Node {
 
     private final int variableIndex;
 
-    public TryExitNode(Long tmpId, String name, Node previous, Code code, int variableIndex) {
-        super(tmpId, name, null, previous, code);
+    public TryExitNode(String name, Node previous, Code code, int variableIndex) {
+        super(name, null, previous, code);
         this.variableIndex = variableIndex;
     }
 

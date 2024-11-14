@@ -12,9 +12,9 @@ import java.util.Objects;
 @Slf4j
 public class LoadNode extends VariableAccessNode {
 
-    public LoadNode(Long tmpId, @NotNull String name, Type outputType,
+    public LoadNode(@NotNull String name, Type outputType,
                     @Nullable Node previous, @NotNull Code code, int index) {
-        super(tmpId, name, outputType, previous, code, index);
+        super(name, outputType, previous, code, index);
     }
 
     @Override

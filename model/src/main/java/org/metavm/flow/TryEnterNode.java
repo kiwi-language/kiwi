@@ -12,8 +12,8 @@ public class TryEnterNode extends Node implements LoadAware {
 
     private transient TryExitNode exit;
 
-    public TryEnterNode(Long tmpId, String name, Node previous, Code code) {
-        super(tmpId, name, null, previous, code);
+    public TryEnterNode(String name, Node previous, Code code) {
+        super(name, null, previous, code);
     }
 
     @Override

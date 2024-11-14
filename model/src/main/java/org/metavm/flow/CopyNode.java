@@ -10,8 +10,8 @@ import org.metavm.object.type.Types;
 @EntityType
 public class CopyNode extends Node {
 
-    protected CopyNode(Long tmpId, String name, Node previous, Code code) {
-        super(tmpId, name, null, previous, code);
+    protected CopyNode(String name, Node previous, Code code) {
+        super(name, null, previous, code);
     }
 
     @Override

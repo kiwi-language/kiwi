@@ -10,11 +10,11 @@ import org.metavm.util.NncUtils;
 @EntityType
 public class NewArrayNode extends Node {
 
-    public NewArrayNode(Long tmpId, String name,
+    public NewArrayNode(String name,
                         ArrayType type,
                         Node previous,
                         Code code) {
-        super(tmpId, name, type, previous, code);
+        super(name, type, previous, code);
     }
 
     @Override

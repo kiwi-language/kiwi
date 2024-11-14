@@ -13,9 +13,9 @@ public class IfNotNode extends JumpNode {
 
     private transient ExpressionTypeMap nextExpressionTypes;
 
-    public IfNotNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code,
+    public IfNotNode(@NotNull String name, @Nullable Node previous, @NotNull Code code,
                      Node target) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
         if(target != null)
             setTarget(target);
     }

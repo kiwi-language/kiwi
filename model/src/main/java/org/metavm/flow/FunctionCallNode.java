@@ -8,8 +8,8 @@ import org.metavm.util.InternalException;
 @EntityType
 public class FunctionCallNode extends CallNode {
 
-    public FunctionCallNode(Long tmpId, String name, Node prev, Code code, FunctionRef functionRef) {
-        super(tmpId, name,  prev, code, functionRef);
+    public FunctionCallNode(String name, Node prev, Code code, FunctionRef functionRef) {
+        super(name,  prev, code, functionRef);
     }
 
     @Override

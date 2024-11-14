@@ -20,9 +20,9 @@ public class LambdaNode extends Node implements LoadAware {
 
     private transient ClassType functionInterfaceImpl;
 
-    public LambdaNode(Long tmpId, String name, Node previous, Code code,
+    public LambdaNode(String name, Node previous, Code code,
                       @NotNull Lambda lambda, @Nullable ClassType functionalInterface) {
-        super(tmpId, name, functionalInterface != null ? functionalInterface : lambda.getFunctionType(), previous, code);
+        super(name, functionalInterface != null ? functionalInterface : lambda.getFunctionType(), previous, code);
         this.functionalInterface = functionalInterface;
         this.lambda = lambda;
     }

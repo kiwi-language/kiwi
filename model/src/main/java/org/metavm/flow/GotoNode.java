@@ -9,14 +9,14 @@ import java.util.Objects;
 
 public class GotoNode extends JumpNode {
 
-    public GotoNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code,
+    public GotoNode(@NotNull String name, @Nullable Node previous, @NotNull Code code,
                     @Nullable Node target) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
         setTarget(Objects.requireNonNullElse(target, this));
     }
 
-    public GotoNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code) {
-        super(tmpId, name, null, previous, code);
+    public GotoNode(@NotNull String name, @Nullable Node previous, @NotNull Code code) {
+        super(name, null, previous, code);
     }
 
     @Override

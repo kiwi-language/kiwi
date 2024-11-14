@@ -10,12 +10,11 @@ import javax.annotation.Nullable;
 
 public class NegateNode extends Node {
 
-    public NegateNode(Long tmpId,
-                      @NotNull String name,
+    public NegateNode(String name,
                       @Nullable Node previous,
                       @NotNull Code code
                       ) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
     }
 
     @Override

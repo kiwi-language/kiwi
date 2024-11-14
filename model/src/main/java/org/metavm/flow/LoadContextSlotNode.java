@@ -13,9 +13,9 @@ public class LoadContextSlotNode extends Node {
     private final int contextIndex;
     private final int slotIndex;
 
-    public LoadContextSlotNode(Long tmpId, @NotNull String name, Type outputType,
+    public LoadContextSlotNode(@NotNull String name, Type outputType,
                                @Nullable Node previous, @NotNull Code code, int contextIndex, int slotIndex) {
-        super(tmpId, name, outputType, previous, code);
+        super(name, outputType, previous, code);
         this.contextIndex = contextIndex;
         this.slotIndex = slotIndex;
     }

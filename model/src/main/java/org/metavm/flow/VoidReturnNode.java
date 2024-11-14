@@ -5,8 +5,8 @@ import org.metavm.flow.rest.Bytecodes;
 
 public class VoidReturnNode extends Node {
 
-    public VoidReturnNode(Long tmpId, String name, Node prev, Code code) {
-        super(tmpId, name, null, prev, code);
+    public VoidReturnNode(String name, Node prev, Code code) {
+        super(name, null, prev, code);
     }
 
     @Override

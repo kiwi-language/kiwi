@@ -7,8 +7,8 @@ import org.metavm.flow.rest.Bytecodes;
 @EntityType
 public class RaiseNode extends Node {
 
-    public RaiseNode(Long tmpId, String name, Node prev, Code code) {
-        super(tmpId, name, null, prev, code);
+    public RaiseNode(String name, Node prev, Code code) {
+        super(name, null, prev, code);
     }
 
     @Override

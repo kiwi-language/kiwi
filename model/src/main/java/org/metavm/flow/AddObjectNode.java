@@ -17,9 +17,9 @@ public class AddObjectNode extends Node {
 
     private boolean ephemeral;
 
-    public AddObjectNode(Long tmpId, String name, boolean ephemeral, ClassType type, Node prev,
+    public AddObjectNode(String name, boolean ephemeral, ClassType type, Node prev,
                          Code code) {
-        super(tmpId, name, type, prev, code);
+        super(name, type, prev, code);
         this.ephemeral = ephemeral;
     }
 

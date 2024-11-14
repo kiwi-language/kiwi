@@ -16,9 +16,9 @@ public class IndexSelectNode extends Node {
 
     private final IndexRef indexRef;
 
-    public IndexSelectNode(Long tmpId, String name, Node previous, Code code,
+    public IndexSelectNode(String name, Node previous, Code code,
                            IndexRef indexRef) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
         this.indexRef = indexRef;
     }
 

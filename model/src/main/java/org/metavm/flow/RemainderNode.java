@@ -10,11 +10,10 @@ import javax.annotation.Nullable;
 
 public class RemainderNode extends Node {
 
-    public RemainderNode(Long tmpId,
-                         @NotNull String name,
+    public RemainderNode(String name,
                          @Nullable Node previous,
                          @NotNull Code code) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
     }
 
     @Override

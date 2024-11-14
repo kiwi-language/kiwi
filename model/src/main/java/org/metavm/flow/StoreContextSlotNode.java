@@ -10,9 +10,9 @@ public class StoreContextSlotNode extends Node {
     private final int contextIndex;
     private final int slotIndex;
 
-    public StoreContextSlotNode(Long tmpId, @NotNull String name,
+    public StoreContextSlotNode(@NotNull String name,
                                 @Nullable Node previous, @NotNull Code code, int contextIndex, int slotIndex) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
         this.contextIndex = contextIndex;
         this.slotIndex = slotIndex;
     }

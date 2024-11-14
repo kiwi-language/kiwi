@@ -10,11 +10,10 @@ import javax.annotation.Nullable;
 
 public class DivNode extends Node {
 
-    public DivNode(Long tmpId,
-                   @NotNull String name,
+    public DivNode(String name,
                    @Nullable Node previous,
                    @NotNull Code code) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
     }
 
     @Override

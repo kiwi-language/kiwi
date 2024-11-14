@@ -12,12 +12,12 @@ public class NewArrayWithDimsNode extends Node {
 
     private final int dimensions;
 
-    public NewArrayWithDimsNode(Long tmpId, String name,
+    public NewArrayWithDimsNode(String name,
                                 ArrayType type,
                                 Node previous,
                                 Code code,
                                 int dimensions) {
-        super(tmpId, name, type, previous, code);
+        super(name, type, previous, code);
         this.dimensions = dimensions;
     }
 

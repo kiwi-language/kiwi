@@ -10,9 +10,9 @@ import org.metavm.util.BusinessException;
 @EntityType
 public class ClearArrayNode extends Node {
 
-    public ClearArrayNode(Long tmpId, String name,
+    public ClearArrayNode(String name,
                           Node previous, Code code) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
     }
 
     @Override

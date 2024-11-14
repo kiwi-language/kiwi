@@ -10,11 +10,10 @@ import javax.annotation.Nullable;
 
 public class AddNode extends Node {
 
-    public AddNode(Long tmpId,
-                   @NotNull String name,
+    public AddNode(String name,
                    @Nullable Node previous,
                    @NotNull Code code) {
-        super(tmpId, name, null, previous, code);
+        super(name, null, previous, code);
     }
 
     @Override

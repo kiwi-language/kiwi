@@ -35,13 +35,11 @@ public abstract class Node extends Element implements LocalKey {
     private transient int offset;
 
     protected Node(
-            Long tmpId,
             @NotNull String name,
             @Nullable Type outputType,
             @Nullable Node previous,
             @NotNull Code code
     ) {
-        super(tmpId);
         this.name = name;
         this.code = code;
         this.outputType = outputType;

@@ -14,8 +14,8 @@ public class IndexCountNode extends Node {
 
     private final IndexRef indexRef;
 
-    public IndexCountNode(Long tmpId, String name, Node previous, Code code, IndexRef indexRef) {
-        super(tmpId, name, null, previous, code);
+    public IndexCountNode(String name, Node previous, Code code, IndexRef indexRef) {
+        super(name, null, previous, code);
         this.indexRef = indexRef;
     }
 

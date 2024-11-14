@@ -12,8 +12,8 @@ public class LoadTypeNode extends Node {
 
     private final Type type;
 
-    public LoadTypeNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code, Type type) {
-        super(tmpId, name, null, previous, code);
+    public LoadTypeNode(@NotNull String name, @Nullable Node previous, @NotNull Code code, Type type) {
+        super(name, null, previous, code);
         this.type = type;
     }
 

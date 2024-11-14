@@ -12,8 +12,8 @@ public class LoadConstantNode extends Node {
 
     private final Value value;
 
-    public LoadConstantNode(Long tmpId, @NotNull String name, @Nullable Node previous, @NotNull Code code, Value value) {
-        super(tmpId, name, null, previous, code);
+    public LoadConstantNode(@NotNull String name, @Nullable Node previous, @NotNull Code code, Value value) {
+        super(name, null, previous, code);
         this.value = value;
     }
 
