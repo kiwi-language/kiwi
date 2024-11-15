@@ -4,7 +4,6 @@ import org.metavm.common.rest.dto.ErrorDTO;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.flow.rest.FlowSignatureDTO;
 import org.metavm.object.instance.rest.InstanceDTO;
-import org.metavm.object.view.rest.dto.ObjectMappingDTO;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -19,7 +18,6 @@ public record ClassTypeParam(
         @Nullable String titleFieldId,
         List<ConstraintDTO> constraints,
         List<FlowDTO> flows,
-        List<ObjectMappingDTO> mappings,
         @Nullable String defaultMappingId,
         String desc,
         Object extra,

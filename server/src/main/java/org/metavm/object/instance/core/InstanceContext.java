@@ -16,7 +16,6 @@ import org.metavm.object.type.ActiveCommitProvider;
 import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.view.MappingProvider;
 import org.metavm.util.LinkedList;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -55,7 +54,6 @@ public class InstanceContext extends BufferingInstanceContext {
                            List<ContextPlugin> plugins,
                            IInstanceContext parent,
                            TypeDefProvider typeDefProvider,
-                           MappingProvider mappingProvider,
                            RedirectStatusProvider redirectStatusProvider,
                            ActiveCommitProvider activeCommitProvider,
                            boolean childrenLazyLoading,
@@ -70,7 +68,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 List.of(/*new CacheTreeSource(cache),*/new StoreTreeSource(instanceStore)),
                 new StoreVersionSource(instanceStore),
                 new StoreIndexSource(instanceStore), idInitializer,
-                parent, typeDefProvider, mappingProvider, redirectStatusProvider, readonly, timeout);
+                parent, typeDefProvider, redirectStatusProvider, readonly, timeout);
         headContext = new SubContext(appId);
         this.plugins = plugins;
         this.executor = executor;
@@ -168,7 +166,6 @@ public class InstanceContext extends BufferingInstanceContext {
             if (DebugEnv.buildPatchLog)
                 debugLogger.info("building patch. numBuild: {}", patchContext.numBuild);
             unfrozen(this::onPatchBuild);
-            saveViews();
             craw();
             check();
             initIds();
@@ -567,7 +564,6 @@ public class InstanceContext extends BufferingInstanceContext {
                 plugins,
                 getParent(),
                 typeDefProvider,
-                getMappingProvider(),
                 getRedirectStatusProvider(),
                 activeCommitProvider,
                 childrenLazyLoading,

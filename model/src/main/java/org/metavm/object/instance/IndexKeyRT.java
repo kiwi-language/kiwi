@@ -127,8 +127,8 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
             return -1;
         if(second instanceof NullValue)
             return 1;
-        if(first instanceof Reference d1 && !d1.isView()
-                && second instanceof Reference d2 && !d2.isView()) {
+        if(first instanceof Reference d1
+                && second instanceof Reference d2) {
             if(d1.isNew() && d2.isNew())
                 return Integer.compare(d1.resolve().getSeq(), d2.resolve().getSeq());
             if(d1.isNew())

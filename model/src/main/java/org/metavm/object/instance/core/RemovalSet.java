@@ -1,6 +1,5 @@
 package org.metavm.object.instance.core;
 
-import com.google.common.collect.Iterators;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,20 +11,16 @@ import java.util.function.Consumer;
 
 @Slf4j
 class RemovalSet implements Collection<Instance> {
-    final Set<Instance> views = new HashSet<>();
     final Set<Instance> instances = new HashSet<>();
 
     public boolean add(Instance instance) {
-        if (instance.isView())
-            return views.add(instance);
-        else
-            return instances.add(instance);
+        return instances.add(instance);
     }
 
     @Override
     public boolean remove(Object o) {
         if (o instanceof Instance i)
-            return i.isView() ? views.remove(i) : instances.remove(i);
+            return instances.remove(i);
         else
             return false;
     }
@@ -61,68 +56,49 @@ class RemovalSet implements Collection<Instance> {
 
     @Override
     public boolean retainAll(@NotNull Collection<?> c) {
-        var r = views.retainAll(c);
-        return instances.retainAll(c) || r;
+        return instances.retainAll(c);
     }
 
     @Override
     public void clear() {
-        views.clear();
         instances.clear();
         ;
     }
 
     @Override
     public int size() {
-        return views.size() + instances.size();
+        return instances.size();
     }
 
     @Override
     public boolean isEmpty() {
-        return views.isEmpty() && instances.isEmpty();
+        return instances.isEmpty();
     }
 
     @Override
     public boolean contains(Object o) {
-        return o instanceof Instance i && (i.isView() ? views.contains(i) : instances.contains(i));
+        return o instanceof Instance i && instances.contains(i);
     }
 
     @NotNull
     @Override
     public Iterator<Instance> iterator() {
-        return Iterators.concat(views.iterator(), instances.iterator());
+        return instances.iterator();
     }
 
     @NotNull
     @Override
     public Object[] toArray() {
-        var array = new Object[size()];
-        int i = 0;
-        for (Instance view : views) {
-            array[i++] = view;
-        }
-        for (Instance inst : instances) {
-            array[i++] = inst;
-        }
-        return array;
+        return instances.toArray();
     }
 
     @NotNull
     @Override
     public <T> T[] toArray(@NotNull T[] a) {
-        int i = 0;
-        for (Instance view : views) {
-            a[i++] = (T) view;
-        }
-        for (Instance inst : instances) {
-            a[i++] = (T) inst;
-        }
-        return a;
+        return instances.toArray(a);
     }
 
     public void forEach(Consumer<? super Instance> action) {
-//          Remove views first otherwise uninitialized views in the removal set may fail to initialize
-        views.forEach(action);
         instances.forEach(action);
     }
 

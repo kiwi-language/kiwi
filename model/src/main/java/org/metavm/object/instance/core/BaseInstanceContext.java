@@ -2,14 +2,15 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.*;
+import org.metavm.entity.ContextAttributeKey;
+import org.metavm.entity.EntityUtils;
+import org.metavm.entity.InstanceIndexQuery;
+import org.metavm.entity.LockMode;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;
 import org.metavm.object.type.RedirectStatusProvider;
-import org.metavm.object.type.StaticFieldTable;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.view.MappingProvider;
 import org.metavm.util.*;
 import org.metavm.util.profile.Profiler;
 import org.slf4j.Logger;
@@ -30,7 +31,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected final long appId;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
     private final Map<Id, Instance> instanceMap = new HashMap<>();
-    private final IdentityHashMap<Instance, List<Instance>> source2views = new IdentityHashMap<>();
     private Instance head;
     private Instance tail;
     private LockMode lockMode = LockMode.NONE;
@@ -47,7 +47,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final TypeDefProvider typeDefProvider;
     private final RedirectStatusProvider redirectStatusProvider;
     private final IndexSource indexSource;
-    private final MappingProvider mappingProvider;
     private int seq;
     private final long startAt = System.currentTimeMillis();
     private long timeout;
@@ -58,7 +57,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                                boolean readonly,
                                IndexSource indexSource,
                                TypeDefProvider typeDefProvider,
-                               MappingProvider mappingProvider,
                                RedirectStatusProvider redirectStatusProvider,
                                long timeout) {
         this.appId = appId;
@@ -67,7 +65,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         this.indexSource = indexSource;
 //        this.typeProvider = typeProvider;
         this.typeDefProvider = typeDefProvider;
-        this.mappingProvider = mappingProvider;
         this.redirectStatusProvider = redirectStatusProvider;
         memIndex = new InstanceMemoryIndex();
         this.timeout = timeout;
@@ -247,12 +244,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                                 found.getMappedEntity() != null ? EntityUtils.getEntityDesc(found.getMappedEntity()) : found));
             return found;
         } else {
-            if(id instanceof ViewId viewId)
-                initializeView(viewId);
-            else {
-                buffer(id);
-                initializeInstance(id);
-            }
+            buffer(id);
+            initializeInstance(id);
             return Objects.requireNonNull(getBuffered(id), () -> "Failed to initialize instance " + id);
 //            return add(id);
         }
@@ -303,51 +296,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         return checkAliveInStore(id);
     }
 
-    private Reference allocateView(ViewId viewId) {
-        var ref = new Reference(viewId, () -> initializeView(viewId));
-        ref.setView();
-        return ref;
-//        var viewType = viewId.getViewTypeKey(mappingProvider, typeDefProvider).toType(typeDefProvider);
-//        DurableInstance view;
-//        if (viewType instanceof ClassType classViewType) {
-//            view = ClassInstanceBuilder.newBuilder(classViewType)
-//                    .sourceRef(viewId.getSourceRef(this, mappingProvider, typeDefProvider))
-//                    .load(this::initializeView)
-//                    .id(viewId)
-//                    .ephemeral(true)
-//                    .build();
-//        } else if (viewType instanceof ArrayType arrayViewType) {
-//            view = new ArrayInstance(viewId, arrayViewType, true, this::initializeView);
-//            view.setSourceRef(viewId.getSourceRef(this, mappingProvider, typeDefProvider));
-//        } else
-//            throw new InternalException("Invalid view type: " + viewType);
-////        source2views.computeIfAbsent(view.tryGetSource(), k -> new ArrayList<>()).add(view);
-//        return view;
-    }
-
-    private Instance initializeView(ViewId id) {
-        var rootId = id.getRootId();
-        var mappingKey = Objects.requireNonNull(rootId.getMappingKey(),
-                () -> "The MappingKey is missing in the id: " + rootId.getClass().getName() + "-" + rootId);
-        var mapping = mappingKey.toMapping(mappingProvider, typeDefProvider);
-        var sourceRef = Objects.requireNonNull(rootId.getSourceRef(this, mappingProvider, typeDefProvider));
-        var view =  mapping.mapRoot(sourceRef.source().resolveObject(), this);
-        view.forEachDescendant(this::add);
-        return view;
-//        r.accept(new InstanceCopier(r) {
-//            @Override
-//            protected Instance getExisting(Instance instance) {
-//                var id = instance.tryGetId();
-//                if (id != null) {
-//                    var existing = internalGet(id);
-//                    existing.setLoaded(requireNonNull(((DurableInstance) instance).tryGetSource()).isLoadedFromCache());
-//                    return existing;
-//                } else
-//                    return null;
-//            }
-//        });
-    }
-
 //    private Type getTypeByInstanceId(Id id) {
 //        TypeKey typeKey = switch (id) {
 //            case PhysicalId physicalId -> physicalId.getTypeKey();
@@ -375,31 +323,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected Reference allocateInstance(Id id) {
-        if (id.isArray()) {
-            return switch (id) {
-                case PhysicalId physicalId -> new Reference(physicalId, () -> get(physicalId));
-//                        new ArrayInstance(physicalId, Types.getAnyArrayType(), false, this::initializeInstance);
-                case ViewId viewId -> allocateView(viewId);
-                default -> throw new IllegalStateException("Unexpected value: " + id);
-            };
-        } else {
-            return switch (id) {
-                case PhysicalId physicalId -> new Reference(physicalId, () -> get(physicalId));
-//                        new ClassInstance(physicalId, ClassInstance.uninitializedKlass.getType(), false, instance -> initializeInstance());
-                case ViewId viewId -> allocateView(viewId);
-                default -> throw new IllegalStateException("Unexpected value: " + id);
-            };
-        }
+        return new Reference(id, () -> get(id));
     }
 
     @Override
     public TypeDefProvider getTypeDefProvider() {
         return typeDefProvider;
-    }
-
-    @Override
-    public MappingProvider getMappingProvider() {
-        return mappingProvider;
     }
 
     @Override
@@ -441,24 +370,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
     }
 
-    protected void saveViews() {
-        try (var ignored = getProfiler().enter("saveViews")) {
-            NncUtils.enhancedForEach(instanceMap.values(), value -> {
-                if (value.isView()) {
-                    var classInstance = (ClassInstance) value;
-                    if (!classInstance.isList() && !classInstance.isRemoved() && !classInstance.isViewSaved())
-                        saveView(classInstance);
-                }
-            });
-        }
-    }
-
-    private void saveView(ClassInstance view) {
-        view.setViewSaved();
-        var mapping = view.getMappingKey().toMapping(mappingProvider, typeDefProvider);
-        mapping.unmap(view.getReference(), this);
-    }
-
     @Override
     public void close() {
         if (closed)
@@ -493,20 +404,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected void onIdInitialized(Instance instance) {
         instanceMap.put(instance.tryGetId(), instance);
         listeners.forEach(l -> l.onInstanceIdInit(instance));
-        forEachView(instance, v -> {
-            if(v.getSourceRef().mapping() != null) {
-                v.initId(
-                        new DefaultViewId(
-                                v instanceof ArrayInstance,
-                                Objects.requireNonNull(v.getSourceRef().mapping(),
-                                        () -> "Mapping is missing in the SourceRef: " + v.getSourceRef() + ", source: " + instance
-                                ).toKey(),
-                                v.getSource().tryGetId()
-                        )
-                );
-            }
-            // TODO handle the case of mapping being null
-        });
     }
 
     protected void onContextInitializeId() {
@@ -633,18 +530,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             cascade.addAll(listener.beforeRemove(instance, removalSet::contains));
         }
         instance.forEachChild(cascade::add);
-        forEachView(instance, cascade::add);
         for (Instance i : cascade) {
             beforeRemove(i, removalSet);
         }
-    }
-
-    private void forEachView(Instance instance, Consumer<Instance> action) {
-        if (instance.isView())
-            action.accept(instance);
-        var views = source2views.get(instance);
-        if (views != null)
-            views.forEach(v -> forEachView(v, action));
     }
 
     private void createReferenceCleanupJob(Value instance) {
@@ -728,8 +616,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             tail.insertAfter(instance);
             tail = instance;
         }
-        if (instance.isView())
-            source2views.computeIfAbsent(instance.getSource().resolve(), k -> new ArrayList<>()).add(instance);
         if (instance.tryGetCurrentId() != null) {
 //            logger.info("Adding instance {} to context, treeId: {}", instance.getId(), instance.getId().tryGetTreeId());
             if (instanceMap.put(instance.tryGetCurrentId(), instance) != null)

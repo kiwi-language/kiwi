@@ -15,7 +15,6 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
-import org.metavm.object.view.ObjectMapping;
 import org.metavm.util.LinkedList;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -356,18 +355,6 @@ public class MetaFrame implements Frame, CallContext {
                             var copy = sourceInst.resolveDurable().copy();
                             stack[top++] = copy.getReference();
                             pc++;
-                        }
-                        case Bytecodes.MAP -> {
-                            var sourceInst = (Reference) stack[--top];
-                            var mapping = (ObjectMapping) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                            stack[top++] = mapping.map(sourceInst.resolve(), this).getReference();
-                            pc += 3;
-                        }
-                        case Bytecodes.UNMAP -> {
-                            var viewInst = (Reference) stack[--top];
-                            var mapping = (ObjectMapping) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                            stack[top++] = mapping.unmap(viewInst, this);
-                            pc += 3;
                         }
                         case Bytecodes.INDEX_SCAN -> {
                             //noinspection DuplicatedCode

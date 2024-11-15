@@ -3,14 +3,12 @@ package org.metavm.entity;
 import org.metavm.ddl.Commit;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.*;
-import org.metavm.object.view.Mapping;
-import org.metavm.object.view.MappingProvider;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-public interface EntityProvider extends MappingProvider, TypeDefProvider, RedirectStatusProvider, ActiveCommitProvider {
+public interface EntityProvider extends TypeDefProvider, RedirectStatusProvider, ActiveCommitProvider {
 
     <T> T getEntity(Class<T> entityType, Id id);
 
@@ -18,10 +16,6 @@ public interface EntityProvider extends MappingProvider, TypeDefProvider, Redire
 
     default Klass getKlass(Id id) {
         return getEntity(Klass.class, id);
-    }
-
-    default Mapping getMapping(Id id) {
-        return getEntity(Mapping.class, id);
     }
 
     default RedirectStatus getRedirectStatus(Id id) {

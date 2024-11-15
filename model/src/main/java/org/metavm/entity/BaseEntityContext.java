@@ -2,9 +2,9 @@ package org.metavm.entity;
 
 import javassist.util.proxy.ProxyObject;
 import org.metavm.event.EventQueue;
+import org.metavm.flow.Code;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Node;
-import org.metavm.flow.Code;
 import org.metavm.object.instance.DefaultObjectInstanceMap;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.ObjectInstanceMap;
@@ -387,7 +387,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             return parent.getEntity(entityType, id);
         if(id.isTemporary())
             return null;
-        var typeTag = id.getTypeTag(this, this);
+        var typeTag = id.getTypeTag(this);
         assert TypeTags.isSystemTypeTag(typeTag);
         var mapper = getDefContext().tryGetMapper(typeTag);
         if (mapper == null || mapper instanceof DirectDef<?>)

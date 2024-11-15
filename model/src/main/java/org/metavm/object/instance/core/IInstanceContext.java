@@ -9,7 +9,6 @@ import org.metavm.event.EventQueue;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.view.MappingProvider;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.NncUtils;
 import org.metavm.util.profile.Profiler;
@@ -92,8 +91,6 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     }
 
     TypeDefProvider getTypeDefProvider();
-
-    MappingProvider getMappingProvider();
 
     RedirectStatusProvider getRedirectStatusProvider();
 

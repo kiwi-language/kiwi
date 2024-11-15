@@ -1,7 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.view.MappingProvider;
 import org.metavm.util.InstanceOutput;
 
 import java.util.Objects;
@@ -48,7 +47,7 @@ public class MockId extends Id {
     }
 
     @Override
-    public int getTypeTag(MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
+    public int getTypeTag(TypeDefProvider typeDefProvider) {
         throw new UnsupportedOperationException();
     }
 }

@@ -1,10 +1,10 @@
 package org.metavm.object.instance.rest;
 
-import org.springframework.web.bind.annotation.*;
 import org.metavm.common.Page;
 import org.metavm.common.Result;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.core.TreeVersion;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -41,11 +41,6 @@ public class InstanceController {
     @PutMapping
     public Result<String> create(@RequestBody InstanceDTO instance) {
         return Result.success(instanceManager.create(instance));
-    }
-
-    @GetMapping("/default-view/{id}")
-    public Result<GetInstanceResponse> getDefaultView(@PathVariable("id") String id) {
-        return Result.success(instanceManager.getDefaultView(id));
     }
 
     @PostMapping

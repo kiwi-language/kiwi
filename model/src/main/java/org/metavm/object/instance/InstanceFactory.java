@@ -7,7 +7,6 @@ import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
-import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -121,19 +120,7 @@ public class InstanceFactory {
         } else {
             throw new InternalException("Can not create instance for type '" + type + "'");
         }
-        if (instanceDTO.sourceMappingRef() != null) {
-            var mappingRefDTO = instanceDTO.sourceMappingRef();
-            var sourceMapping = new ObjectMappingRef(
-                    (ClassType) TypeParser.parseType(mappingRefDTO.declaringType(), context.getTypeDefProvider()),
-                    context.getMappingProvider().getObjectMapping(Id.parse(mappingRefDTO.rawMappingId()))
-            ).resolve();
-            var source = sourceMapping.unmap(instance.getReference(), context);
-            instance.setSourceRef(new SourceRef(source, sourceMapping));
-            context.bind(instance);
-            if(!context.containsInstance(source.resolve()))
-                context.bind(source.resolve());
-        } else
-            context.bind(instance);
+        context.bind(instance);
         return instance.getReference();
     }
 

@@ -109,7 +109,6 @@ public class MockUtils {
                 TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
                 "coupon",
                 "5 Yuan Off",
-                null,
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(
@@ -132,7 +131,6 @@ public class MockUtils {
                 TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
                 "coupon",
                 "10 Yuan Off",
-                null,
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(
@@ -155,7 +153,6 @@ public class MockUtils {
                 TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
                 "coupon",
                 "15 Yuan Off",
-                null,
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(
@@ -189,7 +186,6 @@ public class MockUtils {
                 TypeExpressions.getClassType(shoppingTypeIds.productTypeId()),
                 "Product",
                 "Shoes",
-                null,
                 new ClassInstanceParam(
                         List.of(
                                 InstanceFieldDTO.create(
@@ -209,7 +205,6 @@ public class MockUtils {
                                                                                 TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()),
                                                                                 "SKU",
                                                                                 "40",
-                                                                                null,
                                                                                 new ClassInstanceParam(
                                                                                         List.of(
                                                                                                 InstanceFieldDTO.create(
@@ -232,7 +227,6 @@ public class MockUtils {
                                                                         TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()),
                                                                         "SKU",
                                                                         "41",
-                                                                        null,
                                                                         new ClassInstanceParam(
                                                                                 List.of(
                                                                                         InstanceFieldDTO.create(
@@ -256,7 +250,6 @@ public class MockUtils {
                                                                                 TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()),
                                                                                 "SKU",
                                                                                 "42",
-                                                                                null,
                                                                                 new ClassInstanceParam(
                                                                                         List.of(
                                                                                                 InstanceFieldDTO.create(

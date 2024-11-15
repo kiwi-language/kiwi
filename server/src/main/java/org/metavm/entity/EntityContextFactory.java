@@ -1,6 +1,9 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.*;
+import org.metavm.object.instance.ChangeLogPlugin;
+import org.metavm.object.instance.CheckConstraintPlugin;
+import org.metavm.object.instance.IInstanceStore;
+import org.metavm.object.instance.IndexConstraintPlugin;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.WAL;
@@ -112,7 +115,7 @@ public class EntityContextFactory {
                                                       @Nullable WAL cachingWAL,
                                                       @Nullable WAL bufferingWAL,
                                                       @Nullable IInstanceStore store, boolean migrationDisabled, Consumer<InstanceContextBuilder> customizer) {
-        var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge, bridge)
+        var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge)
                 .readonly(readonly)
                 .parent(parent)
                 .relocationEnabled(migrationDisabled)

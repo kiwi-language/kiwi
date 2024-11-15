@@ -9,10 +9,6 @@ public enum IdTag {
     TAGGED_PHYSICAL(2),
     TYPED_PHYSICAL(3),
     TMP(19),
-    DEFAULT_VIEW(11),
-    CHILD_VIEW(13),
-    FIELD_VIEW(15),
-    ELEMENT_VIEW(17),
     MOCK(100);
 
     private final int code;

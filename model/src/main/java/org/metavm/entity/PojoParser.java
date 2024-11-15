@@ -13,7 +13,6 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
-import org.metavm.object.view.MappingSaver;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,12 +159,6 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
     protected boolean isNativeClass() {
         var annotation = javaClass.getAnnotation(EntityType.class);
         return annotation != null && annotation.isNative();
-    }
-
-    private void saveBuiltinMapping(boolean saveContent) {
-        var klass = def.getKlass();
-        if (klass.shouldGenerateBuiltinMapping())
-            MappingSaver.create(defContext).saveBuiltinMapping(klass, saveContent);
     }
 
     protected abstract D createDef(PojoDef<? super T> superDef);

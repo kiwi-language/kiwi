@@ -57,13 +57,12 @@ public class ClassInstance extends Instance {
 
     public ClassInstance(Id id, @NotNull ClassType type, long version, long syncVersion,
                          @Nullable Consumer<Instance> load, @Nullable InstanceParentRef parentRef,
-                         @Nullable Map<Field, Value> data, @Nullable SourceRef sourceRef, boolean ephemeral, boolean initFieldTable) {
+                         @Nullable Map<Field, Value> data, boolean ephemeral, boolean initFieldTable) {
         super(id, type, version, syncVersion, ephemeral, load);
         this.klass = type.resolve();
         if (klass != uninitializedKlass && initFieldTable)
             fieldTable.initialize();
         setParentRef(parentRef);
-        setSourceRef(sourceRef);
         if (data != null)
             reset(data, 0L, 0L);
     }

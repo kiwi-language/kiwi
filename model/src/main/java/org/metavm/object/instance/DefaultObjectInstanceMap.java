@@ -53,7 +53,7 @@ public class DefaultObjectInstanceMap implements ObjectInstanceMap {
         else if(instance instanceof Reference r) {
             var id = r.tryGetId();
             if(id != null) {
-                if(TypeTags.isSystemTypeTag(id.getTypeTag(entityContext, entityContext)))
+                if(TypeTags.isSystemTypeTag(id.getTypeTag(entityContext)))
                     return entityContext.getEntity(klass, id);
                 else
                     return klass.cast(instance);

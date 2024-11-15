@@ -9,9 +9,6 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
-import org.metavm.object.view.Mapping;
-import org.metavm.object.view.MappingProvider;
-import org.metavm.object.view.ObjectMapping;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ParameterizedMap;
 import org.metavm.util.TypeReference;
@@ -21,7 +18,7 @@ import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.util.List;
 
-public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, MappingProvider, TypeDefProvider, RedirectStatusProvider {
+public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, TypeDefProvider, RedirectStatusProvider {
 
     boolean containsEntity(Object entity);
 
@@ -205,22 +202,6 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     default Method getMethod(String id) {
         return getEntity(Method.class, id);
-    }
-
-    default ObjectMapping getObjectMapping(Id id) {
-        return getEntity(ObjectMapping.class, id);
-    }
-
-    default ObjectMapping getObjectMapping(String id) {
-        return getEntity(ObjectMapping.class, id);
-    }
-
-    default Mapping getMapping(Id id) {
-        return getEntity(Mapping.class, id);
-    }
-
-    default Mapping getMapping(String id) {
-        return getEntity(Mapping.class, id);
     }
 
     @Override

@@ -2,7 +2,6 @@ package org.metavm.object.instance.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.view.MappingProvider;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.NncUtils;
 
@@ -51,7 +50,7 @@ public final class TmpId extends Id {
     }
 
     @Override
-    public int getTypeTag(MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
+    public int getTypeTag(TypeDefProvider typeDefProvider) {
         throw new UnsupportedOperationException();
     }
 

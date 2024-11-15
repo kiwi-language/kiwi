@@ -10,7 +10,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
                 @JsonSubTypes.Type(value = FieldCpEntryDTO.class, name = "2"),
                 @JsonSubTypes.Type(value = MethodCpEntryDTO.class, name = "3"),
                 @JsonSubTypes.Type(value = FunctionCpEntryDTO.class, name = "4"),
-                @JsonSubTypes.Type(value = MappingCpEntryDTO.class, name = "5"),
                 @JsonSubTypes.Type(value = IndexCpEntryDTO.class, name = "6"),
                 @JsonSubTypes.Type(value = LambdaCpEntryDTO.class, name = "7"),
         }

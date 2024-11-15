@@ -13,8 +13,6 @@ import org.metavm.flow.rest.MethodParam;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.rest.dto.*;
-import org.metavm.object.view.FieldsObjectMapping;
-import org.metavm.object.view.rest.dto.ObjectMappingDTO;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,8 +138,7 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
                 new SaveStage(ResolutionStage.INIT, this::initDependencies),
                 new SaveStage(ResolutionStage.SIGNATURE, this::noDependencies),
                 new SaveStage(ResolutionStage.DECLARATION, this::declarationDependencies),
-                new SaveStage(ResolutionStage.DEFINITION, this::noDependencies),
-                new SaveStage(ResolutionStage.MAPPING_DEFINITION, this::noDependencies)
+                new SaveStage(ResolutionStage.DEFINITION, this::noDependencies)
         );
         for (var stage : stages) {
             for (var typeDTO : stage.sort(typeDefMap.values()))
@@ -294,14 +291,6 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     }
 
-    public @Nullable ObjectMappingDTO getMappingDTO(FieldsObjectMapping mapping) {
-        var typeDTO = getTypeDTO(mapping.getSourceType().getStringId());
-        if (typeDTO == null)
-            return null;
-        else
-            return NncUtils.find(typeDTO.mappings(), m -> m.name().equals(mapping.getName()));
-    }
-
     @Override
     public @Nullable KlassDTO getTypeDTO(String id) {
         return (KlassDTO) getTypeDefDTO(id);
@@ -309,10 +298,6 @@ public class SaveTypeBatch implements DTOProvider, TypeDefProvider {
 
     public TypeDefDTO getTypeDefDTO(String id) {
         return typeDefMap.get(id);
-    }
-
-    public KlassDTO getTypeDTONotNull(String id) {
-        return Objects.requireNonNull(getTypeDTO(id), () -> "Can not find typeDTO with id '" + id + "'");
     }
 
     public Commit buildCommit(WAL wal) {

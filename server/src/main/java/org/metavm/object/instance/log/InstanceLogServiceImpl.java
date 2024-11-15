@@ -11,7 +11,6 @@ import org.metavm.object.type.TypeDef;
 import org.metavm.object.version.Version;
 import org.metavm.object.version.VersionRepository;
 import org.metavm.object.version.Versions;
-import org.metavm.object.view.Mapping;
 import org.metavm.task.PublishMetadataEventTask;
 import org.metavm.task.SynchronizeSearchTask;
 import org.metavm.util.ContextUtil;
@@ -97,11 +96,6 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                                 removedTypeDefIds.add(id.toString());
                             else
                                 changedTypeDefIds.add(id.toString());
-                        } else if (Mapping.class.isAssignableFrom(javaClass)) {
-                            if (log.isDelete())
-                                removedMappingIds.add(id.toString());
-                            else
-                                changedMappingIds.add(id.toString());
                         } else if (Function.class.isAssignableFrom(javaClass)) {
                             if (log.isDelete())
                                 removedFunctionIds.add(id.toString());
@@ -120,8 +114,6 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                         var v = Versions.create(
                                 changedTypeDefIds,
                                 removedTypeDefIds,
-                                changedMappingIds,
-                                removedMappingIds,
                                 changedFunctionIds,
                                 removedFunctionIds,
                                 new VersionRepository() {

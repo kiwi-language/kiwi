@@ -159,25 +159,6 @@ public class UnionType extends CompositeType {
     }
 
     @Override
-    public boolean isViewType(Type type) {
-        if (super.isViewType(type))
-            return true;
-        var types = type instanceof UnionType unionType ? unionType.getMembers() : List.of(type);
-        for (Type member : members) {
-            boolean hasView = false;
-            for (Type t : types) {
-                if (member.isViewType(t)) {
-                    hasView = true;
-                    break;
-                }
-            }
-            if (!hasView)
-                return false;
-        }
-        return true;
-    }
-
-    @Override
     public String getName() {
         return NncUtils.join(members, Type::getName, "|");
     }

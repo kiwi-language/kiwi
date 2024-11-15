@@ -35,8 +35,6 @@ public class DebugEnv {
 
     public static volatile boolean resolveVerbose = false;
 
-    public static volatile boolean printMapping = false;
-
     public static volatile boolean flag = false;
 
     public static final List<Klass> list = new CopyOnWriteArrayList<>();

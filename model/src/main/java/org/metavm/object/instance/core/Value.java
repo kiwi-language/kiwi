@@ -157,7 +157,6 @@ public abstract class Value {
                     getType().toExpression(serContext),
                     getType().getName(),
                     getTitle(),
-                    Instances.getSourceMappingRefDTO(this),
                     param
             );
         }

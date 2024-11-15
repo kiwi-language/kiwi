@@ -1,7 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.view.MappingProvider;
 import org.metavm.util.InstanceOutput;
 
 public class TaggedPhysicalId extends PhysicalId {
@@ -14,7 +13,7 @@ public class TaggedPhysicalId extends PhysicalId {
     }
 
     @Override
-    public int getTypeTag(MappingProvider mappingProvider, TypeDefProvider typeDefProvider) {
+    public int getTypeTag(TypeDefProvider typeDefProvider) {
         return typeTag;
     }
 

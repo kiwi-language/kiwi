@@ -3,7 +3,6 @@ package org.metavm.entity;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
-import org.metavm.object.view.Mapping;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -19,7 +18,6 @@ public record InstanceQuery(
         int pageSize,
         List<InstanceQueryField> fields,
         List<Id> createdIds,
-        List<Id> excludedIds,
-        @Nullable Mapping sourceMapping
+        List<Id> excludedIds
         ) {
 }

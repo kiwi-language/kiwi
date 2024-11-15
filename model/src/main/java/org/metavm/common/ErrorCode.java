@@ -99,7 +99,6 @@ public enum ErrorCode {
     ADD_ELEMENT_NOT_SUPPORTED(433, "Adding elements to this array is not supported"),
     MISSING_REQUIRED_ARGUMENT(434, "Missing required parameter '{}'"),
     STATIC_FLOW_CAN_NOT_BE_ABSTRACT(436, "Static flow cannot be abstract"),
-    VIEW_NODE_SOURCE_TYPE_MISMATCH(437, "Source type mismatch for view node"),
     INSTANCE_METHOD_MISSING_STATIC_TYPE(438, "Instance method lacks static type"),
     MODIFYING_SYNTHETIC_FLOW(439, "{} is a synthetic flow and cannot be modified"),
     METHOD_RESOLUTION_FAILED(440, "Unable to resolve method {} with arguments {}"),
@@ -155,21 +154,6 @@ public enum ErrorCode {
 
     // Compiler
     RAW_TYPES_NOT_SUPPORTED(1201, "Raw types are not supported"),
-
-    // VIEW
-    INVALID_READ_VIEW_FIELD_FLOW(1401, "Flow {} cannot be used as a read view field"),
-    INVALID_WRITE_VIEW_FIELD_FLOW(1402, "Flow {} cannot be used as a write view field"),
-    INVALID_GETTER_FLOW(1403, "Invalid read flow for field mapping"),
-    INVALID_SETTER_FLOW(1404, "Invalid write flow for field mapping"),
-    INVALID_OVERRIDDEN_MAPPING(1405, "Invalid overridden mapping"),
-    MUTABLE_TARGET_FIELD_FROM_READONLY_SOURCE(1406, "Source field is read-only, target view field must be read-only"),
-    FIELD_NOT_SEARCHABLE(1407, "Field '{}' cannot be searched"),
-    INVALID_ELEMENT_MAPPING(1408, "Invalid array element mapping"),
-    INVALID_SOURCE_MAPPING(1409, "Invalid source mapping"),
-    INCORRECT_ARRAY_MAPPING_ARGUMENTS(1410, "Invalid array mapping arguments"),
-    INCORRECT_MAPPING(1411, "Invalid mapping configuration"),
-    DEFAULT_VIEW_NOT_FOUND(1412, "Default view not found"),
-    FAIL_TO_SAVE_VIEW(1413, "Failed to save view: {}"),
 
     // API
     INVALID_REQUEST_METHOD(1501, "Invalid request method"),

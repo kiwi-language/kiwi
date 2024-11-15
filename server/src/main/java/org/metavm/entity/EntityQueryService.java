@@ -52,8 +52,7 @@ public class EntityQueryService {
                 entityQuery.pageSize(),
                 NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(entityDef, f, context)),
                 NncUtils.map(entityQuery.newlyCreated(), Id::parse),
-                NncUtils.map(entityQuery.excluded(), Id::parse),
-                null
+                NncUtils.map(entityQuery.excluded(), Id::parse)
         );
     }
 

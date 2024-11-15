@@ -4,7 +4,6 @@ import org.metavm.expression.*;
 import org.metavm.flow.*;
 import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
-import org.metavm.object.view.*;
 
 public abstract class ElementVisitor<R> {
 
@@ -284,30 +283,6 @@ public abstract class ElementVisitor<R> {
         return visitExpression(expressionPlaceholder);
     }
 
-    public R visitFlowFieldMapping(FlowFieldMapping flowFieldMapping) {
-        return visitFieldMapping(flowFieldMapping);
-    }
-
-    public R visitDirectFieldMapping(DirectFieldMapping directFieldMapping) {
-        return visitFieldMapping(directFieldMapping);
-    }
-
-    public R visitFieldMapping(FieldMapping fieldMapping) {
-        return visitElement(fieldMapping);
-    }
-
-    public R visitMapping(Mapping mapping) {
-        return visitElement(mapping);
-    }
-
-    public R visitObjectMapping(ObjectMapping mapping) {
-        return visitMapping(mapping);
-    }
-
-    public R visitDefaultObjectMapping(FieldsObjectMapping mapping) {
-        return visitObjectMapping(mapping);
-    }
-
     public R visitCopyNode(CopyNode copyNode) {
         return visitNode(copyNode);
     }
@@ -330,14 +305,6 @@ public abstract class ElementVisitor<R> {
 
     public R visitClearArrayNode(ClearArrayNode clearArrayNode) {
         return visitNode(clearArrayNode);
-    }
-
-    public R visitMapNode(MapNode mapNode) {
-        return visitNode(mapNode);
-    }
-
-    public R visitUnmapNode(UnmapNode unmapNode) {
-        return visitNode(unmapNode);
     }
 
     public R visitGotoNode(GotoNode gotoNode) {
@@ -366,10 +333,6 @@ public abstract class ElementVisitor<R> {
 
     public R visitLambdaNodeRef(LambdaRef lambdaRef) {
         return visitElement(lambdaRef);
-    }
-
-    public R visitObjectMappingRef(ObjectMappingRef objectMappingRef) {
-        return visitElement(objectMappingRef);
     }
 
     public R visitEnumConstantDef(EnumConstantDef enumConstantDef) {

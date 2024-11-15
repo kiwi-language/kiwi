@@ -1,10 +1,7 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.ContextFlag;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.type.rest.dto.TypeDefDTO;
-import org.metavm.object.view.MappingSaver;
-import org.metavm.util.Constants;
 
 public enum ResolutionStage {
 
@@ -41,29 +38,12 @@ public enum ResolutionStage {
     DEFINITION(4) {
         @Override
         TypeDef saveTypeDef(TypeDefDTO typeDefDTO, SaveTypeBatch batch) {
-            var typeDef = batch.getTypeDef(typeDefDTO.id());
-            if(!Constants.mappingDisabled) {
-                if (!batch.getContext().isFlagSet(ContextFlag.SKIP_SAVING_MAPPINGS)
-                        && typeDef instanceof Klass klass && klass.isClass() && !klass.isAnonymous())
-                    MappingSaver.create(batch.getContext()).saveBuiltinMapping(klass, false);
-            }
             return Types.saveTypeDef(typeDefDTO, DEFINITION, batch);
         }
 
     },
 
-    MAPPING_DEFINITION(5) {
-        @Override
-        TypeDef saveTypeDef(TypeDefDTO typeDefDTO, SaveTypeBatch batch) {
-            var typeDef = batch.getTypeDef(typeDefDTO.id());
-            if(!Constants.mappingDisabled) {
-                if (!batch.getContext().isFlagSet(ContextFlag.SKIP_SAVING_MAPPINGS)
-                        && typeDef instanceof Klass klass && klass.isClass() && !klass.isAnonymous())
-                    MappingSaver.create(batch.getContext()).saveBuiltinMapping(klass, true);
-            }
-            return typeDef;
-        }
-    };
+    ;
 
     private final int code;
 

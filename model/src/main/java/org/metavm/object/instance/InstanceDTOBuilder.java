@@ -4,7 +4,6 @@ import org.metavm.entity.SerializeContext;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
-import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
@@ -52,7 +51,6 @@ public class InstanceDTOBuilder {
                         instance.getType().toExpression(serContext),
                         instance.getType().getName(),
                         instance.getTitle(),
-                        Instances.getSourceMappingRefDTO(instance.getReference()),
                         new ListInstanceParam(
                                 array.isChildArray(),
                                 NncUtils.map(
@@ -76,7 +74,6 @@ public class InstanceDTOBuilder {
                         instance.getType().toExpression(serContext),
                         instance.getType().getName(),
                         instance.getTitle(),
-                        Instances.getSourceMappingRefDTO(instance.getReference()),
                         new ClassInstanceParam(
                                 NncUtils.map(
                                         instance.getKlass().getAllFields(),
@@ -105,7 +102,6 @@ public class InstanceDTOBuilder {
                         array.getType().toExpression(serContext),
                         array.getType().getName(),
                         array.getTitle(),
-                        Instances.getSourceMappingRefDTO(array.getReference()),
                         new ArrayInstanceParam(
                                 array.isChildArray(),
                                 NncUtils.map(

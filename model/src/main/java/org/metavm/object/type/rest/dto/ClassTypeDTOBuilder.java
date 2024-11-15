@@ -7,7 +7,6 @@ import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.type.ClassKind;
 import org.metavm.object.type.TypeTags;
-import org.metavm.object.view.rest.dto.ObjectMappingDTO;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -44,9 +43,7 @@ public class ClassTypeDTOBuilder {
     private String titleFieldId;
     private List<ConstraintDTO> constraints = new ArrayList<>();
     private List<FlowDTO> flows = new ArrayList<>();
-    private List<ObjectMappingDTO> mappings = new ArrayList<>();
     private List<EnumConstantDefDTO> enumConstantDefs = new ArrayList<>();
-    private String defaultMappingId;
     private int source = ClassSourceCodes.RUNTIME;
     private boolean isAbstract;
     private boolean isTemplate;
@@ -168,18 +165,8 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder mappings(List<ObjectMappingDTO> mappings) {
-        this.mappings = mappings != null ? new ArrayList<>(mappings) : null;
-        return this;
-    }
-
     public ClassTypeDTOBuilder enumConstantDefs(List<EnumConstantDefDTO> enumConstantDefs) {
         this.enumConstantDefs = enumConstantDefs != null ? new ArrayList<>(enumConstantDefs) : null;
-        return this;
-    }
-
-    public ClassTypeDTOBuilder defaultMappingId(String defaultMappingId) {
-        this.defaultMappingId = defaultMappingId;
         return this;
     }
 
@@ -232,10 +219,6 @@ public class ClassTypeDTOBuilder {
         return this;
     }
 
-    public ClassTypeDTOBuilder sourceMappingId(String sourceMappingId) {
-        return this;
-    }
-
     public ClassTypeDTOBuilder typeParameters(List<TypeVariableDTO> typeParameters) {
         this.typeParameters = new ArrayList<>(typeParameters);
         this.typeParameterIds = NncUtils.map(typeParameters, BaseDTO::id);
@@ -285,9 +268,7 @@ public class ClassTypeDTOBuilder {
                 titleFieldId,
                 constraints,
                 flows,
-                mappings,
                 enumConstantDefs,
-                defaultMappingId,
                 desc,
                 extra,
                 isAbstract,

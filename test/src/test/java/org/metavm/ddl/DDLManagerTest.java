@@ -10,7 +10,6 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.HybridValueHolder;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.flow.Function;
 import org.metavm.mocks.UpgradeBar;
 import org.metavm.mocks.UpgradeFoo;
 import org.metavm.mocks.UpgradeSingleton;
@@ -212,10 +211,6 @@ public class DDLManagerTest extends TestCase {
         Assert.assertSame(defContext.getInstanceContext().get(ec.getId()), ec);
 
         defContext.getIndexConstraint(Klass.UNIQUE_QUALIFIED_NAME);
-
-        var setSourceFunc = defContext.selectFirstByKey(Function.UNIQUE_NAME, StdFunction.setSource.getName());
-        Assert.assertNotNull(setSourceFunc);
-        Assert.assertEquals(2, setSourceFunc.getParameters().size());
 
         Assert.assertSame(
                 defContext.getKlass(Klass.class),

@@ -33,7 +33,6 @@ public class Reference extends Value {
 
     public static final int FLAG_FORWARDED = 1;
     public static final int FLAG_EAGER = 2;
-    public static final int FLAG_VIEW = 4;
 
     public static final Logger logger = LoggerFactory.getLogger(Reference.class);
 
@@ -173,14 +172,6 @@ public class Reference extends Value {
     @Override
     public Object toJson(IEntityContext context) {
         return getStringId();
-    }
-
-    public boolean isView() {
-        return (flags & FLAG_VIEW) != 0;
-    }
-
-    public void setView() {
-        this.flags |= FLAG_VIEW;
     }
 
     public boolean isRemoved() {

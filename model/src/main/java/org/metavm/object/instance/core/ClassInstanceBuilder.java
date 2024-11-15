@@ -16,7 +16,6 @@ public class ClassInstanceBuilder {
     private Id id;
     private long version;
     private long syncVersion;
-    private SourceRef sourceRef;
     private final ClassType type;
     private Map<Field, Value> data;
     private InstanceParentRef parentRef;
@@ -35,11 +34,6 @@ public class ClassInstanceBuilder {
 
     public ClassInstanceBuilder data(Map<Field, Value> data) {
         this.data = data;
-        return this;
-    }
-
-    public ClassInstanceBuilder sourceRef(SourceRef sourceRef) {
-        this.sourceRef = sourceRef;
         return this;
     }
 
@@ -81,7 +75,7 @@ public class ClassInstanceBuilder {
     public ClassInstance build() {
         //        if(tmpId != null)
 //            instance.setTmpId(tmpId);
-        return new ClassInstance(id, type, version, syncVersion, load, parentRef, data, sourceRef, ephemeral, initFieldTable);
+        return new ClassInstance(id, type, version, syncVersion, load, parentRef, data, ephemeral, initFieldTable);
     }
 
     public Reference buildAndGetReference() {

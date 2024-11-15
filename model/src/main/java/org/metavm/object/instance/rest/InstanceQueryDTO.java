@@ -7,7 +7,6 @@ import java.util.List;
 
 public record InstanceQueryDTO(
         String type,
-        @Nullable String sourceMappingId,
         String searchText,
         @Nullable String expression,
         List<InstanceQueryFieldDTO> fields,

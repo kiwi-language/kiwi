@@ -5,8 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.object.view.MappingProvider;
-import org.metavm.object.view.rest.dto.MappingKey;
 import org.metavm.util.EncodingUtils;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
@@ -65,14 +63,6 @@ public abstract class Id implements Comparable<Id> {
             case TAGGED_PHYSICAL -> new TaggedPhysicalId(input.readLong(), input.readLong(), input.readInt());
             case TYPED_PHYSICAL -> new TypedPhysicalId(isArray, input.readLong(), input.readLong(), TypeKey.read(input));
             case TMP -> new TmpId(input.readLong());
-            case DEFAULT_VIEW -> new DefaultViewId(isArray, MappingKey.read(input), readId(input));
-            case CHILD_VIEW -> new ChildViewId(isArray, MappingKey.read(input), readId(input), (ViewId) readId(input));
-            case FIELD_VIEW ->
-                    new FieldViewId(isArray, (ViewId) readId(input), ViewId.readMappingKey(input), readId(input),
-                            PathViewId.readSourceId(input), TypeKey.read(input));
-            case ELEMENT_VIEW ->
-                    new ElementViewId(isArray, (ViewId) readId(input), ViewId.readMappingKey(input), input.readInt(),
-                            PathViewId.readSourceId(input), TypeKey.read(input));
             case MOCK -> new MockId(input.readLong());
         };
     }
@@ -99,7 +89,7 @@ public abstract class Id implements Comparable<Id> {
         return isArray;
     }
 
-    public abstract int getTypeTag(MappingProvider mappingProvider, TypeDefProvider typeDefProvider);
+    public abstract int getTypeTag(TypeDefProvider typeDefProvider);
 
     @Override
     public int compareTo(@NotNull Id o) {

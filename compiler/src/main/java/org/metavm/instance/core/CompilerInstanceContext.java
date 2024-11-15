@@ -8,7 +8,6 @@ import org.metavm.object.instance.TreeSource;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.view.MappingProvider;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -22,7 +21,6 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
                                    IndexSource indexSource,
                                    IInstanceContext parent,
                                    TypeDefProvider typeDefProvider,
-                                   MappingProvider mappingProvider,
                                    RedirectStatusProvider redirectStatusProvider,
                                    boolean readonly) {
         super(appId,
@@ -30,7 +28,7 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
                 indexSource, idService,
                 parent,
                 typeDefProvider,
-                mappingProvider, redirectStatusProvider, readonly, 0);
+                redirectStatusProvider, readonly, 0);
     }
 
     @Override

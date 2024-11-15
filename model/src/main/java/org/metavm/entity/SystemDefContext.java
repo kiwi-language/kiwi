@@ -2,16 +2,15 @@ package org.metavm.entity;
 
 import org.metavm.api.ValueObject;
 import org.metavm.entity.natives.StandardStaticMethods;
+import org.metavm.flow.Code;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Function;
-import org.metavm.flow.Code;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.DefaultObjectInstanceMap;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
-import org.metavm.object.view.Mapping;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +46,6 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     private final Map<Id, Object> entityMap = new HashMap<>();
     private final Set<java.lang.reflect.Field> fieldBlacklist = new HashSet<>();
     private final Set<ClassType> typeDefTypes = new HashSet<>();
-    private final Set<ClassType> mappingTypes = new HashSet<>();
     private final Set<ClassType> functionTypes = new HashSet<>();
     private final StandardDefBuilder standardDefBuilder;
     private final ObjectInstanceMap defObjectInstanceMap = new DefaultObjectInstanceMap(this, this::addToContext);
@@ -598,28 +596,19 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     }
 
     @Override
-    public boolean isMappingType(ClassType type) {
-        return mappingTypes.contains(type);
-    }
-
-    @Override
     public boolean isFunctionType(ClassType type) {
         return functionTypes.contains(type);
     }
 
     private void recordHotTypes() {
         typeDefTypes.clear();
-        mappingTypes.clear();
         functionTypes.clear();
         var typeDefKlass = getKlass(TypeDef.class);
-        var mappingKlass = getKlass(Mapping.class);
         var functionKlass = getKlass(Function.class);
         typeDef2Def.keySet().forEach(typeDef -> {
             if (typeDef instanceof Klass klass) {
                 if (typeDefKlass.isAssignableFrom(klass))
                     typeDefTypes.add(klass.getType());
-                else if (mappingKlass.isAssignableFrom(klass))
-                    mappingTypes.add(klass.getType());
                 else if (functionKlass.isAssignableFrom(klass))
                     functionTypes.add(klass.getType());
             }

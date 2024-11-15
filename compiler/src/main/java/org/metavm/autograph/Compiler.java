@@ -164,14 +164,6 @@ public class Compiler {
                                 klass.updateParameterized();
                         }
                     });
-                    if (stage.stage == ResolutionStage.INIT) {
-                        psiClassTypes.forEach(t -> {
-                            var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS));
-                            // The builtin mapping will be regenerated on the server side based on the new metadata.
-                            // It must be cleared here because it may contain references to obsolete elements.
-                            klass.clearBuiltinMapping();
-                        });
-                    }
                 }
             }
             var generatedTypes = typeResolver.getGeneratedTypeDefs();
@@ -189,8 +181,7 @@ public class Compiler {
             new Stage(ResolutionStage.INIT, Compiler::noDependencies),
             new Stage(ResolutionStage.SIGNATURE, Compiler::noDependencies),
             new Stage(ResolutionStage.DECLARATION, Compiler::declarationDependencies),
-            new Stage(ResolutionStage.DEFINITION, Compiler::noDependencies),
-            new Stage(ResolutionStage.MAPPING_DEFINITION, Compiler::noDependencies)
+            new Stage(ResolutionStage.DEFINITION, Compiler::noDependencies)
     );
 
     private record Stage(ResolutionStage stage, Function<PsiClass, Set<PsiClass>> getDependencies) {

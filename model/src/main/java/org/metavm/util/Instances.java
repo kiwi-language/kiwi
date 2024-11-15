@@ -18,7 +18,6 @@ import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.PrimitiveFieldValue;
 import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.*;
-import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -527,14 +526,6 @@ public class Instances {
 
     public static List<Reference> merge(List<Reference> result1, List<Reference> result2, boolean desc, long limit) {
         return sortAndLimit(new ArrayList<>(NncUtils.mergeUnique(result1, result2)), desc, limit);
-    }
-
-    public static @Nullable ObjectMappingRefDTO getSourceMappingRefDTO(Value instance) {
-        if (instance instanceof Reference ref) {
-            var durableInstance = ref.resolve();
-            return durableInstance.isView() ? durableInstance.getSourceRef().getMappingRefDTO() : null;
-        } else
-            return null;
     }
 
     public static void reloadParent(Entity entity, Instance instance, ObjectInstanceMap instanceMap, DefContext defContext) {

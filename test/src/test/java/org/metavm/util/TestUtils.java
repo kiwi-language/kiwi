@@ -25,7 +25,6 @@ import org.metavm.flow.rest.ParameterDTO;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.cache.LocalCache;
-import org.metavm.object.instance.core.DefaultViewId;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.PhysicalId;
@@ -34,10 +33,8 @@ import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.FieldDTO;
-import org.metavm.object.type.rest.dto.GetTypeRequest;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.version.VersionManager;
-import org.metavm.object.view.rest.dto.ObjectMappingDTO;
 import org.metavm.task.*;
 import org.slf4j.Logger;
 
@@ -358,27 +355,6 @@ public class TestUtils {
         return NncUtils.findRequired(klassDTO.fields(), f -> name.equals(f.name()));
     }
 
-    public static KlassDTO getViewKlass(KlassDTO type, TypeManager typeManager) {
-        var defaultMapping = getDefaultMapping(type);
-        var targetKlassId = TypeExpressions.extractKlassId(defaultMapping.targetType());
-        return typeManager.getType(new GetTypeRequest(targetKlassId, false)).type();
-    }
-
-    public static ObjectMappingDTO getDefaultMapping(KlassDTO klassDTO) {
-        return NncUtils.findRequired(
-                klassDTO.mappings(),
-                m -> m.id().equals(klassDTO.defaultMappingId())
-        );
-    }
-
-    public static String getDefaultViewType(KlassDTO klassDTO) {
-        return getDefaultMapping(klassDTO).targetType();
-    }
-
-    public static String getDefaultViewKlassId(KlassDTO klassDTO) {
-        return TypeExpressions.extractKlassId(getDefaultViewType(klassDTO));
-    }
-
     public static String getMethodIdByCode(KlassDTO klassDTO, String methodCode) {
         return NncUtils.findRequired(klassDTO.flows(), f -> methodCode.equals(f.name())).id();
     }
@@ -473,10 +449,6 @@ public class TestUtils {
                 scheduler,
                 worker
         );
-    }
-
-    public static String getSourceId(String viewId) {
-        return ((DefaultViewId) Id.parse(viewId)).getSourceId().toString();
     }
 
     public static void waitForDDLState(CommitState commitState, SchedulerAndWorker schedulerAndWorker) {

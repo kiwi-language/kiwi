@@ -12,7 +12,6 @@ import org.metavm.object.type.ClassType;
 import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeDef;
-import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
 import org.metavm.util.ParameterizedStore;
@@ -113,7 +112,6 @@ public class MetaContextCache extends EntityContextFactoryAware {
                 case ClassType classType -> classType.resolve();
                 case FieldRef fieldRef -> fieldRef.resolve();
                 case CallableRef callableRef -> callableRef.resolve();
-                case ObjectMappingRef objectMappingRef -> objectMappingRef.resolve();
                 default -> {}
             }
         });

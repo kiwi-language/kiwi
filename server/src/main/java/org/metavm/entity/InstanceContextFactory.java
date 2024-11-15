@@ -6,7 +6,6 @@ import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.type.ActiveCommitProvider;
 import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.view.MappingProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -45,12 +44,11 @@ public class InstanceContextFactory {
 
     public InstanceContextBuilder newBuilder(long appId,
                                              TypeDefProvider typeDefProvider,
-                                             MappingProvider mappingProvider,
                                              RedirectStatusProvider redirectStatusProvider,
                                              ActiveCommitProvider activeCommitProvider) {
         return InstanceContextBuilder.newBuilder(appId, instanceStore,
                         new DefaultIdInitializer(idService),
-                        typeDefProvider, mappingProvider, redirectStatusProvider, activeCommitProvider)
+                        typeDefProvider, redirectStatusProvider, activeCommitProvider)
                 .executor(executor)
                 .eventQueue(eventQueue)
                 .cache(cache)

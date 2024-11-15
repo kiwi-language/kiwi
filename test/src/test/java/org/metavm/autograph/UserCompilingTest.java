@@ -9,7 +9,6 @@ import org.metavm.object.instance.rest.InstanceQueryDTO;
 import org.metavm.object.instance.rest.PrimitiveFieldValue;
 import org.metavm.object.type.PrimitiveKind;
 import org.metavm.object.type.TypeExpressions;
-import org.metavm.object.type.rest.dto.GetTypeRequest;
 import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.*;
@@ -107,12 +106,9 @@ public class UserCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(0, platformUserApplications.getListSize());
 
                 // test platform user view list
-                var platformUserMapping = TestUtils.getDefaultMapping(platformUserType);
-                var platformUserViewType = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(platformUserMapping.targetType()), false)).type();
-                var platformUserViewList = instanceManager.query(
+                var platformUserList = instanceManager.query(
                         new InstanceQueryDTO(
-                                TypeExpressions.getClassType(platformUserViewType.id()),
-                                platformUserMapping.id(),
+                                TypeExpressions.getClassType(platformUserType.id()),
                                 null,
                                 null,
                                 List.of(),
@@ -123,14 +119,13 @@ public class UserCompilingTest extends CompilerTestBase {
                                 List.of()
                         )
                 ).page().data();
-                Assert.assertEquals(1, platformUserViewList.size());
+                Assert.assertEquals(1, platformUserList.size());
                 // test platform user view update
-                var platformUserView = platformUserViewList.get(0);
-                TestUtils.doInTransactionWithoutResult(() -> instanceManager.update(platformUserView));
+                var platformUser1 = platformUserList.get(0);
                 // reload platform user view and check its roles field
-                var reloadedPlatformUserView = instanceManager.get(platformUserView.id(), 1).instance();
-                var userViewRolesFieldId = TestUtils.getFieldIdByName(platformUserViewType, "roles");
-                var reloadedPlatformUserRoles = ((InstanceFieldValue) reloadedPlatformUserView.getFieldValue(userViewRolesFieldId)).getInstance();
+                var platformUser2 = instanceManager.get(platformUser1.id(), 1).instance();
+                var userRolesFieldId2 = TestUtils.getFieldIdByName(userType, "roles");
+                var reloadedPlatformUserRoles = ((InstanceFieldValue) platformUser2.getFieldValue(userRolesFieldId2)).getInstance();
 //            Assert.assertEquals(1, reloadedPlatformUserRoles.getListSize());
 
                 // create an UserApplication by invoking the UserApplication.create method
@@ -183,7 +178,7 @@ public class UserCompilingTest extends CompilerTestBase {
                         platformUserType.qualifiedName(),
                         List.of("lyq2", "123456", "lyq2", List.of(role.getIdNotNull()))
                 ));
-                var platformUser2 = instanceManager.get(anotherPlatformUserId, 2).instance();
+                var platformUser3 = instanceManager.get(anotherPlatformUserId, 2).instance();
 
                 // send invitation
 //                var appInvitationRequestType = queryClassType("LabAppInvitationRequest");
@@ -192,7 +187,7 @@ public class UserCompilingTest extends CompilerTestBase {
                         List.of(
                                 Map.of(
                                         "application", application.getIdNotNull(),
-                                        "user", platformUser2.getIdNotNull(),
+                                        "user", platformUser3.getIdNotNull(),
                                         "isAdmin", true
                                 )
                         )
@@ -207,8 +202,7 @@ public class UserCompilingTest extends CompilerTestBase {
                         new InstanceQueryDTO(
                                 TypeExpressions.getClassType(messageType.id()),
                                 null,
-                                null,
-                                "receiver = $$" + platformUser2.id(),
+                                "receiver = $$" + platformUser3.id(),
                                 List.of(),
                                 1,
                                 20,
@@ -234,14 +228,14 @@ public class UserCompilingTest extends CompilerTestBase {
                         List.of(message.getFieldValue(messageTargetFieldId).toJson())
                 ));
                 // assert that the user has joined the application
-                var reloadedAnotherPlatformUser = instanceManager.get(platformUser2.id(), 1).instance();
+                var reloadedAnotherPlatformUser = instanceManager.get(platformUser3.id(), 1).instance();
                 var anotherJoinedApplications = ((InstanceFieldValue) reloadedAnotherPlatformUser.getFieldValue(platformUserApplicationsFieldId)).getInstance();
                 Assert.assertEquals(1, anotherJoinedApplications.getListSize());
                 //noinspection unchecked
                 loginResult = (Map<String, Object>) doInTransaction(() -> apiClient.callMethod(
                         platformUserType.qualifiedName(),
                         "enterApp",
-                        List.of(platformUser2.getIdNotNull(), application.getIdNotNull())
+                        List.of(platformUser3.getIdNotNull(), application.getIdNotNull())
                 ));
 //                token = (String) ((PrimitiveFieldValue) loginResult.getFieldValue(getFieldIdByCode(loginResultType, "token"))).getValue();
                 token = (String) loginResult.get("token");
@@ -250,16 +244,16 @@ public class UserCompilingTest extends CompilerTestBase {
                 // test leaving the application
                 doInTransaction(() -> apiClient.callMethod(
                         platformUserType.qualifiedName(), "leaveApp",
-                        List.of(List.of(platformUser2.getIdNotNull()), application.getIdNotNull())
+                        List.of(List.of(platformUser3.getIdNotNull()), application.getIdNotNull())
                 ));
                 // assert that the user has left the application
-                var reloadedAnotherPlatformUser2 = instanceManager.get(platformUser2.id(), 1).instance();
+                var reloadedAnotherPlatformUser2 = instanceManager.get(platformUser3.id(), 1).instance();
                 var anotherJoinedApplications2 = ((InstanceFieldValue) reloadedAnotherPlatformUser2.getFieldValue(platformUserApplicationsFieldId)).getInstance();
                 Assert.assertEquals(0, anotherJoinedApplications2.getListSize());
                 try {
                     doInTransaction(() -> apiClient.callMethod(
                             platformUserType.qualifiedName(), "enterApp",
-                            List.of(platformUser2.getIdNotNull(), application.getIdNotNull())
+                            List.of(platformUser3.getIdNotNull(), application.getIdNotNull())
                     ));
                     Assert.fail("Users that are not member of the application should not be able to enter it");
                 } catch (Exception e) {
@@ -268,12 +262,9 @@ public class UserCompilingTest extends CompilerTestBase {
 
                 // test application view list
                 waitForAllTasksDone();
-                var applicationMapping = TestUtils.getDefaultMapping(userApplicationType);
-                var applicationViewType = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(applicationMapping.targetType()), false)).type();
-                var applicationViewList = instanceManager.query(
+                var applicationList = instanceManager.query(
                         new InstanceQueryDTO(
-                                TypeExpressions.getClassType(applicationViewType.id()),
-                                applicationMapping.id(),
+                                TypeExpressions.getClassType(userApplicationType.id()),
                                 null,
                                 null,
                                 List.of(),
@@ -284,11 +275,11 @@ public class UserCompilingTest extends CompilerTestBase {
                                 List.of()
                         )
                 ).page().data();
-                Assert.assertEquals(1, applicationViewList.size());
+                Assert.assertEquals(1, applicationList.size());
 
                 // test update application view
-                var applicationView = applicationViewList.get(0);
-                TestUtils.doInTransactionWithoutResult(() -> instanceManager.update(applicationView));
+                var application1 = applicationList.get(0);
+                TestUtils.doInTransactionWithoutResult(() -> instanceManager.update(application1));
 
                 // assert that fields of LabToken type has been generated correctly
                 var tokenType = queryClassType("org.metavm.user.LabToken");

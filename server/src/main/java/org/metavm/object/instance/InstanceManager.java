@@ -1,6 +1,5 @@
 package org.metavm.object.instance;
 
-import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
@@ -99,26 +98,6 @@ public class InstanceManager extends EntityContextFactoryAware {
     }
 
     @Transactional(readOnly = true)
-    public GetInstanceResponse getDefaultView(String id) {
-        try (var context = newContext()) {
-            var instanceId = Id.parse(id);
-            var instance = context.getInstanceContext().get(instanceId);
-            if (instance instanceof ClassInstance classInstance) {
-                if (instanceId instanceof PhysicalId/* && !classInstance.getType().isStruct()*/) {
-                    var defaultMapping = classInstance.getType().resolve().getDefaultMapping();
-                    if (defaultMapping != null) {
-                        var viewId = new DefaultViewId(false, defaultMapping.toKey(), instanceId);
-                        var view = context.getInstanceContext().get(viewId);
-                        return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(view.getReference(), 1));
-                    }
-                }
-                return new GetInstanceResponse(InstanceDTOBuilder.buildDTO(instance.getReference(), 1));
-            } else
-                throw new BusinessException(ErrorCode.NOT_A_CLASS_INSTANCE, id);
-        }
-    }
-
-    @Transactional(readOnly = true)
     public GetInstancesResponse batchGet(List<String> ids, int depth) {
         try (var context = newContext()) {
             return batchGet(ids, depth, context.getInstanceContext());
@@ -166,9 +145,6 @@ public class InstanceManager extends EntityContextFactoryAware {
         try (var context = newContext()) {
             var instance = create(instanceDTO, context.getInstanceContext());
             context.finish();
-            if (instance.tryGetSource() != null) {
-                logger.info("source id: {}", instance.getSource().tryGetId());
-            }
             return Objects.requireNonNull(instance.tryGetId()).toString();
         }
     }
@@ -245,7 +221,6 @@ public class InstanceManager extends EntityContextFactoryAware {
     public QueryInstancesResponse query(InstanceQueryDTO query) {
         try (var entityContext = newContext()) {
             var context = entityContext.getInstanceContext();
-            var mappingProvider = context.getMappingProvider();
             Type type = TypeParser.parseType(query.type(), context.getTypeDefProvider());
             if (type instanceof ClassType classType) {
                 var internalQuery = InstanceQueryBuilder.newBuilder(classType.resolve())
@@ -253,7 +228,6 @@ public class InstanceManager extends EntityContextFactoryAware {
                         .newlyCreated(NncUtils.map(query.createdIds(), Id::parse))
                         .fields(NncUtils.map(query.fields(), f -> InstanceQueryField.create(f, entityContext)))
                         .expression(query.expression())
-                        .sourceMapping(NncUtils.get(query.sourceMappingId(), id -> mappingProvider.getMapping(Id.parse(id))))
                         .page(query.page())
                         .pageSize(query.pageSize())
                         .build();

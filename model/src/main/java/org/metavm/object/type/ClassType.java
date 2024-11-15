@@ -189,18 +189,6 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
     }
 
     @Override
-    public boolean isViewType(Type type) {
-        if(StdKlass.list.isInitialized() && type instanceof ClassType that) {
-            var listType = resolve().findAncestorByTemplate(StdKlass.list.get());
-            var thatListType = that.resolve().findAncestorByTemplate(StdKlass.list.get());
-            if(listType != null && thatListType != null
-                    && listType.getFirstTypeArgument().isViewType(thatListType.getFirstTypeArgument()))
-                return true;
-        }
-        return resolve().isViewType(type);
-    }
-
-    @Override
     public String getName() {
         if (typeArguments == null)
             return klass.getQualifiedName();

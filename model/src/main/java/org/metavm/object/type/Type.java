@@ -24,10 +24,6 @@ import java.util.function.Function;
 @EntityType
 public abstract class Type extends ValueElement implements TypeOrTypeKey {
 
-    public boolean isViewType(Type type) {
-        return this.equals(type);
-    }
-
     public abstract String getName();
 
     public String getTypeDesc() {

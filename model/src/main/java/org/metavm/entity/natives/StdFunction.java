@@ -28,31 +28,6 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public enum StdFunction implements ValueHolderOwner<Function> {
 
-    isSourcePresent(
-            "boolean isSourcePresent(any view)", true, List.of(),
-            (func, args, callContext) -> {
-                if (args.get(0) instanceof Reference durableInstance)
-                    return FlowExecResult.of(Instances.booleanInstance(durableInstance.resolve().tryGetSource() != null));
-                else
-                    throw new InternalException("Can not get source of a non-durable instance: " + args.get(0));
-            }),
-    getSource(
-            "any getSource(any view)", true, List.of(),
-            (func, args, callContext) -> {
-                if (args.get(0) instanceof Reference durableInstance)
-                    return FlowExecResult.of(durableInstance.resolve().getSource());
-                else
-                    throw new InternalException("Can not get source of a non-durable instance: " + args.get(0));
-            }),
-    setSource(
-            "void setSource(any view, any source)", true, List.of(),
-            (func, args, callContext) -> {
-                if (args.get(0) instanceof Reference ref) {
-                    ref.resolve().setSourceRef(new SourceRef((Reference) args.get(1), null));
-                    return FlowExecResult.of(null);
-                } else
-                    throw new InternalException("Can not set source for a non-durable instance: " + args.get(0));
-            }),
     functionToInstance(
             "T functionToInstance<T>(any function)", true, List.of(),
             (func, args, callContext) -> {

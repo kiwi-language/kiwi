@@ -7,8 +7,6 @@ public record InternalMetaPatch(
         long version,
         List<String> changedTypeDefIds,
         List<String> removedTypeDefIds,
-        List<String> changedMappingIds,
-        List<String> removedMappingIds,
         List<String> changedFunctionIds,
         List<String> removedFunctionIds
 ) {

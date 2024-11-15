@@ -3,7 +3,6 @@ package org.metavm.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.type.*;
-import org.metavm.object.view.ObjectMapping;
 import org.metavm.util.Instances;
 
 import javax.annotation.Nullable;
@@ -123,14 +122,6 @@ public class Nodes {
         Nodes.store(i, code);
         goto_(entry, code);
         ifNode.setTarget(noop(code));
-    }
-
-    public static MapNode map(Code code, ObjectMapping mapping) {
-        return new MapNode(code.nextNodeName("map"), code.getLastNode(), code, mapping.getRef());
-    }
-
-    public static UnmapNode unmap(Code code, ObjectMapping mapping) {
-        return new UnmapNode(code.nextNodeName("unmap"), code.getLastNode(), code, mapping.getRef());
     }
 
     public static CastNode castNode(Type type, Code code) {

@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
@@ -140,15 +140,6 @@ public class ArrayType extends CompositeType {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitArrayType(this);
-    }
-
-    @Override
-    public boolean isViewType(Type type) {
-        if (super.isViewType(type))
-            return true;
-        if(type instanceof ArrayType arrayType)
-            return elementType.isViewType(arrayType.getElementType());
-        return false;
     }
 
     @Override

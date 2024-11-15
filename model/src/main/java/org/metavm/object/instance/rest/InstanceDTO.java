@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import org.metavm.object.instance.InstanceParamTypeIdResolver;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
-import org.metavm.object.view.rest.dto.ObjectMappingRefDTO;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -21,7 +20,6 @@ public record InstanceDTO(
         String type,
         String typeName,
         String title,
-        @Nullable ObjectMappingRefDTO sourceMappingRef,
         @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
         @JsonTypeIdResolver(InstanceParamTypeIdResolver.class)
         InstanceParam param
@@ -32,16 +30,11 @@ public record InstanceDTO(
     }
 
     public static InstanceDTO createClassInstance(@Nullable String id, String type, List<InstanceFieldDTO> fields) {
-        return createClassInstance(id, type, null, fields);
-    }
-
-    public static InstanceDTO createClassInstance(@Nullable String id, String type, ObjectMappingRefDTO sourceMappingRef, List<InstanceFieldDTO> fields) {
         return new InstanceDTO(
                 id,
                 type,
                 null,
                 null,
-                sourceMappingRef,
                 new ClassInstanceParam(fields)
         );
     }
@@ -52,7 +45,7 @@ public record InstanceDTO(
 
     public static InstanceDTO createArrayInstance(@Nullable String id, String type, boolean elementAsChild, List<FieldValue> elements) {
         return new InstanceDTO(
-                id, type, null, null, null,
+                id, type, null, null,
                 new ArrayInstanceParam(elementAsChild, elements)
         );
     }
@@ -63,14 +56,14 @@ public record InstanceDTO(
 
     public static InstanceDTO createListInstance(@Nullable String id, String type, boolean elementAsChild, List<FieldValue> elements) {
         return new InstanceDTO(
-                id, type, null, null, null,
+                id, type, null, null,
                 new ListInstanceParam(elementAsChild, elements)
         );
     }
 
 
     public InstanceDTO copyWithParam(InstanceParam param) {
-        return new InstanceDTO(id, type, typeName, title, sourceMappingRef, param);
+        return new InstanceDTO(id, type, typeName, title, param);
     }
 
     @Override

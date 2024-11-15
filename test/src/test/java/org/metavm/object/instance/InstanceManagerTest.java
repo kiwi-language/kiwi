@@ -14,11 +14,9 @@ import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.mocks.*;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.ClassInstanceBuilder;
-import org.metavm.object.instance.core.DefaultViewId;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
-import org.metavm.object.view.rest.dto.DirectMappingKey;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -329,10 +327,8 @@ public class InstanceManagerTest extends TestCase {
                 null,
                 List.of()
         )));
-        var mappingId = new DirectMappingKey(Id.parse(TestUtils.getDefaultMapping(parentType).id()));
-        var viewId = new DefaultViewId(false, mappingId, Id.parse(parent.id()));
 //        var parentMapping = instanceManager.get(viewId.toString(), 2);
-        TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(viewId.toString()));
+        TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(parent.id()));
     }
 
     public void testRelocation() {

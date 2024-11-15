@@ -7,7 +7,6 @@ import org.metavm.flow.LambdaRef;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.ConstantPoolDTO;
-import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.NncUtils;
 
 import java.util.HashMap;
@@ -45,7 +44,6 @@ public class ConstantPool extends Entity implements LoadAware {
             case LambdaRef lambdaRef -> new LambdaCpEntry(i, lambdaRef);
             case Type type -> new TypeCpEntry(i, type);
             case IndexRef indexRef -> new IndexCpEntry(i, indexRef);
-            case ObjectMappingRef mappingRef -> new MappingCpEntry(i, mappingRef);
             default -> throw new IllegalStateException("Unexpected value: " + value);
         };
         addEntry(entry);

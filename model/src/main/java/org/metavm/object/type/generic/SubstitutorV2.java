@@ -6,9 +6,6 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.GenericElementDTO;
-import org.metavm.object.view.FieldsObjectMapping;
-import org.metavm.object.view.ObjectMapping;
-import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
@@ -148,18 +145,6 @@ public class SubstitutorV2 extends CopyVisitor {
                     p -> p.getSelfOrCopySource() == parameter.getSelfOrCopySource());
     }
 
-    private ObjectMapping substituteObjectMapping(ObjectMapping objectMapping) {
-        var sourceClass = (Klass) substituteClass(objectMapping.getSourceKlass());
-        if (sourceClass == objectMapping.getSourceKlass())
-            return objectMapping;
-        else {
-            return NncUtils.findRequired(
-                    sourceClass.getMappings(),
-                    m -> m.getSelfOrCopySource() == objectMapping.getSelfOrCopySource()
-            );
-        }
-    }
-
     @Override
     protected Object substituteReference(Object reference) {
         return switch (reference) {
@@ -167,7 +152,6 @@ public class SubstitutorV2 extends CopyVisitor {
             case Field field -> substituteField(field);
             case Flow flow -> substituteFlow(flow);
             case Parameter parameter -> substituteParameter(parameter);
-            case ObjectMapping objectMapping -> substituteObjectMapping(objectMapping);
             case null, default -> super.substituteReference(reference);
         };
     }
@@ -304,15 +288,6 @@ public class SubstitutorV2 extends CopyVisitor {
     }
 
     @Override
-    public Element visitObjectMappingRef(ObjectMappingRef objectMappingRef) {
-        var rawMapping = objectMappingRef.getRawMapping();
-        if (rawMapping.getSourceKlass() == root)
-            return new ObjectMappingRef((ClassType) objectMappingRef.getDeclaringType().accept(this), rawMapping);
-        else
-            return super.visitObjectMappingRef(objectMappingRef);
-    }
-
-    @Override
     public Element visitParameterRef(ParameterRef parameterRef) {
         var rawParam = parameterRef.getRawParameter();
         if (rawParam.getCallable() == root || rawParam.getCallable() instanceof Method m && m.getDeclaringType() == root)
@@ -389,10 +364,6 @@ public class SubstitutorV2 extends CopyVisitor {
                 copy.setMethods(NncUtils.map(klass.getMethods(), method -> (Method) copy0(method)));
                 if (klass.getTitleField() != null)
                     copy.setTitleField((Field) getValue(klass.getTitleField(), v -> {
-                    }));
-                copy.setMappings(NncUtils.map(klass.getMappings(), m -> (ObjectMapping) copy0(m)));
-                if (klass.getDefaultMapping() != null)
-                    copy.setDefaultMapping((FieldsObjectMapping) getValue(klass.getDefaultMapping(), v -> {
                     }));
             }
             if (stage.isAfterOrAt(DEFINITION) && curStage.isBefore(DEFINITION)) {

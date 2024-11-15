@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
-import org.metavm.object.view.Mapping;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -30,7 +29,6 @@ public class InstanceQueryBuilder {
     @NotNull
     private List<Id> createdIds = List.of();
     private List<Id> excludedIds = List.of();
-    private Mapping sourceMapping;
 
     private InstanceQueryBuilder(Klass klass) {
         this.klass = klass;
@@ -90,11 +88,6 @@ public class InstanceQueryBuilder {
         return this;
     }
 
-    public InstanceQueryBuilder sourceMapping(Mapping sourceMapping) {
-        this.sourceMapping = sourceMapping;
-        return this;
-    }
-
     public InstanceQuery build() {
         return new InstanceQuery(
                 klass,
@@ -107,8 +100,7 @@ public class InstanceQueryBuilder {
                 pageSize,
                 fields,
                 createdIds,
-                excludedIds,
-                sourceMapping
+                excludedIds
         );
     }
 

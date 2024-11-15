@@ -13,8 +13,6 @@ public class Versions {
 
     public static Version create(Set<String> changedTypeIds,
                                  Set<String> removedTypeIds,
-                                 Set<String> changedMappingIds,
-                                 Set<String> removedMappingIds,
                                  Set<String> changedFunctionIds,
                                  Set<String> removedFunctionIds,
                                  VersionRepository versionRepository) {
@@ -25,8 +23,6 @@ public class Versions {
         var version = new Version(nextVersion,
                 changedTypeIds,
                 removedTypeIds,
-                changedMappingIds,
-                removedMappingIds,
                 changedFunctionIds,
                 removedFunctionIds
         );

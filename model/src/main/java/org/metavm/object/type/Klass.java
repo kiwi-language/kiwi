@@ -17,8 +17,6 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.KlassDTO;
-import org.metavm.object.view.MappingSaver;
-import org.metavm.object.view.ObjectMapping;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,12 +93,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @ChildEntity(since = 1)
     @Nullable
     private KlassFlags flags;
-
-    @ChildEntity
-    private final ChildArray<ObjectMapping> mappings = addChild(new ChildArray<>(ObjectMapping.class), "mappings");
-
-    @Nullable
-    private ObjectMapping defaultMapping;
 
     @CopyIgnore
     private @Nullable Klass copySource;
@@ -347,28 +339,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         for (Klass subType : implementations) {
             subType.visitDescendantTypes(action);
         }
-    }
-
-    public List<ObjectMapping> getMappings() {
-        return mappings.toList();
-    }
-
-    public ObjectMapping getMapping(Predicate<ObjectMapping> predicate) {
-        return Objects.requireNonNull(findMapping(predicate),
-                () -> "Can not find mapping with predicate in klass " + getTypeDesc());
-    }
-
-    public @Nullable ObjectMapping findMapping(Predicate<ObjectMapping> predicate) {
-        var found = NncUtils.find(mappings, predicate);
-        if (found != null)
-            return found;
-        if (superType != null && (found = superType.resolve().findMapping(predicate)) != null)
-            return found;
-        return null;
-    }
-
-    public @Nullable ObjectMapping getBuiltinMapping() {
-        return NncUtils.find(mappings, ObjectMapping::isBuiltin);
     }
 
     private void resetRank() {
@@ -775,12 +745,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @JsonIgnore
     public boolean isReference() {
         return isEnum() || isClass() || isInterface();
-    }
-
-    public void addMapping(ObjectMapping mapping) {
-        this.mappings.addChild(mapping);
-        if (defaultMapping == null)
-            defaultMapping = mapping;
     }
 
     public Field getField(Id id) {
@@ -1208,9 +1172,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 NncUtils.get(titleField, serializeContext::getStringId),
                 NncUtils.map(constraints, Constraint::toDTO),
                 NncUtils.map(methods, f -> f.toDTO(serializeContext.shouldWriteCode(this), serializeContext)),
-                NncUtils.map(mappings, m -> m.toDTO(serializeContext)),
                 NncUtils.map(enumConstantDefs, ec -> ec.toDTO(serializeContext)),
-                NncUtils.get(defaultMapping, serializeContext::getStringId),
                 desc,
                 getExtra(),
                 isAbstract,
@@ -1547,25 +1509,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             setTypeArguments(NncUtils.map(typeParameters, TypeVariable::getType));
     }
 
-    public ObjectMapping getMappingInAncestors(Id id) {
-        var mapping = findMapping(id);
-        if (mapping != null)
-            return mapping;
-        if (superType != null) {
-            if ((mapping = superType.resolve().getMappingInAncestors(id)) != null)
-                return mapping;
-        }
-        for (var it : interfaces) {
-            if ((mapping = it.resolve().getMappingInAncestors(id)) != null)
-                return mapping;
-        }
-        throw new InternalException("Can not find mapping in the ancestors of type: " + getName());
-    }
-
-    public @Nullable ObjectMapping findMapping(Id id) {
-        return mappings.get(Entity::getId, id);
-    }
-
     public void setFields(List<Field> fields) {
         requireTrue(allMatch(fields, f -> f.getDeclaringType() == this));
         this.fields.resetChildren(fields);
@@ -1669,55 +1612,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
                 }
             }
         }
-        saveMapping(context);
     }
 
     @Override
     public boolean isChangeAware() {
         return !anonymous;
-    }
-
-    public void saveMapping(IEntityContext context) {
-        if(Constants.mappingDisabled)
-            return;
-        if (!(context instanceof SystemDefContext)) {
-            if(shouldGenerateBuiltinMapping() && !context.isFlagSet(ContextFlag.SKIP_SAVING_MAPPINGS))
-                MappingSaver.create(context).saveBuiltinMapping(this, true);
-            else {
-                clearMapping();
-            }
-        }
-    }
-
-    private void clearMapping() {
-        defaultMapping = null;
-        mappings.clear();
-        methods.removeIf(Klass::isMappingMethod);
-    }
-
-    public static final String[] MAPPING_METHOD_PREFIXES = new String[] {
-            "getView", "saveView", "map", "unmap", "fromView"
-    };
-
-    private static boolean isMappingMethod(Method method) {
-        if(method.isSynthetic()) {
-            var methodName = method.getName();
-            for (String prefix : MAPPING_METHOD_PREFIXES) {
-                if(methodName.startsWith(prefix))
-                    return true;
-            }
-            return false;
-        }
-        else
-            return false;
-    }
-
-    public boolean shouldGenerateBuiltinMapping() {
-        return (isClass() || isValue()) && !anonymous;
-    }
-
-    public void setDefaultMapping(@Nullable ObjectMapping mapping) {
-        this.defaultMapping = mapping;
     }
 
     @Nullable
@@ -1729,26 +1628,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return null;
     }
 
-    public void setMappings(List<ObjectMapping> mappings) {
-        this.mappings.resetChildren(mappings);
-    }
-
-    public @Nullable ObjectMapping getDefaultMapping() {
-        return defaultMapping;
-    }
-
     public List<Field> getStaticFields() {
         return staticFields.toList();
-    }
-
-    public void removeMapping(ObjectMapping mapping) {
-        mappings.remove(mapping);
-    }
-
-    public boolean isViewType(Type type) {
-        if (isType(type))
-            return true;
-        return NncUtils.anyMatch(mappings, m -> m.getTargetType().equals(type));
     }
 
     @Override
@@ -1836,12 +1717,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void setNativeClass(Class<? extends NativeBase> nativeClass) {
         this.nativeClass = nativeClass;
-    }
-
-    public void clearBuiltinMapping() {
-        mappings.removeIf(ObjectMapping::isBuiltin);
-        if(defaultMapping != null && defaultMapping.isBuiltin())
-            defaultMapping = null;
     }
 
     public List<EnumConstantDef> getEnumConstantDefs() {

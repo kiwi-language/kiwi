@@ -4,14 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.common.rest.dto.ErrorDTO;
 import org.metavm.flow.rest.FlowDTO;
 import org.metavm.flow.rest.GenericDeclarationDTO;
-import org.metavm.object.view.rest.dto.ObjectMappingDTO;
 import org.metavm.util.Constants;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public record KlassDTO(
         String id,
@@ -29,9 +27,7 @@ public record KlassDTO(
         @Nullable String titleFieldId,
         List<ConstraintDTO> constraints,
         List<FlowDTO> flows,
-        List<ObjectMappingDTO> mappings,
         List<EnumConstantDefDTO> enumConstantDefs,
-        @Nullable String defaultMappingId,
         String desc,
         Object extra,
         boolean isAbstract,

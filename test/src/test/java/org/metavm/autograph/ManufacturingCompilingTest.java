@@ -2,13 +2,9 @@ package org.metavm.autograph;
 
 import org.junit.Assert;
 import org.metavm.object.instance.ApiService;
-import org.metavm.object.instance.core.DefaultViewId;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.TypeExpressions;
-import org.metavm.object.type.rest.dto.GetTypeRequest;
 import org.metavm.object.type.rest.dto.KlassDTO;
-import org.metavm.object.view.rest.dto.DirectMappingKey;
 import org.metavm.util.*;
 
 import java.util.Arrays;
@@ -105,38 +101,18 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(qualified.id(), ((ReferenceFieldValue) feedQualityInspectionStatesList.get(0)).getId());
 
 
-                // get default mapping of material type
-                var materialDefaultMapping = TestUtils.getDefaultMapping(materialType);
-                // get material view
-                var materialViewType = typeManager.getType(new GetTypeRequest(TypeExpressions.extractKlassId(materialDefaultMapping.targetType()), false)).type();
                 // load material view object
-                var materialView = instanceManager.get(
-                        new DefaultViewId(false, new DirectMappingKey(Id.parse(materialDefaultMapping.id())), Id.parse(materialId)).toString(),
-                        1
-                ).instance();
+                var loadedMaterial = instanceManager.get(materialId, 1).instance();
                 // save material view
-                doInTransactionWithoutResult(() -> instanceManager.update(materialView));
+                doInTransactionWithoutResult(() -> instanceManager.update(loadedMaterial));
                 // reload the material view object
-                var reloadedMaterialView = instanceManager.get(materialView.id(), 1).instance();
+                var reloadedMaterialView = instanceManager.get(loadedMaterial.id(), 1).instance();
                 // check the feedQualityInspectionStates field and assert that it didn't change
-                var reloadedFeedQualityInspectionStates = reloadedMaterialView.getFieldValue(TestUtils.getFieldIdByName(materialViewType, "feedQualityInspectionStates"));
+                var reloadedFeedQualityInspectionStates = reloadedMaterialView.getFieldValue(TestUtils.getFieldIdByName(materialType, "feedQualityInspectionStates"));
                 Assert.assertTrue(reloadedFeedQualityInspectionStates instanceof InstanceFieldValue);
                 var reloadedFeedQualityInspectionStatesList = ((InstanceFieldValue) reloadedFeedQualityInspectionStates).getInstance().getElements();
                 Assert.assertEquals(1, reloadedFeedQualityInspectionStatesList.size());
                 Assert.assertEquals(qualified.id(), ((ReferenceFieldValue) reloadedFeedQualityInspectionStatesList.get(0)).getId());
-
-
-                // get InventoryAttributes type
-                var inventoryAttributesType = getClassTypeByCode("org.metavm.manufacturing.material.InventoryAttributes");
-                // get default mapping
-                var defaultMapping = TestUtils.getDefaultMapping(inventoryAttributesType);
-                Assert.assertNotNull(defaultMapping);
-                // get target type of default mapping
-                var targetTypeId = TypeExpressions.extractKlassId(defaultMapping.targetType());
-                var inventoryAttrViewType = typeManager.getType(new GetTypeRequest(targetTypeId, false)).type();
-                // assert that the view type and the source type have the same number of fields
-                Assert.assertEquals(inventoryAttributesType.fields().size(),
-                        inventoryAttrViewType.fields().size());
 
                 // get Utils type
                 var utilsType = getClassTypeByCode("org.metavm.manufacturing.utils.Utils");
@@ -259,7 +235,6 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         var queryResp = instanceManager.query(
                 new InstanceQueryDTO(
                         TypeExpressions.getClassType(inventoryType.id()),
-                        null,
                         null,
                         String.format("material = $$%s and position = $$%s and qualityInspectionState = $$%s and bizState = $$%s",
                                 material.id(), position.id(), qualifiedInspectionState.id(), initialBizState.id()),
@@ -477,7 +452,6 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
 
     private RoutingObjects processRouting(InstanceDTO material, InstanceDTO unit) {
         var routingKlass = getClassTypeByCode("org.metavm.manufacturing.production.Routing");
-        var routingViewKlass = TestUtils.getViewKlass(routingKlass, typeManager);
         var qcWorkCenter = "org.metavm.manufacturing.production.WorkCenter";
         var workCenterId = doInTransaction(() -> apiClient.newInstance(qcWorkCenter, List.of()));
         var qcProcess = "org.metavm.manufacturing.production.Process";
@@ -533,15 +507,6 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                         "successions", List.of()
                 )
         ));
-        // assert that the update is successful
-        var reloadedRoutingView2 = instanceManager.getDefaultView(routing.id()).instance();
-        var itemListView2 = (InstanceFieldValue) reloadedRoutingView2.getFieldValue(TestUtils.getFieldIdByName(routingViewKlass, "processes"));
-        var itemView2 = ((InstanceFieldValue) TestUtils.getListElement(itemListView2, 0)).getInstance();
-        var itemView3 = ((InstanceFieldValue) TestUtils.getListElement(itemListView2, 1)).getInstance();
-        Assert.assertEquals(2, ((ListInstanceParam) itemListView2.getInstance().param()).elements().size());
-        Assert.assertEquals("process1", itemView2.getPrimitiveValue("processCode"));
-        Assert.assertEquals("process2", itemView3.getPrimitiveValue("processCode"));
-
         return new RoutingObjects(routing, routingProcess);
     }
 

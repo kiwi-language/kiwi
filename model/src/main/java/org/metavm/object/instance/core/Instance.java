@@ -11,7 +11,6 @@ import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
-import org.metavm.object.view.rest.dto.MappingKey;
 import org.metavm.system.RegionConstants;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -32,7 +31,6 @@ public abstract class Instance implements Message {
 
     private Type type;
     private transient boolean marked;
-    private transient boolean viewSaved;
     private transient final boolean _new;
     private transient boolean loaded;
     private transient boolean loadedFromCache;
@@ -73,8 +71,6 @@ public abstract class Instance implements Message {
     private transient NativeBase nativeObject;
 
     private final @Nullable Consumer<Instance> load;
-
-    private transient @Nullable SourceRef sourceRef;
 
     private int seq;
 
@@ -123,33 +119,6 @@ public abstract class Instance implements Message {
 
     public boolean shouldSkipWrite() {
         return isInitialized() && isEphemeral();
-    }
-
-    public @Nullable Reference tryGetSource() {
-        return NncUtils.get(sourceRef, SourceRef::source);
-    }
-
-    public @NotNull Reference getSource() {
-        return Objects.requireNonNull(tryGetSource());
-    }
-
-    public void setSourceRef(@Nullable SourceRef sourceRef) {
-        this.sourceRef = sourceRef;
-    }
-
-    public SourceRef getSourceRef() {
-        return Objects.requireNonNull(sourceRef, () -> "SourceRef is not present for instance " + this);
-    }
-
-    public boolean isView() {
-        return sourceRef != null;
-    }
-
-    public MappingKey getMappingKey() {
-        if (tryGetId() instanceof ViewId viewId) {
-            return viewId.getMappingKey();
-        } else
-            throw new InternalException("Not a view instance");
     }
 
     public @Nullable Id tryGetId() {
@@ -578,14 +547,6 @@ public abstract class Instance implements Message {
         this.marked = marked;
     }
 
-    boolean isViewSaved() {
-        return viewSaved;
-    }
-
-    void setViewSaved() {
-        this.viewSaved = true;
-    }
-
     public boolean setChangeNotified() {
         if (changeNotified)
             return false;
@@ -811,7 +772,6 @@ public abstract class Instance implements Message {
                     getType().toExpression(serContext),
                     getType().getName(),
                     getTitle(),
-                    Instances.getSourceMappingRefDTO(this.getReference()),
                     param
             );
         }

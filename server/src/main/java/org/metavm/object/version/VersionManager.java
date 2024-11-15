@@ -1,12 +1,12 @@
 package org.metavm.object.version;
 
-import org.springframework.stereotype.Component;
 import org.metavm.common.MetaPatch;
 import org.metavm.entity.*;
 import org.metavm.flow.Function;
 import org.metavm.object.type.TypeDef;
 import org.metavm.object.type.rest.dto.LoadAllMetadataResponse;
 import org.metavm.util.NncUtils;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,24 +26,19 @@ public class VersionManager extends EntityContextFactoryAware {
         );
         if (versions.isEmpty()) {
             return new InternalMetaPatch(baseVersion, baseVersion,
-                    List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                    List.of(), List.of(), List.of(), List.of());
         }
         var typeIds = NncUtils.flatMapUnique(versions, Version::getChangedTypeIds);
         var removedTypeIds = NncUtils.flatMapUnique(versions, Version::getRemovedTypeIds);
-        var mappingIds = NncUtils.flatMapUnique(versions, Version::getChangedMappingIds);
-        var removedMappingIds = NncUtils.flatMapUnique(versions, Version::getRemovedMappingIds);
         var functionIds = NncUtils.flatMapUnique(versions, Version::getChangedFunctionIds);
         var removedFunctionIds = NncUtils.flatMapUnique(versions, Version::getRemovedFunctionIds);
 
         typeIds = NncUtils.diffSet(typeIds, removedTypeIds);
-        mappingIds = NncUtils.diffSet(mappingIds, removedMappingIds);
         functionIds = NncUtils.diffSet(functionIds, removedFunctionIds);
 
         return new InternalMetaPatch(baseVersion, versions.get(versions.size() - 1).getVersion(),
                 new ArrayList<>(typeIds),
                 new ArrayList<>(removedTypeIds),
-                new ArrayList<>(mappingIds),
-                new ArrayList<>(removedMappingIds),
                 new ArrayList<>(functionIds),
                 new ArrayList<>(removedFunctionIds)
         );
@@ -61,8 +56,6 @@ public class VersionManager extends EntityContextFactoryAware {
                       true,
                       allMetadata.typeDefs(),
                       List.of(),
-                      allMetadata.mappings(),
-                      List.of(),
                       allMetadata.functions(),
                       List.of()
                 );
@@ -74,10 +67,6 @@ public class VersionManager extends EntityContextFactoryAware {
                     serContext.writeTypeDef(type);
                 }
                 var typeDefDTOs = serContext.getTypeDefs();
-                var mappingDTOs = NncUtils.map(
-                        internalPatch.changedMappingIds(),
-                        id -> context.getMapping(id).toDTO(serContext)
-                );
                 var functionDTOs = NncUtils.map(
                         internalPatch.changedFunctionIds(),
                         id -> context.getFunction(id).toDTO(false, serContext)
@@ -88,8 +77,6 @@ public class VersionManager extends EntityContextFactoryAware {
                         false,
                         typeDefDTOs,
                         internalPatch.removedTypeDefIds(),
-                        mappingDTOs,
-                        internalPatch.removedMappingIds(),
                         functionDTOs,
                         internalPatch.removedFunctionIds()
                 );
@@ -121,7 +108,6 @@ public class VersionManager extends EntityContextFactoryAware {
             return new LoadAllMetadataResponse(
                     Versions.getLatestVersion(context),
                     SerializeContext.forceWriteTypeDefs(types),
-                    List.of(),
                     NncUtils.map(functions, f -> f.toDTO(false, serContext))
             );
         }

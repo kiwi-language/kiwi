@@ -8,7 +8,6 @@ import org.metavm.flow.FunctionRef;
 import org.metavm.flow.LambdaRef;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.type.rest.dto.*;
-import org.metavm.object.view.ObjectMappingRef;
 import org.metavm.util.Instances;
 
 public abstract class CpEntry extends Entity implements ValueObject {
@@ -27,8 +26,6 @@ public abstract class CpEntry extends Entity implements ValueObject {
                 new MethodCpEntry(methodCpEntryDTO.index(), MethodRef.createMethodRef(methodCpEntryDTO.methodRef(), context));
             case FunctionCpEntryDTO functionCpEntryDTO ->
                 new FunctionCpEntry(functionCpEntryDTO.index(), FunctionRef.create(functionCpEntryDTO.functionRef(), context));
-            case MappingCpEntryDTO mappingCpEntryDTO ->
-                new MappingCpEntry(mappingCpEntryDTO.index(), ObjectMappingRef.create(mappingCpEntryDTO.mappingRef(), context));
             case IndexCpEntryDTO indexCpEntryDTO ->
                 new IndexCpEntry(indexCpEntryDTO.index(), IndexRef.create(indexCpEntryDTO.indexRef(), context));
             case LambdaCpEntryDTO lambdaCpEntryDTO ->

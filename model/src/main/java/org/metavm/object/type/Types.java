@@ -33,50 +33,6 @@ public class Types {
             throw new InternalException("Can not resolve klass from type " + type.getTypeDesc() + " because it's not a class type");
     }
 
-    public static Type getViewType(Type sourceType, UnionType viewUnionType) {
-        return NncUtils.findRequired(viewUnionType.getMembers(), sourceType::isViewType,
-                () -> "Cannot find view type of " + sourceType + " from union type " + viewUnionType);
-    }
-
-    public static boolean isViewType(Type sourceType, Type targetType) {
-        return switch (sourceType) {
-            case UnionType unionType ->
-                targetType instanceof UnionType that && isViewTypes(unionType.getMembers(), that.getMembers());
-            case IntersectionType intersectionType ->
-                    targetType instanceof IntersectionType that && isViewTypes(intersectionType.getTypes(), that.getTypes());
-            case ArrayType arrayType ->
-                    targetType instanceof ArrayType that && isViewType(arrayType.getElementType(), that.getElementType());
-            case ClassType classType -> {
-                if(targetType instanceof ClassType that) {
-                    var sourceListType = classType.resolve().findAncestorByTemplate(StdKlass.list.get());
-                    var targetListType = that.resolve().findAncestorByTemplate(StdKlass.list.get());
-                    if(sourceListType != null && targetListType != null)
-                        yield isViewType(sourceListType.getFirstTypeArgument(), targetListType.getFirstTypeArgument());
-                    else
-                        yield classType.resolve().isViewType(that);
-                }
-                else
-                    yield false;
-            }
-            default -> sourceType.equals(targetType);
-        };
-    }
-
-    public static boolean isViewTypes(Collection<Type> sourceTypes, Collection<Type> targetTypes) {
-        var thatMembers = new ArrayList<>(targetTypes);
-        out: for (Type member : sourceTypes) {
-            var it = thatMembers.iterator();
-            while (it.hasNext()) {
-                if (isViewType(member, it.next())) {
-                    it.remove();
-                    continue out;
-                }
-            }
-            return false;
-        }
-        return true;
-    }
-
     public static String getCanonicalName(Type type, Function<Type, java.lang.reflect.Type> getJavType) {
         return switch (type) {
             case ClassType classType -> getCanonicalName(classType, getJavType);

@@ -51,7 +51,6 @@ public class InstanceContextTest extends TestCase {
                 entityRepository,
                 entityRepository,
                 entityRepository,
-                entityRepository,
                 false,
                 cache,
                 eventQueue, false, false, false, 0);
@@ -82,10 +81,6 @@ public class InstanceContextTest extends TestCase {
             var instance = (ClassInstance) context.get(id);
             Assert.assertEquals(Instances.stringInstance(name), instance.getField(fooNameField));
         }
-    }
-
-    public void testMapping() {
-
     }
 
     public void testOnChange() {

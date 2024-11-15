@@ -9,19 +9,12 @@ import org.metavm.entity.TypeRegistry;
 import org.metavm.object.type.*;
 import org.metavm.object.version.Version;
 import org.metavm.object.version.VersionRepository;
-import org.metavm.object.view.Mapping;
-import org.metavm.object.view.MappingProvider;
 import org.metavm.util.NncUtils;
 
-public class EntityInstanceContextBridge implements MappingProvider,
+public class EntityInstanceContextBridge implements
         TypeDefProvider, IndexProvider, VersionRepository, TypeRegistry, RedirectStatusProvider, ActiveCommitProvider, DefContextProvider {
 
     private IEntityContext entityContext;
-
-    @Override
-    public Mapping getMapping(Id id) {
-        return entityContext.getMapping(id);
-    }
 
     public void setEntityContext(IEntityContext entityContext) {
         this.entityContext = entityContext;

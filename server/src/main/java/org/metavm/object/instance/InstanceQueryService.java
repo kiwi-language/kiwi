@@ -2,27 +2,23 @@ package org.metavm.object.instance;
 
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
-import org.metavm.entity.*;
-import org.metavm.entity.natives.DefaultCallContext;
+import org.metavm.entity.IEntityContext;
+import org.metavm.entity.InstanceQuery;
+import org.metavm.entity.InstanceQueryField;
 import org.metavm.expression.*;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.instance.search.SearchQuery;
 import org.metavm.object.type.*;
-import org.metavm.object.view.FieldsObjectMapping;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static java.util.Objects.requireNonNull;
 
 @Component
 public class InstanceQueryService {
@@ -60,88 +56,11 @@ public class InstanceQueryService {
     public Page<Reference> query(InstanceQuery query,
                                  InstanceRepository instanceRepository,
                                  IndexedTypeDefProvider typeDefProvider) {
-        var type = query.klass().getType();
-        if (type instanceof ClassType classType && query.sourceMapping() != null) {
-            var sourceMapping = query.sourceMapping();
-            if (!sourceMapping.getTargetType().equals(type) || !(sourceMapping instanceof FieldsObjectMapping sourceObjectMapping))
-                throw new BusinessException(ErrorCode.INVALID_SOURCE_MAPPING);
-            var sourceQuery = convertToSourceQuery(query, classType.resolve(), sourceObjectMapping,
-                    instanceRepository, typeDefProvider);
-            var sourcePage = query(sourceQuery, instanceRepository,
-                    typeDefProvider);
-            return new Page<>(
-                    NncUtils.map(sourcePage.data(),
-                            i -> sourceObjectMapping.mapRoot(i.resolve(), new DefaultCallContext(instanceRepository)).getReference()),
-                    sourcePage.total()
-            );
-        } else
-            return queryPhysical(query, instanceRepository, typeDefProvider, instanceRepository);
-    }
-
-    private InstanceQuery convertToSourceQuery(InstanceQuery query, Klass viewType,
-                                               FieldsObjectMapping mapping,
-                                               InstanceProvider instanceProvider,
-                                               IndexedTypeDefProvider typeDefProvider) {
-        var sourceType = mapping.getSourceType();
-        var fieldMap = new HashMap<Field, Field>();
-        for (var fieldMapping : mapping.getFieldMappings()) {
-            if (fieldMapping.getSourceField() != null)
-                fieldMap.put(fieldMapping.getTargetField(), fieldMapping.getSourceField());
-        }
-        String convertedExpr;
-        if (query.expression() != null) {
-            var parsingContext = new TypeParsingContext(instanceProvider, typeDefProvider, viewType);
-            var cond = ExpressionParser.parse(query.expression(), parsingContext);
-            var convertedCond = (Expression) new CopyVisitor(cond, false) {
-                @Override
-                public Element visitPropertyExpression(PropertyExpression expression) {
-                    var field = (Field) expression.getProperty();
-                    var sourceField = fieldMap.get(field);
-                    if (sourceField == null)
-                        throw new BusinessException(ErrorCode.FIELD_NOT_SEARCHABLE, field.getName());
-                    return new PropertyExpression(
-                            (Expression) expression.getInstance().accept(this),
-                            sourceField.getRef()
-                    );
-                }
-
-                @Override
-                public Element visitThisExpression(ThisExpression expression) {
-                    return new ThisExpression(sourceType);
-                }
-            }.copy(cond);
-            convertedExpr = convertedCond.build(VarType.NAME);
-        } else
-            convertedExpr = null;
-        var queryFields = NncUtils.map(
-                query.fields(),
-                queryField -> new InstanceQueryField(
-                        requireNonNull(fieldMap.get(queryField.field())),
-                        queryField.value(),
-                        queryField.min(),
-                        queryField.max()
-                )
-        );
-        var searchFields = NncUtils.map(query.searchFields(), f -> requireNonNull(fieldMap.get(f)));
-        return new InstanceQuery(
-                sourceType.resolve(), query.searchText(), convertedExpr, searchFields,
-                query.includeBuiltin(), query.includeSubTypes(), query.page(),
-                query.pageSize(), queryFields,
-                NncUtils.map(query.createdIds(), id -> ((DefaultViewId) id).getSourceId()),
-                NncUtils.map(query.excludedIds(), id -> ((DefaultViewId) id).getSourceId()),
-                null
-        );
-    }
-
-    private Page<Reference> queryPhysical(InstanceQuery query,
-                                          InstanceRepository instanceRepository,
-                                          IndexedTypeDefProvider typeDefProvider,
-                                          InstanceProvider instanceProvider) {
-        var searchQuery = buildSearchQuery(query, typeDefProvider, instanceProvider);
+        var searchQuery = buildSearchQuery(query, typeDefProvider, instanceRepository);
         var idPage = instanceSearchService.search(searchQuery);
 //        var newlyCreatedIds = NncUtils.map(query.createdIds(), id -> ((PhysicalId) id).getId());
 //        var excludedIds = NncUtils.mapUnique(query.excludedIds(), id -> ((PhysicalId) id).getId());
-        var created = NncUtils.map(query.createdIds(), instanceProvider::get);
+        var created = NncUtils.map(query.createdIds(), instanceRepository::get);
         var filteredCreatedId =
                 NncUtils.filterAndMap(created, i -> searchQuery.match((ClassInstance) i), Instance::tryGetId);
         List<Id> ids = NncUtils.merge(idPage.data(), filteredCreatedId, true);
@@ -150,7 +69,7 @@ public class InstanceQueryService {
         int actualSize = ids.size();
         ids = ids.subList(0, Math.min(ids.size(), query.pageSize()));
         long total = idPage.total() + (actualSize - idPage.data().size());
-        return new Page<>(NncUtils.map(ids, id -> instanceProvider.get(id).getReference()), total);
+        return new Page<>(NncUtils.map(ids, id -> instanceRepository.get(id).getReference()), total);
     }
 
     public long count(InstanceQuery query, IEntityContext context) {

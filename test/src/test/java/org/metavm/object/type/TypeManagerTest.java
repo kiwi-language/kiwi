@@ -86,7 +86,6 @@ public class TypeManagerTest extends TestCase {
                 .id(savedKlassDTO.id())
                 .fields(null)
                 .methods(null)
-                .mappings(null)
                 .build();
 
         TestUtils.doInTransactionWithoutResult(() -> typeManager.saveType(updatedKlassDTO));
@@ -139,7 +138,6 @@ public class TypeManagerTest extends TestCase {
         TestUtils.doInTransactionWithoutResult(() -> instanceManager.create(new InstanceDTO(
                 null,
                 pNodeType,
-                null,
                 null,
                 null,
                 new ClassInstanceParam(
@@ -217,11 +215,6 @@ public class TypeManagerTest extends TestCase {
         TestUtils.waitForTaskDone(scheduler, worker, t ->
                 t instanceof AddFieldTask addFieldTask && addFieldTask.getField().getName().equals("sku")
         );
-        var skuViewType = TestUtils.getViewKlass(skuType, typeManager);
-        var productViewType = TestUtils.getViewKlass(productType, typeManager);
-        var skuViewChildArrayType = TypeExpressions.getChildArrayType(TypeExpressions.getClassType(skuViewType.id()));
-        var productViewSkuField = TestUtils.getFieldByName(productViewType, "sku");
-        Assert.assertEquals(skuViewChildArrayType, productViewSkuField.type());
         var fieldId = TestUtils.doInTransaction(() -> typeManager.saveField(
                 FieldDTOBuilder.newBuilder("desc", "string")
                         .id(TmpId.random().toString())
@@ -231,9 +224,6 @@ public class TypeManagerTest extends TestCase {
         TestUtils.waitForTaskDone(scheduler, worker, t ->
                 t instanceof AddFieldTask addFieldTask && addFieldTask.getField().getName().equals("desc")
         );
-        var reloadedProductViewType = TestUtils.getViewKlass(productType, typeManager);
-        var reloadedProductViewSkuField = TestUtils.getFieldByName(reloadedProductViewType, "sku");
-        Assert.assertEquals(skuViewChildArrayType, reloadedProductViewSkuField.type());
     }
 
     public void testSynchronizeSearch() {
