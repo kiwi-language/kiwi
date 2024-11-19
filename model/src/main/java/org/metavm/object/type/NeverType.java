@@ -8,8 +8,8 @@ import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.NeverTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.object.type.rest.dto.TypeKeyCodes;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 import java.util.function.Function;
 
@@ -69,12 +69,12 @@ public class NeverType extends Type {
 
     @Override
     public int getTypeKeyCode() {
-        return TypeKeyCodes.NEVER;
+        return WireTypes.NEVER_TYPE;
     }
 
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.NEVER);
+    public void write(MvOutput output) {
+        output.write(WireTypes.NEVER_TYPE);
     }
 
     @Override

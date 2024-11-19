@@ -46,6 +46,8 @@ public class Constants {
 
     public static final String RUN_METHOD_NAME = "__run__";
 
+    public static final int CLASS_MAGIC = 0x1F4D5B3A;
+
     private Constants() {}
 
     public static Id getRootAppId() {

@@ -1,8 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.SerializeContext;
-import org.metavm.object.type.rest.dto.CpEntryDTO;
-import org.metavm.object.type.rest.dto.FieldCpEntryDTO;
+import org.metavm.flow.KlassOutput;
 
 public class FieldCpEntry extends CpEntry {
 
@@ -24,7 +22,7 @@ public class FieldCpEntry extends CpEntry {
     }
 
     @Override
-    public CpEntryDTO toDTO(SerializeContext serializeContext) {
-        return new FieldCpEntryDTO(getIndex(), fieldRef.toDTO(serializeContext));
+    public void write(KlassOutput output) {
+        fieldRef.write(output);
     }
 }

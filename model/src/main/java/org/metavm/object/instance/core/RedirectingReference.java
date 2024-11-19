@@ -2,6 +2,7 @@ package org.metavm.object.instance.core;
 
 import org.metavm.object.type.RedirectStatus;
 import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
@@ -35,9 +36,9 @@ public class RedirectingReference extends Reference {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         if (isInlineValueReference())
-            this.writeInstance(output);
+            this.writeInstance((InstanceOutput) output);
         else {
             output.write(WireTypes.REDIRECTING_REFERENCE);
             output.write(getFlags());

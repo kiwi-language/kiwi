@@ -3,11 +3,11 @@ package org.metavm.entity;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
+import org.metavm.expression.ExpressionParser;
 import org.metavm.expression.TypeParsingContext;
+import org.metavm.flow.ExpressionValue;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
-import org.metavm.flow.ValueFactory;
-import org.metavm.flow.rest.ValueDTO;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.NullValue;
@@ -196,7 +196,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
             org.metavm.object.type.Field field = createField(javaField, declaringTypeDef, fieldType);
             new FieldDef(
                     field,
-                    typeFactory.isNullable(field.getType()),
+                    field.getType().isNullable(),
                     javaField,
                     declaringTypeDef,
                     targetMapper
@@ -220,10 +220,9 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
 
     private void parseCheckConstraint(Field constraintField, PojoDef<T> declaringTypeDef) {
         ConstraintDef<?> constraintDef = (ConstraintDef<?>) ReflectionUtils.get(null, constraintField);
-        org.metavm.flow.Value value = ValueFactory.create(
-                ValueDTO.exprValue(constraintDef.expression()),
-                TypeParsingContext.create(declaringTypeDef.getKlass(), defContext)
-        );
+        var expression = ExpressionParser.parse(constraintDef.expression(), null,
+                TypeParsingContext.create(declaringTypeDef.getKlass(), defContext));
+        var value = new ExpressionValue(expression);
         CheckConstraint checkConstraint = new CheckConstraint(
                 declaringTypeDef.getKlass(), EntityUtils.getMetaConstraintName(constraintField), "", value
         );

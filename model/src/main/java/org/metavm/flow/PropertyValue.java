@@ -2,8 +2,10 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.expression.*;
-import org.metavm.flow.rest.ValueDTO;
+import org.metavm.expression.EvaluationContext;
+import org.metavm.expression.Expression;
+import org.metavm.expression.PropertyExpression;
+import org.metavm.expression.ThisExpression;
 import org.metavm.object.type.PropertyRef;
 import org.metavm.object.type.Type;
 
@@ -15,11 +17,6 @@ public class PropertyValue extends Value {
 
     public PropertyValue(PropertyRef propertyRef) {
         this.propertyRef = propertyRef;
-    }
-
-    @Override
-    public ValueDTO toDTO() {
-        return null;
     }
 
     @Override

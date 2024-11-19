@@ -59,7 +59,7 @@ public class DiskFormatter {
             CONFIG_HOST, "127.0.0.1",
             CONFIG_ES_PORT, 9200,
             CONFIG_REDIS_PORT, 6379,
-            CONFIG_DELETE_ID_FILES, false,
+            CONFIG_DELETE_ID_FILES, true,
             CONFIG_CLEAR_DB, true,
             CONFIG_DB_USER, "postgres",
             CONFIG_DB_PASSWORD, "85263670",

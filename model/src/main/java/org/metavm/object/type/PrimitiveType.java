@@ -9,7 +9,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.PrimitiveTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -171,7 +171,7 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         output.write(PrimitiveTypeKey.getTypeKeyCode(kind.code()));
     }
 

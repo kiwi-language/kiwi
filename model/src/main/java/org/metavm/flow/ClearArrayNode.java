@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.flow.rest.Bytecodes;
 import org.metavm.util.BusinessException;
 
 @EntityType

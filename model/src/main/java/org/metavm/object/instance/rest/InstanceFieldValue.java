@@ -7,10 +7,6 @@ import java.util.Set;
 
 public class InstanceFieldValue extends FieldValue {
 
-    public static InstanceFieldValue of(InstanceDTO instance) {
-        return new InstanceFieldValue(instance.title(), instance);
-    }
-
     private final InstanceDTO instance;
 
     public InstanceFieldValue(@JsonProperty("displayValue") String displayValue,

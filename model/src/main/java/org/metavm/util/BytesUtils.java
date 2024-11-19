@@ -234,7 +234,7 @@ public class BytesUtils {
                 case WireTypes.LONG, WireTypes.TIME -> readLong();
                 case WireTypes.CHAR -> readChar();
                 case WireTypes.DOUBLE -> readDouble();
-                case WireTypes.PASSWORD, WireTypes.STRING -> readString();
+                case WireTypes.PASSWORD, WireTypes.STRING -> readUTF();
                 default -> throw new IllegalStateException("Invalid wire type");
             };
         }

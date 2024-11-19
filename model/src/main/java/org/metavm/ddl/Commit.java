@@ -8,8 +8,6 @@ import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.RedirectStatus;
-import org.metavm.object.type.rest.dto.BatchSaveRequest;
-import org.metavm.util.NncUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -22,7 +20,6 @@ public class Commit extends Entity implements RedirectStatus {
 
     public static BiConsumer<Long, Id> META_CONTEXT_INVALIDATE_HOOK;
 
-    private final String requestJSON;
     private final Date time = new Date();
     private final WAL wal;
     @ChildEntity
@@ -59,10 +56,7 @@ public class Commit extends Entity implements RedirectStatus {
     private boolean cancelled = false;
     private boolean submitted;
 
-    private transient BatchSaveRequest request;
-
     public Commit(WAL wal,
-                  BatchSaveRequest request,
                   List<String> newFieldIds,
                   List<String> convertingFieldIds,
                   List<String> toChildFieldIds,
@@ -76,8 +70,6 @@ public class Commit extends Entity implements RedirectStatus {
                   List<String> runMethodIds,
                   List<FieldChange> fieldChanges) {
         this.wal = wal;
-        this.requestJSON = NncUtils.toJSONString(request);
-        this.request = request;
         this.newFieldIds.addAll(newFieldIds);
         this.convertingFieldIds.addAll(convertingFieldIds);
         this.toChildFieldIds.addAll(toChildFieldIds);
@@ -90,12 +82,6 @@ public class Commit extends Entity implements RedirectStatus {
         this.fromEnumKlassIds.addAll(fromEnumKlassIds);
         this.runMethodIds.addAll(runMethodIds);
         this.fieldChanges.addAll(fieldChanges);
-    }
-
-    public BatchSaveRequest getRequest() {
-        if (request == null)
-            request = NncUtils.readJSONString(requestJSON, BatchSaveRequest.class);
-        return request;
     }
 
     public void submit() {

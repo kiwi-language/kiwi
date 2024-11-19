@@ -30,7 +30,7 @@ public class FieldBuilder {
     private boolean isTransient;
     private boolean asTitle;
     private int tag = -1;
-    private Integer sourceCodeTag;
+    private Integer sourceTag;
     private int since;
 
     private FieldBuilder(String name, Klass declaringType, Type type) {
@@ -124,8 +124,8 @@ public class FieldBuilder {
         return this;
     }
 
-    public FieldBuilder sourceCodeTag(Integer sourceCodeTag) {
-        this.sourceCodeTag = sourceCodeTag;
+    public FieldBuilder sourceTag(Integer sourceTag) {
+        this.sourceTag = sourceTag;
         return this;
     }
 
@@ -160,7 +160,7 @@ public class FieldBuilder {
                     lazy,
                     column,
                     tag,
-                    sourceCodeTag,
+                    sourceTag,
                     since,
                     state
             );

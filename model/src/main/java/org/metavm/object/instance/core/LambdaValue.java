@@ -8,6 +8,7 @@ import org.metavm.flow.Lambda;
 import org.metavm.flow.MetaFrame;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.InternalException;
+import org.metavm.util.MvOutput;
 
 import java.util.List;
 
@@ -33,7 +34,7 @@ public class LambdaValue extends FunctionValue {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         throw new UnsupportedOperationException();
     }
 

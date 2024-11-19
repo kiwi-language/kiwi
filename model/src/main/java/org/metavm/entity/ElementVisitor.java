@@ -558,4 +558,8 @@ public abstract class ElementVisitor<R> {
     public R visitIndexRef(IndexRef indexRef) {
         return visitElement(indexRef);
     }
+
+    public R visitIndexField(IndexField indexField) {
+        return visitElement(indexField);
+    }
 }

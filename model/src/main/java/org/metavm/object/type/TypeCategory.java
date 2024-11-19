@@ -3,7 +3,7 @@ package org.metavm.object.type;
 import org.metavm.api.EntityType;
 import org.metavm.entity.natives.ArrayNative;
 import org.metavm.object.instance.ColumnKind;
-import org.metavm.object.type.rest.dto.*;
+import org.metavm.object.type.rest.dto.TypeCategoryCodes;
 import org.metavm.system.RegionConstants;
 import org.metavm.system.RegionInfo;
 import org.metavm.util.NncUtils;
@@ -11,34 +11,33 @@ import org.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 @EntityType
 public enum TypeCategory {
-    CLASS(TypeCategoryCodes.CLASS, ColumnKind.REFERENCE, ClassTypeParam.class, 2),
-    ENUM(TypeCategoryCodes.ENUM, ColumnKind.REFERENCE, ClassTypeParam.class, 2),
-    INTERFACE(TypeCategoryCodes.INTERFACE, ColumnKind.UNSPECIFIED, ClassTypeParam.class, 3),
-    VALUE(TypeCategoryCodes.VALUE, ColumnKind.UNSPECIFIED, ClassTypeParam.class,2 ),
-    READ_WRITE_ARRAY(TypeCategoryCodes.READ_WRITE_ARRAY, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
-    READ_ONLY_ARRAY(TypeCategoryCodes.READ_ONLY_ARRAY, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
-    CHILD_ARRAY(TypeCategoryCodes.CHILD_ARRAY, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
-    VALUE_ARRAY(TypeCategoryCodes.VALUE_ARRAY, ColumnKind.REFERENCE, ArrayTypeParam.class, ArrayNative.class, 4),
-    UNION(TypeCategoryCodes.UNION, ColumnKind.UNSPECIFIED, UnionTypeParam.class, 5),
-    NULL(TypeCategoryCodes.NULL, ColumnKind.UNSPECIFIED, PrimitiveTypeParam.class, 5),
-    STRING(TypeCategoryCodes.STRING, ColumnKind.STRING, PrimitiveTypeParam.class, 5),
-    DOUBLE(TypeCategoryCodes.DOUBLE, ColumnKind.DOUBLE, PrimitiveTypeParam.class, 5),
-    LONG(TypeCategoryCodes.LONG, ColumnKind.INT, PrimitiveTypeParam.class, 5),
-    BOOLEAN(TypeCategoryCodes.BOOLEAN, ColumnKind.BOOL, PrimitiveTypeParam.class, 5),
-    TIME(TypeCategoryCodes.TIME, ColumnKind.INT, PrimitiveTypeParam.class, 5),
+    CLASS(TypeCategoryCodes.CLASS, ColumnKind.REFERENCE, 2),
+    ENUM(TypeCategoryCodes.ENUM, ColumnKind.REFERENCE, 2),
+    INTERFACE(TypeCategoryCodes.INTERFACE, ColumnKind.UNSPECIFIED, 3),
+    VALUE(TypeCategoryCodes.VALUE, ColumnKind.UNSPECIFIED, 2 ),
+    READ_WRITE_ARRAY(TypeCategoryCodes.READ_WRITE_ARRAY, ColumnKind.REFERENCE, ArrayNative.class, 4),
+    READ_ONLY_ARRAY(TypeCategoryCodes.READ_ONLY_ARRAY, ColumnKind.REFERENCE, ArrayNative.class, 4),
+    CHILD_ARRAY(TypeCategoryCodes.CHILD_ARRAY, ColumnKind.REFERENCE, ArrayNative.class, 4),
+    VALUE_ARRAY(TypeCategoryCodes.VALUE_ARRAY, ColumnKind.REFERENCE, ArrayNative.class, 4),
+    UNION(TypeCategoryCodes.UNION, ColumnKind.UNSPECIFIED, 5),
+    NULL(TypeCategoryCodes.NULL, ColumnKind.UNSPECIFIED, 5),
+    STRING(TypeCategoryCodes.STRING, ColumnKind.STRING, 5),
+    DOUBLE(TypeCategoryCodes.DOUBLE, ColumnKind.DOUBLE, 5),
+    LONG(TypeCategoryCodes.LONG, ColumnKind.INT, 5),
+    BOOLEAN(TypeCategoryCodes.BOOLEAN, ColumnKind.BOOL, 5),
+    TIME(TypeCategoryCodes.TIME, ColumnKind.INT, 5),
     ANY(TypeCategoryCodes.OBJECT, ColumnKind.UNSPECIFIED, 5),
-    PASSWORD(TypeCategoryCodes.PASSWORD, ColumnKind.STRING, PrimitiveTypeParam.class, 5),
-    VOID(TypeCategoryCodes.VOID, ColumnKind.UNSPECIFIED, PrimitiveTypeParam.class, 5),
-    CHAR(TypeCategoryCodes.CHAR, ColumnKind.STRING, PrimitiveTypeParam.class, 5),
-    VARIABLE(TypeCategoryCodes.VARIABLE, ColumnKind.UNSPECIFIED, TypeVariable.class, 1),
+    PASSWORD(TypeCategoryCodes.PASSWORD, ColumnKind.STRING, 5),
+    VOID(TypeCategoryCodes.VOID, ColumnKind.UNSPECIFIED, 5),
+    CHAR(TypeCategoryCodes.CHAR, ColumnKind.STRING, 5),
+    VARIABLE(TypeCategoryCodes.VARIABLE, ColumnKind.UNSPECIFIED, 1),
     INTERSECTION(TypeCategoryCodes.INTERSECTION, ColumnKind.UNSPECIFIED, 4),
-    FUNCTION(TypeCategoryCodes.FUNCTION, ColumnKind.UNSPECIFIED, FunctionTypeParam.class, 5),
-    UNCERTAIN(TypeCategoryCodes.UNCERTAIN, ColumnKind.UNSPECIFIED, UncertainTypeParam.class, 5),
+    FUNCTION(TypeCategoryCodes.FUNCTION, ColumnKind.UNSPECIFIED, 5),
+    UNCERTAIN(TypeCategoryCodes.UNCERTAIN, ColumnKind.UNSPECIFIED, 5),
     NEVER(TypeCategoryCodes.NOTHING, ColumnKind.UNSPECIFIED, 5),
     CAPTURED(TypeCategoryCodes.CAPTURED, ColumnKind.UNSPECIFIED, 5),
 
@@ -47,7 +46,6 @@ public enum TypeCategory {
     private final int code;
     private final int closurePrecedence;
     private final ColumnKind columnKind;
-    private final Class<?> paramClass;
     @Nullable
     private final Class<?> nativeClass;
 
@@ -57,14 +55,9 @@ public enum TypeCategory {
         this(code, columnKind, null, closurePrecedence);
     }
 
-    TypeCategory(int code, ColumnKind columnKind, Class<?> paramClass, int closurePrecedence) {
-        this(code, columnKind, paramClass, null, closurePrecedence);
-    }
-
-    TypeCategory(int code, ColumnKind columnKind, Class<?> paramClass, @Nullable Class<?> nativeClass, int closurePrecedence) {
+    TypeCategory(int code, ColumnKind columnKind, @Nullable Class<?> nativeClass, int closurePrecedence) {
         this.code = code;
         this.columnKind = columnKind;
-        this.paramClass = paramClass;
         this.nativeClass = nativeClass;
         this.closurePrecedence = closurePrecedence;
     }
@@ -165,10 +158,6 @@ public enum TypeCategory {
         return columnKind;
     }
 
-    public Class<?> getParamClass() {
-        return paramClass;
-    }
-
     public boolean isInterface() {
         return this == INTERFACE;
     }
@@ -202,13 +191,6 @@ public enum TypeCategory {
 
     public int closurePrecedence() {
         return closurePrecedence;
-    }
-
-    public static TypeCategory fromParamClass(Class<?> paramKlass) {
-        return Arrays.stream(values())
-                .filter(type -> Objects.equals(type.getParamClass(), paramKlass))
-                .findAny()
-                .orElseThrow(() -> new RuntimeException("TypeCategory not found for param class: " + paramKlass.getName()));
     }
 
 }

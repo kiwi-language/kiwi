@@ -4,11 +4,7 @@ import com.google.common.primitives.UnsignedBytes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.util.EncodingUtils;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.InstanceOutput;
-import org.metavm.util.InternalException;
+import org.metavm.util.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,7 +20,7 @@ public abstract class Id implements Comparable<Id> {
         }
     }
 
-    public abstract void write(InstanceOutput output);
+    public abstract void write(MvOutput output);
 
     public static boolean isPersistedId(@Nullable String id) {
         return id != null && Id.parse(id).tryGetTreeId() != null;
@@ -53,7 +49,7 @@ public abstract class Id implements Comparable<Id> {
         return readId(new InstanceInput(new ByteArrayInputStream(bytes)));
     }
 
-    public static Id readId(InstanceInput input) {
+    public static Id readId(MvInput input) {
         var maskedTagCode = input.read();
         var tag = IdTag.fromCode(maskedTagCode & 0x7F);
         var isArray = (maskedTagCode & 0x80) != 0;
@@ -61,7 +57,6 @@ public abstract class Id implements Comparable<Id> {
             case NULL -> new NullId();
             case PHYSICAL -> new PhysicalId(isArray, input.readLong(), input.readLong());
             case TAGGED_PHYSICAL -> new TaggedPhysicalId(input.readLong(), input.readLong(), input.readInt());
-            case TYPED_PHYSICAL -> new TypedPhysicalId(isArray, input.readLong(), input.readLong(), TypeKey.read(input));
             case TMP -> new TmpId(input.readLong());
             case MOCK -> new MockId(input.readLong());
         };
@@ -99,4 +94,9 @@ public abstract class Id implements Comparable<Id> {
     public boolean isRoot() {
         return false;
     }
+
+    public Long tmpId() {
+        return null;
+    }
+
 }

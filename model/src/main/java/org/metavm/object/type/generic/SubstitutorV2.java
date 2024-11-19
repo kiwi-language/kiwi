@@ -5,7 +5,6 @@ import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.GenericElementDTO;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
@@ -81,11 +80,6 @@ public class SubstitutorV2 extends CopyVisitor {
         }
     }
 
-
-    private void addCopyTmpId(GenericElementDTO member) {
-        if (member.getTemplateId() != null && member.getId() != null)
-            this.copyTmpIds.put(member.getTemplateId(), member.getId());
-    }
 
     public Type substituteType(Type type) {
         return type.accept(typeSubstitutor);
@@ -182,7 +176,7 @@ public class SubstitutorV2 extends CopyVisitor {
         if (object instanceof Entity entity) {
             var id = NncUtils.get(copyTmpIds.get(entity.getStringId()), Id::parse);
             if (id instanceof TmpId tmpId)
-                return tmpId.getTmpId();
+                return tmpId.tmpId();
         }
         return null;
     }
@@ -208,7 +202,7 @@ public class SubstitutorV2 extends CopyVisitor {
                 copy.setJavaMethod(method.getJavaMethod());
             copy.setConstructor(method.isConstructor());
             addCopy(method, copy);
-            if(method.isRootScopePresent())
+            if(method.isCodePresent())
                 addCopy(method.getCode(), copy.getCode());
             enterElement(copy);
             copy.setParameters(NncUtils.map(method.getParameters(), p -> (Parameter) copy0(p)));
@@ -232,7 +226,7 @@ public class SubstitutorV2 extends CopyVisitor {
             if(copy.isNative())
                 copy.setNativeCode(function.getNativeCode());
             addCopy(function, copy);
-            if (function.isRootScopePresent())
+            if (function.isCodePresent())
                 addCopy(function.getCode(), copy.getCode());
             enterElement(copy);
             copy.setParameters(NncUtils.map(function.getParameters(), p -> (Parameter) copy0(p)));
@@ -252,7 +246,7 @@ public class SubstitutorV2 extends CopyVisitor {
     }
 
     private void processFlowBody(Flow flow, Flow copy) {
-        if (stage.isAfterOrAt(DEFINITION) && flow.isRootScopePresent()) {
+        if (stage.isAfterOrAt(DEFINITION) && flow.isCodePresent()) {
             copy.clearContent();
             copy.setCapturedTypeVariables(NncUtils.map(flow.getCapturedTypeVariables(), ct -> (CapturedTypeVariable) copy0(ct)));
             for (Type capturedCompositeType : flow.getCapturedCompositeTypes())

@@ -57,9 +57,6 @@ public class SystemDefContextTest extends TestCase {
         EntityDef<Klass> typeDef = defContext.getEntityDef(Klass.class);
         Klass type = typeDef.getKlass();
         var instance = objectInstanceMap.getInstance(type);
-//                typeDef.createInstance(type, objectInstanceMap, null);
-//        InstanceDTO instanceDTO = instance.toDTO();
-//        TestUtils.logJSON(logger, "instance", instanceDTO);
         Assert.assertEquals(type.tryGetId(), instance.tryGetId());
     }
 

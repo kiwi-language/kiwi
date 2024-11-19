@@ -34,8 +34,4 @@ public class CompilerEntityContext extends BaseEntityContext {
         );
     }
 
-    @Override
-    public TypeRegistry getTypeRegistry() {
-        return defContext;
-    }
 }

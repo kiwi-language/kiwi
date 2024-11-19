@@ -2,12 +2,13 @@ package org.metavm.object.type.rest.dto;
 
 import org.metavm.object.type.NeverType;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 public record NeverTypeKey() implements TypeKey {
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.NEVER);
+    public void write(MvOutput output) {
+        output.write(WireTypes.NEVER_TYPE);
     }
 
     @Override
@@ -27,6 +28,6 @@ public record NeverTypeKey() implements TypeKey {
 
     @Override
     public int getCode() {
-        return TypeKeyCodes.NEVER;
+        return WireTypes.NEVER_TYPE;
     }
 }

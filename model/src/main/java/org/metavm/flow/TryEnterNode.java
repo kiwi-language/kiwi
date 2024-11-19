@@ -3,7 +3,6 @@ package org.metavm.flow;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.LoadAware;
-import org.metavm.flow.rest.Bytecodes;
 
 import java.util.Objects;
 

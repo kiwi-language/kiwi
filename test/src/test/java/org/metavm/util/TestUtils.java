@@ -11,29 +11,22 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.zaxxer.hikari.HikariDataSource;
-import org.hamcrest.MatcherAssert;
 import org.metavm.api.ValueObject;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowExecutionService;
-import org.metavm.flow.FlowManager;
-import org.metavm.flow.rest.FlowDTO;
-import org.metavm.flow.rest.MethodParam;
-import org.metavm.flow.rest.MethodRefDTO;
-import org.metavm.flow.rest.ParameterDTO;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.cache.LocalCache;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
-import org.metavm.object.instance.rest.*;
+import org.metavm.object.instance.rest.FieldValue;
+import org.metavm.object.instance.rest.InstanceFieldValue;
+import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.FieldDTO;
-import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.version.VersionManager;
 import org.metavm.task.*;
 import org.slf4j.Logger;
@@ -41,7 +34,9 @@ import org.slf4j.Logger;
 import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -86,15 +81,6 @@ public class TestUtils {
         } catch (IOException e) {
             throw new InternalException(String.format("Fail to read file %s", path), e);
         }
-    }
-
-    public static FieldValue getListElement(FieldValue value, int index) {
-        if (value instanceof ListFieldValue listFieldValue)
-            return listFieldValue.getElements().get(index);
-        else if (value instanceof InstanceFieldValue instanceFieldValue)
-            return ((ListInstanceParam) instanceFieldValue.getInstance().param()).elements().get(index);
-        else
-            throw new InternalException("Invalid value: " + value);
     }
 
     public static <T> T readJSON(Class<T> klass, String json) {
@@ -186,10 +172,6 @@ public class TestUtils {
                 }
             }
         }
-    }
-
-    public static Id getTypeId(KlassDTO klassDTO) {
-        return Id.parse(klassDTO.id());
     }
 
     public static String getId(FieldValue fieldValue) {
@@ -313,116 +295,10 @@ public class TestUtils {
         });
     }
 
-    public static Set<String> extractDescendantIds(InstanceDTO instanceDTO) {
-        Set<String> ids = new HashSet<>();
-        extractDescendantIds(instanceDTO, ids);
-        return ids;
-    }
-
-    public static InstanceDTO createInstanceWithCheck(InstanceManager instanceManager, InstanceDTO instanceDTO) {
-        var id = doInTransaction(() -> instanceManager.create(instanceDTO));
-        var loaded = instanceManager.get(id, 1).instance();
-        MatcherAssert.assertThat(loaded, new InstanceDTOMatcher(instanceDTO, extractDescendantIds(loaded)));
-        return loaded;
-    }
-
-    private static void extractDescendantIds(InstanceDTO instanceDTO, Set<String> ids) {
-        if (instanceDTO.id() != null)
-            ids.add(instanceDTO.id());
-        if (instanceDTO.param() instanceof ClassInstanceParam classInstanceParam) {
-            for (InstanceFieldDTO field : classInstanceParam.fields()) {
-                if (field.value() instanceof InstanceFieldValue instanceFieldValue)
-                    extractDescendantIds(instanceFieldValue.getInstance(), ids);
-            }
-        } else if (instanceDTO.param() instanceof ArrayInstanceParam arrayInstanceParam) {
-            for (FieldValue element : arrayInstanceParam.elements()) {
-                if (element instanceof InstanceFieldValue instanceFieldValue)
-                    extractDescendantIds(instanceFieldValue.getInstance(), ids);
-            }
-        } else if (instanceDTO.param() instanceof ListInstanceParam listInstanceParam) {
-            for (FieldValue element : listInstanceParam.elements()) {
-                if (element instanceof InstanceFieldValue instanceFieldValue)
-                    extractDescendantIds(instanceFieldValue.getInstance(), ids);
-            }
-        }
-    }
-
-    public static String getFieldIdByName(KlassDTO klassDTO, String name) {
-        return NncUtils.findRequired(klassDTO.fields(), f -> name.equals(f.name())).id();
-    }
-
-    public static FieldDTO getFieldByName(KlassDTO klassDTO, String name) {
-        return NncUtils.findRequired(klassDTO.fields(), f -> name.equals(f.name()));
-    }
-
-    public static String getMethodIdByCode(KlassDTO klassDTO, String methodCode) {
-        return NncUtils.findRequired(klassDTO.flows(), f -> methodCode.equals(f.name())).id();
-    }
-
-    public static MethodRefDTO getMethodRefByCode(KlassDTO klassDTO, String methodCode) {
-        return new MethodRefDTO(
-                TypeExpressions.getClassType(klassDTO.id()),
-                getMethodIdByCode(klassDTO, methodCode),
-                List.of()
-        );
-    }
-
-    public static MethodRefDTO createMethodRef(String klassId, String methodId) {
-        return new MethodRefDTO(TypeExpressions.getClassType(klassId), methodId, List.of());
-    }
-
-    public static FlowDTO getMethodByCode(KlassDTO klassDTO, String methodCode) {
-        return NncUtils.findRequired(klassDTO.flows(), f -> methodCode.equals(f.name()));
-    }
-
-    public static String getStaticMethodIdByCode(KlassDTO klassDTO, String methodCode) {
-        return NncUtils.findRequired(klassDTO.flows(),
-                f -> methodCode.equals(f.name()) && ((MethodParam) f.param()).isStatic()
-        ).id();
-    }
-
-    public static MethodRefDTO getStaticMethodRefByCode(KlassDTO klassDTO, String methodCode) {
-        var method = NncUtils.findRequired(klassDTO.flows(),
-                f -> methodCode.equals(f.name()) && ((MethodParam) f.param()).isStatic()
-        );
-        return createMethodRef(klassDTO.id(), method.id());
-    }
-
-    public static String getStaticMethod(KlassDTO klassDTO, String code, String... parameterTypes) {
-        var paramTypeList = List.of(parameterTypes);
-        return NncUtils.findRequired(klassDTO.flows(),
-                f -> code.equals(f.name()) &&
-                        ((MethodParam) f.param()).isStatic() &&
-                        paramTypeList.equals(NncUtils.map(f.parameters(), ParameterDTO::type)),
-                () -> "Can not find static method " + code + "(" + String.join(",", paramTypeList) + ") in type " + klassDTO.name()
-        ).id();
-    }
-
-    public static MethodRefDTO getStaticMethodRef(KlassDTO klassDTO, String code, String... parameterTypes) {
-        return new MethodRefDTO(TypeExpressions.getClassType(klassDTO.id()), getStaticMethod(klassDTO, code, parameterTypes), List.of());
-    }
-
-    public static String getMethodId(KlassDTO klassDTO, String code, String... parameterTypeIds) {
-        var paramTypeidList = List.of(parameterTypeIds);
-        return NncUtils.findRequired(klassDTO.flows(),
-                f -> code.equals(f.name()) && paramTypeidList.equals(
-                        NncUtils.map(f.parameters(), ParameterDTO::type)
-                )
-        ).id();
-    }
-
-    public static MethodRefDTO getMethodRef(KlassDTO klassDTO, String code, String... parameterTypeIds) {
-        return new MethodRefDTO(TypeExpressions.getClassType(klassDTO.id()), getMethodId(klassDTO, code, parameterTypeIds), List.of());
-    }
-
     private static final Klass mockKlass = TestUtils.newKlassBuilder("TestUtilsMock", "TestUtilsMock").build();
 
     public static ClassType mockClassType() {
         return mockKlass.getType();
-    }
-
-    public static void printIdClassName(String id) {
-        System.out.println(Id.parse(id).getClass().getName());
     }
 
     public static CommonManagers createCommonManagers(BootstrapResult bootResult) {
@@ -434,16 +310,12 @@ public class TestUtils {
         var typeManager = new TypeManager(entityContextFactory, entityQueryService, taskManager, new BeanManager());
         var flowExecutionService = new FlowExecutionService(entityContextFactory);
         var instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
-        var flowManager = new FlowManager(entityContextFactory, transactionOps);
         var scheduler = new Scheduler(entityContextFactory, transactionOps);
         var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), bootResult.metaContextCache());
         typeManager.setFlowExecutionService(flowExecutionService);
         typeManager.setVersionManager(new VersionManager(entityContextFactory));
-        typeManager.setFlowManager(flowManager);
-        typeManager.setInstanceManager(instanceManager);
         return new CommonManagers(
                 typeManager,
-                flowManager,
                 instanceManager,
                 flowExecutionService,
                 scheduler,
@@ -562,7 +434,7 @@ public class TestUtils {
         return newKlassBuilder(name, name);
     }
 
-    public static KlassBuilder newKlassBuilder(String name, String code) {
-        return KlassBuilder.newBuilder(name, code).tag(nextKlassTag());
+    public static KlassBuilder newKlassBuilder(String name, String qualifiedName) {
+        return KlassBuilder.newBuilder(name, qualifiedName).tag(nextKlassTag());
     }
 }

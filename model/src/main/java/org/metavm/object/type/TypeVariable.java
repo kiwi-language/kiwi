@@ -6,11 +6,13 @@ import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
-import org.metavm.object.type.rest.dto.TypeVariableDTO;
+import org.metavm.flow.KlassInput;
+import org.metavm.flow.KlassOutput;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -129,16 +131,6 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
         return origStage;
     }
 
-    public TypeVariableDTO toDTO(SerializeContext serializeContext) {
-        return new TypeVariableDTO(
-                serializeContext.getStringId(this),
-                name,
-                serializeContext.getStringId(genericDeclaration),
-                genericDeclaration.getTypeParameterIndex(this),
-                NncUtils.map(bounds, type1 -> type1.toExpression(serializeContext, null))
-        );
-    }
-
     public String getTypeDesc() {
         return genericDeclaration.getTypeDesc() + "." + name;
     }
@@ -177,4 +169,22 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
         return copySource != null ? copySource : this;
     }
 
+    public void write(KlassOutput output) {
+        output.writeEntityId(this);
+        output.writeUTF(name);
+        output.writeInt(bounds.size());
+        bounds.forEach(b -> b.write(output));
+        writeAttributes(output);
+    }
+
+    public void read(KlassInput input) {
+        setName(input.readUTF());
+        var boundCount = input.readInt();
+        var bounds = new ArrayList<Type>();
+        for (int i = 0; i < boundCount; i++) {
+            bounds.add(input.readType());
+        }
+        setBounds(bounds);
+        readAttributes(input);
+    }
 }

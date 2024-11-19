@@ -2,15 +2,16 @@ package org.metavm.object.type.rest.dto;
 
 import org.metavm.object.type.IntersectionType;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
+import org.metavm.util.WireTypes;
 
 import java.util.Set;
 
 public record IntersectionTypeKey(Set<TypeKey> typeKeys) implements TypeKey {
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.INTERSECTION);
+    public void write(MvOutput output) {
+        output.write(WireTypes.INTERSECTION_TYPE);
         output.writeInt(typeKeys.size());
         typeKeys.forEach(t -> t.write(output));
     }
@@ -32,6 +33,6 @@ public record IntersectionTypeKey(Set<TypeKey> typeKeys) implements TypeKey {
 
     @Override
     public int getCode() {
-        return TypeKeyCodes.INTERSECTION;
+        return WireTypes.INTERSECTION_TYPE;
     }
 }

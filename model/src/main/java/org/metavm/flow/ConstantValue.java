@@ -3,9 +3,9 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.expression.*;
-import org.metavm.flow.rest.ConstantValueDTO;
-import org.metavm.flow.rest.ValueDTO;
+import org.metavm.expression.ConstantExpression;
+import org.metavm.expression.EvaluationContext;
+import org.metavm.expression.Expression;
 import org.metavm.object.type.Type;
 
 @EntityType
@@ -15,11 +15,6 @@ public class ConstantValue extends Value {
 
     public ConstantValue(org.metavm.object.instance.core.Value value) {
         this.value = value;
-    }
-
-    @Override
-    public ValueDTO toDTO() {
-        return new ConstantValueDTO(value.toFieldValueDTO());
     }
 
     @Override

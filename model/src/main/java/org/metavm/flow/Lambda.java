@@ -5,16 +5,16 @@ import org.metavm.api.ChildEntity;
 import org.metavm.entity.ChildArray;
 import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.SerializeContext;
-import org.metavm.flow.rest.LambdaDTO;
 import org.metavm.object.type.FunctionType;
+import org.metavm.object.type.ITypeDef;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 import org.metavm.util.NncUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class Lambda extends Element implements Callable {
+public class Lambda extends Element implements Callable, ITypeDef {
 
     @ChildEntity
     private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
@@ -22,13 +22,15 @@ public class Lambda extends Element implements Callable {
     private FunctionType functionType;
     @ChildEntity
     private final Code code;
+    private Flow flow;
 
     public Lambda(Long tmpId, List<Parameter> parameters, @NotNull Type returnType, Flow flow) {
         super(tmpId);
         this.returnType = returnType;
         setParameters(parameters, false);
         this.functionType = Types.getFunctionType(parameters, returnType);
-        this.code = addChild(new Code(this, flow), "code");
+        this.code = addChild(new Code(this), "code");
+        this.flow = flow;
         flow.addLambda(this);
     }
 
@@ -91,15 +93,6 @@ public class Lambda extends Element implements Callable {
         code.emitCode();
     }
 
-    public LambdaDTO toDTO(SerializeContext serializeContext) {
-        return new LambdaDTO(
-                serializeContext.getStringId(this),
-                NncUtils.map(parameters, Parameter::toDTO),
-                returnType.toExpression(serializeContext),
-                code.toDTO(serializeContext)
-        );
-    }
-
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitLambda(this);
@@ -121,4 +114,35 @@ public class Lambda extends Element implements Callable {
         getCode().writeCode(writer);
     }
 
+    public void write(KlassOutput output) {
+        output.writeEntityId(this);
+        int paramCount = parameters.size();
+        output.writeInt(paramCount);
+        for (Parameter parameter : parameters) {
+            parameter.write(output);
+        }
+        returnType.write(output);
+        functionType.write(output);
+        code.write(output);
+    }
+
+    public void read(KlassInput input) {
+        int paramCount = input.readInt();
+        var params = new ArrayList<Parameter>();
+        for (int i = 0; i < paramCount; i++) {
+            params.add(input.readParameter());
+        }
+        setParameters(params);
+        returnType = input.readType();
+        functionType = (FunctionType) input.readType();
+        code.read(input);
+    }
+
+    public Flow getFlow() {
+        return flow;
+    }
+
+    void setFlow(Flow flow) {
+        this.flow = flow;
+    }
 }

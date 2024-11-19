@@ -3,7 +3,6 @@ package org.metavm.util;
 import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.TypeOrTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.slf4j.Logger;
@@ -158,8 +157,8 @@ public class StreamVisitor {
         return input.readChar();
     }
 
-    public Type readType(TypeDefProvider typeDefProvider) {
-        return Type.readType(input, typeDefProvider);
+    public Type readType() {
+        return Type.readType(input);
     }
 
     public int read() {
@@ -171,7 +170,7 @@ public class StreamVisitor {
     }
 
     public String readString() {
-        return input.readString();
+        return input.readUTF();
     }
 
     public boolean readBoolean() {
@@ -226,7 +225,7 @@ public class StreamVisitor {
     }
 
     public void visitString() {
-        input.readString();
+        input.readUTF();
     }
 
     public void visitLong() {
@@ -246,7 +245,7 @@ public class StreamVisitor {
     }
 
     public void visitPassword() {
-        input.readString();
+        input.readUTF();
     }
 
     public void visitTime() {

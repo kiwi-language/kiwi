@@ -1,6 +1,9 @@
 package org.metavm.entity.mocks;
 
-import org.metavm.entity.*;
+import org.metavm.entity.Entity;
+import org.metavm.entity.EntityMemoryIndex;
+import org.metavm.entity.EntityRepository;
+import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.NncUtils;
@@ -14,20 +17,10 @@ public class MockEntityRepository implements EntityRepository {
     private final IdentitySet<Object> objects = new IdentitySet<>();
     private final Map<Id, Entity> entities = new HashMap<>();
     private final EntityMemoryIndex index = new EntityMemoryIndex();
-    private final TypeRegistry typeRegistry;
-
-    public MockEntityRepository(TypeRegistry typeRegistry) {
-        this.typeRegistry = typeRegistry;
-    }
 
     @Override
     public <T> T getEntity(Class<T> entityType, Id id) {
         return entityType.cast(entities.get(id));
-    }
-
-    @Override
-    public TypeRegistry getTypeRegistry() {
-        return typeRegistry;
     }
 
     @Override

@@ -182,6 +182,12 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         return root;
     }
 
+    public <T extends Entity> T addEphemeralChild(T child, String fieldName) {
+        addChild(child, fieldName);
+        child.setEphemeralEntity(true);
+        return child;
+    }
+
     public <T extends Entity> T addChild(T child, @Nullable String fieldName) {
         NncUtils.requireNonNull(child, "Child object can not be null");
         var field = fieldName != null ?
@@ -383,7 +389,7 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     @NoProxy
     public Long getTmpId() {
         if (id instanceof TmpId tmpId)
-            return tmpId.getTmpId();
+            return tmpId.tmpId();
         else
             return null;
     }

@@ -31,7 +31,7 @@ public class TreeSizeAnalyzer extends StreamCopier {
 
     public TreeSizeAnalyzer(InputStream in) {
         super(in, new ByteArrayOutputStream());
-        bout = (ByteArrayOutputStream) getOutput().getOutputStream();
+        bout = (ByteArrayOutputStream) getOutput().getOut();
     }
 
     @Override

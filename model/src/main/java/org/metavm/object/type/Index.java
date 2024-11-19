@@ -6,13 +6,13 @@ import org.metavm.entity.*;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.InstanceEvaluationContext;
 import org.metavm.flow.Flows;
+import org.metavm.flow.KlassInput;
+import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.rest.dto.IndexFieldDTO;
-import org.metavm.object.type.rest.dto.IndexParam;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -25,18 +25,18 @@ import java.util.function.Predicate;
 import static java.util.Objects.requireNonNull;
 
 @EntityType
-public class Index extends Constraint implements LocalKey, GenericElement {
+public class Index extends Constraint implements LocalKey, GenericElement, ITypeDef {
 
     @ChildEntity
     private final ChildArray<IndexField> fields = addChild(new ChildArray<>(IndexField.class), "fields");
-    private final boolean unique;
+    private boolean unique;
     private @Nullable Method method;
     private transient IndexDef<?> indexDef;
     private transient Index copySource;
 
     public Index(Klass type, String name, String message, boolean unique, List<Field> fields,
                  @Nullable Method method) {
-        super(ConstraintKind.UNIQUE, type, name, message);
+        super(type, name, message);
         this.unique = unique;
         this.method = method;
         for (Field field : fields) {
@@ -44,13 +44,15 @@ public class Index extends Constraint implements LocalKey, GenericElement {
         }
     }
 
-    public Index(Klass type, String name, String message, boolean unique) {
-        super(ConstraintKind.UNIQUE, type, name, message);
+    public Index(Long tmpId, Klass type, String name, String message, boolean unique) {
+        super(type, name, message);
+        setTmpId(tmpId);
         this.unique = unique;
     }
 
     void addField(IndexField item) {
         this.fields.addChild(item);
+        item.setIndex(this);
     }
 
     public IndexField getField(Id id) {
@@ -154,32 +156,6 @@ public class Index extends Constraint implements LocalKey, GenericElement {
         return "Duplicate field '" + NncUtils.join(fields, IndexField::getQualifiedName) + "'";
     }
 
-    @Override
-    protected IndexParam getParam() {
-        try(var serContext = SerializeContext.enter()) {
-            return new IndexParam(
-                    unique,
-                    NncUtils.map(fields, IndexField::toDTO),
-                    NncUtils.get(method, serContext::getStringId)
-            );
-        }
-    }
-
-    @Override
-    public void setParam(Object param, IEntityContext context) {
-        IndexParam indexParam = (IndexParam) param;
-        this.method = NncUtils.get(indexParam.methodId(), context::getMethod);
-        if (indexParam.fields() != null) {
-            for (IndexFieldDTO fieldDTO : indexParam.fields()) {
-                if (fieldDTO.id() != null) {
-                    var field = fields.get(Entity::getStringId, fieldDTO.id());
-                    if (fieldDTO.name() != null)
-                        field.setName(fieldDTO.name());
-                }
-            }
-        }
-    }
-
     public List<IndexField> getFields() {
         return fields.toList();
     }
@@ -227,6 +203,7 @@ public class Index extends Constraint implements LocalKey, GenericElement {
 
     public void setFields(List<IndexField> fields) {
         this.fields.resetChildren(fields);
+        fields.forEach(f -> f.setIndex(this));
     }
 
     @Override
@@ -246,4 +223,30 @@ public class Index extends Constraint implements LocalKey, GenericElement {
     public IndexRef getRef() {
         return new IndexRef(getDeclaringType().getType(), getEffectiveTemplate());
     }
+
+    @Override
+    public void write(KlassOutput output) {
+        output.writeEntityId(this);
+        output.writeUTF(getName());
+        output.writeInt(fields.size());
+        for (IndexField field : fields) {
+            field.write(output);
+        }
+        output.writeBoolean(unique);
+        output.writeEntityId(Objects.requireNonNull(method));
+    }
+
+    @Override
+    public void read(KlassInput input) {
+        setName(input.readUTF());
+        int fieldCount = input.readInt();
+        var fields = new ArrayList<IndexField>(fieldCount);
+        for (int i = 0; i < fieldCount; i++) {
+            fields.add(input.readIndexField());
+        }
+        setFields(fields);
+        unique = input.readBoolean();
+        method = input.getMethod(input.readId());
+    }
+
 }

@@ -3,8 +3,8 @@ package org.metavm.object.instance.core;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
-import org.metavm.util.InstanceOutput;
 import org.metavm.util.Instances;
+import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 public class CharValue extends PrimitiveValue {
@@ -54,7 +54,7 @@ public class CharValue extends PrimitiveValue {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         output.write(WireTypes.CHAR);
         output.writeChar(value);
     }

@@ -2,7 +2,7 @@ package org.metavm.object.instance.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
 
 import java.util.Objects;
@@ -30,12 +30,13 @@ public final class TmpId extends Id {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         output.writeIdTag(IdTag.TMP, false);
         output.writeLong(tmpId);
     }
 
-    public long getTmpId() {
+    @Override
+    public Long tmpId() {
         return tmpId;
     }
 

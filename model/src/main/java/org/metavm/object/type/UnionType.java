@@ -9,11 +9,11 @@ import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.object.type.rest.dto.TypeKeyCodes;
 import org.metavm.object.type.rest.dto.UnionTypeKey;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
+import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -175,21 +175,21 @@ public class UnionType extends CompositeType {
 
     @Override
     public int getTypeKeyCode() {
-        return TypeKeyCodes.UNION;
+        return WireTypes.UNION_TYPE;
     }
 
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.UNION);
+    public void write(MvOutput output) {
+        output.write(WireTypes.UNION_TYPE);
         output.writeInt(members.size());
         members.forEach(t -> t.write(output));
     }
 
-    public static UnionType read(InstanceInput input, TypeDefProvider typeDefProvider) {
+    public static UnionType read(MvInput input) {
         var numMembers = input.readInt();
         var members = new HashSet<Type>(numMembers);
         for (int i = 0; i < numMembers; i++)
-            members.add(Type.readType(input, typeDefProvider));
+            members.add(Type.readType(input));
         return new UnionType(members);
     }
 

@@ -1,11 +1,9 @@
 package org.metavm.autograph;
 
 import org.junit.Assert;
-import org.metavm.flow.rest.MethodParam;
-import org.metavm.object.type.Access;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.MetadataState;
-import org.metavm.util.NncUtils;
-import org.metavm.util.TestUtils;
+import org.metavm.util.TestConstants;
 
 import java.util.List;
 import java.util.Map;
@@ -20,16 +18,18 @@ public class DDLCompilingTest extends CompilerTestBase {
     public void test() {
         compile(DDL_SOURCE_ROOT);
         var ref = new Object() {
-          String stateFieldId;
-          String stateKlassId;
-          String derivedInstanceId;
+          Id stateFieldId;
+          Id stateKlassId;
+          Id derivedInstanceId;
         };
         submit(() -> {
-            ref.stateKlassId = getClassTypeByCode("ProductState").id();
-            var productKlass = getClassTypeByCode("Product");
-            ref.stateFieldId = TestUtils.getFieldIdByName(productKlass, "state");
-            ref.derivedInstanceId = saveInstance("swapsuper.Derived",
-                    Map.of("value1", 1, "value2", 2, "value3", 3));
+            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                ref.stateKlassId = context.getKlassByQualifiedName("ProductState").getId();
+                var productKlass = context.getKlassByQualifiedName("Product");
+                ref.stateFieldId = productKlass.getFieldByName("state").getId();
+                ref.derivedInstanceId = Id.parse(saveInstance("swapsuper.Derived",
+                        Map.of("value1", 1, "value2", 2, "value3", 3)));
+            }
         });
 //        try {
 //            compile(DDL2_SOURCE_ROOT);
@@ -38,22 +38,24 @@ public class DDLCompilingTest extends CompilerTestBase {
 //        catch (Exception ignored) {}
         compile(DDL3_SOURCE_ROOT);
         submit(() -> {
-            var productKlass = getClassTypeByCode("Product");
-            var descField = TestUtils.getFieldByName(productKlass, "description");
-            Assert.assertEquals(MetadataState.REMOVED.code(), descField.state());
-            var statusFieldId = TestUtils.getFieldIdByName(productKlass, "status");
-            Assert.assertEquals(ref.stateFieldId, statusFieldId);
-            var productStatusKlass = getClassTypeByCode("ProductStatus");
-            Assert.assertEquals(ref.stateKlassId, productStatusKlass.id());
-            var currencyKlass = getClassTypeByCode("Currency");
-            var rateMethod = NncUtils.findRequired(currencyKlass.flows(), m -> m.name().equals("__rate__"));
-            Assert.assertEquals(Access.PUBLIC.code(), ((MethodParam)rateMethod.param()).access());
-            var yuanId = typeManager.getEnumConstant(currencyKlass.id(), "YUAN").id();
-            var rate = TestUtils.doInTransaction(() -> apiClient.callMethod(yuanId, "__rate__", List.of()));
-            Assert.assertEquals(0.14, rate);
-            var errors = productKlass.errors();
-            Assert.assertEquals(0, errors.size());
-            Assert.assertEquals(2L, callMethod(ref.derivedInstanceId, "getValue2", List.of()));
+            try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                var productKlass = context.getKlassByQualifiedName("Product");
+                var descField = productKlass.getFieldByName("description");
+                Assert.assertSame(MetadataState.REMOVED, descField.getState());
+                var statusFieldId = productKlass.getFieldByName("status");
+                Assert.assertEquals(ref.stateFieldId, statusFieldId.getId());
+                var productStatusKlass = context.getKlassByQualifiedName("ProductStatus");
+                Assert.assertEquals(ref.stateKlassId, productStatusKlass.getId());
+                var currencyKlass = context.getKlassByQualifiedName("Currency");
+                var rateMethod = currencyKlass.getMethodByName("__rate__");
+                Assert.assertTrue(rateMethod.isPublic());
+                var yuanId = typeManager.getEnumConstantId("Currency", "YUAN");
+                var rate = callMethod(yuanId, "__rate__", List.of());
+                Assert.assertEquals(0.14, rate);
+                var errors = productKlass.getErrors();
+                Assert.assertEquals(0, errors.size());
+                Assert.assertEquals(2L, callMethod(ref.derivedInstanceId.toString(), "getValue2", List.of()));
+            }
         });
         compile(DDL4_SOURCE_ROOT);
 //        compile(DDL3_SOURCE_ROOT);

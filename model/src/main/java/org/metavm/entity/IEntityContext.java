@@ -17,6 +17,7 @@ import org.metavm.util.profile.Profiler;
 import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.util.List;
+import java.util.Objects;
 
 public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, TypeDefProvider, RedirectStatusProvider {
 
@@ -240,6 +241,14 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     @Nullable
     default <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Object... values) {
         return NncUtils.first(selectByKey(indexDef, values));
+    }
+
+    default @Nullable Klass findKlassByQualifiedName(String qualifiedName) {
+        return selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, qualifiedName);
+    }
+
+    default Klass getKlassByQualifiedName(String qualifiedName) {
+        return Objects.requireNonNull(findKlassByQualifiedName(qualifiedName));
     }
 
     boolean containsUniqueKey(IndexDef<?> indexDef, Object...values);

@@ -6,6 +6,7 @@ import org.metavm.flow.Flow;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Flows;
 import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -44,7 +45,7 @@ public class FlowValue extends FunctionValue {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         throw new UnsupportedOperationException();
     }
 

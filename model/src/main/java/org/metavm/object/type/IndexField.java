@@ -6,14 +6,15 @@ import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.expression.PropertyExpression;
 import org.metavm.expression.ThisExpression;
+import org.metavm.flow.KlassInput;
+import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Values;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.rest.dto.IndexFieldDTO;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 
 @EntityType
-public class IndexField extends Entity implements LocalKey {
+public class IndexField extends Element implements LocalKey, ITypeDef {
 
     public static IndexField createFieldItem(Index constraint, Field field) {
         return new IndexField(
@@ -23,7 +24,7 @@ public class IndexField extends Entity implements LocalKey {
         );
     }
 
-    private final Index index;
+    private Index index;
     private String name;
     private org.metavm.flow.Value value;
 
@@ -71,16 +72,6 @@ public class IndexField extends Entity implements LocalKey {
         return null;
     }
 
-    public IndexFieldDTO toDTO() {
-        try(var serializeContext = SerializeContext.enter()) {
-            return new IndexFieldDTO(
-                    serializeContext.getStringId(this),
-                    name,
-                    value.toDTO()
-            );
-        }
-    }
-
     public int getFieldIndex() {
         return index.getFieldIndex(this);
     }
@@ -101,5 +92,24 @@ public class IndexField extends Entity implements LocalKey {
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
         return name;
+    }
+
+    public void write(KlassOutput output) {
+        output.writeEntityId(this);
+        output.writeUTF(name);
+    }
+
+    public void read(KlassInput input) {
+        name = input.readUTF();
+        value = Values.nullValue();
+    }
+
+    public void setIndex(Index index) {
+        this.index = index;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitIndexField(this);
     }
 }

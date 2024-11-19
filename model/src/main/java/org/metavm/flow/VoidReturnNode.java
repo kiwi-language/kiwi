@@ -1,7 +1,6 @@
 package org.metavm.flow;
 
 import org.metavm.entity.ElementVisitor;
-import org.metavm.flow.rest.Bytecodes;
 
 public class VoidReturnNode extends Node {
 

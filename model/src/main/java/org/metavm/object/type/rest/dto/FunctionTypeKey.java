@@ -2,15 +2,16 @@ package org.metavm.object.type.rest.dto;
 
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
+import org.metavm.util.WireTypes;
 
 import java.util.List;
 
 public record FunctionTypeKey(List<TypeKey> parameterTypeKeys, TypeKey returnTypeKey) implements TypeKey {
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.FUNCTION);
+    public void write(MvOutput output) {
+        output.write(WireTypes.FUNCTION_TYPE);
         output.writeInt(parameterTypeKeys.size());
         parameterTypeKeys.forEach(t -> t.write(output));
         returnTypeKey.write(output);
@@ -33,6 +34,6 @@ public record FunctionTypeKey(List<TypeKey> parameterTypeKeys, TypeKey returnTyp
 
     @Override
     public int getCode() {
-        return TypeKeyCodes.FUNCTION;
+        return WireTypes.FUNCTION_TYPE;
     }
 }

@@ -1,11 +1,11 @@
 package org.metavm.entity;
 
-import org.springframework.stereotype.Component;
 import org.metavm.object.instance.core.Id;
 import org.metavm.system.persistence.FileMapper;
 import org.metavm.system.persistence.FilePO;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
+import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -42,7 +42,7 @@ public class DatabaseStdIdStore implements StdIdStore {
         var size = input.readInt();
         var ids = new HashMap<String, Id>(size);
         for (int i = 0; i < size; i++) {
-            var key = input.readString();
+            var key = input.readUTF();
             var value = input.readId();
             ids.put(key, value);
         }
@@ -54,7 +54,7 @@ public class DatabaseStdIdStore implements StdIdStore {
         var output = new InstanceOutput(bout);
         output.writeInt(ids.size());
         for (var entry : ids.entrySet()) {
-            output.writeString(entry.getKey());
+            output.writeUTF(entry.getKey());
             output.writeId(entry.getValue());
         }
         return new FilePO(FILE_NAME, bout.toByteArray());

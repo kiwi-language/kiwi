@@ -13,6 +13,11 @@ public class ArrayUtilsFoo {
         Arrays.sort(array, 0, array.length, (s1, s2) -> s1.compareTo(s2));
     }
 
+    public void sortAll() {
+        //noinspection Convert2MethodRef,ComparatorCombinators
+        Arrays.sort(array, (s1, s2) -> s1.compareTo(s2));
+    }
+
     public String get(int i) {
         return array[i];
     }

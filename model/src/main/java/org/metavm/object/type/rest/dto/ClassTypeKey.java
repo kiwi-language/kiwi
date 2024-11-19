@@ -4,14 +4,15 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 import java.util.List;
 
 public record ClassTypeKey(@NotNull Id id) implements TypeKey, GenericDeclarationRefKey {
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.CLASS);
+    public void write(MvOutput output) {
+        output.write(WireTypes.CLASS_TYPE);
         output.writeId(id);
     }
 
@@ -32,7 +33,7 @@ public record ClassTypeKey(@NotNull Id id) implements TypeKey, GenericDeclaratio
 
     @Override
     public int getCode() {
-        return TypeKeyCodes.CLASS;
+        return WireTypes.CLASS_TYPE;
     }
 
     @Override

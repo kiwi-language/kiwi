@@ -26,7 +26,7 @@ public class DefaultValueUtil {
             List<Object> values = NncUtils.readJSONString(str, new TypeReference<>() {});
             return NncUtils.map(values, value -> convertFromStr(NncUtils.toJSONString(value), Types.getElementType(type)));
         }
-        else if(Types.isNullable(type)) {
+        else if(type.isNullable()) {
             return convertFromStr(str, type.getUnderlyingType());
         }
         else {

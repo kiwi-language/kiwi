@@ -41,10 +41,10 @@ public class ApiServiceTest extends TestCase {
         var skuId = (String) TestUtils.doInTransaction(() -> apiClient.newInstance(
                 "SKU", List.of(title, price, quantity)
         ));
-        var sku = instanceManager.get(skuId, 2).instance();
-        Assert.assertEquals(title, sku.getPrimitiveValue("name"));
-        Assert.assertEquals(price, sku.getPrimitiveValue("price"));
-        Assert.assertEquals(quantity, sku.getPrimitiveValue("quantity"));
+        var sku = apiClient.getObject(skuId);
+        Assert.assertEquals(title, sku.getString("name"));
+        Assert.assertEquals(price, sku.getDouble("price"), 0.0001);
+        Assert.assertEquals(quantity, sku.getLong("quantity"));
     }
 
     public void testHandleInstanceMethodCall() {
@@ -63,8 +63,8 @@ public class ApiServiceTest extends TestCase {
                 "decQuantity",
                 List.of(1)
         ));
-        var sku = instanceManager.get(skuId, 2).instance();
-        Assert.assertEquals(99L, sku.getPrimitiveValue("quantity"));
+        var sku = apiClient.getObject(skuId);
+        Assert.assertEquals(99L, sku.getLong("quantity"));
         // create coupons
         var coupon1Id = TestUtils.doInTransaction(() -> apiClient.newInstance(
                 "Coupon",
@@ -80,9 +80,9 @@ public class ApiServiceTest extends TestCase {
                 "buy",
                 List.of(1, List.of(coupon1Id, coupon2Id))
         ));
-        var order = instanceManager.get(orderId, 2).instance();
-        Assert.assertEquals(1L, order.getPrimitiveValue("quantity"));
-        Assert.assertEquals(85.0, order.getPrimitiveValue("price"));
+        var order = apiClient.getObject(orderId);
+        Assert.assertEquals(1L, order.getLong("quantity"));
+        Assert.assertEquals(85.0, order.getDouble("price"), 0.0001);
     }
 
 }

@@ -15,7 +15,7 @@ public interface BaseDTO {
     default @Nullable Long tmpId() {
         var id = id();
         if(id != null && Id.parse(id) instanceof TmpId tmpId)
-            return tmpId.getTmpId();
+            return tmpId.tmpId();
         else
             return null;
     }

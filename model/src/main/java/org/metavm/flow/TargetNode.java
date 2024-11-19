@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.ReadWriteArray;
-import org.metavm.flow.rest.Bytecodes;
 
 import javax.annotation.Nullable;
 import java.util.List;

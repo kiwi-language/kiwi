@@ -8,8 +8,8 @@ import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.AnyTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.object.type.rest.dto.TypeKeyCodes;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 import java.util.function.Function;
 
@@ -69,12 +69,12 @@ public class AnyType extends Type {
 
     @Override
     public int getTypeKeyCode() {
-        return TypeKeyCodes.ANY;
+        return WireTypes.ANY_TYPE;
     }
 
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.ANY);
+    public void write(MvOutput output) {
+        output.write(WireTypes.ANY_TYPE);
     }
 
     @Override

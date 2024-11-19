@@ -1,6 +1,8 @@
 package org.metavm.util;
 
 import org.metavm.entity.TreeTags;
+import org.metavm.flow.Lambda;
+import org.metavm.flow.Method;
 import org.metavm.object.instance.ChangeType;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
@@ -14,15 +16,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
-public class InstanceInput implements Closeable {
+public class InstanceInput extends MvInput {
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceInput.class);
 
@@ -50,7 +50,6 @@ public class InstanceInput implements Closeable {
             return context.createInstanceInput(bin);
     }
 
-    private final InputStream inputStream;
     private final Function<Id, Instance> resolver;
     private final Consumer<Instance> addValue;
     private final TypeDefProvider typeDefProvider;
@@ -63,16 +62,16 @@ public class InstanceInput implements Closeable {
     private @Nullable KlassDataSlot currentKlassSlot;
     private boolean loadedFromCache;
 
-    public InstanceInput(InputStream inputStream) {
-        this(inputStream, UNSUPPORTED_RESOLVER, UNSUPPORTED_ADD_VALUE, UNSUPPORTED_TYPE_DEF_PROVIDER, UNSUPPORTED_REDIRECTION_SIGNAL_PROVIDER);
+    public InstanceInput(InputStream in) {
+        this(in, UNSUPPORTED_RESOLVER, UNSUPPORTED_ADD_VALUE, UNSUPPORTED_TYPE_DEF_PROVIDER, UNSUPPORTED_REDIRECTION_SIGNAL_PROVIDER);
     }
 
-    public InstanceInput(InputStream inputStream,
+    public InstanceInput(InputStream in,
                          Function<Id, Instance> resolver,
                          Consumer<Instance> addValue,
                          TypeDefProvider typeDefProvider,
                          RedirectStatusProvider redirectStatusProvider) {
-        this.inputStream = inputStream;
+        super(in);
         this.resolver = resolver;
         this.addValue = addValue;
         this.typeDefProvider = typeDefProvider;
@@ -126,12 +125,12 @@ public class InstanceInput implements Closeable {
         return switch (wireType) {
             case WireTypes.NULL -> new NullValue(Types.getNullType());
             case WireTypes.DOUBLE -> new DoubleValue(readDouble(), Types.getDoubleType());
-            case WireTypes.STRING -> new StringValue(readString(), Types.getStringType());
+            case WireTypes.STRING -> new StringValue(readUTF(), Types.getStringType());
             case WireTypes.LONG -> new LongValue(readLong(), Types.getLongType());
             case WireTypes.CHAR -> new CharValue(readChar(), Types.getCharType());
             case WireTypes.BOOLEAN -> new BooleanValue(readBoolean(), Types.getBooleanType());
             case WireTypes.TIME -> new TimeValue(readLong(), Types.getTimeType());
-            case WireTypes.PASSWORD -> new PasswordValue(readString(), Types.getPasswordType());
+            case WireTypes.PASSWORD -> new PasswordValue(readUTF(), Types.getPasswordType());
             case WireTypes.FLAGGED_REFERENCE -> readFlaggedReference();
             case WireTypes.REFERENCE -> readReference();
             case WireTypes.REDIRECTING_REFERENCE -> readRedirectingReference();
@@ -197,7 +196,7 @@ public class InstanceInput implements Closeable {
     }
 
     private Reference readInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
-        var type = Type.readType(this, typeDefProvider);
+        var type = Type.readType(this);
         var id = PhysicalId.of(treeId, nodeId, type);
         var instance = type instanceof ArrayType arrayType ?
                 new ArrayInstance(id, arrayType, false, null) :
@@ -218,7 +217,7 @@ public class InstanceInput implements Closeable {
     }
 
     private Value readValueInstance() {
-        var type = Type.readType(this, typeDefProvider);
+        var type = Type.readType(this);
         var instance = type instanceof ArrayType arrayType ?
                 new ArrayInstance(arrayType) : ClassInstance.allocateEmpty((ClassType) type);
         instance.readRecord(this);
@@ -232,88 +231,59 @@ public class InstanceInput implements Closeable {
 
     public byte[] readInstanceBytes() {
         var bout = new ByteArrayOutputStream();
-        var copyVisitor = new StreamCopier(inputStream, bout);
+        var copyVisitor = new StreamCopier(getIn(), bout);
         copyVisitor.visitValue();
         return bout.toByteArray();
     }
 
-    public String readString() {
-        int len = readInt();
-        byte[] bytes = new byte[len];
-        read(bytes);
-        return new String(bytes, StandardCharsets.UTF_8);
+    @Override
+    public Klass getKlass(Id id) {
+        return (Klass) typeDefProvider.getTypeDef(id);
     }
 
-    public boolean readBoolean() {
-        return read() != 0;
+    @Override
+    public Method getMethod(Id id) {
+        return (Method) typeDefProvider.getTypeDef(id);
     }
 
-    public long readLong() {
-        int b = read();
-        boolean negative = (b & 1) == 1;
-        long v = b >> 1 & 0x3f;
-        int shifts = 6;
-        for (int i = 0; (b & 0x80) != 0 && i < 10; i++, shifts += 7) {
-            b = read();
-            v |= (long) (b & 0x7f) << shifts;
-        }
-        return negative ? -v : v;
+    @Override
+    public Field getField(Id id) {
+        return (Field) typeDefProvider.getTypeDef(id);
     }
 
-    public char readChar() {
-        int firstByte = read();
-        if (firstByte == -1)
-            throw new InternalException("End of stream reached");
-        if ((firstByte & 0x80) == 0) {
-            return (char) firstByte;
-        } else if ((firstByte & 0xE0) == 0xC0) {
-            int secondByte = read();
-            return (char) (((firstByte & 0x1F) << 6) | (secondByte & 0x3F));
-        } else if ((firstByte & 0xF0) == 0xE0) {
-            int secondByte = read();
-            int thirdByte = read();
-            return (char) (((firstByte & 0x0F) << 12) | ((secondByte & 0x3F) << 6) | (thirdByte & 0x3F));
-        } else
-            throw new InternalException("Invalid UTF-8 byte sequence");
+    @Override
+    public TypeVariable getTypeVariable(Id id) {
+        return (TypeVariable) typeDefProvider.getTypeDef(id);
     }
 
-    public int readInt() {
-        return (int) readLong();
+    @Override
+    public org.metavm.flow.Function getFunction(Id id) {
+        return (org.metavm.flow.Function) typeDefProvider.getTypeDef(id);
     }
 
-    public TypeTag readTypeTag() {
-        return TypeTag.fromCode(read());
+    @Override
+    public CapturedTypeVariable getCapturedTypeVariable(Id id) {
+        return (CapturedTypeVariable) typeDefProvider.getTypeDef(id);
     }
 
-    public double readDouble() {
-        long l = 0;
-        for (int shifts = 0; shifts < 64; shifts += 8)
-            l |= (long) read() << shifts;
-        return Double.longBitsToDouble(l);
+    @Override
+    public Lambda getLambda(Id id) {
+        return (Lambda) typeDefProvider.getTypeDef(id);
     }
 
-    public int read(byte[] buf) {
-        try {
-            return inputStream.read(buf);
-        } catch (IOException e) {
-            throw new InternalException("Failed to read from the underlying input steam", e);
-        }
+    @Override
+    public Index getIndex(Id id) {
+        return (Index) typeDefProvider.getTypeDef(id);
     }
 
-    public int read() {
-        try {
-            return inputStream.read();
-        } catch (IOException e) {
-            throw new InternalException("Failed to read from the underlying input steam", e);
-        }
+    @Override
+    public IndexField getIndexField(Id id) {
+        return (IndexField) typeDefProvider.getTypeDef(id);
     }
 
-    public void skip(int len) {
-        try {
-            inputStream.skip(len);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    @Override
+    public EnumConstantDef getEnumConstantDef(Id id) {
+        return (EnumConstantDef) typeDefProvider.getTypeDef(id);
     }
 
     public void setParent(@Nullable Instance parent) {
@@ -322,10 +292,6 @@ public class InstanceInput implements Closeable {
 
     public void setParentField(@Nullable Field parentField) {
         this.parentField = parentField;
-    }
-
-    public Id readId() {
-        return Id.readId(this);
     }
 
     public long readTreeId() {
@@ -355,22 +321,8 @@ public class InstanceInput implements Closeable {
         return new IndexKeyPO(indexId, data);
     }
 
-    public <T> List<T> readList(Supplier<T> read) {
-        var size = readInt();
-        var list = new ArrayList<T>(size);
-        for (int i = 0; i < size; i++) {
-            list.add(read.get());
-        }
-        return list;
-    }
-
     public void setLoadedFromCache(boolean loadedFromCache) {
         this.loadedFromCache = loadedFromCache;
-    }
-
-    @Override
-    public void close() throws IOException {
-        inputStream.close();
     }
 
     public long getTreeId() {
@@ -409,7 +361,4 @@ public class InstanceInput implements Closeable {
         return copy;
     }
 
-    public InputStream getInputStream() {
-        return inputStream;
-    }
 }

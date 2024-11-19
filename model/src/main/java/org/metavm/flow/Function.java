@@ -2,10 +2,12 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.BuildKeyContext;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.GlobalKey;
+import org.metavm.entity.IndexDef;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.FunctionImpl;
-import org.metavm.flow.rest.FunctionParam;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.MetadataState;
@@ -41,12 +43,8 @@ public class Function extends Flow implements GlobalKey {
                     @Nullable Function horizontalTemplate,
                     @Nullable CodeSource codeSource,
                     MetadataState state) {
-        super(tmpId, name, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, horizontalTemplate, codeSource, state, false);
-    }
-
-    @Override
-    protected FunctionParam getParam(boolean includeCode, SerializeContext serializeContext) {
-        return new FunctionParam();
+        super(tmpId, name, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, horizontalTemplate, codeSource, state);
+        resetBody();
     }
 
     @Override
@@ -134,4 +132,5 @@ public class Function extends Flow implements GlobalKey {
     public @Nullable FunctionImpl getNativeCode() {
         return nativeCode;
     }
+
 }

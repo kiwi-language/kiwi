@@ -2,6 +2,8 @@ package org.metavm.entity;
 
 import org.metavm.api.EntityType;
 import org.metavm.api.ValueObject;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,15 @@ public record Attribute(
         var attributes = new ArrayList<Attribute>();
         map.forEach((name, value) -> attributes.add(new Attribute(name, value)));
         return attributes;
+    }
+
+    public void write(MvOutput output) {
+        output.writeUTF(name);
+        output.writeUTF(value);
+    }
+
+    public static Attribute read(MvInput input) {
+        return new Attribute(input.readUTF(), input.readUTF());
     }
 
 }

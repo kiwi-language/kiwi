@@ -135,12 +135,19 @@ public class NncUtils {
         writeFile(filePath, toPrettyJsonString(object));
     }
 
-    public static void writeFile(String filePath, byte[] bytes) {
-        try (var output = new FileOutputStream(filePath)) {
+    public static void writeFile(String path, byte[] bytes) {
+        ensureDirectoryExists(getDirectoryPath(path));
+        try (var output = new FileOutputStream(path)) {
             output.write(bytes);
         } catch (IOException e) {
-            throw new InternalException(String.format("Failed to write file: %s", filePath));
+            throw new InternalException(String.format("Failed to write file: %s", path), e);
         }
+    }
+
+    private static String getDirectoryPath(String path) {
+        var idx = path.lastIndexOf('/');
+        assert idx >= 0;
+        return path.substring(0 , idx + 1);
     }
 
     public static String readLine(String path) {

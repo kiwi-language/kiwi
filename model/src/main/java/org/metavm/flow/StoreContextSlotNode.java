@@ -3,7 +3,6 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.flow.rest.Bytecodes;
 
 public class StoreContextSlotNode extends Node {
 

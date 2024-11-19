@@ -60,7 +60,7 @@ public class MvObjectInputStream extends ObjectInputStream {
 
     @Override
     public @NotNull String readUTF() {
-        return input.readString();
+        return input.readUTF();
     }
 
     @Override

@@ -33,7 +33,7 @@ public class InstanceContextTest extends TestCase {
         super.setUp();
         MockStandardTypesInitializer.init();
         instanceStore = new MemInstanceStore(new LocalCache());
-        entityRepository = new MockEntityRepository(new MemTypeRegistry());
+        entityRepository = new MockEntityRepository();
         cache = new MockCache();
         eventQueue = new MockEventQueue();
         idProvider = new MockIdProvider();

@@ -416,6 +416,27 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(null);
             }
     ),
+    sortArray0(
+            "void sortArray0([never, any|null][] array, java.util.Comparator<[never,any]>|null comparator)",
+            false,
+            List.of(
+                    ReflectionUtils.getMethod(Arrays.class, "sort", Object[].class, Comparator.class)
+            ),
+            (func, args, callContext) -> {
+                var array = args.get(0).resolveArray();
+                var c = args.get(1);
+                if(c.isNull())
+                    array.sort((e1,e2) -> Instances.compare(e1, e2, callContext));
+                else {
+                    var comparator = c.resolveObject();
+                    var cmpMethod = requireNonNull(comparator.getKlass().findMethodByVerticalTemplate(StdMethod.comparatorCompare.get()));
+                    array.sort((e1, e2) -> Instances.toInt(
+                            Flows.invokeVirtual(cmpMethod, comparator, List.of(e1,e2), callContext
+                            )));
+                }
+                return FlowExecResult.of(null);
+            }
+    ),
     sortArray(
             "void sortArray([never, any|null][] array, long from, long to, java.util.Comparator<[never,any]>|null comparator)",
             false,

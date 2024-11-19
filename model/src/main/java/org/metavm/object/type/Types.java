@@ -3,12 +3,13 @@ package org.metavm.object.type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.*;
-import org.metavm.flow.*;
-import org.metavm.flow.rest.FlowDTO;
+import org.metavm.flow.Method;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Nodes;
+import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.FunctionValue;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.generic.TypeSubstitutor;
-import org.metavm.object.type.rest.dto.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -347,28 +348,6 @@ public class Types {
         throw new InternalException("type " + type + " is not an array type");
     }
 
-    public static TypeDef saveTypeDef(TypeDefDTO typeDefDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        return switch (typeDefDTO) {
-            case KlassDTO klassDTO -> saveClass(klassDTO, stage, batch);
-            case TypeVariableDTO typeVariableDTO -> saveTypeVariable(typeVariableDTO, stage, batch);
-            case CapturedTypeVariableDTO capturedTypeVariableDTO ->
-                    saveCapturedTypeVariable(capturedTypeVariableDTO, stage, batch);
-            default -> throw new InternalException("Invalid TypeDefDTO: " + typeDefDTO);
-        };
-    }
-
-    public static Klass saveClass(KlassDTO klassDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        return TYPE_FACTORY.saveKlass(klassDTO, stage, batch);
-    }
-
-    public static TypeVariable saveTypeVariable(TypeVariableDTO typeVariableDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        return TYPE_FACTORY.saveTypeVariable(typeVariableDTO, stage, batch);
-    }
-
-    public static CapturedTypeVariable saveCapturedTypeVariable(CapturedTypeVariableDTO capturedTypeVariableDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        return TYPE_FACTORY.saveCapturedTypeVariable(capturedTypeVariableDTO, stage, batch);
-    }
-
     public static Type getUnionType(Collection<Type> types) {
         if (types.isEmpty())
             return getNeverType();
@@ -423,19 +402,6 @@ public class Types {
         return new UncertainType(lowerBound, upperBound);
     }
 
-    public static Flow saveFlow(FlowDTO flowDTO, SaveTypeBatch batch) {
-        return TYPE_FACTORY.saveMethod(flowDTO, ResolutionStage.DEFINITION, batch);
-    }
-
-    public static org.metavm.flow.Function saveFunction(FlowDTO flowDTO, ResolutionStage stage, SaveTypeBatch batch) {
-        return TYPE_FACTORY.saveFunction(flowDTO, stage, batch);
-    }
-
-    public static Field createFieldAndBind(Klass type, FieldDTO fieldDTO, IEntityContext context) {
-        var batch = SaveTypeBatch.empty(context);
-        return TYPE_FACTORY.saveField(type, fieldDTO, batch);
-    }
-
     public static Type getUnderlyingType(UnionType type) {
         NncUtils.requireTrue(type.isNullable());
         return NncUtils.findRequired(type.getMembers(), t -> !t.equals(getNullType()));
@@ -444,10 +410,6 @@ public class Types {
     public static String getParameterizedKey(Element template, List<? extends Type> typeArguments) {
         return template.getStringId() + "-"
                 + NncUtils.join(typeArguments, Entity::getStringId, "-");
-    }
-
-    public static boolean isNullable(Type type) {
-        return TYPE_FACTORY.isNullable(type);
     }
 
     public static boolean isAny(Type type) {
@@ -869,4 +831,24 @@ public class Types {
             default -> throw new IllegalStateException("Cannot get klass for type: " + type);
         };
     }
+
+    public static List<Klass> sortKlassesByTopology(Collection<Klass> klasses) {
+        var visited = new HashSet<Klass>();
+        var visiting = new HashSet<Klass>();
+        var included = new HashSet<>(klasses);
+        var result = new ArrayList<Klass>();
+        klasses.forEach(k -> visit(k, visited, visiting, included, result));
+        return result;
+    }
+
+    private static void visit(Klass klass, Set<Klass> visited, Set<Klass> visiting, Set<Klass> included, List<Klass> result) {
+        if(!included.contains(klass) || !visited.add(klass))
+            return;
+        if(!visiting.add(klass))
+            throw new RuntimeException("Circular reference in klass hierarchy detected at klass " + klass.getTypeDesc());
+        klass.forEachSuper(s -> visit(s, visited, visiting, included, result));
+        result.add(klass);
+        visiting.remove(klass);
+    }
+
 }

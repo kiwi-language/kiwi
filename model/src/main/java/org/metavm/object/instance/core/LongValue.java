@@ -4,8 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
-import org.metavm.util.InstanceOutput;
 import org.metavm.util.Instances;
+import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 @Slf4j
@@ -117,7 +117,7 @@ public class LongValue extends NumberValue {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         output.write(WireTypes.LONG);
         output.writeLong(value);
     }

@@ -6,13 +6,14 @@ import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.VariableType;
 import org.metavm.util.Constants;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 public record VariableTypeKey(GenericDeclarationRefKey genericDeclarationRefKey, @NotNull Id rawVariableId) implements TypeKey {
     
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.VARIABLE);
+    public void write(MvOutput output) {
+        output.write(WireTypes.VARIABLE_TYPE);
         output.writeId(rawVariableId);
     }
 
@@ -36,6 +37,6 @@ public record VariableTypeKey(GenericDeclarationRefKey genericDeclarationRefKey,
 
     @Override
     public int getCode() {
-        return TypeKeyCodes.VARIABLE;
+        return WireTypes.VARIABLE_TYPE;
     }
 }

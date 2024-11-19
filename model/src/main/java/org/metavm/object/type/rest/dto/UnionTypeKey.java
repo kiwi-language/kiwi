@@ -2,15 +2,16 @@ package org.metavm.object.type.rest.dto;
 
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.UnionType;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
+import org.metavm.util.WireTypes;
 
 import java.util.Set;
 
 public record UnionTypeKey(Set<TypeKey> memberKeys) implements TypeKey {
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.UNION);
+    public void write(MvOutput output) {
+        output.write(WireTypes.UNION_TYPE);
         output.writeInt(memberKeys.size());
         memberKeys.forEach(k -> k.write(output));
     }
@@ -32,6 +33,6 @@ public record UnionTypeKey(Set<TypeKey> memberKeys) implements TypeKey {
 
     @Override
     public int getCode() {
-        return TypeKeyCodes.UNION;
+        return WireTypes.UNION_TYPE;
     }
 }

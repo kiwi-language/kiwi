@@ -1,10 +1,11 @@
 package org.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.BuildKeyContext;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
+import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.GlobalKey;
+import org.metavm.flow.KlassOutput;
 import org.metavm.object.instance.ColumnKind;
 
 import java.util.Map;
@@ -76,5 +77,11 @@ public record Column(
     @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
         return name;
+    }
+
+    public void write(KlassOutput output) {
+        output.write(kind.tagSuffix());
+        output.writeUTF(name);
+        output.writeInt(tag);
     }
 }

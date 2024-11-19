@@ -1,9 +1,7 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.SerializeContext;
+import org.metavm.flow.KlassOutput;
 import org.metavm.flow.LambdaRef;
-import org.metavm.object.type.rest.dto.CpEntryDTO;
-import org.metavm.object.type.rest.dto.LambdaCpEntryDTO;
 
 public class LambdaCpEntry extends CpEntry {
 
@@ -25,7 +23,7 @@ public class LambdaCpEntry extends CpEntry {
     }
 
     @Override
-    public CpEntryDTO toDTO(SerializeContext serializeContext) {
-        return new LambdaCpEntryDTO(getIndex(), lambdaRef.toDTO(serializeContext));
+    public void write(KlassOutput output) {
+        lambdaRef.write(output);
     }
 }

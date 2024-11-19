@@ -1,6 +1,8 @@
 package org.metavm.entity;
 
 import org.metavm.api.ChildEntity;
+import org.metavm.flow.KlassInput;
+import org.metavm.flow.KlassOutput;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -11,7 +13,7 @@ import java.util.Map;
 public abstract class AttributedElement extends Element {
 
     @ChildEntity
-    private final ReadWriteArray<Attribute> attributes = addChild(new ReadWriteArray<>(Attribute.class), "attributes");
+    protected final ReadWriteArray<Attribute> attributes = addChild(new ReadWriteArray<>(Attribute.class), "attributes");
 
     public AttributedElement() {
     }
@@ -64,6 +66,21 @@ public abstract class AttributedElement extends Element {
         var map = new HashMap<String, String>();
         attributes.forEach(attr -> map.put(attr.name(), attr.value()));
         return map;
+    }
+
+    public void writeAttributes(KlassOutput output) {
+        output.writeInt(attributes.size());
+        for (Attribute attribute : attributes) {
+            attribute.write(output);
+        }
+    }
+
+    public void readAttributes(KlassInput input) {
+        attributes.clear();
+        int attributeCount = input.readInt();
+        for (int i = 0; i < attributeCount; i++) {
+            attributes.add(Attribute.read(input));
+        }
     }
 
 }

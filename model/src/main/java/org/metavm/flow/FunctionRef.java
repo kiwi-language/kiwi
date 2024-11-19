@@ -1,18 +1,16 @@
 package org.metavm.flow;
 
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
-import org.metavm.flow.rest.FunctionRefDTO;
+import org.metavm.flow.rest.FunctionRefKey;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.*;
+import org.metavm.object.type.ITypeDef;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
-import org.metavm.object.type.rest.dto.TypeKeyCodes;
-import org.metavm.util.Constants;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.InstanceOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -21,7 +19,7 @@ import java.util.List;
 @EntityType
 public class FunctionRef extends FlowRef {
 
-    public static FunctionRef create(FunctionRefDTO functionRefDTO, IEntityContext context) {
+    public static FunctionRef create(FunctionRefKey functionRefDTO, IEntityContext context) {
         return new FunctionRef(
                 context.getFunction(functionRefDTO.rawFlowId()),
                 NncUtils.map(functionRefDTO.typeArguments(), t -> TypeParser.parseType(t, context))
@@ -40,16 +38,6 @@ public class FunctionRef extends FlowRef {
     @Override
     public Function resolve() {
         return (Function) super.resolve();
-    }
-
-    @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.FUNCTION_REF);
-        output.writeId(getRawFlow().getId());
-        output.writeInt(getTypeArguments().size());
-        for (Type typeArgument : getTypeArguments()) {
-            typeArgument.write(output);
-        }
     }
 
     @Override
@@ -83,23 +71,29 @@ public class FunctionRef extends FlowRef {
         return visitor.visitFunctionRef(this);
     }
 
-    public FunctionRefDTO toDTO(SerializeContext serializeContext) {
-        return toDTO(serializeContext, null);
-    }
-
-    public FunctionRefDTO toDTO(SerializeContext serializeContext, java.util.function.Function<ITypeDef, String> getTypeDefId) {
-        return new FunctionRefDTO(
+    public FunctionRefKey toDTO(SerializeContext serializeContext, java.util.function.Function<ITypeDef, String> getTypeDefId) {
+        return new FunctionRefKey(
                 serializeContext.getStringId(getRawFlow()),
                 NncUtils.map(getTypeArguments(), t -> t.toExpression(serializeContext, getTypeDefId))
         );
     }
 
-    public static FunctionRef read(InstanceInput input, TypeDefProvider typeDefProvider) {
-        var rawFunc = (Function) typeDefProvider.getTypeDef(input.readId());
+    @Override
+    public void write(MvOutput output) {
+        output.write(WireTypes.FUNCTION_REF);
+        output.writeEntityId(getRawFlow());
+        output.writeInt(typeArguments.size());
+        for (Type typeArgument : typeArguments) {
+            typeArgument.write(output);
+        }
+    }
+
+    public static FunctionRef read(MvInput input) {
+        var rawFunc = input.getFunction(input.readId());
         var typeArgsCount = input.readInt();
         var typeArgs = new ArrayList<Type>(typeArgsCount);
         for (int i = 0; i < typeArgsCount; i++) {
-            typeArgs.add(Type.readType(input, typeDefProvider));
+            typeArgs.add(Type.readType(input));
         }
         return new FunctionRef(rawFunc, typeArgs);
     }

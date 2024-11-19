@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,12 +19,28 @@ public class ClassInstanceWrap extends InstanceWrap {
         return convertValue(getRaw(fieldName));
     }
 
+    public long getLong(String fieldName) {
+        return (long) get(fieldName);
+    }
+
+    public double getDouble(String fieldName) {
+        return (double) get(fieldName);
+    }
+
     public String getString(String fieldName) {
         return (String) get(fieldName);
     }
 
+    public boolean getBoolean(String fieldName) {
+        return (boolean) get(fieldName);
+    }
+
     public Id getId(String fieldName) {
         return Id.parse(getString(fieldName));
+    }
+
+    public String id() {
+        return (String) map.get("$id");
     }
 
     public ClassInstanceWrap getObject(String fieldName) {
@@ -45,5 +62,9 @@ public class ClassInstanceWrap extends InstanceWrap {
     @Override
     public String toString() {
         return map.toString();
+    }
+
+    public Map<String, Object> getMap() {
+        return Collections.unmodifiableMap(map);
     }
 }

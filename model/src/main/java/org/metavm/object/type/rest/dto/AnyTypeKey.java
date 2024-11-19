@@ -2,13 +2,14 @@ package org.metavm.object.type.rest.dto;
 
 import org.metavm.object.type.AnyType;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 public record AnyTypeKey() implements TypeKey {
 
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.ANY);
+    public void write(MvOutput output) {
+        output.write(WireTypes.ANY_TYPE);
     }
 
     @Override
@@ -28,7 +29,7 @@ public record AnyTypeKey() implements TypeKey {
 
     @Override
     public int getCode() {
-        return TypeKeyCodes.ANY;
+        return WireTypes.ANY_TYPE;
     }
 
 }

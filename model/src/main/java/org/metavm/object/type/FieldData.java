@@ -4,7 +4,6 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.rest.dto.CreatingFieldDTO;
 import org.metavm.util.Column;
 
 import javax.annotation.Nullable;
@@ -79,15 +78,6 @@ public class FieldData extends Entity {
     @Nullable
     public Value getDefaultValue() {
         return defaultValue;
-    }
-
-    public CreatingFieldDTO toDTO() {
-        return new CreatingFieldDTO(
-                name,
-                type.getStringId(),
-                type.getName(),
-                unique
-        );
     }
 
 }

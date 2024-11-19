@@ -2,12 +2,9 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.SerializeContext;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
 import org.metavm.expression.NodeExpression;
-import org.metavm.flow.rest.NodeValueDTO;
-import org.metavm.flow.rest.ValueDTO;
 import org.metavm.object.type.Type;
 
 import java.util.Objects;
@@ -18,13 +15,6 @@ public class NodeValue extends Value {
 
     public NodeValue(@NotNull Node node) {
         this.node = node;
-    }
-
-    @Override
-    public ValueDTO toDTO() {
-        try (var serContext = SerializeContext.enter()) {
-            return new NodeValueDTO(serContext.getStringId(node));
-        }
     }
 
     @Override

@@ -5,7 +5,8 @@ import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.TypeTags;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 public record ArrayTypeKey(int kind, TypeKey elementTypeKey) implements TypeKey {
 
@@ -13,10 +14,10 @@ public record ArrayTypeKey(int kind, TypeKey elementTypeKey) implements TypeKey 
     private static final int[] typeTags = new int[5];
 
     static {
-        typeKeyCodes[ArrayKind.READ_ONLY.code()] = TypeKeyCodes.READ_ONLY_ARRAY;
-        typeKeyCodes[ArrayKind.READ_WRITE.code()] = TypeKeyCodes.READ_WRITE_ARRAY;
-        typeKeyCodes[ArrayKind.CHILD.code()] = TypeKeyCodes.CHILD_ARRAY;
-        typeKeyCodes[ArrayKind.VALUE.code()] = TypeKeyCodes.VALUE_ARRAY;
+        typeKeyCodes[ArrayKind.READ_ONLY.code()] = WireTypes.READ_ONLY_ARRAY_TYPE;
+        typeKeyCodes[ArrayKind.READ_WRITE.code()] = WireTypes.READ_WRITE_ARRAY_TYPE;
+        typeKeyCodes[ArrayKind.CHILD.code()] = WireTypes.CHILD_ARRAY_TYPE;
+        typeKeyCodes[ArrayKind.VALUE.code()] = WireTypes.VALUE_ARRAY_TYPE;
         typeTags[ArrayKind.READ_ONLY.code()] = TypeTags.READONLY_ARRAY;
         typeTags[ArrayKind.READ_WRITE.code()] = TypeTags.READ_WRITE_ARRAY;
         typeTags[ArrayKind.CHILD.code()] = TypeTags.CHILD_ARRAY;
@@ -24,7 +25,7 @@ public record ArrayTypeKey(int kind, TypeKey elementTypeKey) implements TypeKey 
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         output.write(typeKeyCodes[kind]);
         elementTypeKey.write(output);
     }

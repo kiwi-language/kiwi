@@ -1,7 +1,7 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 
 public class NullId extends Id {
 
@@ -12,7 +12,7 @@ public class NullId extends Id {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         output.writeIdTag(IdTag.NULL, false);
     }
 

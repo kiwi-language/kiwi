@@ -1,8 +1,8 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.object.type.PrimitiveType;
-import org.metavm.util.InstanceOutput;
 import org.metavm.util.Instances;
+import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 import java.text.DateFormat;
@@ -21,7 +21,7 @@ public class TimeValue extends PrimitiveValue /*implements Comparable<TimeInstan
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         output.write(WireTypes.TIME);
         output.writeLong(value);
     }

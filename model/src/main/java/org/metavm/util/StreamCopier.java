@@ -206,7 +206,7 @@ public class StreamCopier extends StreamVisitor {
     @Override
     public void visitString() {
         output.write(WireTypes.STRING);
-        output.writeString(readString());
+        output.writeUTF(readString());
     }
 
     @Override
@@ -236,7 +236,7 @@ public class StreamCopier extends StreamVisitor {
     @Override
     public void visitPassword() {
         output.write(WireTypes.PASSWORD);
-        output.writeString(readString());
+        output.writeUTF(readString());
     }
 
     @Override

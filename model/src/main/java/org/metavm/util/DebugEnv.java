@@ -81,6 +81,8 @@ public class DebugEnv {
 
     public static volatile SystemDefContext defContext;
 
+    public static volatile boolean saveClassFile = true;
+
     public static void exitPathItem() {
         path.removeLast();
     }

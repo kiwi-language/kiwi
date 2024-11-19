@@ -6,8 +6,6 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
 import org.metavm.expression.VarType;
-import org.metavm.flow.rest.ExpressionValueDTO;
-import org.metavm.flow.rest.ValueDTO;
 import org.metavm.object.type.Type;
 
 @EntityType
@@ -17,11 +15,6 @@ public class ExpressionValue extends Value {
 
     public ExpressionValue(@NotNull Expression expression) {
         this.expression = expression;
-    }
-
-    @Override
-    public ValueDTO toDTO() {
-        return new ExpressionValueDTO(expression.build(VarType.ID));
     }
 
     @Override

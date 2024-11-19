@@ -15,6 +15,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class CompilerHttpUtils {
@@ -102,6 +103,23 @@ public class CompilerHttpUtils {
             var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             return processResult(resp.body(), responseTypeRef);
         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <R> R upload(String path, String filePath, TypeReference<R> responseTypeRef) {
+        try {
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(new URI(host + path))
+                    .header("Accept", "application/json")
+                    .header("Content-Type", "application/octet-stream")
+                    .header(Headers.APP_ID, Long.toString(appId))
+                    .POST(HttpRequest.BodyPublishers.ofFile(Paths.get(filePath)))
+                    .build();
+            var resp = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            return processResult(resp.body(), responseTypeRef);
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

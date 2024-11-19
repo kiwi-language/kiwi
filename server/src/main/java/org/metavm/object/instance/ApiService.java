@@ -276,6 +276,7 @@ public class ApiService extends EntityContextFactoryAware {
         var methodRef = methodCode != null ?
                 TypeParser.parseSimpleMethodRef(methodCode, name -> getKlass(name, context)) : null;
         var queue = new LinkedList<Klass>();
+        boolean tracking = "addAll".equals(methodCode);
         klass.forEachSuperClass(queue::offer);
         do {
             var k = Objects.requireNonNull(queue.poll());
@@ -284,12 +285,18 @@ public class ApiService extends EntityContextFactoryAware {
                         && _static == method.isStatic() && constructor == method.isConstructor()) {
                     method = methodRef != null ? method.getParameterized(methodRef.typeArguments()) : method;
                     var resolvedArgs = tryResolveArguments(method, rawArguments, context);
+                    if(tracking)
+                        logger.debug("Try resolving method {}, resolved args: {}", method.getQualifiedSignature(), resolvedArgs);
                     if (resolvedArgs != null)
                         return new ResolutionResult(method, resolvedArgs);
                 }
             }
             k.getInterfaces().forEach(t -> queue.offer(t.resolve()));
         } while (!queue.isEmpty());
+        klass.forEachMethod(m -> {
+            if(m.isPublic() && !m.isAbstract() && m.getName().equals(methodCode) && m.getParameters().size() == rawArguments.size())
+                logger.debug("Method: {}", m.getQualifiedSignature());
+        });
         throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, klass.getQualifiedName() + "." + methodCode,
                 rawArguments);
     }

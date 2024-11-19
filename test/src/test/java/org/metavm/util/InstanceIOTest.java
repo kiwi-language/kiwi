@@ -21,9 +21,9 @@ public class InstanceIOTest extends TestCase {
         String s = "hello world";
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
-        output.writeString(s);
+        output.writeUTF(s);
         var input = InstanceInput.create(bout.toByteArray(), null);
-        Assert.assertEquals(s, input.readString());
+        Assert.assertEquals(s, input.readUTF());
     }
 
     public void testWriteInt() {
@@ -61,37 +61,7 @@ public class InstanceIOTest extends TestCase {
         }
     }
 
-//    public void testLargeInstance() {
-//        var classType = MockRegistry.getDefContext().getClassType(ClassType.class);
-//        var classTypeInst = MockRegistry.getDefContext().getInstance(classType);
-//        var bytes = InstanceOutput.toByteArray(classTypeInst, true);
-//        System.out.println(bytes.length);
-//
-//        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-//        new StreamCopier(new ByteArrayInputStream(bytes), bout).visit();
-//        Assert.assertTrue(Arrays.equals(bytes, bout.toByteArray()));
-//
-//        var deserialized = InstanceInput.readFromBytes(bytes, MockRegistry.getInstanceContext());
-//        MatcherAssert.assertThat(deserialized, InstanceMatcher.of(classTypeInst));
-//
-//        var instanceDTO = classTypeInst.toDTO();
-//        String json = NncUtils.toJSONString(instanceDTO);
-//        System.out.println(json.getBytes(StandardCharsets.UTF_8).length);
-//    }
-
     private static final String BYTE_FILE = "/Users/leen/workspace/object/src/test/resources/bytes/1240104967";
-
-//    public void testPerf() {
-//        var bytes = TestUtils.readBytes(BYTE_FILE);
-//        int runs = 300;
-//        long start = System.currentTimeMillis();
-//        for (int i = 0; i < runs; i++) {
-//            var visitor = new StreamVisitor(new ByteArrayInputStream(bytes));
-//            visitor.visit();
-//        }
-//        long elapsed = System.currentTimeMillis() - start;
-//        System.out.printf("average time: %d%n", elapsed / runs);
-//    }
 
     public void testArrayChildField() {
         var fooKlass = TestUtils.newKlassBuilder("Foo").build();

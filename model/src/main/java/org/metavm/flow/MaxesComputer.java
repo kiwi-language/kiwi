@@ -18,7 +18,7 @@ public class MaxesComputer extends StructuralVisitor<Void> {
 
     @Override
     public Void visitMethod(Method method) {
-        if(!method.isRootScopePresent())
+        if(!method.isCodePresent())
             return null;
 //        if(method.getQualifiedName().equals("MyList.fromView")) {
 //        log.debug("Visiting method: {}", method.getQualifiedSignature());
@@ -36,7 +36,7 @@ public class MaxesComputer extends StructuralVisitor<Void> {
 
     @Override
     public Void visitFunction(Function function) {
-        if(!function.isRootScopePresent())
+        if(!function.isCodePresent())
             return null;
         var c = enterCallable(function);
         c.setMaxLocals(function.getParameters().size());

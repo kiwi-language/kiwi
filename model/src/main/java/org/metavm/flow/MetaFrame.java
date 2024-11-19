@@ -8,7 +8,6 @@ import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ExceptionNative;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.entity.natives.NullPointerExceptionNative;
-import org.metavm.flow.rest.Bytecodes;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;

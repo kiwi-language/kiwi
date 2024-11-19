@@ -151,12 +151,8 @@ public class Nodes {
     }
 
     public static IfNode if_(@Nullable Node target, Code code) {
-        return if_(code.nextNodeName("if"), target, code);
-    }
-
-    public static IfNode if_(String name, @Nullable Node target, Code code) {
         return new IfNode(
-                name,
+                code.nextNodeName("if"),
                 code.getLastNode(),
                 code,
                 target
@@ -200,17 +196,14 @@ public class Nodes {
         return new ClearArrayNode(code.nextNodeName("arrayclear"), code.getLastNode(), code);
     }
 
-    public static SetFieldNode setField(String name, Field field, Code code) {
+    public static SetFieldNode setField(Field field, Code code) {
         return new SetFieldNode(
-                name,
+                code.nextNodeName("setField"),
                 code.getLastNode(),
                 code,
                 field.getRef()
         );
-    }
 
-    public static SetFieldNode setField(Field field, Code code) {
-        return setField(code.nextNodeName("setField"), field, code);
     }
 
     public static SetStaticNode setStatic(Field field, Code code) {

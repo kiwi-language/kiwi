@@ -2,12 +2,13 @@ package org.metavm.object.type.rest.dto;
 
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.UncertainType;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 public record UncertainTypeKey(TypeKey lowerBoundKey, TypeKey upperBoundKey) implements TypeKey {
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.UNCERTAIN);
+    public void write(MvOutput output) {
+        output.write(WireTypes.UNCERTAIN_TYPE);
         lowerBoundKey.write(output);
         upperBoundKey.write(output);
     }
@@ -29,6 +30,6 @@ public record UncertainTypeKey(TypeKey lowerBoundKey, TypeKey upperBoundKey) imp
 
     @Override
     public int getCode() {
-        return TypeKeyCodes.UNCERTAIN;
+        return WireTypes.UNCERTAIN_TYPE;
     }
 }

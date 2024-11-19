@@ -16,7 +16,6 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.object.type.generic.TypeSubstitutor;
-import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +40,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public static final IndexDef<Klass> UNIQUE_QUALIFIED_NAME = IndexDef.createUnique(Klass.class, "qualifiedName");
 
-    public static final IndexDef<Klass> UNIQUE_SOURCE_CODE_TAG = IndexDef.createUnique(Klass.class, "sourceCodeTag");
+    public static final IndexDef<Klass> UNIQUE_SOURCE_CODE_TAG = IndexDef.createUnique(Klass.class, "sourceTag");
 
     public static final IndexDef<Klass> TEMPLATE_IDX = IndexDef.create(Klass.class, "template");
 
@@ -84,7 +83,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     @ChildEntity
     private final ChildArray<TypeVariable> typeParameters = addChild(new ChildArray<>(TypeVariable.class), "typeParameters");
     @ChildEntity
-    private final ReadWriteArray<Type> typeArguments = addChild(new ReadWriteArray<>(Type.class), "typeArguments");
+    private ReadWriteArray<Type> typeArguments = addEphemeralChild(new ReadWriteArray<>(Type.class), "typeArguments");
     @ChildEntity
     private final ChildArray<Error> errors = addChild(new ChildArray<>(Error.class), "errors");
     private boolean error;
@@ -102,11 +101,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     private ClassTypeState state = ClassTypeState.INIT;
 
-    private final @Nullable Integer sourceCodeTag;
+    private @Nullable Integer sourceTag;
 
-    private final long tag;
+    private long tag;
 
-    private final int since;
+    private int since;
 
     @SuppressWarnings({"unused", "FieldCanBeLocal"})
     private boolean templateFlag = false;
@@ -170,7 +169,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             List<TypeVariable> typeParameters,
             List<? extends Type> typeArguments,
             long tag,
-            @Nullable Integer sourceCodeTag,
+            @Nullable Integer sourceTag,
             int since) {
         this.name = name;
         this.qualifiedName = qualifiedName;
@@ -187,7 +186,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         this.source = source;
         this.desc = desc;
         this.tag = tag;
-        this.sourceCodeTag = sourceCodeTag;
+        this.sourceTag = sourceTag;
         this.since = since;
         this.numFields = superType != null ? superType.resolve().getNumFields() : 0;
         closure = new Closure(this);
@@ -205,11 +204,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         resetSortedClasses();
         NncUtils.requireTrue(getAncestorClasses().size() <= Constants.MAX_INHERITANCE_DEPTH,
                 "Inheritance depth of class " + name + "  exceeds limit: " + Constants.MAX_INHERITANCE_DEPTH);
-    }
-
-    public void update(KlassDTO klassDTO) {
-        this.name = klassDTO.name();
-        setDesc(klassDTO.desc());
     }
 
     public void setDesc(@Nullable String desc) {
@@ -289,6 +283,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public long getTag() {
         return tag;
+    }
+
+    @Nullable
+    public Integer getSourceTag() {
+        return sourceTag;
     }
 
     public void setTitleField(@Nullable Field titleField) {
@@ -610,6 +609,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
             throw new InternalException("Method '" + method + "' is already added to the class type");
         methods.addChild(method);
         getMethodTable().rebuild();
+        method.setDeclaringType(this);
     }
     //</editor-fold>
 
@@ -632,10 +632,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         else
             fields.addChild(field);
         resetFieldTransients();
+        field.setDeclaringType(this);
     }
 
     @Override
     public void onLoadPrepare() {
+        typeArguments = addEphemeralChild(new ReadWriteArray<>(Type.class), "typeArguments");
         extensions = new ArrayList<>();
         implementations = new ArrayList<>();
         closure = new Closure(this);
@@ -643,6 +645,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     @Override
     public void onLoad() {
+        if(!typeParameters.isEmpty())
+            typeArguments.addAll(NncUtils.map(typeParameters, TypeVariable::getType));
         stage = ResolutionStage.INIT;
         sortedFields = new ArrayList<>();
         resetSortedFields();
@@ -709,6 +713,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void addConstraint(Constraint constraint) {
         constraints.addChild(constraint);
+        constraint.setDeclaringType(this);
     }
 
     public void removeConstraint(Constraint constraint) {
@@ -1146,50 +1151,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return null;
     }
 
-    public KlassDTO toDTO() {
-        try (var serContext = SerializeContext.enter()) {
-            return toDTO(serContext);
-        }
-    }
-
-    public KlassDTO toDTO(SerializeContext serializeContext) {
-        typeParameters.forEach(serializeContext::writeTypeDef);
-        if (template != null)
-            serializeContext.writeTypeDef(template);
-        return new KlassDTO(
-                serializeContext.getStringId(this),
-                name,
-                qualifiedName,
-                kind.code(),
-                ephemeral,
-                anonymous,
-                getAttributesMap(),
-                NncUtils.get(superType, t -> t.toExpression(serializeContext)),
-                NncUtils.map(interfaces, t -> t.toExpression(serializeContext)),
-                source.code(),
-                NncUtils.map(fields, Field::toDTO),
-                NncUtils.map(staticFields, Field::toDTO),
-                NncUtils.get(titleField, serializeContext::getStringId),
-                NncUtils.map(constraints, Constraint::toDTO),
-                NncUtils.map(methods, f -> f.toDTO(serializeContext.shouldWriteCode(this), serializeContext)),
-                NncUtils.map(enumConstantDefs, ec -> ec.toDTO(serializeContext)),
-                desc,
-                getExtra(),
-                isAbstract,
-                isTemplate(),
-                NncUtils.map(typeParameters, serializeContext::getStringId),
-                NncUtils.map(typeParameters, tv -> tv.toDTO(serializeContext)),
-                NncUtils.get(template, serializeContext::getStringId),
-                NncUtils.map(typeArguments, t -> t.toExpression(serializeContext)),
-                !extensions.isEmpty() || !implementations.isEmpty(),
-                struct,
-                searchable,
-                tag,
-                sourceCodeTag,
-                NncUtils.map(errors, Error::toDTO)
-        );
-    }
-
     protected Object getExtra() {
         return null;
     }
@@ -1397,6 +1358,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         return qualifiedName;
     }
 
+    public String getClassFilePath() {
+        return qualifiedName.replace('.', '/') + ".mvclass";
+    }
+
     public void setQualifiedName(@Nullable String qualifiedName) {
         this.qualifiedName = qualifiedName;
     }
@@ -1466,6 +1431,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         resetFieldOffsets();
     }
 
+    public void resetHierarchy() {
+        closure = new Closure(this);
+        getMethodTable().rebuild();
+        resetRank();
+        resetSortedClasses();
+        resetSortedFields();
+        resetSelfFieldOffset();
+    }
 
     private void onAncestorChanged() {
         forEachSubclass(Klass::onAncestorChangedSelf);
@@ -1510,7 +1483,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public void setFields(List<Field> fields) {
-        requireTrue(allMatch(fields, f -> f.getDeclaringType() == this));
+        fields.forEach(f -> f.setDeclaringType(this));
         this.fields.resetChildren(fields);
         resetFieldTransients();
     }
@@ -1531,17 +1504,17 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     }
 
     public void setStaticFields(List<Field> staticFields) {
-        requireTrue(allMatch(staticFields, f -> f.getDeclaringType() == this));
+        staticFields.forEach(f -> f.setDeclaringType(this));
         this.staticFields.resetChildren(staticFields);
     }
 
     public void setConstraints(List<Constraint> constraints) {
-        requireTrue(allMatch(constraints, c -> c.getDeclaringType() == this));
+        constraints.forEach(c -> c.setDeclaringType(this));
         this.constraints.resetChildren(constraints);
     }
 
     public void setMethods(List<Method> methods) {
-        requireTrue(allMatch(methods, f -> f.getDeclaringType() == this));
+        methods.forEach(m -> m.setDeclaringType(this));
         this.methods.resetChildren(methods);
         rebuildMethodTable();
     }
@@ -1729,10 +1702,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
 
     public void addEnumConstantDef(EnumConstantDef enumConstantDef) {
         this.enumConstantDefs.addChild(enumConstantDef);
+        enumConstantDef.setKlass(this);
     }
 
     public void setEnumConstantDefs(List<EnumConstantDef> enumConstantDefs) {
         this.enumConstantDefs.resetChildren(enumConstantDefs);
+        enumConstantDefs.forEach(ecd -> ecd.setKlass(this));
     }
 
     public void clearEnumConstantDefs() {
@@ -1823,5 +1798,137 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
         }
     }
 
+    public void setTag(long tag) {
+        this.tag = tag;
+    }
+
+    public void setSourceTag(@Nullable Integer sourceTag) {
+        this.sourceTag = sourceTag;
+    }
+
+    public static final int FLAG_ABSTRACT = 1;
+    public static final int FLAG_STRUCT = 2;
+    public static final int FLAG_SEARCHABLE = 4;
+    public static final int FLAG_EPHEMERAL = 8;
+    public static final int FLAG_ANONYMOUS = 16;
+    public static final int FLAG_TEMPLATE = 32;
+
+    public int getClassFlags() {
+        int flags = 0;
+        if(isAbstract)
+            flags |= FLAG_ABSTRACT;
+        if(struct)
+            flags |= FLAG_STRUCT;
+        if(searchable)
+            flags |= FLAG_SEARCHABLE;
+        if(ephemeral)
+            flags |= FLAG_EPHEMERAL;
+        if(anonymous)
+            flags |= FLAG_ANONYMOUS;
+        if(templateFlag)
+            flags |= FLAG_TEMPLATE;
+        return flags;
+    }
+
+    private void setClassFlags(int flags) {
+        isAbstract = (flags & FLAG_ABSTRACT) != 0;
+        struct = (flags & FLAG_STRUCT) != 0;
+        searchable = (flags & FLAG_SEARCHABLE) != 0;
+        ephemeral = (flags & FLAG_EPHEMERAL) != 0;
+        anonymous = (flags & FLAG_ANONYMOUS) != 0;
+        templateFlag = (flags & FLAG_TEMPLATE) != 0;
+    }
+
+    public void write(KlassOutput output) {
+        output.writeEntityId(this);
+        output.write(kind.code());
+        output.writeUTF(name);
+        output.writeUTF(qualifiedName);
+        output.writeInt(getClassFlags());
+        output.write(source.code());
+        output.writeLong(tag);
+        output.writeInt(sourceTag != null ? sourceTag : -1);
+        output.writeInt(since);
+        output.writeInt(typeParameters.size());
+        typeParameters.forEach(tp -> tp.write(output));
+        if(superType != null)
+            superType.write(output);
+        else
+            output.write(0);
+        output.writeInt(interfaces.size());
+        interfaces.forEach(it -> it.write(output));
+        output.writeInt(fields.size());
+        fields.forEach(f -> f.write(output));
+        output.writeInt(staticFields.size());
+        staticFields.forEach(f -> f.write(output));
+        output.writeInt(methods.size());
+        methods.forEach(m -> m.write(output));
+        output.writeInt(constraints.size());
+        for (Constraint constraint : constraints) {
+            constraint.write(output);
+        }
+        output.writeInt(enumConstantDefs.size());
+        enumConstantDefs.forEach(ed -> ed.write(output));
+        writeAttributes(output);
+    }
+
+    public void read(KlassInput input) {
+        kind = ClassKind.fromCode(input.read());
+        name = input.readUTF();
+        if(DebugEnv.flag)
+            logger.debug("Reading klass {}", name);
+        qualifiedName = input.readUTF();
+        setClassFlags(input.readInt());
+        source = ClassSource.fromCode(input.read());
+        tag = input.readLong();
+        sourceTag = input.readInt();
+        if(sourceTag == -1)
+            sourceTag = null;
+        since = input.readInt();
+        var typeParameterCount = input.readInt();
+        var typeParameters = new ArrayList<TypeVariable>();
+        for (int i = 0; i < typeParameterCount; i++) {
+            typeParameters.add(input.readTypeVariable());
+        }
+        setTypeParameters(typeParameters);
+        this.superType = (ClassType) input.readTypeNullable();
+        int interfaceCount = input.readInt();
+        interfaces.clear();
+        for (int i = 0; i < interfaceCount; i++) {
+            interfaces.add((ClassType) input.readType());
+        }
+        var fieldCount = input.readInt();
+        fields.clear();
+        for (int i = 0; i < fieldCount; i++) {
+            var field = input.readField();
+            fields.addChild(field);
+        }
+        var staticFieldCount = input.readInt();
+        var staticFields = new ArrayList<Field>();
+        for (int i = 0; i < staticFieldCount; i++) {
+            staticFields.add(input.readField());
+        }
+        setStaticFields(staticFields);
+        var methodCount = input.readInt();
+        methods.clear();;
+        for (int i = 0; i < methodCount; i++) {
+            var method = input.readMethod();
+            method.setDeclaringType(this);
+            methods.addChild(method);
+        }
+        int constraintCount = input.readInt();
+        var constraints = new ArrayList<Constraint>(constraintCount);
+        for (int i = 0; i < constraintCount; i++) {
+            constraints.add(input.readIndex());
+        }
+        setConstraints(constraints);
+        int enumConstantCount = input.readInt();
+        var ecd = new ArrayList<EnumConstantDef>();
+        for (int i = 0; i < enumConstantCount; i++) {
+            ecd.add(input.readEnumConstantDef());
+        }
+        setEnumConstantDefs(ecd);
+        readAttributes(input);
+    }
 }
 

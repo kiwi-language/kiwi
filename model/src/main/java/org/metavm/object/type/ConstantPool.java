@@ -1,13 +1,12 @@
 package org.metavm.object.type;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.entity.*;
-import org.metavm.flow.FunctionRef;
-import org.metavm.flow.LambdaRef;
-import org.metavm.flow.MethodRef;
+import org.metavm.entity.CopyIgnore;
+import org.metavm.entity.Entity;
+import org.metavm.entity.LoadAware;
+import org.metavm.entity.ReadWriteArray;
+import org.metavm.flow.*;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.rest.dto.ConstantPoolDTO;
-import org.metavm.util.NncUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -73,10 +72,6 @@ public class ConstantPool extends Entity implements LoadAware {
         return resolvedValues;
     }
 
-    public ConstantPoolDTO toDTO(SerializeContext serializeContext) {
-        return new ConstantPoolDTO(NncUtils.map(entries, e -> e.toDTO(serializeContext)));
-    }
-
     public List<CpEntry> getEntries() {
         return entries.toList();
     }
@@ -91,5 +86,26 @@ public class ConstantPool extends Entity implements LoadAware {
         value2entry = new HashMap<>();
         for (CpEntry entry : entries)
             value2entry.put(entry.getValue(), entry);
+    }
+
+    public void write(KlassOutput output) {
+        output.writeInt(entries.size());
+        for (CpEntry entry : entries) {
+            entry.write(output);
+        }
+    }
+
+    public void read(KlassInput input) {
+        clear();
+        int entryCount = input.readInt();
+        for (int i = 0; i < entryCount; i++) {
+            var value = input.readElement();
+            addValue(value);
+        }
+
+    }
+
+    public int size() {
+        return entries.size();
     }
 }

@@ -8,8 +8,8 @@ import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.ArrayTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -97,13 +97,13 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         output.write(ArrayTypeKey.getTypeKeyCode(kind.code()));
         elementType.write(output);
     }
 
-    public static ArrayType read(InstanceInput input,  ArrayKind kind, TypeDefProvider typeDefProvider) {
-        return new ArrayType(Type.readType(input, typeDefProvider), kind);
+    public static ArrayType read(MvInput input, ArrayKind kind) {
+        return new ArrayType(Type.readType(input), kind);
     }
 
     public ArrayKind getKind() {

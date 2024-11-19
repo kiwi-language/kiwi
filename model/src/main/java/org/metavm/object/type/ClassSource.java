@@ -1,14 +1,13 @@
 package org.metavm.object.type;
 
 import org.metavm.api.EntityType;
-import org.metavm.object.type.rest.dto.ClassSourceCodes;
 import org.metavm.util.NncUtils;
 
 @EntityType
 public enum ClassSource {
-    BUILTIN(ClassSourceCodes.BUILTIN),
-    COMPILATION(ClassSourceCodes.COMPILATION),
-    RUNTIME(ClassSourceCodes.RUNTIME);
+    BUILTIN(1),
+    COMPILATION(2),
+    RUNTIME(3);
 
     private final int code;
 
@@ -20,7 +19,7 @@ public enum ClassSource {
         return code;
     }
 
-    public static ClassSource getByCode(int code) {
+    public static ClassSource fromCode(int code) {
         return NncUtils.findRequired(values(), source -> source.code == code);
     }
 

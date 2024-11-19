@@ -14,7 +14,7 @@ import org.metavm.object.instance.query.Path;
 import org.metavm.object.instance.query.PathTree;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Type;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.ValueFormatter;
 import org.metavm.system.RegionConstants;
@@ -26,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 @Component
 public class InstanceManager extends EntityContextFactoryAware {
@@ -145,7 +147,7 @@ public class InstanceManager extends EntityContextFactoryAware {
         try (var context = newContext()) {
             var instance = create(instanceDTO, context.getInstanceContext());
             context.finish();
-            return Objects.requireNonNull(instance.tryGetId()).toString();
+            return requireNonNull(instance.tryGetId()).toString();
         }
     }
 
@@ -220,28 +222,23 @@ public class InstanceManager extends EntityContextFactoryAware {
 
     public QueryInstancesResponse query(InstanceQueryDTO query) {
         try (var entityContext = newContext()) {
-            var context = entityContext.getInstanceContext();
-            Type type = TypeParser.parseType(query.type(), context.getTypeDefProvider());
-            if (type instanceof ClassType classType) {
-                var internalQuery = InstanceQueryBuilder.newBuilder(classType.resolve())
-                        .searchText(query.searchText())
-                        .newlyCreated(NncUtils.map(query.createdIds(), Id::parse))
-                        .fields(NncUtils.map(query.fields(), f -> InstanceQueryField.create(f, entityContext)))
-                        .expression(query.expression())
-                        .page(query.page())
-                        .pageSize(query.pageSize())
-                        .build();
-                var dataPage1 = instanceQueryService.query(internalQuery, entityContext);
-                return new QueryInstancesResponse(
-                        new Page<>(
-                                NncUtils.map(dataPage1.data(), r -> r.resolve().toDTO()),
-                                dataPage1.total()
-                        ),
-                        List.of()
-                );
-            } else {
-                return new QueryInstancesResponse(new Page<>(List.of(), 0L), List.of());
-            }
+            var klass = requireNonNull(entityContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, query.type()));
+            var classType = klass.getType();
+            var internalQuery = InstanceQueryBuilder.newBuilder(classType.resolve())
+                    .searchText(query.searchText())
+                    .newlyCreated(NncUtils.map(query.createdIds(), Id::parse))
+                    .fields(NncUtils.map(query.fields(), f -> InstanceQueryField.create(f, entityContext)))
+                    .expression(query.expression())
+                    .page(query.page())
+                    .pageSize(query.pageSize())
+                    .build();
+            var dataPage1 = instanceQueryService.query(internalQuery, entityContext);
+            return new QueryInstancesResponse(
+                    new Page<>(
+                            NncUtils.map(dataPage1.data(), r -> r.resolve().getStringId()),
+                            dataPage1.total()
+                    )
+            );
         }
     }
 

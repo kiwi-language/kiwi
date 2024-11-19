@@ -3,13 +3,14 @@ package org.metavm.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
-import org.metavm.flow.rest.MethodRefDTO;
+import org.metavm.entity.CopyIgnore;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.SerializeContext;
+import org.metavm.flow.rest.MethodRefKey;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
-import org.metavm.object.type.rest.dto.TypeKeyCodes;
 import org.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -22,14 +23,14 @@ import java.util.function.Function;
 @Slf4j
 public class MethodRef extends FlowRef implements PropertyRef {
 
-    public static MethodRef createMethodRef(MethodRefDTO methodRefDTO, TypeDefProvider typeDefProvider) {
-        var classType = (ClassType) TypeParser.parseType(methodRefDTO.declaringType(), typeDefProvider);
+    public static MethodRef createMethodRef(MethodRefKey methodRefKey, TypeDefProvider typeDefProvider) {
+        var classType = (ClassType) TypeParser.parseType(methodRefKey.declaringType(), typeDefProvider);
         var klass = classType.getKlass();
-        var methodId = Id.parse(methodRefDTO.rawFlowId());
+        var methodId = Id.parse(methodRefKey.rawFlowId());
         var method = Objects.requireNonNull(klass.findSelfMethod(m -> m.idEquals(methodId)),
                 () -> "Cannot find method with ID " + methodId + " in klass " + klass.getTypeDesc());
         return new MethodRef(classType, method,
-                NncUtils.map(methodRefDTO.typeArguments(), t -> TypeParser.parseType(t, typeDefProvider)));
+                NncUtils.map(methodRefKey.typeArguments(), t -> TypeParser.parseType(t, typeDefProvider)));
     }
 
     private final ClassType declaringType;
@@ -40,6 +41,8 @@ public class MethodRef extends FlowRef implements PropertyRef {
     public MethodRef(ClassType declaringType, @NotNull Method rawFlow, List<Type> typeArguments) {
         super(rawFlow, typeArguments);
         this.declaringType = declaringType;
+        if(declaringType.getKlass() == DummyKlass.INSTANCE)
+            throw new RuntimeException("Creating MethodRef with DummyKlass");
     }
 
     public ClassType getDeclaringType() {
@@ -57,7 +60,6 @@ public class MethodRef extends FlowRef implements PropertyRef {
         var klass = declaringType.resolve();
         partialResolved = klass.findMethod(m -> m.getEffectiveVerticalTemplate() == getRawFlow());
         if (partialResolved == null) {
-            log.debug("All methods in klass {}", klass.getTypeDesc());
             klass.forEachMethod(m -> log.info(m.getQualifiedSignature()));
             throw new InternalException("fail to resolve methodRef: " + this);
         }
@@ -69,7 +71,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
         if(resolved != null) {
             return (Method) resolved;
         }
-        var r =  partialResolve().getParameterized(getTypeArguments());
+        var r =  isParameterized() ? partialResolve().getParameterized(getTypeArguments()) : partialResolve();
         resolved = r;
         return r;
     }
@@ -97,12 +99,8 @@ public class MethodRef extends FlowRef implements PropertyRef {
         return visitor.visitMethodRef(this);
     }
 
-    public MethodRefDTO toDTO(SerializeContext serializeContext) {
-        return toDTO(serializeContext, null);
-    }
-
-    public MethodRefDTO toDTO(SerializeContext serializeContext, Function<ITypeDef, String> getTypeDefId) {
-        return new MethodRefDTO(
+    public MethodRefKey toDTO(SerializeContext serializeContext, Function<ITypeDef, String> getTypeDefId) {
+        return new MethodRefKey(
                 declaringType.toExpression(serializeContext, getTypeDefId),
                 serializeContext.getStringId(getRawFlow()),
                 NncUtils.map(typeArguments, t -> t.toExpression(serializeContext, getTypeDefId))
@@ -114,24 +112,24 @@ public class MethodRef extends FlowRef implements PropertyRef {
         return "{\"declaringType\": \"" + declaringType + "\", \"rawMethod\": \"" + getRawFlow().getSignatureString() + "\"}";
     }
 
-    public static MethodRef read(InstanceInput input, TypeDefProvider typeDefProvider) {
-       var classType = ClassType.read(input, typeDefProvider);
-       var rawMethod = (Method) typeDefProvider.getTypeDef(input.readId());
+    public static MethodRef read(MvInput input) {
+       var classType = (ClassType) Type.readType(input);
+       var rawMethod = input.getMethod(input.readId());
        var typeArgsCount = input.readInt();
        var typeArgs = new ArrayList<Type>(typeArgsCount);
        for (int i = 0; i < typeArgsCount; i++) {
-           typeArgs.add(Type.readType(input, typeDefProvider));
+           typeArgs.add(Type.readType(input));
        }
        return new MethodRef(classType, rawMethod, typeArgs);
     }
 
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.METHOD_REF);
+    public void write(MvOutput output) {
+        output.write(WireTypes.METHOD_REF);
         declaringType.write(output);
-        output.writeId(getRawFlow().getId());
-        output.writeInt(getTypeArguments().size());
-        for (Type typeArgument : getTypeArguments()) {
+        output.writeEntityId(getRawFlow());
+        output.writeInt(typeArguments.size());
+        for (Type typeArgument : typeArguments) {
             typeArgument.write(output);
         }
     }
@@ -159,4 +157,5 @@ public class MethodRef extends FlowRef implements PropertyRef {
                                 ) + ">"
                 );
     }
+
 }

@@ -5,7 +5,6 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.ReadWriteArray;
-import org.metavm.object.version.rest.dto.VersionDTO;
 
 import java.util.List;
 import java.util.Set;
@@ -60,10 +59,6 @@ public class Version extends Entity {
 
     public List<String> getRemovedFunctionIds() {
         return removedFunctionIds.toList();
-    }
-
-    public VersionDTO toDTO() {
-        return new VersionDTO(version, changedTypeIds.toList(), removedTypeIds.toList());
     }
 
 }

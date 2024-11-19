@@ -6,8 +6,9 @@ import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
+import org.metavm.util.WireTypes;
 
 import java.util.List;
 
@@ -18,8 +19,8 @@ public record ParameterizedTypeKey(Id templateId, List<TypeKey> typeArgumentKeys
     }
 
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.PARAMETERIZED);
+    public void write(MvOutput output) {
+        output.write(WireTypes.PARAMETERIZED_TYPE);
         output.writeId(templateId);
         output.writeInt(typeArgumentKeys.size());
         typeArgumentKeys.forEach(k -> k.write(output));
@@ -42,7 +43,7 @@ public record ParameterizedTypeKey(Id templateId, List<TypeKey> typeArgumentKeys
 
     @Override
     public int getCode() {
-        return TypeKeyCodes.PARAMETERIZED;
+        return WireTypes.PARAMETERIZED_TYPE;
     }
 
     @Override

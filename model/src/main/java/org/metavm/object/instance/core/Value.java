@@ -9,10 +9,7 @@ import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.Type;
-import org.metavm.util.BusinessException;
-import org.metavm.util.InstanceOutput;
-import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.IdentityHashMap;
@@ -142,7 +139,7 @@ public abstract class Value {
 
     public abstract void writeInstance(InstanceOutput output) ;
 
-    public abstract void write(InstanceOutput output);
+    public abstract void write(MvOutput output);
 
     public abstract Object toSearchConditionValue();
 

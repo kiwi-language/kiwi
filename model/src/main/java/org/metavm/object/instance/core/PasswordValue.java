@@ -3,7 +3,7 @@ package org.metavm.object.instance.core;
 import org.metavm.object.instance.rest.PrimitiveFieldValue;
 import org.metavm.object.type.PrimitiveKind;
 import org.metavm.object.type.PrimitiveType;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 public class PasswordValue extends PrimitiveValue {
@@ -21,9 +21,9 @@ public class PasswordValue extends PrimitiveValue {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         output.write(WireTypes.PASSWORD);
-        output.writeString(value);
+        output.writeUTF(value);
     }
 
     @Override

@@ -27,6 +27,10 @@ public class ArrayInstanceWrap extends InstanceWrap {
         return Collections.unmodifiableList(list);
     }
 
+    public int size() {
+        return list.size();
+    }
+
     @Override
     public String toString() {
         return list.toString();

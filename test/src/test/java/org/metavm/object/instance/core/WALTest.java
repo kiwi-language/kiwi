@@ -15,7 +15,6 @@ import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.PrimitiveType;
-import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.task.DDLTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -135,7 +134,7 @@ public class WALTest extends TestCase {
                     walContext.finish();
                     fieldId = field.getStringId();
                 }
-                var commit = new Commit(wal, new BatchSaveRequest(List.of(), List.of(), true),
+                var commit = new Commit(wal,
                         List.of(fieldId), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
                 context.bind(new DDLTask(commit, CommitState.PREPARING0));
                 context.finish();

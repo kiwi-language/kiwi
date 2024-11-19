@@ -2,7 +2,7 @@ package org.metavm.object.instance.core;
 
 import org.metavm.object.instance.rest.PrimitiveFieldValue;
 import org.metavm.object.type.PrimitiveType;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 public class BooleanValue extends PrimitiveValue {
@@ -20,7 +20,7 @@ public class BooleanValue extends PrimitiveValue {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         output.write(WireTypes.BOOLEAN);
         output.writeBoolean(value);
     }

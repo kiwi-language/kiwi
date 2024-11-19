@@ -7,18 +7,14 @@ import org.metavm.beans.FactoryBeanDefinition;
 import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
 import org.metavm.entity.IEntityContext;
-import org.metavm.object.type.Klass;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class BeanManager {
 
-    public void createBeans(List<Klass> klasses, BeanDefinitionRegistry registry, IEntityContext context) {
+    public void createBeans(Collection<Klass> klasses, BeanDefinitionRegistry registry, IEntityContext context) {
         var defs = new ArrayList<BeanDefinition>();
         for (Klass k : klasses)
             createBeanDefinitions(k, defs, registry, context);

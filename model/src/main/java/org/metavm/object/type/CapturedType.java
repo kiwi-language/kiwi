@@ -1,17 +1,17 @@
 package org.metavm.object.type;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.CapturedTypeKey;
-import org.metavm.object.type.rest.dto.TypeKeyCodes;
 import org.metavm.util.Constants;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -103,13 +103,13 @@ public class CapturedType extends Type {
 
     @Override
     public int getTypeKeyCode() {
-        return TypeKeyCodes.CAPTURED;
+        return WireTypes.CAPTURED_TYPE;
     }
 
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.CAPTURED);
-        output.writeId(variable.getId());
+    public void write(MvOutput output) {
+        output.write(WireTypes.CAPTURED_TYPE);
+        output.writeEntityId(variable);
     }
 
     @Override
@@ -117,8 +117,8 @@ public class CapturedType extends Type {
         return 0;
     }
 
-    public static CapturedType read(InstanceInput input, TypeDefProvider typeDefProvider) {
-        return new CapturedType((CapturedTypeVariable) typeDefProvider.getTypeDef(input.readId()));
+    public static CapturedType read(MvInput input) {
+        return new CapturedType(input.getCapturedTypeVariable(input.readId()));
     }
 
     public UncertainType getUncertainType() {

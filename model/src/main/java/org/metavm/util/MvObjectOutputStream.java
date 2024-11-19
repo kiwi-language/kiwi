@@ -46,7 +46,7 @@ public class MvObjectOutputStream extends ObjectOutputStream {
 
     @Override
     public void writeUTF(String str) {
-        out.writeString(str);
+        out.writeUTF(str);
     }
 
     @Override

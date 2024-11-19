@@ -2,15 +2,17 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.SerializeContext;
+import org.metavm.entity.ValueArray;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.FunctionTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.object.type.rest.dto.TypeKeyCodes;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
+import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -110,12 +112,12 @@ public class FunctionType extends CompositeType {
 
     @Override
     public int getTypeKeyCode() {
-        return TypeKeyCodes.FUNCTION;
+        return WireTypes.FUNCTION_TYPE;
     }
 
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.FUNCTION);
+    public void write(MvOutput output) {
+        output.write(WireTypes.FUNCTION_TYPE);
         output.writeInt(parameterTypes.size());
         parameterTypes.forEach(t -> t.write(output));
         returnType.write(output);
@@ -126,12 +128,12 @@ public class FunctionType extends CompositeType {
         return 4;
     }
 
-    public static FunctionType read(InstanceInput input, TypeDefProvider typeDefProvider) {
+    public static FunctionType read(MvInput input) {
         var numParamTypes = input.readInt();
         var paramTypes = new ArrayList<Type>(numParamTypes);
         for (int i = 0; i < numParamTypes; i++)
-            paramTypes.add(Type.readType(input, typeDefProvider));
-        return new FunctionType(paramTypes, Type.readType(input, typeDefProvider));
+            paramTypes.add(Type.readType(input));
+        return new FunctionType(paramTypes, Type.readType(input));
     }
 
     @Override

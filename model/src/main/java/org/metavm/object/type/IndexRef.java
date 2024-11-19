@@ -1,23 +1,15 @@
 package org.metavm.object.type;
 
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.SerializeContext;
+import org.metavm.entity.Reference;
 import org.metavm.entity.ValueElement;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.rest.dto.IndexRefDTO;
+import org.metavm.flow.KlassInput;
+import org.metavm.flow.KlassOutput;
+import org.metavm.util.WireTypes;
 
 import java.util.Objects;
 
-public class IndexRef extends ValueElement {
-
-    public static IndexRef create(IndexRefDTO indexRefDTO, TypeDefProvider typeDefProvider) {
-        var classType = (ClassType) TypeParser.parseType(indexRefDTO.declaringType(), typeDefProvider);
-        var klass = classType.getKlass();
-        var rawIndexId = Id.parse(indexRefDTO.rawIndexId());
-        var rawIndex = klass.findIndex(i -> i.idEquals(rawIndexId));
-        return new IndexRef(classType, Objects.requireNonNull(rawIndex,
-                () -> "Cannot find field with ID " + rawIndexId + " in klass " + klass.getTypeDesc()));
-    }
+public class IndexRef extends ValueElement implements Reference {
 
     private final ClassType declaringType;
     private final Index rawIndex;
@@ -32,7 +24,15 @@ public class IndexRef extends ValueElement {
         if(resolved != null)
             return resolved;
         var klass = declaringType.resolve();
-        return resolved = Objects.requireNonNull(klass.findIndex(f -> f.getEffectiveTemplate() == rawIndex));
+        var resolved = klass.findIndex(f -> f.getEffectiveTemplate() == rawIndex);
+        if(resolved == null) {
+            for (Constraint constraint : klass.getConstraints()) {
+                logger.debug("Constraint {}, matches: {}", constraint, constraint instanceof Index idx && idx.getEffectiveTemplate() == rawIndex);
+            }
+            logger.debug("Raw index name: {}, declaring klass: {}", rawIndex.getName(), rawIndex.getDeclaringType().getTypeDesc());
+            throw new NullPointerException("Cannot find index with template " + rawIndex.getClass().getSimpleName() + " in klass " + klass.getTypeDesc());
+        }
+        return resolved;
     }
 
     @Override
@@ -50,8 +50,16 @@ public class IndexRef extends ValueElement {
         return Objects.hash(declaringType, rawIndex);
     }
 
-    public IndexRefDTO toDTO(SerializeContext serializeContext) {
-        return new IndexRefDTO(declaringType.toExpression(serializeContext), serializeContext.getStringId(rawIndex));
+    public void write(KlassOutput output) {
+        output.write(WireTypes.INDEX_REF);
+        declaringType.write(output);
+        output.writeEntityId(rawIndex);
+    }
+
+    public static IndexRef read(KlassInput input) {
+        var classType = (ClassType) Type.readType(input);
+        var rawIndex = input.getIndex(input.readId());
+        return new IndexRef(classType, rawIndex);
     }
 
 }

@@ -14,7 +14,7 @@ import java.util.List;
 public class TypeProviders {
 
     public final MemTypeRegistry typeRegistry = new MemTypeRegistry();
-    public final EntityRepository entityRepository = new MockEntityRepository(typeRegistry);
+    public final EntityRepository entityRepository = new MockEntityRepository();
     public final MockTypeDefRepository typeDefRepository = new MockTypeDefRepository();
 
     public SubstitutorV2 createSubstitutor(Object template, List<TypeVariable> typeParameters, List<? extends Type> typeArguments, ResolutionStage stage) {

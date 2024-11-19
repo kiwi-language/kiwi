@@ -4,16 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
-import org.metavm.flow.rest.NeverValueDTO;
-import org.metavm.flow.rest.ValueDTO;
 import org.metavm.object.type.Type;
 
 public class NeverValue extends Value {
-
-    @Override
-    public ValueDTO toDTO() {
-        return new NeverValueDTO();
-    }
 
     @Override
     public Type getType() {

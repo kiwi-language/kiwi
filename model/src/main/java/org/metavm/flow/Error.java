@@ -1,8 +1,8 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.common.rest.dto.ErrorDTO;
-import org.metavm.entity.*;
+import org.metavm.entity.Element;
+import org.metavm.entity.Entity;
 
 @EntityType
 public class Error extends Entity {
@@ -29,16 +29,6 @@ public class Error extends Entity {
 
     public String getMessage() {
         return message;
-    }
-
-    public ErrorDTO toDTO() {
-        try(var serContext = SerializeContext.enter()) {
-            return new ErrorDTO(
-                    ElementKind.getByElementClass(element.getClass()).code(),
-                    serContext.getStringId(element),
-                    message
-            );
-        }
     }
 
 }

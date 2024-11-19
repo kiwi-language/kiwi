@@ -1,6 +1,8 @@
 
 class Base {
 
+    public Base() {}
+
     <T> boolean test(T value) {
         return false;
     }
@@ -8,6 +10,10 @@ class Base {
 }
 
 class Sub extends Base {
+
+    public Sub() {
+        super();
+    }
 
     <T> boolean test(T value) {
         return true;

@@ -4,14 +4,11 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Nodes;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.*;
-import org.metavm.util.InternalException;
-import org.metavm.util.Null;
 import org.metavm.util.TestUtils;
 
 import java.util.List;
@@ -62,21 +59,7 @@ public class SubstitutorV2Test extends TestCase {
         }
 
         var stringType = PrimitiveType.stringType;
-
-        var typeFactory = new DefaultTypeFactory(t -> {
-            if (t == Null.class)
-                return nullType;
-            if (t == String.class)
-                return stringType;
-            throw new InternalException("Type not found: " + t.getTypeName());
-        });
         stringType.initId(PhysicalId.of(1L, 0L, TestUtils.mockClassType()));
-        var pType = foo.getParameterized(List.of(stringType));
-        try (var serContext = SerializeContext.enter()) {
-            serContext.includingCode(true);
-            serContext.writeTypeDef(pType);
-            TestUtils.writeJson(JSON_FILE_PATH, serContext.getTypes());
-        }
     }
 
     public void testFlow() {

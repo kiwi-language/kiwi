@@ -12,22 +12,27 @@ import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.KlassOutput;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.ResolutionStage;
 import org.metavm.object.type.TypeDef;
-import org.metavm.object.type.ValueFormatter;
-import org.metavm.object.type.rest.dto.BatchSaveRequest;
-import org.metavm.object.type.rest.dto.TypeDefDTO;
-import org.metavm.system.RegionConstants;
-import org.metavm.util.*;
+import org.metavm.util.ContextUtil;
+import org.metavm.util.IdentitySet;
+import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.TranspileUtils.executeCommand;
@@ -87,6 +92,7 @@ public class Compiler {
 
     private final String baseMod;
     private final String sourceRoot;
+    private final String targetDir;
 
     private final IrCoreApplicationEnvironment appEnv;
     private final IrCoreProjectEnvironment projectEnv;
@@ -99,7 +105,8 @@ public class Compiler {
         NncUtils.ensureDirectoryExists(REQUEST_DIR);
     }
 
-    public Compiler(String sourceRoot, CompilerInstanceContextFactory contextFactory, TypeClient typeClient) {
+    public Compiler(String sourceRoot, String targetDir, CompilerInstanceContextFactory contextFactory, TypeClient typeClient) {
+        this.targetDir = targetDir;
         this.contextFactory = contextFactory;
         this.typeClient = typeClient;
         var javaHome = System.getProperty("java.home");
@@ -210,7 +217,6 @@ public class Compiler {
         private final IdentitySet<PsiClass> visited = new IdentitySet<>();
         private final IdentitySet<PsiClass> visiting = new IdentitySet<>();
         private final List<PsiClass> result = new ArrayList<>();
-        private final Map<String, TypeDefDTO> map = new HashMap<>();
         private final Function<PsiClass, Set<PsiClass>> getDependencies;
         private final TypeResolver typeResolver;
 
@@ -256,35 +262,21 @@ public class Compiler {
     private void deploy(Collection<TypeDef> generatedTypeDefs, TypeResolver typeResolver) {
         try (var serContext = SerializeContext.enter();
              var ignored = ContextUtil.getProfiler().enter("deploy")) {
+            NncUtils.clearDirectory(targetDir);
             serContext.includingCode(true)
                     .includeNodeOutputType(false)
                     .includingValueType(false);
             for (var typeDef : generatedTypeDefs) {
-                if (typeDef instanceof Klass klass) {
-                    typeResolver.ensureCodeGenerated(klass);
-                    serContext.addWritingCodeType(klass);
-                }
-            }
-            for (var typeDef : generatedTypeDefs) {
                 if (typeDef instanceof Klass klass)
                     typeResolver.ensureCodeGenerated(klass);
-                serContext.writeTypeDef(typeDef);
             }
-            var typeDefDTOs = new ArrayList<TypeDefDTO>();
-            serContext.forEachType(
-                    (t -> (t.isIdNull() || !RegionConstants.isSystemId(t.getId().getTreeId()))),
-                    t -> {
-                        if (t instanceof Klass k && k.isParameterized())
-                            return;
-                        typeDefDTOs.add(t.toDTO(serContext));
-                    }
-            );
-//            var pFlowDTOs = NncUtils.map(generatedPFlows, f -> f.toPFlowDTO(serContext));
+            for (var typeDef : generatedTypeDefs) {
+                if(typeDef instanceof Klass klass)
+                    writeClassFile(klass, serContext);
+            }
             logger.info("Compile successful");
-            var request = new BatchSaveRequest(typeDefDTOs, List.of(), true);
-            if (DebugEnv.saveCompileResult)
-                saveRequest(request);
-            typeClient.batchSave(request);
+            createArchive();
+            typeClient.deploy(targetDir + "/target.mva");
         }
     }
 
@@ -292,10 +284,33 @@ public class Compiler {
         return Collections.unmodifiableList(classNames);
     }
 
-    private void saveRequest(BatchSaveRequest request) {
-        var path = REQUEST_DIR + File.separator
-                + "request." + ValueFormatter.formatTime(System.currentTimeMillis()) + ".json";
-        NncUtils.writeJsonToFileWithIndent(path, request);
+    private void writeClassFile(Klass klass, SerializeContext serializeContext) {
+        var path = targetDir + '/' + klass.getQualifiedName().replace('.', '/') + ".mvclass";
+        var bout = new ByteArrayOutputStream();
+        var output = new KlassOutput(bout, serializeContext);
+        klass.write(output);
+        NncUtils.writeFile(path, bout.toByteArray());
+    }
+
+    private void createArchive() {
+        var targetDir = Paths.get(this.targetDir);
+        var zipFilePath = targetDir + "/target.mva";
+        try(var zipOut = new ZipOutputStream(new FileOutputStream(zipFilePath));
+            var files = Files.walk(targetDir)) {
+                    files.filter(f -> f.toString().endsWith(".mvclass"))
+                        .forEach(f -> {
+                            var zipEntry = new ZipEntry(targetDir.relativize(f).toString());
+                            try {
+                                zipOut.putNextEntry(zipEntry);
+                                Files.copy(f, zipOut);
+                                zipOut.closeEntry();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public PsiJavaFile getPsiJavaFile(String path) {

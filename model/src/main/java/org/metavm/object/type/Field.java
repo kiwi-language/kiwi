@@ -6,9 +6,9 @@ import org.metavm.api.EntityType;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
+import org.metavm.flow.KlassInput;
+import org.metavm.flow.KlassOutput;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.rest.dto.FieldDTO;
-import org.metavm.object.type.rest.dto.GenericElementDTO;
 import org.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -17,16 +17,16 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType
-public class Field extends Element implements ChangeAware, GenericElement, Property {
+public class Field extends Element implements ChangeAware, GenericElement, Property, ITypeDef {
 
     @EntityField(asTitle = true)
     private String name;
-    private final Klass declaringType;
+    private Klass declaringType;
     private Access access;
     private boolean _static;
     private Value defaultValue;
     private boolean lazy;
-    private final Column column;
+    private Column column;
     private boolean isChild;
     @Nullable
     private Expression initializer;
@@ -39,8 +39,8 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     private Type type;
     private int originalTag = -1;
     private int tag;
-    private final int since;
-    private final @Nullable Integer sourceCodeTag;
+    private int since;
+    private @Nullable Integer sourceTag;
     private transient int offset;
 
     public Field(
@@ -58,7 +58,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
             boolean lazy,
             @Nullable Column column,
             int tag,
-            @Nullable Integer sourceCodeTag,
+            @Nullable Integer sourceTag,
             int since,
             MetadataState state
     ) {
@@ -72,7 +72,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         this.state = state;
         this.type = type;
         this.tag = tag;
-        this.sourceCodeTag = sourceCodeTag;
+        this.sourceTag = sourceTag;
         this.readonly = readonly;
         this.isTransient = isTransient;
         this.since = since;
@@ -110,14 +110,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public Type getConcreteType() {
         return getType().getConcreteType();
-    }
-
-    public void update(FieldDTO update) {
-        if (update.type() != null && !Objects.equals(getType().toExpression(), update.type()))
-            throw BusinessException.invalidField(this, "Can not change field type");
-        setName(update.name());
-        setAccess(Access.getByCode(update.access()));
-        setUnique(update.unique());
     }
 
     public Field getEffectiveTemplate() {
@@ -281,27 +273,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return declaringType.getName() + "." + getName();
     }
 
-    public FieldDTO toDTO() {
-        try (var serContext = SerializeContext.enter()) {
-            return new FieldDTO(
-                    serContext.getStringId(this),
-                    getName(),
-                    getAccess().code(),
-                    defaultValue.toFieldValueDTO(),
-                    isUnique(),
-                    declaringType.getStringId(),
-                    type.toExpression(serContext),
-                    isChild,
-                    isStatic(),
-                    readonly,
-                    isTransient,
-                    lazy,
-                    sourceCodeTag,
-                    getState().code()
-            );
-        }
-    }
-
     public boolean isTime() {
         return getType().isTime();
     }
@@ -372,13 +343,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return name;
     }
 
-    public GenericElementDTO toGenericElementDTO(SerializeContext serializeContext) {
-        return new GenericElementDTO(
-                serializeContext.getStringId(Objects.requireNonNull(getCopySource())),
-                serializeContext.getStringId(this)
-        );
-    }
-
     @Override
     public Klass getDeclaringType() {
         return declaringType;
@@ -411,6 +375,10 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public void setType(Type type) {
         this.type = type;
+    }
+
+    public void initTag(int tag) {
+        this.tag = tag;
     }
 
     public void setTag(int tag) {
@@ -467,8 +435,12 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return tag;
     }
 
-    public @Nullable Integer getSourceCodeTag() {
-        return sourceCodeTag;
+    public @Nullable Integer getSourceTag() {
+        return sourceTag;
+    }
+
+    public void setSourceTag(@Nullable Integer sourceTag) {
+        this.sourceTag = sourceTag;
     }
 
     public int getOriginalTag() {
@@ -498,4 +470,67 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     public int getSince() {
         return since;
     }
+
+    public void setDeclaringType(Klass declaringType) {
+        this.declaringType = declaringType;
+    }
+
+    public static final int FLAG_STATIC = 1;
+    public static final int FLAG_CHILD = 2;
+    public static final int FLAG_READONLY = 4;
+    public static final int FLAG_TRANSIENT = 8;
+    public static final int FLAG_LAZY = 16;
+
+    public int getFlags() {
+        int flags = 0;
+        if(_static)
+            flags |= FLAG_STATIC;
+        if(isChild)
+            flags |= FLAG_CHILD;
+//        if(readonly)
+//            flags |= FLAG_READONLY;
+        if(isTransient)
+            flags |= FLAG_TRANSIENT;
+        if(lazy)
+            flags |= FLAG_LAZY;
+        return flags;
+    }
+
+    public void setFlags(int flags) {
+        setChild((flags & FLAG_CHILD) != 0);
+        setStatic((flags & FLAG_STATIC) != 0);
+        setTransient((flags & FLAG_TRANSIENT) != 0);
+//        setReadonly((flags & FLAG_READONLY) != 0);
+        setLazy((flags & FLAG_LAZY) != 0);
+    }
+
+    public void write(KlassOutput output) {
+        output.writeEntityId(this);
+        output.writeUTF(name);
+        output.write(access.code());
+        type.write(output);
+        output.writeInt(getFlags());
+        output.write(state.code());
+        output.writeInt(tag);
+        output.writeInt(sourceTag != null ? sourceTag : -1);
+        output.writeInt(since);
+        column.write(output);
+        defaultValue.write(output);
+    }
+
+    public void read(KlassInput input) {
+        name = input.readUTF();
+        access = Access.fromCode(input.read());
+        type = input.readType();
+        setFlags(input.readInt());
+        state = MetadataState.fromCode(input.read());
+        tag = input.readInt();
+        sourceTag = input.readInt();
+        if(sourceTag == -1)
+            sourceTag = null;
+        since = input.readInt();
+        column = input.readColumn();
+        defaultValue = (Value) input.readElement();
+    }
+
 }

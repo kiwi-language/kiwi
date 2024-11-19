@@ -25,7 +25,7 @@ public enum Access {
         return code;
     }
 
-    public static Access getByCode(int code) {
+    public static Access fromCode(int code) {
         return Arrays.stream(values()).filter(acc -> acc.code == code).findAny()
                 .orElseThrow(() -> BusinessException.invalidParams("Can not find Access for code: " + code));
     }

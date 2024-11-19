@@ -40,8 +40,4 @@ public class EntityContext extends BaseEntityContext implements CompositeTypeFac
         return new EntityContext(getInstanceContext().createSame(appId), getParent());
     }
 
-    @Override
-    public TypeRegistry getTypeRegistry() {
-        return defContext;
-    }
 }

@@ -38,10 +38,6 @@ public class TypeExpressions {
         return getClassType(klass.getStringId());
     }
 
-    public static String getClassType(KlassDTO klassDTO) {
-        return getClassType(klassDTO.id());
-    }
-
     public static String getClassType(String id) {
         return "$$" + id;
     }

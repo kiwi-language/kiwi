@@ -7,7 +7,6 @@ public final class Result<T> {
     private final int code;
     private final String message;
     private final T data;
-    private MetaPatch metaPatch;
 
     public Result(int code, String message, T data) {
         this.code = code;
@@ -46,14 +45,6 @@ public final class Result<T> {
 
     public T getData() {
         return data;
-    }
-
-    public MetaPatch getMetaPatch() {
-        return metaPatch;
-    }
-
-    public void setMetaPatch(MetaPatch metaPatch) {
-        this.metaPatch = metaPatch;
     }
 
 }

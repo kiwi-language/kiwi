@@ -6,9 +6,8 @@ import org.metavm.entity.StdKlass;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
 import org.metavm.expression.TypeLiteralExpression;
-import org.metavm.flow.rest.TypeValueDTO;
-import org.metavm.flow.rest.ValueDTO;
-import org.metavm.object.type.*;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.Types;
 import org.metavm.util.ContextUtil;
 
 public class TypeValue extends Value {
@@ -23,11 +22,6 @@ public class TypeValue extends Value {
     public org.metavm.object.instance.core.@NotNull Value evaluate(EvaluationContext context) {
         var klass = Types.getKlass(type);
         return ContextUtil.getEntityContext().getInstance(klass.getEffectiveTemplate()).getReference();
-    }
-
-    @Override
-    public ValueDTO toDTO() {
-        return new TypeValueDTO(type.toExpression());
     }
 
     @Override

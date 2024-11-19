@@ -237,7 +237,6 @@ public class Declarator extends VisitorBase {
         return resolveNullableType(parameter.getType());
     }
 
-
     @Override
     public void visitField(PsiField psiField) {
         var psiClass = requireNonNull(((PsiMember) psiField).getContainingClass());
@@ -258,8 +257,8 @@ public class Declarator extends VisitorBase {
                     :klass.findSelfFieldByName(psiField.getName());
         }
         else {
-            field = isStatic ? klass.findSelfStaticField(f -> Objects.equals(f.getSourceCodeTag(), fieldTag))
-                    : klass.findSelfField(f -> Objects.equals(f.getSourceCodeTag(), fieldTag));
+            field = isStatic ? klass.findSelfStaticField(f -> Objects.equals(f.getSourceTag(), fieldTag))
+                    : klass.findSelfField(f -> Objects.equals(f.getSourceTag(), fieldTag));
         }
         var modList = requireNonNull(psiField.getModifierList());
         var isTransient = modList.hasModifierProperty(PsiModifier.TRANSIENT);
@@ -271,7 +270,7 @@ public class Declarator extends VisitorBase {
                     .isChild(TranspileUtils.isChild(psiField))
                     .isStatic(modList.hasModifierProperty(PsiModifier.STATIC))
                     .isTransient(isTransient)
-                    .sourceCodeTag(fieldTag != -1 ? fieldTag : null)
+                    .sourceTag(fieldTag != -1 ? fieldTag : null)
                     .build();
         } else {
             field.setName(getBizFieldName(psiField));

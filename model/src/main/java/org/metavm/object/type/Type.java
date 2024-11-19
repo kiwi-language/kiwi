@@ -11,7 +11,6 @@ import org.metavm.object.instance.core.TypeId;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.object.type.rest.dto.TypeKeyCodes;
 import org.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -303,39 +302,42 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
 
     public abstract int getTypeKeyCode();
 
-    public abstract void write(InstanceOutput output);
+    public abstract void write(MvOutput output);
 
     public int getTypeTag() {
         return TypeTags.DEFAULT;
     }
 
-    public static Type readType(InstanceInput input, TypeDefProvider typeDefProvider) {
-        var code = input.read();
+    public static Type readType(MvInput input) {
+        return readType(input.read(), input);
+    }
+
+    public static Type readType(int code, MvInput input) {
         return switch (code) {
-            case TypeKeyCodes.CLASS -> ClassType.read(input, typeDefProvider);
-            case TypeKeyCodes.TAGGED_CLASS -> ClassType.readTagged(input, typeDefProvider);
-            case TypeKeyCodes.PARAMETERIZED -> ClassType.readParameterized(input, typeDefProvider);
-            case TypeKeyCodes.VARIABLE -> VariableType.read(input, typeDefProvider);
-            case TypeKeyCodes.CAPTURED -> CapturedType.read(input, typeDefProvider);
-            case TypeKeyCodes.LONG -> PrimitiveType.longType;
-            case TypeKeyCodes.CHAR -> PrimitiveType.charType;
-            case TypeKeyCodes.DOUBLE -> PrimitiveType.doubleType;
-            case TypeKeyCodes.NULL -> PrimitiveType.nullType;
-            case TypeKeyCodes.VOID -> PrimitiveType.voidType;
-            case TypeKeyCodes.TIME -> PrimitiveType.timeType;
-            case TypeKeyCodes.PASSWORD -> PrimitiveType.passwordType;
-            case TypeKeyCodes.STRING -> PrimitiveType.stringType;
-            case TypeKeyCodes.BOOLEAN -> PrimitiveType.booleanType;
-            case TypeKeyCodes.FUNCTION -> FunctionType.read(input, typeDefProvider);
-            case TypeKeyCodes.UNCERTAIN -> UncertainType.read(input, typeDefProvider);
-            case TypeKeyCodes.UNION -> UnionType.read(input, typeDefProvider);
-            case TypeKeyCodes.INTERSECTION -> IntersectionType.read(input, typeDefProvider);
-            case TypeKeyCodes.READ_ONLY_ARRAY -> ArrayType.read(input, ArrayKind.READ_ONLY, typeDefProvider);
-            case TypeKeyCodes.READ_WRITE_ARRAY -> ArrayType.read(input, ArrayKind.READ_WRITE, typeDefProvider);
-            case TypeKeyCodes.CHILD_ARRAY -> ArrayType.read(input, ArrayKind.CHILD, typeDefProvider);
-            case TypeKeyCodes.VALUE_ARRAY -> ArrayType.read(input, ArrayKind.VALUE, typeDefProvider);
-            case TypeKeyCodes.NEVER -> NeverType.instance;
-            case TypeKeyCodes.ANY -> AnyType.instance;
+            case WireTypes.CLASS_TYPE -> ClassType.read(input);
+            case WireTypes.TAGGED_CLASS_TYPE -> ClassType.readTagged(input);
+            case WireTypes.PARAMETERIZED_TYPE -> ClassType.readParameterized(input);
+            case WireTypes.VARIABLE_TYPE -> VariableType.read(input);
+            case WireTypes.CAPTURED_TYPE -> CapturedType.read(input);
+            case WireTypes.LONG_TYPE -> PrimitiveType.longType;
+            case WireTypes.CHAR_TYPE -> PrimitiveType.charType;
+            case WireTypes.DOUBLE_TYPE -> PrimitiveType.doubleType;
+            case WireTypes.NULL_TYPE -> PrimitiveType.nullType;
+            case WireTypes.VOID_TYPE -> PrimitiveType.voidType;
+            case WireTypes.TIME_TYPE -> PrimitiveType.timeType;
+            case WireTypes.PASSWORD_TYPE -> PrimitiveType.passwordType;
+            case WireTypes.STRING_TYPE -> PrimitiveType.stringType;
+            case WireTypes.BOOLEAN_TYPE -> PrimitiveType.booleanType;
+            case WireTypes.FUNCTION_TYPE -> FunctionType.read(input);
+            case WireTypes.UNCERTAIN_TYPE -> UncertainType.read(input);
+            case WireTypes.UNION_TYPE -> UnionType.read(input);
+            case WireTypes.INTERSECTION_TYPE -> IntersectionType.read(input);
+            case WireTypes.READ_ONLY_ARRAY_TYPE -> ArrayType.read(input, ArrayKind.READ_ONLY);
+            case WireTypes.READ_WRITE_ARRAY_TYPE -> ArrayType.read(input, ArrayKind.READ_WRITE);
+            case WireTypes.CHILD_ARRAY_TYPE -> ArrayType.read(input, ArrayKind.CHILD);
+            case WireTypes.VALUE_ARRAY_TYPE -> ArrayType.read(input, ArrayKind.VALUE);
+            case WireTypes.NEVER_TYPE -> NeverType.instance;
+            case WireTypes.ANY_TYPE -> AnyType.instance;
             default -> throw new InternalException("Invalid type key code: " + code);
         };
     }

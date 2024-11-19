@@ -4,12 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.flow.FlowExecutionService;
-import org.metavm.flow.rest.FlowExecutionRequest;
-import org.metavm.object.instance.rest.InstanceDTO;
-import org.metavm.object.instance.rest.InstanceFieldValue;
-import org.metavm.object.instance.rest.PrimitiveFieldValue;
-import org.metavm.object.instance.rest.ReferenceFieldValue;
+import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
@@ -19,8 +14,6 @@ import java.util.Map;
 public class ShoppingTest extends TestCase {
 
     private TypeManager typeManager;
-    private InstanceManager instanceManager;
-    private FlowExecutionService flowExecutionService;
     private EntityContextFactory entityContextFactory;
     private SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
@@ -31,9 +24,7 @@ public class ShoppingTest extends TestCase {
         var bootResult = BootstrapUtils.bootstrap();
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
-        instanceManager = managers.instanceManager();
         schedulerAndWorker = bootResult.schedulerAndWorker();
-        flowExecutionService = managers.flowExecutionService();
         entityContextFactory = bootResult.entityContextFactory();
         apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache()));
     }
@@ -41,9 +32,7 @@ public class ShoppingTest extends TestCase {
     @Override
     protected void tearDown() {
         typeManager = null;
-        instanceManager = null;
         schedulerAndWorker = null;
-        flowExecutionService = null;
         entityContextFactory = null;
         apiClient = null;
     }
@@ -63,75 +52,98 @@ public class ShoppingTest extends TestCase {
     }
 
     public void testDecAmount() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
-        var productDTO = MockUtils.createProductDTO(shoppingTypeIds);
-        var productId = TestUtils.doInTransaction(() -> instanceManager.create(productDTO));
-        var loadedProductDTO = instanceManager.get(productId, 1).instance();
-        var firstSkuDTO = loadedProductDTO.getFieldValue(shoppingTypeIds.productSkuListFieldId()).underlyingInstance()
-                .getElement(0).underlyingInstance();
-        long originalAmount = (long) ((PrimitiveFieldValue) firstSkuDTO.getFieldValue(shoppingTypeIds.skuAmountFieldId())).getValue();
-        TestUtils.doInTransactionWithoutResult(
-                () -> flowExecutionService.execute(new FlowExecutionRequest(
-                        TestUtils.createMethodRef(shoppingTypeIds.skuTypeId(), shoppingTypeIds.skuDecAmountMethodId()),
-                        firstSkuDTO.id(),
-                        List.of(PrimitiveFieldValue.createLong(1L)))
-                )
-        );
-        var updatedFirstSkuDTO = instanceManager.get(firstSkuDTO.id(), 1).instance();
-        long newAmount = (long) ((PrimitiveFieldValue) updatedFirstSkuDTO.getFieldValue(shoppingTypeIds.skuAmountFieldId())).getValue();
+        MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
+        var productId = createProduct();
+        var product = getObject(productId);
+        var firstSku = product.getArray("skuList").getObject(0);
+        long originalAmount = firstSku.getLong("quantity");
+        callMethod(firstSku.id(), "decQuantity", List.of(1));
+        var updatedFirstSku = getObject(firstSku.id());
+        long newAmount = updatedFirstSku.getLong("quantity");
         assertEquals(originalAmount - 1, newAmount);
         try {
-            TestUtils.doInTransaction(
-                    () -> flowExecutionService.execute(new FlowExecutionRequest(
-                            TestUtils.createMethodRef(shoppingTypeIds.skuTypeId(), shoppingTypeIds.skuDecAmountMethodId()),
-                            firstSkuDTO.id(),
-                            List.of(PrimitiveFieldValue.createLong(originalAmount)))
-                    )
-            );
+            callMethod(firstSku.id(), "decQuantity", List.of(originalAmount));
             fail("Should fail when amount is not enough");
-        } catch (FlowExecutionException e) {
+        } catch (BusinessException e) {
             Assert.assertEquals("Out of inventory", e.getMessage());
         }
     }
 
     public void testBuy() {
         var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
-        var productDTO = MockUtils.createProductDTO(instanceManager, shoppingTypeIds);
-        var couponsDTOs = MockUtils.createCouponDTOs(instanceManager, shoppingTypeIds);
-        var firstSkuDTO = productDTO.getFieldValue(shoppingTypeIds.productSkuListFieldId()).underlyingInstance()
-                .getElement(0).underlyingInstance();
-        var arguments = List.of(PrimitiveFieldValue.createLong(1L),
-                InstanceFieldValue.of(
-                        InstanceDTO.createListInstance(
-                                shoppingTypeIds.couponListType(),
-                                false,
-                                NncUtils.map(couponsDTOs, ReferenceFieldValue::create)
-                        ))
-        );
-            var orderDTO = TestUtils.doInTransaction(
-                () -> flowExecutionService.execute(
-                        new FlowExecutionRequest(
-                                TestUtils.createMethodRef(shoppingTypeIds.skuTypeId(), shoppingTypeIds.skuBuyMethodId())
-                                , firstSkuDTO.id(), arguments)
-                )
-        );
-        Assert.assertNotNull(orderDTO);
-        var order = instanceManager.get(orderDTO.id(), 1).instance();
-        var amount = (long) ((PrimitiveFieldValue) order.getFieldValue(shoppingTypeIds.orderAmountFieldId())).getValue();
-        Assert.assertEquals(1L, amount);
-        var orderPrice = (double) ((PrimitiveFieldValue) order.getFieldValue(shoppingTypeIds.orderPriceFieldId())).getValue();
-        Assert.assertEquals(70.0, orderPrice, 0.0001);
-
-        couponsDTOs = instanceManager.batchGet(NncUtils.map(couponsDTOs, InstanceDTO::id), 1).instances();
-        for (var couponDTO : couponsDTOs) {
-            var coupon = instanceManager.get(couponDTO.id(), 1).instance();
-            var state = coupon.getFieldValue(shoppingTypeIds.couponStateFieldId()).referenceId();
-            Assert.assertEquals(shoppingTypeIds.couponUsedStateId(), state);
+        var productId = createProduct();
+        var product = getObject(productId);
+        var couponsIds = createCoupons();
+        var firstSku = product.getArray("skuList").getObject(0);
+        var orderId = (String) callMethod(firstSku.id(), "buy", List.of(1, couponsIds));
+        var order = getObject(orderId);
+        Assert.assertEquals(1L, order.getLong("quantity"));
+        Assert.assertEquals(70.0, order.getDouble("price"), 0.0001);
+        for (var couponId : couponsIds) {
+            var coupon = getObject(couponId);
+            Assert.assertEquals(shoppingTypeIds.couponUsedStateId(), coupon.getString("state"));
         }
-        var reloadedFirstSkuDTO = instanceManager.get(firstSkuDTO.id(), 1).instance();
-        var originalAmount = (long) ((PrimitiveFieldValue) firstSkuDTO.getFieldValue(shoppingTypeIds.skuAmountFieldId())).getValue();
-        var skuAmount = (long) ((PrimitiveFieldValue) reloadedFirstSkuDTO.getFieldValue(shoppingTypeIds.skuAmountFieldId())).getValue();
-        Assert.assertEquals(originalAmount - 1, skuAmount);
+        var reloadedFirstSkuDTO = getObject(firstSku.id());
+        var originalQuantity = firstSku.getLong("quantity");
+        var skuQuantity = reloadedFirstSkuDTO.getLong("quantity");
+        Assert.assertEquals(originalQuantity - 1, skuQuantity);
+    }
+
+    private String createProduct() {
+        return saveInstance("Product", Map.of(
+                "name", "Shoes",
+                "skuList", List.of(
+                        Map.of(
+                                "name", "40",
+                                "price", 100,
+                                "quantity", 100
+                        ),
+                        Map.of(
+                                "name", "41",
+                                "price", 100,
+                                "quantity", 100
+                        ),
+                        Map.of(
+                                "name", "42",
+                                "price", 100,
+                                "quantity", 100
+                        )
+                )
+        ));
+    }
+
+    private List<String> createCoupons() {
+        return List.of(
+                saveInstance("Coupon", Map.of(
+                        "name", "5 Yuan Off", "discount", 5
+                )),
+                saveInstance("Coupon", Map.of(
+                        "name", "10 Yuan Off", "discount", 10
+                )),
+                saveInstance("Coupon", Map.of(
+                        "name", "15 Yuan Off", "discount", 15
+                ))
+        );
+    }
+
+    protected String saveInstance(String className, Map<String, Object> fields) {
+        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, fields));
+    }
+
+    protected Object callMethod(String qualifier, String methodName, List<Object> arguments) {
+        return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    }
+
+    protected ClassInstanceWrap getObject(String id) {
+        return apiClient.getObject(id);
+    }
+
+    protected Object getStatic(String className, String fieldName) {
+        return apiClient.getStatic(className, fieldName);
+    }
+
+    protected void deleteObject(String id) {
+        TestUtils.doInTransactionWithoutResult(() -> apiClient.deleteInstance(id));
     }
 
 }

@@ -1,15 +1,11 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.common.ErrorCode;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.flow.rest.Bytecodes;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Type;
-import org.metavm.util.BusinessException;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 @EntityType
 public class FunctionNode extends Node {

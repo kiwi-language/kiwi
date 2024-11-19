@@ -5,10 +5,10 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.rest.dto.TypeKeyCodes;
 import org.metavm.object.type.rest.dto.UncertainTypeKey;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -127,12 +127,12 @@ public class UncertainType extends CompositeType {
 
     @Override
     public int getTypeKeyCode() {
-        return TypeKeyCodes.UNCERTAIN;
+        return WireTypes.UNCERTAIN_TYPE;
     }
 
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.UNCERTAIN);
+    public void write(MvOutput output) {
+        output.write(WireTypes.UNCERTAIN_TYPE);
         lowerBound.write(output);
         upperBound.write(output);
     }
@@ -142,8 +142,8 @@ public class UncertainType extends CompositeType {
         return 1;
     }
 
-    public static UncertainType read(InstanceInput input, TypeDefProvider typeDefProvider) {
-        return new UncertainType(Type.readType(input, typeDefProvider), Type.readType(input, typeDefProvider));
+    public static UncertainType read(MvInput input) {
+        return new UncertainType(Type.readType(input), Type.readType(input));
     }
 
     @Override

@@ -6,14 +6,12 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
+import org.metavm.flow.Method;
+import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.object.type.rest.dto.TypeKeyCodes;
 import org.metavm.object.type.rest.dto.VariableTypeKey;
-import org.metavm.util.Constants;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.InstanceOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -92,27 +90,43 @@ public class VariableType extends Type implements IVariableType {
 
     @Override
     public int getTypeKeyCode() {
-        return TypeKeyCodes.VARIABLE;
+        return WireTypes.VARIABLE_TYPE;
     }
 
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.VARIABLE);
+    public void write(MvOutput output) {
+        output.write(WireTypes.VARIABLE_TYPE);
         genericDeclarationRef.write(output);
-        output.writeId(rawVariable.getId());
+        output.writeEntityId(rawVariable);
     }
 
-    public static VariableType read(InstanceInput input, TypeDefProvider typeDefProvider) {
-        var genDeclRef = GenericDeclarationRef.read(input, typeDefProvider);
-        var rawVariable = (TypeVariable) typeDefProvider.getTypeDef(input.readId());
+    public static VariableType read(MvInput input) {
+        var genDeclRef = GenericDeclarationRef.read(input);
+        var rawVariable = input.getTypeVariable(input.readId());
         return new VariableType(genDeclRef, rawVariable);
     }
 
     public TypeVariable getVariable() {
         if(resolved != null)
             return resolved;
-        return resolved = NncUtils.findRequired(genericDeclarationRef.resolve().getTypeParameters(),
+        resolved = NncUtils.find(genericDeclarationRef.resolve().getTypeParameters(),
                 tv -> tv.getEffectiveTemplate() == rawVariable);
+        if(resolved == null) {
+            var method = (Method) genericDeclarationRef.resolve();
+            var methodRef = (MethodRef) genericDeclarationRef;
+            logger.debug("MethodRef parameterized: {}", methodRef.isParameterized());
+            if(methodRef.isParameterized())
+                logger.debug("Type argument equals type parameter: {}", methodRef.getTypeArguments().get(0)
+                        .equals(methodRef.getRawFlow().getTypeParameters().get(0).getType()));
+            logger.debug("Type parameter count: {}", method.getTypeParameters().size());
+            for (TypeVariable typeParameter : method.getTypeParameters()) {
+                logger.debug("Type parameter {}, equals: {}", typeParameter.getName(), typeParameter == rawVariable);
+            }
+            logger.debug("Parameterized: {}", method.isParameterized());
+            throw new RuntimeException("Cannot find type variable " + rawVariable.getName() + " in generic declaration" + method.getDeclaringType().getQualifiedName()
+                    + "." + method.getName());
+        }
+        return resolved;
     }
 
     @Override
@@ -122,7 +136,7 @@ public class VariableType extends Type implements IVariableType {
 
     @Override
     public String getTypeDesc() {
-        return getVariable().getTypeDesc();
+        return getVariable().getName();
     }
 
     @Override

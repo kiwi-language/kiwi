@@ -36,7 +36,7 @@ public class KlassBuilder {
     private List<Klass> dependencies;
     private List<TypeVariable> typeParameters = List.of();
     private long tag = TypeTags.DEFAULT;
-    private Integer sourceCodeTag;
+    private Integer sourceTag;
     private final List<Attribute> attributes = new ArrayList<>();
     private int since = 0;
 
@@ -153,8 +153,8 @@ public class KlassBuilder {
         return this;
     }
 
-    public KlassBuilder sourceCodeTag(Integer sourceCodeTag) {
-        this.sourceCodeTag = sourceCodeTag;
+    public KlassBuilder sourceTag(Integer sourceTag) {
+        this.sourceTag = sourceTag;
         return this;
     }
 
@@ -208,7 +208,7 @@ public class KlassBuilder {
                     typeParameters,
                     typeArguments,
                     tag,
-                    sourceCodeTag,
+                    sourceTag,
                     since);
         } else {
             klass = existing;

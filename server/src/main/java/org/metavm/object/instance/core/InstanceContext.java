@@ -206,8 +206,9 @@ public class InstanceContext extends BufferingInstanceContext {
             forEachInitializedRoot(root -> {
                 if (root.getParent() == null) {
                     root.forEachDescendant(instance -> {
-                        if (instance.isMarked())
+                        if (instance.isMarked()) {
                             throw new BusinessException(ErrorCode.MULTI_PARENT, Instances.getInstanceDesc(instance.getReference()));
+                        }
                         instance.setMarked(true);
                     });
                 }

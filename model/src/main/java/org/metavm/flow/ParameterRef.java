@@ -1,8 +1,10 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
-import org.metavm.flow.rest.ParameterRefDTO;
+import org.metavm.entity.CopyIgnore;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.Reference;
+import org.metavm.entity.ValueElement;
 import org.metavm.util.NncUtils;
 
 import java.util.Objects;
@@ -44,13 +46,6 @@ public class ParameterRef  extends ValueElement implements Reference {
     @Override
     public int hashCode() {
         return Objects.hash(callableRef, rawParameter);
-    }
-
-    public ParameterRefDTO toDTO(SerializeContext serializeContext) {
-        return new ParameterRefDTO(
-                callableRef.toDTO(serializeContext),
-                serializeContext.getStringId(rawParameter)
-        );
     }
 
     @Override

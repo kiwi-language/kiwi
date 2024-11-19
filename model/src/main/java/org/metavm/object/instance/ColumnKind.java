@@ -137,4 +137,8 @@ public enum ColumnKind {
         return esType;
     }
 
+    public static ColumnKind fromTagSuffix(int tagSuffix) {
+        return NncUtils.findRequired(values(), v -> v.tagSuffix == tagSuffix);
+    }
+
     }

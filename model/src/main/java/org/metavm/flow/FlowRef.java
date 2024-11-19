@@ -1,10 +1,9 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
-import org.metavm.flow.rest.FlowRefDTO;
-import org.metavm.flow.rest.FunctionRefDTO;
-import org.metavm.flow.rest.MethodRefDTO;
+import org.metavm.entity.CopyIgnore;
+import org.metavm.entity.GenericDeclarationRef;
+import org.metavm.entity.ValueArray;
 import org.metavm.object.type.Type;
 
 import java.util.List;
@@ -12,15 +11,6 @@ import java.util.Objects;
 
 @EntityType
 public abstract class FlowRef extends CallableRef implements GenericDeclarationRef {
-
-    public static FlowRef create(FlowRefDTO flowRefDTO, EntityRepository context) {
-        if(flowRefDTO instanceof MethodRefDTO methodRefDTO)
-            return MethodRef.createMethodRef(methodRefDTO, context);
-        else if(flowRefDTO instanceof FunctionRefDTO functionRefDTO)
-            return FunctionRef.create(functionRefDTO, context);
-        else
-            throw new IllegalArgumentException("Invalid FlowRefDTO: " + flowRefDTO);
-    }
 
     private final Flow rawFlow;
     protected final ValueArray<Type> typeArguments;
@@ -58,14 +48,6 @@ public abstract class FlowRef extends CallableRef implements GenericDeclarationR
     public int hashCode() {
         return Objects.hash(rawFlow, typeArguments);
     }
-
-    public FlowRefDTO toDTO() {
-        try(var serContext = SerializeContext.enter()) {
-            return toDTO(serContext);
-        }
-    }
-
-    public abstract FlowRefDTO toDTO(SerializeContext serializeContext);
 
     public boolean isParameterized() {
         return !typeArguments.isEmpty();

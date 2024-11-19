@@ -3,6 +3,7 @@ package org.metavm.ddl;
 import org.metavm.asm.AssemblerFactory;
 import org.metavm.entity.*;
 import org.metavm.flow.FlowSavingContext;
+import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.log.Identifier;
@@ -12,7 +13,6 @@ import org.metavm.object.type.Klass;
 import org.metavm.object.type.SaveTypeBatch;
 import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.rest.dto.FieldAdditionDTO;
-import org.metavm.object.type.rest.dto.KlassDTO;
 import org.metavm.object.type.rest.dto.PreUpgradeRequest;
 import org.metavm.task.GlobalPreUpgradeTask;
 import org.metavm.task.PreUpgradeTask;
@@ -23,9 +23,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.metavm.util.Constants.DDL_SESSION_TIMEOUT;
 
@@ -46,7 +51,7 @@ public class DDLManager extends EntityContextFactoryAware {
         var defContext = ModelDefRegistry.getDefContext();
         var klasses = NncUtils.exclude(defContext.getAllBufferedEntities(Klass.class), Entity::isEphemeralEntity);
         var fields = new ArrayList<FieldAdditionDTO>();
-        var initializers = new ArrayList<KlassDTO>();
+        var initializers = new ArrayList<Klass>();
         var wal = new WAL(Constants.ROOT_APP_ID);
         var instancePOs = new ArrayList<InstancePO>();
         var newKlassIds = new ArrayList<String>();
@@ -74,23 +79,38 @@ public class DDLManager extends EntityContextFactoryAware {
         }
         wal.saveInstances(ChangeList.inserts(instancePOs));
         wal.buildData();
-        return new PreUpgradeRequest(fields, initializers, newKlassIds, wal.getData());
+        return new PreUpgradeRequest(fields, writeKlasses(initializers), newKlassIds, wal.getData());
     }
 
-    private KlassDTO buildInitializerKlass(Klass klass) {
-        var klassDTO = tryBuildInitializerKlass(klass);
-        if(klassDTO == null)
+    private String writeKlasses(List<Klass> klasses) {
+        var bout = new ByteArrayOutputStream();
+        try(var serContext = SerializeContext.enter(); var zipOut = new ZipOutputStream(bout)) {
+            for (Klass klass : klasses) {
+                zipOut.putNextEntry(new ZipEntry(klass.getClassFilePath()));
+                klass.write(new KlassOutput(zipOut, serContext));
+                zipOut.closeEntry();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return EncodingUtils.encodeBase64(bout.toByteArray());
+    }
+
+    private Klass buildInitializerKlass(Klass klass) {
+        var k = tryBuildInitializerKlass(klass);
+        if(k == null)
             throw new InternalException("Initializer assembly file is missing for class: " + klass.getQualifiedName());
-        return klassDTO;
+        return k;
     }
 
-    private @Nullable KlassDTO tryBuildInitializerKlass(Klass klass) {
+    private @Nullable Klass tryBuildInitializerKlass(Klass klass) {
         var asmFile = "/initializers/" + klass.getQualifiedName().replace('.', '/') + ".masm";
         try(var input = Klass.class.getResourceAsStream(asmFile)) {
             if(input == null)
                 return null;
             var assembler = AssemblerFactory.createWithStandardTypes(ModelDefRegistry.getDefContext());
-            return (KlassDTO) assembler.assemble(input).get(0);
+            assembler.assemble(input);
+            return assembler.getGeneratedKlasses().get(0);
         }
         catch (IOException e) {
             throw new RuntimeException("Failed to read initializer source file for: " + klass.getName());
@@ -117,7 +137,8 @@ public class DDLManager extends EntityContextFactoryAware {
                         .timeout(DDL_SESSION_TIMEOUT)
                         .writeWAL(writeWAL)
         )) {
-            var batch = typeManager.batchSave(request.initializerKlasses(), List.of(), context);
+            var batch = typeManager.deploy(createInputStreamFromBase64(request.initializers()), context);
+            var initializers = new ArrayList<>(batch.getKlasses());
             var fieldAdds = new ArrayList<FieldAddition>();
             for (FieldAdditionDTO fieldAddDTO : request.fieldAdditions()) {
                 var field = context.getField(fieldAddDTO.fieldId());
@@ -129,8 +150,7 @@ public class DDLManager extends EntityContextFactoryAware {
                 );
             }
             var runMethods = new ArrayList<Method>();
-            for (KlassDTO k : request.initializerKlasses()) {
-                var initializer = context.getKlass(k.id());
+            for (var initializer : initializers) {
                 var runMethod = initializer.findMethod(m -> m.isStatic() && m.getParameters().size() == 1 && m.getName().equals(Constants.RUN_METHOD_NAME));
                 if(runMethod != null)
                     runMethods.add(runMethod);
@@ -145,6 +165,11 @@ public class DDLManager extends EntityContextFactoryAware {
         }
         outerContext.bind(new PreUpgradeTask(writeWAL, Identifier.fromId(defWAL.getId()), request.newKlassIds(), ddlId));
         FlowSavingContext.clearConfig();
+    }
+
+    private InputStream createInputStreamFromBase64(String base64) {
+        var bytes = EncodingUtils.decodeBase64(base64);
+        return new ByteArrayInputStream(bytes);
     }
 
     private Klass tryGetInitializerKlass(Klass klass, IEntityContext context) {

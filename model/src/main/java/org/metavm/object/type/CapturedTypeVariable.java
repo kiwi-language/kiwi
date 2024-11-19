@@ -2,10 +2,13 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.*;
+import org.metavm.entity.CopyIgnore;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.GenericElement;
+import org.metavm.entity.LoadAware;
 import org.metavm.flow.Flow;
-import org.metavm.object.type.rest.dto.CapturedTypeVariableDTO;
-import org.metavm.object.type.rest.dto.TypeDefDTO;
+import org.metavm.flow.KlassInput;
+import org.metavm.flow.KlassOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +28,9 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Loa
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
-    public CapturedTypeVariable(@NotNull UncertainType uncertainType,
+    public CapturedTypeVariable(Long tmpId, @NotNull UncertainType uncertainType,
                         @NotNull CapturedTypeScope scope) {
+        setTmpId(tmpId);
         this.scope = scope;
         this.uncertainType = uncertainType;
         scope.addCapturedTypeVariable(this);
@@ -50,10 +54,7 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Loa
     }
 
     public void setScope(CapturedTypeScope scope) {
-        if (this.scope != DummyCapturedTypeScope.INSTANCE)
-            throw new IllegalStateException("Scope is already set");
         this.scope = scope;
-        scope.addCapturedTypeVariable(this);
     }
 
     public CapturedTypeScope getScope() {
@@ -85,16 +86,6 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Loa
         return new CapturedType(this);
     }
 
-    @Override
-    public TypeDefDTO toDTO(SerializeContext serContext) {
-        return new CapturedTypeVariableDTO(
-                serContext.getStringId(this),
-                uncertainType.toExpression(serContext, null),
-                serContext.getStringId(scope),
-                scope.getCapturedTypeVariableIndex(this)
-        );
-    }
-
     public ResolutionStage setStage(ResolutionStage stage) {
         var curStage = this.stage;
         this.stage = stage;
@@ -109,4 +100,16 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Loa
     public void onLoad() {
         stage = ResolutionStage.INIT;
     }
+
+    public void write(KlassOutput output) {
+        output.writeEntityId(this);
+        uncertainType.write(output);
+        writeAttributes(output);
+    }
+
+    public void read(KlassInput input) {
+        uncertainType = (UncertainType) input.readType();
+        readAttributes(input);
+    }
+
 }

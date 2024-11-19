@@ -2,11 +2,15 @@ package org.metavm.autograph;
 
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
-import org.metavm.common.rest.dto.ErrorDTO;
 import org.metavm.entity.StdKlass;
-import org.metavm.object.instance.rest.InstanceFieldValue;
-import org.metavm.object.type.*;
-import org.metavm.util.*;
+import org.metavm.object.type.Klass;
+import org.metavm.object.type.MetadataState;
+import org.metavm.object.type.Types;
+import org.metavm.object.type.UncertainType;
+import org.metavm.util.BusinessException;
+import org.metavm.util.NncUtils;
+import org.metavm.util.TestConstants;
+import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,14 +105,8 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processCapturedType() {
-        var utilsType = getClassTypeByCode("capturedtypes.CtUtils");
-        for (ErrorDTO error : utilsType.errors()) {
-            logger.info("Utils error: {}", error.message());
-        }
-        Assert.assertEquals(0, utilsType.errors().size());
-        var labType = getClassTypeByCode("capturedtypes.CtLab");
         var labId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
-                        labType.qualifiedName(),
+                "capturedtypes.CtLab",
                         Map.of(
                                 "foos", List.of(
                                         Map.of("name", "foo001"),
@@ -118,10 +116,10 @@ public class BasicCompilingTest extends CompilerTestBase {
                         )
                 )
         );
-        var lab = instanceManager.get(labId, 2).instance();
-        var foos = lab.getInstance("foos");
-        Assert.assertEquals(3, foos.getElements().size());
-        var foo002 = ((InstanceFieldValue) foos.getElements().get(1)).getInstance();
+        var lab = getObject(labId);
+        var foos = lab.getArray("foos");
+        Assert.assertEquals(3, foos.size());
+        var foo002 = foos.getObject(1);
         var foundFooId = TestUtils.doInTransaction(() -> apiClient.callMethod(
                 labId,
                 "getFooByName",
@@ -136,79 +134,73 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processGenericOverride() {
-        var subType = getClassTypeByCode("genericoverride.Sub");
-        var subId = TestUtils.doInTransaction(() -> apiClient.saveInstance(subType.qualifiedName(), Map.of()));
-        var result = TestUtils.doInTransaction(() -> apiClient.callMethod(
+        var subId = saveInstance("genericoverride.Sub", Map.of());
+        var result = callMethod(
                 subId,
                 "containsAny<string>",
                 List.of(
                         List.of("a", "b", "c"),
                         List.of("c", "d")
                 )
-        ));
+        );
         Assert.assertEquals(true, result);
     }
 
     private void processValueTypes() {
-        var currencyKlass = getClassTypeByCode("valuetypes.Currency");
-        Assert.assertEquals(ClassKind.VALUE.code(), currencyKlass.kind());
-        var productKlass = getClassTypeByCode("valuetypes.Product");
-        var currencyKindKlass = getClassTypeByCode("valuetypes.CurrencyKind");
-        var currencyKindYuan = typeManager.getEnumConstant(currencyKindKlass.id(), "YUAN");
+        var currencyKindYuanId = typeManager.getEnumConstantId("valuetypes.CurrencyKind", "YUAN");
         var productId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
-                productKlass.qualifiedName(),
+                "valuetypes.Product",
                 Map.of(
                         "name", "Shoes",
                         "price", Map.of(
                                 "defaultPrice", Map.of(
                                         "quantity", 100,
-                                        "kind", currencyKindYuan.getIdNotNull()
+                                        "kind", currencyKindYuanId
                                 ),
                                 "channelPrices", List.of(
                                         Map.of(
                                                 "channel", "mobile",
                                                 "price", Map.of(
                                                         "quantity", 80,
-                                                        "kind", currencyKindYuan.getIdNotNull()
+                                                        "kind", currencyKindYuanId
                                                 )
                                         ),
                                         Map.of(
                                                 "channel", "web",
                                                 "price", Map.of(
                                                         "quantity", 95,
-                                                        "kind", currencyKindYuan.getIdNotNull()
+                                                        "kind", currencyKindYuanId
                                                 )
                                         )
                                 )
                         )
                 )
         ));
-        var product = instanceManager.get(productId, 2).instance();
-        var price = product.getInstance("price");
+        var product = getObject(productId);
+        var price = product.getObject("price");
         Assert.assertNull(price.id());
         // check default price
-        var defaultPrice = price.getInstance("defaultPrice");
+        var defaultPrice = price.getObject("defaultPrice");
         Assert.assertNull(defaultPrice.id());
-        Assert.assertEquals(100.0, defaultPrice.getPrimitiveValue("quantity"));
-        Assert.assertEquals(currencyKindYuan.id(), defaultPrice.getReferenceId("kind"));
+        Assert.assertEquals(100.0, defaultPrice.getDouble("quantity"), 0.0001);
+        Assert.assertEquals(currencyKindYuanId, defaultPrice.getString("kind"));
         // check channels
-        var channelPrices = price.getInstance("channelPrices");
-        Assert.assertNull(channelPrices.id());
-        Assert.assertEquals(2, channelPrices.getListSize());
+        var channelPrices = price.getArray("channelPrices");
+        Assert.assertEquals(2, channelPrices.size());
         // check mobile channel
-        var mobileChannelPrice = channelPrices.getElementInstance(0);
+        var mobileChannelPrice = channelPrices.getObject(0);
         Assert.assertNull(mobileChannelPrice.id());
-        Assert.assertEquals("mobile", mobileChannelPrice.getPrimitiveValue("channel"));
-        var mobilePrice = mobileChannelPrice.getInstance("price");
-        Assert.assertEquals(80.0, mobilePrice.getPrimitiveValue("quantity"));
-        Assert.assertEquals(currencyKindYuan.id(), mobilePrice.getReferenceId("kind"));
+        Assert.assertEquals("mobile", mobileChannelPrice.getString("channel"));
+        var mobilePrice = mobileChannelPrice.getObject("price");
+        Assert.assertEquals(80.0, mobilePrice.getDouble("quantity"), 0.0001);
+        Assert.assertEquals(currencyKindYuanId, mobilePrice.getString("kind"));
         // check web channel
-        var webChannelPrice = channelPrices.getElementInstance(1);
+        var webChannelPrice = channelPrices.getObject(1);
         Assert.assertNull(webChannelPrice.id());
-        Assert.assertEquals("web", webChannelPrice.getPrimitiveValue("channel"));
-        var webPrice = webChannelPrice.getInstance("price");
-        Assert.assertEquals(95.0, webPrice.getPrimitiveValue("quantity"));
-        Assert.assertEquals(currencyKindYuan.id(), webPrice.getReferenceId("kind"));
+        Assert.assertEquals("web", webChannelPrice.getString("channel"));
+        var webPrice = webChannelPrice.getObject("price");
+        Assert.assertEquals(95.0, webPrice.getDouble("quantity"), 0.0001);
+        Assert.assertEquals(currencyKindYuanId, webPrice.getString("kind"));
     }
 
     private void processInterceptor() {
@@ -221,20 +213,24 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processEnums() {
-        var kindId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("enums.ProductKind", "fromCode", List.of(0)));
+        var kindId = (String) callMethod("enums.ProductKind", "fromCode", List.of(0));
         var kind = apiClient.getObject(kindId);
         Assert.assertEquals("DEFAULT", kind.getString("name"));
     }
 
     private void processRemovedField() {
-        var klass = getClassTypeByCode("removal.RemovedFieldFoo");
-        var field = TestUtils.getFieldByName(klass, "name");
-        Assert.assertEquals(MetadataState.REMOVED.code(), field.state());
+        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var klass = context.getKlassByQualifiedName("removal.RemovedFieldFoo");
+            var field = klass.getFieldByName("name");
+            Assert.assertSame(MetadataState.REMOVED, field.getState());
+        }
     }
 
     private void processTypeNarrowing() {
-        var fooKlass = getClassTypeByCode("typenarrowing.TypeNarrowingFoo");
-        Assert.assertEquals(0, fooKlass.errors().size());
+        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var fooKlass = context.getKlassByQualifiedName("typenarrowing.TypeNarrowingFoo");
+            Assert.assertEquals(0, fooKlass.getErrors().size());
+        }
     }
 
     private void processHash() {
@@ -246,88 +242,90 @@ public class BasicCompilingTest extends CompilerTestBase {
         var fooId = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
         )));
-        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "put", List.of(fooId, "Foo")));
+        callMethod("hashMapLab", "put", List.of(fooId, "Foo"));
         var foo2Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
         )));
-        var result = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "get", List.of(foo2Id)));
+        var result = callMethod("hashMapLab", "get", List.of(foo2Id));
         Assert.assertEquals("Foo", result);
 
         // Test entity without a defined hashCode method
         var barId = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeBar", Map.of(
                 "name", "Bar"
         )));
-        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "put", List.of(barId, "Bar")));
-        var result2 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "get", List.of(barId)));
+        callMethod("hashMapLab", "put", List.of(barId, "Bar"));
+        var result2 = callMethod("hashMapLab", "get", List.of(barId));
         Assert.assertEquals("Bar", result2);
 
-        var bazKlass = getClassTypeByCode("hashcode.HashCodeBaz");
-        Assert.assertEquals(ClassKind.VALUE.code(), bazKlass.kind());
+        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var bazKlass = context.getKlassByQualifiedName("hashcode.HashCodeBaz");
+            Assert.assertTrue(bazKlass.isValue());
+        }
 
         // Test value object
-        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "bazPut", List.of("Baz", fooId, "Baz")));
-        var result3 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "bazGet", List.of("Baz", fooId)));
+        callMethod("hashMapLab", "bazPut", List.of("Baz", fooId, "Baz"));
+        var result3 = callMethod("hashMapLab", "bazGet", List.of("Baz", fooId));
         Assert.assertEquals("Baz", result3);
-        var result4 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "bazGet", List.of("Baz1", fooId)));
+        var result4 = callMethod("hashMapLab", "bazGet", List.of("Baz1", fooId));
         Assert.assertNull(result4);
 
         // Test list
-        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "listPut", List.of(List.of(fooId, barId), "List")));
-        var result5 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "listGet", List.of(List.of(fooId, barId))));
+        callMethod("hashMapLab", "listPut", List.of(List.of(fooId, barId), "List"));
+        var result5 = callMethod("hashMapLab", "listGet", List.of(List.of(fooId, barId)));
         Assert.assertEquals("List", result5);
 
         // Test set
-        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "setPut", List.of(List.of("Hello", "World"), "Set")));
-        var result6 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "setGet", List.of(List.of("World", "Hello"))));
+        callMethod("hashMapLab", "setPut", List.of(List.of("Hello", "World"), "Set"));
+        var result6 = callMethod("hashMapLab", "setGet", List.of(List.of("World", "Hello")));
         Assert.assertEquals("Set", result6);
-        var result7 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "setGet", List.of(List.of("World"))));
+        var result7 = callMethod("hashMapLab", "setGet", List.of(List.of("World")));
         Assert.assertNull(result7);
 
         // Test map
         var entries = List.of(Map.of("key", "name", "value", "leen"), Map.of("key", "age", "value", 30));
-        TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "mapPut", List.of(entries, "Map")));
-        var result8 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "mapGet", List.of(entries)));
+        callMethod("hashMapLab", "mapPut", List.of(entries, "Map"));
+        var result8 = callMethod("hashMapLab", "mapGet", List.of(entries));
         Assert.assertEquals("Map", result8);
-        var result9 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashMapLab", "setGet", List.of(List.of("World"))));
+        var result9 = callMethod("hashMapLab", "setGet", List.of(List.of("World")));
         Assert.assertNull(result9);
     }
 
     private void processHashSet() {
-        TestUtils.doInTransaction(() -> apiClient.callMethod("hashSetLab", "add", List.of("Hello")));
-        var contains = TestUtils.doInTransaction(() -> apiClient.callMethod("hashSetLab", "contains", List.of("Hello")));
+        callMethod("hashSetLab", "add", List.of("Hello"));
+        var contains = callMethod("hashSetLab", "contains", List.of("Hello"));
         Assert.assertEquals(true, contains);
 
         var foo1Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
         )));
-        TestUtils.doInTransaction(() -> apiClient.callMethod("hashSetLab", "add", List.of(foo1Id)));
+        callMethod("hashSetLab", "add", List.of(foo1Id));
 
         var foo2Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
         )));
-        var contains1 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashSetLab", "contains", List.of(foo2Id)));
+        var contains1 = callMethod("hashSetLab", "contains", List.of(foo2Id));
         Assert.assertEquals(true, contains1);
         var foo3Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo1"
         )));
-        var contains2 = TestUtils.doInTransaction(() -> apiClient.callMethod("hashSetLab", "contains", List.of(foo3Id)));
+        var contains2 = callMethod("hashSetLab", "contains", List.of(foo3Id));
         Assert.assertEquals(false, contains2);
     }
 
     private void processSorting() {
         var foo1Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("sorting.ComparableFoo", Map.of("seq", 1)));
         var foo2Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("sorting.ComparableFoo", Map.of("seq", 2)));
-        var cmp = TestUtils.doInTransaction(() -> apiClient.callMethod(foo1Id, "compareTo", List.of(foo2Id)));
+        var cmp = callMethod(foo1Id, "compareTo", List.of(foo2Id));
         Assert.assertEquals(-1L, cmp);
         var labId = TestUtils.doInTransaction(() -> apiClient.saveInstance("sorting.SortLab", Map.of(
                 "foos", List.of(foo2Id, foo1Id)
         )));
         var foos = apiClient.getObject(labId).getRaw("foos");
         Assert.assertEquals(List.of(foo1Id, foo2Id), foos);
-        TestUtils.doInTransaction(() -> apiClient.callMethod(labId, "reverseFoos", List.of()));
+        callMethod(labId, "reverseFoos", List.of());
         var foos1 = apiClient.getObject(labId).getRaw("foos");
         Assert.assertEquals(List.of(foo2Id, foo1Id), foos1);
-        TestUtils.doInTransaction(() -> apiClient.callMethod(labId, "sortFoos", List.of()));
+        callMethod(labId, "sortFoos", List.of());
         var foos2 = apiClient.getObject(labId).getRaw("foos");
         Assert.assertEquals(List.of(foo1Id, foo2Id), foos2);
     }
@@ -340,14 +338,13 @@ public class BasicCompilingTest extends CompilerTestBase {
                 "key", "name",
                 "value", "leen"
         ))));
-        var entryId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "first", List.of()));
+        var entryId = (String) callMethod(id, "first", List.of());
         var entry = apiClient.getObject(entryId);
         Assert.assertEquals("name", entry.get("key"));
         Assert.assertEquals("leen", entry.get("value"));
     }
 
     private void processWarehouse() {
-        getClassTypeByCode("innerclass.Warehouse.Container");
         var warehouseId = (String) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("warehouseService", "createWarehouse", List.of("w1"))
         );
@@ -357,9 +354,9 @@ public class BasicCompilingTest extends CompilerTestBase {
         var itemId = (String) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("warehouseService", "createItem", List.of(containerId, "i1"))
         );
-        var itemType = TestUtils.doInTransaction(() -> apiClient.callMethod(itemId, "getType", List.of()));
-        var itemContainer = TestUtils.doInTransaction(() -> apiClient.callMethod(itemId, "getContainer", List.of()));
-        var itemWarehouse = TestUtils.doInTransaction(() -> apiClient.callMethod(itemId, "getWarehouse", List.of()));
+        var itemType = callMethod(itemId, "getType", List.of());
+        var itemContainer = callMethod(itemId, "getContainer", List.of());
+        var itemWarehouse = callMethod(itemId, "getWarehouse", List.of());
         Assert.assertEquals("i1", itemType);
         Assert.assertEquals(containerId, itemContainer);
         Assert.assertEquals(warehouseId, itemWarehouse);
@@ -389,10 +386,10 @@ public class BasicCompilingTest extends CompilerTestBase {
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID))  {
             var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "defaultmethod.IFoo"));
             var method = klass.getMethodByName("foo");
-            Assert.assertTrue(method.isRootScopePresent());
+            Assert.assertTrue(method.isCodePresent());
         }
         var fooId = TestUtils.doInTransaction(() -> apiClient.saveInstance("defaultmethod.Foo", Map.of()));
-        var result = TestUtils.doInTransaction(() -> apiClient.callMethod(fooId, "foo", List.of()));
+        var result = callMethod(fooId, "foo", List.of());
         Assert.assertEquals(0L, result);
     }
 
@@ -424,7 +421,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         TestUtils.doInTransaction(() -> apiClient.callMethod(id, "put", List.of(
                 "intelligence", "180"
         )));
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "print", List.of()));
+        callMethod(id, "print", List.of());
     }
 
     private void processLambda() {
@@ -463,7 +460,7 @@ public class BasicCompilingTest extends CompilerTestBase {
                                 )
                         ))
         );
-        var r = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "concatKeys", List.of()));
+        var r = callMethod(id, "concatKeys", List.of());
         Assert.assertEquals("name,age,height", r);
     }
 
@@ -484,7 +481,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processMyCollection() {
         var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("mycollection.MyCollection<string>", Map.of()));
-        var size = (long) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "size", List.of()));
+        var size = (long) callMethod(id, "size", List.of());
         Assert.assertEquals(0L, size);
     }
 
@@ -527,21 +524,21 @@ public class BasicCompilingTest extends CompilerTestBase {
         var id = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                 "innerclass.InnerExtendsEnclosing.Inner<string>", Map.of()
         ));
-        var r = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "foo", List.of()));
+        var r = (boolean) callMethod(id, "foo", List.of());
         Assert.assertTrue(r);
     }
 
     private void processNullable() {
         var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("nullable.NullableFoo", Map.of()));
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "add", List.of("a")));
-        var r = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        callMethod(id, "add", List.of("a"));
+        var r = callMethod(id, "get", List.of(0));
         Assert.assertEquals("a", r);
 
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "add", Collections.singletonList(null)));
-        var r1 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(1)));
+        callMethod(id, "add", Collections.singletonList(null));
+        var r1 = callMethod(id, "get", List.of(1));
         Assert.assertNull(r1);
         try {
-            TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getHash", List.of(1)));
+            callMethod(id, "getHash", List.of(1));
             Assert.fail();
         }
         catch (BusinessException e) {
@@ -551,56 +548,60 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processArray() {
         var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("array.ArrayFoo", Map.of()));
-        var v = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        var v = callMethod(id, "get", List.of(0));
         Assert.assertNull(v);
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "set", List.of(0, "metavm")));
-        var v1 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        callMethod(id, "set", List.of(0, "metavm"));
+        var v1 = callMethod(id, "get", List.of(0));
         Assert.assertEquals("metavm", v1);
 
-        var v2 = (long) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getInt", List.of(0)));
+        var v2 = (long) callMethod(id, "getInt", List.of(0));
         Assert.assertEquals(0L, v2);
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "setInt", List.of(0, 1)));
-        var v3 = (long) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getInt", List.of(0)));
+        callMethod(id, "setInt", List.of(0, 1));
+        var v3 = (long) callMethod(id, "getInt", List.of(0));
         Assert.assertEquals(1L, v3);
 
-        var v4 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getMulti", List.of(0, 0)));
+        var v4 = callMethod(id, "getMulti", List.of(0, 0));
         Assert.assertNull(v4);
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "setMulti", List.of(0, 0, "metavm")));
-        var v5 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getMulti", List.of(0, 0)));
+        callMethod(id, "setMulti", List.of(0, 0, "metavm"));
+        var v5 = callMethod(id, "getMulti", List.of(0, 0));
         Assert.assertEquals("metavm", v5);
 
-        var v6 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getInitialized", List.of(0, 0)));
+        var v6 = callMethod(id, "getInitialized", List.of(0, 0));
         Assert.assertEquals("metavm", v6);
-        var v7 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getInitialized", List.of(2, 2)));
+        var v7 = callMethod(id, "getInitialized", List.of(2, 2));
         Assert.assertEquals(6L, v7);
     }
 
     private void processArrayUtils() {
         var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("array.ArrayUtilsFoo", Map.of()));
-        var v1 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        var v1 = callMethod(id, "get", List.of(0));
         Assert.assertEquals("c", v1);
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "sort", List.of()));
-        var v2 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        callMethod(id, "sort", List.of());
+        var v2 = callMethod(id, "get", List.of(0));
         Assert.assertEquals("a", v2);
 
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "copy", List.of()));
-        var v3 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy", List.of(0)));
+        callMethod(id, "sortAll", List.of());
+        v2 = callMethod(id, "get", List.of(0));
+        Assert.assertEquals("a", v2);
+
+        callMethod(id, "copy", List.of());
+        var v3 = callMethod(id, "getCopy", List.of(0));
         Assert.assertEquals("a", v3);
 
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "copy2", List.of()));
-        var v4 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy2", List.of(0)));
+        callMethod(id, "copy2", List.of());
+        var v4 = callMethod(id, "getCopy2", List.of(0));
         Assert.assertEquals("a", v4);
 
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "copyRange", List.of(1, 3)));
-        var v5 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy", List.of(0)));
+        callMethod(id, "copyRange", List.of(1, 3));
+        var v5 = callMethod(id, "getCopy", List.of(0));
         Assert.assertEquals("b", v5);
 
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "copyRange2", List.of(1, 3)));
-        var v6 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy2", List.of(0)));
+        callMethod(id, "copyRange2", List.of(1, 3));
+        var v6 = callMethod(id, "getCopy2", List.of(0));
         Assert.assertEquals("b", v6);
 
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "systemCopy", List.of()));
-        var v7 = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "getCopy", List.of(1)));
+        callMethod(id, "systemCopy", List.of());
+        var v7 = callMethod(id, "getCopy", List.of(1));
         Assert.assertEquals("a", v7);
     }
 
@@ -608,7 +609,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var id = TestUtils.doInTransaction(() ->
                 apiClient.saveInstance("array.ReflectNewArrayFoo", Map.of("a", List.of(1,2,3)))
         );
-        var v = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "get", List.of(0)));
+        var v = callMethod(id, "get", List.of(0));
         Assert.assertNull(v);
     }
 
@@ -683,10 +684,10 @@ public class BasicCompilingTest extends CompilerTestBase {
         var id = TestUtils.doInTransaction(() ->
                 apiClient.saveInstance("bitset.BitSet", Map.of("n", 20))
         );
-        var r1 = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "isClear", List.of(10)));
+        var r1 = (boolean) callMethod(id, "isClear", List.of(10));
         Assert.assertTrue(r1);
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "setBit", List.of(10)));
-        var r2 = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "isClear", List.of(10)));
+        callMethod(id, "setBit", List.of(10));
+        var r2 = (boolean) callMethod(id, "isClear", List.of(10));
         Assert.assertFalse(r2);
     }
 

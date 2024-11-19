@@ -12,8 +12,6 @@ public interface EntityProvider extends TypeDefProvider, RedirectStatusProvider,
 
     <T> T getEntity(Class<T> entityType, Id id);
 
-    TypeRegistry getTypeRegistry();
-
     default Klass getKlass(Id id) {
         return getEntity(Klass.class, id);
     }

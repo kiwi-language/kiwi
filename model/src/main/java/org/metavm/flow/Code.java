@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
-import org.metavm.flow.rest.CodeDTO;
 import org.metavm.object.instance.core.Id;
-import org.metavm.util.DebugEnv;
 import org.metavm.util.EncodingUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +19,6 @@ public class Code extends Element implements LoadAware {
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private final Callable callable;
-    private final Flow flow;
     @ChildEntity
     private ChildArray<Node> nodes = addChild(new ChildArray<>(Node.class), "nodes");
     private int maxLocals;
@@ -29,28 +26,10 @@ public class Code extends Element implements LoadAware {
     private String codeBase64 = EncodingUtils.encodeBase64(new byte[0]);
     private transient byte[] code;
 
-    public Code(Callable callable, Flow flow) {
+    public Code(Callable callable) {
         super(null, null);
         this.callable = callable;
-        this.flow = flow;
         nodes.setEphemeralEntity(true);
-    }
-
-    public CodeDTO toDTO(SerializeContext serializeContext) {
-        return new CodeDTO(
-                serializeContext.getStringId(this),
-                codeBase64,
-                maxLocals,
-                maxStack
-        );
-    }
-
-    private boolean shouldDebug() {
-        if(DebugEnv.debugging && flow.getEffectiveHorizontalTemplate().getName().equals("find")) {
-            return flow.getHorizontalTemplate() == null || flow.getTypeArguments().get(0).isCaptured();
-        }
-        else
-            return false;
     }
 
     public void addNode(Node node) {
@@ -66,7 +45,7 @@ public class Code extends Element implements LoadAware {
         }
         if(node instanceof VariableAccessNode varAccNode)
             maxLocals = Math.max(maxLocals, varAccNode.getIndex() + 1);
-        flow.addNode(node);
+        getFlow().addNode(node);
     }
 
     public void clear() {
@@ -114,7 +93,7 @@ public class Code extends Element implements LoadAware {
     public void removeNode(Node node) {
         onNodeChange();
         nodes.remove(node);
-        flow.removeNode(node);
+        getFlow().removeNode(node);
     }
 
     public Callable getCallable() {
@@ -123,7 +102,7 @@ public class Code extends Element implements LoadAware {
 
     @JsonIgnore
     public Flow getFlow() {
-        return flow;
+        return callable instanceof Flow flow ? flow : ((Lambda) callable).getFlow();
     }
 
     public boolean isEmpty() {
@@ -156,7 +135,7 @@ public class Code extends Element implements LoadAware {
     }
 
     public String nextNodeName(String prefix) {
-        return flow.nextNodeName(prefix);
+        return getFlow().nextNodeName(prefix);
     }
 
     public int getMaxLocals() {
@@ -193,7 +172,7 @@ public class Code extends Element implements LoadAware {
                 tryEnters.pop().setExit(tryExit);
         }
         assert tryEnters.isEmpty();
-        var output = new CodeOutput(flow.getConstantPool());
+        var output = new CodeOutput(getFlow().getConstantPool());
         nodes.forEach(node -> node.writeCode(output));
         code = output.toByteArray();
         codeBase64 = EncodingUtils.encodeBase64(code);
@@ -219,8 +198,27 @@ public class Code extends Element implements LoadAware {
         return code;
     }
 
+    public int length() {
+        return code.length;
+    }
+
     public void setCode(byte[] code) {
         this.code = code;
+    }
+
+    public void write(KlassOutput output) {
+        output.writeInt(maxLocals);
+        output.writeInt(maxStack);
+        output.writeInt(code.length);
+        output.write(code);
+    }
+
+    public void read(KlassInput input) {
+        maxLocals = input.readInt();
+        maxStack = input.readInt();
+        code = new byte[input.readInt()];
+        int n = input.read(code);
+        codeBase64 = EncodingUtils.encodeBase64(code);
     }
 
 }

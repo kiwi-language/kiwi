@@ -2,7 +2,6 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.flow.rest.Bytecodes;
 
 import javax.annotation.Nullable;
 import java.util.Objects;

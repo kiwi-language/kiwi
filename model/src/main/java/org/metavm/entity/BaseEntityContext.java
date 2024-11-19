@@ -629,18 +629,6 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         );
     }
 
-    private InstanceIndexQueryItem createInstanceQueryItem(Index indexConstraint,
-                                                           Class<?> javaClass,
-                                                           EntityIndexQueryItem queryItem) {
-        Klass type = indexConstraint.getDeclaringType();
-        Field field = type.getFieldByJavaField(ReflectionUtils.getField(javaClass, queryItem.fieldName()));
-        return new InstanceIndexQueryItem(
-                indexConstraint.getFieldByTypeField(field),
-                queryItem.operator(),
-                resolveInstance(queryItem.value())
-        );
-    }
-
     @Override
     public Value resolveInstance(Object value) {
         if (value == null) {

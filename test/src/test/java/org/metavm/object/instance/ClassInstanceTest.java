@@ -6,9 +6,7 @@ import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.ClassInstanceParam;
-import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceDTO;
-import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -27,29 +25,6 @@ public class ClassInstanceTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         MockStandardTypesInitializer.init();
-    }
-
-    public void testToFieldValueDTO_for_reference() {
-        var fooType = MockUtils.createFooTypes(true);
-        var foo = ClassInstanceBuilder.newBuilder(fooType.fooType().getType())
-                .data(Map.of(
-                        fooType.fooNameField(),
-                        Instances.stringInstance("foo"),
-                        fooType.fooBarsField(),
-                        new ArrayInstance(
-                                fooType.barChildArrayType(),
-                                List.of()
-                        ).getReference(),
-                        fooType.fooBazListField(),
-                        new ArrayInstance(fooType.bazArrayType()).getReference()
-                ))
-                .build();
-        foo.initId(PhysicalId.of(100000L, 0L, TestUtils.mockClassType()));
-        FieldValue fieldValueDTO = foo.toFieldValueDTO();
-        Assert.assertEquals(foo.getTitle(), fieldValueDTO.getDisplayValue());
-        Assert.assertTrue(fieldValueDTO instanceof ReferenceFieldValue);
-        ReferenceFieldValue refFieldValueDTO = (ReferenceFieldValue) fieldValueDTO;
-        Assert.assertEquals(foo.tryGetId(), Id.parse(refFieldValueDTO.getId()));
     }
 
     public void testToDTO() {

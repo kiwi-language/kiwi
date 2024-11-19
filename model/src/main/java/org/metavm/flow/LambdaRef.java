@@ -2,17 +2,16 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.SerializeContext;
-import org.metavm.flow.rest.LambdaRefDTO;
+import org.metavm.util.MvInput;
+import org.metavm.util.WireTypes;
 
 import java.util.Objects;
 
 @EntityType
 public class LambdaRef extends CallableRef  {
 
-    public static LambdaRef fromDTO(LambdaRefDTO lambdaRefDTO, IEntityContext context) {
-        return new LambdaRef(context.getEntity(Lambda.class, lambdaRefDTO.lambdaNodeId()));
+    public static LambdaRef read(MvInput input) {
+        return new LambdaRef(input.getLambda(input.readId()));
     }
 
     private final Lambda lambda;
@@ -39,13 +38,12 @@ public class LambdaRef extends CallableRef  {
     }
 
     @Override
-    public LambdaRefDTO toDTO(SerializeContext serializeContext) {
-        return new LambdaRefDTO(serializeContext.getStringId(lambda));
-    }
-
-    @Override
     public Lambda resolve() {
         return lambda;
     }
 
+    public void write(KlassOutput output) {
+        output.write(WireTypes.LAMBDA_REF);
+        output.writeEntityId(lambda);
+    }
 }

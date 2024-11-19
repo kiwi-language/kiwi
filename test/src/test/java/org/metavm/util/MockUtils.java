@@ -8,15 +8,14 @@ import org.metavm.mocks.Bar;
 import org.metavm.mocks.Baz;
 import org.metavm.mocks.Foo;
 import org.metavm.mocks.Qux;
-import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.ClassInstanceBuilder;
 import org.metavm.object.instance.core.TmpId;
-import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.BatchSaveRequest;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -98,186 +97,6 @@ public class MockUtils {
         );
     }
 
-    public static InstanceDTO createProductDTO(InstanceManager instanceManager, ShoppingTypeIds shoppingTypeIds) {
-        var productId = TestUtils.doInTransaction(() -> instanceManager.create(createProductDTO(shoppingTypeIds)));
-        return instanceManager.get(productId, 1).instance();
-    }
-
-    public static List<InstanceDTO> createCouponDTOs(InstanceManager instanceManager, ShoppingTypeIds shoppingTypeIds) {
-        var couponFiveOff = new InstanceDTO(
-                null,
-                TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
-                "coupon",
-                "5 Yuan Off",
-                new ClassInstanceParam(
-                        List.of(
-                                InstanceFieldDTO.create(
-                                        shoppingTypeIds.couponTitleFieldId(),
-                                        PrimitiveFieldValue.createString("5 Yuan Off")
-                                ),
-                                InstanceFieldDTO.create(
-                                        shoppingTypeIds.couponDiscountFieldId(),
-                                        PrimitiveFieldValue.createDouble(5.0)
-                                ),
-                                InstanceFieldDTO.create(
-                                        shoppingTypeIds.couponStateFieldId(),
-                                        ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId())
-                                )
-                        )
-                )
-        );
-        var couponTenOff = new InstanceDTO(
-                null,
-                TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
-                "coupon",
-                "10 Yuan Off",
-                new ClassInstanceParam(
-                        List.of(
-                                InstanceFieldDTO.create(
-                                        shoppingTypeIds.couponTitleFieldId(),
-                                        PrimitiveFieldValue.createString("10 Yuan Off")
-                                ),
-                                InstanceFieldDTO.create(
-                                        shoppingTypeIds.couponDiscountFieldId(),
-                                        PrimitiveFieldValue.createDouble(10.0)
-                                ),
-                                InstanceFieldDTO.create(
-                                        shoppingTypeIds.couponStateFieldId(),
-                                        ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId())
-                                )
-                        )
-                )
-        );
-        var couponFifteenOff = new InstanceDTO(
-                null,
-                TypeExpressions.getClassType(shoppingTypeIds.couponTypeId()),
-                "coupon",
-                "15 Yuan Off",
-                new ClassInstanceParam(
-                        List.of(
-                                InstanceFieldDTO.create(
-                                        shoppingTypeIds.couponTitleFieldId(),
-                                        PrimitiveFieldValue.createString("15 Yuan Off")
-                                ),
-                                InstanceFieldDTO.create(
-                                        shoppingTypeIds.couponDiscountFieldId(),
-                                        PrimitiveFieldValue.createDouble(15.0)
-                                ),
-                                InstanceFieldDTO.create(
-                                        shoppingTypeIds.couponStateFieldId(),
-                                        ReferenceFieldValue.create(shoppingTypeIds.couponNormalStateId())
-                                )
-                        )
-                )
-        );
-        var couponFiveOffId = TestUtils.doInTransaction(() -> instanceManager.create(couponFiveOff));
-        var couponTenOffId = TestUtils.doInTransaction(() -> instanceManager.create(couponTenOff));
-        var couponFifteenOffId = TestUtils.doInTransaction(() -> instanceManager.create(couponFifteenOff));
-        return List.of(
-                instanceManager.get(couponFiveOffId, 1).instance(),
-                instanceManager.get(couponTenOffId, 1).instance(),
-                instanceManager.get(couponFifteenOffId, 1).instance()
-        );
-    }
-
-    public static InstanceDTO createProductDTO(ShoppingTypeIds shoppingTypeIds) {
-        return new InstanceDTO(
-                null,
-                TypeExpressions.getClassType(shoppingTypeIds.productTypeId()),
-                "Product",
-                "Shoes",
-                new ClassInstanceParam(
-                        List.of(
-                                InstanceFieldDTO.create(
-                                        shoppingTypeIds.productTitleFieldId(),
-                                        PrimitiveFieldValue.createString("Shoes")
-                                ),
-                                InstanceFieldDTO.create(
-                                        shoppingTypeIds.productSkuListFieldId(),
-                                        InstanceFieldValue.of(
-                                                InstanceDTO.createListInstance(
-                                                        shoppingTypeIds.skuChildListType(),
-                                                        true,
-                                                        List.of(
-                                                                InstanceFieldValue.of(
-                                                                        new InstanceDTO(
-                                                                                null,
-                                                                                TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()),
-                                                                                "SKU",
-                                                                                "40",
-                                                                                new ClassInstanceParam(
-                                                                                        List.of(
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        shoppingTypeIds.skuTitleFieldId(),
-                                                                                                        PrimitiveFieldValue.createString("40")
-                                                                                                ),
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        shoppingTypeIds.skuPriceFieldId(),
-                                                                                                        PrimitiveFieldValue.createDouble(100)
-                                                                                                ),
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        shoppingTypeIds.skuAmountFieldId(),
-                                                                                                        PrimitiveFieldValue.createLong(100)
-                                                                                                )
-                                                                                        )
-                                                                                )
-                                                                        )),
-                                                                InstanceFieldValue.of(new InstanceDTO(
-                                                                        null,
-                                                                        TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()),
-                                                                        "SKU",
-                                                                        "41",
-                                                                        new ClassInstanceParam(
-                                                                                List.of(
-                                                                                        InstanceFieldDTO.create(
-                                                                                                shoppingTypeIds.skuTitleFieldId(),
-                                                                                                PrimitiveFieldValue.createString("41")
-                                                                                        ),
-                                                                                        InstanceFieldDTO.create(
-                                                                                                shoppingTypeIds.skuPriceFieldId(),
-                                                                                                PrimitiveFieldValue.createDouble(100)
-                                                                                        ),
-                                                                                        InstanceFieldDTO.create(
-                                                                                                shoppingTypeIds.skuAmountFieldId(),
-                                                                                                PrimitiveFieldValue.createLong(100)
-                                                                                        )
-                                                                                )
-                                                                        )
-                                                                ))
-                                                                ,
-                                                                InstanceFieldValue.of(new InstanceDTO(
-                                                                                null,
-                                                                                TypeExpressions.getClassType(shoppingTypeIds.skuTypeId()),
-                                                                                "SKU",
-                                                                                "42",
-                                                                                new ClassInstanceParam(
-                                                                                        List.of(
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        shoppingTypeIds.skuTitleFieldId(),
-                                                                                                        PrimitiveFieldValue.createString("42")
-                                                                                                ),
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        shoppingTypeIds.skuPriceFieldId(),
-                                                                                                        PrimitiveFieldValue.createDouble(100)
-                                                                                                ),
-                                                                                                InstanceFieldDTO.create(
-                                                                                                        shoppingTypeIds.skuAmountFieldId(),
-                                                                                                        PrimitiveFieldValue.createLong(100)
-                                                                                                )
-                                                                                        )
-                                                                                )
-                                                                        )
-                                                                )
-                                                        )
-                                                )
-                                        )
-                                )
-                        )
-                )
-        );
-
-    }
-
     public static ShoppingInstances createShoppingInstances(ShoppingTypes shoppingTypes) {
         var sku40 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType().getType())
                 .data(Map.of(
@@ -353,34 +172,6 @@ public class MockUtils {
         );
     }
 
-    public static final String PROJECT_ROOT = "/Users/leen/workspace/object";
-
-    public static ListTypeIds createListType(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        saveListTypes(typeManager, schedulerAndWorker);
-        var listType = typeManager.getTypeByQualifiedName("MyList").type();
-        return new ListTypeIds(
-                listType.id(),
-                listType.typeParameterIds().get(0),
-                TestUtils.getFieldIdByName(listType, "label"),
-                TestUtils.getFieldIdByName(listType, "nodes"),
-                getNodeTypeIds(typeManager)
-        );
-    }
-
-    private static void saveListTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        assemble(PROJECT_ROOT + "/test/src/test/resources/asm/List.masm", typeManager, schedulerAndWorker);
-    }
-
-    private static NodeTypeIds getNodeTypeIds(TypeManager typeManager) {
-        var nodeType = typeManager.getTypeByQualifiedName("Node").type();
-        return new NodeTypeIds(
-                nodeType.id(),
-                nodeType.typeParameterIds().get(0),
-                TestUtils.getFieldIdByName(nodeType, "label"),
-                TestUtils.getFieldIdByName(nodeType, "value")
-        );
-    }
-
     private static Field createEnumConstantField(ClassInstance enumConstant) {
         var enumType = enumConstant.getKlass();
         var nameField = enumType.getFieldByName("name");
@@ -393,66 +184,72 @@ public class MockUtils {
 
     public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
         assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm", typeManager, schedulerAndWorker);
-        var productType = typeManager.getTypeByQualifiedName("Product").type();
-        var skuType = typeManager.getTypeByQualifiedName("SKU").type();
-        var couponType = typeManager.getTypeByQualifiedName("Coupon").type();
-        var couponStateType = typeManager.getTypeByQualifiedName("CouponState").type();
-        var orderType = typeManager.getTypeByQualifiedName("Order").type();
-        var skuChildListType = TypeExpressions.getChildListType(TypeExpressions.getClassType(skuType.id()));
-        var couponListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(couponType.id()));
-        return new ShoppingTypeIds(
-                productType.id(),
-                skuType.id(),
-                couponStateType.id(),
-                couponType.id(),
-                orderType.id(),
-                skuChildListType,
-                couponListType,
-                TestUtils.getFieldIdByName(productType, "name"),
-                TestUtils.getFieldIdByName(productType, "skuList"),
-                TestUtils.getFieldIdByName(skuType, "name"),
-                TestUtils.getFieldIdByName(skuType, "price"),
-                TestUtils.getFieldIdByName(skuType, "quantity"),
-                TestUtils.getMethodIdByCode(skuType, "decQuantity"),
-                TestUtils.getMethodIdByCode(skuType, "buy"),
-                TestUtils.getFieldIdByName(couponType, "name"),
-                TestUtils.getFieldIdByName(couponType, "discount"),
-                TestUtils.getFieldIdByName(couponType, "state"),
-                TestUtils.getFieldIdByName(orderType, "code"),
-                TestUtils.getFieldIdByName(orderType, "sku"),
-                TestUtils.getFieldIdByName(orderType, "quantity"),
-                TestUtils.getFieldIdByName(orderType, "price"),
-                TestUtils.getFieldIdByName(orderType, "orderTime"),
-                TestUtils.getFieldIdByName(orderType, "coupons"),
-                typeManager.getEnumConstant(couponStateType.id(), "NORMAL").id(),
-                typeManager.getEnumConstant(couponStateType.id(), "USED").id()
-        );
+        var entityContextFactory = schedulerAndWorker.entityContextFactory();
+        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var productKlass = context.getKlassByQualifiedName("Product");
+            var skuKlass = context.getKlassByQualifiedName("SKU");
+            var couponKlass = context.getKlassByQualifiedName("Coupon");
+            var couponStateKlas = context.getKlassByQualifiedName("CouponState");
+            var orderKlass = context.getKlassByQualifiedName("Order");
+            var skuChildListType = TypeExpressions.getChildListType(TypeExpressions.getClassType(skuKlass.getStringId()));
+            var couponListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(couponKlass.getStringId()));
+            return new ShoppingTypeIds(
+                    productKlass.getStringId(),
+                    skuKlass.getStringId(),
+                    couponStateKlas.getStringId(),
+                    couponKlass.getStringId(),
+                    orderKlass.getStringId(),
+                    skuChildListType,
+                    couponListType,
+                    productKlass.getFieldByName("name").getStringId(),
+                    productKlass.getFieldByName("skuList").getStringId(),
+                    skuKlass.getFieldByName("name").getStringId(),
+                    skuKlass.getFieldByName("price").getStringId(),
+                    skuKlass.getFieldByName("quantity").getStringId(),
+                    skuKlass.getMethodByName("decQuantity").getStringId(),
+                    skuKlass.getMethodByName("buy").getStringId(),
+                    couponKlass.getFieldByName("name").getStringId(),
+                    couponKlass.getFieldByName("discount").getStringId(),
+                    couponKlass.getFieldByName("state").getStringId(),
+                    orderKlass.getFieldByName("code").getStringId(),
+                    orderKlass.getFieldByName("sku").getStringId(),
+                    orderKlass.getFieldByName("quantity").getStringId(),
+                    orderKlass.getFieldByName("price").getStringId(),
+                    orderKlass.getFieldByName("orderTime").getStringId(),
+                    orderKlass.getFieldByName("coupons").getStringId(),
+                    typeManager.getEnumConstantId("CouponState", "NORMAL"),
+                    typeManager.getEnumConstantId("CouponState", "USED")
+            );
+        }
     }
 
     public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
         assemble("/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm", typeManager, schedulerAndWorker);
-        var livingBeingType = typeManager.getTypeByQualifiedName("LivingBeing").type();
-        var animalType = typeManager.getTypeByQualifiedName("Animal").type();
-        var humanType = typeManager.getTypeByQualifiedName("Human").type();
-        var sentientType = typeManager.getTypeByQualifiedName("Sentient").type();
-        return new LivingBeingTypeIds(
-                livingBeingType.id(),
-                animalType.id(),
-                humanType.id(),
-                sentientType.id(),
-                TestUtils.getFieldIdByName(livingBeingType, "age"),
-                TestUtils.getFieldIdByName(livingBeingType, "extra"),
-                TestUtils.getFieldIdByName(livingBeingType, "offsprings"),
-                TestUtils.getFieldIdByName(livingBeingType, "ancestors"),
-                TestUtils.getFieldIdByName(animalType, "intelligence"),
-                TestUtils.getFieldIdByName(humanType, "occupation"),
-                TestUtils.getFieldIdByName(humanType, "thinking"),
-                TestUtils.getMethodIdByCode(livingBeingType, "LivingBeing"),
-                TestUtils.getMethodIdByCode(animalType, "Animal"),
-                TestUtils.getMethodIdByCode(humanType, "Human"),
-                TestUtils.getMethodIdByCode(livingBeingType, "makeSound"),
-                TestUtils.getMethodIdByCode(sentientType, "think")
-        );
+        var entityContextFactory = schedulerAndWorker.entityContextFactory();
+        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var livingBeingKlass = context.getKlassByQualifiedName("LivingBeing");
+            var animalKlas = context.getKlassByQualifiedName("Animal");
+            var humanKlass = context.getKlassByQualifiedName("Human");
+            var sentientKlass = context.getKlassByQualifiedName("Sentient");
+            return new LivingBeingTypeIds(
+                    livingBeingKlass.getStringId(),
+                    animalKlas.getStringId(),
+                    humanKlass.getStringId(),
+                    sentientKlass.getStringId(),
+                    livingBeingKlass.getFieldByName("age").getStringId(),
+                    livingBeingKlass.getFieldByName("extra").getStringId(),
+                    livingBeingKlass.getFieldByName("offsprings").getStringId(),
+                    livingBeingKlass.getFieldByName("ancestors").getStringId(),
+                    animalKlas.getFieldByName("intelligence").getStringId(),
+                    humanKlass.getFieldByName("occupation").getStringId(),
+                    humanKlass.getFieldByName("thinking").getStringId(),
+                    livingBeingKlass.getMethodByName("LivingBeing").getStringId(),
+                    animalKlas.getMethodByName("Animal").getStringId(),
+                    humanKlass.getMethodByName("Human").getStringId(),
+                    livingBeingKlass.getMethodByName("makeSound").getStringId(),
+                    sentientKlass.getMethodByName("think").getStringId()
+            );
+        }
     }
 
     public static void assemble(String source, TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
@@ -465,10 +262,17 @@ public class MockUtils {
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var assembler = AssemblerFactory.createWithStandardTypes(context);
             assembler.assemble(List.of(source));
+            assembler.generateClasses(TestConstants.TARGET);
             FlowSavingContext.initConfig();
-            var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
-            NncUtils.writeFile("/Users/leen/workspace/object/test.json", NncUtils.toPrettyJsonString(request));
-            var commitId = TestUtils.doInTransaction(() -> typeManager.batchSave(request));
+//            var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
+//            NncUtils.writeFile("/Users/leen/workspace/object/test.json", NncUtils.toPrettyJsonString(request));
+            var commitId = TestUtils.doInTransaction(() -> {
+                try(var input = new FileInputStream(TestConstants.TARGET + "/target.mva")) {
+                    return typeManager.deploy(input);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
             if (waitForDDLDone)
                 TestUtils.waitForDDLState(CommitState.COMPLETED, schedulerAndWorker);
             return commitId;
@@ -659,19 +463,6 @@ public class MockUtils {
         if (initIds)
             TestUtils.initInstanceIds(foo);
         return foo;
-    }
-
-    public static UserTypeIds createUserTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/User.masm", typeManager, schedulerAndWorker);
-        var applicationType = typeManager.getTypeByQualifiedName("Application").type();
-        var applicationNameFieldId = TestUtils.getFieldIdByName(applicationType, "name");
-        var applicationOwnerFieldId = TestUtils.getFieldIdByName(applicationType, "owner");
-        // get the longName field id and password field id of the platform user type
-        var platformUserType = typeManager.getTypeByQualifiedName("PlatformUser").type();
-        var platformUserLoginNameFieldId = TestUtils.getFieldIdByName(platformUserType, "loginName");
-        var platformUserPasswordFieldId = TestUtils.getFieldIdByName(platformUserType, "passwd");
-        return new UserTypeIds(platformUserType.id(), applicationType.id(), applicationNameFieldId, applicationOwnerFieldId, platformUserLoginNameFieldId,
-                platformUserPasswordFieldId);
     }
 
     public static Foo getFoo() {

@@ -130,13 +130,17 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
 //    }
 
     @Override
-    public TypeRegistry getTypeRegistry() {
-        return this;
-    }
-
-    @Override
     public <T> T getEntity(Class<T> entityType, Id id) {
-        return entityType.cast(entityMap.get(id));
+//        if(!entityType.isInstance(entityMap.get(id))) {
+//            throw new ClassCastException("Entity " + entityMap.get(id) + " is not an instance of klass " + entityType.getName());
+//        }
+        try {
+            return entityType.cast(entityMap.get(id));
+        }
+        catch (ClassCastException e) {
+            logger.debug("Entity {}", entityMap.get(id));
+            throw e;
+        }
     }
 
     @Override

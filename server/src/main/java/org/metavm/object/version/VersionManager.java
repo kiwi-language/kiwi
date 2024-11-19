@@ -1,10 +1,8 @@
 package org.metavm.object.version;
 
-import org.metavm.common.MetaPatch;
 import org.metavm.entity.*;
 import org.metavm.flow.Function;
 import org.metavm.object.type.TypeDef;
-import org.metavm.object.type.rest.dto.LoadAllMetadataResponse;
 import org.metavm.util.NncUtils;
 import org.springframework.stereotype.Component;
 
@@ -44,46 +42,6 @@ public class VersionManager extends EntityContextFactoryAware {
         );
     }
 
-    public MetaPatch pull(long baseVersion) {
-        try (var context = newContext()) {
-            var latestVersion = Versions.getLatestVersion(context);
-            // if the base version lags too far behind, a reset is performed
-            if(latestVersion - baseVersion > 100) {
-                var allMetadata = loadAllMetadata();
-                return new MetaPatch(
-                      0L,
-                      latestVersion,
-                      true,
-                      allMetadata.typeDefs(),
-                      List.of(),
-                      allMetadata.functions(),
-                      List.of()
-                );
-            }
-            var internalPatch = pullInternal(baseVersion, context);
-            var types = NncUtils.map(internalPatch.changedTypeDefIds(), context::getTypeDef);
-            try (var serContext = SerializeContext.enter()) {
-                for (var type : types) {
-                    serContext.writeTypeDef(type);
-                }
-                var typeDefDTOs = serContext.getTypeDefs();
-                var functionDTOs = NncUtils.map(
-                        internalPatch.changedFunctionIds(),
-                        id -> context.getFunction(id).toDTO(false, serContext)
-                );
-                return new MetaPatch(
-                        baseVersion,
-                        internalPatch.version(),
-                        false,
-                        typeDefDTOs,
-                        internalPatch.removedTypeDefIds(),
-                        functionDTOs,
-                        internalPatch.removedFunctionIds()
-                );
-            }
-        }
-    }
-
     public List<TypeDef> getAllTypes(IEntityContext context) {
         var defContext = context.getDefContext();
         var typeDefs = new ArrayList<>(
@@ -98,19 +56,6 @@ public class VersionManager extends EntityContextFactoryAware {
         var functions = new ArrayList<>(defContext.getAllBufferedEntities(Function.class));
         functions.addAll(context.selectByKey(Function.IDX_ALL_FLAG, true));
         return functions;
-    }
-
-    public LoadAllMetadataResponse loadAllMetadata() {
-        try (var context = newContext();
-             var serContext = SerializeContext.enter()) {
-            var types = getAllTypes(context);
-            var functions = getAllFunctions(context);
-            return new LoadAllMetadataResponse(
-                    Versions.getLatestVersion(context),
-                    SerializeContext.forceWriteTypeDefs(types),
-                    NncUtils.map(functions, f -> f.toDTO(false, serContext))
-            );
-        }
     }
 
 

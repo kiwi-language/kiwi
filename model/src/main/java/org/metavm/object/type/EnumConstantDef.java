@@ -3,12 +3,12 @@ package org.metavm.object.type;
 import org.metavm.api.EntityType;
 import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.SerializeContext;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.flow.Flows;
+import org.metavm.flow.KlassInput;
+import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.type.rest.dto.EnumConstantDefDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,17 +16,17 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType
-public class EnumConstantDef extends Element {
+public class EnumConstantDef extends Element implements ITypeDef {
 
     public static final Logger logger = LoggerFactory.getLogger(EnumConstantDef.class);
 
-    private final Klass klass;
+    private Klass klass;
     private String name;
     private int ordinal;
     private Method initializer;
 
     public EnumConstantDef(Klass klass, String name, int ordinal, Method initializer) {
-        assert klass.isEnum();
+//        assert klass.isEnum();
         this.klass = klass;
         this.name = name;
         this.ordinal = ordinal;
@@ -45,6 +45,10 @@ public class EnumConstantDef extends Element {
 
     public Klass getKlass() {
         return klass;
+    }
+
+    public void setKlass(Klass klass) {
+        this.klass = klass;
     }
 
     public Field getField() {
@@ -67,11 +71,21 @@ public class EnumConstantDef extends Element {
         this.ordinal = ordinal;
     }
 
-    public EnumConstantDefDTO toDTO(SerializeContext serializeContext) {
-        return new EnumConstantDefDTO(serializeContext.getStringId(this), name, ordinal, serializeContext.getStringId(initializer));
-    }
-
     public Method getInitializer() {
         return initializer;
     }
+
+    public void write(KlassOutput output) {
+        output.writeEntityId(this);
+        output.writeUTF(name);
+        output.writeInt(ordinal);
+        output.writeEntityId(initializer);
+    }
+
+    public void read(KlassInput input) {
+        name = input.readUTF();
+        ordinal = input.readInt();
+        initializer = input.getMethod(input.readId());
+    }
+
 }

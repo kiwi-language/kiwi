@@ -1,7 +1,6 @@
 package org.metavm.autograph;
 
 import junit.framework.TestCase;
-import org.junit.Assert;
 import org.metavm.application.ApplicationManager;
 import org.metavm.common.MockEmailService;
 import org.metavm.entity.EntityContextFactory;
@@ -9,15 +8,12 @@ import org.metavm.entity.EntityQueryService;
 import org.metavm.entity.MetaContextCache;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowExecutionService;
-import org.metavm.flow.FlowManager;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.KlassDTO;
-import org.metavm.object.type.rest.dto.TypeQuery;
 import org.metavm.object.version.VersionManager;
 import org.metavm.system.BlockManager;
 import org.metavm.system.IdService;
@@ -55,7 +51,6 @@ public abstract class CompilerTestBase extends TestCase  {
     protected ColumnStore columnStore;
     protected TypeTagStore typeTagStore;
     protected FlowExecutionService flowExecutionService;
-    protected FlowManager flowManager;
     protected ApplicationManager applicationManager;
     protected LoginService loginService;
     protected PlatformUserManager platformUserManager;
@@ -89,9 +84,6 @@ public abstract class CompilerTestBase extends TestCase  {
                 new BeanManager());
         instanceManager = new InstanceManager(entityContextFactory,
                 bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
-        typeManager.setInstanceManager(instanceManager);
-        flowManager = new FlowManager(entityContextFactory, new MockTransactionOperations());
-        typeManager.setFlowManager(flowManager);
         flowExecutionService = new FlowExecutionService(entityContextFactory);
         typeManager.setFlowExecutionService(flowExecutionService);
         var blockManager = new BlockManager(bootResult.blockMapper());
@@ -124,7 +116,6 @@ public abstract class CompilerTestBase extends TestCase  {
         columnStore = null;
         typeTagStore = null;
         flowExecutionService = null;
-        flowManager = null;
         applicationManager = null;
         loginService = null;
         platformUserManager = null;
@@ -155,35 +146,6 @@ public abstract class CompilerTestBase extends TestCase  {
         }
     }
 
-
-    protected KlassDTO queryClassType(String name) {
-        return typeManager.getTypeByQualifiedName(name).type();
-    }
-
-    protected void assertNoError(KlassDTO klassDTO) {
-        Assert.assertEquals(0, klassDTO.errors().size());
-    }
-
-    protected KlassDTO queryClassType(String name, List<Integer> categories) {
-        var types = typeManager.query(new TypeQuery(
-                name,
-                categories,
-                false,
-                false,
-                false,
-                null,
-                List.of(),
-                1
-                , 20
-        )).data();
-        Assert.assertEquals(1, types.size());
-        return types.get(0);
-    }
-
-    protected KlassDTO getClassTypeByCode(String code) {
-        return typeManager.getTypeByQualifiedName(code).type();
-    }
-
     protected void compileTwice(String sourceRoot) {
         compile(sourceRoot);
 //        DebugEnv.buildPatchLog = true;
@@ -193,7 +155,7 @@ public abstract class CompilerTestBase extends TestCase  {
 
     protected void compile(String sourceRoot) {
         ContextUtil.resetProfiler();
-        new Main(HOME, sourceRoot, APP_ID, "__fake_token__", typeClient, allocatorStore, columnStore, typeTagStore).run();
+        new Main(HOME, sourceRoot, TestConstants.TARGET, APP_ID, "__fake_token__", typeClient, allocatorStore, columnStore, typeTagStore).run();
         submit(() -> TestUtils.waitForDDLPrepared(schedulerAndWorker));
     }
 

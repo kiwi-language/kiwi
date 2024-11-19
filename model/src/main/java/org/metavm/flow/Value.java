@@ -7,7 +7,6 @@ import org.metavm.entity.Element;
 import org.metavm.entity.EntityParentRef;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
-import org.metavm.flow.rest.ValueDTO;
 import org.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
@@ -22,8 +21,6 @@ public abstract class Value extends Element implements ValueObject {
     public Value(@Nullable EntityParentRef parentRef) {
         super(null, parentRef);
     }
-
-    public abstract ValueDTO toDTO();
 
     public abstract Type getType();
 

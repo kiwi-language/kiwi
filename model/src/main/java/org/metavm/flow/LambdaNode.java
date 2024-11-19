@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.LoadAware;
-import org.metavm.flow.rest.Bytecodes;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;

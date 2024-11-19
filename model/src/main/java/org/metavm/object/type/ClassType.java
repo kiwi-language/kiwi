@@ -9,10 +9,7 @@ import org.metavm.object.instance.core.TypeId;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.*;
-import org.metavm.util.Constants;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.InstanceOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +37,8 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
 //            throw new InternalException("Can not use a parameterized klass for a ClassType. klass: " + klass.getTypeDesc());
 //        if(typeArguments.equals(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType)))
 //            throw new InternalException("Trying to create an raw class type using type arguments for klass: " + klass.getTypeDesc());
+//        if(klass == DummyKlass.INSTANCE)
+//            throw new IllegalArgumentException("Creating ClassType with dummy klass");
         this.klass = klass;
         this.typeArguments = typeArguments.isEmpty() ? null : new ValueArray<>(Type.class, typeArguments);
     }
@@ -235,45 +234,48 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
 
     @Override
     public int getTypeKeyCode() {
-        return typeArguments == null ? (getTypeTag() == 0 ? TypeKeyCodes.CLASS : TypeKeyCodes.TAGGED_CLASS) : TypeKeyCodes.PARAMETERIZED;
+        return typeArguments == null ? (getTypeTag() == 0 ? WireTypes.CLASS_TYPE : WireTypes.TAGGED_CLASS_TYPE) : WireTypes.PARAMETERIZED_TYPE;
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         if (typeArguments == null) {
             var tag = getTypeTag();
             if (tag == 0) {
-                output.write(TypeKeyCodes.CLASS);
-                output.writeId(klass.getId());
+                output.write(WireTypes.CLASS_TYPE);
+                output.writeEntityId(klass);
             } else {
-                output.write(TypeKeyCodes.TAGGED_CLASS);
-                output.writeId(klass.getId());
+                output.write(WireTypes.TAGGED_CLASS_TYPE);
+                output.writeEntityId(klass);
                 output.writeLong(tag);
             }
         } else {
-            output.write(TypeKeyCodes.PARAMETERIZED);
-            output.writeId(klass.getId());
+            output.write(WireTypes.PARAMETERIZED_TYPE);
+            output.writeEntityId(klass);
             output.writeInt(typeArguments.size());
             typeArguments.forEach(t -> t.write(output));
         }
     }
 
-    public static ClassType read(InstanceInput input, TypeDefProvider typeDefProvider) {
-        return new ClassType(typeDefProvider.getKlass(input.readId()), List.of());
+    public static ClassType read(MvInput input) {
+        return new ClassType(input.getKlass(input.readId()), List.of());
     }
 
-    public static ClassType readTagged(InstanceInput input, TypeDefProvider typeDefProvider) {
-        var type = new ClassType(typeDefProvider.getKlass(input.readId()), List.of());
-        input.readInt();
+    public static ClassType readTagged(MvInput input) {
+        var type = new ClassType(input.getKlass(input.readId()), List.of());
+        input.readLong();
         return type;
     }
 
-    public static ClassType readParameterized(InstanceInput input, TypeDefProvider typeDefProvider) {
-        var klass = typeDefProvider.getKlass(input.readId());
+    public static ClassType readParameterized(MvInput input) {
+        var klass = input.getKlass(input.readId());
         int numTypeArgs = input.readInt();
         var typeArgs = new ArrayList<Type>(numTypeArgs);
+        if(DebugEnv.flag)
+            logger.debug("Reading class type. raw klass: {}, type argument count: {}",
+                klass.getQualifiedName(), numTypeArgs);
         for (int i = 0; i < numTypeArgs; i++)
-            typeArgs.add(Type.readType(input, typeDefProvider));
+            typeArgs.add(Type.readType(input));
         return new ClassType(klass, typeArgs);
     }
 

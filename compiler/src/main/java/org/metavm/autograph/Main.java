@@ -3,8 +3,6 @@ package org.metavm.autograph;
 import org.metavm.application.rest.dto.ApplicationDTO;
 import org.metavm.common.Page;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.GetTypeByCodeRequest;
-import org.metavm.object.type.rest.dto.GetTypeResponse;
 import org.metavm.user.rest.dto.LoginInfo;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.*;
@@ -33,14 +31,14 @@ public class Main {
     private final Compiler compiler;
     private final String sourceRoot;
 
-    public Main(String home, String sourceRoot, long appId, String token, TypeClient typeClient, AllocatorStore allocatorStore, ColumnStore columnStore, TypeTagStore typeTagStore) {
+    public Main(String home, String sourceRoot, String targetDir, long appId, String token, TypeClient typeClient, AllocatorStore allocatorStore, ColumnStore columnStore, TypeTagStore typeTagStore) {
         this.sourceRoot = sourceRoot;
         CompilerContext compilerContext = new CompilerContext(home, typeClient, allocatorStore, columnStore, typeTagStore);
         typeClient.setAppId(appId);
         CompilerHttpUtils.setToken(appId, token);
         compilerContext.getBootstrap().boot();
         compilerContext.getTreeLoader().load();
-        compiler = new Compiler(sourceRoot, compilerContext.getContextFactory(), typeClient);
+        compiler = new Compiler(sourceRoot, targetDir, compilerContext.getContextFactory(), typeClient);
     }
 
     public List<String> run() {
@@ -101,28 +99,10 @@ public class Main {
         CompilerHttpUtils.setAppId(currentAppId);
     }
 
-    private static void printClassTag(String name) {
-        var klass = CompilerHttpUtils.post("/type/get-by-code", new GetTypeByCodeRequest(name), new TypeReference<GetTypeResponse>() {
-        }).type();
-        System.out.println(klass.sourceCodeTag());
-    }
-
-    private static void printFieldTag(String name) {
-        var idx = name.lastIndexOf('.');
-        if(idx == -1) {
-            System.out.println("Invalid qualified field name");
-            return;
-        }
-        var klassName = name.substring(0, idx);
-        var fieldName = name.substring(idx + 1);
-        var klass = CompilerHttpUtils.post("/type/get-by-code", new GetTypeByCodeRequest(klassName), new TypeReference<GetTypeResponse>() {
-        }).type();
-        var field = NncUtils.find(klass.fields(), f -> fieldName.equals(f.name()));
-        if(field == null) {
-            System.out.println("Field not found");
-            return;
-        }
-        System.out.println(field.sourceCodeTag());
+    private static void printSourceTag(String name) {
+        var path = String.format("/type/source-tag/%s", name.replace('.', '/'));
+        var tag = CompilerHttpUtils.get(path, new TypeReference<Integer>() {});
+        System.out.println(tag);
     }
 
     private static String getAppFile() {
@@ -304,19 +284,12 @@ public class Main {
                     }
                     createApp(args[1]);
                 }
-                case "class-tag" -> {
+                case "tag" -> {
                     if (args.length < 2) {
                         usage();
                         return;
                     }
-                    printClassTag(args[1]);
-                }
-                case "field-tag" -> {
-                    if (args.length < 2) {
-                        usage();
-                        return;
-                    }
-                    printFieldTag(args[1]);
+                    printSourceTag(args[1]);
                 }
                 case "env" -> {
                     var selected = NncUtils.readLine(ENV_FILE);
@@ -360,6 +333,7 @@ public class Main {
                     logger.info("Application ID: {}", NncUtils.readLong(getAppFile()));
                     var main = new Main(selectedEnv,
                             sourceRoot,
+                            "target",
                             NncUtils.readLong(getAppFile()),
                             NncUtils.readLine(getTokenFile()),
                             typeClient,
@@ -373,6 +347,7 @@ public class Main {
                     var main = new Main(
                             args[1],
                             args[2],
+                            "target",
                             Long.parseLong(args[3]),
                             args[4],
                             new HttpTypeClient(),

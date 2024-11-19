@@ -1,12 +1,9 @@
 package org.metavm.autograph;
 
 import org.junit.Assert;
-import org.metavm.util.TestUtils;
 
 import java.util.List;
 import java.util.Map;
-
-import static org.metavm.util.TestUtils.doInTransaction;
 
 public class ShoppingCompilingTest extends CompilerTestBase {
 
@@ -15,35 +12,32 @@ public class ShoppingCompilingTest extends CompilerTestBase {
     public void testShopping() {
         compileTwice(SHOPPING_SOURCE_ROOT);
         submit(() -> {
-            var productType = getClassTypeByCode("org.metavm.lab.shopping.AstProduct");
-            var productId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
-                    productType.qualifiedName(),
+            var productId = saveInstance(
+                    "org.metavm.lab.shopping.AstProduct",
                     Map.of(
                             "title", "shoes",
                             "price", 100,
                             "inventory", 100
                     )
-            ));
-            var directCouponType = getClassTypeByCode("org.metavm.lab.shopping.AstDirectCoupon");
-            var couponStateType = getClassTypeByCode("org.metavm.lab.shopping.AstCouponState");
-            var couponNormalState = typeManager.getEnumConstant(couponStateType.id(), "UNUSED");
-            var couponId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
-                    directCouponType.qualifiedName(),
+            );
+            var couponNormalStateId = typeManager.getEnumConstantId("org.metavm.lab.shopping.AstCouponState", "UNUSED");
+            var couponId = saveInstance(
+                    "org.metavm.lab.shopping.AstDirectCoupon",
                     Map.of(
                             "discount", 5,
-                            "state", couponNormalState.getIdNotNull(),
+                            "state", couponNormalStateId,
                             "product", productId
                     )
-            ));
-            var orderId = (String) doInTransaction(() -> apiClient.callMethod(
+            );
+            var orderId = (String) callMethod(
                     productId,
                     "buy",
                     List.of(1, List.of(couponId))
-            ));
-            var order = instanceManager.get(orderId, 1).instance();
-            var price = order.getPrimitiveValue("price");
-            var orderCoupons = order.getInstance("coupons");
-            Assert.assertEquals(1, orderCoupons.getListSize());
+            );
+            var order = getObject(orderId);
+            var price = order.getLong("price");
+            var orderCoupons = order.getArray("coupons");
+            Assert.assertEquals(1, orderCoupons.size());
             Assert.assertEquals(95L, price);
         });
     }

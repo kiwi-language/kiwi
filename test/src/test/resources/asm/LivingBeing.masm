@@ -79,6 +79,10 @@ class Human extends Animal implements Sentient {
         return this.occupation;
    }
 
+   public boolean isThinking() {
+        return this.thinking;
+   }
+
    public string makeSound() {
         return "I am a human being";
    }

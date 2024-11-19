@@ -1,17 +1,17 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.ElementVisitor;
 import org.metavm.api.EntityType;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.ValueArray;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.IntersectionTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.object.type.rest.dto.TypeKeyCodes;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
+import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -103,12 +103,12 @@ public class IntersectionType extends CompositeType {
 
     @Override
     public int getTypeKeyCode() {
-        return TypeKeyCodes.INTERSECTION;
+        return WireTypes.INTERSECTION_TYPE;
     }
 
     @Override
-    public void write(InstanceOutput output) {
-        output.write(TypeKeyCodes.INTERSECTION);
+    public void write(MvOutput output) {
+        output.write(WireTypes.INTERSECTION_TYPE);
         output.writeInt(types.size());
         types.forEach(t -> t.write(output));
     }
@@ -118,11 +118,11 @@ public class IntersectionType extends CompositeType {
         return 2;
     }
 
-    public static IntersectionType read(InstanceInput input, TypeDefProvider typeDefProvider) {
+    public static IntersectionType read(MvInput input) {
         var numTypes = input.readInt();
         var types = new HashSet<Type>(numTypes);
         for (int i = 0; i < numTypes; i++)
-            types.add(Type.readType(input, typeDefProvider));
+            types.add(Type.readType(input));
         return new IntersectionType(types);
     }
 

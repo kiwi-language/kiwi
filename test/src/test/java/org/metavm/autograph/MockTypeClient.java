@@ -6,7 +6,6 @@ import org.metavm.object.instance.rest.GetTreesRequest;
 import org.metavm.object.instance.rest.InstanceVersionsRequest;
 import org.metavm.object.instance.rest.TreeDTO;
 import org.metavm.object.type.TypeManager;
-import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.object.type.rest.dto.TreeResponse;
 import org.metavm.object.type.rest.dto.TypeTreeQuery;
 import org.metavm.system.BlockManager;
@@ -14,9 +13,10 @@ import org.metavm.system.rest.dto.BlockDTO;
 import org.metavm.util.ContextUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionOperations;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -53,8 +53,16 @@ public class MockTypeClient implements TypeClient {
     }
 
     @Override
-    public void batchSave(BatchSaveRequest request) {
-        submit(() -> transactionOperations.execute((TransactionCallback<Object>) status -> typeManager.batchSave(request)), "batchSave");
+    public void deploy(String mvaFile) {
+        submit(() -> transactionOperations.execute(status -> {
+            try(var input = new FileInputStream(mvaFile)) {
+                typeManager.deploy(input);
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            return null;
+        }), "deploy");
     }
 
     @Override

@@ -7,9 +7,6 @@ import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.NativeMethods;
 import org.metavm.entity.natives.RuntimeExceptionNative;
-import org.metavm.flow.rest.FlowParam;
-import org.metavm.flow.rest.FlowSummaryDTO;
-import org.metavm.flow.rest.MethodParam;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
@@ -34,7 +31,7 @@ public class Method extends Flow implements Property, GenericElement {
     private static final Pattern GETTER_PTN = Pattern.compile("(get|is)([A-Z][a-zA-Z0-9]*)");
     private static final Pattern SETTER_PTN = Pattern.compile("set([A-Z][a-zA-Z0-9]*)");
 
-    private final @NotNull Klass declaringType;
+    private @NotNull Klass declaringType;
     private boolean _static;
     private Access access;
     private boolean isConstructor;
@@ -77,7 +74,7 @@ public class Method extends Flow implements Property, GenericElement {
                   @Nullable CodeSource codeSource,
                   boolean hidden,
                   MetadataState state) {
-        super(tmpId, name, isNative, isSynthetic, parameters, returnType, List.of(), List.of(), horizontalTemplate, codeSource, state, isAbstract);
+        super(tmpId, name, isNative, isSynthetic, parameters, returnType, List.of(), List.of(), horizontalTemplate, codeSource, state);
         if (isStatic && isAbstract)
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.declaringType = declaringType;
@@ -99,6 +96,7 @@ public class Method extends Flow implements Property, GenericElement {
         if (horizontalTemplate == null)
             declaringType.addMethod(this);
         checkTypes(parameters, returnType);
+        resetBody();
     }
 
     @Nullable
@@ -135,20 +133,6 @@ public class Method extends Flow implements Property, GenericElement {
     @Override
     public boolean isValidLocalKey() {
         return true;
-    }
-
-    @Override
-    protected FlowParam getParam(boolean includeCode, SerializeContext serContext) {
-        if (includeCode) {
-            serContext.writeTypeDef(declaringType);
-        }
-        return new MethodParam(
-                isConstructor, isAbstract, _static,
-                NncUtils.get(verticalTemplate, serContext::getStringId),
-                serContext.getStringId(declaringType),
-                NncUtils.get(staticType, t -> t.toExpression(serContext)),
-                access.code()
-        );
     }
 
     @Nullable
@@ -202,6 +186,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     public void setAbstract(boolean anAbstract) {
         isAbstract = anAbstract;
+        resetBody();
     }
 
     public void setVerticalTemplate(@Nullable Method verticalTemplate) {
@@ -270,21 +255,6 @@ public class Method extends Flow implements Property, GenericElement {
         return Objects.requireNonNullElse(verticalTemplate, this);
     }
 
-    public FlowSummaryDTO toSummaryDTO() {
-        try (var serContext = SerializeContext.enter()) {
-            return new FlowSummaryDTO(
-                    serContext.getStringId(this),
-                    getName(),
-                    serContext.getStringId(getDeclaringType()),
-                    NncUtils.map(getParameters(), Parameter::toDTO),
-                    getReturnType().toExpression(serContext),
-                    !getParameterTypes().isEmpty(),
-                    isConstructor,
-                    getState().code()
-            );
-        }
-    }
-
     @Override
     public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
 //        logger.debug("Executing method: {}", getQualifiedSignature());
@@ -309,7 +279,7 @@ public class Method extends Flow implements Property, GenericElement {
                     result = NativeMethods.invoke(this, self, arguments, callContext);
             }
             else {
-                if (!isRootScopePresent())
+                if (!isCodePresent())
                     throw new InternalException("fail to invoke method: " + getQualifiedName() + ". root scope not present");
                 try {
                     Value[] argArray;
@@ -539,6 +509,52 @@ public class Method extends Flow implements Property, GenericElement {
     @Override
     public int getInputCount() {
         return _static || isConstructor ? getParameters().size() : 1 + getParameters().size();
+    }
+
+    public void setDeclaringType(@NotNull Klass klass) {
+        this.declaringType = klass;
+        resetType();
+    }
+
+    @Override
+    public boolean hasBody() {
+        return super.hasBody() && !isAbstract;
+    }
+
+    public static final int FLAG_CONSTRUCTOR = 4;
+    public static final int FLAG_ABSTRACT = 8;
+    public static final int FLAG_STATIC = 16;
+    public static final int FLAG_HIDDEN = 32;
+
+    public int getFlags() {
+        int flags = super.getFlags();
+        if(isConstructor)
+            flags |= FLAG_CONSTRUCTOR;
+        if(isAbstract)
+            flags |= FLAG_ABSTRACT;
+        if(_static)
+            flags |= FLAG_STATIC;
+        if(hidden)
+            flags |= FLAG_HIDDEN;
+        return flags;
+    }
+
+    void setFlags(int flags) {
+        super.setFlags(flags);
+        isConstructor = (flags & FLAG_CONSTRUCTOR) != 0;
+        isAbstract = (flags & FLAG_ABSTRACT) != 0;
+        _static = (flags & FLAG_STATIC) != 0;
+        hidden = (flags & FLAG_HIDDEN) != 0;
+    }
+
+    public void write(KlassOutput output) {
+        super.write(output);
+        output.write(access.code());
+    }
+
+    public void read(KlassInput input) {
+        super.read(input);
+        access = Access.fromCode(input.read());
     }
 
 }

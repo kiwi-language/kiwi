@@ -5,11 +5,12 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.CapturedType;
 import org.metavm.object.type.CapturedTypeVariable;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 public record CapturedTypeKey(@NotNull Id variableId) implements TypeKey {
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         output.writeId(variableId);
     }
 
@@ -30,6 +31,6 @@ public record CapturedTypeKey(@NotNull Id variableId) implements TypeKey {
 
     @Override
     public int getCode() {
-        return TypeKeyCodes.CAPTURED;
+        return WireTypes.CAPTURED_TYPE;
     }
 }

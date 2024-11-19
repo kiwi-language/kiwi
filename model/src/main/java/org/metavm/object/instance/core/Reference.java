@@ -10,6 +10,7 @@ import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
 import org.metavm.util.WireTypes;
 import org.slf4j.Logger;
@@ -121,9 +122,9 @@ public class Reference extends Value {
     }
 
     @Override
-    public void write(InstanceOutput output) {
+    public void write(MvOutput output) {
         if (isInlineValueReference())
-            writeInstance(output);
+            writeInstance((InstanceOutput) output);
         else {
             if(flags != 0) {
                 output.write(WireTypes.FLAGGED_REFERENCE);

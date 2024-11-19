@@ -7,16 +7,18 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.ModelDefRegistry;
-import org.metavm.flow.FlowExecutionService;
 import org.metavm.flow.FlowSavingContext;
-import org.metavm.flow.rest.FlowExecutionRequest;
-import org.metavm.flow.rest.MethodRefDTO;
 import org.metavm.mocks.*;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.ClassInstanceBuilder;
+import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.rest.*;
-import org.metavm.object.type.*;
+import org.metavm.object.instance.rest.LoadInstancesByPathsRequest;
+import org.metavm.object.instance.rest.SelectRequest;
+import org.metavm.object.type.FieldBuilder;
+import org.metavm.object.type.PrimitiveType;
+import org.metavm.object.type.TypeManager;
+import org.metavm.object.type.Types;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +34,7 @@ public class InstanceManagerTest extends TestCase {
     private EntityContextFactory entityContextFactory;
     private SchedulerAndWorker schedulerAndWorker;
     private TypeManager typeManager;
-    private FlowExecutionService flowExecutionService;
+    private ApiClient apiClient;
 
     @Override
     protected void setUp() throws Exception {
@@ -42,7 +44,7 @@ public class InstanceManagerTest extends TestCase {
         entityContextFactory = bootResult.entityContextFactory();
         instanceManager = managers.instanceManager();
         typeManager = managers.typeManager();
-        flowExecutionService = managers.flowExecutionService();
+        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache()));
         ContextUtil.setAppId(TestConstants.APP_ID);
         FlowSavingContext.initConfig();
     }
@@ -53,7 +55,7 @@ public class InstanceManagerTest extends TestCase {
         entityContextFactory = null;
         schedulerAndWorker = null;
         typeManager = null;
-        flowExecutionService = null;
+        apiClient = null;
         FlowSavingContext.clearConfig();
     }
 
@@ -150,168 +152,63 @@ public class InstanceManagerTest extends TestCase {
 
     public void testUtils() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Utils.masm", typeManager, schedulerAndWorker);
-        var utilsType = typeManager.getTypeByQualifiedName("Utils").type();
-        var contains = TestUtils.doInTransaction(() -> flowExecutionService.execute(
-                new FlowExecutionRequest(
-                        TestUtils.getMethodRefByCode(utilsType, "test"),
-                        null,
-                        List.of(
-                                new ListFieldValue(
-                                        null,
-                                        false,
-                                        List.of(
-                                                PrimitiveFieldValue.createString("a"),
-                                                PrimitiveFieldValue.createString("b"),
-                                                PrimitiveFieldValue.createString("c")
-                                        )
-                                ),
-                                new ListFieldValue(
-                                        null,
-                                        false,
-                                        List.of(
-                                                PrimitiveFieldValue.createString("d"),
-                                                PrimitiveFieldValue.createString("b")
-                                        )
-                                )
-                        )
-                )
+        var contains = (boolean) callMethod("Utils", "test", List.of(
+                List.of("a", "b", "c"), List.of("d", "b")
         ));
-        Assert.assertEquals("true", contains.title());
+        Assert.assertTrue(contains);
 
-        var contains2 = TestUtils.doInTransaction(() -> flowExecutionService.execute(
-                new FlowExecutionRequest(
-                        TestUtils.getMethodRefByCode(utilsType, "test2"),
-                        null,
-                        List.of(
-                                new ListFieldValue(
-                                        null,
-                                        false,
-                                        List.of(
-                                                PrimitiveFieldValue.createString("a"),
-                                                PrimitiveFieldValue.createString("b"),
-                                                PrimitiveFieldValue.createString("c")
-                                        )
-                                ),
-                                PrimitiveFieldValue.createString("b"),
-                                PrimitiveFieldValue.createString("d")
-                        )
-                )
-        ));
-        Assert.assertEquals("true", contains2.title());
+        var contains2 = (boolean) callMethod("Utils", "test2", List.of(
+           List.of("a", "b", "c"), "d", "b")
+        );
+        Assert.assertTrue(contains2);
     }
 
     public void testGenericOverloading() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/GenericOverloading.masm", typeManager, schedulerAndWorker);
-        var baseType = typeManager.getTypeByQualifiedName("Base").type();
-        var subType = typeManager.getTypeByQualifiedName("Sub").type();
-        var testMethodId = TestUtils.getMethodByCode(baseType, "test").id();
-        var subId = TestUtils.doInTransaction(() -> instanceManager.create(
-                InstanceDTO.createClassInstance(
-                        Constants.ID_PREFIX + subType.id(),
-                        List.of()
-                )
-        ));
-        var result = TestUtils.doInTransaction(() -> flowExecutionService.execute(
-                new FlowExecutionRequest(
-                        new MethodRefDTO(
-                                TypeExpressions.getClassType(baseType.id()),
-                                testMethodId,
-                                List.of("string")
-                        ),
-                        subId,
-                        List.of(PrimitiveFieldValue.createString("abc"))
-                )
-        ));
-        Assert.assertEquals("true", result.title());
+        var subId = saveInstance("Sub", Map.of());
+        var result = (boolean) callMethod(subId, "test<string>", List.of("abc"));
+        Assert.assertTrue(result);
     }
 
     public void testLambda() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Lambda.masm", typeManager, schedulerAndWorker);
-        var utilsType = typeManager.getTypeByQualifiedName("Utils").type();
-        var result = TestUtils.doInTransaction(() -> flowExecutionService.execute(
-                new FlowExecutionRequest(
-                        TestUtils.getMethodRefByCode(utilsType, "findGt"),
-                        null,
-                        List.of(
-                                new ListFieldValue(
-                                        null,
-                                        false,
-                                        List.of(
-                                                PrimitiveFieldValue.createLong(1),
-                                                PrimitiveFieldValue.createLong(2),
-                                                PrimitiveFieldValue.createLong(3)
-                                        )
-                                ),
-                                PrimitiveFieldValue.createLong(2)
-                        )
-                )
+        var result = (long) callMethod("Utils", "findGt", List.of(
+                List.of(1, 2, 3), 2
         ));
-        Assert.assertEquals("3", result.title());
+        Assert.assertEquals(3L, result);
     }
 
     public void testLivingBeing() {
-        var typeIds = MockUtils.createLivingBeingTypes(typeManager, schedulerAndWorker);
-        var human = TestUtils.doInTransaction(() -> flowExecutionService.execute(
-                new FlowExecutionRequest(
-                        new MethodRefDTO(TypeExpressions.getClassType(typeIds.humanTypeId()), typeIds.humanConstructorId(), List.of()),
-                        null,
-                        List.of(
-                                PrimitiveFieldValue.createLong(30),
-                                PrimitiveFieldValue.createNull(),
-                                PrimitiveFieldValue.createLong(180),
-                                PrimitiveFieldValue.createString("Inventor")
-                        )
+        MockUtils.createLivingBeingTypes(typeManager, schedulerAndWorker);
+        var humanId = saveInstance("Human", Map.of(
+                "age", 30,
+                "intelligence", 180,
+                "occupation", "Inventor"
                 )
-        ));
-        Assert.assertEquals("30", human.getFieldValue(typeIds.livingBeingAgeFieldId()).getDisplayValue());
-        Assert.assertEquals("null", human.getFieldValue(typeIds.livingBeingExtraFieldId()).getDisplayValue());
-        Assert.assertEquals("180", human.getFieldValue(typeIds.animalIntelligenceFieldId()).getDisplayValue());
-        Assert.assertEquals("Inventor", human.getFieldValue(typeIds.humanOccupationFieldId()).getDisplayValue());
-        Assert.assertEquals("false", human.getFieldValue(typeIds.humanThinkingFieldId()).getDisplayValue());
-        var makeSoundResult = TestUtils.doInTransaction(() -> flowExecutionService.execute(
-                new FlowExecutionRequest(
-                        TestUtils.createMethodRef(typeIds.livingBeingTypeId(), typeIds.makeSoundMethodId()),
-                        human.id(),
-                        List.of()
-                )
-        ));
-        Assert.assertEquals("I am a human being", makeSoundResult.title());
-        TestUtils.doInTransaction(() -> flowExecutionService.execute(
-                new FlowExecutionRequest(
-                        TestUtils.createMethodRef(typeIds.sentientTypeId(), typeIds.thinkMethodId()),
-                        human.id(),
-                        List.of()
-                )
-        ));
-        var reloadedHuman = instanceManager.get(human.id(), 2).instance();
-        Assert.assertEquals("true", reloadedHuman.getFieldValue(typeIds.humanThinkingFieldId()).getDisplayValue());
+        );
+        var human = getObject(humanId);
+        Assert.assertEquals(30L, human.getLong(("age")));
+        Assert.assertNull(human.get("extra"));
+        Assert.assertEquals(180L, human.getLong("intelligence"));
+        Assert.assertEquals("Inventor", human.getString("occupation"));
+        Assert.assertFalse(human.getBoolean("thinking"));
+        var makeSoundResult = callMethod(humanId, "makeSound", List.of());
+        Assert.assertEquals("I am a human being", makeSoundResult);
+        callMethod(humanId, "think", List.of());
+        var reloadedHuman = getObject(humanId);
+        Assert.assertTrue(reloadedHuman.getBoolean("thinking"));
     }
 
     public void testRemoveNonPersistedChild() {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
         MockUtils.assemble(parentChildMasm, typeManager, schedulerAndWorker);
-        var parentType = typeManager.getTypeByQualifiedName("Parent").type();
-        var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                TestUtils.getMethodRefByCode(parentType, "Parent"),
-                null,
-                List.of()
-        )));
-        TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                TestUtils.getMethodRefByCode(parentType, "test"),
-                parent.id(),
-                List.of()
-        )));
-        var reloadedParent = instanceManager.get(parent.id(), 2).instance();
-        var parentChildrenFieldId = TestUtils.getFieldIdByName(parentType, "children");
-        var children = ((InstanceFieldValue) reloadedParent.getFieldValue(parentChildrenFieldId)).getInstance();
-        Assert.assertEquals(0, children.getListSize());
-
+        var parentId = saveInstance("Parent", Map.of());
+        callMethod(parentId, "test", List.of());
+        var parent = getObject(parentId);
+        var children = parent.getArray("children");
+        Assert.assertEquals(0, children.size());
         try {
-            TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                    TestUtils.getMethodRefByCode(parentType, "test2"),
-                    parent.id(),
-                    List.of()
-            )));
+            callMethod(parentId, "test2", List.of());
             Assert.fail("Should not be able to delete non-persisted child when it's referenced");
         } catch (BusinessException e) {
             Assert.assertSame(e.getErrorCode(), ErrorCode.STRONG_REFS_PREVENT_REMOVAL);
@@ -321,14 +218,8 @@ public class InstanceManagerTest extends TestCase {
     public void testRemoveRoot() {
         final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm";
         MockUtils.assemble(parentChildMasm, typeManager, schedulerAndWorker);
-        var parentType = typeManager.getTypeByQualifiedName("Parent").type();
-        var parent = TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-                TestUtils.getMethodRefByCode(parentType, "Parent"),
-                null,
-                List.of()
-        )));
-//        var parentMapping = instanceManager.get(viewId.toString(), 2);
-        TestUtils.doInTransactionWithoutResult(() -> instanceManager.delete(parent.id()));
+        var parentId = saveInstance("Parent", Map.of());
+        deleteObject(parentId);
     }
 
     public void testRelocation() {
@@ -474,5 +365,26 @@ public class InstanceManagerTest extends TestCase {
             Assert.assertEquals(Instances.nullInstance(), inst2.getField(nameField));
         }
     }
+
+    protected String saveInstance(String className, Map<String, Object> fields) {
+        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, fields));
+    }
+
+    protected Object callMethod(String qualifier, String methodName, List<Object> arguments) {
+        return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    }
+
+    protected ClassInstanceWrap getObject(String id) {
+        return apiClient.getObject(id);
+    }
+
+    protected Object getStatic(String className, String fieldName) {
+        return apiClient.getStatic(className, fieldName);
+    }
+
+    protected void deleteObject(String id) {
+        TestUtils.doInTransactionWithoutResult(() -> apiClient.deleteInstance(id));
+    }
+
 
 }

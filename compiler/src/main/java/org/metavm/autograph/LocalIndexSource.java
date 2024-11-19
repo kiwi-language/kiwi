@@ -2,7 +2,6 @@ package org.metavm.autograph;
 
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.InstanceIndexQuery;
-import org.metavm.entity.InstanceIndexQueryItem;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;
 import org.metavm.object.instance.core.ClassInstance;
@@ -10,7 +9,6 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.InstanceIndexKey;
 import org.metavm.object.instance.persistence.IndexKeyPO;
-import org.metavm.util.BytesUtils;
 import org.metavm.util.CompilerHttpUtils;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
@@ -69,13 +67,6 @@ public class LocalIndexSource implements IndexSource {
                 NncUtils.get(query.from(), InstanceIndexKey::toPO),
                 NncUtils.get(query.to(), InstanceIndexKey::toPO),
                 query.desc(), query.limit());
-    }
-
-    public LocalIndex.QueryItem convertQueryItem(InstanceIndexQueryItem queryItem) {
-        return new LocalIndex.QueryItem(
-                queryItem.operator(),
-                BytesUtils.toIndexBytes(queryItem.value())
-        );
     }
 
     @Override

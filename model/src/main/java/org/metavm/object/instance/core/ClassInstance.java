@@ -244,6 +244,8 @@ public class ClassInstance extends Instance {
 
     @Override
     protected void writeBody(InstanceOutput output) {
+//        if(DebugEnv.flag)
+//            logger.debug("Writing instance " + this);
         output.writeInt(fieldTable.countSubTablesForWriting());
         fieldTable.forEachSubTable(subTable -> {
             int numFields;
@@ -289,6 +291,8 @@ public class ClassInstance extends Instance {
         output.writeInt(numFields);
         subTable.forEach(field -> {
             if (!field.shouldSkipWrite()) {
+//                if(DebugEnv.flag && field instanceof InstanceField f)
+//                    logger.debug("Writing field {}", f.getField().getName());
                 output.writeInt(field.getTag());
                 field.writeValue(output);
             }
@@ -362,7 +366,7 @@ public class ClassInstance extends Instance {
 
     private byte[] readSlot(InstanceInput input) {
         var bout = new ByteArrayOutputStream();
-        var copier = new StreamCopier(input.getInputStream(), bout);
+        var copier = new StreamCopier(input.getIn(), bout);
         copier.visitClassBody();
         return bout.toByteArray();
     }
@@ -456,7 +460,10 @@ public class ClassInstance extends Instance {
 
     private void setFieldInternal(Field field, Value value, boolean checkMutability) {
         ensureLoaded();
-        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass));
+        NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass),
+                () -> "Field " + field.getQualifiedName() + " is not defined in klass " + klass.getTypeDesc()
+                        + " with super type " + klass.getSuperType() + ", super equals: "
+                        + (field.getDeclaringType() == Objects.requireNonNull(klass.getSuperType()).resolve()));
         if (checkMutability && field.isReadonly())
             throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD, field.getQualifiedName());
         if (field.isChild() && value.isNotNull())

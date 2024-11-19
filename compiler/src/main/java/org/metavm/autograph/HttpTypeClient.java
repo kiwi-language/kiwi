@@ -4,7 +4,6 @@ import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.rest.GetTreesRequest;
 import org.metavm.object.instance.rest.InstanceVersionsRequest;
 import org.metavm.object.instance.rest.TreeDTO;
-import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.object.type.rest.dto.TreeResponse;
 import org.metavm.object.type.rest.dto.TypeTreeQuery;
 import org.metavm.system.rest.dto.BlockDTO;
@@ -30,9 +29,8 @@ public class HttpTypeClient implements TypeClient {
     }
 
     @Override
-    public void batchSave(BatchSaveRequest request) {
-        CompilerHttpUtils.post("/type/batch", request, new TypeReference<List<String>>() {
-        });
+    public void deploy(String mvaPath) {
+        CompilerHttpUtils.upload("/type/deploy", mvaPath, new TypeReference<Void>() {});
     }
 
     @Override

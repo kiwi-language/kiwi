@@ -11,7 +11,7 @@ import java.util.List;
 public class AssemblerFactory {
 
     public static Assembler createWithStandardTypes(IEntityContext context) {
-        return new Assembler(code -> context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, code), context::bind);
+        return new Assembler(code -> context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, code));
     }
 
     private static List<TypeDef> getStandardTypeDefs() {

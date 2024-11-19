@@ -49,11 +49,6 @@ public class ReversedDefContext extends DefContext {
     }
 
     @Override
-    public TypeRegistry getTypeRegistry() {
-        return defContext;
-    }
-
-    @Override
     public DefContext getDefContext() {
         return defContext;
     }

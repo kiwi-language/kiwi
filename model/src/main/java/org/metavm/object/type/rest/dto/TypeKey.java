@@ -17,7 +17,7 @@ import java.util.Set;
 
 public interface TypeKey extends TypeOrTypeKey {
 
-    void write(InstanceOutput output);
+    void write(MvOutput output);
 
     String toTypeExpression();
 
@@ -118,31 +118,31 @@ public interface TypeKey extends TypeOrTypeKey {
 
     static TypeKey read(int code, InstanceInput input) {
         return switch (code) {
-            case TypeKeyCodes.ANY -> new AnyTypeKey();
-            case TypeKeyCodes.NEVER -> new NeverTypeKey();
-            case TypeKeyCodes.BOOLEAN -> new PrimitiveTypeKey(PrimitiveKind.BOOLEAN.code());
-            case TypeKeyCodes.LONG -> new PrimitiveTypeKey(PrimitiveKind.LONG.code());
-            case TypeKeyCodes.CHAR -> new PrimitiveTypeKey(PrimitiveKind.CHAR.code());
-            case TypeKeyCodes.DOUBLE -> new PrimitiveTypeKey(PrimitiveKind.DOUBLE.code());
-            case TypeKeyCodes.STRING -> new PrimitiveTypeKey(PrimitiveKind.STRING.code());
-            case TypeKeyCodes.VOID -> new PrimitiveTypeKey(PrimitiveKind.VOID.code());
-            case TypeKeyCodes.NULL -> new PrimitiveTypeKey(PrimitiveKind.NULL.code());
-            case TypeKeyCodes.TIME -> new PrimitiveTypeKey(PrimitiveKind.TIME.code());
-            case TypeKeyCodes.PASSWORD -> new PrimitiveTypeKey(PrimitiveKind.PASSWORD.code());
-            case TypeKeyCodes.CHILD_ARRAY -> new ArrayTypeKey(ArrayKind.CHILD.code(), read(input));
-            case TypeKeyCodes.READ_ONLY_ARRAY -> new ArrayTypeKey(ArrayKind.READ_ONLY.code(), read(input));
-            case TypeKeyCodes.READ_WRITE_ARRAY -> new ArrayTypeKey(ArrayKind.READ_WRITE.code(), read(input));
-            case TypeKeyCodes.VALUE_ARRAY -> new ArrayTypeKey(ArrayKind.VALUE.code(), read(input));
-            case TypeKeyCodes.CLASS -> new ClassTypeKey(input.readId());
-            case TypeKeyCodes.TAGGED_CLASS -> new TaggedClassTypeKey(input.readId(), input.readInt());
-            case TypeKeyCodes.PARAMETERIZED ->
+            case WireTypes.ANY_TYPE -> new AnyTypeKey();
+            case WireTypes.NEVER_TYPE -> new NeverTypeKey();
+            case WireTypes.BOOLEAN_TYPE -> new PrimitiveTypeKey(PrimitiveKind.BOOLEAN.code());
+            case WireTypes.LONG_TYPE -> new PrimitiveTypeKey(PrimitiveKind.LONG.code());
+            case WireTypes.CHAR_TYPE -> new PrimitiveTypeKey(PrimitiveKind.CHAR.code());
+            case WireTypes.DOUBLE_TYPE -> new PrimitiveTypeKey(PrimitiveKind.DOUBLE.code());
+            case WireTypes.STRING_TYPE -> new PrimitiveTypeKey(PrimitiveKind.STRING.code());
+            case WireTypes.VOID_TYPE -> new PrimitiveTypeKey(PrimitiveKind.VOID.code());
+            case WireTypes.NULL_TYPE -> new PrimitiveTypeKey(PrimitiveKind.NULL.code());
+            case WireTypes.TIME_TYPE -> new PrimitiveTypeKey(PrimitiveKind.TIME.code());
+            case WireTypes.PASSWORD_TYPE -> new PrimitiveTypeKey(PrimitiveKind.PASSWORD.code());
+            case WireTypes.CHILD_ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.CHILD.code(), read(input));
+            case WireTypes.READ_ONLY_ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.READ_ONLY.code(), read(input));
+            case WireTypes.READ_WRITE_ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.READ_WRITE.code(), read(input));
+            case WireTypes.VALUE_ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.VALUE.code(), read(input));
+            case WireTypes.CLASS_TYPE -> new ClassTypeKey(input.readId());
+            case WireTypes.TAGGED_CLASS_TYPE -> new TaggedClassTypeKey(input.readId(), input.readInt());
+            case WireTypes.PARAMETERIZED_TYPE ->
                     new ParameterizedTypeKey(input.readId(), readTypeKeyList(input));
-            case TypeKeyCodes.UNION -> new UnionTypeKey(readTypeKeySet(input));
-            case TypeKeyCodes.INTERSECTION -> new IntersectionTypeKey(readTypeKeySet(input));
-            case TypeKeyCodes.FUNCTION -> new FunctionTypeKey(readTypeKeyList(input), read(input));
-            case TypeKeyCodes.UNCERTAIN -> new UncertainTypeKey(read(input), read(input));
-            case TypeKeyCodes.VARIABLE -> new VariableTypeKey(GenericDeclarationRefKey.read(input), input.readId());
-            case TypeKeyCodes.CAPTURED -> new CapturedTypeKey(input.readId());
+            case WireTypes.UNION_TYPE -> new UnionTypeKey(readTypeKeySet(input));
+            case WireTypes.INTERSECTION_TYPE -> new IntersectionTypeKey(readTypeKeySet(input));
+            case WireTypes.FUNCTION_TYPE -> new FunctionTypeKey(readTypeKeyList(input), read(input));
+            case WireTypes.UNCERTAIN_TYPE -> new UncertainTypeKey(read(input), read(input));
+            case WireTypes.VARIABLE_TYPE -> new VariableTypeKey(GenericDeclarationRefKey.read(input), input.readId());
+            case WireTypes.CAPTURED_TYPE -> new CapturedTypeKey(input.readId());
             default -> throw new InternalException("Invalid type key code: " + code);
         };
     }

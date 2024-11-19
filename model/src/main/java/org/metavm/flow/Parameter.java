@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityType;
 import org.metavm.entity.*;
-import org.metavm.flow.rest.ParameterDTO;
+import org.metavm.object.type.ITypeDef;
 import org.metavm.object.type.Type;
 import org.metavm.util.NncUtils;
 
@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 @EntityType
-public class Parameter extends AttributedElement implements GenericElement, LocalKey {
+public class Parameter extends AttributedElement implements GenericElement, LocalKey, ITypeDef {
 
     public static Parameter create(String name, Type type) {
         return new Parameter(null, name, type);
@@ -21,21 +21,18 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
     @EntityField(asTitle = true)
     private String name;
     private Type type;
-    @Nullable
-    private Value condition;
     private Callable callable;
     @Nullable
     @CopyIgnore
     private Parameter copySource;
 
     public Parameter(Long tmpId, String name, Type type) {
-        this(tmpId, name, type, null, null, DummyCallable.INSTANCE);
+        this(tmpId, name, type, null, DummyCallable.INSTANCE);
     }
 
     public Parameter(Long tmpId,
                      String name,
                      Type type,
-                     @Nullable Value condition,
                      @Nullable Parameter copySource,
                      Callable callable) {
         setTmpId(tmpId);
@@ -43,7 +40,6 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
         this.name = name;
         this.type = type;
         this.copySource = copySource;
-        setCondition(condition);
     }
 
     public Callable getCallable() {
@@ -53,8 +49,9 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
     public void setCallable(Callable callable) {
         if (callable == this.callable)
             return;
-        NncUtils.requireTrue(this.callable == DummyCallable.INSTANCE,
-                "Callable already set");
+        NncUtils.requireTrue(this.callable == DummyCallable.INSTANCE
+                        || this.callable == DummyMethod.INSTANCE,
+                () -> "Callable already set: " + this.callable + ", new callable: " + callable);
         this.callable = callable;
     }
 
@@ -75,21 +72,7 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
     }
 
     public Parameter copy() {
-        return new Parameter(null, name, type, condition, null, DummyCallable.INSTANCE);
-    }
-
-    public ParameterDTO toDTO() {
-        try (var serContext = SerializeContext.enter()) {
-            return new ParameterDTO(
-                    serContext.getStringId(this),
-                    name,
-                    type.toExpression(serContext),
-                    NncUtils.get(condition, Value::toDTO),
-                    NncUtils.get(copySource, serContext::getStringId),
-                    getAttributesMap(),
-                    serContext.getStringId(callable)
-            );
-        }
+        return new Parameter(null, name, type, null, DummyCallable.INSTANCE);
     }
 
     @Nullable
@@ -125,14 +108,6 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
         this.copySource = (Parameter) copySource;
     }
 
-    public @Nullable Value getCondition() {
-        return condition;
-    }
-
-    public void setCondition(@Nullable Value condition) {
-        this.condition = condition;
-    }
-
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitParameter(this);
@@ -150,6 +125,19 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
 
     public String getText() {
         return name + ":" + type.getName();
+    }
+
+    public void write(KlassOutput output) {
+        output.writeEntityId(this);
+        output.writeUTF(name);
+        type.write(output);
+        writeAttributes(output);
+    }
+
+    public void read(KlassInput input) {
+        name = input.readUTF();
+        type = input.readType();
+        readAttributes(input);
     }
 
 }

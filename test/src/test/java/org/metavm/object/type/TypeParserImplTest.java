@@ -9,7 +9,6 @@ import org.metavm.entity.Entity;
 import org.metavm.entity.EntityUtils;
 import org.metavm.flow.FunctionBuilder;
 import org.metavm.flow.MethodBuilder;
-import org.metavm.flow.rest.FunctionRefDTO;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.Constants;
 import org.metavm.util.TestUtils;
@@ -152,11 +151,6 @@ public class TypeParserImplTest extends TestCase {
         var parser = new TypeParserImpl(typeDefProvider);
         var pFuncRef1 = parser.parseFunctionRef(expr);
         Assert.assertEquals(pFuncRef, pFuncRef1);
-
-        var funcRefDTO = (FunctionRefDTO) pFuncRef.toDTO();
-        Assert.assertEquals(expr, funcRefDTO.toTypeExpression());
-        var pFuncRef2 = funcRefDTO.resolve(typeDefProvider);
-        Assert.assertEquals(pFuncRef, pFuncRef2);
     }
 
     private Map<Id, Entity> getEntityMap(Object root) {

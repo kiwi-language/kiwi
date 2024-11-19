@@ -4,7 +4,6 @@ import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.rest.GetTreesRequest;
 import org.metavm.object.instance.rest.InstanceVersionsRequest;
 import org.metavm.object.instance.rest.TreeDTO;
-import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.object.type.rest.dto.TreeResponse;
 import org.metavm.object.type.rest.dto.TypeTreeQuery;
 import org.metavm.system.rest.dto.BlockDTO;
@@ -17,7 +16,7 @@ public interface TypeClient {
 
     void setAppId(long appId);
 
-    void batchSave(BatchSaveRequest request);
+    void deploy(String mvaFile);
 
     void login(long appId, String loginName, String password);
 

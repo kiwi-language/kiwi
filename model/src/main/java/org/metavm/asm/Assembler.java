@@ -1,19 +1,18 @@
 package org.metavm.asm;
 
-import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.metavm.asm.antlr.AssemblyLexer;
 import org.metavm.asm.antlr.AssemblyParser;
 import org.metavm.asm.antlr.AssemblyParserBaseVisitor;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
-import org.metavm.object.type.rest.dto.KlassDTO;
-import org.metavm.object.type.rest.dto.TypeDefDTO;
-import org.metavm.object.type.rest.dto.TypeVariableDTO;
 import org.metavm.util.LinkedList;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -21,10 +20,14 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -35,35 +38,77 @@ public class Assembler {
     private final char[] buf = new char[1024 * 1024];
 
     private final Map<String, List<ClassType>> superTypes = new HashMap<>();
-    private final List<KlassDTO> types = new ArrayList<>();
+    private final List<Klass> generatedKlasses = new ArrayList<>();
     private final Map<String, Klass> name2klass = new HashMap<>();
-    private final List<TypeVariableDTO> typeVariables = new ArrayList<>();
     private final Map<ParserRuleContext, Map<AsmAttributeKey<?>, Object>> attributes = new HashMap<>();
     private final Function<String, Klass> klassProvider;
-    private final Consumer<Entity> binder;
-    private TokenStream tokenStream;
 
-    public Assembler(Function<String, Klass> klassProvider, Consumer<Entity> binder) {
+    public Assembler(Function<String, Klass> klassProvider) {
         for (StdKlass stdKlass : StdKlass.values()) {
             var klass = stdKlass.get();
             name2klass.put(klass.getQualifiedName(), klass);
         }
         this.klassProvider = klassProvider;
-        this.binder = binder;
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public List<TypeDefDTO> assemble(List<String> sourcePaths) {
+    public void assemble(List<String> sourcePaths) {
         var units = NncUtils.map(sourcePaths, path -> parse(getSource(path)));
-        return assemble0(units);
+        assemble0(units);
     }
 
-    public List<TypeDefDTO> assemble(InputStream input) {
+    public void generateClasses(String targetDir) {
+        try (var serContext = SerializeContext.enter();
+             var ignored = ContextUtil.getProfiler().enter("deploy")) {
+            NncUtils.clearDirectory(targetDir);
+            serContext.includingCode(true)
+                    .includeNodeOutputType(false)
+                    .includingValueType(false);
+            for (var klass : generatedKlasses) {
+                writeClassFile(klass, targetDir, serContext);
+            }
+            logger.info("Compile successful");
+            createArchive(targetDir);
+        }
+    }
+
+    private void writeClassFile(Klass klass, String targetDir, SerializeContext serializeContext) {
+        var path = targetDir + '/' + klass.getQualifiedName().replace('.', '/') + ".mvclass";
+        var bout = new ByteArrayOutputStream();
+        var output = new KlassOutput(bout, serializeContext);
+        klass.write(output);
+        NncUtils.writeFile(path, bout.toByteArray());
+    }
+
+    private void createArchive(String target) {
+        var targetDir = Paths.get(target);
+        var zipFilePath = targetDir + "/target.mva";
+        try(var zipOut = new ZipOutputStream(new FileOutputStream(zipFilePath));
+            var files = Files.walk(targetDir)) {
+            files.filter(f -> f.toString().endsWith(".mvclass"))
+                    .forEach(f -> {
+                        var zipEntry = new ZipEntry(targetDir.relativize(f).toString());
+                        try {
+                            zipOut.putNextEntry(zipEntry);
+                            Files.copy(f, zipOut);
+                            zipOut.closeEntry();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+
+    public void assemble(InputStream input) {
         var unit = parse(input);
-        return assemble0(List.of(unit));
+        assemble0(List.of(unit));
     }
 
-    private List<TypeDefDTO> assemble0(List<AssemblyParser.CompilationUnitContext> units) {
+    private void assemble0(List<AssemblyParser.CompilationUnitContext> units) {
         visit(units, new ImportParser());
         visit(units, new AsmInit());
         visit(units, new AsmDeclarator());
@@ -73,7 +118,6 @@ public class Assembler {
         try (var ignored = SerializeContext.enter()) {
             visit(units, new KlassInitializer());
         }
-        return getAllTypeDefs();
     }
 
     private void visit(List<AssemblyParser.CompilationUnitContext> units, AssemblyParserBaseVisitor<Void> visitor) {
@@ -171,8 +215,8 @@ public class Assembler {
             throw new IllegalArgumentException("Unrecognized type: " + typeType.getText());
     }
 
-    public List<KlassDTO> getTypes() {
-        return Collections.unmodifiableList(types);
+    public List<Klass> getGeneratedKlasses() {
+        return Collections.unmodifiableList(generatedKlasses);
     }
 
     public static class Modifiers {
@@ -569,7 +613,7 @@ public class Assembler {
             var index = klass.findIndex(idx -> idx.getName().equals(name));
             var mods = currentMods();
             if (index == null)
-                index = new Index(klass, name, null, mods.contains("unique"));
+                index = new Index(null, klass, name, null, mods.contains("unique"));
             setAttribute(ctx, AsmAttributeKey.index, index);
             return null;
         }
@@ -756,9 +800,6 @@ public class Assembler {
             var typeVariable = getAttribute(ctx, AsmAttributeKey.typeVariable);
             if (ctx.typeType() != null)
                 typeVariable.setBounds(List.of(parseType(ctx.typeType(), scope, getCompilationUnit())));
-            try (var serContext = SerializeContext.enter()) {
-                typeVariables.add(typeVariable.toDTO(serContext));
-            }
             return null;
         }
 
@@ -967,7 +1008,7 @@ public class Assembler {
             var klass = getAttribute(ctx, AsmAttributeKey.classInfo).getKlass();
             try (var serContext = SerializeContext.enter()) {
                 serContext.addWritingCodeType(klass);
-                types.add(klass.toDTO(serContext));
+                generatedKlasses.add(klass);
             }
             super.visitTypeDef(name, typeCategory, isStruct, superType, interfaces, typeParameters, annotations, ctx, processBody);
         }
@@ -976,7 +1017,6 @@ public class Assembler {
     private AssemblyParser.CompilationUnitContext parse(String source) {
         var input = CharStreams.fromString(source);
         var parser = new AssemblyParser(new CommonTokenStream(new AssemblyLexer(input)));
-        tokenStream = parser.getTokenStream();
         return parser.compilationUnit();
     }
 
@@ -984,7 +1024,6 @@ public class Assembler {
         try {
             var input = CharStreams.fromReader(new InputStreamReader(in));
             var parser = new AssemblyParser(new CommonTokenStream(new AssemblyLexer(input)));
-            tokenStream = parser.getTokenStream();
             return parser.compilationUnit();
         }
         catch (IOException e) {
@@ -1107,7 +1146,6 @@ public class Assembler {
     private Klass createKlass(String name, String qualifiedName, ClassKind kind) {
         var klass = KlassBuilder.newBuilder(name, qualifiedName).kind(kind).tmpId(NncUtils.randomNonNegative()).build();
         name2klass.put(qualifiedName, klass);
-//        binder.accept(klass);
         return klass;
     }
 
@@ -1141,29 +1179,4 @@ public class Assembler {
         }
     }
 
-    public List<TypeDefDTO> getAllTypeDefs() {
-        List<TypeDefDTO> typeDefs = new ArrayList<>(types);
-        typeDefs.addAll(typeVariables);
-        return typeDefs;
-    }
-
-    private class AsmTypeDefProvider implements IndexedTypeDefProvider {
-
-        private final AsmCompilationUnit compilationUit;
-
-        private AsmTypeDefProvider(AsmCompilationUnit compilationUit) {
-            this.compilationUit = compilationUit;
-        }
-
-        @Nullable
-        @Override
-        public Klass findKlassByName(String name) {
-            return Assembler.this.getKlass(compilationUit.getReferenceName(name));
-        }
-
-        @Override
-        public TypeDef getTypeDef(Id id) {
-            throw new UnsupportedOperationException();
-        }
-    }
 }

@@ -10,11 +10,12 @@ import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeManager;
-import org.metavm.object.type.rest.dto.BatchSaveRequest;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -131,11 +132,9 @@ public class AssemblerTest extends TestCase {
         getObject(id);
     }
 
-    private BatchSaveRequest assemble(List<String> sources, Assembler assembler) {
+    private void assemble(List<String> sources, Assembler assembler) {
         assembler.assemble(sources);
-        var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
-        TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
-        return request;
+        assembler.generateClasses(TestConstants.TARGET);
     }
 
     private String saveInstance(String className, Map<String, Object> fields) {
@@ -154,10 +153,16 @@ public class AssemblerTest extends TestCase {
         FlowSavingContext.initConfig();
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var assembler = AssemblerFactory.createWithStandardTypes(context);
-            var request = assemble(List.of(source), assembler);
-            TestUtils.writeJson("/Users/leen/workspace/object/test.json", request);
+            assemble(List.of(source), assembler);
             ContextUtil.setAppId(TestConstants.APP_ID);
-            TestUtils.doInTransaction(() -> typeManager.batchSave(request));
+            TestUtils.doInTransaction(() -> {
+                try(var input = new FileInputStream(TestConstants.TARGET + "/target.mva")) {
+                    typeManager.deploy(input);
+                    return null;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
             TestUtils.waitForDDLPrepared(schedulerAndWorker);
         }
     }

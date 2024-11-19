@@ -2,7 +2,6 @@ package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Attribute;
-import org.metavm.flow.rest.FlowDTO;
 import org.metavm.object.type.*;
 import org.metavm.util.NncUtils;
 
@@ -24,7 +23,6 @@ public class MethodBuilder {
     private boolean isAbstract;
     private boolean isNative;
     private boolean isSynthetic;
-    private FlowDTO flowDTO;
     private Access access = Access.PUBLIC;
     private Type returnType;
     private List<Parameter> parameters = List.of();
@@ -63,11 +61,6 @@ public class MethodBuilder {
 
     public MethodBuilder codeSource(CodeSource codeSource) {
         this.codeSource = codeSource;
-        return this;
-    }
-
-    public MethodBuilder flowDTO(FlowDTO flowDTO) {
-        this.flowDTO = flowDTO;
         return this;
     }
 
@@ -158,7 +151,6 @@ public class MethodBuilder {
             else
                 returnType = NncUtils.orElse(Types.getVoidType(), Types::getVoidType);
         }
-        var effectiveTmpId = tmpId != null ? tmpId : NncUtils.get(flowDTO, FlowDTO::tmpId);
         if(!hidden && !typeArguments.isEmpty())
             hidden = NncUtils.anyMatch(typeArguments, Type::isCaptured);
         Method method;
@@ -166,7 +158,7 @@ public class MethodBuilder {
             if (state == null)
                 state = MetadataState.READY;
             method = new Method(
-                    effectiveTmpId,
+                    tmpId,
                     declaringType,
                     name,
                     isConstructor,
