@@ -16,10 +16,7 @@ import org.metavm.flow.KlassOutput;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.ResolutionStage;
 import org.metavm.object.type.TypeDef;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.IdentitySet;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,6 +84,19 @@ public class Compiler {
                         file.accept(new FieldInitializerMover());
                         file.accept(new NewObjectTransformer());
                     }
+            ),
+            new CompileStage(
+                    file -> true,
+                    file -> {
+                        resolveQnAndActivity(file);
+                        file.accept(new VarargsTransformer());
+                        resolveQnAndActivity(file);
+                        file.accept(new SwitchLabelStatementTransformer());
+                        file.accept(new NullSwitchCaseAppender());
+                        file.accept(new DefaultSwitchCaseAppender());
+                        resolveQnAndActivity(file);
+                        file.accept(new StringConcatTransformer());
+                    }
             )
     );
 
@@ -148,16 +158,18 @@ public class Compiler {
 
     public boolean compile(List<String> sources) {
         var profiler = ContextUtil.getProfiler();
-        try (var context = newContext(); var entry = profiler.enter("compile")) {
+        try (var context = newContext(); var ignored = profiler.enter("compile")) {
             long start = System.currentTimeMillis();
             var typeResolver = new TypeResolverImpl(context);
             var files = NncUtils.map(sources, this::getPsiJavaFile);
-            prepareStages.forEach(stage -> executeStage(stage, files));
+            for (int i = 0; i < prepareStages.size(); i++) {
+                executeStage(prepareStages.get(i), i, files);
+            }
             var psiClasses = NncUtils.flatMapAndFilter(files, TranspileUtils::getAllClasses,
                     k -> !TranspileUtils.hasAnnotation(k, EntityIndex.class));
             psiClasses.forEach(k -> classNames.add(k.getQualifiedName()));
             for (var stage : stages) {
-                try (var ignored = profiler.enter("stage: " + stage)) {
+                try (var ignored1 = profiler.enter("stage: " + stage)) {
                     var sortedKlasses = stage.sort(psiClasses, typeResolver);
                     var psiClassTypes = NncUtils.map(
                             sortedKlasses,
@@ -180,7 +192,7 @@ public class Compiler {
             logger.info("Deploy done");
             return true;
         } finally {
-//            logger.info(profiler.finish(false, true).output());
+            logger.info(profiler.finish(false, true).output());
         }
     }
 
@@ -251,12 +263,13 @@ public class Compiler {
 
     }
 
-
-    private void executeStage(CompileStage stage, List<PsiJavaFile> files) {
-        files.forEach(file -> {
-            if(stage.filter().test(file))
-                executeCommand(() -> stage.action().accept(file));
-        });
+    private void executeStage(CompileStage stage, int i, List<PsiJavaFile> files) {
+        try (var ignored = ContextUtil.getProfiler().enter("executeStage" + i)) {
+            files.forEach(file -> {
+                if (stage.filter().test(file))
+                    executeCommand(() -> stage.action().accept(file));
+            });
+        }
     }
 
     private void deploy(Collection<TypeDef> generatedTypeDefs, TypeResolver typeResolver) {
@@ -322,4 +335,10 @@ public class Compiler {
         return contextFactory.newEntityContext(typeClient.getAppId());
     }
 
+    private static void resolveQnAndActivity(PsiJavaFile file) {
+        file.accept(new QnResolver());
+        file.accept(new ActivityAnalyzer());
+        if(DebugEnv.debugging)
+            file.accept(new ActivityPrinter());
+    }
 }

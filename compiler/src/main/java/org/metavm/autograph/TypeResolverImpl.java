@@ -465,7 +465,6 @@ public class TypeResolverImpl implements TypeResolver {
                             it -> ((ClassType) resolveTypeOnly(it))
                     )
             );
-            codeGenerator.transform(psiClass);
             return klass;
         }
     }

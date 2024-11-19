@@ -2,6 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiStatement;
 import com.intellij.psi.PsiVariable;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.natives.StdFunction;
@@ -26,6 +27,7 @@ public class MethodGenerator {
     private final TypeNarrower typeNarrower = new TypeNarrower(this::getExpressionType);
     private final Map<String, Integer> varNames = new HashMap<>();
     private final LinkedList<Integer> yieldVariables = new LinkedList<>();
+    private final LinkedList<BlockInfo> blocks = new LinkedList<>();
 
     public MethodGenerator(Method method, TypeResolver typeResolver, VisitorBase visitor) {
         this.method = method;
@@ -702,6 +704,18 @@ public class MethodGenerator {
         return onNodeCreated(new PopNode(nextName("pop"),
                 code().getLastNode(), code()
         ));
+    }
+
+    public void enterBlock(PsiStatement statement) {
+        blocks.push(new BlockInfo(blocks.peek(), statement));
+    }
+
+    public BlockInfo exitBlock() {
+        return Objects.requireNonNull(blocks.pop());
+    }
+
+    public BlockInfo currentBlock() {
+        return Objects.requireNonNull(blocks.peek());
     }
 
     private record ScopeInfo(Code code) {

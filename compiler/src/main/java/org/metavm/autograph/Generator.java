@@ -329,8 +329,11 @@ public class Generator extends VisitorBase {
         builder.exitScope();
         builders.pop();
         CompositeTypeEventRegistry.removeListener(capturedTypeListener);
-//        if(method.getName().equals("Warehouse"))
+//        if(method.getDeclaringType().getQualifiedName().equals("continue_.ContinueFoo")
+//                && method.getName().equals("oddIndexOf")) {
+//            logger.debug("Max locals: {}", method.getCode().getMaxLocals());
 //            logger.debug("{}", method.getText());
+//        }
     }
 
     private boolean isEnumType(Klass classType) {
@@ -465,19 +468,21 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitIfStatement(PsiIfStatement statement) {
+        builder().enterBlock(statement);
         builder().getExpressionResolver().constructIf(
                 requireNonNull(statement.getCondition()),
                 () -> {
-                    if (statement.getThenBranch() != null) {
+                    if (statement.getThenBranch() != null)
                         statement.getThenBranch().accept(this);
-                    }
                 },
                 () -> {
-                    if (statement.getElseBranch() != null) {
+                    if (statement.getElseBranch() != null)
                         statement.getElseBranch().accept(this);
-                    }
                 }
         );
+        var block = builder().exitBlock();
+        if(block.hasBreaks())
+            block.connectBreaks(builder().createNoop());
     }
 
     @Override
@@ -491,21 +496,83 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitForStatement(PsiForStatement statement) {
-        throw new InternalException("For loop should be transformed into while loop before code generation");
+        var init = Objects.requireNonNull(statement.getInitialization());
+        if (init instanceof PsiDeclarationStatement declStmt) {
+            for (PsiElement element : declStmt.getDeclaredElements()) {
+                PsiVariable variable = (PsiVariable) element;
+                var varIdx = builder().getVariableIndex(variable);
+                if(variable.getInitializer() != null) {
+                    resolveExpression(variable.getInitializer());
+                    builder().createStore(varIdx);
+                }
+            }
+        } else
+            processExpressions(init);
+        var entry = builder().createNoop();
+        var cond = statement.getCondition();
+        IfNotNode ifNode;
+        if(cond != null) {
+            resolveExpression(cond);
+            ifNode = builder().createIfNot(null);
+        }
+        else
+            ifNode = null;
+        builder().enterBlock(statement);
+        if (statement.getBody() != null)
+            statement.getBody().accept(this);
+        var block = builder().exitBlock();
+        var continuePoint = builder().createNoop();
+        var update = statement.getUpdate();
+        if(update != null)
+            processExpressions(update);
+        builder().createGoto(entry);
+        var exit = builder().createNoop();
+        if(ifNode != null)
+            ifNode.setTarget(exit);
+        block.connect(continuePoint, exit);
+    }
+
+    private void processExpressions(PsiStatement statement) {
+        switch (statement) {
+            case PsiExpressionListStatement exprListStmt -> {
+                for (var e : exprListStmt.getExpressionList().getExpressions())
+                    resolveAndPopExpression(e);
+            }
+            case PsiExpressionStatement exprStmt -> resolveAndPopExpression(exprStmt.getExpression());
+            case PsiEmptyStatement ignored -> {}
+            default ->
+                    throw new InternalException("Not an expression or expression list statement " + statement.getText());
+        }
     }
 
     @Override
     public void visitWhileStatement(PsiWhileStatement statement) {
-        var entryNode = builder().createNoop();
-        var condition = statement.getCondition();
+        var entry = builder().createNoop();
+        var condition = Objects.requireNonNull(statement.getCondition());
         resolveExpression(condition);
-        var ifNode = condition != null ? builder().createIfNot(null) : null;
+        var ifNode = builder().createIfNot(null);
+        builder().enterBlock(statement);
         if (statement.getBody() != null)
             statement.getBody().accept(this);
-        builder().createGoto(entryNode);
+        var block = builder().exitBlock();
+        builder().createGoto(entry);
         var exit = builder().createNoop();
-        if(ifNode != null)
-            ifNode.setTarget(exit);
+        ifNode.setTarget(exit);
+        block.connect(entry, exit);
+    }
+
+    @Override
+    public void visitDoWhileStatement(PsiDoWhileStatement statement) {
+        var entry = builder().createNoop();
+        builder().enterBlock(statement);
+        if (statement.getBody() != null)
+            statement.getBody().accept(this);
+        var block = builder().exitBlock();
+        var condition = statement.getCondition();
+        resolveExpression(condition);
+        builder().createIf(entry);
+        var exit = builder().createNoop();
+        block.connect(entry, exit);
     }
 
     @Override
@@ -519,7 +586,7 @@ public class Generator extends VisitorBase {
             var indexVar = builder().nextVariableIndex();
             builder().createLoadConstant(Instances.longInstance(0));
             builder().createStore(indexVar);
-            var entryNode = builder().createNoop();
+            var entry = builder().createNoop();
             builder().createLoad(indexVar, Types.getLongType());
             builder().createLoad(iteratedVar, iteratedType);
             builder().createArrayLength();
@@ -537,17 +604,21 @@ public class Generator extends VisitorBase {
             builder().createLoad(indexVar, Types.getLongType());
             builder().createGetElement();
             builder().createStore(builder().getVariableIndex(statement.getIterationParameter()));
+            builder().enterBlock(statement);
             if (statement.getBody() != null)
                 statement.getBody().accept(this);
+            var block = builder().exitBlock();
+            var continuePoint = builder().createNoop();
             builder().createLoad(indexVar, Types.getLongType());
             builder().createLoadConstant(Instances.longOne());
             builder().createAdd();
             builder().createStore(indexVar);
-            builder().createGoto(entryNode);
+            builder().createGoto(entry);
             var exit = builder().createNoop();
             ifNode.setTarget(exit);
             if(ifNode1 != null)
                 ifNode1.setTarget(exit);
+            block.connect(continuePoint, exit);
         } else {
             var collType = Types.resolveKlass(iteratedType);
             typeResolver.ensureDeclared(collType);
@@ -559,7 +630,7 @@ public class Generator extends VisitorBase {
             builder().createStore(itVar);
             var itType = (ClassType) iteratorMethod.getReturnType().getUnderlyingType();
             var itKlass = itType.resolve();
-            var entryNode = builder().createNoop();
+            var entry = builder().createNoop();
             builder().createLoad(itVar, itType);
             builder().createMethodCall(itKlass.getMethod("hasNext", List.of()));
             var ifNode = builder().createIfNot(null);
@@ -574,13 +645,16 @@ public class Generator extends VisitorBase {
             builder().createLoad(itVar, itType);
             builder().createMethodCall(itKlass.getMethod("next", List.of()));
             builder().createStore(builder().getVariableIndex(statement.getIterationParameter()));
+            builder().enterBlock(statement);
             if (statement.getBody() != null)
                 statement.getBody().accept(this);
-            builder().createGoto(entryNode);
+            var block = builder().exitBlock();
+            builder().createGoto(entry);
             var exit = builder().createNoop();
             ifNode.setTarget(exit);
             if(ifNode1 != null)
                 ifNode1.setTarget(exit);
+            block.connect(entry, exit);
         }
     }
 
@@ -623,16 +697,47 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitExpressionStatement(PsiExpressionStatement statement) {
-        if (isExtraLoopTest(statement)) {
+        if (isExtraLoopTest(statement))
             return;
+        resolveAndPopExpression(statement.getExpression());
+    }
+
+    @Override
+    public void visitBlockStatement(PsiBlockStatement statement) {
+        builder().enterBlock(statement);
+        super.visitBlockStatement(statement);
+        var block = builder().exitBlock();
+        if(block.hasBreaks())
+            block.connectBreaks(builder().createNoop());
+    }
+
+    @Override
+    public void visitBreakStatement(PsiBreakStatement statement) {
+        var label = NncUtils.get(statement.getLabelIdentifier(), PsiElement::getText);
+        var block = builder().currentBlock();
+        try {
+            block.addBreak(builder().createGoto(null), label);
         }
-        var node = resolveExpression(statement.getExpression());
-        if(node.getType() != null)
-            builder().createPop();
+        catch (Exception e) {
+            block.printBlocks();
+            throw e;
+        }
+    }
+
+    @Override
+    public void visitContinueStatement(PsiContinueStatement statement) {
+        var label = NncUtils.get(statement.getLabelIdentifier(), PsiElement::getText);
+        builder().currentBlock().addContinue(builder().createGoto(null), label);
     }
 
     private Node resolveExpression(PsiExpression expression) {
         return builder().getExpressionResolver().resolve(expression);
+    }
+
+    private void resolveAndPopExpression(PsiExpression expression) {
+        var node = resolveExpression(expression);
+        if(node.getType() != null)
+            builder().createPop();
     }
 
     private MethodGenerator builder() {

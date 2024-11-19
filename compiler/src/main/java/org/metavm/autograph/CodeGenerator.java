@@ -3,7 +3,6 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiClass;
 import org.metavm.entity.IEntityContext;
 import org.metavm.util.ContextUtil;
-import org.metavm.util.DebugEnv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,53 +16,16 @@ public class CodeGenerator {
         this.context = context;
     }
 
-    void transform(PsiClass psiClass) {
-        try (var ignored = ContextUtil.getProfiler().enter("CodeGenerator.transform")) {
-            TranspileUtils.executeCommand(() -> {
-                resolveQnAndActivity(psiClass);
-                psiClass.accept(new VarargsTransformer());
-                resolveQnAndActivity(psiClass);
-                psiClass.accept(new SwitchLabelStatementTransformer());
-                psiClass.accept(new NullSwitchCaseAppender());
-                psiClass.accept(new DefaultSwitchCaseAppender());
-                psiClass.accept(new ForeachTransformer());
-                resolveQnAndActivity(psiClass);
-                psiClass.accept(new ForTransformer());
-                psiClass.accept(new DoWhileTransformer());
-                resolveQnAndActivity(psiClass);
-                psiClass.accept(new BreakTransformer());
-                resolveQnAndActivity(psiClass);
-                psiClass.accept(new ContinueTransformer());
-                resolveQnAndActivity(psiClass);
-                psiClass.accept(new StringConcatTransformer());
-            });
-        }
-    }
-
-    private void resolveQnAndActivity(PsiClass psiClass) {
-        psiClass.accept(new QnResolver());
-        psiClass.accept(new ActivityAnalyzer());
-        if(DebugEnv.debugging)
-            psiClass.accept(new ActivityPrinter());
-    }
-
     void generateDecl(PsiClass psiClass, TypeResolver typeResolver) {
-        psiClass.accept(new QnResolver());
-        psiClass.accept(new ActivityAnalyzer());
-        if(DebugEnv.debugging)
-            psiClass.accept(new ActivityPrinter());
-        var astToCfg = new AstToCfg();
-        psiClass.accept(astToCfg);
-        if(DebugEnv.debugging) {
-            astToCfg.getGraphs().values().forEach(Graph::log);
+        try(var ignored = ContextUtil.getProfiler().enter("generateDecl")) {
+            psiClass.accept(new Declarator(psiClass, typeResolver, context));
         }
-        psiClass.accept(new ReachingDefAnalyzer(astToCfg.getGraphs()));
-        psiClass.accept(new LivenessAnalyzer(astToCfg.getGraphs()));
-        psiClass.accept(new Declarator(psiClass, typeResolver, context));
     }
 
     void generateCode(PsiClass psiClass, TypeResolver typeResolver) {
-        psiClass.accept(new Generator(psiClass, typeResolver));
+        try (var ignored = ContextUtil.getProfiler().enter("generateCode")) {
+            psiClass.accept(new Generator(psiClass, typeResolver));
+        }
     }
 
 }
