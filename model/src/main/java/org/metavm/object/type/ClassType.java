@@ -271,9 +271,6 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
         var klass = input.getKlass(input.readId());
         int numTypeArgs = input.readInt();
         var typeArgs = new ArrayList<Type>(numTypeArgs);
-        if(DebugEnv.flag)
-            logger.debug("Reading class type. raw klass: {}, type argument count: {}",
-                klass.getQualifiedName(), numTypeArgs);
         for (int i = 0; i < numTypeArgs; i++)
             typeArgs.add(Type.readType(input));
         return new ClassType(klass, typeArgs);

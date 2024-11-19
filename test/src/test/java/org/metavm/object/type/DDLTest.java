@@ -389,7 +389,6 @@ public class DDLTest extends TestCase {
     }
 
     public void testRollbackEntityToValueConversion() {
-        DebugEnv.flag = true;
         assemble("value_ddl_before.masm");
         var yuanId = typeManager.getEnumConstantId("Currency", "YUAN");
         var shoesId = saveInstance("Product", Map.of(

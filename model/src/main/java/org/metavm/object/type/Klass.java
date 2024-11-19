@@ -1875,8 +1875,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, G
     public void read(KlassInput input) {
         kind = ClassKind.fromCode(input.read());
         name = input.readUTF();
-        if(DebugEnv.flag)
-            logger.debug("Reading klass {}", name);
         qualifiedName = input.readUTF();
         setClassFlags(input.readInt());
         source = ClassSource.fromCode(input.read());
