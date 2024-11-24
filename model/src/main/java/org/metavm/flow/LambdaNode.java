@@ -3,21 +3,17 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.LoadAware;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.Types;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
 @EntityType
-public class LambdaNode extends Node implements LoadAware {
+public class LambdaNode extends Node {
 
     private final Lambda lambda;
     private final @Nullable ClassType functionalInterface;
-
-    private transient ClassType functionInterfaceImpl;
 
     public LambdaNode(String name, Node previous, Code code,
                       @NotNull Lambda lambda, @Nullable ClassType functionalInterface) {
@@ -30,6 +26,11 @@ public class LambdaNode extends Node implements LoadAware {
     @NotNull
     public Type getType() {
         return NncUtils.requireNonNull(super.getType());
+    }
+
+    @Override
+    public boolean hasOutput() {
+        return true;
     }
 
     @Nullable
@@ -62,22 +63,12 @@ public class LambdaNode extends Node implements LoadAware {
 
     @Override
     public int getLength() {
-        return functionInterfaceImpl == null ? 4 : 6;
+        return functionalInterface == null ? 4 : 6;
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitLambdaEnterNode(this);
-    }
-
-    @Override
-    public void onLoad() {
-        createSAMImpl();
-    }
-
-    public void createSAMImpl() {
-        functionInterfaceImpl = functionalInterface != null ?
-                Types.createFunctionalClass(functionalInterface) : null;
     }
 
 }

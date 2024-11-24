@@ -58,6 +58,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     @ChildEntity
     private final ChildArray<Lambda> lambdas = addChild(new ChildArray<>(Lambda.class), "lambdas");
     @ChildEntity
+    private final ChildArray<Klass> klasses = addChild(new ChildArray<>(Klass.class), "klasses");
+    @ChildEntity
     @Nullable
     private ConstantPool constantPool;
 
@@ -623,6 +625,20 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         }
     }
 
+    public void addLocalKlass(Klass localKlass) {
+        klasses.addChild(localKlass);
+        localKlass.setEnclosingFlow(this);
+    }
+
+    public List<Klass> getKlasses() {
+        return klasses.toList();
+    }
+
+    public void setKlasses(List<Klass> klasses) {
+        this.klasses.resetChildren(klasses);
+        klasses.forEach(k -> k.setEnclosingFlow(this));
+    }
+
     public boolean hasBody() {
         return !isNative;
     }
@@ -664,6 +680,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         output.writeInt(lambdas.size());
         lambdas.forEach(l -> l.write(output));
         writeAttributes(output);
+        output.writeInt(klasses.size());
+        klasses.forEach(k -> k.write(output));
     }
 
     @Override
@@ -712,6 +730,11 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         }
         setLambdas(lambdas);
         readAttributes(input);
+        var localKlassCount = input.readInt();
+        klasses.clear();
+        for (int i = 0; i < localKlassCount; i++) {
+            klasses.addChild(input.readKlass());
+        }
     }
 }
 

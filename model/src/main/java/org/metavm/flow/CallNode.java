@@ -42,6 +42,10 @@ public abstract class CallNode extends Node {
         this.capturedVariableIndexes.reset(capturedVariableIndexes);
     }
 
+    public int getCapturedVariableCount() {
+        return capturedVariableIndexes.size();
+    }
+
     @Override
     public Type getType() {
         var type = getFlowRef().resolve().getReturnType();
@@ -49,13 +53,18 @@ public abstract class CallNode extends Node {
     }
 
     @Override
+    public boolean hasOutput() {
+        return !getFlowRef().getRawFlow().getReturnType().isVoid();
+    }
+
+    @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("invoke " + flowRef.resolve().getName());
+        writer.write("invoke " + flowRef);
     }
 
     @Override
     public int getStackChange() {
-        var flow = flowRef.resolve();
+        var flow = flowRef.getRawFlow();
         if(flow.getReturnType().isVoid())
             return -flow.getInputCount();
         else

@@ -841,7 +841,7 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var instCtx = context.getInstanceContext();
             var k = context.getKlassByQualifiedName("FooService");
-            var index = k.getIndices().get(0);
+            var index = k.getAllIndices().get(0);
             var bean = instCtx.selectFirstByKey(new IndexKeyRT(
                 index,
                 Map.of(

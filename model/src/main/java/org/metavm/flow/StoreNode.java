@@ -17,6 +17,11 @@ public class StoreNode extends VariableAccessNode {
     }
 
     @Override
+    public boolean hasOutput() {
+        return false;
+    }
+
+    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("store " + index);
     }

@@ -16,6 +16,11 @@ public class TryEnterNode extends Node implements LoadAware {
     }
 
     @Override
+    public boolean hasOutput() {
+        return false;
+    }
+
+    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("try-enter");
     }

@@ -208,6 +208,7 @@ public class SubstitutorV2 extends CopyVisitor {
             copy.setParameters(NncUtils.map(method.getParameters(), p -> (Parameter) copy0(p)));
             copy.setReturnType(substituteType(method.getReturnType()));
             copy.setLambdas(NncUtils.map(method.getLambdas(), l -> (Lambda) copy0(l)));
+            copy.setKlasses(NncUtils.map(method.getKlasses(), k -> (Klass) copy0(k)));
             processFlowBody(method, copy);
             exitElement();
             check();
@@ -232,6 +233,7 @@ public class SubstitutorV2 extends CopyVisitor {
             copy.setParameters(NncUtils.map(function.getParameters(), p -> (Parameter) copy0(p)));
             copy.setReturnType(substituteType(function.getReturnType()));
             copy.setLambdas(NncUtils.map(function.getLambdas(), l -> (Lambda) copy0(l)));
+            copy.setKlasses(NncUtils.map(function.getKlasses(), k -> (Klass) copy0(k)));
             processFlowBody(function, copy);
             exitElement();
             check();
@@ -239,7 +241,6 @@ public class SubstitutorV2 extends CopyVisitor {
         } else
             return super.visitFunction(function);
     }
-
 
     private void addExistingCopy(Object original, Object copy) {
         existingCopies.put(original, copy);
@@ -292,14 +293,21 @@ public class SubstitutorV2 extends CopyVisitor {
 
     @Override
     public Element visitClassType(ClassType type) {
-        var klass = type.getKlass();
-        if (klass == root)
-            return new ClassType(type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> (Type) t.accept(this)));
+        var isRootRef = root instanceof Klass k && k.getType().equals(type);
+        ClassType copy;
+        if(!isRootRef && type.getKlass().isLocal())
+            copy =  (ClassType) super.visitClassType(type);
         else {
-            var copy = (ClassType) super.visitClassType(type);
-            copy = copy.trySimplify();
-            return copy;
+            copy = new ClassType(
+                    (ClassType) NncUtils.get(type.getOwner(), k -> k.accept(this)),
+                    type.getKlass(),
+                    isRootRef || type.isParameterized() ?
+                            NncUtils.map(type.getTypeArguments(), t -> (Type) t.accept(this)) : List.of()
+            );
+            if(copy.getOwner() == null)
+                copy = copy.trySimplify();
         }
+        return copy;
     }
 
     @Override
@@ -356,6 +364,7 @@ public class SubstitutorV2 extends CopyVisitor {
                 copy.setFields(NncUtils.map(klass.getFields(), field -> (Field) copy0(field)));
                 copy.setStaticFields(NncUtils.map(klass.getStaticFields(), field -> (Field) copy0(field)));
                 copy.setMethods(NncUtils.map(klass.getMethods(), method -> (Method) copy0(method)));
+                copy.setKlasses(NncUtils.map(klass.getKlasses(), k -> (Klass) copy0(k)));
                 if (klass.getTitleField() != null)
                     copy.setTitleField((Field) getValue(klass.getTitleField(), v -> {
                     }));

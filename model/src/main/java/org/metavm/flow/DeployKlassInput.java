@@ -20,6 +20,7 @@ public class DeployKlassInput extends KlassInput {
     @Override
     public Klass readKlass() {
         var klass = getKlass(readId());
+        setKlassParent(klass);
         var oldKind = klass.getKind();
         var oldSuperType = klass.getSuperType();
         enterElement(klass);

@@ -29,22 +29,23 @@ public class AddObjectNode extends Node {
     }
 
     @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
+    @Override
     protected void setOutputType(@Nullable Type outputType) {
         throw new UnsupportedOperationException();
     }
 
-    public Klass getKlass() {
-        return getType().resolve();
-    }
-
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("allocate " + getType().getName());
+        writer.write("allocate " + getType().getTypeDesc());
     }
 
     @Override
     public int getStackChange() {
-        return 1 - getKlass().getAllFields().size();
+        return 1 - getType().getKlass().getAllFields().size();
     }
 
     @Override

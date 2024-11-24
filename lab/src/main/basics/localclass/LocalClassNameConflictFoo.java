@@ -2,10 +2,11 @@ package localclass;
 
 public class LocalClassNameConflictFoo {
 
-    public static Object foo() {
+    public static Object foo(int v) {
         class Local {
+            int value = v;
         }
-        return new Local();
+        return new Local().value;
     }
 
     class Local {
@@ -14,7 +15,7 @@ public class LocalClassNameConflictFoo {
     class $1 {}
 
     public static Object test() {
-        return foo();
+        return foo(1);
     }
 
 

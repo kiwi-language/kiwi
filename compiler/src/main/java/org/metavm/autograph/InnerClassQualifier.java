@@ -4,7 +4,7 @@ import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.util.LinkedList;
 
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 @Slf4j
 public class InnerClassQualifier extends VisitorBase {
@@ -30,9 +30,9 @@ public class InnerClassQualifier extends VisitorBase {
                     && TranspileUtils.isNonStaticInnerClass(klass)
             ) {
                 var k = currentClass();
-                var targetKlass = Objects.requireNonNull(klass.getContainingClass());
+                var targetKlass = requireNonNull(klass.getContainingClass());
                 while (!TranspileUtils.isAssignable(targetKlass, k)) {
-                    k = Objects.requireNonNull(Objects.requireNonNull(k).getContainingClass());
+                    k = requireNonNull(requireNonNull(k).getContainingClass());
                 }
                 var replacement = TranspileUtils.createExpressionFromText(
                         k.getName() + ".this." + expression.getText()
@@ -45,45 +45,31 @@ public class InnerClassQualifier extends VisitorBase {
     @Override
     public void visitReferenceExpression(PsiReferenceExpression expression) {
         super.visitReferenceExpression(expression);
-        if (expression.resolve() instanceof PsiField field && !TranspileUtils.isStatic(field)) {
-            var declaringClass = Objects.requireNonNull(field.getContainingClass());
-            if (expression.getQualifierExpression() == null) {
-                var currentKlass = currentClass();
-                if (!TranspileUtils.isAssignable(declaringClass, currentKlass)) {
-                    var k = Objects.requireNonNull(currentKlass.getContainingClass());
-                    while (!TranspileUtils.isAssignable(declaringClass, k))
-                        k = Objects.requireNonNull(k.getContainingClass());
-                    replace(
-                            expression,
-                            TranspileUtils.createExpressionFromText(k.getName() + ".this." + field.getName())
-                    );
-                }
-            }
+        if (expression.resolve() instanceof PsiMember member
+                && !(member instanceof PsiMethod method && method.isConstructor())
+                && expression.getQualifierExpression() == null
+                && member.getContainingClass() != null) {
+                expression.setQualifierExpression(getQualifier(currentClass(), member));
         }
     }
 
-    @Override
-    public void visitMethodCallExpression(PsiMethodCallExpression expression) {
-        super.visitMethodCallExpression(expression);
-        var method = Objects.requireNonNull(expression.resolveMethod(), expression::getText);
-        if(!TranspileUtils.isStatic(method)) {
-            var declaringClass = Objects.requireNonNull(method.getContainingClass());
-            if (expression.getMethodExpression().getQualifierExpression() == null) {
-                var currentKlass = currentClass();
-                if (!TranspileUtils.isAssignable(declaringClass, currentKlass)) {
-                    var k = Objects.requireNonNull(currentKlass.getContainingClass());
-                    while (!TranspileUtils.isAssignable(declaringClass, k))
-                        k = Objects.requireNonNull(k.getContainingClass());
-                    expression.getMethodExpression().setQualifierExpression(
-                            TranspileUtils.createExpressionFromText(k.getName() + ".this")
-                    );
-                }
-            }
+    private static PsiExpression getQualifier(PsiClass currentKlass, PsiMember member) {
+        var declaringClass = requireNonNull(member.getContainingClass());
+        if (TranspileUtils.isStatic(member))
+            return TranspileUtils.createExpressionFromText(TranspileUtils.getClassName(declaringClass));
+        else {
+            if (!TranspileUtils.isAssignable(declaringClass, currentKlass)) {
+                var k = requireNonNull(TranspileUtils.getProperParent(currentKlass, PsiClass.class));
+                while (!TranspileUtils.isAssignable(declaringClass, k))
+                    k = requireNonNull(TranspileUtils.getProperParent(k, PsiClass.class));
+                return TranspileUtils.createExpressionFromText(k.getName() + ".this");
+            } else
+                return TranspileUtils.createExpressionFromText("this");
         }
     }
 
     private PsiClass currentClass() {
-        return Objects.requireNonNull(classes.peek());
+        return requireNonNull(classes.peek());
     }
 
 }

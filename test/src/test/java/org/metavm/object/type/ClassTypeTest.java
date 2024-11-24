@@ -143,9 +143,11 @@ public class ClassTypeTest extends TestCase {
         TestUtils.initEntityIds(fooKlass);
         TestUtils.initEntityIds(entryKlass);
         var classType = new ClassType(
+                null,
                 listKlass,
                 List.of(
                         new ClassType(
+                                null,
                                 entryKlass,
                                 fooKlass.getTypeArguments()
                         )

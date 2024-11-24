@@ -25,6 +25,11 @@ public class CastNode extends Node {
     }
 
     @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
+    @Override
     protected void setOutputType(Type outputType) {
         super.setOutputType(Objects.requireNonNull(outputType));
     }

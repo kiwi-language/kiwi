@@ -93,8 +93,8 @@ public class MetaContextCache extends EntityContextFactoryAware {
         }
         for (TypeDef typeDef : typeDefs) {
             if(typeDef instanceof Klass klass) {
-                klass.rebuildMethodTable();
-                klass.forEachParameterized(Klass::rebuildMethodTable);
+                klass.resetHierarchy();
+                klass.forEachParameterized(Klass::resetHierarchy);
                 klass.resolveConstantPool();
             }
         }

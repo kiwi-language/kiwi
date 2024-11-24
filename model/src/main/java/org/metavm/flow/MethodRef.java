@@ -40,6 +40,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
 
     public MethodRef(ClassType declaringType, @NotNull Method rawFlow, List<Type> typeArguments) {
         super(rawFlow, typeArguments);
+        assert rawFlow.getCopySource() == null;
         this.declaringType = declaringType;
         if(declaringType.getKlass() == DummyKlass.INSTANCE)
             throw new RuntimeException("Creating MethodRef with DummyKlass");
@@ -58,11 +59,10 @@ public class MethodRef extends FlowRef implements PropertyRef {
         if(partialResolved != null)
             return partialResolved;
         var klass = declaringType.resolve();
-        partialResolved = klass.findMethod(m -> m.getEffectiveVerticalTemplate() == getRawFlow());
-        if (partialResolved == null) {
-            klass.forEachMethod(m -> log.info(m.getQualifiedSignature()));
-            throw new InternalException("fail to resolve methodRef: " + this);
-        }
+        var rawMethod = getRawFlow();
+        partialResolved = klass.findMethod(m -> m.getUltimateTemplate() == rawMethod);
+        if (partialResolved == null)
+            throw new InternalException("Failed to resolve methodRef: " + this);
         return partialResolved;
     }
 
@@ -109,7 +109,8 @@ public class MethodRef extends FlowRef implements PropertyRef {
 
     @Override
     protected String toString0() {
-        return "{\"declaringType\": \"" + declaringType + "\", \"rawMethod\": \"" + getRawFlow().getSignatureString() + "\"}";
+        return declaringType + "." + getRawFlow().getName() +
+                (typeArguments.isEmpty() ? "" : "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">");
     }
 
     public static MethodRef read(MvInput input) {

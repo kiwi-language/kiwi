@@ -163,6 +163,8 @@ public abstract class Node extends Element implements LocalKey {
         return outputType;
     }
 
+    public abstract boolean hasOutput();
+
     public ExpressionTypeMap getExpressionTypes() {
         return NncUtils.orElse(expressionTypes, () -> ExpressionTypeMap.EMPTY);
     }

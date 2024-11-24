@@ -562,4 +562,12 @@ public abstract class ElementVisitor<R> {
     public R visitIndexField(IndexField indexField) {
         return visitElement(indexField);
     }
+
+    public R visitLoadParentNode(LoadParentNode node) {
+        return visitNode(node);
+    }
+
+    public R visitNewChild(NewChildNode node) {
+        return visitNewObjectNode(node);
+    }
 }

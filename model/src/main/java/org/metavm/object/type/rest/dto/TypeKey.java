@@ -104,7 +104,7 @@ public interface TypeKey extends TypeOrTypeKey {
     static TypeKey fromClassTypeContext(TypeParser.ClassTypeContext classType) {
         var id = Id.parse(classType.qualifiedName().getText().substring(Constants.ID_PREFIX.length()));
         if(classType.typeArguments() != null)
-            return new ParameterizedTypeKey(id, NncUtils.map(classType.typeArguments().typeList().type(), TypeKey::fromTypeContext));
+            return new ParameterizedTypeKey(null, id, NncUtils.map(classType.typeArguments().typeList().type(), TypeKey::fromTypeContext));
         else if(classType.DECIMAL_LITERAL() != null)
             return new TaggedClassTypeKey(id, Integer.parseInt(classType.DECIMAL_LITERAL().getText()));
         else
@@ -114,6 +114,11 @@ public interface TypeKey extends TypeOrTypeKey {
     static TypeKey read(InstanceInput input) {
         int code = input.read();
         return read(code, input);
+    }
+
+    static @Nullable TypeKey readNullable(InstanceInput input) {
+        var code = input.read();
+        return code == WireTypes.NULL ? null : read(code, input);
     }
 
     static TypeKey read(int code, InstanceInput input) {
@@ -136,7 +141,7 @@ public interface TypeKey extends TypeOrTypeKey {
             case WireTypes.CLASS_TYPE -> new ClassTypeKey(input.readId());
             case WireTypes.TAGGED_CLASS_TYPE -> new TaggedClassTypeKey(input.readId(), input.readInt());
             case WireTypes.PARAMETERIZED_TYPE ->
-                    new ParameterizedTypeKey(input.readId(), readTypeKeyList(input));
+                    new ParameterizedTypeKey(readNullable(input), input.readId(), readTypeKeyList(input));
             case WireTypes.UNION_TYPE -> new UnionTypeKey(readTypeKeySet(input));
             case WireTypes.INTERSECTION_TYPE -> new IntersectionTypeKey(readTypeKeySet(input));
             case WireTypes.FUNCTION_TYPE -> new FunctionTypeKey(readTypeKeyList(input), read(input));

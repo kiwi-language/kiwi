@@ -93,7 +93,9 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var subst = substitute(type);
         if (subst != null)
             return subst;
-        return new ClassType(type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> t.accept(this)));
+        return new ClassType(
+                (ClassType) NncUtils.get(type.getOwner(), t -> t.accept(this)),
+                type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> t.accept(this)));
     }
 
     private @Nullable Type substitute(Type type) {

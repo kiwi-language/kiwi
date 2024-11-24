@@ -51,27 +51,25 @@ public class Declarator extends VisitorBase {
         if (psiClass != this.psiClass)
             return;
         var klass = typeResolver.getKlass(psiClass);
+        var parent = TranspileUtils.getProperParent(psiClass, Set.of(PsiMethod.class, PsiClass.class));
+        if(parent instanceof PsiMethod)
+            requireNonNull(parent.getUserData(Keys.Method)).addLocalKlass(klass);
+        klass.setKlasses(NncUtils.map(psiClass.getInnerClasses(),
+                k -> Objects.requireNonNull(k.getUserData(Keys.MV_CLASS), () -> "Cannot find metavm class for class " + k.getQualifiedName())));
+        if (psiClass.getSuperClass() != null &&
+                !Objects.equals(psiClass.getSuperClass().getQualifiedName(), Object.class.getName())) {
+            klass.setSuperType(((ClassType) typeResolver.resolveTypeOnly(TranspileUtils.getSuperClassType(psiClass))));
+        }
+        else if(!klass.isEnum())
+            klass.setSuperType(null);
+        klass.setInterfaces(
+                NncUtils.map(
+                        TranspileUtils.getInterfaceTypes(psiClass),
+                        it -> ((ClassType) typeResolver.resolveTypeOnly(it))
+                )
+        );
         klass.setStage(ResolutionStage.DECLARATION);
         var classInfo = new ClassInfo(klass);
-        if (!klass.isInterface()) {
-            if (klass.findSelfMethodByName("<init>") == null) {
-                MethodBuilder.newBuilder(klass, "<init>")
-                        .access(Access.PRIVATE)
-                        .build();
-            }
-            var initMethod = Objects.requireNonNull(klass.findSelfMethodByName("<init>"));
-            initMethod.clearContent();
-            classInfo.visitedMethods.add(initMethod);
-        }
-        if (klass.findSelfMethodByName("<cinit>") == null) {
-            MethodBuilder.newBuilder(klass, "<cinit>")
-                    .isStatic(true)
-                    .access(Access.PRIVATE)
-                    .build();
-        }
-        var cinitMethod = Objects.requireNonNull(klass.findSelfMethodByName("<cinit>"));
-        cinitMethod.clearContent();
-        classInfo.visitedMethods.add(cinitMethod);
         klass.clearAttributes();
         var componentAnno = TranspileUtils.getAnnotation(psiClass, Component.class);
         PsiAnnotation configurationAnno;
@@ -112,10 +110,7 @@ public class Declarator extends VisitorBase {
     }
 
     private String getDefaultBeanName(Klass klass) {
-        var klassName = klass.getQualifiedName();
-        var idx = klassName.lastIndexOf('.');
-        var simpleName = idx == -1 ? klassName : klassName.substring(idx + 1);
-        return NamingUtils.firstCharToLowerCase(simpleName);
+        return NamingUtils.firstCharToLowerCase(klass.getName());
     }
 
     @Override
@@ -148,6 +143,7 @@ public class Declarator extends VisitorBase {
             flow.setAccess(access);
             flow.setStatic(isStatic);
             flow.setAbstract(isAbstract);
+            flow.setKlasses(List.of());
         }
         flow.setTypeParameters(NncUtils.map(
                 method.getTypeParameters(),
@@ -168,7 +164,7 @@ public class Declarator extends VisitorBase {
         }
         currentClass().visitedMethods.add(flow);
         if (TranspileUtils.hasAnnotation(method, EntityIndex.class)) {
-            Index index = NncUtils.find(klass.getIndices(), idx -> Objects.equals(idx.getName(), method.getName()));
+            Index index = NncUtils.find(klass.getAllIndices(), idx -> Objects.equals(idx.getName(), method.getName()));
             if (index == null) {
                 index = new Index(
                         klass,
@@ -283,7 +279,7 @@ public class Declarator extends VisitorBase {
         currentClass().visitedFields.add(field);
         if (TranspileUtils.isTitleField(psiField))
             klass.setTitleField(field);
-        else if(klass.getTitleField() == field)
+        else if(klass.getSelfTitleField() == field)
             klass.setTitleField(null);
         if((Boolean) TranspileUtils.getFieldAnnotationAttribute(psiField, "removed", false))
             field.setMetadataRemoved();
@@ -307,8 +303,8 @@ public class Declarator extends VisitorBase {
             field.setName(getEnumConstantName(enumConstant));
         var ecd = klass.findEnumConstantDef(e -> e.getName().equals(enumConstant.getName()));
         if(ecd == null) {
-            var name = enumConstant.getName();
-            var initializer = MethodBuilder.newBuilder(klass, "$" + name)
+        var name = enumConstant.getName();
+        var initializer = MethodBuilder.newBuilder(klass, "$" + name)
                     .isStatic(true)
                     .returnType(klass.getType())
                     .build();

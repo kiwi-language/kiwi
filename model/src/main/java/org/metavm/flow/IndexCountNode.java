@@ -53,4 +53,9 @@ public class IndexCountNode extends Node {
     public Type getType() {
         return Types.getLongType();
     }
+
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
 }

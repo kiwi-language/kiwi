@@ -23,6 +23,11 @@ public class TargetNode extends Node {
     }
 
     @Override
+    public boolean hasOutput() {
+        return false;
+    }
+
+    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("LabelNode");
     }

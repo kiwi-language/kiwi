@@ -110,6 +110,10 @@ public class TranspileUtils {
         );
     }
 
+    public static PsiMethod getMethodByName(PsiClass klass, String name) {
+        return NncUtils.findRequired(klass.getMethods(), m -> m.getName().equals(name));
+    }
+
     public static String getMethodQualifiedName(PsiMethod method) {
         return Objects.requireNonNull(method.getContainingClass()).getQualifiedName() + "." + method.getName();
     }
@@ -741,7 +745,7 @@ public class TranspileUtils {
 
 
     public static @Nullable PsiElement getAncestor(PsiElement element, Class<?>... parentClasses) {
-        return getParent(element, Set.of(parentClasses));
+        return findParent(element, Set.of(parentClasses));
     }
 
     public static @Nullable PsiStatement getPrevStatement(PsiStatement statement) {
@@ -756,18 +760,22 @@ public class TranspileUtils {
         return getAncestor(element, JavaDummyHolder.class) != null;
     }
 
-    public static @Nullable <T extends PsiElement> T getParent(PsiElement element, Class<T> parentClass) {
-        return parentClass.cast(getParent(element, Set.of(parentClass)));
+    public static <T extends PsiElement> T getParent(PsiElement element, Class<T> parentClass) {
+        return requireNonNull(findParent(element, parentClass));
+    }
+
+    public static @Nullable <T extends PsiElement> T findParent(PsiElement element, Class<T> parentClass) {
+        return parentClass.cast(findParent(element, Set.of(parentClass)));
     }
 
     public static @Nullable <T extends PsiElement> T getProperParent(PsiElement element, Class<T> parentClass) {
         var p = element.getParent();
-        return p != null ? parentClass.cast(getParent(p, Set.of(parentClass))) : null;
+        return p != null ? parentClass.cast(findParent(p, Set.of(parentClass))) : null;
     }
 
     public static @NotNull <T extends PsiElement> T getParentNotNull(PsiElement element, Class<T> parentClass) {
         return Objects.requireNonNull(
-                parentClass.cast(getParent(element, Set.of(parentClass))),
+                parentClass.cast(findParent(element, Set.of(parentClass))),
                 () -> "Cannot find parent of type " + parentClass.getName() + " of element " + element.getText()
         );
     }
@@ -786,7 +794,12 @@ public class TranspileUtils {
         return false;
     }
 
-    public static @Nullable PsiElement getParent(PsiElement element, Set<Class<?>> parentClasses) {
+    public static @Nullable PsiElement getProperParent(PsiElement element, Set<Class<?>> parentClasses) {
+        var parent = element.getParent();
+        return parent != null ? findParent(parent, parentClasses) : null;
+    }
+
+    public static @Nullable PsiElement findParent(PsiElement element, Set<Class<?>> parentClasses) {
         PsiElement current = element;
         while (current != null && !ReflectionUtils.isInstance(parentClasses, current)) {
             current = current.getParent();
@@ -795,7 +808,7 @@ public class TranspileUtils {
     }
 
     public static PsiElement getParentNotNull(PsiElement element, Set<Class<?>> parentClasses) {
-        return requireNonNull(getParent(element, parentClasses));
+        return requireNonNull(findParent(element, parentClasses));
     }
 
     public static Scope getBodyScope(PsiElement element) {
@@ -984,6 +997,10 @@ public class TranspileUtils {
         return modifierListOwner.hasModifierProperty(PsiModifier.STATIC);
     }
 
+    public static boolean isFinal(PsiModifierListOwner modifierListOwner) {
+        return modifierListOwner.hasModifierProperty(PsiModifier.FINAL);
+    }
+
     public static boolean isTransient(PsiModifierListOwner modifierListOwner) {
         return modifierListOwner.hasModifierProperty(PsiModifier.TRANSIENT);
     }
@@ -1006,7 +1023,7 @@ public class TranspileUtils {
     }
 
     public static String getQualifiedName(PsiMethod psiMethod) {
-        return requireNonNull(psiMethod.getContainingClass()).getName() + "." + psiMethod.getName();
+        return getQualifiedName(requireNonNull(psiMethod.getContainingClass())) + "." + psiMethod.getName();
     }
 
     public static String getFlowName(PsiMethod method) {
@@ -1198,13 +1215,12 @@ public class TranspileUtils {
                 else
                     return getInternalName(requireNonNull(typeParameter.getOwner()), current) + "." + typeParameter.getName();
             }
+            var className = Objects.requireNonNullElse(psiClass.getQualifiedName(), psiClass.getName());
             if (classType.getParameters().length > 0) {
                 var typeArgs = NncUtils.map(classType.getParameters(), t -> getInternalName(t, current));
-                return Types.parameterizedName(
-                        typeNameMap.getOrDefault(psiClass.getQualifiedName(), psiClass.getQualifiedName()),
-                        typeArgs);
+                return Types.parameterizedName(typeNameMap.getOrDefault(className, className), typeArgs);
             } else
-                return typeNameMap.getOrDefault(psiClass.getQualifiedName(), psiClass.getQualifiedName());
+                return typeNameMap.getOrDefault(className, className);
         }
         if (type instanceof PsiPrimitiveType primitiveType) {
             return typeNameMap.get(primitiveType.getBoxedTypeName());
@@ -1449,12 +1465,12 @@ public class TranspileUtils {
      *
      * @return the index of the context where the variable is defined, or -1 if it's the variable is not captured
      */
-    public static int getContextIndex(PsiVariable variable, PsiLambdaExpression lambdaExpression) {
-        var context = requireNonNull(getParent(variable, Set.of(PsiMethod.class, PsiClassInitializer.class, PsiLambdaExpression.class)));
+    public static int getContextIndex(PsiVariable variable, PsiElement element) {
+        var context = requireNonNull(findParent(variable, Set.of(PsiMethod.class, PsiLambdaExpression.class)));
         int idx = -1;
-        PsiElement e = lambdaExpression;
+        PsiElement e = element;
         while (e != null && e != context) {
-            if(e instanceof PsiLambdaExpression)
+            if(e instanceof PsiLambdaExpression || e instanceof PsiMethod)
                 idx++;
             e = e.getParent();
         }
@@ -1482,6 +1498,31 @@ public class TranspileUtils {
             return aName.equals(klass.getSimpleName()) || aName.equals(klass.getName());
         else
             return false;
+    }
+
+    public static PsiElement getEnclosingCallable(PsiClass klass) {
+        var parent = findParent(klass, Set.of(PsiClass.class, PsiMethod.class, PsiClassInitializer.class));
+        return parent instanceof PsiClass ? null : parent;
+    }
+
+    public static String getQualifiedName(PsiClass klass) {
+        var enclosingCallable = getEnclosingCallable(klass);
+        if(enclosingCallable instanceof PsiMethod method)
+            return getQualifiedName(method) + "." + klass.getName();
+        else
+            return Objects.requireNonNull(klass.getQualifiedName());
+    }
+
+    public static void insertAfterSuperCall(PsiStatement statement, PsiMethod constructor) {
+        var block = requireNonNull(constructor.getBody());
+        if(block.getStatements().length == 0 || isSuperCall(block.getStatements()[0]))
+            block.add(statement);
+        else if(!isThisCall(block.getStatements()[0]))
+            block.addAfter(statement, block.getStatements()[0]);
+    }
+
+    public static String getClassName(PsiClass klass) {
+        return Objects.requireNonNullElse(klass.getQualifiedName(), klass.getName());
     }
 
 }

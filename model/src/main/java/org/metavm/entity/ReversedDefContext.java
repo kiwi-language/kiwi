@@ -186,7 +186,7 @@ public class ReversedDefContext extends DefContext {
         var instCtx = getInstanceContext();
         var entities = new ArrayList<>();
         forEachDef(def -> {
-            if(def instanceof TypeVariableDef )
+            if(def instanceof TypeVariableDef || (def.getTypeDef() instanceof Klass k && (k.isInner() || k.isLocal())))
                 return;
             entities.add(def.getTypeDef());
         });

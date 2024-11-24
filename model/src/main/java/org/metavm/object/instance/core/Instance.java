@@ -216,7 +216,7 @@ public abstract class Instance implements Message {
         if (parent != null) {
             this.parent = parent;
             if (parent instanceof ClassInstance) {
-                this.parentField = requireNonNull(parentField);
+                this.parentField = parentField;
 //                assert parentField.isChild() : "Invalid parent field: " + parentField;
             } else if (parent instanceof ArrayInstance parentArray) {
                 NncUtils.requireNull(parentField);
@@ -426,6 +426,14 @@ public abstract class Instance implements Message {
     public @Nullable Instance getParent() {
         ensureLoaded();
         return parent;
+    }
+
+    public @Nullable Instance getParent(int index) {
+        var v = parent;
+        for (int i = 0; i < index; i++) {
+            v = requireNonNull(v).parent;
+        }
+        return v;
     }
 
     public boolean isChildOf(Instance instance, @Nullable Field parentField) {

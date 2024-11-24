@@ -50,4 +50,9 @@ public class FunctionNode extends Node {
         var type = functionType.getReturnType();
         return type.isVoid() ? null : type;
     }
+
+    @Override
+    public boolean hasOutput() {
+        return !functionType.isVoid();
+    }
 }

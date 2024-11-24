@@ -136,6 +136,11 @@ public class StreamCopier extends StreamVisitor {
                 output.writeLong(readLong());
                 visitClassBody();
             }
+            int childrenCount = readInt();
+            output.writeInt(childrenCount);
+            for (int i = 0; i < childrenCount; i++) {
+                visitValue();
+            }
         }
     }
 

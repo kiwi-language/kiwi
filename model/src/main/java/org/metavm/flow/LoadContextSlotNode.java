@@ -31,6 +31,11 @@ public class LoadContextSlotNode extends Node {
     }
 
     @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
+    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("loadContextSlot " + contextIndex + " " + slotIndex);
     }

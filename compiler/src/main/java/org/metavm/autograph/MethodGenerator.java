@@ -55,7 +55,7 @@ public class MethodGenerator {
 
     IfNotNode createIfNot(@Nullable Node target) {
         return onNodeCreated(new IfNotNode(
-                nextName("ifNot"),
+                nextName("ifnot"),
                 code().getLastNode(),
                 code(),
                 target
@@ -80,7 +80,7 @@ public class MethodGenerator {
     }
 
     TryEnterNode createTryEnter() {
-        return onNodeCreated(new TryEnterNode(nextName("tryEnter"), code().getLastNode(), code()));
+        return onNodeCreated(new TryEnterNode(nextName("tryenter"), code().getLastNode(), code()));
     }
 
     String nextVarName(String name) {
@@ -90,7 +90,7 @@ public class MethodGenerator {
     }
 
     TryExitNode createTryExit() {
-        return onNodeCreated(new TryExitNode(nextName("tryExit"),
+        return onNodeCreated(new TryExitNode(nextName("tryexit"),
                 code().getLastNode(),
                 code(),
                 nextVariableIndex()
@@ -112,14 +112,14 @@ public class MethodGenerator {
     }
 
     NewArrayNode createNewArray(ArrayType type) {
-        return onNodeCreated(new NewArrayNode(nextName("NewArray"),
+        return onNodeCreated(new NewArrayNode(nextName("arraynew"),
                 type,
                 code().getLastNode(), code()
         ));
     }
 
     NewArrayWithDimsNode createNewArrayWithDimensions(ArrayType type, int dimensions) {
-        return onNodeCreated(new NewArrayWithDimsNode(nextName("NewArray"),
+        return onNodeCreated(new NewArrayWithDimsNode(nextName("arraynew"),
                 type,
                 code().getLastNode(), code(),
                 dimensions
@@ -200,24 +200,24 @@ public class MethodGenerator {
         return i;
     }
 
-    SetFieldNode createSetField(Field field) {
+    SetFieldNode createSetField(FieldRef fieldRef) {
         return onNodeCreated(new SetFieldNode(
-                nextName("Update"),
+                nextName("setfield"),
                 code().getLastNode(),
                 code(),
-                field.getRef()));
+                fieldRef));
     }
 
-    SetStaticNode createSetStatic(Field field) {
-        return onNodeCreated(new SetStaticNode(nextName("UpdateStatic"),
+    SetStaticNode createSetStatic(FieldRef fieldRef) {
+        return onNodeCreated(new SetStaticNode(nextName("setstatic"),
                 code().getLastNode(), code(),
-                field.getRef()));
+                fieldRef));
     }
 
     AddElementNode createAddElement() {
         return onNodeCreated(
                 new AddElementNode(
-                        nextName("AddElement"),
+                        nextName("arrayadd"),
                         code().getLastNode(),
                         code()
                 )
@@ -227,7 +227,7 @@ public class MethodGenerator {
     RemoveElementNode createRemoveElement() {
         return onNodeCreated(
                 new RemoveElementNode(
-                        nextName("RemoveElement"),
+                        nextName("arrayremove"),
                         code().getLastNode(),
                         code()
                 )
@@ -237,7 +237,7 @@ public class MethodGenerator {
     GetElementNode createGetElement() {
         return onNodeCreated(
                 new GetElementNode(
-                        nextName("GetElement"),
+                        nextName("arrayget"),
                         code().getLastNode(),
                         code()
                 )
@@ -247,7 +247,7 @@ public class MethodGenerator {
     @SuppressWarnings("UnusedReturnValue")
     VoidReturnNode createVoidReturn() {
         return onNodeCreated(new VoidReturnNode(
-                nextName("Exit"),
+                nextName("exit"),
                 code().getLastNode(),
                 code()
         ));
@@ -255,49 +255,44 @@ public class MethodGenerator {
 
     ReturnNode createReturn() {
         return onNodeCreated(new ReturnNode(
-                nextName("Exit"),
+                nextName("ret"),
                 code().getLastNode(),
                 code()
         ));
     }
 
     IndexCountNode createIndexCount(Index index) {
-        return onNodeCreated(new IndexCountNode(nextName("IndexCount"), code().getLastNode(), code(), index.getRef()
+        return onNodeCreated(new IndexCountNode(nextName("indexcount"), code().getLastNode(), code(), index.getRef()
         ));
     }
 
     IndexScanNode createIndexScan(Index index) {
-        return onNodeCreated(new IndexScanNode(nextName("IndexScan"), code().getLastNode(),
+        return onNodeCreated(new IndexScanNode(nextName("indexscan"), code().getLastNode(),
                 code(), index.getRef()
         ));
     }
 
     public IndexSelectNode createIndexSelect(Index index) {
-        return onNodeCreated(new IndexSelectNode(nextName("IndexSelect"),
+        return onNodeCreated(new IndexSelectNode(nextName("indexselect"),
                 code().getLastNode(), code(), index.getRef()
         ));
     }
 
     public IndexSelectFirstNode createIndexSelectFirst(Index index) {
-        return onNodeCreated(new IndexSelectFirstNode(nextName("IndexSelectFirst"),
+        return onNodeCreated(new IndexSelectFirstNode(nextName("indexget"),
                 code().getLastNode(), code(), index.getRef()
         ));
     }
 
-    public Field newTemporaryField(Klass klass, String name, Type type) {
-        return FieldBuilder.newBuilder(name, klass, type).build();
+    MethodCallNode createMethodCall(MethodRef methodRef) {
+        return createMethodCall(methodRef, List.of(), List.of());
     }
 
-    MethodCallNode createMethodCall(Method method) {
-        return createMethodCall(method, List.of(), List.of());
-    }
-
-    MethodCallNode createMethodCall(Method method,
+    MethodCallNode createMethodCall(MethodRef methodRef,
                                     List<Type> capturedExpressionTypes,
                                     List<Long> capturedVariables) {
-        var node = new MethodCallNode(nextName(method.getName()),
-                code().getLastNode(), code(),
-                method.getRef());
+        var node = new MethodCallNode(nextName(methodRef.getRawFlow().getName()),
+                code().getLastNode(), code(), methodRef);
         node.setCapturedVariableIndexes(capturedVariables);
         node.setCapturedVariableTypes(capturedExpressionTypes);
         return onNodeCreated(node);
@@ -316,17 +311,14 @@ public class MethodGenerator {
                 functionRef));
     }
 
-    LambdaNode createLambda(Lambda lambda, Klass functionalInterface) {
-        var node = onNodeCreated(new LambdaNode(nextName("lambda"), code().getLastNode(), code(),
-                lambda, functionalInterface.getType()
+    LambdaNode createLambda(Lambda lambda, ClassType functionalInterface) {
+        return onNodeCreated(new LambdaNode(nextName("lambda"), code().getLastNode(), code(),
+                lambda, functionalInterface
         ));
-        node.createSAMImpl();
-        return node;
     }
 
-    NewObjectNode createNew(Method method, boolean ephemeral, boolean unbound) {
-        var methodRef = method.getRef();
-        return onNodeCreated(new NewObjectNode(nextName(methodRef.resolve().getName()), methodRef,
+    NewObjectNode createNew(MethodRef methodRef, boolean ephemeral, boolean unbound) {
+        return onNodeCreated(new NewObjectNode(nextName(methodRef.getRawFlow().getName()), methodRef,
                 code().getLastNode(), code(), ephemeral, unbound));
     }
 
@@ -366,7 +358,7 @@ public class MethodGenerator {
     @SuppressWarnings("UnusedReturnValue")
     public RaiseNode createRaise() {
         return onNodeCreated(new RaiseNode(
-                nextName("Error"),
+                nextName("raise"),
                 code().getLastNode(), code()
         ));
     }
@@ -376,13 +368,13 @@ public class MethodGenerator {
     }
 
     public ClearArrayNode createClearArray() {
-        return onNodeCreated(new ClearArrayNode(nextName("ClearArray"),
+        return onNodeCreated(new ClearArrayNode(nextName("arrayclear"),
                 code().getLastNode(), code()
         ));
     }
 
     public SetElementNode createSetElement() {
-        return onNodeCreated(new SetElementNode(nextName("SetElement"),
+        return onNodeCreated(new SetElementNode(nextName("arrayset"),
                 code().getLastNode(), code()));
     }
 
@@ -424,7 +416,7 @@ public class MethodGenerator {
 
     LeftShiftNode createLeftShift() {
         return onNodeCreated(new LeftShiftNode(
-                        nextName("leftShift"),
+                        nextName("lshift"),
                         code().getLastNode(),
                         code()
                 )
@@ -433,7 +425,7 @@ public class MethodGenerator {
 
     RightShiftNode createRightShift() {
         return onNodeCreated(new RightShiftNode(
-                        nextName("rightShift"),
+                        nextName("rshift"),
                         code().getLastNode(),
                         code()
                 )
@@ -442,7 +434,7 @@ public class MethodGenerator {
 
     UnsignedRightShiftNode createUnsignedRightShift() {
         return onNodeCreated(new UnsignedRightShiftNode(
-                        nextName("unsignedRightShift"),
+                        nextName("urshift"),
                         code().getLastNode(),
                         code()
                 )
@@ -559,7 +551,7 @@ public class MethodGenerator {
 
     InstanceOfNode createInstanceOf(Type type) {
         return onNodeCreated(new InstanceOfNode(
-                        nextName("instanceOf"),
+                        nextName("instanceof"),
                         code().getLastNode(),
                         code(),
                         type
@@ -594,22 +586,22 @@ public class MethodGenerator {
         );
     }
 
-    GetPropertyNode createGetProperty(Property property) {
+    GetPropertyNode createGetProperty(PropertyRef propertyRef) {
         return onNodeCreated(new GetPropertyNode(
                         nextName("property"),
                         code().getLastNode(),
                         code(),
-                        property.getRef()
+                        propertyRef
                 )
         );
     }
 
-    GetStaticNode createGetStatic(Property property) {
+    GetStaticNode createGetStatic(PropertyRef propertyRef) {
         return onNodeCreated(new GetStaticNode(
                         nextName("static"),
                         code().getLastNode(),
                         code(),
-                        property.getRef()
+                        propertyRef
                 )
         );
     }
@@ -690,7 +682,7 @@ public class MethodGenerator {
     }
 
     public Node createLoadType(Type type) {
-        return onNodeCreated(new LoadTypeNode(nextName("loadType"),
+        return onNodeCreated(new LoadTypeNode(nextName("loadtype"),
                 code().getLastNode(), code(), type
         ));
     }
@@ -704,6 +696,14 @@ public class MethodGenerator {
         return onNodeCreated(new PopNode(nextName("pop"),
                 code().getLastNode(), code()
         ));
+    }
+
+    public LoadParentNode createLoadParent(int index) {
+        return new LoadParentNode(nextName("loadparent"), code().getLastNode(), code(), index);
+    }
+
+    public NewChildNode createNewChild(MethodRef methodRef) {
+        return new NewChildNode(nextName("newchild"), methodRef, code().getLastNode(), code());
     }
 
     public void enterBlock(PsiStatement statement) {

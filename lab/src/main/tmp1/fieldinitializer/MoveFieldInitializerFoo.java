@@ -6,6 +6,8 @@ public class MoveFieldInitializerFoo {
 
     private int value = defaultValue;
     private int value1 = value + 1;
+    private int value2;
+    private char c;
 
     public MoveFieldInitializerFoo() {
         this(0, 0);

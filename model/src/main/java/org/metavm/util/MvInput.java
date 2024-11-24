@@ -7,6 +7,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.*;
 
+import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -141,6 +142,13 @@ public abstract class MvInput implements Closeable {
     public abstract Klass getKlass(Id id);
 
     public abstract Method getMethod(Id id);
+
+    public @Nullable Type readTypeNullable() {
+        int tag = read();
+        if(tag == WireTypes.NULL)
+            return null;
+        return Type.readType(tag, this);
+    }
 
     public abstract Field getField(Id id);
 

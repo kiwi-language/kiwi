@@ -27,6 +27,11 @@ public class IfNode extends JumpNode {
     }
 
     @Override
+    public boolean hasOutput() {
+        return false;
+    }
+
+    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("if " + getTarget().getName());
     }

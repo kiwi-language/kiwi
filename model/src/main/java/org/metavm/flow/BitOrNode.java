@@ -46,4 +46,9 @@ public class BitOrNode extends Node {
         return Types.getLongType();
     }
 
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
 }

@@ -124,10 +124,6 @@ public class Nodes {
         ifNode.setTarget(noop(code));
     }
 
-    public static CastNode castNode(Type type, Code code) {
-        return new CastNode(code.nextNodeName("cast"), type, code.getLastNode(), code);
-    }
-
     public static FunctionCallNode functionCall(Code code, Function function) {
         return new FunctionCallNode(code.nextNodeName("functionCall"), code.getLastNode(), code, function.getRef());
     }

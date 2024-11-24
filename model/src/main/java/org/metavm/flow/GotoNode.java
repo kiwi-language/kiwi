@@ -54,4 +54,9 @@ public class GotoNode extends JumpNode {
     public boolean isUnconditionalJump() {
         return true;
     }
+
+    @Override
+    public boolean hasOutput() {
+        return false;
+    }
 }

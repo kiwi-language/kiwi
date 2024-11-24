@@ -47,7 +47,6 @@ public class SaveTypeBatch implements TypeDefProvider {
 
     public void addNewField(Field field) {
         newFields.add(field);
-        log.debug("Adding new field {}", field.getName(), new Exception());
     }
 
     public void addTypeChangedField(Field field) {

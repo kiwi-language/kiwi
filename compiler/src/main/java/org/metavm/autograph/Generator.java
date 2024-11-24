@@ -2,7 +2,9 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import org.metavm.api.EntityIndex;
+import org.metavm.entity.StdField;
 import org.metavm.entity.StdKlass;
+import org.metavm.entity.StdMethod;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.CompositeTypeEventRegistry;
@@ -51,69 +53,13 @@ public class Generator extends VisitorBase {
             return;
         klass.setStage(ResolutionStage.DEFINITION);
         klass.setQualifiedName(psiClass.getQualifiedName());
-        MethodGenerator initFlowBuilder;
-        Method initFlow;
-        if(!psiClass.isInterface()) {
-            initFlow = klass.getMethodByNameAndParamTypes("<init>", List.of());
-            initFlowBuilder = new MethodGenerator(initFlow, typeResolver, this);
-            initFlowBuilder.enterScope(initFlowBuilder.getMethod().getCode());
-            if (klass.getSuperType() != null) {
-                var superInit = klass.getSuperType().resolve().findSelfMethodByName("<init>");
-                if (superInit != null) {
-                    initFlowBuilder.getThis();
-                    initFlowBuilder.createMethodCall(superInit);
-                }
-            }
-        }
-        else {
-            initFlowBuilder = null;
-            initFlow = null;
-        }
-        var classInit = klass.getMethodByNameAndParamTypes("<cinit>", List.of());
-        var classInitFlowBuilder = new MethodGenerator(classInit, typeResolver, this);
-        classInitFlowBuilder.enterScope(classInitFlowBuilder.getMethod().getCode());
-        if (klass.getSuperType() != null) {
-            var superCInit = klass.getSuperType().resolve().findSelfMethodByName("<cinit>");
-            if (superCInit != null)
-                classInitFlowBuilder.createMethodCall(superCInit);
-        }
-        enterClass(new ClassInfo(klass, psiClass, initFlowBuilder, classInitFlowBuilder));
-
+        enterClass(new ClassInfo(klass, psiClass));
         super.visitClass(psiClass);
-
-        if(initFlowBuilder != null) {
-            initFlowBuilder.createVoidReturn();
-            initFlowBuilder.exitScope();
-        }
-
-        classInitFlowBuilder.createVoidReturn();
-        classInitFlowBuilder.exitScope();
-
-        if(!psiClass.isInterface()) {
-            boolean hasConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
-            if (!hasConstructor) {
-                var constructor = klass.getDefaultConstructor();
-                var constructorGen = new MethodGenerator(constructor, typeResolver, this);
-                constructorGen.enterScope(constructor.getCode());
-                constructorGen.getThis();
-                constructorGen.createMethodCall(initFlow);
-                constructorGen.getThis();
-                constructorGen.createReturn();
-                constructorGen.exitScope();
-            }
-        }
         if(klass.isEnum())
             Flows.generateValuesMethodBody(klass);
         exitClass();
         klass.setStage(ResolutionStage.DEFINITION);
         klass.emitCode();
-//        for (Method method : klass.getMethods()) {
-//            if(method.isRootScopePresent()) {
-//                logger.debug("Emitted code for method {}. Constant pool size: {}, code length: {}",
-//                        method.getQualifiedSignature(), method.getConstantPool().getEntries().size(),
-//                        method.getScope().getCode() == null ? 0 : method.getScope().getCode().length);
-//            }
-//        }
     }
 
     @Override
@@ -125,15 +71,29 @@ public class Generator extends VisitorBase {
         builder.enterScope(initializer.getCode());
         builder.createLoadConstant(Instances.stringInstance(ecd.getName()));
         builder.createLoadConstant(Instances.longInstance(ecd.getOrdinal()));
-        var argTypes = NncUtils.merge(
-                List.of(Types.getStringType(), Types.getLongType()),
-                NncUtils.map(
-                    requireNonNull(enumConstant.getArgumentList()).getExpressions(),
-                    expr -> builder.getExpressionResolver().resolve(expr).getType()
-                )
+        var argList = enumConstant.getArgumentList();
+        if(argList != null) {
+            for (var arg :  argList.getExpressions()){
+                builder.getExpressionResolver().resolve(arg);
+            }
+        }
+        var paramTypes = new ArrayList<Type>();
+        paramTypes.add(Types.getStringType());
+        paramTypes.add(Types.getLongType());
+        var generics = enumConstant.resolveMethodGenerics();
+        var method = (PsiMethod) requireNonNull(generics.getElement());
+        for (var psiParam : method.getParameterList().getParameters()) {
+            paramTypes.add(typeResolver.resolveNullable(psiParam.getType(), ResolutionStage.DECLARATION));
+        }
+        var constructor = ecd.getKlass().getSelfMethod(
+                m -> m.isConstructor() && m.getParameterTypes().equals(paramTypes)
         );
-        var constructor = ecd.getKlass().resolveMethod(ecd.getKlass().getName(), argTypes, List.of(), false);
-        builder.createNew(constructor, false, false);
+        var typeArgs = NncUtils.map(
+                method.getTypeParameters(),
+                tp -> typeResolver.resolveDeclaration(generics.getSubstitutor().substitute(tp))
+        );
+        var methodRef = new MethodRef(ecd.getKlass().getType(), constructor, typeArgs);
+        builder.createNew(methodRef, false, false);
         builder.createReturn();
         builder.exitScope();
     }
@@ -168,40 +128,6 @@ public class Generator extends VisitorBase {
             }
             index.setFields(indexFields);
             return;
-        }
-        var field = Objects.requireNonNull(psiField.getUserData(Keys.FIELD));
-        if (psiField.getInitializer() != null) {
-            if (field.isStatic()) {
-                var builder = currentClassInfo().staticBuilder;
-                builder.getExpressionResolver().resolve(psiField.getInitializer());
-                builder.createSetStatic(field);
-            } else {
-                var builder = currentClassInfo().fieldBuilder;
-                builder.getThis();
-                builder.getExpressionResolver().resolve(psiField.getInitializer());
-                builder.createSetField(field);
-            }
-        } else if (field.getType().isNullable()) {
-            initFieldWithConstant(field, Instances.nullInstance());
-        } else if (field.getType().isBoolean()) {
-            initFieldWithConstant(field, Instances.falseInstance());
-        } else if (field.getType().isLong()) {
-            initFieldWithConstant(field, Instances.longZero());
-        } else if (field.getType().isDouble()) {
-            initFieldWithConstant(field, Instances.doubleInstance(0.0));
-        }
-    }
-
-    private void initFieldWithConstant(Field field, org.metavm.object.instance.core.Value value) {
-        if (field.isStatic()) {
-            var builder = currentClassInfo().staticBuilder;
-            builder.createLoadConstant(value);
-            builder.createSetStatic(field);
-        } else {
-            var builder = currentClassInfo().fieldBuilder;
-            builder.getThis();
-            builder.createLoadConstant(value);
-            builder.createSetField(field);
         }
     }
 
@@ -296,23 +222,15 @@ public class Generator extends VisitorBase {
         } else {
             processParameters(psiMethod.getParameterList(), method);
             if (psiMethod.isConstructor()) {
-                var superClass = NncUtils.get(currentClass().getSuperType(), ClassType::resolve);
-                if (superClass != null && !isEnumType(superClass) && !isEntityType(superClass)
-                        && !isRecordType(superClass) && !isSuperCallPresent(psiMethod)) {
-                    builder().getThis();
-                    builder().createMethodCall(superClass.getDefaultConstructor());
-                }
-                builder.getThis();
-                builder.createMethodCall(currentClassInfo().fieldBuilder.getMethod());
                 if (currentClass().isEnum()) {
                     var klass = currentClass();
-                    var enumClass = requireNonNull(klass.getSuperType()).resolve();
+                    var enumType = requireNonNull(klass.getSuperType());
                     builder.getThis();
                     builder.createLoad(1, Types.getStringType());
-                    builder.createSetField(enumClass.getFieldByName("name"));
+                    builder.createSetField(new FieldRef(enumType, StdField.enumName.get()));
                     builder.getThis();
                     builder.createLoad(2, Types.getLongType());
-                    builder.createSetField(enumClass.getFieldByName("ordinal"));
+                    builder.createSetField(new FieldRef(enumType, StdField.enumOrdinal.get()));
                 }
             }
         }
@@ -329,9 +247,7 @@ public class Generator extends VisitorBase {
         builder.exitScope();
         builders.pop();
         CompositeTypeEventRegistry.removeListener(capturedTypeListener);
-//        if(method.getDeclaringType().getQualifiedName().equals("continue_.ContinueFoo")
-//                && method.getName().equals("oddIndexOf")) {
-//            logger.debug("Max locals: {}", method.getCode().getMaxLocals());
+//        if(method.getName().equals("Inner2")) {
 //            logger.debug("{}", method.getText());
 //        }
     }
@@ -620,19 +536,17 @@ public class Generator extends VisitorBase {
                 ifNode1.setTarget(exit);
             block.connect(continuePoint, exit);
         } else {
-            var collType = Types.resolveKlass(iteratedType);
-            typeResolver.ensureDeclared(collType);
+            var iterableType = Types.resolveAncestorType((ClassType) iteratedType, StdKlass.iterable.get());
             builder().createLoad(iteratedVar, iteratedType);
-            var iteratorMethod = Objects.requireNonNull(collType.findMethodByName("iterator"));
-            builder().createMethodCall(iteratorMethod);
+            builder().createMethodCall(new MethodRef(iterableType, StdMethod.iterableIterator.get(), List.of()));
             builder().createNonNull();
             var itVar = builder().nextVariableIndex();
             builder().createStore(itVar);
-            var itType = (ClassType) iteratorMethod.getReturnType().getUnderlyingType();
-            var itKlass = itType.resolve();
+            var elementType = iterableType.getFirstTypeArgument();
+            var itType = new ClassType(null, StdKlass.iterator.get(), List.of(elementType));
             var entry = builder().createNoop();
             builder().createLoad(itVar, itType);
-            builder().createMethodCall(itKlass.getMethod("hasNext", List.of()));
+            builder().createMethodCall(new MethodRef(itType, StdMethod.iteratorHasNext.get(), List.of()));
             var ifNode = builder().createIfNot(null);
             var condition = getExtraLoopTest(statement);
             IfNotNode ifNode1;
@@ -643,7 +557,7 @@ public class Generator extends VisitorBase {
             else
                 ifNode1 = null;
             builder().createLoad(itVar, itType);
-            builder().createMethodCall(itKlass.getMethod("next", List.of()));
+            builder().createMethodCall(new MethodRef(itType, StdMethod.iteratorNext.get(), List.of()));
             builder().createStore(builder().getVariableIndex(statement.getIterationParameter()));
             builder().enterBlock(statement);
             if (statement.getBody() != null)
@@ -736,7 +650,7 @@ public class Generator extends VisitorBase {
 
     private void resolveAndPopExpression(PsiExpression expression) {
         var node = resolveExpression(expression);
-        if(node.getType() != null)
+        if(node.hasOutput())
             builder().createPop();
     }
 
@@ -749,7 +663,7 @@ public class Generator extends VisitorBase {
         return classes;
     }
 
-    private record ClassInfo(Klass klass, PsiClass psiClass, MethodGenerator fieldBuilder, MethodGenerator staticBuilder) {
+    private record ClassInfo(Klass klass, PsiClass psiClass) {
 
 
     }

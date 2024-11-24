@@ -6,6 +6,7 @@ import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiModifier;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
+import org.metavm.flow.MethodRef;
 import org.metavm.flow.Node;
 import org.metavm.object.type.ClassType;
 import org.metavm.util.NncUtils;
@@ -46,16 +47,16 @@ public class SetOfResolver implements MethodCallResolver {
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var setType = (ClassType) expressionResolver.getTypeResolver().resolve(
                 methodGenerics.getSubstitutor().substitute(method.getReturnType()));
-        var hashSetKlass = StdKlass.hashSet.get().getParameterized(List.of(setType.getFirstTypeArgument()));
+        var hashSetKlass = StdKlass.hashSet.get();
+        var hashSetType = new ClassType(null, hashSetKlass, List.of(setType.getFirstTypeArgument()));
         var set = methodGenerator.createNew(
-                hashSetKlass.getDefaultConstructor(),
+                new MethodRef(hashSetType, hashSetKlass.getDefaultConstructor(), List.of()),
                 false,
                 true);
-        var addMethod = hashSetKlass.getMethod(m -> m.getEffectiveVerticalTemplate() == StdMethod.hashSetAdd.get());
         for (PsiExpression expression : methodCallExpression.getArgumentList().getExpressions()) {
             methodGenerator.createDup();
             expressionResolver.resolve(expression);
-            methodGenerator.createMethodCall(addMethod);
+            methodGenerator.createMethodCall(new MethodRef(hashSetType, StdMethod.hashSetAdd.get(), List.of()));
             methodGenerator.createPop();
         }
         return set;

@@ -54,7 +54,7 @@ public class AstToCfg extends SkipDiscardedVisitor {
 
     @Override
     public void visitSwitchLabeledRuleStatement(PsiSwitchLabeledRuleStatement statement) {
-        var switchStmt = TranspileUtils.getParent(statement, Set.of(PsiSwitchStatement.class, PsiSwitchExpression.class));
+        var switchStmt = TranspileUtils.findParent(statement, Set.of(PsiSwitchStatement.class, PsiSwitchExpression.class));
         builder.newCondBranch(switchStmt);
         if (statement.getCaseLabelElementList() != null) {
             statement.getCaseLabelElementList().accept(this);
@@ -131,7 +131,7 @@ public class AstToCfg extends SkipDiscardedVisitor {
 
     @Override
     public void visitSwitchLabelStatement(PsiSwitchLabelStatement statement) {
-        var switchStmt = TranspileUtils.getParent(statement, Set.of(PsiSwitchStatement.class, PsiSwitchExpression.class));
+        var switchStmt = TranspileUtils.findParent(statement, Set.of(PsiSwitchStatement.class, PsiSwitchExpression.class));
         builder.newCondBranch(switchStmt, true);
         if (statement.isDefaultCase()) builder.setDefaultCaseFlag(switchStmt);
         else requireNonNull(statement.getCaseLabelElementList()).accept(this);

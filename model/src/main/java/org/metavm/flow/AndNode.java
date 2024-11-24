@@ -45,4 +45,9 @@ public class AndNode extends Node {
     public Type getType() {
         return Types.getBooleanType();
     }
+
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
 }

@@ -101,6 +101,9 @@ public class BasicCompilingTest extends CompilerTestBase {
             processTypePatternSwitch();
             processTypePatternSwitchExpression();
             processEmptyMethod();
+            processMethodCallWithinLambda();
+            processArrayInitializer();
+            processInnerClassExtension();
         });
     }
 
@@ -1010,6 +1013,25 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processEmptyMethod() {
         var klassName = "misc.EmptyMethodFoo";
         callMethod(klassName, "test", List.of());
+    }
+
+    private void processMethodCallWithinLambda() {
+        Assert.assertTrue((boolean) callMethod("lambda.MethodCallWithinLambda", "test", List.of()));
+    }
+
+    private void processArrayInitializer() {
+        Assert.assertTrue(
+                (boolean) callMethod("arrayinitializer.ArrayInitializerFoo", "test", List.of())
+        );
+    }
+
+    private void processInnerClassExtension() {
+        var sum = (long) callMethod(
+                "innerclass.InnerClassExtension",
+                "sum",
+                List.of(1,2,3,4)
+        );
+        Assert.assertEquals(10L, sum);
     }
 
 }

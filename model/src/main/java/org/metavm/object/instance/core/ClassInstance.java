@@ -5,6 +5,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.natives.ListNative;
+import org.metavm.flow.ClosureContext;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
@@ -32,6 +33,8 @@ public class ClassInstance extends Instance {
     private final FieldTable fieldTable = new FieldTable(this);
     private Klass klass;
     private transient Map<Flow, FlowValue> functions;
+    private @Nullable ClosureContext closureContext;
+    private final List<ClassInstance> children = new ArrayList<>();
 
     public static ClassInstance create(Map<Field, Value> data, ClassType type) {
         return ClassInstanceBuilder.newBuilder(type).data(data).build();
@@ -57,9 +60,11 @@ public class ClassInstance extends Instance {
 
     public ClassInstance(Id id, @NotNull ClassType type, long version, long syncVersion,
                          @Nullable Consumer<Instance> load, @Nullable InstanceParentRef parentRef,
-                         @Nullable Map<Field, Value> data, boolean ephemeral, boolean initFieldTable) {
+                         @Nullable Map<Field, Value> data, boolean ephemeral, boolean initFieldTable,
+                         @Nullable ClosureContext closureContext) {
         super(id, type, version, syncVersion, ephemeral, load);
         this.klass = type.resolve();
+        this.closureContext = closureContext;
         if (klass != uninitializedKlass && initFieldTable)
             fieldTable.initialize();
         setParentRef(parentRef);
@@ -126,7 +131,7 @@ public class ClassInstance extends Instance {
     public Set<IndexKeyRT> getIndexKeys() {
         ensureLoaded();
         return NncUtils.flatMapUnique(
-                klass.getConstraints(Index.class),
+                klass.getAllConstraints(Index.class),
                 c -> c.createIndexKey(this)
         );
     }
@@ -157,6 +162,7 @@ public class ClassInstance extends Instance {
             if(f.isChild() && v instanceof Reference r)
                 action.accept(r.resolve());
         });
+        children.forEach(action);
     }
 
     @Override
@@ -165,6 +171,7 @@ public class ClassInstance extends Instance {
             if(v instanceof Reference r && (f.isChild() || r.isValueReference()))
                 action.accept(r.resolve());
         });
+        children.forEach(action);
     }
 
     @Override
@@ -173,6 +180,7 @@ public class ClassInstance extends Instance {
             if(v instanceof Reference r)
                 action.accept(r);
         });
+        children.forEach(c -> action.accept(c.getReference()));
     }
 
     @Override
@@ -181,6 +189,7 @@ public class ClassInstance extends Instance {
             if(v instanceof Reference r)
                 action.accept(r, f.isChild());
         });
+        children.forEach(c -> action.accept(c.getReference(), true));
     }
 
     @Override
@@ -189,6 +198,7 @@ public class ClassInstance extends Instance {
             if(v instanceof Reference r)
                 action.accept(r, f.isChild(), f.getType());
         });
+        children.forEach(c -> action.accept(c.getReference(), true, c.getType()));
     }
 
     @Override
@@ -259,6 +269,7 @@ public class ClassInstance extends Instance {
                 defaultWriteFields(subTable, output, numFields);
             }
         });
+        writeChildren(output);
     }
 
     private void customWrite(FieldSubTable subTable, Method writeObjectMethod, InstanceOutput output) {
@@ -297,6 +308,24 @@ public class ClassInstance extends Instance {
                 field.writeValue(output);
             }
         });
+    }
+
+    private void writeChildren(InstanceOutput output) {
+        if(children.isEmpty())
+            output.writeInt(0);
+        else {
+            int childrenCount = 0;
+            for (ClassInstance child : children) {
+                if (!child.isEphemeral())
+                    childrenCount++;
+            }
+            output.writeInt(childrenCount);
+            for (ClassInstance child : children) {
+                if(!child.isEphemeral())
+                    child.writeRecord(output);
+            }
+        }
+
     }
 
     @Override
@@ -362,6 +391,7 @@ public class ClassInstance extends Instance {
             } else
                 customRead(Objects.requireNonNull(st.klass.getReadObjectMethod()), slot);
         }
+        readChildren(input);
     }
 
     private byte[] readSlot(InstanceInput input) {
@@ -418,6 +448,13 @@ public class ClassInstance extends Instance {
         input.setParentField(getParentField());
         for (; m < fields.size(); m++) {
             fields.get(m).ensureInitialized();
+        }
+    }
+
+    private void readChildren(InstanceInput input) {
+        int childrenCount = input.readInt();
+        for (int i = 0; i < childrenCount; i++) {
+            children.add(input.readValue().resolveObject());
         }
     }
 
@@ -901,6 +938,16 @@ public class ClassInstance extends Instance {
         return klass.isSearchable();
     }
 
+    @Nullable
+    public ClosureContext getClosureContext() {
+        return closureContext;
+    }
+
+    public void addChild(ClassInstance child) {
+        children.add(child);
+        child.setParent(this, null);
+    }
+
     private interface IFieldSubTable extends Iterable<IInstanceField>, Comparable<IFieldSubTable> {
 
         long getKlassTag();
@@ -1025,7 +1072,6 @@ public class ClassInstance extends Instance {
             }
             return count;
         }
-
 
     }
 

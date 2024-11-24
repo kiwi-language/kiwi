@@ -47,4 +47,9 @@ public class LoadConstantNode extends Node {
     public Type getType() {
         return value.getType();
     }
+
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
 }

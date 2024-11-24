@@ -1,9 +1,11 @@
 package org.metavm.object.instance.core;
 
+import org.metavm.flow.ClosureContext;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -22,6 +24,7 @@ public class ClassInstanceBuilder {
     private Consumer<Instance> load;
     private boolean ephemeral;
     private boolean initFieldTable = true;
+    private @Nullable ClosureContext closureContext;
 
     private ClassInstanceBuilder(ClassType type) {
         this.type = type;
@@ -72,10 +75,15 @@ public class ClassInstanceBuilder {
         return this;
     }
 
+    public ClassInstanceBuilder closureContext(ClosureContext closureContext) {
+        this.closureContext = closureContext;
+        return this;
+    }
+
     public ClassInstance build() {
         //        if(tmpId != null)
 //            instance.setTmpId(tmpId);
-        return new ClassInstance(id, type, version, syncVersion, load, parentRef, data, ephemeral, initFieldTable);
+        return new ClassInstance(id, type, version, syncVersion, load, parentRef, data, ephemeral, initFieldTable, closureContext);
     }
 
     public Reference buildAndGetReference() {

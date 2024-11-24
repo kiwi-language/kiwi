@@ -52,7 +52,7 @@ public class EnumConstantDef extends Element implements ITypeDef {
     }
 
     public Field getField() {
-        return klass.getStaticFieldByName(name);
+        return klass.getSelfStaticFieldByName(name);
     }
 
     public String getName() {

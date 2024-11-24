@@ -47,6 +47,7 @@ public class Constants {
     public static final String RUN_METHOD_NAME = "__run__";
 
     public static final int CLASS_MAGIC = 0x1F4D5B3A;
+    public static volatile boolean maintenanceDisabled;
 
     private Constants() {}
 
@@ -73,6 +74,14 @@ public class Constants {
 
     public static boolean isIdPrefixed(String str) {
         return str.startsWith(ID_PREFIX);
+    }
+
+    public static void disableMaintenance() {
+        maintenanceDisabled = true;
+    }
+
+    public static void enableMaintenance() {
+        maintenanceDisabled = false;
     }
 
 }

@@ -19,12 +19,6 @@ public class MethodCallNode extends CallNode {
     }
 
     @Override
-    public void writeContent(CodeWriter writer) {
-        var method = getFlowRef().resolve();
-        writer.write("invoke " + method.getQualifiedSignature());
-    }
-
-    @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.METHOD_CALL);
         writeCallCode(output);

@@ -10,17 +10,23 @@ import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
 import org.metavm.util.WireTypes;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
-public record ParameterizedTypeKey(Id templateId, List<TypeKey> typeArgumentKeys) implements TypeKey, GenericDeclarationRefKey {
+public record ParameterizedTypeKey(TypeKey owner, Id templateId, List<TypeKey> typeArgumentKeys) implements TypeKey, GenericDeclarationRefKey {
 
-    public static ParameterizedTypeKey create(Klass template, List<Type> typeArguments) {
-        return new ParameterizedTypeKey(template.getId(), NncUtils.map(typeArguments, Type::toTypeKey));
+    public static ParameterizedTypeKey create(@Nullable ClassType owner, Klass template, List<Type> typeArguments) {
+        return new ParameterizedTypeKey(owner != null ? owner.toTypeKey() : null,
+                template.getId(), NncUtils.map(typeArguments, Type::toTypeKey));
     }
 
     @Override
     public void write(MvOutput output) {
         output.write(WireTypes.PARAMETERIZED_TYPE);
+        if(owner != null)
+            owner.write(output);
+        else
+            output.write(WireTypes.NULL);
         output.writeId(templateId);
         output.writeInt(typeArgumentKeys.size());
         typeArgumentKeys.forEach(k -> k.write(output));
@@ -33,7 +39,9 @@ public record ParameterizedTypeKey(Id templateId, List<TypeKey> typeArgumentKeys
 
     @Override
     public ClassType toType(TypeDefProvider typeDefProvider) {
-        return new ClassType(typeDefProvider.getKlass(templateId), NncUtils.map(typeArgumentKeys, k -> k.toType(typeDefProvider)));
+        return new ClassType(
+                owner != null ? (ClassType) owner.toType(typeDefProvider) : null,
+                typeDefProvider.getKlass(templateId), NncUtils.map(typeArgumentKeys, k -> k.toType(typeDefProvider)));
     }
 
     @Override

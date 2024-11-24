@@ -136,7 +136,7 @@ public class VariableType extends Type implements IVariableType {
 
     @Override
     public String getTypeDesc() {
-        return getVariable().getName();
+        return rawVariable.getName();
     }
 
     @Override

@@ -1,10 +1,7 @@
 package org.metavm.autograph;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElementFactory;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiManager;
+import com.intellij.psi.*;
 import org.metavm.api.ChildList;
 import org.metavm.api.EntityIndex;
 import org.metavm.autograph.env.IrCoreApplicationEnvironment;
@@ -48,42 +45,33 @@ public class Compiler {
                         file.accept(new RecordToClass());
                         file.accept(new BodyNormalizer());
                         file.accept(new RawTypeTransformer());
+                        file.accept(new ArrayInitializerTransformer());
                     }
             ),
             new CompileStage(
                     file -> true,
                     file -> {
                         file.accept(new DefaultConstructorCreator());
-                        file.accept(new SuperCallInserter());
-                        file.accept(new ObjectSuperCallRemover());
-                        file.accept(new QnResolver());
-                        file.accept(new ActivityAnalyzer());
+                        file.accept(new FieldInitializerSetter());
+                        file.accept(new FieldInitializerMover());
                         file.accept(new SyntheticClassNameTracker());
                         file.accept(new AnonymousClassTransformer());
                     }
             ),
             new CompileStage(
                     file -> true,
-                    file -> file.accept(new InnerClassCopier())
-            ),
-            new CompileStage(
-                    file -> true,
                     file -> {
-                        file.accept(new InnerClassQualifier());
-                        file.accept(new InnerClassTransformer());
+                        file.accept(new SuperCallInserter());
+                        file.accept(new ObjectSuperCallRemover());
                     }
             ),
             new CompileStage(
                     file -> true,
-                    file -> file.accept(new OriginalNameRecorder())
+                    file -> file.accept(new InnerClassQualifier())
             ),
             new CompileStage(
                     file -> true,
-                    file -> {
-                        file.accept(new InnerClassTransformFinalizer());
-                        file.accept(new FieldInitializerMover());
-                        file.accept(new NewObjectTransformer());
-                    }
+                    file -> file.accept(new NewObjectTransformer())
             ),
             new CompileStage(
                     file -> true,
@@ -159,6 +147,7 @@ public class Compiler {
     public boolean compile(List<String> sources) {
         var profiler = ContextUtil.getProfiler();
         try (var context = newContext(); var ignored = profiler.enter("compile")) {
+            Constants.disableMaintenance();
             long start = System.currentTimeMillis();
             var typeResolver = new TypeResolverImpl(context);
             var files = NncUtils.map(sources, this::getPsiJavaFile);
@@ -192,12 +181,13 @@ public class Compiler {
             logger.info("Deploy done");
             return true;
         } finally {
+            Constants.enableMaintenance();
             logger.info(profiler.finish(false, true).output());
         }
     }
 
     private static final List<Stage> stages = List.of(
-            new Stage(ResolutionStage.INIT, Compiler::noDependencies),
+            new Stage(ResolutionStage.INIT, Compiler::initDependencies),
             new Stage(ResolutionStage.SIGNATURE, Compiler::noDependencies),
             new Stage(ResolutionStage.DECLARATION, Compiler::declarationDependencies),
             new Stage(ResolutionStage.DEFINITION, Compiler::noDependencies)
@@ -213,8 +203,24 @@ public class Compiler {
         return Set.of();
     }
 
+    public static Set<PsiClass> initDependencies(PsiClass klass) {
+        var parent = TranspileUtils.getProperParent(klass, Set.of(PsiMethod.class, PsiClassInitializer.class, PsiClass.class));
+        if(parent instanceof PsiClass k)
+            return Set.of(k);
+        else
+            return Set.of();
+    }
+
     private static Set<PsiClass> declarationDependencies(PsiClass klass) {
-        return Set.of(klass.getSupers());
+        var deps =  new HashSet<>(Arrays.asList(klass.getSupers()));
+        var parent = TranspileUtils.getProperParent(klass, Set.of(PsiMethod.class, PsiClassInitializer.class, PsiClass.class));
+        if(parent instanceof PsiMethod method)
+            deps.add(method.getContainingClass());
+        else if (parent instanceof PsiClassInitializer classInit)
+            deps.add(classInit.getContainingClass());
+        else if(parent instanceof PsiClass declaringKlass)
+            deps.add(declaringKlass);
+        return deps;
     }
 
     private static class Sorter {
@@ -284,11 +290,12 @@ public class Compiler {
                     typeResolver.ensureCodeGenerated(klass);
             }
             for (var typeDef : generatedTypeDefs) {
-                if(typeDef instanceof Klass klass)
+                if(typeDef instanceof Klass klass && !klass.isInner() && !klass.isLocal())
                     writeClassFile(klass, serContext);
             }
             logger.info("Compile successful");
             createArchive();
+            Constants.enableMaintenance();
             typeClient.deploy(targetDir + "/target.mva");
         }
     }

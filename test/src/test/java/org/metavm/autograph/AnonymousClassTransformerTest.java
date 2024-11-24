@@ -39,10 +39,6 @@ public class AnonymousClassTransformerTest extends TestCase {
             var target = m.replaceAll("/src/main/tmp/" + newPkgName + "/");
             var file = TranspileTestTools.getPsiJavaFile(source);
             TranspileTestTools.executeCommand(() -> {
-                file.accept(new DefaultConstructorCreator());
-                file.accept(new SuperCallInserter());
-                file.accept(new QnResolver());
-                file.accept(new ActivityAnalyzer());
                 file.accept(new SyntheticClassNameTracker());
                 file.accept(new AnonymousClassTransformer());
             });

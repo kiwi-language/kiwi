@@ -823,7 +823,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
      */
     protected void addMapping(Object model, Instance instance) {
         if (instance.getMappedEntity() != null)
-            throw new IllegalStateException("Entity " + model + " is already mapped");
+            throw new IllegalStateException("Entity " + EntityUtils.getEntityDesc(model) + " is already mapped");
         model2instance.put(model, instance);
         instance.setMappedEntity(model);
         entities.add(model);

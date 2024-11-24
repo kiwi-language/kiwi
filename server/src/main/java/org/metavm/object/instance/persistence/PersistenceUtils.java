@@ -37,7 +37,7 @@ public class PersistenceUtils {
     public static void forEachIndexEntries(ClassInstance instance, long appId, Consumer<IndexEntryPO> action,
                                            Consumer<IndexEntryPO> actionForUnique) {
         instance.ensureLoaded();
-        instance.getKlass().getConstraints(Index.class).forEach(index -> forEachIndexEntries(index, instance, appId, action, actionForUnique));
+        instance.getKlass().getAllConstraints(Index.class).forEach(index -> forEachIndexEntries(index, instance, appId, action, actionForUnique));
     }
 
     private static void forEachIndexEntries(Index index, ClassInstance instance,

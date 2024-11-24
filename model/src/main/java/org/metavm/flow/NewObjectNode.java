@@ -48,9 +48,11 @@ public class NewObjectNode extends CallNode {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        super.writeContent(writer);
+        writer.write("new " + getFlowRef());
         if (ephemeral)
             writer.write(" ephemeral");
+        if (unbound)
+            writer.write(" unbound");
     }
 
     @Override

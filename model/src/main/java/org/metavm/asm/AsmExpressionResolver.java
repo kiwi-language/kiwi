@@ -100,7 +100,7 @@ class AsmExpressionResolver {
         NncUtils.map(ctx.expression(), this::resolve0);
         if (ctx.SELECT() != null) {
             Nodes.select(index, code);
-            return new ClassType(StdKlass.arrayList.get(), List.of(index.getDeclaringType().getType()));
+            return new ClassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType().getType()));
         }
         else {
             Nodes.selectFirst(index, code);
@@ -390,7 +390,7 @@ class AsmExpressionResolver {
         var methodName = methodCall.IDENTIFIER().getText();
         var targetKlass = findKlass(qualifier.getText());
         if (targetKlass != null) {
-            type = new ClassType(targetKlass, List.of());
+            type = new ClassType(null, targetKlass, List.of());
         } else {
             type = (ClassType) resolve0(qualifier);
         }

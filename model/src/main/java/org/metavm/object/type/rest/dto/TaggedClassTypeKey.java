@@ -26,7 +26,7 @@ public record TaggedClassTypeKey(Id id, int tag) implements TypeKey, GenericDecl
 
     @Override
     public ClassType toType(TypeDefProvider typeDefProvider) {
-        return new ClassType(typeDefProvider.getKlass(id), List.of());
+        return new ClassType(null, typeDefProvider.getKlass(id), List.of());
     }
 
     @Override

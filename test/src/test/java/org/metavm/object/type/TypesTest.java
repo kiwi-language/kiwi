@@ -88,4 +88,21 @@ public class TypesTest extends TestCase {
         );
     }
 
+    public void testResolveAncestorType() {
+        var itKlass = TestUtils.newKlassBuilder("It").kind(ClassKind.INTERFACE).build();
+        new TypeVariable(null, "T", itKlass);
+
+        var baseKlass = TestUtils.newKlassBuilder("Base").build();
+        var superTypeVar = new TypeVariable(null, "T", baseKlass);
+        baseKlass.setInterfaces(List.of(new ClassType(null, itKlass, List.of(superTypeVar.getType()))));
+
+        var subKlass = TestUtils.newKlassBuilder("Sub").build();
+        var subTypeVar = new TypeVariable(null, "T", subKlass);
+        subKlass.setSuperType(new ClassType(null, baseKlass, List.of(subTypeVar.getType())));
+
+        var subType = new ClassType(null, subKlass, List.of(Types.getStringType()));
+        var itType = Types.resolveAncestorType(subType, itKlass);
+        Assert.assertEquals(new ClassType(null, itKlass, List.of(Types.getStringType())), itType);
+    }
+
 }

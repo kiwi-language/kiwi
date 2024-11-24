@@ -29,6 +29,11 @@ public class IndexSelectFirstNode extends Node {
     }
 
     @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
+    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("indexSelectFirst(" + indexRef.resolve().getName() + ", " +  ")");
     }

@@ -85,7 +85,7 @@ public class SwitchExpressionTransformer extends VisitorBase {
     @Override
     public void visitYieldStatement(PsiYieldStatement statement) {
         super.visitYieldStatement(statement);
-        var switchElement = TranspileUtils.getParent(statement, Set.of(PsiSwitchStatement.class, PsiSwitchExpression.class));
+        var switchElement = TranspileUtils.findParent(statement, Set.of(PsiSwitchStatement.class, PsiSwitchExpression.class));
         if (switchElement instanceof PsiSwitchExpression switchExpr) {
             var expr = NncUtils.requireNonNull(statement.getExpression());
             var replacement = (PsiStatement) replace(statement,

@@ -47,4 +47,9 @@ public class LoadTypeNode extends Node {
     public Type getType() {
         return StdKlass.type.type();
     }
+
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
 }

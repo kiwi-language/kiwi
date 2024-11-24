@@ -32,6 +32,8 @@ public class DummyKlass extends Klass {
                 null,
                 false,
                 false,
+                null,
+                null,
                 List.of(),
                 List.of(),
                 0,

@@ -6,7 +6,9 @@ public class StructuralTypeTransformer<S> extends TypeTransformer<S> {
 
     @Override
     public Type visitClassType(ClassType type, S s) {
-        return new ClassType(type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> t.accept(this, s)));
+        return new ClassType(
+                (ClassType) NncUtils.get(type.getOwner(), t -> t.accept(this, s)),
+                type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> t.accept(this, s)));
     }
 
     @Override

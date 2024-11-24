@@ -50,7 +50,9 @@ public class TypeKeySubstitutor extends TypeKeyVisitorBase<TypeKey> {
 
     @Override
     public TypeKey visitParameterizedTypeKey(ParameterizedTypeKey typeKey) {
-        return new ParameterizedTypeKey(typeKey.templateId(), NncUtils.map(typeKey.typeArgumentKeys(), k -> k.accept(this)));
+        return new ParameterizedTypeKey(
+                NncUtils.get(typeKey.owner(), k -> k.accept(this)),
+                typeKey.templateId(), NncUtils.map(typeKey.typeArgumentKeys(), k -> k.accept(this)));
     }
 
 }

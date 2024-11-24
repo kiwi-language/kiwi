@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
+import static org.metavm.autograph.TranspileUtils.createTemplateType;
 
 public class ExpressionResolver {
 
@@ -173,8 +174,48 @@ public class ExpressionResolver {
         return psiExpression.getType() == PsiType.BOOLEAN;
     }
 
-    private Node resolveThis(PsiThisExpression ignored) {
-        return methodGenerator.createLoadThis();
+    private Node resolveThis(PsiThisExpression expression) {
+        var qualifier = expression.getQualifier();
+        var targetKlass = qualifier != null ? (PsiClass) requireNonNull(qualifier.resolve())
+                : TranspileUtils.getParent(expression, PsiClass.class);
+        PsiElement e = expression;
+        int cIdx = -2;
+        int pIdx = -1;
+        PsiMethod enclosingMethod = null;
+        while (e != null && e != targetKlass) {
+            switch (e) {
+                case PsiLambdaExpression ignored -> cIdx++;
+                case PsiMethod psiMethod -> {
+                    NncUtils.requireFalse(TranspileUtils.isStatic(psiMethod),
+                            () -> "Encountered static method " + psiMethod.getName() + " on the path to class " + targetKlass.getName());
+                    cIdx++;
+                    pIdx = -1;
+                    enclosingMethod = psiMethod;
+                }
+                case PsiClass psiClass -> {
+                    NncUtils.requireFalse(TranspileUtils.isStatic(psiClass),
+                            () -> "Encountered static class " + psiClass.getName() + " on the path to class " + targetKlass.getName());
+                    pIdx++;
+                }
+                default -> {
+                }
+            }
+            e = e.getParent();
+        }
+        requireNonNull(e, () -> targetKlass.getName() + " is not an enclosing class of expression " + expression.getText());
+        Node result;
+        if (cIdx >= 0) {
+            result = methodGenerator.createLoadContextSlot(cIdx, 0,
+                    typeResolver.resolveDeclaration(createTemplateType(
+                            requireNonNull(requireNonNull(enclosingMethod).getContainingClass()))
+                    ));
+        } else
+            result = methodGenerator.createLoadThis();
+        if (pIdx >= 0) {
+            methodGenerator.createLoadParent(pIdx);
+            result = methodGenerator.createTypeCast(typeResolver.resolveDeclaration(expression.getType()));
+        }
+        return result;
     }
 
     private Node resolveConditional(PsiConditionalExpression psiExpression, ResolutionContext context) {
@@ -226,7 +267,6 @@ public class ExpressionResolver {
                     return methodGenerator.createArrayLength();
                 } else {
                     PsiClass psiClass = requireNonNull(psiField.getContainingClass());
-                    Field field;
                     if (psiField.hasModifierProperty(PsiModifier.STATIC)) {
                         var className = psiField.getContainingClass().getQualifiedName();
                         if (className != null && className.startsWith("java.")) {
@@ -234,60 +274,59 @@ public class ExpressionResolver {
                             if (PrimitiveStaticFields.isConstant(javaField))
                                 return methodGenerator.createLoadConstant(Instances.fromConstant(PrimitiveStaticFields.getConstant(javaField)));
                         }
-                        var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass))).resolve();
-                        field = Objects.requireNonNull(klass.findStaticFieldByName(psiField.getName()));
-                        return methodGenerator.createGetStatic(field);
+                        var type = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass)));
+                        var field = Objects.requireNonNull(type.getKlass().findSelfStaticFieldByName(psiField.getName()));
+                        return methodGenerator.createGetStatic(new FieldRef(type, field));
                     } else {
                         var qualifierExpr = psiReferenceExpression.getQualifierExpression();
                         resolveQualifier(qualifierExpr, context);
                         methodGenerator.createNonNull();
-                        var qualifierType = qualifierExpr != null ?
-                                typeResolver.resolve(qualifierExpr.getType()) : methodGenerator.getThisType();
-                        Klass klass = Types.resolveKlass(qualifierType);
-                        typeResolver.ensureDeclared(klass);
-                        field = klass.getFieldByName(psiField.getName());
-                        return methodGenerator.createGetProperty(field);
+                        var generics = psiReferenceExpression.advancedResolve(false);
+                        var type = (ClassType) typeResolver.resolveDeclaration(
+                                generics.getSubstitutor().substitute(createTemplateType(psiClass))
+                        );
+                        var field = type.getKlass().getSelfFieldByName(psiField.getName());
+                        return methodGenerator.createGetProperty(new FieldRef(type, field));
                     }
                 }
             }
             case PsiMethod psiMethod -> {
                 var methodRefExpr = (PsiMethodReferenceExpression) psiReferenceExpression;
-                var type = typeResolver.resolveDeclaration(methodRefExpr.getFunctionalInterfaceType());
+                var type = (ClassType) typeResolver.resolveDeclaration(methodRefExpr.getFunctionalInterfaceType());
                 PsiClass psiClass = requireNonNull(psiMethod.getContainingClass());
-                Method method;
                 if (psiMethod.hasModifierProperty(PsiModifier.STATIC)) {
-                    Klass klass = Types.resolveKlass(typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass)));
-                    method = klass.getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
-                    methodGenerator.createGetStatic(method);
+                    var classType = (ClassType) typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass));
+                    var method = classType.getKlass().getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
+                    methodGenerator.createGetStatic(new MethodRef(classType, method, List.of()));
                 } else {
                     if (psiReferenceExpression.getQualifierExpression() instanceof PsiReferenceExpression refExpr &&
                             refExpr.resolve() instanceof PsiClass) {
-                        var klass = Types.resolveKlass(typeResolver.resolve(TranspileUtils.createType(psiClass)));
-                        method = klass.getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
-                        methodGenerator.createGetStatic(method);
+                        var classType = (ClassType) typeResolver.resolve(TranspileUtils.createType(psiClass));
+                        var method = classType.getKlass().getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
+                        methodGenerator.createGetStatic(new MethodRef(classType, method, List.of()));
                     } else {
                         var qualifierExpr = Objects.requireNonNull(psiReferenceExpression.getQualifierExpression());
-                        Klass klass = Types.resolveKlass(typeResolver.resolve(qualifierExpr.getType()));
-                        typeResolver.ensureDeclared(klass);
-                        method = klass.getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
+                        var classType = (ClassType) typeResolver.resolve(qualifierExpr.getType());
+                        var method = classType.getKlass().getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
                         resolveQualifier(qualifierExpr, context);
-                        methodGenerator.createGetProperty(method);
+                        methodGenerator.createGetProperty(new MethodRef(classType, method, List.of()));
                     }
                 }
-                return createSAMConversion(Types.resolveKlass(type));
+                return createSAMConversion(type);
             }
             case PsiVariable variable -> {
-                var lambda = currentLambda();
                 int contextIndex;
                 var type = typeResolver.resolveNullable(variable.getType(), ResolutionStage.DECLARATION);
                 var index = TranspileUtils.getVariableIndex(variable);
-                if (lambda != null && (contextIndex = TranspileUtils.getContextIndex(variable, lambda)) >= 0)
+                if ((contextIndex = TranspileUtils.getContextIndex(variable, psiReferenceExpression)) >= 0)
                     return methodGenerator.createLoadContextSlot(contextIndex, index, type);
                 else
                     return methodGenerator.createLoad(index, type);
             }
-            case null, default ->
-                    throw new InternalException("Can not resolve reference expression with target: " + target);
+            case null, default -> {
+                throw new InternalException("Can not resolve reference expression "
+                        + psiReferenceExpression.getText() + " with target: " + target);
+            }
         }
     }
 
@@ -426,7 +465,8 @@ public class ExpressionResolver {
     private MethodCallResolver getMethodCallResolver(PsiMethodCallExpression methodCallExpression) {
         var methodExpr = methodCallExpression.getMethodExpression();
         var qualifier = methodExpr.getQualifierExpression();
-        var method = (PsiMethod) Objects.requireNonNull(methodExpr.resolve());
+        var method = (PsiMethod) Objects.requireNonNull(methodExpr.resolve(),
+                () -> "Failed to resolve method expression for " + methodCallExpression.getText());
         var declaringType = qualifier != null && qualifier.getType() instanceof PsiClassType classType ?
                 classType : null;
         var signature = TranspileUtils.getSignature(method, declaringType);
@@ -474,9 +514,9 @@ public class ExpressionResolver {
 
     private Node resolveFlowCall(PsiMethodCallExpression expression, ResolutionContext context) {
         var ref = expression.getMethodExpression();
-        var rawMethod = (PsiMethod) Objects.requireNonNull(ref.resolve());
-        var klassName = requireNonNull(requireNonNull(rawMethod.getContainingClass()).getQualifiedName());
-        if (klassName.startsWith("org.metavm.lang.")) {
+        var rawMethod = (PsiMethod) requireNonNull(ref.resolve());
+        var klassName = requireNonNull(rawMethod.getContainingClass()).getQualifiedName();
+        if (klassName != null && klassName.startsWith("org.metavm.lang.")) {
             throw new InternalException("Native method should be resolved by MethodResolver: " + klassName + "." + rawMethod.getName());
         }
         var isStatic = TranspileUtils.isStatic(rawMethod);
@@ -493,12 +533,26 @@ public class ExpressionResolver {
                 ensureTypeDeclared(NncUtils.requireNonNull(psiSelf.getType()));
             }
         }
-        var method = resolveMethod(expression);
+        var methodGenerics = expression.resolveMethodGenerics();
+        var substitutor = methodGenerics.getSubstitutor();
+        var psiMethod = (PsiMethod) requireNonNull(methodGenerics.getElement());
+        var type = (ClassType) typeResolver.resolveDeclaration(
+                substitutor.substitute(createTemplateType(requireNonNull(psiMethod.getContainingClass())))
+        );
+        List<Type> paramTypes = NncUtils.map(
+                psiMethod.getParameterList().getParameters(),
+                param -> typeResolver.resolveNullable(param.getType(), ResolutionStage.DECLARATION)
+        );
+        var method = type.getKlass().getSelfMethod(
+                m -> m.getName().equals(psiMethod.getName()) && m.getParameterTypes().equals(paramTypes)
+        );
+        var typeArgs = NncUtils.map(psiMethod.getTypeParameters(),
+                tp -> typeResolver.resolveDeclaration(substitutor.substitute(tp)));
         var psiArgs = expression.getArgumentList().getExpressions();
         for (var psiArg : psiArgs) {
              resolve(psiArg, context);
         }
-        var node = methodGenerator.createMethodCall(method);
+        var node = methodGenerator.createMethodCall(new MethodRef(type, method, typeArgs));
         setCapturedVariables(node);
         return node;
     }
@@ -506,9 +560,13 @@ public class ExpressionResolver {
     void setCapturedVariables(CallNode node) {
         var flow = node.getFlowRef();
         var capturedTypeSet = new HashSet<CapturedType>();
-        if (flow instanceof MethodRef methodRef)
-            methodRef.getDeclaringType().getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
-        flow.getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
+        if (flow instanceof MethodRef methodRef) {
+            var declaringType = methodRef.getDeclaringType();
+            if(declaringType.isParameterized())
+                declaringType.getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
+        }
+        if(flow.isParameterized())
+            flow.getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
         var capturedTypes = new ArrayList<>(capturedTypeSet);
         var psiCapturedTypes = NncUtils.map(capturedTypes, typeResolver::getPsiCapturedType);
         var capturedPsiExpressions = NncUtils.mapAndFilterByType(psiCapturedTypes, PsiCapturedWildcardType::getContext, PsiExpression.class);
@@ -527,8 +585,8 @@ public class ExpressionResolver {
         node.setCapturedVariableTypes(captureVariableTypes);
     }
 
-    private Node createSAMConversion(Klass samInterface) {
-        var func = StdFunction.functionToInstance.get().getParameterized(List.of(samInterface.getType()));
+    private Node createSAMConversion(ClassType samInterface) {
+        var func = StdFunction.functionToInstance.get().getParameterized(List.of(samInterface));
         return methodGenerator.createFunctionCall(func);
     }
 
@@ -536,32 +594,6 @@ public class ExpressionResolver {
     private Node getQualifier(@Nullable PsiExpression qualifierExpression, ResolutionContext context) {
         return qualifierExpression == null ? loadThis()
                 : resolve(requireNonNull(qualifierExpression), context);
-    }
-
-    private Method resolveMethod(PsiCallExpression expression) {
-        var methodGenerics = expression.resolveMethodGenerics();
-        var substitutor = methodGenerics.getSubstitutor();
-        var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
-        var declaringType = Types.resolveKlass(typeResolver.resolveDeclaration(
-                substitutor.substitute(TranspileUtils.createTemplateType(requireNonNull(method.getContainingClass())))
-        ));
-        var psiParameters = NncUtils.requireNonNull(method.getParameterList()).getParameters();
-        var template = declaringType.getEffectiveTemplate();
-        List<Type> rawParamTypes = NncUtils.map(
-                psiParameters,
-                param -> typeResolver.resolveNullable(param.getType(), ResolutionStage.DECLARATION)
-        );
-        var templateMethod = template.getMethodByNameAndParamTypes(method.getName(), rawParamTypes).getEffectiveVerticalTemplate();
-        Method piFlow = Objects.requireNonNull(template != declaringType ? declaringType.findMethodByVerticalTemplate(templateMethod) : templateMethod);
-        Method flow;
-        if (piFlow.getTypeParameters().isEmpty()) {
-            flow = piFlow;
-        } else {
-            var flowTypeArgs = NncUtils.map(method.getTypeParameters(),
-                    typeParam -> typeResolver.resolveDeclaration(substitutor.substitute(typeParam)));
-            flow = piFlow.getParameterized(flowTypeArgs);
-        }
-        return flow;
     }
 
     private Node resolveNew(PsiNewExpression expression, ResolutionContext context) {
@@ -605,36 +637,34 @@ public class ExpressionResolver {
         if (resolver != null)
             return resolver.resolve(expression, this, methodGenerator);
         if (expression.getType() instanceof PsiClassType psiClassType) {
-            var klass = Types.resolveKlass(typeResolver.resolve(psiClassType));
+            var type = (ClassType) typeResolver.resolve(psiClassType);
             NncUtils.map(
                     requireNonNull(expression.getArgumentList()).getExpressions(),
                     expr -> resolve(expr, context)
             );
             var methodGenerics = expression.resolveMethodGenerics();
-            NewObjectNode node;
-            if (methodGenerics.getElement() == null) {
-                var flow = klass.getDefaultConstructor();
-                node = methodGenerator.createNew(flow, false, false);
-            } else {
-                var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
-                var substitutor = methodGenerics.getSubstitutor();
-                var paramTypes = NncUtils.map(
-                        requireNonNull(method.getParameterList()).getParameters(),
-                        param -> resolveParameterType(param, substitutor)
-                );
-                var flow = klass.getMethodByNameAndParamTypes(Types.getConstructorName(klass), paramTypes);
-                node = methodGenerator.createNew(flow, false, false);
-            }
+            var qualifier = expression.getQualifier();
+            if(qualifier != null)
+                resolve(qualifier, context);
+            var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
+            var paramTypes = NncUtils.map(method.getParameterList().getParameters(),
+                    p -> typeResolver.resolveNullable(p.getType(), ResolutionStage.DECLARATION));
+            var klass = type.getKlass();
+            var flow = klass.getMethod(m -> m.isConstructor() && m.getParameterTypes().equals(paramTypes));
+            var typeArgs = NncUtils.map(
+                    method.getTypeParameters(),
+                    tp -> typeResolver.resolveDeclaration(methodGenerics.getSubstitutor().substitute(tp))
+            );
+            var methodRef = new MethodRef(type, flow, typeArgs);
+            var node = qualifier == null ?
+                    methodGenerator.createNew(methodRef, false, false) :
+                    methodGenerator.createNewChild(methodRef);
             setCapturedVariables(node);
             return node;
         } else {
             // TODO support new array instance
             throw new InternalException("Unsupported NewExpression: " + expression);
         }
-    }
-
-    private Type resolveParameterType(PsiParameter param, PsiSubstitutor substitutor) {
-        return typeResolver.resolveNullable(substitutor.substitute(param.getType()), ResolutionStage.INIT);
     }
 
     private Node resolveAssignment(PsiAssignmentExpression expression, ResolutionContext context) {
@@ -676,40 +706,39 @@ public class ExpressionResolver {
 
     private Node resolveDirectAssignment(PsiExpression assigned, PsiExpression assignment, ResolutionContext context) {
         if(assigned instanceof PsiReferenceExpression refExpr) {
-            var target = refExpr.resolve();
+            var generics = refExpr.advancedResolve(false);
+            var target = generics.getElement();
             Node node;
             if (target instanceof PsiVariable variable) {
                 if (variable instanceof PsiField psiField) {
                     if (TranspileUtils.isStatic(psiField)) {
-                        var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.createType(psiField.getContainingClass()))).resolve();
-                        var field = klass.getStaticFieldByName(psiField.getName());
+                        var classType = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.createType(psiField.getContainingClass())));
+                        var field = classType.getKlass().getSelfStaticFieldByName(psiField.getName());
                         node = resolve(assignment, context);
                         methodGenerator.createDup();
-                        methodGenerator.createSetStatic(field);
+                        methodGenerator.createSetStatic(new FieldRef(classType, field));
                     } else {
-                        //noinspection DuplicatedCode
-                        ClassType instanceType;
                         if (refExpr.getQualifierExpression() != null) {
                             resolve(refExpr.getQualifierExpression(), context);
-                            Values.node(methodGenerator.createNonNull());
-                            instanceType = ((ClassType) typeResolver.resolveDeclaration(refExpr.getQualifierExpression().getType()));
-                        } else {
+                            methodGenerator.createNonNull();
+                        } else
                             loadThis();
-                            instanceType = methodGenerator.getThisType();
-                        }
-                        var instanceKlass = instanceType.resolve();
-                        var field = instanceKlass.getFieldByName(psiField.getName());
+                        var type = (ClassType) typeResolver.resolveDeclaration(
+                                generics.getSubstitutor().substitute(
+                                        createTemplateType(requireNonNull(psiField.getContainingClass()))
+                                )
+                        );
+                        var field = type.getKlass().getSelfFieldByName(psiField.getName());
                         node = resolve(assignment, context);
                         methodGenerator.createDupX1();
-                        methodGenerator.createSetField(field);
+                        methodGenerator.createSetField(new FieldRef(type, field));
                     }
                 } else {
-                    var lambda = currentLambda();
                     int contextIndex;
                     var index = TranspileUtils.getVariableIndex(variable);
                     node = resolve(assignment, context);
                     methodGenerator.createDup();
-                    if(lambda != null && (contextIndex = TranspileUtils.getContextIndex(variable, lambda)) >= 0)
+                    if((contextIndex = TranspileUtils.getContextIndex(variable, assigned)) >= 0)
                         methodGenerator.createStoreContextSlot(contextIndex, index);
                     else
                         methodGenerator.createStore(index);
@@ -738,42 +767,41 @@ public class ExpressionResolver {
                                            Runnable action2,
                                            ResolutionContext context) {
         if(operand instanceof PsiReferenceExpression refExpr) {
-            var target = refExpr.resolve();
+            var generics = refExpr.advancedResolve(false);
+            var target = generics.getElement();
             Node assignment;
             if (target instanceof PsiVariable variable) {
                 if (variable instanceof PsiField psiField) {
                     if (TranspileUtils.isStatic(psiField)) {
-                        var klass = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.createType(psiField.getContainingClass()))).resolve();
-                        var field = klass.getStaticFieldByName(psiField.getName());
-                        assignment = methodGenerator.createGetStatic(field);
+                        var classType = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.createType(psiField.getContainingClass())));
+                        var field = classType.getKlass().getSelfStaticFieldByName(psiField.getName());
+                        assignment = methodGenerator.createGetStatic(new FieldRef(classType, field));
                         assignment = action1.apply(assignment);
                         methodGenerator.createDup();
                         action2.run();
-                        methodGenerator.createSetStatic(field);
+                        methodGenerator.createSetStatic(new FieldRef(classType, field));
                     } else {
-                        //noinspection DuplicatedCode
-                        ClassType instanceType;
                         if (refExpr.getQualifierExpression() != null) {
                             resolve(refExpr.getQualifierExpression(), context);
-                            Values.node(methodGenerator.createNonNull());
-                            instanceType = ((ClassType) typeResolver.resolveDeclaration(refExpr.getQualifierExpression().getType()));
-                        } else {
+                            methodGenerator.createNonNull();
+                        } else
                             loadThis();
-                            instanceType = methodGenerator.getThisType();
-                        }
                         methodGenerator.createDup();
-                        var instanceKlass = instanceType.resolve();
-                        var field = instanceKlass.getFieldByName(psiField.getName());
-                        assignment = methodGenerator.createGetProperty(field);
+                        var type = (ClassType) typeResolver.resolveDeclaration(
+                                generics.getSubstitutor().substitute(
+                                        createTemplateType(requireNonNull(psiField.getContainingClass()))
+                                )
+                        );
+                        var field = type.getKlass().getSelfFieldByName(psiField.getName());
+                        assignment = methodGenerator.createGetProperty(new FieldRef(type, field));
                         assignment = action1.apply(assignment);
                         methodGenerator.createDupX1();
                         action2.run();
-                        methodGenerator.createSetField(field);
+                        methodGenerator.createSetField(new FieldRef(type, field));
                     }
                 } else {
-                    var lambda = currentLambda();
-                    int contextIndex = -1;
-                    var captured = lambda != null && (contextIndex = TranspileUtils.getContextIndex(variable, lambda)) >= 0;
+                    int contextIndex;
+                    var captured = (contextIndex = TranspileUtils.getContextIndex(variable, operand)) >= 0;
                     var index = TranspileUtils.getVariableIndex(variable);
                     var type = typeResolver.resolveDeclaration(operand.getType());
                     if(captured)
@@ -960,7 +988,7 @@ public class ExpressionResolver {
             parameters.add(resolveParameter(psiParameter));
             psiParameter.putUserData(Keys.VARIABLE_INDEX, i++);
         }
-        var funcInterface = Types.resolveKlass(typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType()));
+        var funcInterface = (ClassType) typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType());
         var lambda = new Lambda(null, parameters, returnType, methodGenerator.getMethod());
         methodGenerator.enterScope(lambda.getCode());
         if (expression.getBody() instanceof PsiExpression bodyExpr) {

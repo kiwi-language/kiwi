@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.Entity;
 import org.metavm.object.instance.core.Id;
@@ -11,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.function.Consumer;
 
+@Slf4j
 public abstract class MvOutput extends OutputStream {
 
     private final OutputStream out;

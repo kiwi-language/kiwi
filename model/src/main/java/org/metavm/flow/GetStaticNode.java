@@ -26,13 +26,18 @@ public class GetStaticNode extends Node {
     }
 
     @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
+    @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitGetStaticNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write(propertyRef.resolve().getQualifiedName());
+        writer.write("getstatic " + propertyRef);
     }
 
     @Override

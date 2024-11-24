@@ -55,4 +55,9 @@ public class InstanceOfNode extends Node {
         return Types.getBooleanType();
     }
 
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
 }

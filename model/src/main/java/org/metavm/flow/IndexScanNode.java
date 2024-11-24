@@ -22,6 +22,11 @@ public class IndexScanNode extends Node {
         return new ArrayType(getIndex().getDeclaringType().getType(), ArrayKind.READ_ONLY);
     }
 
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
     public Index getIndex() {
         return indexRef.resolve();
     }

@@ -30,8 +30,13 @@ public class GetPropertyNode extends Node {
     }
 
     @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
+    @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("getProperty " + propertyRef.resolve().getName());
+        writer.write("getProperty " + propertyRef);
     }
 
     @Override

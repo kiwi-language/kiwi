@@ -36,6 +36,11 @@ public class RaiseNode extends Node {
     }
 
     @Override
+    public boolean hasOutput() {
+        return false;
+    }
+
+    @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitRaiseNode(this);
     }

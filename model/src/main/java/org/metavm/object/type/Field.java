@@ -132,7 +132,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         if (unique && isArray()) {
             throw BusinessException.invalidField(this, "Array fields can not be unique");
         }
-        Index constraint = declaringType.getUniqueConstraint(List.of(this));
+        Index constraint = declaringType.findSelfUniqueConstraint(List.of(this));
         if (constraint != null && !unique) {
             declaringType.removeConstraint(constraint);
         }
@@ -239,7 +239,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     public boolean isUnique() {
-        return declaringType.getUniqueConstraint(List.of(this)) != null;
+        return declaringType.findSelfUniqueConstraint(List.of(this)) != null;
     }
 
     public boolean isNotNull() {

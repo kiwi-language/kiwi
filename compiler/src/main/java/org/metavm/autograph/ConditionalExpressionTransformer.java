@@ -10,7 +10,7 @@ public class ConditionalExpressionTransformer extends VisitorBase {
 
     @Override
     public void visitConditionalExpression(PsiConditionalExpression expression) {
-        var statement = requireNonNull(TranspileUtils.getParent(expression, PsiStatement.class));
+        var statement = requireNonNull(TranspileUtils.findParent(expression, PsiStatement.class));
         var scope = requireNonNull(statement.getUserData(Keys.SCOPE));
         var varName = namer.newName("conditional", scope.getAllDefined());
         var varDecl = (PsiDeclarationStatement) TranspileUtils.createStatementFromText(String.format("%s %s;",

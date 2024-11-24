@@ -12,13 +12,10 @@ public class DefaultConstructorCreator extends VisitorBase {
 
     @Override
     public void visitClass(PsiClass psiClass) {
-        if(TranspileUtils.isDiscarded(psiClass) || psiClass instanceof PsiAnonymousClass)
-            return;
         super.visitClass(psiClass);
-        if(psiClass instanceof PsiTypeParameter || psiClass.isInterface())
+        if(psiClass instanceof PsiTypeParameter || psiClass.isInterface() || psiClass instanceof PsiAnonymousClass)
             return;
-        boolean hashConstructor = NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor);
-        if (!psiClass.isInterface() && !hashConstructor) {
+        if (!NncUtils.anyMatch(List.of(psiClass.getMethods()), PsiMethod::isConstructor)) {
             psiClass.addBefore(TranspileUtils.createConstructor(psiClass.getName(), !psiClass.isEnum()), null);
         }
     }

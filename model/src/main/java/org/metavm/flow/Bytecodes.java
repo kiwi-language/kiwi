@@ -79,6 +79,8 @@ public class Bytecodes {
     public static final int POP = 84;
     public static final int DUP_X1 = 85;
     public static final int DUP_X2 = 86;
+    public static final int LOAD_PARENT = 87;
+    public static final int NEW_CHILD = 88;
 
     private static final String[] names = new String[256];
 

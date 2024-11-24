@@ -44,7 +44,9 @@ public class FieldRef extends ValueElement implements PropertyRef {
 //        logger.info("resolving field: " + rawField.getName() + " in klass " + klass);
         return resolved = rawField.isStatic() ?
                 klass.findStaticField(f -> f.getEffectiveTemplate() == rawField) :
-                klass.getField(f -> f.getEffectiveTemplate() == rawField);
+                Objects.requireNonNull(
+                        klass.findField(f -> f.getEffectiveTemplate() == rawField),
+                        () -> "Cannot find field with template " + rawField.getQualifiedName() + " in klass " + klass.getTypeDesc());
     }
 
     @Override
@@ -66,7 +68,7 @@ public class FieldRef extends ValueElement implements PropertyRef {
 
     @Override
     protected String toString0() {
-        return "{\"declaringType: \"" + declaringType + "\", \"rawField\": \"" + rawField.getName() + "\"}";
+        return declaringType.getTypeDesc() + "." + rawField.getName();
     }
 
     public void write(MvOutput output) {

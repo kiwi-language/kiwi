@@ -28,7 +28,12 @@ public class IndexSelectNode extends Node {
     @Override
     @NotNull
     public ClassType getType() {
-        return new ClassType(StdKlass.arrayList.get(), List.of(getIndex().getDeclaringType().getType()));
+        return new ClassType(null, StdKlass.arrayList.get(), List.of(getIndex().getDeclaringType().getType()));
+    }
+
+    @Override
+    public boolean hasOutput() {
+        return true;
     }
 
     @Override

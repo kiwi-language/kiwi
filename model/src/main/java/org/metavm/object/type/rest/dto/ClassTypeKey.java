@@ -23,7 +23,7 @@ public record ClassTypeKey(@NotNull Id id) implements TypeKey, GenericDeclaratio
 
     @Override
     public ClassType toType(TypeDefProvider typeDefProvider) {
-        return new ClassType(typeDefProvider.getKlass(id), List.of());
+        return new ClassType(null, typeDefProvider.getKlass(id), List.of());
     }
 
     @Override

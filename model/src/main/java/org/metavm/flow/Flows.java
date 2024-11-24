@@ -117,7 +117,7 @@ public class Flows {
 
     public static Method saveValuesMethod(Klass klass) {
         assert klass.isEnum();
-        var m = klass.findMethod(Flows::isValuesMethod);
+        var m = klass.findSelfMethod(Flows::isValuesMethod);
         if(m == null) {
             m = MethodBuilder.newBuilder(klass, "values")
                     .isStatic(true)
@@ -129,7 +129,7 @@ public class Flows {
 
     public static void generateValuesMethodBody(Klass klass) {
         assert klass.isEnum();
-        var valuesMethod = klass.getMethod(Flows::isValuesMethod);
+        var valuesMethod = klass.getSelfMethod(Flows::isValuesMethod);
         valuesMethod.clearContent();
         var code = valuesMethod.getCode();
         var arrayType = new ArrayType(klass.getType(), ArrayKind.READ_WRITE);

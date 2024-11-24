@@ -1,11 +1,20 @@
 package org.metavm.entity;
 
-import org.metavm.util.NncUtils;
-
 public interface GenericElement {
 
     default Object getSelfOrCopySource() {
-        return NncUtils.getOrElse(getCopySource(), s -> s, this);
+        var copySource = getCopySource();
+        return copySource != null ? copySource : this;
+    }
+
+    default Object getRootCopySource() {
+        var e = this;
+        while (true) {
+            var s = (GenericElement) e.getCopySource();
+            if(s == null)
+                return e;
+            e = s;
+        }
     }
 
     Object getCopySource();

@@ -43,4 +43,9 @@ public class DupX2Node extends Node {
     public Type getType() {
         return Types.getAnyType();
     }
+
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
 }

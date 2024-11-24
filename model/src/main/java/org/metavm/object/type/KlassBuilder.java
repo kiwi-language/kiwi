@@ -2,6 +2,7 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.Attribute;
+import org.metavm.flow.Flow;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -39,6 +40,8 @@ public class KlassBuilder {
     private Integer sourceTag;
     private final List<Attribute> attributes = new ArrayList<>();
     private int since = 0;
+    private @Nullable Flow enclosingFlow;
+    private @Nullable Klass declaringKlass;
 
     private KlassBuilder(String name, @Nullable String qualifiedName) {
         this.name = name;
@@ -174,6 +177,16 @@ public class KlassBuilder {
         return this;
     }
 
+    public KlassBuilder enclosingFlow(@Nullable Flow flow) {
+        this.enclosingFlow = flow;
+        return this;
+    }
+
+    public KlassBuilder declaringKlass(@Nullable Klass declaringKlass) {
+        this.declaringKlass = declaringKlass;
+        return this;
+    }
+
     public Klass build() {
         NncUtils.requireFalse(done, "Build has already been invoked");
         done = true;
@@ -205,6 +218,8 @@ public class KlassBuilder {
                     desc,
                     isAbstract,
                     isTemplate,
+                    enclosingFlow,
+                    declaringKlass,
                     typeParameters,
                     typeArguments,
                     tag,

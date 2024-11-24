@@ -6,6 +6,7 @@ import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiModifier;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
+import org.metavm.flow.MethodRef;
 import org.metavm.flow.Node;
 import org.metavm.object.type.ClassType;
 import org.metavm.util.NncUtils;
@@ -45,18 +46,18 @@ public class ListOfResolver implements MethodCallResolver {
         var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
         var listType = (ClassType) expressionResolver.getTypeResolver().resolve(
                 methodGenerics.getSubstitutor().substitute(method.getReturnType()));
-        var arrayListKlass = StdKlass.arrayList.get().getParameterized(List.of(listType.getFirstTypeArgument()));
+        var arrayListKlass = StdKlass.arrayList.get();
+        var arrayListType = new ClassType(null, arrayListKlass, List.of(listType.getFirstTypeArgument()));
         var list = methodGenerator.createNew(
-                arrayListKlass.getDefaultConstructor(),
+                new MethodRef(arrayListType, arrayListKlass.getDefaultConstructor(), List.of()),
                 false,
                 true);
-        var addMethod = arrayListKlass.getMethod(m -> m.getEffectiveVerticalTemplate() == StdMethod.arrayListAdd.get());
         var expressions = methodCallExpression.getArgumentList().getExpressions();
         for (PsiExpression psiExpression : expressions) {
             methodGenerator.createDup();
             expressionResolver.resolve(psiExpression);
             methodGenerator.createMethodCall(
-                    addMethod,
+                    new MethodRef(arrayListType, StdMethod.arrayListAdd.get(), List.of()),
                     List.of(),
                     List.of()
             );

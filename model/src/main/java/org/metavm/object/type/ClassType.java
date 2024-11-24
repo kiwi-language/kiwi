@@ -25,30 +25,36 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
 
     public static final Logger logger = LoggerFactory.getLogger(ClassType.class);
 
+    private final @Nullable ClassType owner;
     private final Klass klass;
-    private final @Nullable ValueArray<Type> typeArguments;
+    private @Nullable ValueArray<Type> typeArguments;
     @CopyIgnore
     private transient TypeSubstitutor substitutor;
     @CopyIgnore
+    private transient Klass partialResolved;
+    @CopyIgnore
     private transient Klass resolved;
 
-    public ClassType(@NotNull Klass klass, List<Type> typeArguments) {
+    public ClassType(@Nullable ClassType owner, @NotNull Klass klass, List<Type> typeArguments) {
 //        if (klass.isParameterized())
 //            throw new InternalException("Can not use a parameterized klass for a ClassType. klass: " + klass.getTypeDesc());
 //        if(typeArguments.equals(NncUtils.map(klass.getTypeParameters(), TypeVariable::getType)))
 //            throw new InternalException("Trying to create an raw class type using type arguments for klass: " + klass.getTypeDesc());
 //        if(klass == DummyKlass.INSTANCE)
 //            throw new IllegalArgumentException("Creating ClassType with dummy klass");
+        assert klass.getTemplate() == null && (klass.isLocal() || klass.getCopySource() == null);
+        this.owner = owner;
         this.klass = klass;
         this.typeArguments = typeArguments.isEmpty() ? null : new ValueArray<>(Type.class, typeArguments);
     }
 
     public ClassType trySimplify() {
-        if(!EntityProxyFactory.isDummy(klass)
-                && typeArguments != null && klass.getTypeArguments().equals(typeArguments.toList()))
-            return klass.getType();
-        else
-            return this;
+        if(!EntityProxyFactory.isDummy(klass) && typeArguments != null) {
+            var p = partialResolve();
+            if(typeArguments.toList().equals(p.getTypeArguments()))
+                return new ClassType(owner, klass, List.of());
+        }
+        return this;
     }
 
     @Override
@@ -58,12 +64,14 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
 
     @Override
     public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
-        return typeArguments == null ?
+        return owner == null && typeArguments == null ?
                 (getTypeTag() > 0 ?
                         new TaggedClassTypeKey(getTypeDefId.apply(klass), getTypeTag()) :
                         new ClassTypeKey(getTypeDefId.apply(klass))
                 ) :
-                new ParameterizedTypeKey(klass.getId(), NncUtils.map(typeArguments, type -> type.toTypeKey(getTypeDefId)));
+                new ParameterizedTypeKey(
+                        owner != null ? owner.toTypeKey(getTypeDefId) : null,
+                        klass.getId(), NncUtils.map(typeArguments, type -> type.toTypeKey(getTypeDefId)));
     }
 
     @Override
@@ -84,7 +92,7 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
     }
 
     public Type getFirstTypeArgument() {
-        return resolve().getFirstTypeArgument();
+        return getTypeArguments().get(0);
     }
 
     public Type getIterableElementType() {
@@ -97,16 +105,18 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
 
     public List<Type> getTypeArguments() {
         // the type arguments should be the list of type parameters for a raw ClassType
-        return typeArguments != null ? typeArguments.toList() : klass.getTypeArguments();
+        return typeArguments != null ? typeArguments.toList() : partialResolve().getTypeArguments();
     }
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
         if (that instanceof ClassType thatClassType) {
-            if (typeArguments == null && thatClassType.typeArguments == null && klass == thatClassType.klass)
+            var k1 = partialResolve();
+            var k2 = thatClassType.partialResolve();
+            if (typeArguments == null && thatClassType.typeArguments == null && k1 == k2)
                 return true;
             if (typeArguments != null) {
-                var thatAncestor = thatClassType.findAncestor(klass);
+                var thatAncestor = thatClassType.findAncestor(k1);
                 if (thatAncestor != null)
                     return NncUtils.biAllMatch(typeArguments, thatAncestor.getTypeArguments(), Type::contains);
                 else
@@ -159,27 +169,38 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
             return type;
     }
 
+    public Klass partialResolve() {
+        if(partialResolved != null)
+            return partialResolved;
+        if(owner != null) {
+            partialResolved = owner.resolve().findInnerKlass(k1 -> k1.getRootCopySource() == klass);
+            if (partialResolved == null)
+                throw new NullPointerException("Cannot find inner class with template " + klass.getTypeDesc() + " in klass " + owner.resolve().getTypeDesc());
+            return partialResolved;
+        } else
+            return partialResolved = klass;
+    }
+
     public Klass resolve() {
-        if (resolved != null) {
+        if (resolved != null)
             return resolved;
-        }
-        if (typeArguments == null) {
-            resolved = klass;
-            return klass;
-        } else {
-            return resolved = klass.getParameterized(typeArguments.toList());
-        }
+        var p = partialResolve();
+        if (typeArguments == null)
+            resolved = p;
+        else
+           resolved = p.getParameterized(typeArguments.toList());
+        return resolved;
     }
 
     @Override
     protected boolean equals0(Object obj) {
-        return obj instanceof ClassType that && klass == that.klass &&
+        return obj instanceof ClassType that && Objects.equals(owner, that.owner) && klass == that.klass &&
                 Objects.equals(typeArguments, that.typeArguments);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(klass, typeArguments);
+        return Objects.hash(owner, klass, typeArguments);
     }
 
     @Override
@@ -239,7 +260,7 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
 
     @Override
     public void write(MvOutput output) {
-        if (typeArguments == null) {
+        if (owner == null && typeArguments == null) {
             var tag = getTypeTag();
             if (tag == 0) {
                 output.write(WireTypes.CLASS_TYPE);
@@ -251,29 +272,38 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
             }
         } else {
             output.write(WireTypes.PARAMETERIZED_TYPE);
+            if(owner != null)
+                owner.write(output);
+            else
+                output.write(WireTypes.NULL);
             output.writeEntityId(klass);
-            output.writeInt(typeArguments.size());
-            typeArguments.forEach(t -> t.write(output));
+            if(typeArguments == null)
+                output.writeInt(0);
+            else {
+                output.writeInt(typeArguments.size());
+                typeArguments.forEach(t -> t.write(output));
+            }
         }
     }
 
     public static ClassType read(MvInput input) {
-        return new ClassType(input.getKlass(input.readId()), List.of());
+        return new ClassType(null, input.getKlass(input.readId()), List.of());
     }
 
     public static ClassType readTagged(MvInput input) {
-        var type = new ClassType(input.getKlass(input.readId()), List.of());
+        var type = new ClassType(null, input.getKlass(input.readId()), List.of());
         input.readLong();
         return type;
     }
 
     public static ClassType readParameterized(MvInput input) {
+        var owner = (ClassType) input.readTypeNullable();
         var klass = input.getKlass(input.readId());
         int numTypeArgs = input.readInt();
         var typeArgs = new ArrayList<Type>(numTypeArgs);
         for (int i = 0; i < numTypeArgs; i++)
             typeArgs.add(Type.readType(input));
-        return new ClassType(klass, typeArgs);
+        return new ClassType(owner, klass, typeArgs);
     }
 
     public boolean isParameterized() {
@@ -295,13 +325,20 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
 
     @Override
     public void forEachTypeDef(Consumer<TypeDef> action) {
+        if(owner != null)
+            owner.forEachTypeDef(action);
         action.accept(klass);
         getTypeArguments().forEach(t -> t.forEachTypeDef(action));
     }
 
     @Override
     public String getTypeDesc() {
-        return resolve().getTypeDesc();
+        String prefix;
+        if(owner != null)
+            prefix =  owner.getTypeDesc() + "." + klass.getName();
+        else
+            prefix = klass.getTypeDesc();
+        return prefix + (typeArguments != null ? "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">" : "");
     }
 
     @Override
@@ -329,5 +366,10 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
     @Override
     public int getPrecedence() {
         return 0;
+    }
+
+    @Nullable
+    public ClassType getOwner() {
+        return owner;
     }
 }

@@ -21,6 +21,11 @@ public class GetUniqueNode extends Node {
     }
 
     @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
+    @Override
     public void writeContent(CodeWriter writer) {
         writer.write("getUnique(" + getIndex().getName() + ")");
     }

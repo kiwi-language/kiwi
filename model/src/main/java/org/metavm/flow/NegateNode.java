@@ -46,4 +46,9 @@ public class NegateNode extends Node {
     public Type getType() {
         return Types.getLongType();
     }
+
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
 }

@@ -46,4 +46,9 @@ public class NeNode extends Node {
         return Types.getBooleanType();
     }
 
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
 }

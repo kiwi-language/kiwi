@@ -283,9 +283,12 @@ public class Method extends Flow implements Property, GenericElement {
                     throw new InternalException("fail to invoke method: " + getQualifiedName() + ". root scope not present");
                 try {
                     Value[] argArray;
-                    if(self == null)
+                    ClosureContext closureContext;
+                    if(self == null) {
+                        closureContext = null;
                         argArray = arguments.toArray(Value[]::new);
-                    else {
+                    } else {
+                        closureContext = self.getClosureContext();
                         argArray = new Value[arguments.size() + 1];
                         argArray[0] = self.getReference();
                         int i = 1;
@@ -296,7 +299,7 @@ public class Method extends Flow implements Property, GenericElement {
                     result = new MetaFrame(callContext.instanceRepository()).execute(
                             getCode(),
                             argArray,
-                            null
+                            closureContext
                     );
                 } catch (Exception e) {
                     logger.info("Fail to execute method {}", getQualifiedName());
@@ -347,7 +350,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     public String getQualifiedName() {
-        return declaringType.getName() + "." + getNameWithTypeArguments();
+        return declaringType.getTypeDesc() + "." + getNameWithTypeArguments();
     }
 
     @Override
@@ -390,7 +393,7 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     public Method getUltimateTemplate() {
-        return getEffectiveVerticalTemplate().getEffectiveHorizontalTemplate().getEffectiveVerticalTemplate();
+        return (Method) getEffectiveHorizontalTemplate().getRootCopySource();
     }
 
     @Override

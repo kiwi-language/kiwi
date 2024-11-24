@@ -10,7 +10,6 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 
-import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.util.List;
 
@@ -32,10 +31,21 @@ public class KlassInput extends MvInput {
 
     public Klass readKlass() {
         var klass = getKlass(readId());
+        setKlassParent(klass);
         enterElement(klass);
         klass.read(this);
         exitElement();
         return klass;
+    }
+
+    protected void setKlassParent(Klass klass) {
+        var parent = elements.peek();
+        switch (parent) {
+            case null -> {}
+            case Flow f -> klass.setEnclosingFlow(f);
+            case Klass k -> klass.setDeclaringKlass(k);
+            default -> throw new IllegalStateException("Invalid enclosing element for klass: " + parent);
+        }
     }
 
     @Override
@@ -65,13 +75,6 @@ public class KlassInput extends MvInput {
 
     public Type readType() {
         return Type.readType(this);
-    }
-
-    public @Nullable Type readTypeNullable() {
-        int tag = read();
-        if(tag == WireTypes.NULL)
-            return null;
-        return Type.readType(tag, this);
     }
 
     public Field readField() {

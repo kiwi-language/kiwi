@@ -18,6 +18,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
+import java.util.LinkedList;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -851,4 +852,25 @@ public class Types {
         visiting.remove(klass);
     }
 
+    public static ClassType resolveAncestorType(ClassType type, Klass ancestorKlass) {
+       var queue = new LinkedList<ClassType>();
+       queue.offer(type);
+       while (!queue.isEmpty()) {
+           var t = queue.poll();
+           var k = t.getKlass();
+           if(k == ancestorKlass)
+               return t;
+           var typeParams = new ArrayList<Type>();
+           var typeArgs = new ArrayList<Type>();
+           var t1 = t;
+           while (t1 != null) {
+               typeParams.addAll(t1.getKlass().getTypeArguments());
+               typeArgs.addAll(t1.getTypeArguments());
+               t1 = t1.getOwner();
+           }
+           var typeSubst = new TypeSubstitutor(typeParams, typeArgs);
+           k.forEachSuperType(s -> queue.offer((ClassType) s.accept(typeSubst)));
+       }
+       throw new IllegalStateException("Klass " + type.getName() + " is not an inheritor of java.util.Iterable");
+    }
 }

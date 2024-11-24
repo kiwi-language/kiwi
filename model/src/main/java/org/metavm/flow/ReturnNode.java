@@ -41,6 +41,11 @@ public class ReturnNode extends Node {
     }
 
     @Override
+    public boolean hasOutput() {
+        return false;
+    }
+
+    @Override
     public boolean isExit() {
         return true;
     }

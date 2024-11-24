@@ -65,7 +65,8 @@ public class Assembler {
                     .includeNodeOutputType(false)
                     .includingValueType(false);
             for (var klass : generatedKlasses) {
-                writeClassFile(klass, targetDir, serContext);
+                if(!klass.isInner() && !klass.isLocal())
+                    writeClassFile(klass, targetDir, serContext);
             }
             logger.info("Compile successful");
             createArchive(targetDir);
@@ -493,7 +494,7 @@ public class Assembler {
             field.setStatic(isStatic);
             if (mods.contains(Modifiers.TITLE))
                 klass.setTitleField(field);
-            else if(klass.getTitleField() == field)
+            else if(klass.getSelfTitleField() == field)
                 klass.setTitleField(null);
             if(mods.contains(Modifiers.DELETED))
                 field.setState(MetadataState.REMOVED);
@@ -641,7 +642,7 @@ public class Assembler {
             super.visitTypeDef(name, typeCategory, isStruct, superType, interfaces, typeParameters, annotations, ctx, processBody);
             var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
             var klass = classInfo.getKlass();
-            var removedIndices = NncUtils.exclude(klass.getIndices(), classInfo.visitedIndices::contains);
+            var removedIndices = NncUtils.exclude(klass.getAllIndices(), classInfo.visitedIndices::contains);
             removedIndices.forEach(klass::removeConstraint);
         }
 
@@ -657,7 +658,7 @@ public class Assembler {
                     && method.getParameters().isEmpty()
                     && method.getReturnType() instanceof ClassType indexType
                     && !method.isStatic()) {
-                Index index = NncUtils.find(klass.getIndices(), idx -> Objects.equals(idx.getName(), name));
+                Index index = NncUtils.find(klass.getAllIndices(), idx -> Objects.equals(idx.getName(), name));
                 if (index == null) {
                     index = new Index(
                             klass,
@@ -702,7 +703,7 @@ public class Assembler {
         public Void visitEnumDeclaration(AssemblyParser.EnumDeclarationContext ctx) {
             var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
             var supers = addSupers(classInfo.rawName());
-            var pEnumType = new ClassType(getKlass(Enum.class.getName()), List.of(classInfo.getKlass().getType()));
+            var pEnumType = new ClassType(null, getKlass(Enum.class.getName()), List.of(classInfo.getKlass().getType()));
             supers.add(pEnumType);
             if (ctx.IMPLEMENTS() != null)
                 forEachClass(ctx.typeList(), supers::add);
@@ -751,7 +752,7 @@ public class Assembler {
             enterScope(currentClass);
             klass.setStruct(isStruct);
             if (typeCategory.isEnum())
-                currentClass.superType = new ClassType(getKlass(Enum.class.getName()), List.of(currentClass.getKlass().getType()));
+                currentClass.superType = new ClassType(null, getKlass(Enum.class.getName()), List.of(currentClass.getKlass().getType()));
             else if (superType != null)
                 currentClass.superType = (ClassType) parseType(superType, currentClass, getCompilationUnit());
             if (currentClass.superType != null)
@@ -760,12 +761,12 @@ public class Assembler {
                 klass.setSuperType(null);
             if (interfaces != null)
                 klass.setInterfaces(NncUtils.map(interfaces.typeType(), t -> (ClassType) parseType(t, scope, getCompilationUnit())));
-            var cinit = klass.findSelfMethod(m -> m.getName().equals("<cinit>")
+            var cinit = klass.findSelfMethod(m -> m.getName().equals("__cinit__")
                     && m.isStatic() && m.getParameters().isEmpty());
             if (cinit != null)
                 cinit.clearContent();
             else {
-                cinit = MethodBuilder.newBuilder(klass, "<cinit>")
+                cinit = MethodBuilder.newBuilder(klass, "__cinit__")
                         .isStatic(true)
                         .tmpId(NncUtils.randomNonNegative())
                         .access(Access.PRIVATE)
@@ -1132,7 +1133,7 @@ public class Assembler {
                 classOrInterfaceType.typeArguments().typeType(),
                 typeType1 -> parseType(typeType1, scope, compilationUnit)
         ) : List.of();
-        return new ClassType(getKlass(name), typeArguments);
+        return new ClassType(null, getKlass(name), typeArguments);
     }
 
     public Klass getKlass(String name) {

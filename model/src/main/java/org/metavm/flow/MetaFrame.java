@@ -196,12 +196,57 @@ public class MetaFrame implements Frame, CallContext {
                             for (int j = 0; j < numArgs; j++) {
                                 args.addFirst(stack[--top]);
                             }
-                            var type = method.getDeclaringType().getType();
+                            var klass = method.getDeclaringType();
+                            var type = klass.getType();
                             var self = ClassInstanceBuilder.newBuilder(type)
                                     .ephemeral(ephemeral)
+                                    .closureContext(klass.isLocal() ? new ClosureContext(closureContext, locals) : null)
                                     .build();
                             if (!self.isEphemeral() && !unbound)
                                 addInstance(self);
+                            //noinspection DuplicatedCode
+                            FlowExecResult result = method.execute(self, args, this);
+                            if (result.exception() != null) {
+                                pc = catchException(result.exception());
+                                if (pc == -1)
+                                    return new FlowExecResult(null, Objects.requireNonNull(exception));
+                            } else {
+                                if (result.ret() != null)
+                                    stack[top++] = result.ret();
+                            }
+                        }
+                        case Bytecodes.NEW_CHILD -> {
+                            //noinspection DuplicatedCode
+                            var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
+                            var method = (Method) constants[flowIndex];
+                            int numCapturedVars = (bytes[pc + 3] & 0xff) << 8 | bytes[pc + 4] & 0xff;
+                            pc += 5;
+                            if (numCapturedVars > 0) {
+                                var capturedVarIndexes = new int[numCapturedVars];
+                                var capturedVarTypes = new Type[numCapturedVars];
+                                //noinspection DuplicatedCode
+                                for (int i = 0; i < numCapturedVars; i++) {
+                                    capturedVarIndexes[i] = (bytes[pc] & 0xff) << 8 | bytes[pc + 1] & 0xff;
+                                    pc += 2;
+                                }
+                                for (int i = 0; i < numCapturedVars; i++) {
+                                    capturedVarTypes[i] = (Type) constants[(bytes[pc] & 0xff) << 8 | bytes[pc + 1] & 0xff];
+                                    pc += 2;
+                                }
+                                method = (Method) tryUncaptureFlow(method, capturedVarIndexes, capturedVarTypes, locals);
+                            }
+                            var parent = stack[--top].resolveObject();
+                            var args = new LinkedList<Value>();
+                            int numArgs = method.getParameters().size();
+                            for (int j = 0; j < numArgs; j++) {
+                                args.addFirst(stack[--top]);
+                            }
+                            var klass = method.getDeclaringType();
+                            var type = klass.getType();
+                            var self = ClassInstanceBuilder.newBuilder(type)
+                                    .closureContext(klass.isLocal() ? new ClosureContext(closureContext, locals) : null)
+                                    .build();
+                            parent.addChild(self);
                             //noinspection DuplicatedCode
                             FlowExecResult result = method.execute(self, args, this);
                             if (result.exception() != null) {
@@ -382,7 +427,7 @@ public class MetaFrame implements Frame, CallContext {
                             var index = (Index) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                             var result = instanceRepository().indexSelect(loadIndexKey(index, stack, top));
                             top -= index.getFields().size();
-                            var type = new ClassType(StdKlass.arrayList.get(), List.of(index.getDeclaringType().getType()));
+                            var type = new ClassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType().getType()));
                             var list = ClassInstance.allocate(type);
                             var listNative = new ListNative(list);
                             listNative.List(this);
@@ -657,6 +702,12 @@ public class MetaFrame implements Frame, CallContext {
                             top++;
                             pc++;
                         }
+                        case Bytecodes.LOAD_PARENT -> {
+                            var v = stack[--top];
+                            var idx = (bytes[pc + 1] & 0xff) << 8 | (bytes[pc + 2] & 0xff);
+                            stack[top++] = requireNonNull(v.resolveObject().getParent(idx)).getReference();
+                            pc += 3;
+                        }
                         default -> throw new IllegalStateException("Invalid bytecode: " + b);
                     }
                 } catch (Exception e) {
@@ -714,21 +765,6 @@ public class MetaFrame implements Frame, CallContext {
         }
         else
             return flow;
-    }
-
-    @SuppressWarnings("unused")
-    private void checkResult(Value result, Node node) {
-        Type outputType = node.getType();
-        if (outputType == null || outputType.isVoid()) {
-            if (result != null) {
-                throw new InternalException("Node " + node + " can not return a result value");
-            }
-        } else {
-            if (!outputType.isInstance(result)) {
-                throw new InternalException("Node " + node + " returned a result '" + result
-                        + "' that is not an instance of the output type: " + outputType);
-            }
-        }
     }
 
     public ClassInstance getThrow() {

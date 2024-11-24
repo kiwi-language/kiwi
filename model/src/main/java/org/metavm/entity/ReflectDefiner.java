@@ -56,10 +56,13 @@ public class ReflectDefiner {
         var kind = javaClass.isEnum() ? ClassKind.ENUM : (javaClass.isInterface() ? ClassKind.INTERFACE :
                 (ValueObject.class.isAssignableFrom(javaClass) ? ClassKind.VALUE : ClassKind.CLASS));
         var code = javaClass.getName().replace('$', '.');
+        var declaringKlass = javaClass.getDeclaringClass() != null ?
+                getKlass.apply(javaClass.getDeclaringClass()) : null;
         klass = KlassBuilder.newBuilder(javaClass.getSimpleName(), code)
                 .tag(tag)
                 .source(ClassSource.BUILTIN)
                 .kind(kind)
+                .declaringKlass(declaringKlass)
                 .isAbstract(Modifier.isAbstract(javaClass.getModifiers()))
                 .build();
         addKlass.accept(javaClass, klass);
