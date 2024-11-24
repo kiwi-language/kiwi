@@ -300,11 +300,10 @@ public class MethodGenerator {
 
     Node createTypeCast(Type targetType) {
         targetType = Types.getNullableType(targetType);
-        return createFunctionCall(StdFunction.typeCast.get().getParameterized(List.of(targetType)));
+        return createFunctionCall(new FunctionRef(StdFunction.typeCast.get(), List.of(targetType)));
     }
 
-    FunctionCallNode createFunctionCall(Function function) {
-        var functionRef = function.getRef();
+    FunctionCallNode createFunctionCall(FunctionRef functionRef) {
         return onNodeCreated(new FunctionCallNode(
                 nextName(functionRef.getRawFlow().getName()),
                 code().getLastNode(), code(),

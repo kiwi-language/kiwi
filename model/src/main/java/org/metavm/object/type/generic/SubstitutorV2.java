@@ -39,6 +39,9 @@ public class SubstitutorV2 extends CopyVisitor {
                          Object existingRoot,
                          ResolutionStage stage) {
         super(root, true);
+//        if(DebugEnv.flag) {
+//            logger.debug("Creating substitutor", new Exception());
+//        }
         if (typeParameters.size() != typeArguments.size()) {
             logger.info("#type parameters != #type arguments. root: {}", EntityUtils.getEntityDesc(root));
         }

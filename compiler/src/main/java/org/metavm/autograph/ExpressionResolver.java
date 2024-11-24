@@ -586,8 +586,8 @@ public class ExpressionResolver {
     }
 
     private Node createSAMConversion(ClassType samInterface) {
-        var func = StdFunction.functionToInstance.get().getParameterized(List.of(samInterface));
-        return methodGenerator.createFunctionCall(func);
+        var funcRef = new FunctionRef(StdFunction.functionToInstance.get(), List.of(samInterface));
+        return methodGenerator.createFunctionCall(funcRef);
     }
 
     @SuppressWarnings("UnusedReturnValue")

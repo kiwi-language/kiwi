@@ -4,7 +4,9 @@ import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import org.metavm.flow.Function;
+import org.metavm.flow.FunctionRef;
 import org.metavm.flow.Node;
+import org.metavm.object.type.Type;
 import org.metavm.util.NncUtils;
 
 import java.util.List;
@@ -28,15 +30,17 @@ public class NativeFunctionCallResolver implements MethodCallResolver {
     @Override
     public Node resolve(PsiMethodCallExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
         var function = this.function;
+        List<Type> typeArgs;
         if (function.isTemplate()) {
             var methodGenerics = methodCallExpression.resolveMethodGenerics();
             var subst = methodGenerics.getSubstitutor();
             var method = (PsiMethod) Objects.requireNonNull(methodGenerics.getElement());
-            var typeArgs = NncUtils.map(method.getTypeParameters(),
+            typeArgs = NncUtils.map(method.getTypeParameters(),
                     tp -> methodGenerator.getTypeResolver().resolve(subst.substitute(tp))
             );
-            function = function.getParameterized(typeArgs);
         }
+        else
+            typeArgs = List.of();
         var paramIt = function.getParameters().iterator();
         if (!signature.isStatic()) {
             expressionResolver.resolve(methodCallExpression.getMethodExpression().getQualifierExpression());
@@ -48,7 +52,7 @@ public class NativeFunctionCallResolver implements MethodCallResolver {
             if(paramIt.next().getType().isNotNull())
                 methodGenerator.createNonNull();
         }
-        var node = methodGenerator.createFunctionCall(function);
+        var node = methodGenerator.createFunctionCall(new FunctionRef(function, typeArgs));
         expressionResolver.setCapturedVariables(node);
         return node;
     }

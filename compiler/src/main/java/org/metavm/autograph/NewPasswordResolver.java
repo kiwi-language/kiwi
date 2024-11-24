@@ -25,6 +25,6 @@ public class NewPasswordResolver implements NewResolver {
     @Override
     public Node resolve(PsiNewExpression methodCallExpression, ExpressionResolver expressionResolver, MethodGenerator methodGenerator) {
         expressionResolver.resolve(requireNonNull(methodCallExpression.getArgumentList()).getExpressions()[0]);
-        return methodGenerator.createFunctionCall(StdFunction.password.get());
+        return methodGenerator.createFunctionCall(StdFunction.password.get().getRef());
     }
 }
