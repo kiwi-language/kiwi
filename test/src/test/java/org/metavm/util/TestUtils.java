@@ -304,10 +304,8 @@ public class TestUtils {
     public static CommonManagers createCommonManagers(BootstrapResult bootResult) {
         var entityContextFactory = bootResult.entityContextFactory();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
-        var entityQueryService = new EntityQueryService(instanceQueryService);
         var transactionOps = new MockTransactionOperations();
-        var taskManager = new TaskManager(entityContextFactory, transactionOps);
-        var typeManager = new TypeManager(entityContextFactory, entityQueryService, taskManager, new BeanManager());
+        var typeManager = new TypeManager(entityContextFactory, new BeanManager());
         var flowExecutionService = new FlowExecutionService(entityContextFactory);
         var instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
         var scheduler = new Scheduler(entityContextFactory, transactionOps);

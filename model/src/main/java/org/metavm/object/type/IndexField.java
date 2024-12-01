@@ -80,7 +80,7 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
         if (Instances.isPrimitive(entity) || context.containsEntity(entity))
             return context.getObjectInstanceMap().getInstance(entity);
         else
-            throw new InternalException("Entity " + entity + " not found in the context");
+            throw new InternalException("Entity " + entity.getClass().getName() + " " + entity + " not found in the context");
 
     }
 

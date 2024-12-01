@@ -304,7 +304,7 @@ public class DDLTest extends TestCase {
                 var productKlass1 = context.getKlassByQualifiedName("Product");
                 var priceKlass1 = context.getKlassByQualifiedName("Price");
                 var currencyKlass1 = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "Currency"));
-                var sft = StaticFieldTable.getInstance(currencyKlass1, context);
+                var sft = StaticFieldTable.getInstance(currencyKlass1.getType(), context);
                 var yuan = sft.getEnumConstants().get(0);
                 var instCtx = context.getInstanceContext();
                 var price = ClassInstanceBuilder.newBuilder(priceKlass1.getType())
@@ -783,11 +783,11 @@ public class DDLTest extends TestCase {
                     var instCtx = context.getInstanceContext();
                     var invInst = instCtx.get(Id.parse(inventoryId));
                     var boxKlass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "Box"));
-                    var boxOfInvKlass = boxKlass.getParameterized(List.of(invInst.getType()));
-                    var boxInst = ClassInstanceBuilder.newBuilder(boxOfInvKlass.getType())
+                    var boxOfInvKlass = ClassType.create(boxKlass, List.of(invInst.getType()));
+                    var boxInst = ClassInstanceBuilder.newBuilder(boxOfInvKlass)
                             .data(Map.of(
-                                    boxOfInvKlass.getFieldByName("item"), invInst.getReference(),
-                                    boxOfInvKlass.getFieldByName("count"), Instances.longInstance(1)
+                                    boxOfInvKlass.getKlass().getFieldByName("item"), invInst.getReference(),
+                                    boxOfInvKlass.getKlass().getFieldByName("count"), Instances.longInstance(1)
                             ))
                             .build();
                     instCtx.bind(boxInst);
@@ -867,7 +867,7 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var currencyKlass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "Currency");
             Assert.assertNotNull(currencyKlass);
-            var sft = StaticFieldTable.getInstance(currencyKlass, context);
+            var sft = StaticFieldTable.getInstance(currencyKlass.getType(), context);
             var yuan = sft.getEnumConstants().get(0);
             Assert.assertEquals(Instances.doubleInstance(0.14), yuan.getField("rate"));
         }

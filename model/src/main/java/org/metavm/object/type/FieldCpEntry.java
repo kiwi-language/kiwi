@@ -17,11 +17,6 @@ public class FieldCpEntry extends CpEntry {
     }
 
     @Override
-    public Object resolve() {
-        return fieldRef.resolve();
-    }
-
-    @Override
     public void write(KlassOutput output) {
         fieldRef.write(output);
     }

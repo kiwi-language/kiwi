@@ -58,7 +58,7 @@ public class KlassInput extends MvInput {
 
     public Method readMethod() {
         var method = getMethod(readId());
-        method.setDeclaringType((Klass) currentElement());
+        method.setDeclaringType((Klass) currentElement(), false);
         enterElement(method);
         method.read(this);
         exitElement();
@@ -90,7 +90,9 @@ public class KlassInput extends MvInput {
     public Field getField(Id id) {
         var field = repository.getEntity(Field.class, id);
         if(field == null)
-            field = repository.bind(FieldBuilder.newBuilder(UNNAMED, KLASS, Types.getAnyType()).tmpId(id.tmpId()).build());
+            field = repository.bind(FieldBuilder.newBuilder(UNNAMED, KLASS, Types.getAnyType())
+                    .column(ColumnKind.getColumnByName("r0"))
+                    .tmpId(id.tmpId()).build());
         return field;
     }
 
@@ -149,7 +151,7 @@ public class KlassInput extends MvInput {
     public Parameter getParameter(Id id) {
         var param = repository.getEntity(Parameter.class, id);
         if(param == null)
-            param = repository.bind(new Parameter(id.tmpId(), UNNAMED, Types.getAnyType()));
+            param = repository.bind(new Parameter(id.tmpId(), UNNAMED, Types.getAnyType(), DummyCallable.INSTANCE));
         return param;
     }
 

@@ -49,10 +49,10 @@
             <version>${intellij.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.graphstream</groupId>
-            <artifactId>gs-core</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.graphstream</groupId>-->
+<!--            <artifactId>gs-core</artifactId>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>junit</groupId>

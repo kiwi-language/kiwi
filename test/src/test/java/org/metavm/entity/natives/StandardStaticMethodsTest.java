@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.flow.Function;
+import org.metavm.flow.FunctionRef;
 import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
@@ -69,8 +70,8 @@ public class StandardStaticMethodsTest extends TestCase {
         Assert.assertEquals(stringInstance("VM"), r5.ret());
     }
 
-    private Function getFunction(Method javaMethod) {
-        return NncUtils.findRequired(functions, f -> f.getName().equals(StandardStaticMethods.getFunctionName(javaMethod)));
+    private FunctionRef getFunction(Method javaMethod) {
+        return NncUtils.findRequired(functions, f -> f.getName().equals(StandardStaticMethods.getFunctionName(javaMethod))).getRef();
     }
 
 }

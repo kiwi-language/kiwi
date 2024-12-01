@@ -18,8 +18,6 @@ public abstract class CpEntry extends Entity implements ValueObject {
 
     public abstract Object getValue();
 
-    public abstract Object resolve();
-
     public abstract void write(KlassOutput output);
 
 }

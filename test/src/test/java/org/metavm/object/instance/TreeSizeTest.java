@@ -48,7 +48,7 @@ public class TreeSizeTest extends TestCase {
             ), klass.getType());
             context.getInstanceContext().bind(inst);
             context.initIds();
-            logTreeSize("klass klass", context.getInstance(ModelDefRegistry.getClassType(Klass.class).resolve()));
+            logTreeSize("klass klass", context.getInstance(ModelDefRegistry.getClassType(Klass.class).getKlass()));
             logTreeSize("foo klass", context.getInstance(klass));
             logTreeSize("foo instance", inst);
         }

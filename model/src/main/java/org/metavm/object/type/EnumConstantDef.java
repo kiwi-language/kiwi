@@ -40,7 +40,7 @@ public class EnumConstantDef extends Element implements ITypeDef {
     }
 
     public ClassInstance createEnumConstant(CallContext callContext) {
-        return Objects.requireNonNull(Flows.invoke(initializer, null, List.of(), callContext)).resolveObject();
+        return Objects.requireNonNull(Flows.invoke(initializer.getRef(), null, List.of(), callContext)).resolveObject();
     }
 
     public Klass getKlass() {

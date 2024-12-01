@@ -12,20 +12,20 @@ import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.SubstitutorV2;
-import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 @EntityType
-public class Method extends Flow implements Property, GenericElement {
+public class Method extends Flow implements Property {
 
-    public static final IndexDef<Method> IDX_PARAMETERIZED = IndexDef.create(Method.class, "parameterized");
     public static final Logger logger = LoggerFactory.getLogger(Method.class);
 
     private static final Pattern GETTER_PTN = Pattern.compile("(get|is)([A-Z][a-zA-Z0-9]*)");
@@ -36,24 +36,9 @@ public class Method extends Flow implements Property, GenericElement {
     private Access access;
     private boolean isConstructor;
     private boolean isAbstract;
-    /*
-     *                       horizontalTemplate
-     *  Foo<T>.bar<E>       <------------------      Foo<T>.bar<String>
-     *       ^                                            ^
-     *       | verticalTemplate                           | verticalTemplate
-     *       |                                            |
-     * Foo<Integer>.bar<E>  <-------------------  Foo<Integer>.bar<String>
-     *                       horizontalTemplate
-     */
-    @CopyIgnore
-    @Nullable
-    private Method verticalTemplate;
-    @Nullable
-    private FunctionType staticType;
+    private int staticTypeIndex;
 
     private boolean hidden;
-
-    private final boolean parameterized;
 
     private transient @Nullable java.lang.reflect.Method javaMethod;
 
@@ -64,49 +49,31 @@ public class Method extends Flow implements Property, GenericElement {
                   boolean isAbstract,
                   boolean isNative,
                   boolean isSynthetic,
-                  List<Parameter> parameters,
+                  List<NameAndType> parameters,
                   Type returnType,
                   List<TypeVariable> typeParameters,
-                  List<? extends Type> typeArguments,
                   boolean isStatic,
-                  @Nullable Method horizontalTemplate,
                   Access access,
                   @Nullable CodeSource codeSource,
                   boolean hidden,
                   MetadataState state) {
-        super(tmpId, name, isNative, isSynthetic, parameters, returnType, List.of(), List.of(), horizontalTemplate, codeSource, state);
+        super(tmpId, name, isNative, isSynthetic, parameters, returnType, List.of(), codeSource, state);
         if (isStatic && isAbstract)
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.declaringType = declaringType;
         setTypeParameters(typeParameters);
-        if(typeParameters.isEmpty())
-            setTypeArguments(typeArguments);
         this._static = isStatic;
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
-        if (!isStatic) {
-            this.staticType = new FunctionType(
-                    NncUtils.prepend(declaringType.getType(), NncUtils.map(parameters, Parameter::getType)),
-                    returnType
-            );
-        }
+        staticTypeIndex = isStatic ? -1 : getConstantPool().addValue(new FunctionType(
+                NncUtils.prepend(declaringType.getType(), NncUtils.map(parameters, NameAndType::type)),
+                returnType
+        ));
         this.access = access;
-        parameterized = horizontalTemplate != null;
         this.hidden = hidden;
-        if (horizontalTemplate == null)
-            declaringType.addMethod(this);
-        checkTypes(parameters, returnType);
+        declaringType.addMethod(this);
+        checkTypes(getParameters(), returnType);
         resetBody();
-    }
-
-    @Nullable
-    @Override
-    public Flow getTemplate() {
-        var template = super.getTemplate();
-        if (template != null)
-            return template;
-        else
-            return verticalTemplate;
     }
 
     public boolean isConstructor() {
@@ -126,18 +93,8 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     @Override
-    public Method getEffectiveHorizontalTemplate() {
-        return (Method) super.getEffectiveHorizontalTemplate();
-    }
-
-    @Override
     public boolean isValidLocalKey() {
         return true;
-    }
-
-    @Nullable
-    public Method getVerticalTemplate() {
-        return verticalTemplate;
     }
 
     @Override
@@ -189,39 +146,24 @@ public class Method extends Flow implements Property, GenericElement {
         resetBody();
     }
 
-    public void setVerticalTemplate(@Nullable Method verticalTemplate) {
-        NncUtils.requireNull(this.verticalTemplate);
-        if (verticalTemplate != null)
-            NncUtils.requireTrue(verticalTemplate.declaringType == declaringType.getTemplate());
-        this.verticalTemplate = verticalTemplate;
-    }
-
     public boolean isHidden() {
         return hidden;
-    }
-
-    @Override
-    public void setCopySource(Object copySource) {
-        NncUtils.requireNull(this.verticalTemplate);
-        this.verticalTemplate = (Method) copySource;
     }
 
     public String getQualifiedSignature() {
         return declaringType.getTypeDesc() + "." + getSignatureString();
     }
 
-    @Nullable
-    @Override
-    public Method getHorizontalTemplate() {
-        return (Method) super.getHorizontalTemplate();
+    public @Nullable FunctionType getStaticType() {
+        return staticTypeIndex == -1 ? null : getConstantPool().getFunctionType(staticTypeIndex);
     }
 
-    public @Nullable FunctionType getStaticType() {
-        return staticType;
+    public int getStaticTypeIndex() {
+        return staticTypeIndex;
     }
 
     public void setStaticType(@Nullable FunctionType staticType) {
-        this.staticType = NncUtils.get(staticType, t -> addChild(t, "staticType"));
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -231,6 +173,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     private void checkTypes(List<Parameter> parameters, Type returnType) {
         var paramTypes = NncUtils.map(parameters, Parameter::getType);
+        var staticType = getStaticType();
         if (isInstanceMethod()) {
             AssertUtils.assertNonNull(staticType, ErrorCode.INSTANCE_METHOD_MISSING_STATIC_TYPE);
             if (!staticType.getParameterTypes().equals(NncUtils.prepend(declaringType.getType(), paramTypes))
@@ -243,25 +186,18 @@ public class Method extends Flow implements Property, GenericElement {
     @Override
     protected void resetType() {
         super.resetType();
-        if (!isStatic()) {
-            staticType = new FunctionType(
-                    NncUtils.prepend(declaringType.getType(), getParameterTypes()),
-                    getReturnType()
-            );
-        }
-    }
-
-    public Method getEffectiveVerticalTemplate() {
-        return Objects.requireNonNullElse(verticalTemplate, this);
+        staticTypeIndex = isStatic() ? - 1 : getConstantPool().addValue(new FunctionType(
+                NncUtils.prepend(declaringType.getType(), getParameterTypes()),
+                getReturnType()
+        ));
     }
 
     @Override
-    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
+    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext) {
 //        logger.debug("Executing method: {}", getQualifiedSignature());
         try (var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName() + "." + getName())) {
             if (DebugEnv.debugging) {
-                var methodName = getDeclaringType().getName() + "." + getNameWithTypeArguments();
-                logger.debug("Method.execute: {}", methodName);
+                logger.debug("Method.execute: {}", this);
                 logger.debug("Arguments: ");
                 arguments.forEach(arg -> debugLogger.info(arg.getText()));
                 logger.debug(getText());
@@ -270,7 +206,7 @@ public class Method extends Flow implements Property, GenericElement {
                 NncUtils.requireNull(self);
             else
                 Objects.requireNonNull(self);
-            arguments = checkArguments(arguments);
+            arguments = checkArguments(arguments, flowRef.getTypeMetadata());
             FlowExecResult result;
             if (isNative()) {
                 if(javaMethod != null && self != null && self.getMappedEntity() != null)
@@ -299,11 +235,12 @@ public class Method extends Flow implements Property, GenericElement {
                     result = new MetaFrame(callContext.instanceRepository()).execute(
                             getCode(),
                             argArray,
+                            flowRef.getTypeMetadata(),
                             closureContext
                     );
                 } catch (Exception e) {
                     logger.info("Fail to execute method {}", getQualifiedName());
-                    logger.info(getText());
+//                    logger.info(getText());
                     throw new InternalException("fail to execute method " + getQualifiedName(), e);
                 }
             }
@@ -350,7 +287,7 @@ public class Method extends Flow implements Property, GenericElement {
 
     @Override
     public String getQualifiedName() {
-        return declaringType.getTypeDesc() + "." + getNameWithTypeArguments();
+        return declaringType.getTypeDesc() + "." + getName();
     }
 
     @Override
@@ -359,76 +296,21 @@ public class Method extends Flow implements Property, GenericElement {
     }
 
     @Override
-    public Object getCopySource() {
-        return verticalTemplate;
-    }
-
-    @Override
     public String getInternalName(@Nullable Flow current) {
         if (current == this)
             return "this";
         return declaringType.getInternalName(null) + "." + getName() + "(" +
-                NncUtils.join(getParameterTypes(), type -> type.getInternalName(this)) + ")";
-    }
-
-    public boolean isHiddenBy(Method that) {
-        var paramTypes = getParameterTypes();
-        var thatParamTypes = that.getParameterTypes();
-        if (paramTypes.size() != thatParamTypes.size())
-            return false;
-        if (paramTypes.equals(thatParamTypes)) {
-            if (declaringType.equals(that.getDeclaringType()))
-                throw new InternalException(
-                        String.format("Methods with the same signature defined in the same type: %s(%s)",
-                                getName(), NncUtils.join(paramTypes, Type::getTypeDesc)));
-            return declaringType.isAssignableFrom(that.getDeclaringType());
-        }
-        for (int i = 0; i < paramTypes.size(); i++) {
-            var paramType = paramTypes.get(i);
-            var thatParamType = thatParamTypes.get(i);
-            if (!paramType.isConvertibleFrom(thatParamType))
-                return false;
-        }
-        return true;
-    }
-
-    public Method getUltimateTemplate() {
-        return (Method) getEffectiveHorizontalTemplate().getRootCopySource();
+                NncUtils.join(getParameterTypes(getConstantPool()), type -> type.getInternalName(this)) + ")";
     }
 
     @Override
     public MethodRef getRef() {
-        return new MethodRef(declaringType.getType(), this.getUltimateTemplate(), isParameterized() ? getTypeArguments() : List.of());
+        return new MethodRef(declaringType.getType(), this, List.of());
     }
 
     @Override
     public int getMinLocals() {
         return isStatic() ? getParameters().size() : getParameters().size() + 1;
-    }
-
-    @Override
-    public Method getParameterized(List<? extends Type> typeArguments) {
-        return (Method) super.getParameterized(typeArguments);
-    }
-
-    @Override
-    protected Method createParameterized(List<? extends Type> typeArguments) {
-        var parameterized = MethodBuilder.newBuilder(declaringType, getName())
-//                .tmpId(getCopyTmpId(method))
-                .horizontalTemplate(this)
-                .isSynthetic(isSynthetic())
-                .access(getAccess())
-                .isStatic(isStatic())
-                .typeArguments(typeArguments)
-                .build();
-        parameterized.setStrictEphemeral(true);
-        return parameterized;
-    }
-
-    @Nullable
-    @Override
-    public Method getExistingParameterized(List<? extends Type> typeArguments) {
-        return (Method) super.getExistingParameterized(typeArguments);
     }
 
     @Override
@@ -479,44 +361,19 @@ public class Method extends Flow implements Property, GenericElement {
         return getQualifiedName();
     }
 
-    public boolean isOverrideOf(Method method) {
-        if(isConstructor || method.isConstructor
-                || isStatic() || method.isStatic()
-                || isPrivate() || method.isPrivate())
-            return false;
-        if(getName().equals(method.getName())
-                && getParameters().size() == method.getParameters().size()
-                && getTypeParameters().size() == method.getTypeParameters().size()
-        ) {
-            var k1 = getDeclaringType();
-            var k2 = method.getDeclaringType();
-            if(k1 != k2 && (k2.isInterface() || k2.isAssignableFrom(k1))) {
-                var subst = new TypeSubstitutor(
-                        NncUtils.map(getTypeParameters(), TypeVariable::getType),
-                        NncUtils.map(method.getTypeParameters(), TypeVariable::getType)
-                );
-                if (NncUtils.biAllMatch(getParameterTypes(), method.getParameterTypes(),
-                        (t1, t2) -> t1.accept(subst).equals(t2))) {
-//                    NncUtils.requireTrue(method.getReturnType().isAssignableFrom(getReturnType()),
-//                            () -> "Return type of the overriding method " + getQualifiedSignature()
-//                                    + " (" + getReturnType() + ") is not assignable "
-//                                    + " to the return type of the overridden method " + method.getQualifiedSignature()
-//                                    + " (" + method.getReturnType() + ")");
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     @Override
     public int getInputCount() {
         return _static || isConstructor ? getParameters().size() : 1 + getParameters().size();
     }
 
     public void setDeclaringType(@NotNull Klass klass) {
+        setDeclaringType(klass, true);
+    }
+
+    public void setDeclaringType(@NotNull Klass klass, boolean resetType) {
         this.declaringType = klass;
-        resetType();
+        if(resetType)
+            resetType();
     }
 
     @Override
@@ -553,11 +410,30 @@ public class Method extends Flow implements Property, GenericElement {
     public void write(KlassOutput output) {
         super.write(output);
         output.write(access.code());
+        output.writeShort(staticTypeIndex);
     }
 
     public void read(KlassInput input) {
         super.read(input);
         access = Access.fromCode(input.read());
+        staticTypeIndex = (short) input.readShort();
     }
 
+    @Override
+    public List<TypeVariable> getAllTypeParameters() {
+        var typeParams = new ArrayList<>(declaringType.getAllTypeParameters());
+        typeParams.addAll(getTypeParameters());
+        return typeParams;
+    }
+
+    @Override
+    public boolean isConstantPoolParameterized() {
+        return super.isConstantPoolParameterized() || declaringType.isConstantPoolParameterized();
+    }
+
+    @Override
+    public void foreachGenericDeclaration(Consumer<GenericDeclaration> action) {
+        declaringType.foreachGenericDeclaration(action);
+        super.foreachGenericDeclaration(action);
+    }
 }

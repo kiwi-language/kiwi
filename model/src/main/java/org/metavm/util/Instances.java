@@ -552,7 +552,7 @@ public class Instances {
         if (listType.isList()) {
             var elementType = listType.getFirstTypeArgument();
             if (listType.getKlass() == StdKlass.list.get()) {
-                listType = StdKlass.arrayList.get().getParameterized(List.of(elementType)).getType();
+                listType = ClassType.create(StdKlass.arrayList.get(), List.of(elementType));
             }
             var list = ClassInstance.allocate(listType);
             var listNative = new ListNative(list);
@@ -579,41 +579,38 @@ public class Instances {
         for (Instance instance : instances) {
             if (instance instanceof ClassInstance clsInst) {
                 for (Field field : newFields) {
-                    var k = clsInst.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
+                    var k = clsInst.getType().findAncestorByKlass(field.getDeclaringType());
                     if (k != null) {
-                        var pf = k.findField(f -> f.getEffectiveTemplate() == field);
-                        initializeField(clsInst, pf, context);
+                        initializeField(clsInst, field, context);
                     }
                 }
                 for (Field field : convertingFields) {
-                    var k = clsInst.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
+                    var k = clsInst.getType().findAncestorByKlass(field.getDeclaringType());
                     if (k != null) {
-                        var pf = k.findField(f -> f.getEffectiveTemplate() == field);
-                        convertField(clsInst, pf, context);
+                        convertField(clsInst, field, context);
                     }
                 }
                 for (Field field : toChildFields) {
-                    var k = clsInst.getKlass().findAncestorKlassByTemplate(field.getDeclaringType());
+                    var k = clsInst.getType().findAncestorByKlass(field.getDeclaringType());
                     if (k != null) {
-                        var pf = k.findField(f -> f.getEffectiveTemplate() == field);
-                        var value = clsInst.getField(pf);
+                        var value = clsInst.getField(field);
                         if (value instanceof Reference r)
-                            r.resolve().setParent(clsInst, pf);
+                            r.resolve().setParent(clsInst, field);
                     }
                 }
                 for (Klass klass : changingSuperKlasses) {
-                    var k = clsInst.getKlass().findAncestorKlassByTemplate(klass);
+                    var k = clsInst.getType().findAncestorByKlass(klass);
                     if (k != null)
-                        initializeSuper(clsInst, k, context);
+                        initializeSuper(clsInst, klass, context);
                 }
                 for (Klass klass : toValueKlasses) {
                     handleEntityToValueConversion(clsInst, klass);
                 }
                 for (Field removingChildField : removingChildFields) {
-                    var k = clsInst.getKlass().findAncestorByTemplate(removingChildField.getDeclaringType());
+                    var k = clsInst.getType().findAncestorByKlass(removingChildField.getDeclaringType());
                     if(k == null)
                         continue;
-                    var f = k.getFieldByTemplate(removingChildField);
+                    var f = k.getField(removingChildField).getRawField();
                     var childRef = clsInst.getField(f);
                     if(childRef.isNull())
                         continue;
@@ -642,9 +639,9 @@ public class Instances {
                     child.setRemoving(true);
                 }
                 for (Method runMethod : runMethods) {
-                    var k = clsInst.getKlass().findAncestorByTemplate(runMethod.getDeclaringType());
+                    var k = clsInst.getType().findAncestorByKlass(runMethod.getDeclaringType());
                     if(k != null) {
-                        var pm = clsInst.getKlass().getMethod(m -> m.getEffectiveVerticalTemplate() == runMethod);
+                        var pm = clsInst.getType().getMethod(runMethod);
                         Flows.invoke(pm, clsInst, List.of(), context);
                     }
                 }
@@ -654,7 +651,7 @@ public class Instances {
                     if (r.isResolved()) {
                         var resolved = r.resolve();
                         if (resolved instanceof ClassInstance clsInst) {
-                            var k = clsInst.getKlass().findAncestorByTemplate(klass);
+                            var k = clsInst.getType().findAncestorByKlass(klass);
                             if (k != null)
                                 r.setEager();
                         }
@@ -671,7 +668,7 @@ public class Instances {
         instance.forEachReference((r, isChild, type) -> {
             if(type.isAssignableFrom(klass.getType())) {
                 var referent = r.resolve();
-                if(referent instanceof ClassInstance object && object.getKlass().findAncestorKlassByTemplate(klass) != null)
+                if(referent instanceof ClassInstance object && object.getType().findAncestorByKlass(klass) != null)
                     r.setEager();
             }
         });
@@ -681,11 +678,11 @@ public class Instances {
         instance.transformReference((r, isChild, type) -> {
             if(type.isAssignableFrom(enumClass.getType())) {
                 var referent = r.resolve();
-                var sft = StaticFieldTable.getInstance(enumClass, context);
+                var sft = StaticFieldTable.getInstance(enumClass.getType(), context);
                 if(referent instanceof ClassInstance object && object.getKlass() == enumClass && !sft.isEnumConstant(object.getReference())) {
                     var r1 = object.getReference();
-                    object.setField(enumClass.getFieldByTemplate(StdField.enumName.get()), Instances.stringInstance(""));
-                    object.setField(enumClass.getFieldByTemplate(StdField.enumOrdinal.get()), Instances.longInstance(-1L));
+                    object.setField(StdField.enumName.get(), Instances.stringInstance(""));
+                    object.setField(StdField.enumOrdinal.get(), Instances.longInstance(-1L));
                     var ec = mapEnumConstant(r1 ,enumClass, context);
                     return new RedirectingReference(referent, ec, commit);
                 }
@@ -696,7 +693,7 @@ public class Instances {
 
     private static Reference mapEnumConstant(Reference instance, Klass enumClass, IEntityContext context) {
         var mapper = getEnumConstantMapper(enumClass);
-        return (Reference) requireNonNull(Flows.invoke(mapper, null, List.of(instance), context.getInstanceContext()));
+        return (Reference) requireNonNull(Flows.invoke(mapper.getRef(), null, List.of(instance), context.getInstanceContext()));
     }
 
     private static Method getEnumConstantMapper(Klass enumClass) {
@@ -749,10 +746,10 @@ public class Instances {
         var initMethod = findFieldInitializer(field, true);
         if (initMethod != null) {
             if(initMethod.getParameters().isEmpty())
-                return Flows.invoke(initMethod, instance, List.of(), context);
+                return Flows.invoke(initMethod.getRef(), instance, List.of(), context);
             else if(initMethod.getParameterTypes().equals(List.of(Types.getStringType(), Types.getLongType()))){
                 return Flows.invoke(
-                        initMethod,
+                        initMethod.getRef(),
                         instance,
                         List.of(
                                 instance.getUnknownField(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag()),
@@ -786,7 +783,7 @@ public class Instances {
     public static Value computeConvertedFieldValue(ClassInstance instance, Field field, IInstanceContext context) {
         var converter = requireNonNull(findTypeConverter(field));
         var originalValue = instance.getUnknownField(field.getDeclaringType().getTag(), field.getOriginalTag());
-        return Flows.invoke(converter, instance, List.of(originalValue), context);
+        return Flows.invoke(converter.getRef(), instance, List.of(originalValue), context);
     }
 
     private static void initializeSuper(ClassInstance instance, Klass klass, IEntityContext context) {
@@ -795,12 +792,12 @@ public class Instances {
 
 
     public static Method findSuperInitializer(Klass klass) {
-        var superKlass = requireNonNull(klass.getSuperType()).resolve();
-        var initMethodName = "__" + superKlass.getName() + "__";
+        var superType = requireNonNull(klass.getSuperType());
+        var initMethodName = "__" + superType.getName() + "__";
         return klass.findMethod(
                 m -> initMethodName.equals(m.getName())
                         && m.getParameters().isEmpty()
-                        && m.getReturnType().equals(superKlass.getType())
+                        && m.getReturnType().equals(superType)
         );
     }
 
@@ -808,12 +805,12 @@ public class Instances {
         var superInitializer = findSuperInitializer(klass);
         if(superInitializer != null) {
             var initializer = requireNonNull(superInitializer);
-            var s = requireNonNull(Flows.invoke(initializer, instance, List.of(), context.getInstanceContext())).resolveObject();
+            var s = requireNonNull(Flows.invoke(initializer.getRef(), instance, List.of(), context.getInstanceContext())).resolveObject();
             s.setEphemeral();
             s.forEachField(instance::setFieldForce);
         }
         else {
-            var superKlass = requireNonNull(klass.getSuperType()).resolve();
+            var superKlass = requireNonNull(klass.getSuperType()).getKlass();
             superKlass.forEachField(field -> {
                 if(!instance.isFieldInitialized(field) || instance.getField(field).isNull()) {
                     instance.setFieldForce(field,
@@ -829,9 +826,9 @@ public class Instances {
             var klass = context.getKlass(fieldChange.klassId());
             for (Instance instance : instances) {
                 if(instance instanceof ClassInstance object) {
-                    var k = object.getKlass().findAncestorByTemplate(klass);
+                    var k = object.getType().findAncestorByKlass(klass);
                     if(k != null)
-                        object.tryClearUnknownField(k.getTag(), fieldChange.newTag());
+                        object.tryClearUnknownField(k.getKlassTag(), fieldChange.newTag());
                 }
             }
         }
@@ -839,7 +836,7 @@ public class Instances {
             for (String toChildFieldId : commit.getToChildFieldIds()) {
                 var field = context.getField(toChildFieldId);
                 if (instance instanceof ClassInstance object) {
-                  var k = object.getKlass().findAncestorByTemplate(field.getDeclaringType());
+                  var k = object.getType().findAncestorByKlass(field.getDeclaringType());
                   if(k != null) {
                       var value = object.getField(field);
                       if(value instanceof Reference ref)
@@ -857,7 +854,7 @@ public class Instances {
                     instance.forEachReference(r -> {
                         if(r.isEager()) {
                             var referent = r.resolve();
-                            if(referent instanceof ClassInstance object && object.getKlass().findAncestorKlassByTemplate(klass) != null) {
+                            if(referent instanceof ClassInstance object && object.getType().findAncestorByKlass(klass) != null) {
                                 if(object.isValue())
                                     context.getInstanceContext().remove(object);
                                 else
@@ -908,9 +905,9 @@ public class Instances {
 
     public static int compare(Instance instance1, Instance instance2, CallContext callContext) {
         if(instance1 instanceof ClassInstance clsInst1 && instance2 instanceof ClassInstance clsInst2) {
-            var comparableKlass = clsInst1.getKlass().findAncestorByTemplate(StdKlass.comparable.get());
-            if(comparableKlass != null && comparableKlass.getTypeArguments().get(0).isInstance(clsInst2.getReference())) {
-                var compareToMethod = comparableKlass.getMethod(m -> m.getVerticalTemplate() == StdMethod.comparableCompareTo.get());
+            var comparableType = clsInst1.getType().findAncestorByKlass(StdKlass.comparable.get());
+            if(comparableType != null && comparableType.getTypeArguments().get(0).isInstance(clsInst2.getReference())) {
+                var compareToMethod = comparableType.getMethod(StdMethod.comparableCompareTo.get());
                 var r = (LongValue) requireNonNull(Flows.invokeVirtual(compareToMethod, clsInst1, List.of(clsInst2.getReference()), callContext));
                 return r.getValue().intValue();
             }
@@ -931,7 +928,7 @@ public class Instances {
         if(instance instanceof ClassInstance clsInst) {
             var method = clsInst.getKlass().getHashCodeMethod();
             if(method != null) {
-                var ret = Flows.invoke(method, clsInst, List.of(), callContext);
+                var ret = Flows.invoke(method.getRef(), clsInst, List.of(), callContext);
                 return ((LongValue) requireNonNull(ret)).getValue().intValue();
             }
             if(clsInst.isValue()) {
@@ -966,7 +963,7 @@ public class Instances {
         if(instance1 instanceof ClassInstance clsInst) {
             var method = clsInst.getKlass().getEqualsMethod();
             if(method != null) {
-                var ret = Flows.invoke(method, clsInst, List.of(instance2.getReference()), callContext);
+                var ret = Flows.invoke(method.getRef(), clsInst, List.of(instance2.getReference()), callContext);
                 return ((BooleanValue) requireNonNull(ret)).getValue();
             }
             if(clsInst.isValue() && instance2 instanceof ClassInstance clsInst2 && clsInst2.isValue()
@@ -1007,7 +1004,7 @@ public class Instances {
         if(instance instanceof ClassInstance clsInst) {
             var method = clsInst.getKlass().getToStringMethod();
             if(method != null) {
-                var ret = Flows.invoke(method, clsInst, List.of(), callContext);
+                var ret = Flows.invoke(method.getRef(), clsInst, List.of(), callContext);
                 return ((StringValue) requireNonNull(ret)).getValue();
             }
         }
@@ -1060,7 +1057,7 @@ public class Instances {
         if(instance instanceof ClassInstance clsInst)
             return clsInst.getKlass();
         else if(instance instanceof ArrayInstance array)
-            return Types.getGeneralKlass(array.getType().getElementType()).getArrayKlass();
+            return Types.getGeneralKlass(array.getType());
         else
             throw new IllegalArgumentException("Cannot get general klass for instance: " + instance);
     }

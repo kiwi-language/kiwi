@@ -3,10 +3,7 @@ package org.metavm.object.type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.*;
-import org.metavm.flow.Method;
-import org.metavm.flow.MethodBuilder;
-import org.metavm.flow.Nodes;
-import org.metavm.flow.Parameter;
+import org.metavm.flow.*;
 import org.metavm.object.instance.core.FunctionValue;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.generic.TypeSubstitutor;
@@ -17,8 +14,8 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.ParameterizedType;
-import java.util.*;
 import java.util.LinkedList;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -27,13 +24,6 @@ public class Types {
     public static final Logger logger = LoggerFactory.getLogger(Types.class);
     private static final TypeFactory TYPE_FACTORY = new DefaultTypeFactory(ModelDefRegistry::getType);
     private static final Function<java.lang.reflect.Type, Type> getType = ModelDefRegistry::getType;
-
-    public static Klass resolveKlass(Type type) {
-        if (type instanceof ClassType classType)
-            return classType.resolve();
-        else
-            throw new InternalException("Can not resolve klass from type " + type.getTypeDesc() + " because it's not a class type");
-    }
 
     public static String getCanonicalName(Type type, Function<Type, java.lang.reflect.Type> getJavType) {
         return switch (type) {
@@ -48,14 +38,6 @@ public class Types {
         return getJavaType.apply(arrayType.getElementType()) + "[]";
     }
 
-    public static Type substitute(Type type, IEntityContext entityContext, List<TypeVariable> typeParameters, List<Type> typeArguments) {
-        return substitute(List.of(type), entityContext, typeParameters, typeArguments).get(0);
-    }
-
-    public static List<Type> substitute(List<Type> types, IEntityContext entityContext, List<TypeVariable> typeParameters, List<Type> typeArguments) {
-        return NncUtils.map(types, new Substitutor(entityContext, typeParameters, typeArguments));
-    }
-
     public static void extractCapturedType(Type formalType, Type actualType, BiConsumer<CapturedType, Type> setCaptureType) {
         // TODO: to be more rigorous
         switch (formalType) {
@@ -63,8 +45,8 @@ public class Types {
             case ClassType classType -> {
                 if (classType.isParameterized() && actualType instanceof ClassType actualClassType) {
                     var formalTypeArguments = classType.getTypeArguments();
-                    var alignedActualClassType = Objects.requireNonNull(actualClassType.findAncestor(classType.getEffectiveTemplate().getKlass()),
-                            () -> "Cannot find ancestor with template " + classType.getEffectiveTemplate().getKlass()
+                    var alignedActualClassType = Objects.requireNonNull(actualClassType.findAncestorByKlass(classType.getTemplateType().getKlass()),
+                            () -> "Cannot find ancestor with template " + classType.getTemplateType().getKlass()
                                     + " in class type " + actualClassType
                     );
                     var actualTypeArguments = alignedActualClassType.getTypeArguments();
@@ -152,29 +134,6 @@ public class Types {
         return List.of();
     }
 
-    public static Type tryUncapture(Type type) {
-        return switch (type) {
-            case CapturedType capturedType -> capturedType.getUncertainType();
-            case ClassType classType -> {
-                if (classType.isParameterized()) {
-                    yield classType.getKlass().getParameterized(
-                            NncUtils.map(classType.getTypeArguments(), Types::tryUncapture)
-                    ).getType();
-                } else
-                    yield classType;
-            }
-            case ArrayType arrayType -> new ArrayType(tryUncapture(arrayType.getElementType()), arrayType.getKind());
-            case UnionType unionType -> new UnionType(NncUtils.mapUnique(unionType.getMembers(), Types::tryUncapture));
-            case IntersectionType intersectionType ->
-                    new IntersectionType(NncUtils.mapUnique(intersectionType.getTypes(), Types::tryUncapture));
-            case FunctionType functionType ->
-                    new FunctionType(NncUtils.map(functionType.getParameterTypes(), Types::tryUncapture),
-                            tryUncapture(functionType.getReturnType()));
-            case VariableType variableType -> variableType;
-            default -> type;
-        };
-    }
-
     public static Type getTypeType(TypeTag tag) {
         return switch (tag) {
             case CLASS -> getClassType(Klass.class);
@@ -215,10 +174,9 @@ public class Types {
         if (type2.isAssignableFrom(type1))
             return type2;
         return switch (type1) {
-            case ClassType classType -> NncUtils.getOrElse(
-                    classType.resolve().getClosure().find(anc -> anc.getType().isAssignableFrom(type2)),
-                    Klass::getType,
-                    getAnyType(type2.isNullable()));
+            case ClassType classType -> Objects.requireNonNullElseGet(
+                    classType.findAncestor(anc -> anc.isAssignableFrom(type2)),
+                    () -> getAnyType(type2.isNullable()));
             case UnionType unionType -> getLeastUpperBound(getLeastUpperBound(unionType.getMembers()), type2);
             case IntersectionType intersectionType ->
                     getLowestType(NncUtils.map(intersectionType.getTypes(), t -> getLeastUpperBound(t, type2)));
@@ -258,23 +216,23 @@ public class Types {
                 .typeParameters(typeParams)
                 .ephemeral(true)
                 .build();
-        var subst = new TypeSubstitutor(NncUtils.map(typeVars, TypeVariable::getType), klass.getTypeArguments());
+        var subst = new TypeSubstitutor(NncUtils.map(typeVars, TypeVariable::getType), klass.getDefaultTypeArguments());
         NncUtils.biForEach(typeParams, typeVars, (typeParam, typeVar) ->
                 typeParam.setBounds(NncUtils.map(typeVar.getBounds(), t -> t.accept(subst)))
         );
         var substInterface = (ClassType) functionalInterface.accept(subst);
         klass.setInterfaces(List.of(substInterface));
         klass.setEphemeralEntity(true);
-        var sam = getSAM(substInterface.resolve());
+        var sam = getSAM(substInterface);
         var funcType = new FunctionType(sam.getParameterTypes(), sam.getReturnType());
         var funcField = FieldBuilder.newBuilder("func", klass, funcType).build();
 
         var flow = MethodBuilder.newBuilder(klass, sam.getName())
-                .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
+                .parameters(NncUtils.map(sam.getParameters(), p -> new NameAndType(p.getName(), p.getType())))
                 .returnType(sam.getReturnType())
                 .build();
         var code = flow.getCode();
-        Nodes.thisProperty(funcField, code);
+        Nodes.thisProperty(funcField.getRef(), code);
         int numParams = flow.getParameters().size();
         for (int i = 0; i < numParams; i++) {
             Nodes.argument(flow, i);
@@ -285,13 +243,13 @@ public class Types {
         else
             Nodes.ret(code);
         klass.emitCode();
-        return klass.getParameterized(NncUtils.map(typeVars, TypeVariable::getType)).getType();
+        return ClassType.create(klass, NncUtils.map(typeVars, TypeVariable::getType));
     }
 
-    public static Method getSAM(Klass functionalInterface) {
+    public static MethodRef getSAM(ClassType functionalInterface) {
         var abstractFlows = NncUtils.filter(
                 functionalInterface.getMethods(),
-                Method::isAbstract
+                MethodRef::isAbstract
         );
         if (abstractFlows.size() != 1) {
             throw new InternalException(functionalInterface + " is not a functional interface");
@@ -299,10 +257,10 @@ public class Types {
         return abstractFlows.get(0);
     }
 
-    public static Klass createSAMInterfaceImpl(Klass samInterface, FunctionValue function) {
+    public static Klass createSAMInterfaceImpl(ClassType samInterface, FunctionValue function) {
         var klass = KlassBuilder.newBuilder(
                         samInterface.getName() + "$" + NncUtils.randomNonNegative(), null)
-                .interfaces(samInterface.getType())
+                .interfaces(samInterface)
                 .ephemeral(true)
                 .anonymous(true)
                 .build();
@@ -314,9 +272,8 @@ public class Types {
         );
         methodStaticType.setEphemeralEntity(true);
         var method = MethodBuilder.newBuilder(klass, sam.getName())
-                .parameters(NncUtils.map(sam.getParameters(), Parameter::copy))
+                .parameters(NncUtils.map(sam.getParameters(), p -> new NameAndType(p.getName(), p.getType())))
                 .returnType(sam.getReturnType())
-                .type(sam.getType())
                 .staticType(methodStaticType)
                 .build();
         var code = method.getCode();
@@ -565,8 +522,8 @@ public class Types {
         };
     }
 
-    public static String getConstructorName(Klass classType) {
-        var typeCode = Objects.requireNonNull(classType.getEffectiveTemplate().getName());
+    public static String getConstructorName(Klass klass) {
+        var typeCode = Objects.requireNonNull(klass.getName());
         var dotIdx = typeCode.lastIndexOf('.');
         return dotIdx >= 0 ? typeCode.substring(dotIdx + 1) : typeCode;
     }
@@ -779,7 +736,7 @@ public class Types {
 
     public static Klass getGeneralKlass(Type type) {
         return switch (type) {
-            case ClassType classType -> classType.resolve();
+            case ClassType classType -> classType.getKlass();
             case ArrayType arrayType -> getGeneralKlass(arrayType.getElementType()).getArrayKlass();
             case UnionType unionType -> getGeneralKlass(unionType.getUnderlyingType());
             case AnyType anyType -> StdKlass.any.get();
@@ -825,7 +782,7 @@ public class Types {
 
     public static Klass getKlass(Type type) {
         return switch (type) {
-            case ClassType classType -> classType.resolve();
+            case ClassType classType -> classType.getKlass();
             case ArrayType arrayType -> getKlass(arrayType.getElementType()).getArrayKlass();
             case UnionType unionType -> getKlass(unionType.getUnderlyingType());
             case AnyType anyType -> ModelDefRegistry.getDefContext().getKlass(DummyAny.class);
@@ -860,16 +817,7 @@ public class Types {
            var k = t.getKlass();
            if(k == ancestorKlass)
                return t;
-           var typeParams = new ArrayList<Type>();
-           var typeArgs = new ArrayList<Type>();
-           var t1 = t;
-           while (t1 != null) {
-               typeParams.addAll(t1.getKlass().getTypeArguments());
-               typeArgs.addAll(t1.getTypeArguments());
-               t1 = t1.getOwner();
-           }
-           var typeSubst = new TypeSubstitutor(typeParams, typeArgs);
-           k.forEachSuperType(s -> queue.offer((ClassType) s.accept(typeSubst)));
+           t.forEachSuper(queue::offer);
        }
        throw new IllegalStateException("Klass " + type.getName() + " is not an inheritor of java.util.Iterable");
     }

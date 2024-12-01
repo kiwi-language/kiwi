@@ -19,11 +19,6 @@ public enum DummyGenericDeclaration implements GenericDeclaration {
         return List.of();
     }
 
-    @Nullable
-    public GenericDeclaration getTemplate() {
-        return null;
-    }
-
     @Override
     public void addTypeParameter(TypeVariable typeParameter) {
     }

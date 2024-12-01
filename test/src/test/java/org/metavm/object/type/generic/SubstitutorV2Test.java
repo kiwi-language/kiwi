@@ -1,12 +1,11 @@
 package org.metavm.object.type.generic;
 
 import junit.framework.TestCase;
-import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.NameAndType;
 import org.metavm.flow.Nodes;
-import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.*;
 import org.metavm.util.TestUtils;
@@ -35,45 +34,29 @@ public class SubstitutorV2Test extends TestCase {
                 .build();
         {
             var getValueFlow = MethodBuilder.newBuilder(foo, "getValue")
-                    .type(new FunctionType(List.of(), typeVar.getType()))
                     .staticType(new FunctionType(List.of(foo.getType()), typeVar.getType()))
                     .returnType(typeVar.getType())
                     .build();
             var code = getValueFlow.getCode();
-            Nodes.thisProperty(valueField, code);
+            Nodes.thisProperty(valueField.getRef(), code);
             Nodes.ret(code);
         }
 
         {
             var flow = MethodBuilder.newBuilder(foo, "setValue")
-                    .type(new FunctionType(List.of(typeVar.getType()), voidType))
                     .staticType(new FunctionType(List.of(foo.getType(), typeVar.getType()), voidType))
                     .returnType(voidType)
-                    .parameters(new Parameter(null, "value", typeVar.getType()))
+                    .parameters(new NameAndType("value", typeVar.getType()))
                     .build();
             var code = flow.getCode();
             Nodes.this_(code);
             Nodes.argument(flow, 0);
-            Nodes.setField(valueField, code);
+            Nodes.setField(valueField.getRef(), code);
             Nodes.voidRet(code);
         }
 
         var stringType = PrimitiveType.stringType;
         stringType.initId(PhysicalId.of(1L, 0L, TestUtils.mockClassType()));
     }
-
-    public void testFlow() {
-        var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
-        var barMethod = MethodBuilder.newBuilder(fooType, "bar")
-                .typeParameters(List.of(
-                        new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE)
-                ))
-                .build();
-        var bar1 = barMethod.getParameterized(List.of(Types.getStringType()));
-        var bar2 = barMethod.getParameterized(List.of(Types.getStringType()));
-        Assert.assertSame(bar1, bar2);
-    }
-
-
 
 }

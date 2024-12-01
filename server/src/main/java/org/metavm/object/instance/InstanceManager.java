@@ -60,7 +60,7 @@ public class InstanceManager extends EntityContextFactoryAware {
     public Page<InstanceDTO[]> select(SelectRequest request) {
         try (var entityContext = newContext()) {
             var context = entityContext.getInstanceContext();
-            var klass = ((ClassType) TypeParser.parseType(request.type(), context.getTypeDefProvider())).resolve();
+            var klass = ((ClassType) TypeParser.parseType(request.type(), context.getTypeDefProvider())).getKlass();
             var dataPage = instanceQueryService.query(InstanceQueryBuilder.newBuilder(klass)
                     .expression(request.condition())
                     .page(request.page())
@@ -224,7 +224,7 @@ public class InstanceManager extends EntityContextFactoryAware {
         try (var entityContext = newContext()) {
             var klass = requireNonNull(entityContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, query.type()));
             var classType = klass.getType();
-            var internalQuery = InstanceQueryBuilder.newBuilder(classType.resolve())
+            var internalQuery = InstanceQueryBuilder.newBuilder(classType.getKlass())
                     .searchText(query.searchText())
                     .newlyCreated(NncUtils.map(query.createdIds(), Id::parse))
                     .fields(NncUtils.map(query.fields(), f -> InstanceQueryField.create(f, entityContext)))

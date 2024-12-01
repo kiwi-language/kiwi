@@ -24,7 +24,6 @@ public class FieldBuilder {
     private Value staticValue;
     private MetadataState state;
     private boolean lazy;
-    private Field template;
     private Field existing;
     private boolean readonly;
     private boolean isTransient;
@@ -106,11 +105,6 @@ public class FieldBuilder {
 
     public FieldBuilder staticValue(Value staticValue) {
         this.staticValue = staticValue;
-        return this;
-    }
-
-    public FieldBuilder template(Field template) {
-        this.template = template;
         return this;
     }
 

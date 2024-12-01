@@ -794,6 +794,20 @@ public class TranspileUtils {
         return false;
     }
 
+    public static @Nullable PsiMethod getEnclosingMethod(PsiClass klass) {
+        if(klass instanceof PsiTypeParameter)
+            return null;
+        var parent = klass.getParent();
+        while (parent != null) {
+            if(parent instanceof PsiClass)
+                return null;
+            if(parent instanceof PsiMethod method)
+                return method;
+            parent = parent.getParent();
+        }
+        return null;
+    }
+
     public static @Nullable PsiElement getProperParent(PsiElement element, Set<Class<?>> parentClasses) {
         var parent = element.getParent();
         return parent != null ? findParent(parent, parentClasses) : null;
@@ -1231,7 +1245,7 @@ public class TranspileUtils {
             else if(wildcardType.getBound() != null)
                 return "[Never," + getInternalName(wildcardType.getBound(), current) + "]";
             else
-                return "[Never, Any]";
+                return "[Never,Any]";
         }
         if(type instanceof PsiArrayType arrayType) {
             return getInternalName(arrayType.getComponentType(), true, current)  +"[]";

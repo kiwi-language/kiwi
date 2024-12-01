@@ -21,7 +21,7 @@ public class PropertyValue extends Value {
 
     @Override
     public Type getType() {
-        return Objects.requireNonNull(propertyRef.resolve().getType());
+        return Objects.requireNonNull(propertyRef.getType());
     }
 
     @Override
@@ -31,13 +31,13 @@ public class PropertyValue extends Value {
 
     @Override
     public String getText() {
-        return propertyRef.resolve().getName();
+        return propertyRef.getName();
     }
 
     @Override
     public Expression getExpression() {
         return new PropertyExpression(
-                new ThisExpression(propertyRef.resolve().getDeclaringType().getType()),
+                new ThisExpression(propertyRef.getDeclaringType()),
                 propertyRef
         );
     }

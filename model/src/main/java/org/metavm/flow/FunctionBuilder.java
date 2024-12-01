@@ -5,6 +5,7 @@ import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.Types;
+import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -23,12 +24,9 @@ public class FunctionBuilder {
     private @NotNull String name;
     private boolean isNative;
     private boolean isSynthetic;
-    private List<Parameter> parameters = new ArrayList<>();
-    @Nullable
-    private Function horizontalTemplate;
+    private List<NameAndType> parameters = new ArrayList<>();
     private @NotNull Type returnType = Types.getVoidType();
     private List<TypeVariable> typeParameters = new ArrayList<>();
-    private List<? extends Type> typeArguments = new ArrayList<>();
     private CodeSource codeSource;
     private MetadataState state = MetadataState.READY;
 
@@ -57,16 +55,6 @@ public class FunctionBuilder {
         return this;
     }
 
-    public FunctionBuilder horizontalTemplate(Function horizontalTemplate) {
-        this.horizontalTemplate = horizontalTemplate;
-        return this;
-    }
-
-    public FunctionBuilder typeArguments(List<?extends Type> typeArguments) {
-        this.typeArguments = typeArguments;
-        return this;
-    }
-
     public FunctionBuilder existing(Function existing) {
         this.existing = existing;
         return this;
@@ -87,11 +75,11 @@ public class FunctionBuilder {
         return this;
     }
 
-    public FunctionBuilder parameters(Parameter... parameters) {
+    public FunctionBuilder parameters(NameAndType... parameters) {
         return parameters(List.of(parameters));
     }
 
-    public FunctionBuilder parameters(List<Parameter> parameters) {
+    public FunctionBuilder parameters(List<NameAndType> parameters) {
         this.parameters = parameters;
         return this;
     }
@@ -108,7 +96,7 @@ public class FunctionBuilder {
 
     public Function build() {
         if (existing == null) {
-            return new Function(
+             return new Function(
                     tmpId,
                     name,
                     isNative,
@@ -116,20 +104,16 @@ public class FunctionBuilder {
                     parameters,
                     returnType,
                     typeParameters,
-                    typeArguments,
-                    horizontalTemplate,
-                    codeSource,
+                     codeSource,
                     state
             );
         } else {
             existing.setName(name);
             existing.setTypeParameters(typeParameters);
-            if (typeParameters.isEmpty())
-                existing.setTypeArguments(typeArguments);
             existing.setNative(isNative);
-            existing.setParameters(parameters);
             existing.setReturnType(returnType);
             existing.setState(state);
+            existing.setParameters(NncUtils.map(parameters, p -> new Parameter(null, p.name(), p.type(), existing)));
             return existing;
         }
     }

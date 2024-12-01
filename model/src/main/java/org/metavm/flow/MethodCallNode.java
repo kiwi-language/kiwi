@@ -24,10 +24,6 @@ public class MethodCallNode extends CallNode {
         writeCallCode(output);
     }
 
-    private Method getMethod() {
-        return (Method) super.getFlowRef().resolve();
-    }
-
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitSubFlowNode(this);

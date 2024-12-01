@@ -6,6 +6,7 @@ import org.metavm.flow.rest.MethodRefKey;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.antlr.TypeParser;
 import org.metavm.util.InstanceInput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 public interface GenericDeclarationRefKey {
@@ -33,4 +34,7 @@ public interface GenericDeclarationRefKey {
             return (GenericDeclarationRefKey) TypeKey.read(code, input);
     }
 
+    void write(MvOutput output);
+
+    GenericDeclarationRef toGenericDeclarationRef(TypeDefProvider typeDefProvider);
 }

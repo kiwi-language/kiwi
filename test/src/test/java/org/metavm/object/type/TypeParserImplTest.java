@@ -8,6 +8,7 @@ import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.Entity;
 import org.metavm.entity.EntityUtils;
 import org.metavm.flow.FunctionBuilder;
+import org.metavm.flow.FunctionRef;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.Constants;
@@ -47,7 +48,7 @@ public class TypeParserImplTest extends TestCase {
                         throw new RuntimeException();
                 }
         );
-        Assert.assertSame(testMethod, methodRef.resolve());
+        Assert.assertSame(testMethod, methodRef.getRawFlow());
     }
 
     public void testPrecedence() {
@@ -76,7 +77,7 @@ public class TypeParserImplTest extends TestCase {
         Assert.assertEquals("value", func.getParameter(0).getName());
         Assert.assertEquals(new UnionType(Set.of(variableType, Types.getNullType())), func.getParameter(0).getType());
         Assert.assertEquals("messageSupplier", func.getParameter(1).getName());
-        Assert.assertEquals(supplierKlass.getParameterized(List.of(Types.getStringType())).getType(), func.getParameter(1).getType());
+        Assert.assertEquals(ClassType.create(supplierKlass, List.of(Types.getStringType())), func.getParameter(1).getType());
     }
 
 
@@ -108,13 +109,12 @@ public class TypeParserImplTest extends TestCase {
                 .typeParameters(List.of(new TypeVariable(null, "E", DummyGenericDeclaration.INSTANCE)))
                 .build();
         TestUtils.initEntityIds(klass);
-        var pKlass = klass.getParameterized(List.of(Types.getLongType()));
-        var pM2 = pKlass.getMethod(m -> m.getVerticalTemplate() == m2);
+        var pKlass = ClassType.create(klass, List.of(Types.getLongType()));
+        var pM2 = pKlass.getMethod(m2);
         var ppM2 = pM2.getParameterized(List.of(Types.getStringType()));
-        var methodRef = ppM2.getRef();
-        Assert.assertEquals(pKlass.getType(), methodRef.getDeclaringType());
-        Assert.assertSame(methodRef.getRawFlow(), m2);
-        Assert.assertEquals(List.of(Types.getStringType()), methodRef.getTypeArguments());
+        Assert.assertEquals(pKlass, ppM2.getDeclaringType());
+        Assert.assertSame(ppM2.getRawFlow(), m2);
+        Assert.assertEquals(List.of(Types.getStringType()), ppM2.getTypeArguments());
 
 
         var tv = pM2.getTypeParameters().get(0).getType();
@@ -140,17 +140,16 @@ public class TypeParserImplTest extends TestCase {
         TestUtils.initEntityIds(func);
         var map = getEntityMap(func);
 
-        var pFunc = func.getParameterized(List.of(Types.getStringType()));
-        Assert.assertEquals(0, pFunc.getTypeParameters().size());
+        var pFunc = new FunctionRef(func, List.of(Types.getStringType()));
+        Assert.assertEquals(1, pFunc.getRawFlow().getTypeParameters().size());
         Assert.assertEquals(List.of(Types.getStringType()), pFunc.getTypeArguments());
-        var pFuncRef = pFunc.getRef();
-        Assert.assertTrue(pFuncRef.isParameterized());
-        var expr = pFuncRef.toExpression(null);
+        Assert.assertTrue(pFunc.isParameterized());
+        var expr = pFunc.toExpression(null);
 
         TypeDefProvider typeDefProvider = (Id id) -> (ITypeDef) map.get(id);
         var parser = new TypeParserImpl(typeDefProvider);
         var pFuncRef1 = parser.parseFunctionRef(expr);
-        Assert.assertEquals(pFuncRef, pFuncRef1);
+        Assert.assertEquals(pFunc, pFuncRef1);
     }
 
     private Map<Id, Entity> getEntityMap(Object root) {

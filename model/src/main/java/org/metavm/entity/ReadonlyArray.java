@@ -29,11 +29,11 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
     private Type elementType;
     private ModelIdentity identifier;
 
-    public ReadonlyArray(Class<T> klass, Collection<T> data) {
+    public ReadonlyArray(Class<T> klass, Collection<? extends T> data) {
         this(TypeReference.of(klass).getGenericType(), data, DEFAULT_INDEX_BUILD_THRESHOLD);
     }
 
-    public ReadonlyArray(TypeReference<T> typeRef, Collection<T> data) {
+    public ReadonlyArray(TypeReference<T> typeRef, Collection<? extends T> data) {
         this(typeRef.getGenericType(), data, DEFAULT_INDEX_BUILD_THRESHOLD);
     }
 
@@ -53,7 +53,7 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
         table = new ArrayList<>();
     }
 
-    private ReadonlyArray(Type elementType, Collection<T> data, int buildIndexThreshold) {
+    private ReadonlyArray(Type elementType, Collection<? extends T> data, int buildIndexThreshold) {
         this.elementType = elementType;
         this.genericType = new ParameterizedTypeImpl(
                 null,

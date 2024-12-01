@@ -18,11 +18,6 @@ public class ValueCpEntry extends CpEntry {
     }
 
     @Override
-    public Object resolve() {
-        return value;
-    }
-
-    @Override
     public void write(KlassOutput output) {
         value.write(output);
     }

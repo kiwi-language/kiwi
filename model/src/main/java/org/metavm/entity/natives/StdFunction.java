@@ -32,7 +32,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             "T functionToInstance<T>(any function)", true, List.of(),
             (func, args, callContext) -> {
                 if (args.get(0) instanceof FunctionValue functionValue) {
-                    var samInterface = ((ClassType) func.getTypeArguments().get(0)).resolve();
+                    var samInterface = ((ClassType) func.getTypeArguments().get(0));
                     var type = Types.createSAMInterfaceImpl(samInterface, functionValue);
                     return FlowExecResult.of(new ClassInstance(null, Map.of(), type).getReference());
                 } else {
@@ -208,7 +208,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 else {
                     var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
-                    var getMethod = messageSupplier.getKlass().getMethodByNameAndParamTypes("get", List.of());
+                    var getMethod = messageSupplier.getType().getMethodByNameAndParamTypes("get", List.of());
                     var getResult = getMethod.execute(messageSupplier, List.of(), ctx);
                     if (getResult.exception() != null)
                         return FlowExecResult.ofException(getResult.exception());
@@ -429,7 +429,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     array.sort((e1,e2) -> Instances.compare(e1, e2, callContext));
                 else {
                     var comparator = c.resolveObject();
-                    var cmpMethod = requireNonNull(comparator.getKlass().findMethodByVerticalTemplate(StdMethod.comparatorCompare.get()));
+                    var cmpMethod = comparator.getType().getMethod(StdMethod.comparatorCompare.get());
                     array.sort((e1, e2) -> Instances.toInt(
                             Flows.invokeVirtual(cmpMethod, comparator, List.of(e1,e2), callContext
                             )));
@@ -452,7 +452,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     array.sort(from, to, (e1,e2) -> Instances.compare(e1, e2, callContext));
                 else {
                     var comparator = c.resolveObject();
-                    var cmpMethod = requireNonNull(comparator.getKlass().findMethodByVerticalTemplate(StdMethod.comparatorCompare.get()));
+                    var cmpMethod = comparator.getType().getMethod(StdMethod.comparatorCompare.get());
                     array.sort(from, to, (e1, e2) -> Instances.toInt(
                             Flows.invokeVirtual(cmpMethod, comparator, List.of(e1,e2), callContext
                     )));
@@ -560,7 +560,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var o = args.get(0).resolveDurable();
                 var entityContext = ContextUtil.getEntityContext();
                 return FlowExecResult.of(entityContext.getInstance(
-                        Instances.getGeneralClass(o).getEffectiveTemplate()).getReference()
+                        Instances.getGeneralClass(o)).getReference()
                 );
             }
     ),

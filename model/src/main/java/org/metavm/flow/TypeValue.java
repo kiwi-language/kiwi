@@ -21,7 +21,7 @@ public class TypeValue extends Value {
     @Override
     public org.metavm.object.instance.core.@NotNull Value evaluate(EvaluationContext context) {
         var klass = Types.getKlass(type);
-        return ContextUtil.getEntityContext().getInstance(klass.getEffectiveTemplate()).getReference();
+        return ContextUtil.getEntityContext().getInstance(klass).getReference();
     }
 
     @Override

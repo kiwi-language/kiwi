@@ -1,11 +1,10 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.CopyIgnore;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.Reference;
 import org.metavm.entity.ValueElement;
-import org.metavm.util.NncUtils;
+import org.metavm.object.type.Type;
 
 import java.util.Objects;
 
@@ -14,8 +13,6 @@ public class ParameterRef  extends ValueElement implements Reference {
 
     private final CallableRef callableRef;
     private final Parameter rawParameter;
-    @CopyIgnore
-    private transient Parameter resolved;
 
     public ParameterRef(CallableRef callableRef, Parameter rawParameter) {
         this.callableRef = callableRef;
@@ -28,12 +25,6 @@ public class ParameterRef  extends ValueElement implements Reference {
 
     public Parameter getRawParameter() {
         return rawParameter;
-    }
-
-    public Parameter resolve() {
-        if(resolved != null)
-            return resolved;
-        return resolved = NncUtils.findRequired(callableRef.resolve().getParameters(), p -> p.getUltimateTemplate() == rawParameter);
     }
 
     @Override
@@ -51,6 +42,14 @@ public class ParameterRef  extends ValueElement implements Reference {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitParameterRef(this);
+    }
+
+    public String getName() {
+        return rawParameter.getName();
+    }
+
+    public Type getType() {
+        return callableRef.getTypeMetadata().getType(rawParameter.getTypeIndex());
     }
 
 }

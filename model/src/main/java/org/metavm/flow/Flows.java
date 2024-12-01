@@ -44,26 +44,26 @@ public class Flows {
         return flow instanceof Method method && method.isInstanceMethod();
     }
 
-    public static FunctionType getStaticType(Flow flow) {
-        if (flow instanceof Method method && method.isInstanceMethod())
+    public static FunctionType getStaticType(FlowRef flow) {
+        if (flow instanceof MethodRef method && method.isInstanceMethod())
             return method.getStaticType();
         else
             throw new InternalException("Can not get static type of flow: " + flow);
     }
 
-    public static FlowExecResult execute(Flow flow, @Nullable ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
+    public static FlowExecResult execute(FlowRef flow, @Nullable ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
         return execute(flow, self, arguments, context.getInstanceContext());
     }
 
-    public static FlowExecResult execute(@NotNull Flow flow, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
+    public static FlowExecResult execute(@NotNull FlowRef flow, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         return flow.execute(self, arguments, callContext);
     }
 
-    public static @Nullable Value invoke(@NotNull Flow flow, ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
+    public static @Nullable Value invoke(@NotNull FlowRef flow, ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
         return invoke(flow, self, arguments, context.getInstanceContext());
     }
 
-    public static @Nullable Value invoke(@NotNull Flow flow, ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
+    public static @Nullable Value invoke(@NotNull FlowRef flow, ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         var result = execute(flow, self, arguments, callContext);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
@@ -79,25 +79,25 @@ public class Flows {
             return result.ret();
     }
 
-    public static @Nullable Value invokeVirtual(@NotNull Flow flow, @NotNull ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
-        if(flow instanceof Method method && method.isInstanceMethod()) {
-            flow = self.getKlass().resolveMethod(method);
+    public static @Nullable Value invokeVirtual(@NotNull FlowRef flow, @NotNull ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
+        if(flow instanceof MethodRef method && method.isInstanceMethod()) {
+            flow = self.getType().getOverride(method);
             return invoke(flow, self, arguments, context);
         }
         else
             throw new InternalException("Can not invoke virtual method: " + flow);
     }
 
-    public static @Nullable Value invokeVirtual(@NotNull Flow flow, @NotNull ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
-        if(flow instanceof Method method && method.isInstanceMethod()) {
-            flow = self.getKlass().resolveMethod(method);
+    public static @Nullable Value invokeVirtual(@NotNull FlowRef flow, @NotNull ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
+        if(flow instanceof MethodRef method && method.isInstanceMethod()) {
+            flow = self.getType().getOverride(method);
             return invoke(flow, self, arguments, callContext);
         }
         else
             throw new InternalException("Can not invoke virtual method: " + flow);
     }
 
-    public static Value invokeGetter(Method getter, ClassInstance instance, IEntityContext context) {
+    public static Value invokeGetter(MethodRef getter, ClassInstance instance, IEntityContext context) {
         var result = execute(getter, instance, List.of(), context);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
@@ -105,7 +105,7 @@ public class Flows {
             return Objects.requireNonNull(result.ret());
     }
 
-    public static void invokeSetter(Method setter, ClassInstance instance, Value value, IEntityContext context) {
+    public static void invokeSetter(MethodRef setter, ClassInstance instance, Value value, IEntityContext context) {
         var result = execute(setter, instance, List.of(value), context);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
@@ -130,7 +130,9 @@ public class Flows {
     public static void generateValuesMethodBody(Klass klass) {
         assert klass.isEnum();
         var valuesMethod = klass.getSelfMethod(Flows::isValuesMethod);
+        var retType = valuesMethod.getReturnType();
         valuesMethod.clearContent();
+        valuesMethod.setReturnType(retType); // Add return type to constant pool
         var code = valuesMethod.getCode();
         var arrayType = new ArrayType(klass.getType(), ArrayKind.READ_WRITE);
         Nodes.newArray(arrayType, code);

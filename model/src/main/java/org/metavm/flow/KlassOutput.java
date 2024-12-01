@@ -3,6 +3,7 @@ package org.metavm.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Entity;
 import org.metavm.entity.SerializeContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.util.MvOutput;
 
 import java.io.OutputStream;
@@ -21,4 +22,9 @@ public class KlassOutput extends MvOutput {
     public void writeEntityId(Entity entity) {
         writeId(serializeContext.getId(entity));
     }
+
+    public Id getId(Entity entity) {
+        return serializeContext.getId(entity);
+    }
+
 }

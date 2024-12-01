@@ -44,9 +44,8 @@ public class ExpressionResolverV2 extends CopyVisitor {
             try {
                 var qualifier = context.getDefaultExpr();
                 var qualifierType = (ClassType) qualifier.getType();
-                var klass = qualifierType.resolve();
-                var property = klass.getPropertyByVar(Var.parse(expr.getVariable()));
-                return new PropertyExpression(qualifier, property.getRef());
+                var propertyRef = qualifierType.getPropertyByVar(Var.parse(expr.getVariable()));
+                return new PropertyExpression(qualifier, propertyRef);
             } catch (InternalException e) {
                 throw new InternalException("Fail to resolve variable: " + expr.getVariable(), e);
             }
@@ -110,11 +109,10 @@ public class ExpressionResolverV2 extends CopyVisitor {
             }
             var qualifier = (Expression) copy(expression.getQualifier());
             var qualifierType = (ClassType) context.getExpressionType(qualifier);
-            var klass = qualifierType.resolve();
-            var property = klass.getPropertyByVar(Var.parse(expression.getField().getVariable()));
-            if (property == null)
+            var propertyRef = qualifierType.getPropertyByVar(Var.parse(expression.getField().getVariable()));
+            if (propertyRef == null)
                 throw new InternalException("Property not found: " + expression.getField().getVariable() + " in type " + qualifierType);
-            return new PropertyExpression(qualifier, property.getRef());
+            return new PropertyExpression(qualifier, propertyRef);
         } finally {
             assignedTypeStack.pop();
         }

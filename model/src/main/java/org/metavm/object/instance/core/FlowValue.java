@@ -2,8 +2,8 @@ package org.metavm.object.instance.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.flow.Flow;
 import org.metavm.flow.FlowExecResult;
+import org.metavm.flow.FlowRef;
 import org.metavm.flow.Flows;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.MvOutput;
@@ -14,12 +14,12 @@ import java.util.List;
 @Slf4j
 public class FlowValue extends FunctionValue {
 
-    private final Flow flow;
+    private final FlowRef flow;
     @Nullable
     private final ClassInstance boundSelf;
 
-    public FlowValue(Flow flow, @Nullable ClassInstance boundSelf) {
-        super(!Flows.isInstanceMethod(flow) || boundSelf != null ? flow.getType() : Flows.getStaticType(flow));
+    public FlowValue(FlowRef flow, @Nullable ClassInstance boundSelf) {
+        super(!Flows.isInstanceMethod(flow.getRawFlow()) || boundSelf != null ? flow.getType() : Flows.getStaticType(flow));
         this.flow = flow;
         this.boundSelf = boundSelf;
     }
@@ -54,4 +54,12 @@ public class FlowValue extends FunctionValue {
         return visitor.visitFlowValue(this);
     }
 
+    @Nullable
+    public ClassInstance getBoundSelf() {
+        return boundSelf;
+    }
+
+    public FlowRef getFlow() {
+        return flow;
+    }
 }

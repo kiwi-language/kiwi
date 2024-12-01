@@ -24,7 +24,6 @@ public class DummyKlass extends Klass {
                 List.of(),
                 ClassKind.CLASS,
                 ClassSource.BUILTIN,
-                null,
                 false,
                 false,
                 false,
@@ -34,7 +33,6 @@ public class DummyKlass extends Klass {
                 false,
                 null,
                 null,
-                List.of(),
                 List.of(),
                 0,
                 0,
@@ -70,14 +68,20 @@ public class DummyKlass extends Klass {
     }
 
     @Override
-    public void addParameterized(Klass parameterized) {
-    }
-
-    @Override
     public void addTypeParameter(TypeVariable typeParameter) {
     }
 
     public ReadWriteArray<Attribute> getAttributeArray() {
         return attributes;
+    }
+
+    @Override
+    public ConstantPool getConstantPool() {
+        return new ConstantPool() {
+            @Override
+            public int addValue(Object value) {
+                return 0;
+            }
+        };
     }
 }

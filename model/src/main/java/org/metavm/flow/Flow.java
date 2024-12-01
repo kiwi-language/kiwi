@@ -26,16 +26,13 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    public static final IndexDef<Flow> IDX_HORIZONTAL_TEMPLATE =
-            IndexDef.create(Flow.class, "horizontalTemplate");
-
     @EntityField(asTitle = true)
     private @NotNull String name;
     private boolean isNative;
     private boolean isSynthetic;
     @ChildEntity
     private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
-    private @NotNull Type returnType;
+    private int returnTypeIndex;
     @ChildEntity
     private @Nullable Code code;
     private transient long version;
@@ -44,13 +41,8 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     private boolean isTemplate;
     @ChildEntity
     private final ChildArray<TypeVariable> typeParameters = addChild(new ChildArray<>(TypeVariable.class), "typeParameters");
-    @CopyIgnore
-    @Nullable
-    private final Flow horizontalTemplate;
-    @ChildEntity
-    private ReadWriteArray<Type> typeArguments = addEphemeralChild(new ReadWriteArray<>(Type.class), "typeArguments");
     private @NotNull MetadataState state;
-    private @NotNull FunctionType type;
+    private int typeIndex;
     @Nullable
     private final CodeSource codeSource;
     @ChildEntity
@@ -60,8 +52,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     @ChildEntity
     private final ChildArray<Klass> klasses = addChild(new ChildArray<>(Klass.class), "klasses");
     @ChildEntity
-    @Nullable
-    private ConstantPool constantPool;
+    private final ConstantPool constantPool = addChild(new ConstantPool(), "constantPool");
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient List<Node> nodes = new ArrayList<>();
@@ -71,39 +62,42 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                 @NotNull String name,
                 boolean isNative,
                 boolean isSynthetic,
-                List<Parameter> parameters,
+                List<NameAndType> parameters,
                 @NotNull Type returnType,
                 List<TypeVariable> typeParameters,
-                List<? extends Type> typeArguments,
-                @Nullable Flow horizontalTemplate,
                 @Nullable CodeSource codeSource,
                 @NotNull MetadataState state
     ) {
         super(tmpId);
-        if (horizontalTemplate == null && typeParameters.isEmpty() && !typeArguments.isEmpty())
-            throw new InternalException("Missing flow template");
         this.name = NamingUtils.ensureValidName(name);
         this.isNative = isNative;
         this.isSynthetic = isSynthetic;
-        this.returnType = returnType;
-        this.type = new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
+        this.returnTypeIndex = constantPool.addValue(returnType);
+        this.typeIndex = constantPool.addValue(new FunctionType(NncUtils.map(parameters, NameAndType::type), returnType));
         setTypeParameters(typeParameters);
-        if(typeParameters.isEmpty())
-            setTypeArguments(typeArguments);
-        setParameters(parameters, false);
-        this.horizontalTemplate = horizontalTemplate;
+        setParameters(NncUtils.map(parameters, p -> new Parameter(null, p.name(), p.type(), this)), false);
         this.codeSource = codeSource;
         this.state = state;
     }
 
-    public abstract FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext);
+    public abstract FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext);
 
-    public List<Type> getParameterTypes() {
-        return NncUtils.map(parameters, Parameter::getType);
+    public List<Type> getParameterTypes(TypeMetadata typeMetadata) {
+        return NncUtils.map(parameters, p -> p.getType(typeMetadata));
     }
 
-    public @NotNull Type getReturnType() {
-        return returnType;
+    public List<Type> getParameterTypes() {
+        return getParameterTypes(getConstantPool());
+    }
+
+    public @NotNull Type getReturnType(TypeMetadata typeMetadata) {
+        if(typeMetadata.getType(returnTypeIndex) == null)
+            throw new NullPointerException("Return type is missing for flow " + getQualifiedName());
+        return typeMetadata.getType(returnTypeIndex);
+    }
+
+    public Type getReturnType() {
+        return getReturnType(constantPool);
     }
 
     @Override
@@ -111,23 +105,12 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return Objects.requireNonNull(code, () -> "Root scope not present in flow: " + getQualifiedName());
     }
 
-    public boolean isConstantPoolPresent() {
-        return constantPool != null;
-    }
-
     public boolean isCodePresent() {
         return code != null;
     }
 
     @Override
-    public void onLoadPrepare() {
-         typeArguments = addEphemeralChild(new ReadWriteArray<>(Type.class), "typeArguments");
-    }
-
-    @Override
     public void onLoad() {
-        if(!typeParameters.isEmpty())
-            typeArguments.addAll(NncUtils.map(typeParameters, TypeVariable::getType));
         stage = ResolutionStage.INIT;
         nodeNames = new HashSet<>();
         accept(new VoidStructuralVisitor() {
@@ -144,29 +127,13 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         }
     }
 
-    public boolean matches(String name, List<Type> argumentTypes) {
-        if (this.name.equals(name)) {
-            if (parameters.size() == argumentTypes.size()) {
-                for (int i = 0; i < parameters.size(); i++) {
-                    var paramType = parameters.get(i).getType();
-                    var argType = argumentTypes.get(i);
-                    if (!paramType.isConvertibleFrom(argType))
-                        return false;
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
     public boolean isError() {
         return getState() == MetadataState.ERROR;
     }
 
     public void clearContent() {
         clearNodes();
-        if(constantPool != null)
-            constantPool.clear();
+        constantPool.clear();
         capturedTypeVariables.clear();
     }
 
@@ -208,14 +175,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     public String getQualifiedName() {
-        return getNameWithTypeArguments();
-    }
-
-    public String getNameWithTypeArguments() {
-        if (NncUtils.allMatch(typeArguments, t -> t instanceof VariableType v && v.getVariable().getGenericDeclaration() == this))
-            return name;
-        else
-            return name + "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">";
+        return getName();
     }
 
     public @NotNull MetadataState getState() {
@@ -255,14 +215,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         version++;
     }
 
-    public @Nullable Flow getTemplate() {
-        return horizontalTemplate;
-    }
-
-    public boolean getParameterizedFlows() {
-        return horizontalTemplate != null;
-    }
-
     public Parameter getParameterByName(String name) {
         return parameters.get(Parameter::getName, name);
     }
@@ -295,10 +247,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return NncUtils.listOf(typeParameters);
     }
 
-    public List<? extends Type> getEffectiveTypeArguments() {
-        return horizontalTemplate == null ? NncUtils.map(typeParameters, TypeVariable::getType) : typeArguments.toList();
-    }
-
     public void setParameters(List<Parameter> parameters) {
         setParameters(parameters, true);
     }
@@ -311,14 +259,18 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     protected void resetType() {
-        type = new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
+        typeIndex = constantPool.addValue(new FunctionType(NncUtils.map(parameters, Parameter::getType), constantPool.getType(returnTypeIndex)));
+    }
+
+    @Override
+    public int getTypeIndex() {
+        return typeIndex;
     }
 
     @Override
     public void addTypeParameter(TypeVariable typeParameter) {
         isTemplate = true;
         typeParameters.addChild(typeParameter);
-        typeArguments.add(typeParameter.getType());
     }
 
     public List<Parameter> getParameters() {
@@ -340,35 +292,17 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     public void setReturnType(Type returnType) {
-        this.returnType = returnType;
+        this.returnTypeIndex = constantPool.addValue(returnType);
         resetType();
     }
 
-    public @Nullable Flow getHorizontalTemplate() {
-        return horizontalTemplate;
-    }
-
-    public Flow getEffectiveHorizontalTemplate() {
-        return horizontalTemplate == null ? this : horizontalTemplate;
-    }
-
-    public List<Type> getTypeArguments() {
-        return typeArguments.toList();
-    }
-
-    public boolean isParameterized() {
-        return horizontalTemplate != null && horizontalTemplate != this;
+    public List<Type> getDefaultTypeArguments() {
+        return NncUtils.map(typeParameters, TypeVariable::getType);
     }
 
     public void setNative(boolean aNative) {
         isNative = aNative;
         resetBody();
-    }
-
-    public void setTypeArguments(List<? extends Type> typeArguments) {
-        if (isTemplate() && !NncUtils.iterableEquals(NncUtils.map(this.typeParameters, TypeVariable::getType), typeArguments))
-            throw new InternalException("Type arguments must equal to type parameters for a template flow. Actual type arguments: " + typeArguments);
-        this.typeArguments.reset(typeArguments);
     }
 
     public boolean isTemplate() {
@@ -382,8 +316,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
                 tp.setGenericDeclaration(this);
         });
         this.typeParameters.resetChildren(typeParameters);
-        if (isTemplate())
-            setTypeArguments(NncUtils.map(typeParameters, TypeVariable::getType));
     }
 
     public void setCapturedTypeVariables(List<CapturedTypeVariable> capturedTypeVariables) {
@@ -394,21 +326,15 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.capturedTypeVariables.resetChildren(capturedTypeVariables);
     }
 
-    public void setCapturedCompositeTypes(List<Type> capturedCompositeTypes) {
-//        this.capturedCompositeTypes.resetChildren(capturedCompositeTypes);
-    }
-
-    public void setCapturedFlows(List<Flow> capturedFlows) {
-//        this.capturedFlows.resetChildren(capturedFlows);
-    }
-
     public @NotNull FunctionType getType() {
-        return type;
+        return constantPool.getFunctionType(typeIndex);
+    }
+
+    public FunctionType getType(TypeMetadata typeMetadata) {
+        return typeMetadata.getFunctionType(typeIndex);
     }
 
     public String getSignatureString() {
-        var name = isParameterized() ?
-                getName() + "<" + NncUtils.join(getTypeArguments(), Type::getTypeDesc) + ">" : getName();
         return name + "(" + NncUtils.join(getParameterTypes(), Type::getTypeDesc) + ")";
     }
 
@@ -416,7 +342,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.state = state;
     }
 
-    protected List<Value> checkArguments(List<? extends Value> arguments) {
+    protected List<Value> checkArguments(List<? extends Value> arguments, TypeMetadata typeMetadata) {
         List<Value> convertedArgs = new ArrayList<>();
         out:
         if (arguments.size() == parameters.size()) {
@@ -425,16 +351,19 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
             while (paramIt.hasNext() && argIt.hasNext()) {
                 var param = paramIt.next();
                 var arg = argIt.next();
-                if (param.getType().isInstance(arg)) {
+                var paramType = param.getType(typeMetadata);
+                if (paramType.isInstance(arg)) {
                     convertedArgs.add(arg);
                 } else {
                     try {
-                        convertedArgs.add(arg.convert(param.getType()));
+                        convertedArgs.add(arg.convert(paramType));
                     } catch (BusinessException e) {
 //                        if (DebugEnv.debugging) {
-                            logger.info("Argument type mismatch: {} is not assignable from {}",
-                                    param.getType().getTypeDesc(),
-                                    arg.getType().getTypeDesc());
+                            logger.info("Argument type mismatch: {} is not assignable from {}, constants: {}",
+                                    paramType.getTypeDesc(),
+                                    arg.getType().getTypeDesc(),
+                                    typeMetadata
+                                    );
 //                        }
                         break out;
                     }
@@ -444,23 +373,13 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         }
         logger.info("class: {}, number type parameters: {}", EntityUtils.getRealType(this).getSimpleName(), getTypeParameters().size());
         throw new BusinessException(ErrorCode.ILLEGAL_FUNCTION_ARGUMENT, getQualifiedName(),
-                NncUtils.join(getParameterTypes(), Type::getTypeDesc),
+                NncUtils.join(getParameterTypes(typeMetadata), Type::getTypeDesc),
                 NncUtils.join(arguments, arg -> arg.getType().getTypeDesc()));
     }
 
     @Override
     public Collection<CapturedTypeVariable> getCapturedTypeVariables() {
         return capturedTypeVariables.toList();
-    }
-
-    public Collection<Type> getCapturedCompositeTypes() {
-        return List.of();
-//        return capturedCompositeTypes.toList();
-    }
-
-    public Collection<Flow> getCapturedFlows() {
-        return List.of();
-//        return capturedFlows.toList();
     }
 
     @Override
@@ -479,14 +398,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         if (capturedTypeVariables.contains(capturedTypeVariable))
             throw new InternalException("Captured type already present: " + EntityUtils.getEntityDesc(capturedTypeVariable));
         capturedTypeVariables.addChild(capturedTypeVariable);
-    }
-
-    public void addCapturedCompositeType(Type compositeType) {
-//        capturedCompositeTypes.addChild(compositeType);
-    }
-
-    public void addCapturedFlow(Flow flow) {
-//        capturedFlows.addChild(flow);
     }
 
     public ResolutionStage getStage() {
@@ -521,46 +432,18 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     @Override
     public String getScopeName() {
-        return getNameWithTypeArguments();
+        return name;
     }
 
     @Override
     public String getTypeDesc() {
-        return getNameWithTypeArguments();
-    }
-
-    public void addParameterized(Flow parameterized) {
-        NncUtils.requireTrue(parameterized.getTemplate() == this);
-        NncUtils.requireNull(ParameterizedStore.put(this, parameterized.typeArguments.secretlyGetTable(), parameterized),
-                () -> "Parameterized flow " + parameterized.getTypeDesc() + " already exists");
-    }
-
-    protected abstract Flow createParameterized(List<? extends Type> typeArguments);
-
-    public @Nullable Flow getExistingParameterized(List<? extends Type> typeArguments) {
-        if (typeArguments.equals(NncUtils.map(typeParameters, TypeVariable::getType)))
-            return this;
-        return (Flow) ParameterizedStore.get(this,typeArguments);
+        return name;
     }
 
     private ResolutionStage stage() {
         if(stage == null)
             stage = ResolutionStage.INIT;
         return stage;
-    }
-
-    public Flow getParameterized(List<? extends Type> typeArguments) {
-        var pFlow = getExistingParameterized(typeArguments);
-        if(pFlow == this)
-            return pFlow;
-        if(pFlow == null) {
-            pFlow = createParameterized(typeArguments);
-            addParameterized(pFlow);
-        }
-        else if (pFlow.getStage().isAfterOrAt(stage()))
-            return pFlow;
-        var subst = new SubstitutorV2(this, typeParameters.toList(), typeArguments, pFlow, ResolutionStage.DEFINITION);
-        return substitute(subst);
     }
 
     protected Flow substitute(SubstitutorV2 substitutor) {
@@ -592,15 +475,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         lambdas.forEach(l -> l.setFlow(this));
     }
 
-    public void forEachParameterized(Consumer<Flow> action) {
-        ParameterizedStore.forEach(this, (k,v) -> action.accept((Flow) v));
-    }
-
-    public void resolveConstantPool() {
-        if(constantPool != null)
-            constantPool.resolve();
-    }
-
     public ConstantPool getConstantPool() {
         return Objects.requireNonNull(constantPool,
                 () -> "Constant pool is not initialized for flow " + getQualifiedName());
@@ -615,14 +489,10 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     protected void resetBody() {
-        if(hasBody()) {
+        if(hasBody())
             code = addChild(new Code(this), "code");
-            constantPool = addChild(new ConstantPool(), "constantPool");
-        }
-        else {
+        else
             code = null;
-            constantPool = null;
-        }
     }
 
     public void addLocalKlass(Klass localKlass) {
@@ -665,16 +535,16 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         output.writeEntityId(this);
         output.writeUTF(name);
         output.writeInt(getFlags());
+        constantPool.write(output);
         output.writeInt(typeParameters.size());
         typeParameters.forEach(tp -> tp.write(output));
         output.writeInt(capturedTypeVariables.size());
         capturedTypeVariables.forEach(ctp -> ctp.write(output));
         output.writeInt(parameters.size());
         parameters.forEach(p -> p.write(output));
-        returnType.write(output);
+        output.writeShort(returnTypeIndex);
+        output.writeShort(typeIndex);
         output.write(state.code());
-        if(constantPool != null)
-            constantPool.write(output);
         if(code != null)
             code.write(output);
         output.writeInt(lambdas.size());
@@ -688,6 +558,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     public void read(KlassInput input) {
         name = input.readUTF();
         setFlags(input.readInt());
+        constantPool.read(input);
         int typeParamCount = input.readInt();
         var typeParams = new ArrayList<TypeVariable>(typeParamCount);
         for (int i = 0; i < typeParamCount; i++) {
@@ -701,24 +572,18 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         }
         setCapturedTypeVariables(capturedTypeVars);
         var paramCount = input.readInt();
-        var params = new ArrayList<Parameter>(paramCount);
+        parameters.clear();
         for (int i = 0; i < paramCount; i++) {
-            params.add(input.readParameter());
+            parameters.addChild(input.readParameter());
         }
-        setParameters(params);
-        returnType = input.readType();
+        returnTypeIndex = input.readShort();
+        typeIndex = input.readShort();
         state = MetadataState.fromCode(input.read());
         if(hasBody()) {
-            if(constantPool == null)
-                constantPool = addChild(new ConstantPool(), "constantPool");
             if(code == null)
                 code = addChild(new Code(this), "code");
         } else {
-            constantPool = null;
             code = null;
-        }
-        if(constantPool != null) {
-            constantPool.read(input);
         }
         if(code != null) {
             code.read(input);
@@ -735,6 +600,70 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         for (int i = 0; i < localKlassCount; i++) {
             klasses.addChild(input.readKlass());
         }
+    }
+
+    public ConstantPool getExistingTypeMetadata(List<? extends Type> typeArguments) {
+        if (NncUtils.map(getAllTypeParameters(), TypeVariable::getType).equals(typeArguments))
+            return constantPool;
+        return (ConstantPool) ParameterizedStore.get(this, typeArguments);
+    }
+
+    private ConstantPool createTypeMetadata(List<? extends Type> typeArguments) {
+        return new ConstantPool(typeArguments);
+    }
+
+    public void addTypeMetadata(ConstantPool parameterized) {
+        var existing = ParameterizedStore.get(this, parameterized.typeArguments.secretlyGetTable());
+        if(existing != null)
+            throw new IllegalStateException("Parameterized klass " + parameterized + " already exists. "
+                    + "existing: " + System.identityHashCode(existing) + ", new: "+ System.identityHashCode(parameterized)
+            );
+        NncUtils.requireNull(ParameterizedStore.put(this, parameterized.typeArguments.secretlyGetTable(), parameterized),
+                () -> "Parameterized klass " + parameterized + " already exists");
+    }
+
+    public boolean isConstantPoolParameterized() {
+        return isTemplate;
+    }
+
+    public TypeMetadata getTypeMetadata(List<? extends Type> typeArguments) {
+        if (!isConstantPoolParameterized()) {
+            if (typeArguments.isEmpty())
+                return constantPool;
+            else
+                throw new InternalException(this + " is not a template class. Type arguments: " + typeArguments);
+        }
+//        typeArguments.forEach(Type::getTypeDesc);
+        var typeMetadata = getExistingTypeMetadata(typeArguments);
+        if (typeMetadata == constantPool)
+            return constantPool;
+        if(typeMetadata == null) {
+            typeMetadata = createTypeMetadata(typeArguments);
+            addTypeMetadata(typeMetadata);
+        }
+        else if (typeMetadata.getStage().isAfterOrAt(stage))
+            return typeMetadata;
+        var existingTm = typeMetadata;
+        var subst = new SubstitutorV2(
+                constantPool, getAllTypeParameters(), typeArguments, typeMetadata, stage);
+        typeMetadata = (ConstantPool) subst.copy(constantPool);
+        assert typeMetadata == existingTm;
+        return typeMetadata;
+    }
+
+    public List<TypeVariable> getAllTypeParameters() {
+        return typeParameters.toList();
+    }
+
+
+    public void update(List<Parameter> parameters, Type returnType) {
+        setParameters(parameters, false);
+        this.returnTypeIndex = constantPool.addValue(returnType);
+        resetType();
+    }
+
+    public void foreachGenericDeclaration(Consumer<GenericDeclaration> action) {
+        action.accept(this);
     }
 }
 

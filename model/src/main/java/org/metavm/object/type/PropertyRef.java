@@ -4,6 +4,11 @@ import org.metavm.entity.Reference;
 
 public interface PropertyRef extends Reference {
 
-    Property resolve();
+    Type getType();
 
+    Property getProperty();
+
+    String getName();
+
+    ClassType getDeclaringType();
 }

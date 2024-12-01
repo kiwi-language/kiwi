@@ -98,10 +98,6 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey {
     public <S> void acceptComponents(TypeVisitor<?, S> visitor, S s) {
     }
 
-    public Type transform(TypeTransformer<?> transformer) {
-        return transformer.visitType(this, null);
-    }
-
     public List<? extends Type> getSuperTypes() {
         return List.of();
     }

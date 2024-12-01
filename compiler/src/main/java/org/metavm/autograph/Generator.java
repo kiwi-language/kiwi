@@ -7,8 +7,6 @@ import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
-import org.metavm.object.type.generic.CompositeTypeEventRegistry;
-import org.metavm.object.type.generic.CompositeTypeListener;
 import org.metavm.util.CompilerConfig;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -199,21 +197,6 @@ public class Generator extends VisitorBase {
 //        logger.debug("Generating code for method {}", TranspileUtils.getMethodQualifiedName(psiMethod));
         var method = NncUtils.requireNonNull(psiMethod.getUserData(Keys.Method));
         method.setLambdas(List.of());
-        var capturedTypeListener = new CompositeTypeListener() {
-            @Override
-            public void onTypeCreated(Type type) {
-                if (type.isCaptured())
-                    method.addCapturedCompositeType(type);
-            }
-
-            @Override
-            public void onFlowCreated(Flow flow) {
-                if (NncUtils.anyMatch(flow.getTypeArguments(), Type::isCaptured))
-                    method.addCapturedFlow(flow);
-            }
-        };
-        CompositeTypeEventRegistry.addListener(capturedTypeListener);
-        method.clearContent();
         MethodGenerator builder = new MethodGenerator(method, typeResolver, this);
         builders.push(builder);
         builder.enterScope(method.getCode());
@@ -246,14 +229,9 @@ public class Generator extends VisitorBase {
         }
         builder.exitScope();
         builders.pop();
-        CompositeTypeEventRegistry.removeListener(capturedTypeListener);
 //        if(method.getName().equals("Inner2")) {
 //            logger.debug("{}", method.getText());
 //        }
-    }
-
-    private boolean isEnumType(Klass classType) {
-        return classType.getTemplate() != null && classType.getTemplate() == StdKlass.enum_.get();
     }
 
     private boolean isEntityType(Klass classType) {

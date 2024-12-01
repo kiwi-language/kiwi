@@ -109,7 +109,7 @@ public enum CommitState {
                     instance.forEachReference(ref -> {
                         var referent = ref.resolve();
                         if (referent instanceof ClassInstance object) {
-                            var k = object.getKlass().findAncestorByTemplate(klass);
+                            var k = object.getType().findAncestorByKlass(klass);
                             if (k != null)
                                 ref.clearEager();
                         }
@@ -183,7 +183,7 @@ public enum CommitState {
                 }
                 if(instance instanceof ClassInstance object) {
                     for (Klass k : toEnumKlasses) {
-                        var staticFieldTable = StaticFieldTable.getInstance(k, context);
+                        var staticFieldTable = StaticFieldTable.getInstance(k.getType(), context);
                         if (object.getKlass() == k && !staticFieldTable.isEnumConstant(object.getReference())) {
                             instCtx.remove(instance);
                         }
@@ -191,10 +191,10 @@ public enum CommitState {
                     if (fromEnumKlasses.contains(object.getKlass()) && !instCtx.isReferenced(object))
                         instCtx.remove(instance);
                     for (Field removedChildField : removedChildFields) {
-                        var k = object.getKlass().findAncestorByTemplate(removedChildField.getDeclaringType());
+                        var k = object.getType().findAncestorByKlass(removedChildField.getDeclaringType());
                         if(k != null) {
-                            var f = k.getFieldByTemplate(removedChildField);
-                            object.setField(f, Instances.nullInstance());
+                            var f = k.getField(removedChildField);
+                            object.setField(f.getRawField(), Instances.nullInstance());
                         }
                     }
                 }

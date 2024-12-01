@@ -4,7 +4,12 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.CopyIgnore;
 import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.ValueArray;
+import org.metavm.entity.natives.CallContext;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.Value;
+import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Type;
+import org.metavm.object.type.TypeMetadata;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,8 +21,10 @@ public abstract class FlowRef extends CallableRef implements GenericDeclarationR
     protected final ValueArray<Type> typeArguments;
     @CopyIgnore
     protected transient Flow resolved;
+    @CopyIgnore
+    private transient TypeMetadata typeMetadata;
 
-    public FlowRef(Flow rawFlow, List<Type> typeArguments) {
+    public FlowRef(Flow rawFlow, List<? extends Type> typeArguments) {
         this.rawFlow = rawFlow;
         this.typeArguments =  new ValueArray<>(Type.class, typeArguments);
     }
@@ -27,14 +34,7 @@ public abstract class FlowRef extends CallableRef implements GenericDeclarationR
     }
 
     public List<Type> getTypeArguments() {
-        return typeArguments.isEmpty() ? rawFlow.getTypeArguments() : typeArguments.toList();
-    }
-
-    public Flow resolve() {
-       if(resolved != null) {
-           return resolved;
-       }
-       return resolved = (typeArguments.isEmpty() ? rawFlow : rawFlow.getParameterized(typeArguments.toList()));
+        return typeArguments.isEmpty() ? rawFlow.getDefaultTypeArguments() : typeArguments.toList();
     }
 
     @Override
@@ -52,4 +52,57 @@ public abstract class FlowRef extends CallableRef implements GenericDeclarationR
     public boolean isParameterized() {
         return !typeArguments.isEmpty();
     }
+
+    public List<Type> getParameterTypes() {
+        return rawFlow.getParameterTypes(getTypeMetadata());
+    }
+
+    public Type getReturnType() {
+        return rawFlow.getReturnType(getTypeMetadata());
+    }
+
+    public boolean matches(String name, List<Type> argumentTypes) {
+        if (rawFlow.getName().equals(name)) {
+            var parameters = rawFlow.getParameters();
+            if (parameters.size() == argumentTypes.size()) {
+                for (int i = 0; i < parameters.size(); i++) {
+                    var paramType = parameters.get(i).getType(getTypeMetadata());
+                    var argType = argumentTypes.get(i);
+                    if (!paramType.isConvertibleFrom(argType))
+                        return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public FunctionType getType() {
+        return (FunctionType) getTypeMetadata().getType(rawFlow.getTypeIndex());
+    }
+
+    public FlowExecResult execute(ClassInstance boundSelf, List<? extends Value> arguments, CallContext callContext) {
+//        logger.debug("Executing flow {}", this);
+        return rawFlow.execute(boundSelf, arguments, this, callContext);
+    }
+
+    public String getQualifiedName() {
+        return getRawFlow().getQualifiedName();
+    }
+
+    public abstract FlowRef getParameterized(List<? extends Type> typeArguments);
+
+    @Override
+    public TypeMetadata getTypeMetadata() {
+        if(typeMetadata == null)
+            typeMetadata = getTypeMetadata0();
+        return typeMetadata;
+    }
+
+    protected abstract TypeMetadata getTypeMetadata0();
+
+    public int getParameterCount() {
+        return getRawFlow().getParameters().size();
+    }
+
 }

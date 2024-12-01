@@ -52,7 +52,6 @@ public class ReflectDefiner {
     }
 
     public ReflectDefineResult defineClass() {
-//        logger.debug("Defining class {}", javaClass.getName());
         var kind = javaClass.isEnum() ? ClassKind.ENUM : (javaClass.isInterface() ? ClassKind.INTERFACE :
                 (ValueObject.class.isAssignableFrom(javaClass) ? ClassKind.VALUE : ClassKind.CLASS));
         var code = javaClass.getName().replace('$', '.');
@@ -82,7 +81,7 @@ public class ReflectDefiner {
                     .isConstructor(true)
                     .build();
             constructor.setTypeParameters(NncUtils.map(javaConstructor.getTypeParameters(), tv -> defineTypeVariable(tv, constructor)));
-            constructor.setParameters(NncUtils.map(javaConstructor.getParameters(), this::parseParameter));
+            constructor.setParameters(NncUtils.map(javaConstructor.getParameters(), p -> parseParameter(p, constructor)));
             if(!methodSignatures.add(MethodSignature.of(constructor)))
                 klass.removeMethod(constructor);
         }
@@ -102,17 +101,22 @@ public class ReflectDefiner {
                     .isNative(!abs && kind != ClassKind.INTERFACE)
                     .build();
             method.setTypeParameters(NncUtils.map(javaMethod.getTypeParameters(), tv -> defineTypeVariable(tv, method)));
-            method.setParameters(NncUtils.map(javaMethod.getParameters(), this::parseParameter));
+            method.setParameters(NncUtils.map(javaMethod.getParameters(), p -> parseParameter(p, method)));
             method.setReturnType(resolveNullableType(javaMethod.getGenericReturnType()));
-            if(!methodSignatures.add(MethodSignature.of(method)))
-                klass.removeMethod(method);
+            if(!methodSignatures.add(MethodSignature.of(method))) {
+                var name = method.getName();
+                int i = 1;
+                method.setName(name + i);
+                while (!methodSignatures.add(MethodSignature.of(method)))
+                    method.setName(name + ++i);
+            }
         }
         klass.rebuildMethodTable();
         for (Field field : javaClass.getDeclaredFields()) {
             if (Modifier.isPublic(field.getModifiers()) && Modifier.isStatic(field.getModifiers()))
                 defineField(field, klass);
         }
-        if(staticInitialValues.isEmpty())
+        if (staticInitialValues.isEmpty())
             return new ReflectDefineResult(klass, null);
         else {
             var sft = new StaticFieldTable(klass);
@@ -145,48 +149,6 @@ public class ReflectDefiner {
         return Access.PACKAGE;
     }
 
-    private List<org.metavm.flow.Method> getOverridden(org.metavm.flow.Method method) {
-        var overridden = new ArrayList<org.metavm.flow.Method>();
-        var queue = new LinkedList<Klass>();
-        var visited = new HashSet<Klass>();
-        klass.forEachSuper(s -> {
-            if(visited.add(s))
-                queue.offer(s);
-        });
-        while (!queue.isEmpty()) {
-            var k = queue.poll();
-            var found = k.findSelfMethod(m -> isOverride(method, m));
-            if(found != null)
-                overridden.add(found);
-            else
-                k.forEachSuper(s -> {
-                    if(visited.add(s))
-                        queue.offer(s);
-                });
-        }
-        return overridden;
-    }
-
-    public static boolean isOverride(org.metavm.flow.Method method, org.metavm.flow.Method overridden) {
-        if(method.getName().equals(overridden.getName())
-                && method.getTypeParameters().size() == overridden.getTypeParameters().size()
-                && method.getParameters().size() == overridden.getParameters().size()) {
-            var ancestor = method.getDeclaringType().findAncestorByTemplate(overridden.getDeclaringType());
-            if(ancestor != null) {
-                var subst = new TypeSubstitutor(
-                        NncUtils.map(ancestor.getEffectiveTemplate().getTypeParameters(), TypeVariable::getType),
-                        ancestor.getTypeArguments()
-                );
-                var subst1 = new TypeSubstitutor(
-                        NncUtils.map(overridden.getTypeParameters(), TypeVariable::getType),
-                        NncUtils.map(method.getTypeParameters(), TypeVariable::getType)
-                );
-                return method.getParameterTypes().equals(NncUtils.map(overridden.getParameterTypes(), t -> t.accept(subst).accept(subst1)));
-            }
-        }
-        return false;
-    }
-
     private TypeVariable defineTypeVariable(java.lang.reflect.TypeVariable<?> typeVariable, GenericDeclaration genericDeclaration) {
         var tv = new TypeVariable(null, typeVariable.getName(), genericDeclaration);
         typeVariableMap.put(typeVariable, tv);
@@ -194,8 +156,8 @@ public class ReflectDefiner {
         return tv;
     }
 
-    private Parameter parseParameter(java.lang.reflect.Parameter parameter) {
-        return Parameter.create(parameter.getName(), resolveNullableType(parameter.getParameterizedType()));
+    private Parameter parseParameter(java.lang.reflect.Parameter parameter, org.metavm.flow.Method method) {
+        return new Parameter(null, parameter.getName(), resolveNullableType(parameter.getParameterizedType()), method);
     }
 
     private Type resolveNullableType(java.lang.reflect.Type type) {
@@ -233,9 +195,13 @@ public class ReflectDefiner {
             }
             case ParameterizedType pType -> {
                 var rawKlass = ((ClassType) resolveType(pType.getRawType())).getKlass();
-                if(rawKlass.isTemplate())
-                    yield rawKlass.getParameterized(NncUtils.map(pType.getActualTypeArguments(), this::resolveType)).getType();
-                else
+                if(rawKlass.isTemplate()) {
+                    yield new ClassType(
+                            (ClassType) NncUtils.get(pType.getOwnerType(), this::resolveType),
+                            rawKlass,
+                            NncUtils.map(List.of(pType.getActualTypeArguments()), this::resolveType)
+                    );
+                } else
                     yield rawKlass.getType();
             }
             case WildcardType wildcardType -> new UncertainType(

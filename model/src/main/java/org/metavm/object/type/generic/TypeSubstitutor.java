@@ -1,6 +1,8 @@
 package org.metavm.object.type.generic;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.flow.FunctionRef;
+import org.metavm.flow.MethodRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.metavm.entity.ElementVisitor;
@@ -96,6 +98,17 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         return new ClassType(
                 (ClassType) NncUtils.get(type.getOwner(), t -> t.accept(this)),
                 type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> t.accept(this)));
+    }
+
+
+    @Override
+    public Type visitMethodRef(MethodRef methodRef) {
+        return super.visitMethodRef(methodRef);
+    }
+
+    @Override
+    public Type visitFunctionRef(FunctionRef functionRef) {
+        return super.visitFunctionRef(functionRef);
     }
 
     private @Nullable Type substitute(Type type) {

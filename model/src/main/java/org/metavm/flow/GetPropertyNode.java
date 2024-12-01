@@ -26,7 +26,7 @@ public class GetPropertyNode extends Node {
 
     @NotNull
     public Type getType() {
-        return propertyRef.resolve().getType();
+        return propertyRef.getType();
     }
 
     @Override

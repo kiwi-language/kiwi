@@ -81,20 +81,20 @@ public class InstanceFactory {
             Map<String, InstanceFieldDTO> fieldMap = NncUtils.toMap(classInstanceParam.fields(), InstanceFieldDTO::fieldId);
             ClassInstance object = ClassInstance.allocate(classType, parentRef);
             instance = object;
-            for (Field field : classType.resolve().getAllFields()) {
-                var tag = field.getTagId().toString();
+            classType.forEachField(field -> {
+                var tag = field.getFieldId().toString();
                 if (fieldMap.containsKey(tag)) {
                     var fieldValue = resolveValue(
                             fieldMap.get(tag).value(),
                             field.getType(),
-                            InstanceParentRef.ofObject(object.getReference(), field),
+                            InstanceParentRef.ofObject(object.getReference(), field.getRawField()),
                             context
                     );
-                    object.initField(field, fieldValue);
+                    object.initField(field.getRawField(), fieldValue);
                 } else {
-                    object.initField(field, Instances.nullInstance());
+                    object.initField(field.getRawField(), Instances.nullInstance());
                 }
-            }
+            });
             object.ensureAllFieldsInitialized();
         } else if (param instanceof ArrayInstanceParam arrayInstanceParam) {
             var arrayType = (ArrayType) type;
@@ -181,23 +181,23 @@ public class InstanceFactory {
                 listNative.clear();
                 NncUtils.forEach(
                         listFieldValue.getElements(),
-                        e -> listNative.add(resolveValue(e, list.getKlass().getFirstTypeArgument(), null, context))
+                        e -> listNative.add(resolveValue(e, list.getType().getFirstTypeArgument(), null, context))
                 );
                 return list.getReference();
             } else {
                 var classType = (ClassType) type;
                 if(!classType.isList())
                     throw new InternalException(classType.getTypeDesc() + " is not a list type");
-                Klass klass;
-                if(StdKlass.list.get().isType(classType.getEffectiveTemplate())) {
+                ClassType klass;
+                if(StdKlass.list.get().isType(classType.getTemplateType())) {
                     if(listFieldValue.isElementAsChild())
-                        klass = StdKlass.childList.get().getParameterized(List.of(classType.getFirstTypeArgument()));
+                        klass = ClassType.create(StdKlass.childList.get(), List.of(classType.getFirstTypeArgument()));
                     else
-                        klass = StdKlass.arrayList.get().getParameterized(List.of(classType.getFirstTypeArgument()));
+                        klass = ClassType.create(StdKlass.arrayList.get(), List.of(classType.getFirstTypeArgument()));
                 }
                 else
-                    klass = classType.resolve();
-                var list = ClassInstance.allocate(klass.getType());
+                    klass = classType;
+                var list = ClassInstance.allocate(klass);
                 var listNative = new ListNative(list);
                 listNative.List();
                 NncUtils.forEach(

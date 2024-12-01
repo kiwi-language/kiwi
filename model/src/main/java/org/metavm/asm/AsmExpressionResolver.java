@@ -124,7 +124,7 @@ class AsmExpressionResolver {
                 field2expression.put(field.IDENTIFIER().getText(), field.expression());
             }
         }
-        for (Field field : type.resolve().getAllFields()) {
+        type.foreachField(field -> {
             var fieldValue = field2expression.get(field.getName());
             if(fieldValue != null)
                 resolve0(fieldValue);
@@ -133,7 +133,7 @@ class AsmExpressionResolver {
                         () -> "Value for field '" + field.getName() + "' is missing in the allocate expression");
                 Nodes.loadConstant(value, code);
             }
-        }
+        });
         new AddObjectNode(
                 code.nextNodeName("addObject"),
                 false,
@@ -145,9 +145,10 @@ class AsmExpressionResolver {
     }
 
     private Type resolveLambdaExpression(AssemblyParser.LambdaExpressionContext ctx) {
-        var params = parseParameterList(ctx.lambdaParameters().formalParameterList(), null);
         var returnType = parseType(ctx.typeTypeOrVoid());
-        var lambda = new Lambda(null, params, returnType, this.code.getFlow());
+        var lambda = new Lambda(null, List.of(), returnType, this.code.getFlow());
+        var params = parseParameterList(ctx.lambdaParameters().formalParameterList(), lambda);
+        lambda.setParameters(params);
         var code = lambda.getCode();
         var asmLambda = new AsmLambda((AsmCallable) codeGenerator.scopeNotNull(), lambda);
         params.forEach(p -> asmLambda.declareVariable(p.getName(), p.getType()));
@@ -171,7 +172,6 @@ class AsmExpressionResolver {
         }
         else {
             var type = (ClassType) parseClassType(creator.classOrInterfaceType());
-            var targetKlass = type.resolve();
             List<AssemblyParser.ExpressionContext> arguments =
                     NncUtils.getOrElse(
                             creator.arguments().expressionList(),
@@ -181,11 +181,11 @@ class AsmExpressionResolver {
             List<Type> typeArgs = creator.typeArguments() != null ?
                     NncUtils.map(creator.typeArguments().typeType(), this::parseType) : List.of();
             var argTypes = NncUtils.map(arguments, this::resolve0);
-            var constructor = targetKlass.resolveMethod(
-                    targetKlass.getEffectiveTemplate().getName(), argTypes, typeArgs, false
+            var constructor = type.resolveMethod(
+                    type.getKlass().getName(), argTypes, typeArgs, false
             );
             Nodes.newObject(code, constructor, ctx.UNEW() != null, ctx.ENEW() != null);
-            return targetKlass.getType();
+            return type;
         }
     }
 
@@ -368,7 +368,7 @@ class AsmExpressionResolver {
                 var qualifierType = (ClassType) resolve0(qualifierCtx);
                 resolve0(ctx.expression(1));
                 Nodes.dupX1(code);
-                var field = qualifierType.resolve().getFieldByName(fieldName);
+                var field = qualifierType.getFieldByName(fieldName);
                 Nodes.setField(field, code);
                 return field.getType();
             }
@@ -398,7 +398,7 @@ class AsmExpressionResolver {
                 NncUtils.map(methodCall.typeArguments().typeType(), this::parseType) : List.of();
         List<Type> argTypes = methodCall.expressionList() != null ?
                 NncUtils.map(methodCall.expressionList().expression(), this::resolve0) : List.of();
-        Method method = type.resolve().resolveMethod(methodName, argTypes, typeArgs, false);
+        var method = type.resolveMethod(methodName, argTypes, typeArgs, false);
         Nodes.methodCall(method, code);
         return method.getReturnType();
     }
@@ -408,7 +408,7 @@ class AsmExpressionResolver {
         var type = getThis();
         List<Type> argTypes = expressionList != null ?
                 NncUtils.map(expressionList.expression(), this::resolve0) : List.of();
-        Method method = type.resolve().resolveMethod(methodName, argTypes, List.of(), false);
+        var method = type.resolveMethod(methodName, argTypes, List.of(), false);
         Nodes.methodCall(method, code);
         return null;
     }
@@ -418,7 +418,7 @@ class AsmExpressionResolver {
         var type = getThis();
         List<Type> argTypes = expressionList != null ?
                 NncUtils.map(expressionList.expression(), this::resolve0) : List.of();
-        Method method = type.resolve().resolveMethod(methodName, argTypes, List.of(), false);
+        var method = type.resolveMethod(methodName, argTypes, List.of(), false);
         Nodes.methodCall(method, code);
         return null;
     }
@@ -436,7 +436,7 @@ class AsmExpressionResolver {
             return Types.getLongType();
         } else {
             assert type instanceof ClassType;
-            var klass = ((ClassType) type).resolve();
+            var klass = ((ClassType) type);
             var field = klass.getFieldByName(name);
             Nodes.getProperty(field, code);
             return field.getType();
@@ -544,27 +544,27 @@ class AsmExpressionResolver {
     }
 
     private List<Parameter> parseParameterList(@Nullable AssemblyParser.FormalParameterListContext parameterList,
-                                               @Nullable Callable callable) {
+                                               Callable callable) {
         if (parameterList == null)
             return List.of();
         return NncUtils.map(parameterList.formalParameter(), p -> parseParameter(p, callable));
     }
 
-    private Parameter parseParameter(AssemblyParser.FormalParameterContext parameter, @Nullable Callable callable) {
+    private Parameter parseParameter(AssemblyParser.FormalParameterContext parameter, Callable callable) {
         var name = parameter.IDENTIFIER().getText();
         var type = parseType(parameter.typeType());
-        if (callable != null) {
-            var existing = callable.findParameter(p -> p.getName().equals(name));
-            if (existing != null) {
-                existing.setType(type);
-                return existing;
-            }
+        var existing = callable.findParameter(p -> p.getName().equals(name));
+        if (existing != null) {
+            existing.setType(type);
+            return existing;
+        } else {
+            return new Parameter(
+                    NncUtils.randomNonNegative(),
+                    name,
+                    type,
+                    callable
+            );
         }
-        return new Parameter(
-                NncUtils.randomNonNegative(),
-                name,
-                type
-        );
     }
 
     private Type getExpressionType(Expression expression) {

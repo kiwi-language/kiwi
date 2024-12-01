@@ -99,7 +99,7 @@ public class SystemDefContextTest extends TestCase {
 
     public void test_field_with_instance_type() {
         PojoDef<ConstantExpression> def = defContext.getPojoDef(ConstantExpression.class);
-        var quxType = defContext.getClassType(Qux.class).resolve();
+        var quxType = defContext.getClassType(Qux.class).getKlass();
         quxType.initId(PhysicalId.of(1000000L, 0L, TestUtils.mockClassType()));
         Field quxAmountField = defContext.getField(Qux.class, "amount");
         var qux = ClassInstance.create(

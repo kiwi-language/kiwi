@@ -106,7 +106,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
         var fields = new HashMap<Id, FieldValue>();
         instance.forEachField((field, value) -> {
             if (!field.isChild()) {
-                fields.put(field.getTagId(), value.toFieldValueDTO());
+                fields.put(field.getId(), value.toFieldValueDTO());
             }
         });
         return new Source(

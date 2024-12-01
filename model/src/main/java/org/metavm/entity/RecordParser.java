@@ -1,10 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.api.ValueObject;
-import org.metavm.flow.Method;
-import org.metavm.flow.MethodBuilder;
-import org.metavm.flow.Nodes;
-import org.metavm.flow.Parameter;
+import org.metavm.flow.*;
 import org.metavm.object.type.ColumnStore;
 import org.metavm.object.type.TypeCategory;
 import org.metavm.util.NncUtils;
@@ -45,7 +42,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                     .isConstructor(true)
                     .parameters(NncUtils.map(
                             javaClass.getRecordComponents(),
-                            c -> new Parameter(null, c.getName(), defContext.getType(c.getGenericType()))
+                            c -> new NameAndType(c.getName(), defContext.getType(c.getGenericType()))
                     ))
                     .returnType(get().getType())
                     .build();
@@ -71,7 +68,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                    if(!field.isStatic()) {
                        Nodes.this_(code);
                        Nodes.argument(constructor, i++);
-                       Nodes.setField(field, code);
+                       Nodes.setField(field.getRef(), code);
                    }
                 }
                 Nodes.this_(code);
@@ -81,7 +78,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                 var accessor = klass.getMethodByName(field.getName());
                 var code = accessor.getCode();
                 code.setStrictEphemeral(true);
-                Nodes.thisProperty(field, code);
+                Nodes.thisProperty(field.getRef(), code);
                 Nodes.ret(code);
             }
         }

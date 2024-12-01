@@ -33,7 +33,7 @@ public class FlowManagerTest extends TestCase {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                 var klass = TestUtils.newKlassBuilder("Foo").build();
                 var method = MethodBuilder.newBuilder(klass, "test")
-                        .parameters(Parameter.create("value", Types.getBooleanType()))
+                        .parameters(new NameAndType("value", Types.getBooleanType()))
                         .returnType(Types.getBooleanType())
                         .isStatic(true)
                         .build();
@@ -58,7 +58,7 @@ public class FlowManagerTest extends TestCase {
         });
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var method = context.getMethod(methodId);
-            var r = Flows.execute(method, null, List.of(Instances.trueInstance()), context).ret();
+            var r = Flows.execute(method.getRef(), null, List.of(Instances.trueInstance()), context).ret();
             Assert.assertNotNull(r);
             Assert.assertEquals(Instances.trueInstance(), r);
         }

@@ -25,14 +25,13 @@ import java.util.function.Predicate;
 import static java.util.Objects.requireNonNull;
 
 @EntityType
-public class Index extends Constraint implements LocalKey, GenericElement, ITypeDef {
+public class Index extends Constraint implements LocalKey, ITypeDef {
 
     @ChildEntity
     private final ChildArray<IndexField> fields = addChild(new ChildArray<>(IndexField.class), "fields");
     private boolean unique;
     private @Nullable Method method;
     private transient IndexDef<?> indexDef;
-    private transient Index copySource;
 
     public Index(Klass type, String name, String message, boolean unique, List<Field> fields,
                  @Nullable Method method) {
@@ -98,7 +97,7 @@ public class Index extends Constraint implements LocalKey, GenericElement, IType
         Map<IndexField, Value> values = new HashMap<>();
         if(method != null) {
             var indexValues =
-                    requireNonNull(Flows.execute(method, instance, List.of(), ContextUtil.getEntityContext()).ret())
+                    requireNonNull(Flows.execute(method.getRef(), instance, List.of(), ContextUtil.getEntityContext()).ret())
                             .resolveObject();
             for (int i = 0; i < fields.size() - 1; i++) {
                 var field = fields.get(i);
@@ -206,22 +205,8 @@ public class Index extends Constraint implements LocalKey, GenericElement, IType
         fields.forEach(f -> f.setIndex(this));
     }
 
-    @Override
-    public Object getCopySource() {
-        return copySource;
-    }
-
-    @Override
-    public void setCopySource(Object copySource) {
-        this.copySource = (Index) copySource;
-    }
-
-    public Index getEffectiveTemplate() {
-        return getDeclaringType().isParameterized() ? Objects.requireNonNull(copySource) : this;
-    }
-
     public IndexRef getRef() {
-        return new IndexRef(getDeclaringType().getType(), getEffectiveTemplate());
+        return new IndexRef(getDeclaringType().getType(), this);
     }
 
     @Override

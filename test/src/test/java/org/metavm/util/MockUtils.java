@@ -32,10 +32,10 @@ public class MockUtils {
                 .kind(ClassKind.ENUM)
                 .build();
         var enumKlass = StdKlass.enum_.get();
-        var couponStateEnumKlas = enumKlass.getParameterized(List.of(couponStateType.getType()));
-        couponStateType.setSuperType(couponStateEnumKlas.getType());
-        var enumNameField = couponStateEnumKlas.getFieldByName("name");
-        var enumOrdinalField = couponStateEnumKlas.getFieldByName("ordinal");
+        var couponStateEnumKlas = ClassType.create(enumKlass, List.of(couponStateType.getType()));
+        couponStateType.setSuperType(couponStateEnumKlas);
+        var enumNameField = couponStateEnumKlas.getKlass().getFieldByName("name");
+        var enumOrdinalField = couponStateEnumKlas.getKlass().getFieldByName("ordinal");
         var couponNormalState = ClassInstanceBuilder.newBuilder(couponStateType.getType())
                 .data(Map.of(
                         enumNameField,

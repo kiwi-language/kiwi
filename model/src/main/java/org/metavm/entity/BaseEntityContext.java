@@ -740,7 +740,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             if (array instanceof ChildArray<?>)
                 children.addAll(NncUtils.filter(array, Objects::nonNull));
         } else if (type instanceof ClassType classType) {
-            var klass = classType.resolve();
+            var klass = classType.getKlass();
             for (Field field : klass.getAllFields()) {
                 if (field.isChild()) {
                     Object child = ReflectionUtils.get(object, getDefContext().getJavaField(field));

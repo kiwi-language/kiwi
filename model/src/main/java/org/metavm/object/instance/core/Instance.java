@@ -228,9 +228,8 @@ public abstract class Instance implements Message {
                 root = parent.getRoot();
             if (!pendingChild)
                 aggregateRoot = parent;
-            if (parent.isEphemeral() && !ephemeral) {
+            if (parent.isEphemeral() && !ephemeral)
                 forEachDescendant(instance -> instance.ephemeral = true);
-            }
         } else {
             this.parent = null;
             this.parentField = null;

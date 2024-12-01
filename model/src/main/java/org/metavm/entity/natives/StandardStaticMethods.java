@@ -3,10 +3,7 @@ package org.metavm.entity.natives;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.DefContext;
 import org.metavm.entity.DummyGenericDeclaration;
-import org.metavm.flow.FlowExecResult;
-import org.metavm.flow.Function;
-import org.metavm.flow.FunctionBuilder;
-import org.metavm.flow.Parameter;
+import org.metavm.flow.*;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.Types;
@@ -122,11 +119,11 @@ public class StandardStaticMethods {
 
         public Function define() {
 //            log.debug("Defining function for method {}", ReflectionUtils.getMethodQualifiedName(method));
-            var params = new ArrayList<Parameter>();
+            var params = new ArrayList<NameAndType>();
             if(!Modifier.isStatic(method.getModifiers()))
-                params.add(Parameter.create("$this", Types.fromJavaType(method.getDeclaringClass())));
+                params.add(new NameAndType("$this", Types.fromJavaType(method.getDeclaringClass())));
             for (var p : method.getParameters()) {
-                params.add(Parameter.create(p.getName(), Types.fromJavaType(p.getParameterizedType())));
+                params.add(new NameAndType(p.getName(), Types.fromJavaType(p.getParameterizedType())));
             }
             var func = FunctionBuilder.newBuilder(name)
                     .typeParameters(

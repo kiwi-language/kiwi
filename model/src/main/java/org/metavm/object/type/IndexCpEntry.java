@@ -17,11 +17,6 @@ public class IndexCpEntry extends CpEntry {
     }
 
     @Override
-    public Object resolve() {
-        return indexRef.resolve();
-    }
-
-    @Override
     public void write(KlassOutput output) {
         indexRef.write(output);
     }

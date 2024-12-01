@@ -29,12 +29,9 @@ public class KlassBuilder {
     private boolean struct;
     private String desc;
     private List<ClassType> interfaces = new ArrayList<>();
-    private List<? extends Type> typeArguments = new ArrayList<>();
     private Klass existing;
     private boolean done;
     private Long suffix;
-    private Klass template;
-    private List<Klass> dependencies;
     private List<TypeVariable> typeParameters = List.of();
     private long tag = TypeTags.DEFAULT;
     private Integer sourceTag;
@@ -89,16 +86,6 @@ public class KlassBuilder {
         return randomSuffix();
     }
 
-    public KlassBuilder template(Klass template) {
-        this.template = template;
-        return this;
-    }
-
-    public KlassBuilder dependencies(List<Klass> dependencies) {
-        this.dependencies = dependencies;
-        return this;
-    }
-
     public KlassBuilder typeParameters(List<TypeVariable> typeParameters) {
         this.typeParameters = typeParameters;
         return this;
@@ -139,11 +126,6 @@ public class KlassBuilder {
 
     public KlassBuilder typeParameters(TypeVariable... typeParameters) {
         return typeParameters(List.of(typeParameters));
-    }
-
-    public KlassBuilder typeArguments(List<? extends Type> typeArguments) {
-        this.typeArguments = typeArguments;
-        return this;
     }
 
     public KlassBuilder isAbstract(boolean isAbstract) {
@@ -210,7 +192,6 @@ public class KlassBuilder {
                     interfaces,
                     kind,
                     source,
-                    template,
                     anonymous,
                     ephemeral,
                     struct,
@@ -221,7 +202,6 @@ public class KlassBuilder {
                     enclosingFlow,
                     declaringKlass,
                     typeParameters,
-                    typeArguments,
                     tag,
                     sourceTag,
                     since);
@@ -236,7 +216,6 @@ public class KlassBuilder {
             existing.setAnonymous(anonymous);
             existing.setDesc(desc);
             existing.setTypeParameters(typeParameters);
-            existing.setTypeArguments(typeArguments);
             existing.setStruct(struct);
             existing.setSearchable(searchable);
         }

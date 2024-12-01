@@ -51,22 +51,4 @@ public class EntityContextTest extends TestCase {
         }
     }
 
-    public void testRemovingOrphans() {
-        TestUtils.doInTransactionWithoutResult(() -> {
-            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                var klass = TestUtils.newKlassBuilder("Foo")
-                        .typeParameters(new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE))
-                        .build();
-                var m = MethodBuilder.newBuilder(klass, "test").build();
-                Nodes.noop(m.getCode());
-                klass.setStage(ResolutionStage.DEFINITION);
-                context.bind(klass);
-                var pKlass = klass.getParameterized(List.of(Types.getStringType()));
-                context.bind(pKlass);
-                klass.updateParameterized();
-                context.finish();
-            }
-        });
-    }
-
 }

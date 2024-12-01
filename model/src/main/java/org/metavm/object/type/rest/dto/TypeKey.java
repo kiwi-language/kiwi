@@ -3,6 +3,8 @@ package org.metavm.object.type.rest.dto;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.metavm.flow.rest.FunctionRefKey;
+import org.metavm.flow.rest.MethodRefKey;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.*;
 import org.metavm.object.type.antlr.TypeLexer;
@@ -73,7 +75,6 @@ public interface TypeKey extends TypeOrTypeKey {
         if(ctx.variableType() != null) {
             var variableType = ctx.variableType();
             return new VariableTypeKey(
-                    GenericDeclarationRefKey.fromContext(variableType.genericDeclarationRef()),
                     Id.parse(Constants.removeIdPrefix(variableType.IDENTIFIER().getText()))
             );
         }
@@ -116,9 +117,14 @@ public interface TypeKey extends TypeOrTypeKey {
         return read(code, input);
     }
 
-    static @Nullable TypeKey readNullable(InstanceInput input) {
+    static @Nullable GenericDeclarationRefKey readGenericDeclarationRef(InstanceInput input) {
         var code = input.read();
-        return code == WireTypes.NULL ? null : read(code, input);
+        return switch (code) {
+            case WireTypes.NULL -> null;
+            case WireTypes.METHOD_REF -> MethodRefKey.read(input);
+            case WireTypes.FUNCTION_REF -> FunctionRefKey.read(input);
+            default -> (GenericDeclarationRefKey) read(code, input);
+        };
     }
 
     static TypeKey read(int code, InstanceInput input) {
@@ -141,12 +147,12 @@ public interface TypeKey extends TypeOrTypeKey {
             case WireTypes.CLASS_TYPE -> new ClassTypeKey(input.readId());
             case WireTypes.TAGGED_CLASS_TYPE -> new TaggedClassTypeKey(input.readId(), input.readInt());
             case WireTypes.PARAMETERIZED_TYPE ->
-                    new ParameterizedTypeKey(readNullable(input), input.readId(), readTypeKeyList(input));
+                    new ParameterizedTypeKey(readGenericDeclarationRef(input), input.readId(), readTypeKeyList(input));
             case WireTypes.UNION_TYPE -> new UnionTypeKey(readTypeKeySet(input));
             case WireTypes.INTERSECTION_TYPE -> new IntersectionTypeKey(readTypeKeySet(input));
             case WireTypes.FUNCTION_TYPE -> new FunctionTypeKey(readTypeKeyList(input), read(input));
             case WireTypes.UNCERTAIN_TYPE -> new UncertainTypeKey(read(input), read(input));
-            case WireTypes.VARIABLE_TYPE -> new VariableTypeKey(GenericDeclarationRefKey.read(input), input.readId());
+            case WireTypes.VARIABLE_TYPE -> new VariableTypeKey(input.readId());
             case WireTypes.CAPTURED_TYPE -> new CapturedTypeKey(input.readId());
             default -> throw new InternalException("Invalid type key code: " + code);
         };

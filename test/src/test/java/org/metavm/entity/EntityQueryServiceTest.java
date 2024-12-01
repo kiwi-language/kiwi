@@ -95,7 +95,7 @@ public class EntityQueryServiceTest extends TestCase {
     }
 
     public void testSearchTypes() {
-        Klass fooType = ModelDefRegistry.getClassType(Foo.class).resolve();
+        Klass fooType = ModelDefRegistry.getClassType(Foo.class).getKlass();
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try (var context = entityContextFactory.newContext(Constants.ROOT_APP_ID)) {
             Page<Klass> page = entityQueryService.query(

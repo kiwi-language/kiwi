@@ -241,14 +241,17 @@ public class TypeResolverImpl implements TypeResolver {
                 if (klass == null)
                     klass = resolvePojoClass(psiClass, stage);
                 if (psiClass.getContainingClass() != null || classType.getParameters().length > 0) {
-                    ClassType ownerType;
-                    if(psiClass.getContainingClass() != null) {
+                    GenericDeclarationRef owner;
+                    PsiClass enclosingClass = psiClass.getContainingClass();
+                    PsiMethod enclosingMethod;
+                    if(enclosingClass != null) {
                         var generics = classType.resolveGenerics();
-                        var ownerPsiType = generics.getSubstitutor().substitute(TranspileUtils.createTemplateType(psiClass.getContainingClass()));
-                        ownerType = ((ClassType) resolveTypeOnly(ownerPsiType));
-                    }
+                        var ownerPsiType = generics.getSubstitutor().substitute(TranspileUtils.createTemplateType(enclosingClass));
+                        owner = ((ClassType) resolveTypeOnly(ownerPsiType));
+                    } else if((enclosingMethod = TranspileUtils.getEnclosingMethod(psiClass)) != null)
+                        owner = Objects.requireNonNull(enclosingMethod.getUserData(Keys.Method)).getRef();
                     else
-                        ownerType = null;
+                        owner = null;
                     var typeArgs = new ArrayList<Type>();
                     var templateType = TranspileUtils.createTemplateType(psiClass);
                     if(!Arrays.equals(templateType.getParameters(), classType.getParameters())) {
@@ -261,7 +264,7 @@ public class TypeResolverImpl implements TypeResolver {
                             );
                         }
                     }
-                    return new ClassType(ownerType, klass, typeArgs);
+                    return new ClassType(owner, klass, typeArgs);
                 } else {
                     return klass.getType();
                 }
@@ -289,7 +292,7 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     public Flow resolveFlow(PsiMethod method) {
-        var klass = ((ClassType) resolveDeclaration(TranspileUtils.createType(method.getContainingClass()))).resolve();
+        var klass = ((ClassType) resolveDeclaration(TranspileUtils.createType(method.getContainingClass()))).getKlass();
         return NncUtils.findRequired(klass.getMethods(), f ->
                 f.getInternalName(null).equals(TranspileUtils.getInternalName(method)));
     }
@@ -306,7 +309,7 @@ public class TypeResolverImpl implements TypeResolver {
     public Field resolveField(PsiField field) {
         PsiType declaringType = TranspileUtils.getElementFactory().createType(
                 requireNonNull(field.getContainingClass()));
-        Klass klass = ((ClassType) resolve(declaringType)).resolve();
+        Klass klass = ((ClassType) resolve(declaringType)).getKlass();
         return klass.findFieldByName(field.getName());
     }
 
@@ -445,6 +448,7 @@ public class TypeResolverImpl implements TypeResolver {
             if(parent instanceof PsiClass)
                 declaringKlass = requireNonNull(parent.getUserData(Keys.MV_CLASS));
             if (klass != null) {
+                klass.getConstantPool().clear();
                 klass.setName(name);
                 klass.setQualifiedName(qualName);
                 if (klass.isTemplate() != isTemplate)
@@ -520,19 +524,10 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private void processKlass(Klass klass, final ResolutionStage stage) {
-        var template = klass.getEffectiveTemplate();
-        if (template != klass && template.getStage().isAfterOrAt(stage))
-            template.getParameterized(klass.getTypeArguments(), stage);
-        else if (template.tryGetId() == null) {
-            if(psiClassMap.get(template) == null) {
-                var typeArgs = requireNonNull(template.getDeclaringKlass()).getTypeArguments();
-                for (Type typeArg : typeArgs) {
-                    logger.debug("Generic declaration: {}", ((VariableType) typeArg).getGenericDeclarationRef());
-                }
-            }
-            var psiClass = Objects.requireNonNull(psiClassMap.get(template),
+        if (klass.tryGetId() == null) {
+            var psiClass = Objects.requireNonNull(psiClassMap.get(klass),
                     () -> "Cannot find PsiClass for klass " + klass.getTypeDesc());
-            processKlass(template, psiClass, stage);
+            processKlass(klass, psiClass, stage);
         }
     }
 

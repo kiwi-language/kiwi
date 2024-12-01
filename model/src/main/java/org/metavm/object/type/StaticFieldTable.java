@@ -25,8 +25,8 @@ public class StaticFieldTable extends Entity implements LoadAware, GlobalKey {
 
     public static final IndexDef<StaticFieldTable> IDX_KLASS = IndexDef.createUnique(StaticFieldTable.class, "klass");
 
-    public static StaticFieldTable getInstance(Klass klass, IEntityContext context) {
-        klass = klass.getEffectiveTemplate();
+    public static StaticFieldTable getInstance(ClassType type, IEntityContext context) {
+        var klass = type.getKlass();
         var sft = context.selectFirstByKey(IDX_KLASS, klass);
         if(sft == null) {
             sft = new StaticFieldTable(klass);
@@ -63,7 +63,6 @@ public class StaticFieldTable extends Entity implements LoadAware, GlobalKey {
     }
 
     public Value get(Field field) {
-        field = field.getEffectiveTemplate();
         assert field.getDeclaringType() == klass;
         var entry = map.get(field);
         return entry != null ? entry.getValue() : Instances.nullInstance();
@@ -78,7 +77,6 @@ public class StaticFieldTable extends Entity implements LoadAware, GlobalKey {
     }
 
     public void set(Field field, Value value) {
-        field = field.getEffectiveTemplate();
         assert field.getDeclaringType() == klass;
         var entry = map.get(field);
         if(entry != null)
@@ -104,8 +102,7 @@ public class StaticFieldTable extends Entity implements LoadAware, GlobalKey {
     }
 
     public void remove(Field field) {
-        var f = field.getEffectiveTemplate();
-        entries.removeIf(e -> e.getField() == f);
+        entries.removeIf(e -> e.getField() == field);
     }
 
     public EnumConstantRT getEnumConstant(Id id) {

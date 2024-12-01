@@ -982,14 +982,15 @@ public class ExpressionResolver {
     public Node resolveLambdaExpression(PsiLambdaExpression expression, ResolutionContext context) {
         enterLambda(expression);
         var returnType = typeResolver.resolveNullable(TranspileUtils.getLambdaReturnType(expression), ResolutionStage.DECLARATION);
+        var funcInterface = (ClassType) typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType());
+        var lambda = new Lambda(null, List.of(), returnType, methodGenerator.getMethod());
         var parameters = new ArrayList<Parameter>();
         int i = 0;
         for (var psiParameter : expression.getParameterList().getParameters()) {
-            parameters.add(resolveParameter(psiParameter));
+            parameters.add(resolveParameter(psiParameter, lambda));
             psiParameter.putUserData(Keys.VARIABLE_INDEX, i++);
         }
-        var funcInterface = (ClassType) typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType());
-        var lambda = new Lambda(null, parameters, returnType, methodGenerator.getMethod());
+        lambda.setParameters(parameters);
         methodGenerator.enterScope(lambda.getCode());
         if (expression.getBody() instanceof PsiExpression bodyExpr) {
             resolve(bodyExpr, context);
@@ -1086,10 +1087,11 @@ public class ExpressionResolver {
             caseBody.accept(visitor);
     }
 
-    private Parameter resolveParameter(PsiParameter psiParameter) {
+    private Parameter resolveParameter(PsiParameter psiParameter, Callable callable) {
         return new Parameter(
                 null, psiParameter.getName(),
-                typeResolver.resolveNullable(psiParameter.getType(), ResolutionStage.DECLARATION)
+                typeResolver.resolveNullable(psiParameter.getType(), ResolutionStage.DECLARATION),
+                callable
         );
     }
 

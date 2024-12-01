@@ -61,7 +61,7 @@ public abstract class PojoDef<T> extends ModelDef<T> {
             }
             setPojoFields(model, instance, objectInstanceMap);
         } else {
-            PojoDef<? extends T> subTypeDef = getSubTypeDef(instance.getType().resolve());
+            PojoDef<? extends T> subTypeDef = getSubTypeDef(instance.getKlass());
             subTypeDef.initEntityHelper(model, instance, objectInstanceMap);
         }
     }
@@ -111,10 +111,10 @@ public abstract class PojoDef<T> extends ModelDef<T> {
 //        try(var ignored = ContextUtil.getProfiler().enter("PojoDef.resetInstance")) {
             Klass instanceKlass = instance.getKlass();
             if (klass.isType(instance.getType())) {
-                if (model instanceof Entity entity)
-                    Instances.reloadParent(entity, instance, instanceMap, defContext);
                 instance.setType(klass.getType());
                 instance.reset(getInstanceFields(model, instanceMap), instance.getVersion(), instance.getSyncVersion());
+                if (model instanceof Entity entity)
+                    Instances.reloadParent(entity, instance, instanceMap, defContext);
             } else {
                 getSubTypeDef(instanceKlass).resetInstance(instance, model, instanceMap);
             }
@@ -132,7 +132,7 @@ public abstract class PojoDef<T> extends ModelDef<T> {
         }
         Klass t = subType;
         while (t != null && Objects.equals(t.getSuperType(), klass.getType())) {
-            t = NncUtils.get(t.getSuperType(), ClassType::resolve);
+            t = NncUtils.get(t.getSuperType(), ClassType::getKlass);
         }
         Klass directSubType = NncUtils.requireNonNull(t);
         PojoDef<? extends T> subDef = subTypeDefList.get(directSubType);
@@ -147,7 +147,7 @@ public abstract class PojoDef<T> extends ModelDef<T> {
         var fieldData = getInstanceFields0(object, instanceMap);
         var result = new HashMap<Field, Value>();
         klass.forEachField(f -> {
-            var v = fieldData.get(f.getEffectiveTemplate());
+            var v = fieldData.get(f);
             if(v != null)
                 result.put(f, v);
         });

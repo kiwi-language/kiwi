@@ -6,9 +6,8 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.flow.ClosureContext;
-import org.metavm.flow.Flow;
 import org.metavm.flow.Flows;
-import org.metavm.flow.Method;
+import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
@@ -24,6 +23,8 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
+
 public class ClassInstance extends Instance {
 
     public static final Logger logger = LoggerFactory.getLogger(ClassInstance.class);
@@ -32,7 +33,7 @@ public class ClassInstance extends Instance {
 
     private final FieldTable fieldTable = new FieldTable(this);
     private Klass klass;
-    private transient Map<Flow, FlowValue> functions;
+    private transient Map<MethodRef, FlowValue> functions;
     private @Nullable ClosureContext closureContext;
     private final List<ClassInstance> children = new ArrayList<>();
 
@@ -63,7 +64,7 @@ public class ClassInstance extends Instance {
                          @Nullable Map<Field, Value> data, boolean ephemeral, boolean initFieldTable,
                          @Nullable ClosureContext closureContext) {
         super(id, type, version, syncVersion, ephemeral, load);
-        this.klass = type.resolve();
+        this.klass = type.getKlass();
         this.closureContext = closureContext;
         if (klass != uninitializedKlass && initFieldTable)
             fieldTable.initialize();
@@ -74,7 +75,7 @@ public class ClassInstance extends Instance {
 
     public ClassInstance(Id id, ClassType type, boolean ephemeral, @Nullable Consumer<Instance> load) {
         super(id, type, 0, 0, ephemeral, load);
-        this.klass = type.resolve();
+        this.klass = type.getKlass();
         if (klass != uninitializedKlass)
             fieldTable.initialize();
     }
@@ -259,8 +260,8 @@ public class ClassInstance extends Instance {
         output.writeInt(fieldTable.countSubTablesForWriting());
         fieldTable.forEachSubTable(subTable -> {
             int numFields;
-            Method writeObjectMethod;
-            if(subTable instanceof FieldSubTable st && (writeObjectMethod = st.klass.getWriteObjectMethod()) != null) {
+            MethodRef writeObjectMethod;
+            if(subTable instanceof FieldSubTable st && (writeObjectMethod = st.type.getWriteObjectMethod()) != null) {
                 output.writeLong(st.klassTag);
                 customWrite(st, writeObjectMethod, output);
             }
@@ -272,7 +273,7 @@ public class ClassInstance extends Instance {
         writeChildren(output);
     }
 
-    private void customWrite(FieldSubTable subTable, Method writeObjectMethod, InstanceOutput output) {
+    private void customWrite(FieldSubTable subTable, MethodRef writeObjectMethod, InstanceOutput output) {
         output.writeInt(-1);
         var markingOutput = new MarkingInstanceOutput();
         markingOutput.setCurrent(this);
@@ -294,7 +295,7 @@ public class ClassInstance extends Instance {
     }
 
     public void defaultWrite(InstanceOutput output) {
-        var st = (FieldSubTable) Objects.requireNonNull(output.getCurrentKlassSlot());
+        var st = (FieldSubTable) requireNonNull(output.getCurrentKlassSlot());
         defaultWriteFields(st, output, st.countFieldsForWriting());
     }
 
@@ -332,7 +333,7 @@ public class ClassInstance extends Instance {
     @NoProxy
     public void setType(Type type) {
         if (type instanceof ClassType classType) {
-            klass = classType.resolve();
+            klass = classType.getKlass();
             super.setType(type);
         } else
             throw new IllegalArgumentException(type + " is not a class type");
@@ -363,7 +364,7 @@ public class ClassInstance extends Instance {
             if(lev != null) {
                 st = subTables.get(lev);
                 input.setCurrentKlassSlot(st);
-                if(st.klass.getReadObjectMethod() == null) {
+                if(st.type.getKlass().getReadObjectMethod() == null) {
                     defaultReadFields(input, st);
                     slots[lev] = input;
                 }
@@ -389,7 +390,7 @@ public class ClassInstance extends Instance {
                     field.ensureInitialized();
                 }
             } else
-                customRead(Objects.requireNonNull(st.klass.getReadObjectMethod()), slot);
+                customRead(requireNonNull(st.type.getReadObjectMethod()), slot);
         }
         readChildren(input);
     }
@@ -401,7 +402,7 @@ public class ClassInstance extends Instance {
         return bout.toByteArray();
     }
 
-    private void customRead(Method readObjectMethod, InstanceInput input) {
+    private void customRead(MethodRef readObjectMethod, InstanceInput input) {
         var flag = input.readInt();
         assert flag == -1;
         var numBlocks = input.readInt();
@@ -421,7 +422,7 @@ public class ClassInstance extends Instance {
     }
 
     public void defaultRead(InstanceInput input) {
-        defaultReadFields(input, (FieldSubTable) Objects.requireNonNull(input.getCurrentKlassSlot()));
+        defaultReadFields(input, (FieldSubTable) requireNonNull(input.getCurrentKlassSlot()));
     }
 
     private void defaultReadFields(InstanceInput input, FieldSubTable subTable) {
@@ -500,7 +501,7 @@ public class ClassInstance extends Instance {
         NncUtils.requireTrue(field.getDeclaringType().isAssignableFrom(klass),
                 () -> "Field " + field.getQualifiedName() + " is not defined in klass " + klass.getTypeDesc()
                         + " with super type " + klass.getSuperType() + ", super equals: "
-                        + (field.getDeclaringType() == Objects.requireNonNull(klass.getSuperType()).resolve()));
+                        + (field.getDeclaringType() == requireNonNull(klass.getSuperType()).getKlass()));
         if (checkMutability && field.isReadonly())
             throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD, field.getQualifiedName());
         if (field.isChild() && value.isNotNull())
@@ -569,19 +570,19 @@ public class ClassInstance extends Instance {
         return fieldTable.tryGetUnknown(klassId, tag);
     }
 
-    public FlowValue getFunction(Method method) {
+    public FlowValue getFunction(MethodRef method) {
         ensureLoaded();
         if (functions == null)
             functions = new HashMap<>();
-        var concreteFlow = klass.tryResolveMethod(method);
+        var concreteFlow = getType().findOverride(method);
         return functions.computeIfAbsent(concreteFlow,
-                k -> new FlowValue(klass.tryResolveMethod(method), this));
+                k -> new FlowValue(requireNonNull(getType().findOverride(method)), this));
     }
 
-    public Value getProperty(Property property) {
+    public Value getProperty(PropertyRef property) {
         return switch (property) {
-            case Field field -> getField(field);
-            case Method method -> getFunction(method);
+            case FieldRef field -> getField(field.getRawField());
+            case MethodRef method -> getFunction(method);
             default -> throw new IllegalStateException("Unexpected value: " + property);
         };
     }
@@ -651,7 +652,7 @@ public class ClassInstance extends Instance {
         } else {
             return new ReferenceFieldValue(
                     getTitle(),
-                    Objects.requireNonNull(this.getStringIdForDTO(), "Id required"),
+                    requireNonNull(this.getStringIdForDTO(), "Id required"),
                     getType().toExpression());
         }
     }
@@ -685,7 +686,7 @@ public class ClassInstance extends Instance {
             });
             getKlass().forEachMethod(m -> {
                 if (m.isGetter())
-                    map.put(m.getPropertyName(), Flows.invokeGetter(m, this, context));
+                    map.put(m.getPropertyName(), Flows.invokeGetter(m.getRef(), this, context));
             });
             return map;
         }
@@ -723,12 +724,12 @@ public class ClassInstance extends Instance {
         var copy = ClassInstanceBuilder.newBuilder(getType()).initFieldTable(false).build();
         copy.fieldTable.initializeFieldsArray();
         for (FieldSubTable subTable : fieldTable.subTables) {
-            var st = copy.fieldTable.addSubTable(subTable.klass);
+            var st = copy.fieldTable.addSubTable(subTable.type);
             for (var field : subTable.fields) {
                 var v = field.getValue();
                 if(field.getField().isChild() && v instanceof Reference r)
                     v = r.resolve().copy().getReference();
-                st.add(new InstanceField(copy, field.getField(), v));
+                st.add(new InstanceField(copy, field.getField(), field.getType(), v));
             }
         }
         return copy;
@@ -771,14 +772,14 @@ public class ClassInstance extends Instance {
 
         void initialize() {
             initializeFieldsArray();
-            for (Klass k : owner.klass.getSortedKlasses()) {
-                var st = addSubTable(k);
-                st.initialize(owner, k);
-            }
+            owner.getType().foreachSuperClassTopDown(t -> {
+                var st = addSubTable(t);
+                st.initialize(owner, t);
+            });
         }
 
-        FieldSubTable addSubTable(Klass klass) {
-            var subTable = new FieldSubTable(this, klass);
+        FieldSubTable addSubTable(ClassType type) {
+            var subTable = new FieldSubTable(this, type);
             subTables.add(subTable);
             return subTable;
         }
@@ -962,20 +963,20 @@ public class ClassInstance extends Instance {
 
     private static class FieldSubTable implements IFieldSubTable, KlassDataSlot {
         private final FieldTable table;
-        private final Klass klass;
+        private final ClassType type;
         private final long klassTag;
         private final List<InstanceField> fields = new ArrayList<>();
         private final List<UnknownField> unknownFields = new ArrayList<>();
 
-        public FieldSubTable(FieldTable table, Klass klass) {
+        public FieldSubTable(FieldTable table, ClassType type) {
             this.table = table;
-            this.klass = klass;
-            this.klassTag = klass.getTag();
+            this.type = type;
+            this.klassTag = type.getKlassTag();
         }
 
-        void initialize(ClassInstance owner, Klass klass) {
-            for (Field field : klass.getSortedFields()) {
-                add(new InstanceField(owner, field));
+        void initialize(ClassInstance owner, ClassType type) {
+            for (Field field : type.getKlass().getSortedFields()) {
+                add(new InstanceField(owner, field, type.getTypeMetadata().getType(field.getTypeIndex())));
             }
         }
 
@@ -1026,7 +1027,7 @@ public class ClassInstance extends Instance {
         }
 
         private boolean shouldSkipWrite() {
-            return klass.getWriteObjectMethod() == null && countFieldsForWriting() == 0;
+            return type.getKlass().getWriteObjectMethod() == null && countFieldsForWriting() == 0;
         }
     }
 

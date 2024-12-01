@@ -23,14 +23,13 @@ public abstract class ScanByTypeTask extends ScanTask {
     @Override
     protected ScanResult scan(IInstanceContext context, long cursor, long limit) {
         var r = context.scan(cursor, limit);
-        return new ScanResult(NncUtils.filter(r.instances(), this::filer), r.completed(), r.cursor());
+        return new ScanResult(NncUtils.filter(r.instances(), this::filter), r.completed(), r.cursor());
     }
 
-    private boolean filer(Instance instance) {
-        Klass klass;
-        if(type instanceof ClassType classType && (klass = classType.resolve()).isTemplate()) {
+    private boolean filter(Instance instance) {
+        if(type instanceof ClassType classType && classType.isTemplate()) {
             if(instance instanceof ClassInstance classInstance)
-                return classInstance.getKlass().findAncestorByTemplate(klass) != null;
+                return classInstance.getType().findAncestorByKlass(classType.getKlass()) != null;
             else
                 return false;
         }

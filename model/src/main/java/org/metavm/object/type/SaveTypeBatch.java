@@ -146,7 +146,7 @@ public class SaveTypeBatch implements TypeDefProvider {
                     FieldChangeKind.TYPE_CHANGE));
         }
         for (Klass k : changingSuperKlasses) {
-            var s = Objects.requireNonNull(k.getSuperType()).resolve();
+            var s = Objects.requireNonNull(k.getSuperKlass());
             s.forEachField(f -> fieldChanges.add(new FieldChange(
                     k.getStringId(),
                     f.getStringId(),
@@ -184,7 +184,7 @@ public class SaveTypeBatch implements TypeDefProvider {
         }
         for (var klass : changingSuperKlasses) {
             if (Instances.findSuperInitializer(klass) == null) {
-                var superClass =Objects.requireNonNull(klass.getSuperType()).resolve();
+                var superClass = Objects.requireNonNull(klass.getSuperType()).getKlass();
                 for (Field field : superClass.getAllFields()) {
                     if(Instances.getDefaultValue(field, context) == null)
                         throw new BusinessException(ErrorCode.MISSING_SUPER_INITIALIZER, klass.getName());

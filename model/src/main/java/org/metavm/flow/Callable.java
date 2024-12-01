@@ -1,7 +1,9 @@
 package org.metavm.flow;
 
+import org.metavm.object.type.ConstantPool;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Type;
+import org.metavm.object.type.TypeMetadata;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -13,6 +15,8 @@ public interface Callable {
     Type getReturnType();
 
     List<Parameter> getParameters();
+
+    int getTypeIndex();
 
     int getInputCount();
 
@@ -33,7 +37,11 @@ public interface Callable {
     FunctionType getFunctionType();
 
     default List<Type> getParameterTypes() {
-        return NncUtils.map(getParameters(), Parameter::getType);
+        return getParameterTypes(getConstantPool());
+    }
+
+    default List<Type> getParameterTypes(TypeMetadata typeMetadata) {
+        return NncUtils.map(getParameters(), p -> p.getType(typeMetadata));
     }
 
     CallableRef getRef();
@@ -43,5 +51,7 @@ public interface Callable {
     default int getMinLocals() {
         return getParameters().size();
     }
+
+    ConstantPool getConstantPool();
 
 }

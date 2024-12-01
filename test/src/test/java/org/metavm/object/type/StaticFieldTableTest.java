@@ -25,8 +25,8 @@ public class StaticFieldTableTest extends TestCase {
     public void test() {
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var klass = context.bind(TestUtils.newKlassBuilder("Foo").build());
-            var sft = StaticFieldTable.getInstance(klass, context);
-            var sft1 = StaticFieldTable.getInstance(klass, context);
+            var sft = StaticFieldTable.getInstance(klass.getType(), context);
+            var sft1 = StaticFieldTable.getInstance(klass.getType(), context);
             Assert.assertSame(sft, sft1);
         }
     }

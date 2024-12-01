@@ -1,29 +1,47 @@
 package org.metavm.object.type;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.entity.CopyIgnore;
-import org.metavm.entity.Entity;
-import org.metavm.entity.LoadAware;
-import org.metavm.entity.ReadWriteArray;
+import org.metavm.entity.*;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Value;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ConstantPool extends Entity implements LoadAware {
+public class ConstantPool extends Element implements LoadAware, TypeMetadata {
 
     @ChildEntity
     private final ReadWriteArray<CpEntry> entries = addChild(new ReadWriteArray<>(CpEntry.class), "entries");
     @CopyIgnore
     private transient Map<Object, CpEntry> value2entry = new HashMap<>();
     @CopyIgnore
-    private transient volatile Object[] resolvedValues;
+    private transient Object[] values = new Object[1];
+
+    public transient ReadWriteArray<Type> typeArguments;
+    private transient ResolutionStage stage = ResolutionStage.INIT;
+
+    public ConstantPool() {
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitConstantPool(this);
+    }
+
+    public ConstantPool(List<? extends Type> typeArguments) {
+        this.typeArguments = new ReadWriteArray<>(Type.class);
+        this.typeArguments.addAll(typeArguments);
+    }
 
     public void addEntry(CpEntry entry) {
         entries.add(entry);
-        value2entry.put(entry.getValue(), entry);
+        var value = entry.getValue();
+        value2entry.put(value, entry);
+        while (values.length < entries.size())
+            values = Arrays.copyOf(values, values.length << 1);
+        values[entries.size() - 1] = value;
     }
 
     public int addValue(Object value) {
@@ -49,27 +67,14 @@ public class ConstantPool extends Entity implements LoadAware {
         return entry;
     }
 
-    public synchronized void resolve() {
-        if(resolvedValues != null)
-            return;
-        var entries = this.entries;
-        var r = new Object[entries.size()];
-        int i = 0;
-        for (CpEntry entry : entries)
-            r[i++] = entry.resolve();
-        this.resolvedValues = r;
-    }
-
     public void clear() {
         entries.clear();
         value2entry.clear();
-        resolvedValues = null;
+        values = new Object[1];
     }
 
-    public Object[] getResolvedValues() {
-        if(resolvedValues == null)
-            resolve();
-        return resolvedValues;
+    public Object[] getValues() {
+        return values;
     }
 
     public List<CpEntry> getEntries() {
@@ -79,13 +84,18 @@ public class ConstantPool extends Entity implements LoadAware {
     @Override
     public void onLoadPrepare() {
         value2entry = new HashMap<>();
+        stage = ResolutionStage.INIT;
     }
 
     @Override
     public void onLoad() {
-        value2entry = new HashMap<>();
-        for (CpEntry entry : entries)
-            value2entry.put(entry.getValue(), entry);
+        values = new Object[Math.max(1, entries.size())];
+        int i = 0;
+        for (CpEntry entry : entries) {
+            var value = entry.getValue();
+            value2entry.put(value, entry);
+            values[i++] = value;
+        }
     }
 
     public void write(KlassOutput output) {
@@ -102,10 +112,44 @@ public class ConstantPool extends Entity implements LoadAware {
             var value = input.readElement();
             addValue(value);
         }
-
     }
 
     public int size() {
         return entries.size();
+    }
+
+    @Override
+    public Type getType(int index) {
+        return (Type) values[index];
+    }
+
+    @Override
+    public MethodRef getMethodRef(int index) {
+        return (MethodRef) values[index];
+    }
+
+    public ClassType getClassType(int index) {
+        return (ClassType) values[index];
+    }
+
+    public ResolutionStage getStage() {
+        return stage;
+    }
+
+    public void setStage(ResolutionStage stage) {
+        this.stage = stage;
+    }
+
+    @Override
+    protected String toString0() {
+        return Arrays.toString(getValues());
+    }
+
+    public ConstantPool copy() {
+        var copy = new ConstantPool();
+        for (CpEntry entry : entries) {
+            copy.addValue(entry.getValue());
+        }
+        return copy;
     }
 }

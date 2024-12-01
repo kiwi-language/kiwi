@@ -3,13 +3,13 @@ package org.metavm.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.CopyIgnore;
 import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.MethodRefKey;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
+import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
 import org.metavm.util.*;
 
@@ -23,27 +23,29 @@ import java.util.function.Function;
 @Slf4j
 public class MethodRef extends FlowRef implements PropertyRef {
 
-    public static MethodRef createMethodRef(MethodRefKey methodRefKey, TypeDefProvider typeDefProvider) {
-        var classType = (ClassType) TypeParser.parseType(methodRefKey.declaringType(), typeDefProvider);
-        var klass = classType.getKlass();
-        var methodId = Id.parse(methodRefKey.rawFlowId());
-        var method = Objects.requireNonNull(klass.findSelfMethod(m -> m.idEquals(methodId)),
-                () -> "Cannot find method with ID " + methodId + " in klass " + klass.getTypeDesc());
-        return new MethodRef(classType, method,
-                NncUtils.map(methodRefKey.typeArguments(), t -> TypeParser.parseType(t, typeDefProvider)));
+    public static MethodRef create(ClassType declaringType, Method method, List<? extends Type> typeArguments) {
+        if(typeArguments.equals(method.getDefaultTypeArguments()))
+            typeArguments = List.of();
+        return new MethodRef(declaringType, method, typeArguments);
     }
 
     private final ClassType declaringType;
-    @CopyIgnore
-    protected transient Method partialResolved;
 
-
-    public MethodRef(ClassType declaringType, @NotNull Method rawFlow, List<Type> typeArguments) {
+    public MethodRef(ClassType declaringType, @NotNull Method rawFlow, List<? extends Type> typeArguments) {
         super(rawFlow, typeArguments);
-        assert rawFlow.getCopySource() == null;
+        assert declaringType.getKlass() != DummyKlass.INSTANCE;
         this.declaringType = declaringType;
-        if(declaringType.getKlass() == DummyKlass.INSTANCE)
-            throw new RuntimeException("Creating MethodRef with DummyKlass");
+    }
+
+    public List<Type> getAllTypeArguments() {
+        var typeArgs = new ArrayList<>(declaringType.getAllTypeArguments());
+        typeArgs.addAll(getTypeArguments());
+        return typeArgs;
+    }
+
+    @Override
+    public GenericDeclarationRef getOwner() {
+        return getDeclaringType();
     }
 
     public ClassType getDeclaringType() {
@@ -53,32 +55,6 @@ public class MethodRef extends FlowRef implements PropertyRef {
     @Override
     public Method getRawFlow() {
         return (Method) super.getRawFlow();
-    }
-
-    private Method partialResolve() {
-        if(partialResolved != null)
-            return partialResolved;
-        var klass = declaringType.resolve();
-        var rawMethod = getRawFlow();
-        partialResolved = klass.findMethod(m -> m.getUltimateTemplate() == rawMethod);
-        if (partialResolved == null)
-            throw new InternalException("Failed to resolve methodRef: " + this);
-        return partialResolved;
-    }
-
-    @Override
-    public Method resolve() {
-        if(resolved != null) {
-            return (Method) resolved;
-        }
-        var r =  isParameterized() ? partialResolve().getParameterized(getTypeArguments()) : partialResolve();
-        resolved = r;
-        return r;
-    }
-
-    @Override
-    public List<Type> getTypeArguments() {
-        return typeArguments.isEmpty() ? partialResolve().getTypeArguments() : typeArguments.toList();
     }
 
     @Override
@@ -109,8 +85,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
 
     @Override
     protected String toString0() {
-        return declaringType + "." + getRawFlow().getName() +
-                (typeArguments.isEmpty() ? "" : "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">");
+        return getTypeDesc();
     }
 
     public static MethodRef read(MvInput input) {
@@ -157,6 +132,160 @@ public class MethodRef extends FlowRef implements PropertyRef {
                                         ","
                                 ) + ">"
                 );
+    }
+
+    public String getName() {
+        return getRawFlow().getName();
+    }
+
+    public String getTypeDesc() {
+        return declaringType + "."
+                + getRawFlow().getName()
+                + (typeArguments.isEmpty() ? "" : "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">")
+                + "(" + NncUtils.join(getRawFlow().getParameterTypes(), Type::getTypeDesc) + ")";
+    }
+
+    public boolean isHiddenBy(MethodRef that) {
+        var paramTypes = getParameterTypes();
+        var thatParamTypes = that.getParameterTypes();
+        if (paramTypes.size() != thatParamTypes.size())
+            return false;
+        if (paramTypes.equals(thatParamTypes)) {
+            if (declaringType.equals(that.getDeclaringType()))
+                throw new InternalException(
+                        String.format("Methods with the same signature defined in the same type: %s(%s)",
+                                getName(), NncUtils.join(paramTypes, Type::getTypeDesc)));
+            return declaringType.isAssignableFrom(that.getDeclaringType());
+        }
+        for (int i = 0; i < paramTypes.size(); i++) {
+            var paramType = paramTypes.get(i);
+            var thatParamType = thatParamTypes.get(i);
+            if (!paramType.isConvertibleFrom(thatParamType))
+                return false;
+        }
+        return true;
+    }
+
+    public boolean isOverrideOf(MethodRef methodRef) {
+        var m1 = getRawFlow();
+        var m2 = methodRef.getRawFlow();
+        if(m2.getName().equals("test") && m2.getDeclaringType().getName().equals("Predicate")
+                && toString().equals("null.test(capturedtypes.CtFoo|null)")) {
+            System.out.println("Caught");
+        }
+        if(m1.isConstructor() || m2.isConstructor()
+                || m1.isStatic() || m2.isStatic()
+                || m1.isPrivate() || m2.isPrivate())
+            return false;
+        if(m1.getName().equals(m2.getName())
+                && m1.getParameters().size() == m2.getParameters().size()
+                && m1.getTypeParameters().size() == m2.getTypeParameters().size()
+        ) {
+            var k1 = getDeclaringType();
+            var k2 = methodRef.getDeclaringType();
+            if(!k1.equals(k2) && (k2.isInterface() || k2.isAssignableFrom(k1))) {
+                var subst = new TypeSubstitutor(
+                        NncUtils.map(m1.getTypeParameters(), TypeVariable::getType),
+                        NncUtils.map(m2.getTypeParameters(), TypeVariable::getType)
+                );
+                if (NncUtils.biAllMatch(getParameterTypes(), methodRef.getParameterTypes(),
+                        (t1, t2) -> t1.accept(subst).equals(t2))) {
+//                    NncUtils.requireTrue(method.getReturnType().isAssignableFrom(getReturnType()),
+//                            () -> "Return type of the overriding method " + getQualifiedSignature()
+//                                    + " (" + getReturnType() + ") is not assignable "
+//                                    + " to the return type of the overridden method " + method.getQualifiedSignature()
+//                                    + " (" + method.getReturnType() + ")");
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean isVirtual() {
+        return getRawFlow().isVirtual();
+    }
+
+    public boolean isAbstract() {
+        return getRawFlow().isAbstract();
+    }
+
+    public boolean isInstanceMethod() {
+        return getRawFlow().isInstanceMethod();
+    }
+
+    public @Nullable FunctionType getStaticType() {
+        try {
+            var idx = getRawFlow().getStaticTypeIndex();
+            return idx == -1 ? null : (FunctionType) getTypeMetadata().getType(idx);
+        }
+        catch (ClassCastException e) {
+            throw new IllegalStateException("Failed to static type for method " + getRawFlow() + ". Static type index: " + getRawFlow().getStaticTypeIndex()
+                    + ", constants: " + getTypeMetadata() + ", template constants: " + getRawFlow().getConstantPool());
+        }
+    }
+
+    public Type getParameterType(int index) {
+        return getTypeMetadata().getType(getRawFlow().getParameter(index).getTypeIndex());
+    }
+
+    public boolean isStatic() {
+        return getRawFlow().isStatic();
+    }
+
+    public boolean isConstructor() {
+        return getRawFlow().isConstructor();
+    }
+
+    public MethodRef getParameterized(List<? extends Type> typeArguments) {
+        return create(declaringType, getRawFlow(), typeArguments);
+    }
+
+    public List<TypeVariable> getTypeParameters() {
+        return getRawFlow().getTypeParameters();
+    }
+
+    public boolean isPublic() {
+        return getRawFlow().isPublic();
+    }
+
+    public String getQualifiedSignature() {
+        return getRawFlow().getQualifiedSignature();
+    }
+
+    public List<ParameterRef> getParameters() {
+        return NncUtils.map(getRawFlow().getParameters(), p -> new ParameterRef(this, p));
+    }
+
+    @Override
+    public Property getProperty() {
+         return getRawFlow();
+    }
+
+    public TypeMetadata getTypeMetadata0() {
+//        if(toString0().equals("Collection<E>.toArray")) {
+//            var typeArg = (VariableType) declaringType.getTypeArguments().get(0);
+//            log.debug("Generating type metadata for {}, constant pool size: {}", this, getRawFlow().getConstantPool().size());
+//            log.debug("Generic declaration: {}, method: {}, typee argumetns: {}",
+//                    typeArg.getVariable().getGenericDeclaration(), getRawFlow().getQualifiedSignature(),
+//                    typeArguments.toList());
+//        }
+//        if(toString().equals("java.util.Collection<java.util.AbstractCollection.E>.toArray()") && DebugEnv.methodRef != null) {
+//            System.out.println("Caught");
+//        }
+        var m = getRawFlow().getTypeMetadata(getAllTypeArguments());
+//        log.debug("Generating type metadata for " + this);
+//        if(toString().equals("java.util.Collection<java.util.AbstractCollection.E>.toArray()")) {
+//            if(DebugEnv.methodRef != null)
+//                log.debug("Equals to last method ref: {}", DebugEnv.methodRef.equals(this));
+//            else
+//                DebugEnv.methodRef = this;
+//            log.debug("Generated type metadata {} for {}@{}, size: {}",
+//                    System.identityHashCode(m),
+//                    this, System.identityHashCode(this),
+//                    m.size());
+//        }
+        return m;
     }
 
 }

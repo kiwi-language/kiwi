@@ -9,7 +9,6 @@ import org.metavm.flow.Flow;
 import org.metavm.flow.KlassInput;
 import org.metavm.flow.KlassOutput;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -18,16 +17,13 @@ import java.util.HashSet;
 import java.util.List;
 
 @EntityType
-public class TypeVariable extends TypeDef implements LocalKey, GenericElement, GlobalKey, LoadAware {
+public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAware {
 
     @EntityField(asTitle = true)
     private String name;
     @ChildEntity
     private final ReadWriteArray<Type> bounds = addChild(new ReadWriteArray<>(Type.class), "bounds");
     private @NotNull GenericDeclaration genericDeclaration;
-    @CopyIgnore
-    @Nullable
-    private TypeVariable copySource;
     private transient VariableType type;
     private transient Type bound;
     private transient ResolutionStage stage = ResolutionStage.INIT;
@@ -62,21 +58,16 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
         return name;
     }
 
+    public String getQualifiedName() {
+        return genericDeclaration.getQualifiedName() + "." + name;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
 
     public void setBounds(List<Type> bounds) {
         this.bounds.reset(bounds);
-    }
-
-    @Override
-    public void setCopySource(Object copySource) {
-        NncUtils.requireNull(this.copySource);
-        //noinspection UnnecessaryLocalVariable
-        var typeVarTemplate = (TypeVariable) copySource;
-//        NncUtils.requireTrue(typeVarTemplate.getGenericDeclaration() == genericDeclaration.getTemplate());
-        this.copySource = typeVarTemplate;
     }
 
     @Override
@@ -90,11 +81,6 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
         if (bound != null)
             return bound;
         return bound = bounds.isEmpty() ? AnyType.instance : new IntersectionType(new HashSet<>(bounds.toList()));
-    }
-
-    @Override
-    public @Nullable TypeVariable getCopySource() {
-        return copySource;
     }
 
     public List<? extends Type> getSuperTypes() {
@@ -152,7 +138,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
 
     public @NotNull VariableType getType() {
         if(type == null)
-            type = new VariableType(genericDeclaration.getRef(), getEffectiveTemplate());
+            type = new VariableType(this);
         return type;
     }
 
@@ -163,10 +149,6 @@ public class TypeVariable extends TypeDef implements LocalKey, GenericElement, G
     @Override
     protected String toString0() {
         return "TypeVariable-" + getTypeDesc();
-    }
-
-    public TypeVariable getEffectiveTemplate() {
-        return copySource != null ? copySource : this;
     }
 
     public void write(KlassOutput output) {

@@ -1,13 +1,14 @@
 package org.metavm.entity;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.ChildList;
 import org.metavm.api.ValueList;
 import org.metavm.api.entity.MvObject;
 import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.NameAndType;
 import org.metavm.flow.Nodes;
-import org.metavm.flow.Parameter;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.type.*;
@@ -22,6 +23,7 @@ import java.util.function.Predicate;
 import static org.metavm.util.ReflectionUtils.ENUM_NAME_FIELD;
 import static org.metavm.util.ReflectionUtils.ENUM_ORDINAL_FIELD;
 
+@Slf4j
 public class StandardDefBuilder {
 
     private ValueDef<Enum<?>> enumDef;
@@ -476,14 +478,14 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(throwableType.getType())
-                .parameters(new Parameter(null, "message", Types.getStringType()))
+                .parameters(new NameAndType("message", Types.getStringType()))
                 .build();
 
         MethodBuilder.newBuilder(throwableType, "Throwable")
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(throwableType.getType())
-                .parameters(new Parameter(null, "cause", throwableType.getType()))
+                .parameters(new NameAndType("cause", throwableType.getType()))
                 .build();
 
         MethodBuilder.newBuilder(throwableType, "Throwable")
@@ -491,8 +493,8 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .returnType(throwableType.getType())
                 .parameters(
-                        new Parameter(null, "message", Types.getStringType()),
-                        new Parameter(null, "cause", throwableType.getType())
+                        new NameAndType("message", Types.getStringType()),
+                        new NameAndType("cause", throwableType.getType())
                 )
                 .build();
 
@@ -510,7 +512,7 @@ public class StandardDefBuilder {
         MethodBuilder.newBuilder(klass, klass.getName())
                 .isConstructor(true)
                 .isNative(true)
-                .parameters(Parameter.create("index", Types.getLongType()))
+                .parameters(new NameAndType("index", Types.getLongType()))
                 .returnType(klass.getType())
                 .build();
     }
@@ -526,14 +528,14 @@ public class StandardDefBuilder {
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
-                .parameters(new Parameter(null, "message", Types.getNullableStringType()))
+                .parameters(new NameAndType("message", Types.getNullableStringType()))
                 .build();
 
         MethodBuilder.newBuilder(runtimeExceptionType, name)
                 .isConstructor(true)
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
-                .parameters(new Parameter(null, "cause", Types.getNullableType(throwableKlass.getType())))
+                .parameters(new NameAndType("cause", Types.getNullableType(throwableKlass.getType())))
                 .build();
 
         MethodBuilder.newBuilder(runtimeExceptionType, name)
@@ -541,8 +543,8 @@ public class StandardDefBuilder {
                 .isNative(true)
                 .returnType(runtimeExceptionType.getType())
                 .parameters(
-                        new Parameter(null, "message", Types.getNullableStringType()),
-                        new Parameter(null, "cause", Types.getNullableType(throwableKlass.getType()))
+                        new NameAndType("message", Types.getNullableStringType()),
+                        new NameAndType("cause", Types.getNullableType(throwableKlass.getType()))
                 )
                 .build();
     }

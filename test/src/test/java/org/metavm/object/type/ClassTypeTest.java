@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.flow.MethodBuilder;
-import org.metavm.flow.Parameter;
+import org.metavm.flow.NameAndType;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.InstanceInput;
@@ -92,35 +92,36 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testResolveMethod() {
-        var baseType = TestUtils.newKlassBuilder("Base", "Base").build();
+        var baseKlass = TestUtils.newKlassBuilder("Base", "Base").build();
 
-        MethodBuilder.newBuilder(baseType, "test")
-                .parameters(new Parameter(null, "p1", Types.getStringType()))
+        MethodBuilder.newBuilder(baseKlass, "test")
+                .parameters(new NameAndType("p1", Types.getStringType()))
                 .build();
 
-        var m1 = MethodBuilder.newBuilder(baseType, "test")
-                .parameters(new Parameter(null, "p1", Types.getBooleanType()))
+        var m1 = MethodBuilder.newBuilder(baseKlass, "test")
+                .parameters(new NameAndType("p1", Types.getBooleanType()))
                 .build();
 
-        var fooType = TestUtils.newKlassBuilder("Foo", "Foo")
-                .superType(baseType.getType())
+        var fooKlass = TestUtils.newKlassBuilder("Foo", "Foo")
+                .superType(baseKlass.getType())
                 .build();
 
-        var m2 = MethodBuilder.newBuilder(fooType, "test")
-                .parameters(new Parameter(null, "p1", Types.getAnyType()))
+        var m2 = MethodBuilder.newBuilder(fooKlass, "test")
+                .parameters(new NameAndType("p1", Types.getAnyType()))
                 .build();
 
-        var m3 = MethodBuilder.newBuilder(fooType, "test")
-                .parameters(new Parameter(null, "p1", Types.getStringType()))
+        var m3 = MethodBuilder.newBuilder(fooKlass, "test")
+                .parameters(new NameAndType("p1", Types.getStringType()))
                 .build();
 
-        var m4 = MethodBuilder.newBuilder(fooType, "test")
-                .parameters(new Parameter(null, "p1", Types.getDoubleType()))
+        var m4 = MethodBuilder.newBuilder(fooKlass, "test")
+                .parameters(new NameAndType("p1", Types.getDoubleType()))
                 .build();
 
-        Assert.assertSame(m1, fooType.resolveMethod("test", List.of(Types.getBooleanType()), List.of(), false));
-        Assert.assertSame(m4, fooType.resolveMethod("test", List.of(Types.getLongType()), List.of(), false));
-        Assert.assertSame(m3, fooType.resolveMethod("test", List.of(Types.getStringType()), List.of(), false));
+        var fooType = fooKlass.getType();
+        Assert.assertSame(m1, fooType.resolveMethod("test", List.of(Types.getBooleanType()), List.of(), false).getRawFlow());
+        Assert.assertSame(m4, fooType.resolveMethod("test", List.of(Types.getLongType()), List.of(), false).getRawFlow());
+        Assert.assertSame(m3, fooType.resolveMethod("test", List.of(Types.getStringType()), List.of(), false).getRawFlow());
     }
 
     public void testNestedParameterizedType() {
@@ -149,7 +150,7 @@ public class ClassTypeTest extends TestCase {
                         new ClassType(
                                 null,
                                 entryKlass,
-                                fooKlass.getTypeArguments()
+                                fooKlass.getDefaultTypeArguments()
                         )
                 )
         );

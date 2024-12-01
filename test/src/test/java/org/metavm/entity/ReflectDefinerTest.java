@@ -35,36 +35,15 @@ public class ReflectDefinerTest extends TestCase {
         var absCollKlass = getKlass(AbstractCollection.class);
         Assert.assertEquals(TreeSet.class.getName(), treeSetKlass.getQualifiedName());
         var addMethod = treeSetKlass.getMethodByName("add");
-        var pAbsCollKlass = treeSetKlass.findAncestorKlassByTemplate(absCollKlass);
+        var pAbsCollKlass = treeSetKlass.getType().findAncestorByKlass(absCollKlass);
         Assert.assertNotNull(pAbsCollKlass);
         var absCollAddMethod = pAbsCollKlass.getMethodByName("add");
-        Assert.assertTrue(treeSetKlass.isOverrideOf(addMethod, absCollAddMethod));
+        Assert.assertTrue(treeSetKlass.isOverrideOf(addMethod, absCollAddMethod.getRawFlow()));
         for (Method method : treeSetKlass.getMethods()) {
-//            logger.debug("Method: {} {}, overridden: {}", method.getReturnType().getTypeDesc(), method.getQualifiedSignature(),
-//                    method.getOverridden());
             Assert.assertTrue(method.isNative());
         }
-        var listKlass = getKlass(List.class);
-        var sortMethod = listKlass.getMethodByName("sort");
-        var arrayListKlass = getKlass(ArrayList.class);
-        var sortMethod1 = arrayListKlass.getMethodByName("sort");
-        Assert.assertTrue(ReflectDefiner.isOverride(sortMethod1, sortMethod));
-
         var comparatorKlass = getKlass(Comparator.class);
         Assert.assertEquals(10, comparatorKlass.getMethods().size());
-
-        var toArray = arrayListKlass.getMethodByName("toArray");
-//        var overridden = toArray.getOverridden();
-//        Assert.assertEquals(2, overridden.size());
-
-//        for (MethodRef o : toArray.getOverriddenRefs()) {
-//            var m = o.resolve();
-//            var tv = m.getTypeParameters().get(0);
-//            var arg = (VariableType) o.getTypeArguments().get(0);
-//            logger.debug("Overridden: {}, TypeVariable: {}, copy source: {}", m, tv, tv.getCopySource());
-//            logger.debug("Overridden: {}, type arg: {}, variable type ref: {}", m, arg, arg.getVariableRef().getClass().getName());
-//        }
-
 
         var longSummaryStatisticsKlass = getKlass(LongSummaryStatistics.class);
         var signatures = new HashSet<ReflectDefiner.MethodSignature>();

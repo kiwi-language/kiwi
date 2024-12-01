@@ -18,11 +18,6 @@ public class MethodCpEntry extends CpEntry {
     }
 
     @Override
-    public Object resolve() {
-        return methodRef.resolve();
-    }
-
-    @Override
     public void write(KlassOutput output) {
         methodRef.write(output);
     }

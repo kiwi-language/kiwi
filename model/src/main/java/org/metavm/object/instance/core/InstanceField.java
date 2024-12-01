@@ -3,11 +3,10 @@ package org.metavm.object.instance.core;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.SerializeContext;
 import org.metavm.object.instance.rest.InstanceFieldDTO;
-import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
+import org.metavm.object.type.Type;
 import org.metavm.util.BusinessException;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.Instances;
@@ -23,15 +22,17 @@ public class InstanceField implements IInstanceField {
 
     private final ClassInstance owner;
     private final Field field;
+    private final Type type;
     private @Nullable Value value;
 
-    InstanceField(ClassInstance owner, Field field) {
+    InstanceField(ClassInstance owner, Field field, Type type) {
         this.owner = owner;
         this.field = field;
+        this.type = type;
     }
 
-    InstanceField(ClassInstance owner, Field field, @NotNull Value value) {
-        this(owner, field);
+    InstanceField(ClassInstance owner, Field field, Type type, @NotNull Value value) {
+        this(owner, field, type);
         this.value = value;
     }
 
@@ -84,7 +85,7 @@ public class InstanceField implements IInstanceField {
 
     void ensureInitialized() {
         if(value == null)
-            value = Instances.getDefaultValue(field.getType());
+            value = Instances.getDefaultValue(type);
     }
 
     @Override
@@ -93,14 +94,14 @@ public class InstanceField implements IInstanceField {
     }
 
     Value checkValue(Value value) {
-        if (field.getType().isInstance(value)) {
+        if (type.isInstance(value)) {
             return value;
         }
         else if(field.isMetadataRemoved() && value.isNull())
             return value;
         else {
             try {
-                return value.convert(field.getType());
+                return value.convert(type);
             } catch (Exception e) {
                 throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
                         field.getQualifiedName(), e.getMessage());
@@ -119,7 +120,7 @@ public class InstanceField implements IInstanceField {
     }
 
     public String getDisplayValue() {
-        if (field.getType().isArray()) {
+        if (type.isArray()) {
             return "";
         }
         return field.getDisplayValue(value);
@@ -127,20 +128,20 @@ public class InstanceField implements IInstanceField {
 
     @SuppressWarnings("unused")
     public boolean isPrimitive() {
-        return field.getType().isPrimitive();
+        return type.isPrimitive();
     }
 
     public boolean isArray() {
-        return field.getType().isArray();
+        return type.isArray();
     }
 
     public InstanceFieldDTO toDTO() {
         try(var serContext = SerializeContext.enter()) {
             return new InstanceFieldDTO(
-                    serContext.getStringId(field.getEffectiveTemplate()),
+                    serContext.getStringId(field),
                     field.getName(),
-                    field.getType().getConcreteType().getCategory().code(),
-                    field.getType().isArray(),
+                    type.getConcreteType().getCategory().code(),
+                    type.isArray(),
                     getValue().toFieldValueDTO()
             );
         }
@@ -159,5 +160,9 @@ public class InstanceField implements IInstanceField {
     @Override
     public String toString() {
         return field.getName();
+    }
+
+    public Type getType() {
+        return type;
     }
 }

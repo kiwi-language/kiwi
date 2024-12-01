@@ -36,14 +36,12 @@ public class Function extends Flow implements GlobalKey {
                     String name,
                     boolean isNative,
                     boolean isSynthetic,
-                    List<Parameter> parameters,
+                    List<NameAndType> parameters,
                     Type returnType,
                     List<TypeVariable> typeParameters,
-                    List<? extends Type> typeArguments,
-                    @Nullable Function horizontalTemplate,
                     @Nullable CodeSource codeSource,
                     MetadataState state) {
-        super(tmpId, name, isNative, isSynthetic, parameters, returnType, typeParameters, typeArguments, horizontalTemplate, codeSource, state);
+        super(tmpId, name, isNative, isSynthetic, parameters, returnType, typeParameters, codeSource, state);
         resetBody();
     }
 
@@ -57,42 +55,21 @@ public class Function extends Flow implements GlobalKey {
     }
 
     @Override
-    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
+    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext) {
         NncUtils.requireNull(self);
-        arguments = checkArguments(arguments);
+        arguments = checkArguments(arguments, flowRef.getTypeMetadata());
         if (isNative()) {
             return Objects.requireNonNull(
                     nativeCode, "Native function " + this + " is not initialized"
-            ).run(this, arguments, callContext);
+            ).run((FunctionRef) flowRef, arguments, callContext);
         }
         else
             return new MetaFrame(callContext.instanceRepository()).execute(
                     getCode(),
                     arguments.toArray(Value[]::new),
+                    flowRef.getTypeMetadata(),
                     null
             );
-    }
-
-    @Override
-    public @Nullable Function getHorizontalTemplate() {
-        return (Function) super.getHorizontalTemplate();
-    }
-
-    @Override
-    public Function getEffectiveHorizontalTemplate() {
-        return (Function) super.getEffectiveHorizontalTemplate();
-    }
-
-    @Override
-    protected Function createParameterized(List<? extends Type> typeArguments) {
-        var parameterized = FunctionBuilder.newBuilder(getName())
-//                .tmpId(getCopyTmpId(function))
-                .horizontalTemplate(this)
-                .typeArguments(typeArguments)
-                .isSynthetic(isSynthetic())
-                .build();
-        parameterized.setStrictEphemeral(true);
-        return parameterized;
     }
 
     @Override
@@ -110,18 +87,7 @@ public class Function extends Flow implements GlobalKey {
 
     @Override
     public FunctionRef getRef() {
-        return new FunctionRef(this.getEffectiveHorizontalTemplate(), getTypeArguments());
-    }
-
-    @Nullable
-    @Override
-    public Function getExistingParameterized(List<? extends Type> typeArguments) {
-        return (Function) super.getExistingParameterized(typeArguments);
-    }
-
-    @Override
-    public Function getParameterized(List<? extends Type> typeArguments) {
-        return (Function) super.getParameterized(typeArguments);
+        return new FunctionRef(this, List.of());
     }
 
     public void setNativeCode(FunctionImpl impl) {
@@ -132,5 +98,6 @@ public class Function extends Flow implements GlobalKey {
     public @Nullable FunctionImpl getNativeCode() {
         return nativeCode;
     }
+
 
 }

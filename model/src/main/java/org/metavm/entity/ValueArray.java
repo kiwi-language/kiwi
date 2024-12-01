@@ -10,11 +10,11 @@ public class ValueArray<T> extends ReadonlyArray<T> implements ValueObject {
     public ValueArray() {
     }
 
-    public ValueArray(Class<T> klass, Collection<T> data) {
+    public ValueArray(Class<T> klass, Collection<? extends T> data) {
         super(klass, data);
     }
 
-    public ValueArray(Type elementType, Collection<T> data) {
+    public ValueArray(Type elementType, Collection<? extends T> data) {
         super(elementType);
         secretlyGetTable().addAll(data);
     }

@@ -17,11 +17,6 @@ public class TypeCpEntry extends CpEntry {
     }
 
     @Override
-    public Object resolve() {
-        return type;
-    }
-
-    @Override
     public void write(KlassOutput output) {
         type.write(output);
     }

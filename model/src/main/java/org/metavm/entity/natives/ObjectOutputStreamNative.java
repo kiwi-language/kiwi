@@ -23,7 +23,7 @@ public class ObjectOutputStreamNative extends NativeBase {
     }
 
     public void writeObject(Value object, CallContext callContext) {
-        Flows.invoke(writeObjectOverride, instance, List.of(object), callContext);
+        Flows.invoke(writeObjectOverride.getRef(), instance, List.of(object), callContext);
     }
 
 }

@@ -4,6 +4,8 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.CopyIgnore;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.ValueElement;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
@@ -37,18 +39,6 @@ public class FieldRef extends ValueElement implements PropertyRef {
         return rawField;
     }
 
-    public Field resolve() {
-        if(resolved != null)
-            return resolved;
-        var klass = declaringType.resolve();
-//        logger.info("resolving field: " + rawField.getName() + " in klass " + klass);
-        return resolved = rawField.isStatic() ?
-                klass.findStaticField(f -> f.getEffectiveTemplate() == rawField) :
-                Objects.requireNonNull(
-                        klass.findField(f -> f.getEffectiveTemplate() == rawField),
-                        () -> "Cannot find field with template " + rawField.getQualifiedName() + " in klass " + klass.getTypeDesc());
-    }
-
     @Override
     protected boolean equals0(Object obj) {
         if (this == obj) return true;
@@ -75,5 +65,26 @@ public class FieldRef extends ValueElement implements PropertyRef {
         output.write(WireTypes.FIELD_REF);
         declaringType.write(output);
         output.writeEntityId(rawField);
+    }
+
+    public Type getType() {
+        return declaringType.getTypeMetadata().getType(rawField.getTypeIndex());
+    }
+
+    @Override
+    public Property getProperty() {
+        return rawField;
+    }
+
+    public Value getDefaultValue() {
+        return rawField.getDefaultValue();
+    }
+
+    public String getName() {
+        return rawField.getName();
+    }
+
+    public Id getFieldId() {
+        return rawField.getId();
     }
 }

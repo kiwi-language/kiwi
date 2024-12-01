@@ -1,15 +1,16 @@
 package org.metavm.object.type;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 
+@Slf4j
 public class Closure {
 
     private final List<Klass> classes;
-    private final Map<Klass, Klass> template2instance = new HashMap<>();
     private final Set<Klass> set;
 
     public Closure(Klass klass) {
@@ -31,13 +32,6 @@ public class Closure {
     private Closure(List<Klass> types, Set<Klass> set) {
         this.classes = types;
         this.set = set;
-        for (var type : types) {
-            if(type instanceof Klass classType) {
-                var template = classType.getTemplate();
-                if(template != null)
-                    template2instance.put(template, type);
-            }
-        }
     }
 
     public List<Klass> getClasses() {
@@ -58,10 +52,6 @@ public class Closure {
 
     public @Nullable Klass find(Predicate<Klass> predicate) {
         return NncUtils.find(classes, predicate);
-    }
-
-    public Klass findByTemplate(Klass template) {
-        return template2instance.get(template);
     }
 
     public Closure getMin() {

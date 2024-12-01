@@ -5,11 +5,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.ddl.Commit;
-import org.metavm.flow.CallableRef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.WAL;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeDef;
 import org.metavm.util.ContextUtil;
@@ -83,39 +80,14 @@ public class MetaContextCache extends EntityContextFactoryAware {
     }
 
     private void loadAllTypeDefs(IEntityContext context) {
-//        var future = executor.submit(() -> {
         var typeDefs = context.selectByKey(Klass.IDX_ALL_FLAG, true);
         for (TypeDef typeDef : typeDefs) {
             EntityUtils.ensureTreeInitialized(typeDef);
         }
         for (TypeDef typeDef : typeDefs) {
-            resolveReferences(typeDef);
-        }
-        for (TypeDef typeDef : typeDefs) {
-            if(typeDef instanceof Klass klass) {
+            if(typeDef instanceof Klass klass)
                 klass.resetHierarchy();
-                klass.forEachParameterized(Klass::resetHierarchy);
-                klass.resolveConstantPool();
-            }
         }
-//        });
-//        try {
-//            future.get();
-//        } catch (InterruptedException | ExecutionException e) {
-//            throw new RuntimeException(e);
-//        }
-    }
-
-    private void resolveReferences(Object entity) {
-        EntityUtils.forEachMember(entity, e -> {
-            switch (e) {
-                case ClassType classType -> classType.resolve();
-                case FieldRef fieldRef -> fieldRef.resolve();
-                case CallableRef callableRef -> callableRef.resolve();
-                default -> {}
-            }
-        });
-
     }
 
     private record CacheKey(long appId, @Nullable Id walId) {

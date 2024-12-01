@@ -3,10 +3,7 @@ package org.metavm.autograph;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.MetadataState;
-import org.metavm.object.type.Types;
-import org.metavm.object.type.UncertainType;
+import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.NncUtils;
 import org.metavm.util.TestConstants;
@@ -104,6 +101,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processMethodCallWithinLambda();
             processArrayInitializer();
             processInnerClassExtension();
+            processIndexSelect();
+            processGenericObjectIO();
         });
     }
 
@@ -378,9 +377,10 @@ public class BasicCompilingTest extends CompilerTestBase {
                     "asterisk.AsteriskTypeFoo"));
             var method = klass.getMethodByName("getInstance");
             var serializableKlass = StdKlass.serializable.get();
-            var expectedType = Types.getNullableType(klass.getParameterized(
+            var expectedType = Types.getNullableType(ClassType.create(
+                    klass,
                     List.of(new UncertainType(Types.getNeverType(), serializableKlass.getType()))
-            ).getType());
+            ));
             Assert.assertEquals(expectedType, method.getReturnType());
         }
     }
@@ -1032,6 +1032,20 @@ public class BasicCompilingTest extends CompilerTestBase {
                 List.of(1,2,3,4)
         );
         Assert.assertEquals(10L, sum);
+    }
+
+    private void processIndexSelect() {
+        var className = "index.IndexSelectFoo";
+        var id = saveInstance(className, Map.of("name", "foo"));
+        var found = (String) callMethod(className, "findByName", List.of("foo"));
+        Assert.assertEquals(id, found);
+    }
+
+    private void processGenericObjectIO() {
+        var className = "objectio.GenericObjectIOFoo<string>";
+        var id = saveInstance(className, Map.of("value", "foo"));
+        var foo = getObject(id);
+        Assert.assertEquals("foo", foo.getString("value"));
     }
 
 }

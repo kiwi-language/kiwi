@@ -3,8 +3,8 @@ package org.metavm.entity;
 import org.metavm.api.ChildList;
 import org.metavm.api.ValueList;
 import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.NameAndType;
 import org.metavm.flow.Nodes;
-import org.metavm.flow.Parameter;
 import org.metavm.object.type.*;
 import org.metavm.util.NncUtils;
 
@@ -94,7 +94,7 @@ public class MockStandardTypesInitializer {
         {
             var constructor = MethodBuilder.newBuilder(runtimeExceptionKlass, runtimeExceptionKlass.getName())
                     .isConstructor(true)
-                    .parameters(Parameter.create("message", Types.getNullableStringType()))
+                    .parameters(new NameAndType("message", Types.getNullableStringType()))
                     .build();
             var code = constructor.getCode();
             Nodes.this_(code);

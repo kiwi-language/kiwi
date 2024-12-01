@@ -43,9 +43,9 @@ public class TestNativeKlass extends TestCase {
             );
             context.bind(request);
             var inst = (ClassInstance) context.getInstance(request);
-            var httpMethod = Flows.invokeVirtual(httpRequestGetMethod.get(), inst, List.of(), context);
+            var httpMethod = Flows.invokeVirtual(httpRequestGetMethod.get().getRef(), inst, List.of(), context);
             Assert.assertEquals(stringInstance("GET"), httpMethod);
-            var token = Flows.invokeVirtual(httpRequestGetCookie.get(), inst, List.of(stringInstance("token")), context);
+            var token = Flows.invokeVirtual(httpRequestGetCookie.get().getRef(), inst, List.of(stringInstance("token")), context);
             Assert.assertEquals(stringInstance("__token__"), token);
         }
     }

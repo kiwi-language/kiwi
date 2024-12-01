@@ -46,19 +46,19 @@ public class PreUpgradeTask extends ScanTask {
                 for (FieldAddition fieldAdd : ddl.getFieldAdditions()) {
                     var field  = fieldAdd.field();
                     var klass = field.getDeclaringType();
-                    var k = clsInst.getKlass().findAncestorByTemplate(klass);
+                    var k = clsInst.getType().findAncestorByKlass(klass);
                     if(k != null) {
-                        var value = Flows.invoke(fieldAdd.initializer(), null, List.of(clsInst.getReference()), instCtx);
+                        var value = Flows.invoke(fieldAdd.initializer().getRef(), null, List.of(clsInst.getReference()), instCtx);
                         clsInst.setFieldForce(field, value);
                         clsInst.setDirectlyModified(true);
                     }
                 }
                 for (Method runMethod : ddl.getRunMethods()) {
-                    var paramKlass = ((ClassType) runMethod.getParameterTypes().get(0)).resolve();
-                    var k = clsInst.getKlass().findAncestorByTemplate(paramKlass.getEffectiveTemplate());
+                    var paramKlass = ((ClassType) runMethod.getParameterTypes().get(0));
+                    var k = clsInst.getType().findAncestorByKlass(paramKlass.getKlass());
                     if(k != null) {
-                        var pm = runMethod.getTypeParameters().isEmpty() ? runMethod :
-                                runMethod.getParameterized(List.of(clsInst.getType()));
+                        var pm = runMethod.getTypeParameters().isEmpty() ? runMethod.getRef() :
+                                runMethod.getRef().getParameterized(List.of(clsInst.getType()));
                         Flows.invoke(pm, null, List.of(clsInst.getReference()), context);
                     }
                 }
@@ -76,7 +76,7 @@ public class PreUpgradeTask extends ScanTask {
                 var creationMethod = initializer.findMethod(m -> m.isStatic() && m.getName().equals("create")
                         && m.getParameters().isEmpty() && m.getReturnType().equals(klass.getType()));
                 if (creationMethod != null) {
-                    Objects.requireNonNull(Flows.invoke(creationMethod, null, List.of(), context));
+                    Objects.requireNonNull(Flows.invoke(creationMethod.getRef(), null, List.of(), context));
                 }
             }
         }

@@ -11,6 +11,7 @@ import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.Constants;
 import org.metavm.util.InstanceInput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -62,6 +63,27 @@ public record MethodRefKey(
             typeArgs.add(TypeKey.read(input).toTypeExpression());
         }
         return new MethodRefKey(classType, rawMethodId, typeArgs);
+    }
+
+    @Override
+    public void write(MvOutput output) {
+        TypeKey.fromExpression(declaringType).write(output);
+        output.writeId(Id.parse(rawFlowId));
+        output.writeInt(typeArguments.size());
+        typeArguments.forEach(t -> TypeKey.fromExpression(t).write(output));
+    }
+
+    public MethodRef toMethodRef(TypeDefProvider typeDefProvider) {
+        return new MethodRef(
+                TypeParser.parseClassType(declaringType, typeDefProvider),
+                (Method) typeDefProvider.getTypeDef(Id.parse(rawFlowId)),
+                NncUtils.map(typeArguments, t -> TypeParser.parseType(t, typeDefProvider))
+        );
+    }
+
+    @Override
+    public GenericDeclarationRef toGenericDeclarationRef(TypeDefProvider typeDefProvider) {
+        return toMethodRef(typeDefProvider);
     }
 
 }

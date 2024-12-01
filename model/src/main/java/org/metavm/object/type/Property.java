@@ -26,7 +26,11 @@ public interface Property extends ClassMember, LocalKey {
 
     void setAccess(Access access);
 
-    Type getType();
+    Type getType(TypeMetadata typeMetadata);
+
+    default Type getType() {
+        return getType(getDeclaringType().getConstantPool());
+    }
 
 //    void setType(Type type);
 
@@ -64,8 +68,6 @@ public interface Property extends ClassMember, LocalKey {
         var selfId = tryGetId();
         return selfId != null && selfId.equals(id);
     }
-
-    Property getUltimateTemplate();
 
     String getQualifiedName();
 }

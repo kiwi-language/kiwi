@@ -27,12 +27,12 @@ public class PropertyExpression extends Expression {
     }
 
     public Property getProperty() {
-        return propertyRef.resolve();
+        return propertyRef.getProperty();
     }
 
     @Override
     public Type getType() {
-        return getProperty().getType();
+        return propertyRef.getType();
     }
 
     @Override
@@ -42,7 +42,7 @@ public class PropertyExpression extends Expression {
 
     @Override
     protected Value evaluateSelf(EvaluationContext context) {
-        return (instance.evaluate(context)).resolveObject().getProperty(getProperty());
+        return (instance.evaluate(context)).resolveObject().getProperty(propertyRef);
     }
 
     @Override
@@ -50,7 +50,7 @@ public class PropertyExpression extends Expression {
         String fieldsExpr = switch (symbolType) {
             case ID -> {
                 try (var serContext = SerializeContext.enter()) {
-                    yield idVarName(requireNonNull(serContext.getId(getProperty().getUltimateTemplate())));
+                    yield idVarName(requireNonNull(serContext.getId(getProperty())));
                 }
             }
             case NAME -> getProperty().getName();

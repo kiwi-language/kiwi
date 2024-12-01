@@ -86,7 +86,7 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
             //noinspection rawtypes,unchecked
             return new ArrayMapper<>(javaClass, this);
         } else if (type instanceof ClassType classType)
-            return tryGetDef(classType.resolve());
+            return tryGetDef(classType.getKlass());
         else
             throw new InternalException("Can not get entity mapper for type: " + type.getTypeDesc());
     }
@@ -110,7 +110,7 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
         if (type instanceof ArrayType arrayType)
             return ParameterizedTypeImpl.create(arrayType.getKind().getEntityClass(), getJavaType(arrayType.getElementType()));
         else if (type instanceof ClassType classType)
-            return getDef(classType.resolve()).getEntityType();
+            return getDef(classType.getKlass()).getEntityType();
         else
             throw new IllegalArgumentException("Can not get java type for type " + type);
     }
@@ -121,7 +121,7 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
 
     public @Nullable java.lang.reflect.Field findJavaField(Field field) {
         var def = (PojoDef<?>) getDef(field.getDeclaringType());
-        var fieldDef =  def.findFieldDef(fd -> fd.getField() == field.getEffectiveTemplate());
+        var fieldDef =  def.findFieldDef(fd -> fd.getField() == field);
         return fieldDef != null ? fieldDef.getJavaField() : null;
     }
 

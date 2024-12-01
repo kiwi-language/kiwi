@@ -10,6 +10,7 @@ import org.metavm.asm.antlr.AssemblyParserBaseVisitor;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.flow.*;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
@@ -74,7 +75,7 @@ public class Assembler {
     }
 
     private void writeClassFile(Klass klass, String targetDir, SerializeContext serializeContext) {
-        var path = targetDir + '/' + klass.getQualifiedName().replace('.', '/') + ".mvclass";
+        var path = targetDir + '/' + requireNonNull(klass.getQualifiedName()).replace('.', '/') + ".mvclass";
         var bout = new ByteArrayOutputStream();
         var output = new KlassOutput(bout, serializeContext);
         klass.write(output);
@@ -126,26 +127,25 @@ public class Assembler {
     }
 
     private List<Parameter> parseParameterList(@Nullable AssemblyParser.FormalParameterListContext parameterList,
-                                               @Nullable Callable callable, AsmScope scope, AsmCompilationUnit compilationUnit) {
+                                               Callable callable, AsmScope scope, AsmCompilationUnit compilationUnit) {
         if (parameterList == null)
             return List.of();
         return NncUtils.map(parameterList.formalParameter(), p -> parseParameter(p, callable, scope, compilationUnit));
     }
 
-    private Parameter parseParameter(AssemblyParser.FormalParameterContext parameter, @Nullable Callable callable, AsmScope scope, AsmCompilationUnit compilationUnit) {
+    private Parameter parseParameter(AssemblyParser.FormalParameterContext parameter, Callable callable, AsmScope scope, AsmCompilationUnit compilationUnit) {
         var name = parameter.IDENTIFIER().getText();
         var type = parseType(parameter.typeType(), scope, compilationUnit);
-        if (callable != null) {
-            var existing = callable.findParameter(p -> p.getName().equals(name));
-            if (existing != null) {
-                existing.setType(type);
-                return existing;
-            }
+        var existing = callable.findParameter(p -> p.getName().equals(name));
+        if (existing != null) {
+            existing.setType(type);
+            return existing;
         }
         return new Parameter(
                 NncUtils.randomNonNegative(),
                 name,
-                type
+                type,
+                callable
         );
     }
 
@@ -391,9 +391,12 @@ public class Assembler {
                 else if(annotation.IDENTIFIER().getText().equals("Searchable"))
                     searchable = true;
             }
-            if (klass == null)
+            if (klass == null) {
                 klass = createKlass(name, code, kind);
-            else {
+                klass.disableMethodTableBuild();
+            } else {
+                klass.getConstantPool().clear();
+                klass.disableMethodTableBuild();
                 if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)
                     klass.clearEnumConstantDefs();
                 klass.setKind(kind);
@@ -460,13 +463,29 @@ public class Assembler {
             var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
             enterScope(classInfo);
             var klass = classInfo.getKlass();
+            klass.setStruct(isStruct);
+            if (typeCategory.isEnum())
+                classInfo.superType = new ClassType(null, getKlass(Enum.class.getName()), List.of(classInfo.getKlass().getType()));
+            else if (superType != null)
+                classInfo.superType = (ClassType) parseType(superType, classInfo, getCompilationUnit());
+            if (classInfo.superType != null)
+                klass.setSuperType(classInfo.superType);
+            else if(!klass.isEnum())
+                klass.setSuperType(null);
+            if (interfaces != null)
+                klass.setInterfaces(NncUtils.map(interfaces.typeType(), t -> (ClassType) parseType(t, scope, getCompilationUnit())));
             processBody.run();
             if(klass.isEnum())
                 classInfo.visitedMethods.add(Flows.saveValuesMethod(klass));
             var removedMethods = NncUtils.exclude(klass.getMethods(), classInfo.visitedMethods::contains);
             removedMethods.forEach(klass::removeMethod);
             var removedFields = NncUtils.exclude(klass.getFields(), classInfo.visitedFields::contains);
-            removedFields.forEach(Field::setMetadataRemoved);
+            removedFields.forEach(f -> {
+                f.setMetadataRemoved();
+                f.resetTypeIndex();
+            });
+            NncUtils.exclude(klass.getStaticFields(), classInfo.visitedFields::contains).forEach(klass::removeField);
+            klass.rebuildMethodTable();
             exitScope();
         }
 
@@ -516,6 +535,9 @@ public class Assembler {
                         .isStatic(true)
                         .build();
             }
+            else
+                field.resetTypeIndex();
+            classInfo.visitedFields.add(field);
             var enumConstantDef = klass.findEnumConstantDef(ec -> ec.getName().equals(name));
             if(enumConstantDef == null) {
                 var initializer = MethodBuilder.newBuilder(klass, "$" + name)
@@ -573,27 +595,34 @@ public class Assembler {
                     nameParam = new Parameter(
                             NncUtils.randomNonNegative(),
                             "_name",
-                            PrimitiveType.stringType
+                            PrimitiveType.stringType,
+                            method
                     );
                 }
+                else
+                    nameParam.setType(PrimitiveType.stringType);
                 parameters.add(nameParam);
                 var ordinalParam = method.findParameter(p -> p.getName().equals("_ordinal"));
                 if (ordinalParam == null) {
                     ordinalParam = new Parameter(
                             NncUtils.randomNonNegative(),
                             "_ordinal",
-                            PrimitiveType.longType
+                            PrimitiveType.longType,
+                            method
                     );
                 }
+                else
+                    ordinalParam.setType(PrimitiveType.longType);
                 parameters.add(ordinalParam);
             }
             parameters.addAll(parseParameterList(formalParameterList, method, methodInfo, getCompilationUnit()));
-            method.setParameters(parameters);
+            Type retType;
             if (isConstructor) {
                 method.setConstructor(true);
-                method.setReturnType(klass.getType());
+                retType = klass.getType();
             } else
-                method.setReturnType(parseType(requireNonNull(returnType), methodInfo, getCompilationUnit()));
+                retType = parseType(requireNonNull(returnType), methodInfo, getCompilationUnit());
+            method.update(parameters, retType);
         }
 
         @Override
@@ -672,7 +701,7 @@ public class Assembler {
                     index.setName(name);
                 }
                 classInfo.visitedIndices.add(index);
-                var indexKlass = indexType.resolve();
+                var indexKlass = indexType.getKlass();
                 for (var field : indexKlass.getFields()) {
                     if(!field.isStatic() && !field.isTransient()) {
                         var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), field.getName()));
@@ -750,17 +779,6 @@ public class Assembler {
             var currentClass = getAttribute(ctx, AsmAttributeKey.classInfo);
             var klass = currentClass.getKlass();
             enterScope(currentClass);
-            klass.setStruct(isStruct);
-            if (typeCategory.isEnum())
-                currentClass.superType = new ClassType(null, getKlass(Enum.class.getName()), List.of(currentClass.getKlass().getType()));
-            else if (superType != null)
-                currentClass.superType = (ClassType) parseType(superType, currentClass, getCompilationUnit());
-            if (currentClass.superType != null)
-                klass.setSuperType(currentClass.superType);
-            else if(!klass.isEnum())
-                klass.setSuperType(null);
-            if (interfaces != null)
-                klass.setInterfaces(NncUtils.map(interfaces.typeType(), t -> (ClassType) parseType(t, scope, getCompilationUnit())));
             var cinit = klass.findSelfMethod(m -> m.getName().equals("__cinit__")
                     && m.isStatic() && m.getParameters().isEmpty());
             if (cinit != null)
@@ -818,7 +836,7 @@ public class Assembler {
                     var supers = new LinkedList<>(superTypes.get(currentClass().getKlass().getName()));
                     while (!supers.isEmpty()) {
                         var s = supers.poll();
-                        var overridden = s.resolve().findMethod(m -> {
+                        var overridden = s.findMethod(m -> {
                             if (m.getName().equals(method.getName())
                                     && m.getParameters().size() == method.getParameters().size()
                                     && m.getTypeParameters().size() == method.getTypeParameters().size()
@@ -826,7 +844,7 @@ public class Assembler {
                                 if (method.getTypeParameters().isEmpty())
                                     return m.getParameterTypes().equals(method.getParameterTypes());
                                 else {
-                                    var subst = new TypeSubstitutor(method.getTypeArguments(), m.getTypeArguments());
+                                    var subst = new TypeSubstitutor(method.getDefaultTypeArguments(), m.getTypeArguments());
                                     var paramTypesSubst = NncUtils.map(method.getParameterTypes(), t -> t.accept(subst));
                                     return paramTypesSubst.equals(m.getParameterTypes());
                                 }
@@ -843,16 +861,10 @@ public class Assembler {
                     if (isConstructor && currentClass.isEnum) {
                         Values.node(Nodes.this_(code));
                         Values.node(Nodes.load(1, Types.getStringType(), code));
-                        Nodes.setField(
-                            klass.getField(f -> f.getEffectiveTemplate() == StdField.enumName.get()),
-                                code
-                        );
+                        Nodes.setField(StdField.enumName.get().getRef(), code);
                         Values.node(Nodes.this_(code));
                         Values.node(Nodes.load(2, Types.getLongType(), code));
-                        Nodes.setField(
-                                klass.getField(f -> f.getEffectiveTemplate() == StdField.enumOrdinal.get()),
-                                code
-                        );
+                        Nodes.setField(StdField.enumOrdinal.get().getRef(), code);
                     }
                     processBlock(block, method.getCode());
                     if (isConstructor) {
@@ -897,7 +909,7 @@ public class Assembler {
                     List.of(Types.getStringType(), Types.getLongType()),
                     NncUtils.map(argCtx, this::parseExpression)
             );
-            var constructor = klass.resolveMethod(klass.getName(), types, List.of(), false);
+            var constructor = klass.getType().resolveMethod(klass.getName(), types, List.of(), false);
             Nodes.newObject(code, constructor, false, false);
             Nodes.ret(code);
             exitScope();

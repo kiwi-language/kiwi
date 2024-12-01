@@ -24,7 +24,7 @@ public class ParameterizedStore {
             return map().put(genericDeclaration, typeArguments, parameterized);
     }
 
-    public static void forEach(GenericDeclaration template, BiConsumer<List<? extends Type>, Object> action) {
+    public static void forEach(Object template, BiConsumer<List<? extends Type>, Object> action) {
         sharedMap.forEach(template, action);
         map().forEach(template, action);
     }

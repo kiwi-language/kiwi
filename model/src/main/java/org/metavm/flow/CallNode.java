@@ -48,7 +48,7 @@ public abstract class CallNode extends Node {
 
     @Override
     public Type getType() {
-        var type = getFlowRef().resolve().getReturnType();
+        var type = getFlowRef().getReturnType();
         return type.isVoid() ? null : type;
     }
 

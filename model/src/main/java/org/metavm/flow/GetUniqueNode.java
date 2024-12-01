@@ -16,10 +16,6 @@ public class GetUniqueNode extends Node {
         this.indexRef = indexRef;
     }
 
-    public Index getIndex() {
-        return indexRef.resolve();
-    }
-
     @Override
     public boolean hasOutput() {
         return true;
@@ -27,12 +23,12 @@ public class GetUniqueNode extends Node {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("getUnique(" + getIndex().getName() + ")");
+        writer.write("getUnique(" + indexRef.getName() + ")");
     }
 
     @Override
     public int getStackChange() {
-        return 1 - getIndex().getFields().size();
+        return 1 - indexRef.getFieldCount();
     }
 
     @Override

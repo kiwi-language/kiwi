@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.DummyGenericDeclaration;
+import org.metavm.entity.GenericDeclaration;
 import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
@@ -111,15 +112,15 @@ public class TypeParserImpl implements TypeParser {
                 .build();
         func.setParameters(
                         ctx.parameterList() != null ?
-                                NncUtils.map(ctx.parameterList().parameter(), this::parseParameter) : List.of()
+                                NncUtils.map(ctx.parameterList().parameter(), p -> parseParameter(p, func)) : List.of()
                 );
         func.setReturnType(parseType(ctx.type()));
         return func;
     }
 
-    private Parameter parseParameter(org.metavm.object.type.antlr.TypeParser.ParameterContext ctx) {
+    private Parameter parseParameter(org.metavm.object.type.antlr.TypeParser.ParameterContext ctx, Callable callable) {
         var name = ctx.IDENTIFIER().getText();
-        return new Parameter(null, name, parseType(ctx.type()));
+        return new Parameter(null, name, parseType(ctx.type()), callable);
     }
 
     private TypeVariable parseTypeParameter(org.metavm.object.type.antlr.TypeParser.TypeParameterContext ctx) {
@@ -186,9 +187,8 @@ public class TypeParserImpl implements TypeParser {
 
     private VariableType parseVariableType(org.metavm.object.type.antlr.TypeParser.VariableTypeContext ctx) {
 //        return new VariableType((TypeVariable) getTypeDef(ctx.qualifiedName().getText()), genericDeclarationRef, rawVariable);
-        var genericDeclRef = parseGenericDeclarationRef(ctx.genericDeclarationRef());
         var rawTypeVariable = (TypeVariable) getTypeDef(ctx.IDENTIFIER().getText());
-        return new VariableType(genericDeclRef, rawTypeVariable);
+        return new VariableType(rawTypeVariable);
     }
 
     private GenericDeclarationRef parseGenericDeclarationRef(org.metavm.object.type.antlr.TypeParser.GenericDeclarationRefContext ctx) {
@@ -251,7 +251,8 @@ public class TypeParserImpl implements TypeParser {
             return typeVar.getType();
         var klass = (Klass) getTypeDef(name);
         if (ctx.typeArguments() != null) {
-            return new ClassType(null, klass, NncUtils.map(ctx.typeArguments().typeList().type(), this::parseType));
+            return new ClassType(NncUtils.get(klass.getOwner(), GenericDeclaration::getRef),
+                    klass, NncUtils.map(ctx.typeArguments().typeList().type(), this::parseType));
         } else
             return klass.getType();
     }

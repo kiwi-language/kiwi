@@ -2,13 +2,12 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.FunctionRefKey;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ITypeDef;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeParser;
+import org.metavm.object.type.TypeMetadata;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
 import org.metavm.util.*;
 
@@ -19,14 +18,7 @@ import java.util.List;
 @EntityType
 public class FunctionRef extends FlowRef {
 
-    public static FunctionRef create(FunctionRefKey functionRefDTO, IEntityContext context) {
-        return new FunctionRef(
-                context.getFunction(functionRefDTO.rawFlowId()),
-                NncUtils.map(functionRefDTO.typeArguments(), t -> TypeParser.parseType(t, context))
-        );
-    }
-
-    public FunctionRef(Function rawFlow, List<Type> typeArguments) {
+    public FunctionRef(Function rawFlow, List<? extends Type> typeArguments) {
         super(rawFlow, typeArguments);
     }
 
@@ -36,8 +28,15 @@ public class FunctionRef extends FlowRef {
     }
 
     @Override
-    public Function resolve() {
-        return (Function) super.resolve();
+    public FunctionRef getParameterized(List<? extends Type> typeArguments) {
+        if (typeArguments.equals(getRawFlow().getDefaultTypeArguments()))
+            typeArguments = List.of();
+        return new FunctionRef(getRawFlow(), typeArguments);
+    }
+
+    @Override
+    protected TypeMetadata getTypeMetadata0() {
+        return getRawFlow().getTypeMetadata(getTypeArguments());
     }
 
     @Override
@@ -98,4 +97,14 @@ public class FunctionRef extends FlowRef {
         return new FunctionRef(rawFunc, typeArgs);
     }
 
+    @Override
+    public String getTypeDesc() {
+        var name = getRawFlow().getName();
+        return typeArguments.isEmpty() ? name : name + "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">";
+    }
+
+    @Override
+    protected String toString0() {
+        return getTypeDesc();
+    }
 }

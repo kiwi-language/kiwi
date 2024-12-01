@@ -77,11 +77,7 @@ public abstract class CompilerTestBase extends TestCase  {
         schedulerAndWorker = bootResult.schedulerAndWorker();
         metaContextCache = bootResult.metaContextCache();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
-        typeManager = new TypeManager(
-                bootResult.entityContextFactory(),
-                new EntityQueryService(instanceQueryService),
-                new TaskManager(entityContextFactory, new MockTransactionOperations()),
-                new BeanManager());
+        typeManager = new TypeManager(bootResult.entityContextFactory(), new BeanManager());
         instanceManager = new InstanceManager(entityContextFactory,
                 bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
         flowExecutionService = new FlowExecutionService(entityContextFactory);

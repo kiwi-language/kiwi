@@ -38,7 +38,7 @@ public class IdentityContextTest extends TestCase {
                 .returnType(Types.getVoidType())
                 .typeParameters(List.of(typeVar))
                 .build();
-        method.setParameters(List.of(new Parameter(null, "t", typeVar.getType())));
+        method.setParameters(List.of(new Parameter(null, "t", typeVar.getType(), method)));
         var identities = new IdentityHashMap<Object, ModelIdentity>();
         EntityUtils.visitGraph(List.of(fooKlass),
                 entity -> {

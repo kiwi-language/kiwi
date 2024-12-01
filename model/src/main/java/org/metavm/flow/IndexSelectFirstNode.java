@@ -3,7 +3,6 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.type.Index;
 import org.metavm.object.type.IndexRef;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
@@ -19,13 +18,9 @@ public class IndexSelectFirstNode extends Node {
         this.indexRef = indexRef;
     }
 
-    public Index getIndex() {
-        return indexRef.resolve();
-    }
-
     @Override
     public Type getType() {
-        return Types.getNullableType(indexRef.resolve().getDeclaringType().getType());
+        return Types.getNullableType(indexRef.getDeclaringType());
     }
 
     @Override
@@ -35,12 +30,12 @@ public class IndexSelectFirstNode extends Node {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("indexSelectFirst(" + indexRef.resolve().getName() + ", " +  ")");
+        writer.write("indexSelectFirst(" + indexRef.getName() + ", " +  ")");
     }
 
     @Override
     public int getStackChange() {
-        return 1 - indexRef.resolve().getFields().size();
+        return 1 - indexRef.getFieldCount();
     }
 
     @Override

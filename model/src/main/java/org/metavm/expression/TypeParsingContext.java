@@ -89,7 +89,7 @@ public class TypeParsingContext extends BaseParsingContext {
             }
             fields.add(field);
             if (varIt.hasNext()) {
-                t = ((ClassType) field.getType().getConcreteType()).resolve();
+                t = ((ClassType) field.getType().getConcreteType()).getKlass();
             }
         }
         return fields;

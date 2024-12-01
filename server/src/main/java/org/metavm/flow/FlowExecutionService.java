@@ -27,14 +27,14 @@ public class FlowExecutionService extends EntityContextFactoryAware {
         super(entityContextFactory);
     }
 
-    public Value executeInternal(Flow flow, @Nullable ClassInstance self, List<Value> arguments, IEntityContext context) {
+    public Value executeInternal(FlowRef flow, @Nullable ClassInstance self, List<Value> arguments, IEntityContext context) {
         try(var ignored = ContextUtil.getProfiler().enter("FlowExecutionService.executeInternal")) {
-            if (flow instanceof Method method && method.isInstanceMethod()) {
+            if (flow instanceof MethodRef method && method.isInstanceMethod()) {
                 if (method.isConstructor()) {
-                    self = ClassInstanceBuilder.newBuilder(((Method) flow).getDeclaringType().getType()).build();
+                    self = ClassInstanceBuilder.newBuilder(((MethodRef) flow).getDeclaringType()).build();
                     context.getInstanceContext().bind(self);
                 } else
-                    flow = Objects.requireNonNull(self).getKlass().resolveMethod(method);
+                    flow = Objects.requireNonNull(self).getType().getOverride(method);
             }
             var result = flow.execute(self, arguments, context.getInstanceContext());
             if (result.exception() == null)

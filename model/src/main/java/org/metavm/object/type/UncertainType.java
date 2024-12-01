@@ -28,8 +28,8 @@ public class UncertainType extends CompositeType {
         return new UncertainType(NeverType.instance, upperBound);
     }
 
-    private Type upperBound;
-    private Type lowerBound;
+    private final Type upperBound;
+    private final Type lowerBound;
 
     public UncertainType(Type lowerBound, Type upperBound) {
         super();
@@ -72,17 +72,9 @@ public class UncertainType extends CompositeType {
         return lowerBound;
     }
 
-    public void setUpperBound(Type upperBound) {
-        this.upperBound = upperBound;
-    }
-
     @Override
     public List<? extends Type> getSuperTypes() {
         return List.of(upperBound);
-    }
-
-    public void setLowerBound(Type lowerBound) {
-        this.lowerBound = lowerBound;
     }
 
     @Override

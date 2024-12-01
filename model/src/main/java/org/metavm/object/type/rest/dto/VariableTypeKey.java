@@ -9,24 +9,23 @@ import org.metavm.util.Constants;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
-public record VariableTypeKey(GenericDeclarationRefKey genericDeclarationRefKey, @NotNull Id rawVariableId) implements TypeKey {
+public record VariableTypeKey(@NotNull Id variableId) implements TypeKey {
     
     @Override
     public void write(MvOutput output) {
         output.write(WireTypes.VARIABLE_TYPE);
-        output.writeId(rawVariableId);
+        output.writeId(variableId);
     }
 
     @Override
     public String toTypeExpression() {
-        return genericDeclarationRefKey.toTypeExpression() + "@" + Constants.addIdPrefix(rawVariableId.toString());
+        return "@" + Constants.addIdPrefix(variableId.toString());
     }
 
     @Override
     public VariableType toType(TypeDefProvider typeDefProvider) {
         return new VariableType(
-                genericDeclarationRefKey.resolve(typeDefProvider),
-                (TypeVariable) typeDefProvider.getTypeDef(rawVariableId)
+                (TypeVariable) typeDefProvider.getTypeDef(variableId)
         );
     }
 

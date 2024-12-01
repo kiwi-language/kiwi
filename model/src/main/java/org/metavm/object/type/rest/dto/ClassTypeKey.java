@@ -1,6 +1,7 @@
 package org.metavm.object.type.rest.dto;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.TypeDefProvider;
@@ -14,6 +15,11 @@ public record ClassTypeKey(@NotNull Id id) implements TypeKey, GenericDeclaratio
     public void write(MvOutput output) {
         output.write(WireTypes.CLASS_TYPE);
         output.writeId(id);
+    }
+
+    @Override
+    public GenericDeclarationRef toGenericDeclarationRef(TypeDefProvider typeDefProvider) {
+        return toType(typeDefProvider);
     }
 
     @Override

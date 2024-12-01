@@ -14,7 +14,7 @@ import java.util.function.Supplier;
 public class Nodes {
 
     public static RaiseNode raiseWithMessage(Code code) {
-        var klass = StdKlass.runtimeException.get();
+        var klass = StdKlass.runtimeException.type();
         var constructor = klass.resolveMethod(klass.getName(), List.of(Types.getNullableStringType()), List.of(), false);
         Nodes.newObject(code, constructor, true, true);
         return raise(code);
@@ -38,9 +38,9 @@ public class Nodes {
                 code.getLastNode(), code);
     }
 
-    public static NewObjectNode newObject(Code code, Method constructor, boolean ephemeral, boolean unbound) {
+    public static NewObjectNode newObject(Code code, MethodRef constructor, boolean ephemeral, boolean unbound) {
         return new NewObjectNode(code.nextNodeName("newObject"),
-                constructor.getRef(), code.getLastNode(), code, ephemeral, unbound);
+                constructor, code.getLastNode(), code, ephemeral, unbound);
     }
 
     public static VoidReturnNode voidRet(Code code) {
@@ -92,50 +92,18 @@ public class Nodes {
         ifNode.setTarget(noop(code));
     }
 
-    public static void listForEach(
-            Supplier<Node> listSupplier,
-            ClassType listType,
-            BiConsumer<Supplier<Node>, Supplier<Node>> action,
-            Code code) {
-        var i = code.nextVariableIndex();
-        loadConstant(Instances.longInstance(0), code);
-        store(i, code);
-        var listClass = listType.resolve();
-        var sizeMethod = listClass.getMethodByNameAndParamTypes("size", List.of());
-        var entry = noop(code);
-        Supplier<Node> indexSupplier = () -> Nodes.load(i, Types.getLongType(), code);
-        indexSupplier.get();
-        listSupplier.get();
-        Nodes.methodCall(sizeMethod, code);
-        ge(code);
-        var ifNode = if_(null, code);
-        var getMethod = listClass.getMethodByNameAndParamTypes("get", List.of(Types.getLongType()));
-        Supplier<Node> elementSupplier = () -> {
-            listSupplier.get();
-            indexSupplier.get();
-            return Nodes.methodCall(getMethod, code);
-        };
-        action.accept(elementSupplier, indexSupplier);
-        indexSupplier.get();
-        loadConstant(Instances.longInstance(1), code);
-        Nodes.add(code);
-        Nodes.store(i, code);
-        goto_(entry, code);
-        ifNode.setTarget(noop(code));
-    }
-
     public static FunctionCallNode functionCall(Code code, Function function) {
         return new FunctionCallNode(code.nextNodeName("functionCall"), code.getLastNode(), code, function.getRef());
     }
 
-    public static MethodCallNode methodCall(Method method, Code code) {
+    public static MethodCallNode methodCall(MethodRef method, Code code) {
         return methodCall(code.nextNodeName("methodCall"),
                 method,
                 code);
     }
 
-    public static MethodCallNode methodCall(String name, Method method, Code code) {
-        return new MethodCallNode(name, code.getLastNode(), code, method.getRef());
+    public static MethodCallNode methodCall(String name, MethodRef method, Code code) {
+        return new MethodCallNode(name, code.getLastNode(), code, method);
     }
 
     public static FunctionNode function(Code code, FunctionType functionType) {
@@ -192,12 +160,12 @@ public class Nodes {
         return new ClearArrayNode(code.nextNodeName("arrayclear"), code.getLastNode(), code);
     }
 
-    public static SetFieldNode setField(Field field, Code code) {
+    public static SetFieldNode setField(FieldRef fieldRef, Code code) {
         return new SetFieldNode(
                 code.nextNodeName("setField"),
                 code.getLastNode(),
                 code,
-                field.getRef()
+                fieldRef
         );
 
     }
@@ -418,21 +386,21 @@ public class Nodes {
         return Nodes.load(0, type, code);
     }
 
-    public static Node thisProperty(Property property, Code code) {
+    public static Node thisProperty(PropertyRef propertyRef, Code code) {
         this_(code);
-        return getProperty(property, code);
+        return getProperty(propertyRef, code);
     }
 
-    public static Node getProperty(Property property, Code code) {
-        return getProperty(code.nextNodeName("property"), property, code);
+    public static Node getProperty(PropertyRef propertyRef, Code code) {
+        return getProperty(code.nextNodeName("property"), propertyRef, code);
     }
 
-    public static Node getProperty(String name, Property property, Code code) {
+    public static Node getProperty(String name, PropertyRef propertyRef, Code code) {
         return new GetPropertyNode(
                 name,
                 code.getLastNode(),
                 code,
-                property.getRef()
+                propertyRef
         );
     }
 

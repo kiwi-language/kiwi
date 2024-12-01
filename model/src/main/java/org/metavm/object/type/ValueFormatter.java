@@ -56,19 +56,18 @@ public class ValueFormatter {
                         InstanceFieldDTO::fieldId
                 );
                 ClassInstance instance;
-                var klass = classType.resolve();
                 if (!instanceDTO.isNew()) {
                     instance = (ClassInstance) context.get(instanceDTO.parseId());
                 } else {
                     instance = ClassInstance.allocate(classType);
                 }
-                for (Field field : klass.getAllFields()) {
-                    FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getStringTag()), InstanceFieldDTO::value);
+                classType.foreachField(field -> {
+                    FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getRawField().getStringId()), InstanceFieldDTO::value);
                     Value fieldValue = rawValue != null ?
-                            parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance.getReference(), field), context)
+                            parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance.getReference(), field.getRawField()), context)
                             : Instances.nullInstance();
-                    fieldValueMap.put(field, fieldValue);
-                }
+                    fieldValueMap.put(field.getRawField(), fieldValue);
+                });
                 if (!instanceDTO.isNew()) {
                     fieldValueMap.forEach((field, value) -> {
                         if (!field.isReadonly())

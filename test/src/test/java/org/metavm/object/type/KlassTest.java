@@ -26,25 +26,25 @@ public class KlassTest extends TestCase {
                 .build();
         var fooKlass = TestUtils.newKlassBuilder("Foo").searchable(true).build();
         var typeParam = new TypeVariable(null, "T", fooKlass);
-        fooKlass.setInterfaces(List.of(supplierKlass.getParameterized(List.of(typeParam.getType())).getType()));
+        fooKlass.setInterfaces(List.of(ClassType.create(supplierKlass, List.of(typeParam.getType()))));
         var nameField = FieldBuilder.newBuilder("name", fooKlass, Types.getStringType()).build();
         var valueField = FieldBuilder.newBuilder("value", fooKlass, typeParam.getType()).build();
 
         var constructor = MethodBuilder.newBuilder(fooKlass, "Foo")
                 .isConstructor(true)
                 .parameters(
-                        new Parameter(null, "name", Types.getStringType()),
-                        new Parameter(null, "value", typeParam.getType())
+                        new NameAndType("name", Types.getStringType()),
+                        new NameAndType("value", typeParam.getType())
                 )
                 .build();
         {
             var code = constructor.getCode();
             Nodes.this_(code);
             Nodes.argument(constructor, 0);
-            Nodes.setField(nameField, code);
+            Nodes.setField(nameField.getRef(), code);
             Nodes.this_(code);
             Nodes.argument(constructor, 1);
-            Nodes.setField(valueField, code);
+            Nodes.setField(valueField.getRef(), code);
             Nodes.this_(code);
             Nodes.ret(code);
         }
@@ -54,33 +54,34 @@ public class KlassTest extends TestCase {
         {
             var code = getMethod.getCode();
             Nodes.this_(code);
-            Nodes.getProperty(valueField, code);
+            Nodes.getProperty(valueField.getRef(), code);
             Nodes.ret(code);
         }
         var factoryMethod = MethodBuilder.newBuilder(fooKlass, "create").isStatic(true).build();
         var factoryTypeParam = new TypeVariable(null, "T", factoryMethod);
-        var pKlass = fooKlass.getParameterized(List.of(factoryTypeParam.getType()));
+        var pKlass = ClassType.create(fooKlass, List.of(factoryTypeParam.getType()));
         factoryMethod.setParameters(List.of(
-                new Parameter(null, "name", Types.getStringType()),
-                new Parameter(null, "value", factoryTypeParam.getType())
+                new Parameter(null, "name", Types.getStringType(), factoryMethod),
+                new Parameter(null, "value", factoryTypeParam.getType(), factoryMethod)
         ));
-        factoryMethod.setReturnType(pKlass.getType());
+        factoryMethod.setReturnType(pKlass);
         {
             var code = factoryMethod.getCode();
             Nodes.argument(factoryMethod, 0);
             Nodes.argument(factoryMethod, 1);
-            Nodes.newObject(code, pKlass.getMethod(Method::isConstructor), false, false);
+            Nodes.newObject(code, pKlass.getMethod(MethodRef::isConstructor), false, false);
             Nodes.ret(code);
         }
-        var longFooKlass = fooKlass.getParameterized(List.of(Types.getLongType()));
+        var longFooKlass = ClassType.create(fooKlass, List.of(Types.getLongType()));
         var getComparatorMethod = MethodBuilder.newBuilder(fooKlass, "getComparator")
                 .isStatic(true)
-                .returnType(new FunctionType(List.of(longFooKlass.getType(), longFooKlass.getType()), Types.getLongType()))
+                .returnType(new FunctionType(List.of(longFooKlass, longFooKlass), Types.getLongType()))
                 .build();
-        var lambda = new Lambda(null, List.of(
-                new Parameter(null, "foo1", longFooKlass.getType()),
-                new Parameter(null, "foo2", longFooKlass.getType())
-        ), Types.getLongType(), getComparatorMethod);
+        var lambda = new Lambda(null, List.of(), Types.getLongType(), getComparatorMethod);
+        lambda.setParameters(List.of(
+                new Parameter(null, "foo1", longFooKlass, lambda),
+                new Parameter(null, "foo2", longFooKlass, lambda)
+        ));
         {
             var code = lambda.getCode();
             Nodes.argument(lambda, 0);
@@ -107,24 +108,24 @@ public class KlassTest extends TestCase {
         var indexNameField = FieldBuilder.newBuilder("name", nameIndexKlass, Types.getStringType()).build();
         var nameIndexConstructor = MethodBuilder.newBuilder(nameIndexKlass, "NameIndex")
                 .isConstructor(true)
-                .parameters(new Parameter(null, "name", Types.getStringType()))
+                .parameters(new NameAndType("name", Types.getStringType()))
                 .build();
         {
             var code = nameIndexConstructor.getCode();
             Nodes.this_(code);
             Nodes.argument(nameIndexConstructor, 0);
-            Nodes.setField(indexNameField, code);
+            Nodes.setField(indexNameField.getRef(), code);
             Nodes.this_(code);
             Nodes.ret(code);
         }
         var nameIndexMethod = MethodBuilder.newBuilder(fooKlass, "nameIndex")
-                .parameters(new Parameter(null, "name", Types.getStringType()))
+                .parameters(new NameAndType("name", Types.getStringType()))
                 .returnType(nameIndexKlass.getType())
                 .build();
         {
             var code = nameIndexMethod.getCode();
             Nodes.argument(nameIndexMethod, 0);
-            Nodes.newObject(code, nameIndexConstructor, true, true);
+            Nodes.newObject(code, nameIndexConstructor.getRef(), true, true);
             Nodes.ret(code);
         }
         var index = new org.metavm.object.type.Index(fooKlass, "nameIndex", "", true,
@@ -132,7 +133,7 @@ public class KlassTest extends TestCase {
         new IndexField(index, "name", Values.nullValue());
         var getByNameMethod = MethodBuilder.newBuilder(fooKlass, "getByName")
                 .isStatic(true)
-                .parameters(new Parameter(null, "name", Types.getStringType()))
+                .parameters(new NameAndType("name", Types.getStringType()))
                 .returnType(fooKlass.getType())
                 .build();
         {

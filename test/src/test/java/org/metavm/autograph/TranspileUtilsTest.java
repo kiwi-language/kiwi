@@ -15,6 +15,7 @@ import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.Types;
 import org.metavm.object.type.UncertainType;
@@ -76,11 +77,11 @@ public class TranspileUtilsTest extends TestCase {
         addMethod.setParameters(List.of(
                 new Parameter(null, "list",
                         Types.getNullableType(
-                                StdKlass.list.get().getParameterized(List.of(
-                                        new UncertainType(typeVar.getType(), Types.getAnyType()))).getType()
-                        )
+                                ClassType.create(StdKlass.list.get(), List.of(
+                                        new UncertainType(typeVar.getType(), Types.getAnyType())))
+                        ), addMethod
                 ),
-                new Parameter(null, "element", Types.getNullableType(typeVar.getType()))
+                new Parameter(null, "element", Types.getNullableType(typeVar.getType()), addMethod)
         ));
         var sig2 = addMethod.getInternalName(null);
         Assert.assertEquals(sig, sig2);

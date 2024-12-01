@@ -63,6 +63,7 @@ public class MetaFrame implements Frame, CallContext {
     @SuppressWarnings("DuplicatedCode")
     public @NotNull FlowExecResult execute(Code code,
                                            Value[] arguments,
+                                           TypeMetadata constantPool,
                                            @Nullable ClosureContext closureContext) {
 //        if(DebugEnv.flag) {
 //            log.debug("Executing flow {}, maxLocals: {}, maxStack: {}, constants: {}, code length: {}",
@@ -73,7 +74,7 @@ public class MetaFrame implements Frame, CallContext {
 //        }
         var pc = 0;
         var bytes = code.getCode();
-        var constants = code.getFlow().getConstantPool().getResolvedValues();
+        var constants = constantPool.getValues();
         var locals = new Value[code.getMaxLocals()];
         System.arraycopy(arguments, 0, locals, 0, arguments.length);
         var top = 0;
@@ -93,7 +94,7 @@ public class MetaFrame implements Frame, CallContext {
                                     .ephemeral(ephemeral)
                                     .build();
                             var fieldValues = new LinkedList<Value>();
-                            var fields = type.resolve().getAllFields();
+                            var fields = type.getKlass().getAllFields();
                             int numFields = fields.size();
                             for (int i = 0; i < numFields; i++) {
                                 fieldValues.addFirst(stack[--top]);
@@ -106,10 +107,10 @@ public class MetaFrame implements Frame, CallContext {
                         }
                         case Bytecodes.SET_FIELD -> {
                             int fieldIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                            var field = (Field) constants[fieldIndex];
+                            var field = (FieldRef) constants[fieldIndex];
                             var value = stack[--top];
                             var instance = stack[--top].resolveObject();
-                            instance.setField(field, value);
+                            instance.setField(field.getRawField(), value);
                             pc += 3;
                         }
                         case Bytecodes.DELETE_OBJECT -> {
@@ -125,7 +126,7 @@ public class MetaFrame implements Frame, CallContext {
                         }
                         case Bytecodes.METHOD_CALL -> {
                             var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                            var method = (Method) constants[flowIndex];
+                            var method = (MethodRef) constants[flowIndex];
                             int numCapturedVars = (bytes[pc + 3] & 0xff) << 8 | bytes[pc + 4] & 0xff;
                             pc += 5;
                             if (numCapturedVars > 0) {
@@ -139,16 +140,16 @@ public class MetaFrame implements Frame, CallContext {
                                     capturedVarTypes[i] = (Type) constants[(bytes[pc] & 0xff) << 8 | bytes[pc + 1] & 0xff];
                                     pc += 2;
                                 }
-                                method = (Method) tryUncaptureFlow(method, capturedVarIndexes, capturedVarTypes, locals);
+                                method = (MethodRef) tryUncaptureFlow(method, capturedVarIndexes, capturedVarTypes, locals);
                             }
                             var args = new LinkedList<Value>();
-                            int numArgs = method.getParameters().size();
+                            int numArgs = method.getParameterCount();
                             for (int j = 0; j < numArgs; j++) {
                                 args.addFirst(stack[--top]);
                             }
                             var self = method.isStatic() ? null : stack[--top].resolveObject();
                             if (method.isVirtual())
-                                method = requireNonNull(self).getKlass().resolveMethod(method);
+                                method = requireNonNull(self).getType().getOverride(method);
                             //noinspection DuplicatedCode
                             FlowExecResult result = method.execute(self, args, this);
                             if (result.exception() != null) {
@@ -160,7 +161,7 @@ public class MetaFrame implements Frame, CallContext {
                             }
                         }
                         case Bytecodes.GET_UNIQUE -> {
-                            var index = (Index) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                            var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getRawIndex();
                             Value result = instanceRepository().selectFirstByKey(loadIndexKey(index, stack, top));
                             top -= index.getFields().size();
                             if (result == null)
@@ -171,7 +172,7 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.NEW -> {
                             //noinspection DuplicatedCode
                             var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                            var method = (Method) constants[flowIndex];
+                            var method = (MethodRef) constants[flowIndex];
                             int numCapturedVars = (bytes[pc + 3] & 0xff) << 8 | bytes[pc + 4] & 0xff;
                             pc += 5;
                             if (numCapturedVars > 0) {
@@ -186,7 +187,7 @@ public class MetaFrame implements Frame, CallContext {
                                     capturedVarTypes[i] = (Type) constants[(bytes[pc] & 0xff) << 8 | bytes[pc + 1] & 0xff];
                                     pc += 2;
                                 }
-                                method = (Method) tryUncaptureFlow(method, capturedVarIndexes, capturedVarTypes, locals);
+                                method = (MethodRef) tryUncaptureFlow(method, capturedVarIndexes, capturedVarTypes, locals);
                             }
                             var ephemeral = bytes[pc] == 1;
                             var unbound = bytes[pc + 1] == 1;
@@ -196,11 +197,10 @@ public class MetaFrame implements Frame, CallContext {
                             for (int j = 0; j < numArgs; j++) {
                                 args.addFirst(stack[--top]);
                             }
-                            var klass = method.getDeclaringType();
-                            var type = klass.getType();
+                            var type = method.getDeclaringType();
                             var self = ClassInstanceBuilder.newBuilder(type)
                                     .ephemeral(ephemeral)
-                                    .closureContext(klass.isLocal() ? new ClosureContext(closureContext, locals) : null)
+                                    .closureContext(type.isLocal() ? new ClosureContext(closureContext, locals) : null)
                                     .build();
                             if (!self.isEphemeral() && !unbound)
                                 addInstance(self);
@@ -218,7 +218,7 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.NEW_CHILD -> {
                             //noinspection DuplicatedCode
                             var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                            var method = (Method) constants[flowIndex];
+                            var method = (MethodRef) constants[flowIndex];
                             int numCapturedVars = (bytes[pc + 3] & 0xff) << 8 | bytes[pc + 4] & 0xff;
                             pc += 5;
                             if (numCapturedVars > 0) {
@@ -233,7 +233,7 @@ public class MetaFrame implements Frame, CallContext {
                                     capturedVarTypes[i] = (Type) constants[(bytes[pc] & 0xff) << 8 | bytes[pc + 1] & 0xff];
                                     pc += 2;
                                 }
-                                method = (Method) tryUncaptureFlow(method, capturedVarIndexes, capturedVarTypes, locals);
+                                method = (MethodRef) tryUncaptureFlow(method, capturedVarIndexes, capturedVarTypes, locals);
                             }
                             var parent = stack[--top].resolveObject();
                             var args = new LinkedList<Value>();
@@ -241,10 +241,9 @@ public class MetaFrame implements Frame, CallContext {
                             for (int j = 0; j < numArgs; j++) {
                                 args.addFirst(stack[--top]);
                             }
-                            var klass = method.getDeclaringType();
-                            var type = klass.getType();
+                            var type = method.getDeclaringType();
                             var self = ClassInstanceBuilder.newBuilder(type)
-                                    .closureContext(klass.isLocal() ? new ClosureContext(closureContext, locals) : null)
+                                    .closureContext(type.isLocal() ? new ClosureContext(closureContext, locals) : null)
                                     .build();
                             parent.addChild(self);
                             //noinspection DuplicatedCode
@@ -259,9 +258,9 @@ public class MetaFrame implements Frame, CallContext {
                             }
                         }
                         case Bytecodes.SET_STATIC -> {
-                            var field = (Field) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                            var field = (FieldRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                             var sft = StaticFieldTable.getInstance(field.getDeclaringType(), ContextUtil.getEntityContext());
-                            sft.set(field, stack[--top]);
+                            sft.set(field.getRawField(), stack[--top]);
                             pc += 3;
                         }
                         case Bytecodes.NEW_ARRAY -> {
@@ -303,7 +302,7 @@ public class MetaFrame implements Frame, CallContext {
                             }
                         }
                         case Bytecodes.LAMBDA -> {
-                            var lambda = (Lambda) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                            var lambda = (LambdaRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                             var func = new LambdaValue(lambda, new ClosureContext(closureContext, locals));
                             if (bytes[pc + 3] == 0) {
                                 stack[top++] = func;
@@ -312,7 +311,7 @@ public class MetaFrame implements Frame, CallContext {
                                 var functionalInterface = (ClassType) constants[bytes[pc + 4] | bytes[pc + 5]];
                                 // TODO Pre-generate functional interface implementation
                                 var functionInterfaceImpl = Types.createFunctionalClass(functionalInterface);
-                                var funcImplKlass = functionInterfaceImpl.resolve();
+                                var funcImplKlass = functionInterfaceImpl.getKlass();
                                 var funcField = funcImplKlass.getFieldByName("func");
                                 stack[top++] = ClassInstance.create(Map.of(funcField, func), functionInterfaceImpl).getReference();
                                 pc += 6;
@@ -339,7 +338,7 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.FUNCTION_CALL -> {
                             //noinspection DuplicatedCode
                             var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                            var func = (Function) constants[flowIndex];
+                            var func = (FunctionRef) constants[flowIndex];
                             int numCapturedVars = (bytes[pc + 3] & 0xff) << 8 | bytes[pc + 4] & 0xff;
                             pc += 5;
                             if (numCapturedVars > 0) {
@@ -354,10 +353,10 @@ public class MetaFrame implements Frame, CallContext {
                                     capturedVarTypes[i] = (Type) constants[(bytes[pc] & 0xff) << 8 | bytes[pc + 1] & 0xff];
                                     pc += 2;
                                 }
-                                func = (Function) tryUncaptureFlow(func, capturedVarIndexes, capturedVarTypes, locals);
+                                func = (FunctionRef) tryUncaptureFlow(func, capturedVarIndexes, capturedVarTypes, locals);
                             }
                             var args = new LinkedList<Value>();
-                            int numArgs = func.getParameters().size();
+                            int numArgs = func.getParameterCount();
                             for (int j = 0; j < numArgs; j++) {
                                 args.addFirst(stack[--top]);
                             }
@@ -402,7 +401,7 @@ public class MetaFrame implements Frame, CallContext {
                         }
                         case Bytecodes.INDEX_SCAN -> {
                             //noinspection DuplicatedCode
-                            var index = (Index) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                            var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getRawIndex();
                             var to = loadIndexKey(index, stack, top);
                             top -= index.getFields().size();
                             var from = loadIndexKey(index, stack, top);
@@ -414,7 +413,7 @@ public class MetaFrame implements Frame, CallContext {
                         }
                         case Bytecodes.INDEX_COUNT -> {
                             //noinspection DuplicatedCode
-                            var index = (Index) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                            var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getRawIndex();
                             var to = loadIndexKey(index, stack, top);
                             top -= index.getFields().size();
                             var from = loadIndexKey(index, stack, top);
@@ -424,7 +423,7 @@ public class MetaFrame implements Frame, CallContext {
                             pc += 3;
                         }
                         case Bytecodes.INDEX_SELECT -> {
-                            var index = (Index) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                            var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getRawIndex();
                             var result = instanceRepository().indexSelect(loadIndexKey(index, stack, top));
                             top -= index.getFields().size();
                             var type = new ClassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType().getType()));
@@ -436,7 +435,7 @@ public class MetaFrame implements Frame, CallContext {
                             pc += 3;
                         }
                         case Bytecodes.INDEX_SELECT_FIRST -> {
-                            var index = (Index) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                            var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getRawIndex();
                             var result = instanceRepository().selectFirstByKey(loadIndexKey(index, stack, top));
                             top -= index.getFields().size();
                             stack[top++] = NncUtils.orElse(result, Instances.nullInstance());
@@ -599,16 +598,16 @@ public class MetaFrame implements Frame, CallContext {
                         }
                         case Bytecodes.GET_PROPERTY -> {
                             var i = stack[--top].resolveObject();
-                            var p = (Property) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                            var p = (PropertyRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                             stack[top++] = i.getProperty(p);
                             pc += 3;
                         }
                         case Bytecodes.GET_STATIC -> {
-                            var property = (Property) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                            if (property instanceof Field field) {
+                            var property = (PropertyRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                            if (property instanceof FieldRef field) {
                                 var staticFieldTable = StaticFieldTable.getInstance(field.getDeclaringType(), ContextUtil.getEntityContext());
-                                stack[top++] = staticFieldTable.get(field);
-                            } else if (property instanceof Method method) {
+                                stack[top++] = staticFieldTable.get(field.getRawField());
+                            } else if (property instanceof MethodRef method) {
                                 stack[top++] = new FlowValue(method, null);
                             } else
                                 throw new IllegalStateException("Unknown property type: " + property);
@@ -676,7 +675,7 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.LOAD_TYPE -> {
                             var type = (Type) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                             var klass = Types.getKlass(type);
-                            stack[top++] = ContextUtil.getEntityContext().getInstance(klass.getEffectiveTemplate()).getReference();
+                            stack[top++] = ContextUtil.getEntityContext().getInstance(klass).getReference();
                             pc += 3;
                         }
                         case Bytecodes.DUP -> {
@@ -727,7 +726,7 @@ public class MetaFrame implements Frame, CallContext {
     }
 
 
-    private Flow tryUncaptureFlow(Flow flow, int[] capturedVariableIndexes, Type[] capturedVariableTypes, Value[] locals) {
+    private FlowRef tryUncaptureFlow(FlowRef flow, int[] capturedVariableIndexes, Type[] capturedVariableTypes, Value[] locals) {
         if(capturedVariableIndexes.length == 0)
             return flow;
         var actualExprTypes = new Type[capturedVariableIndexes.length];
@@ -747,21 +746,20 @@ public class MetaFrame implements Frame, CallContext {
             actualCapturedTypes.add(t);
         });
         var typeSubst = new TypeSubstitutor(capturedTypes, actualCapturedTypes);
-        if(flow instanceof Method method && method.getDeclaringType().isParameterized()
+        if(flow instanceof MethodRef method && method.getDeclaringType().isParameterized()
                 && NncUtils.anyMatch(method.getDeclaringType().getTypeArguments(), Type::isCaptured)) {
             var declaringType = method.getDeclaringType();
             var actualTypeArgs = NncUtils.map(declaringType.getTypeArguments(), t -> t.accept(typeSubst));
-            var actualDeclaringType = declaringType.getEffectiveTemplate().getParameterized(actualTypeArgs);
+            var actualDeclaringType = new ClassType(declaringType.getOwner(), declaringType.getKlass(), actualTypeArgs);
             if(DebugEnv.debugging)
                 log.info("uncapture flow declaring type from {} to {}",
                         declaringType.getTypeDesc(),
                         actualDeclaringType.getTypeDesc());
-            flow = NncUtils.requireNonNull(actualDeclaringType.findSelfMethod(
-                    m -> m.getEffectiveVerticalTemplate() == method.getEffectiveVerticalTemplate()));
+            flow = NncUtils.requireNonNull(actualDeclaringType.findSelfMethod(m -> m.getRawFlow() == method.getRawFlow()));
         }
         if(NncUtils.anyMatch(flow.getTypeArguments(), Type::isCaptured)) {
             var actualTypeArgs = NncUtils.map(flow.getTypeArguments(), t -> t.accept(typeSubst));
-            return Objects.requireNonNull(flow.getHorizontalTemplate()).getParameterized(actualTypeArgs);
+            return flow.getParameterized(actualTypeArgs);
         }
         else
             return flow;

@@ -6,40 +6,25 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.*;
 import org.metavm.object.type.ITypeDef;
 import org.metavm.object.type.Type;
+import org.metavm.object.type.TypeMetadata;
 import org.metavm.util.NncUtils;
 
-import javax.annotation.Nullable;
-import java.util.Objects;
-
 @EntityType
-public class Parameter extends AttributedElement implements GenericElement, LocalKey, ITypeDef {
-
-    public static Parameter create(String name, Type type) {
-        return new Parameter(null, name, type);
-    }
+public class Parameter extends AttributedElement implements LocalKey, ITypeDef {
 
     @EntityField(asTitle = true)
     private String name;
-    private Type type;
+    private int typeIndex;
     private Callable callable;
-    @Nullable
-    @CopyIgnore
-    private Parameter copySource;
-
-    public Parameter(Long tmpId, String name, Type type) {
-        this(tmpId, name, type, null, DummyCallable.INSTANCE);
-    }
 
     public Parameter(Long tmpId,
                      String name,
                      Type type,
-                     @Nullable Parameter copySource,
                      Callable callable) {
         setTmpId(tmpId);
         this.callable = callable;
         this.name = name;
-        this.type = type;
-        this.copySource = copySource;
+        typeIndex = callable.getConstantPool().addValue(type);
     }
 
     public Callable getCallable() {
@@ -60,52 +45,23 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
     }
 
     public void setType(Type type) {
-        this.type = type;
+        this.typeIndex = callable.getConstantPool().addValue(type);
     }
 
     public String getName() {
         return name;
     }
 
+    public Type getType(TypeMetadata typeMetadata) {
+        return typeMetadata.getType(typeIndex);
+    }
+
     public Type getType() {
-        return type;
-    }
-
-    public Parameter copy() {
-        return new Parameter(null, name, type, null, DummyCallable.INSTANCE);
-    }
-
-    @Nullable
-    public Parameter getCopySource() {
-        return copySource;
-    }
-
-    public Parameter getUltimateTemplate() {
-        return getEffectiveVerticalTemplate().getEffectiveHorizontalTemplate().getEffectiveVerticalTemplate();
-    }
-
-    public Parameter getEffectiveHorizontalTemplate() {
-        if(callable instanceof Flow flow && flow.isParameterized())
-            return Objects.requireNonNull(copySource);
-        else
-            return this;
-    }
-
-    public Parameter getEffectiveVerticalTemplate() {
-        if(callable instanceof Method method && !method.isParameterized() && method.getDeclaringType().isParameterized())
-            return Objects.requireNonNull(copySource);
-        else
-            return this;
+        return getType(callable.getConstantPool());
     }
 
     public ParameterRef getRef() {
-        return new ParameterRef(callable.getRef(), getUltimateTemplate());
-    }
-
-    @Override
-    public void setCopySource(Object copySource) {
-        NncUtils.requireNull(this.copySource);
-        this.copySource = (Parameter) copySource;
+        return new ParameterRef(callable.getRef(), this);
     }
 
     @Override
@@ -124,20 +80,23 @@ public class Parameter extends AttributedElement implements GenericElement, Loca
     }
 
     public String getText() {
-        return name + ":" + type.getName();
+        return name + ":" + callable.getConstantPool().getType(typeIndex).getName();
     }
 
     public void write(KlassOutput output) {
         output.writeEntityId(this);
         output.writeUTF(name);
-        type.write(output);
+        output.writeShort(typeIndex);
         writeAttributes(output);
     }
 
     public void read(KlassInput input) {
         name = input.readUTF();
-        type = input.readType();
+        typeIndex = input.readShort();
         readAttributes(input);
     }
 
+    public int getTypeIndex() {
+        return typeIndex;
+    }
 }

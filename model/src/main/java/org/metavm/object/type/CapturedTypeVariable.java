@@ -2,9 +2,7 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
-import org.metavm.entity.CopyIgnore;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.GenericElement;
 import org.metavm.entity.LoadAware;
 import org.metavm.flow.Flow;
 import org.metavm.flow.KlassInput;
@@ -15,16 +13,13 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 
 @EntityType
-public class CapturedTypeVariable extends TypeDef implements GenericElement, LoadAware {
+public class CapturedTypeVariable extends TypeDef implements LoadAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
     private CapturedTypeScope scope;
 
     private UncertainType uncertainType;
-
-    @CopyIgnore
-    private @Nullable CapturedTypeVariable copySource;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
@@ -68,17 +63,6 @@ public class CapturedTypeVariable extends TypeDef implements GenericElement, Loa
 
     public UncertainType getUncertainType() {
         return uncertainType;
-    }
-
-    @Nullable
-    @Override
-    public CapturedTypeVariable getCopySource() {
-        return copySource;
-    }
-
-    @Override
-    public void setCopySource(Object copySource) {
-        this.copySource = (CapturedTypeVariable) copySource;
     }
 
     @Override

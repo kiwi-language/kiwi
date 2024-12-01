@@ -7,13 +7,14 @@ import org.metavm.object.instance.core.*;
 import org.metavm.util.Instances;
 
 import java.util.List;
+import java.util.Objects;
 
 public abstract class SetNative extends IterableNative {
 
     public BooleanValue equals(Value o, CallContext callContext) {
         if(o instanceof Reference ref) {
             if(ref.resolve() instanceof ClassInstance that
-                    && that.getKlass().findAncestorKlassByTemplate(StdKlass.set.get()) == getInstance().getKlass().findAncestorKlassByTemplate(StdKlass.set.get())) {
+                    && Objects.equals(that.getType().findAncestorByKlass(StdKlass.set.get()), getInstance().getType().findAncestorByKlass(StdKlass.set.get()))) {
                 var thatNat = (SetNative) NativeMethods.getNativeObject(that);
                 if(size() == thatNat.size()) {
                     for (Value value : thatNat) {
@@ -59,7 +60,7 @@ public abstract class SetNative extends IterableNative {
 
     public Value retainAll(Value value, CallContext callContext) {
         var coll = value.resolveObject();
-        var containsMethod = coll.getKlass().getMethod(m -> m.getEffectiveVerticalTemplate() == StdMethod.collectionContains.get());
+        var containsMethod = coll.getType().getMethod(StdMethod.collectionContains.get());
         var it = iterator();
         boolean changed = false;
         while (it.hasNext()) {

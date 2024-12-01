@@ -1,8 +1,7 @@
 package org.metavm.util;
 
-import org.metavm.flow.Function;
-import org.metavm.flow.Lambda;
-import org.metavm.flow.Method;
+import org.metavm.entity.GenericDeclarationRef;
+import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.*;
@@ -143,11 +142,14 @@ public abstract class MvInput implements Closeable {
 
     public abstract Method getMethod(Id id);
 
-    public @Nullable Type readTypeNullable() {
+    public @Nullable GenericDeclarationRef readGenericDeclarationRef() {
         int tag = read();
-        if(tag == WireTypes.NULL)
-            return null;
-        return Type.readType(tag, this);
+        return switch (tag) {
+            case WireTypes.NULL -> null;
+            case WireTypes.METHOD_REF -> MethodRef.read(this);
+            case WireTypes.FUNCTION_REF -> FunctionRef.read(this);
+            default -> (GenericDeclarationRef) Type.readType(tag, this);
+        };
     }
 
     public abstract Field getField(Id id);

@@ -86,17 +86,11 @@ public class NativeMethods {
 
     private static Class<?> tryGetNativeClass(Klass klass) {
         while (klass != null) {
-//            var def = ModelDefRegistry.tryGetDef(klass.getEffectiveTemplate());
-//            if (def != null) {
-//                if (def instanceof DirectDef<?> directDef && directDef.getNativeClass() != null)
-//                    return directDef.getNativeClass();
-//                else
-//                    return null;
-            var nativeClass = klass.getEffectiveTemplate().getNativeClass();
+            var nativeClass = klass.getNativeClass();
             if(nativeClass != null)
                 return nativeClass;
             else
-                klass = NncUtils.get(klass.getSuperType(), ClassType::resolve);
+                klass = NncUtils.get(klass.getSuperType(), ClassType::getKlass);
         }
         return null;
     }

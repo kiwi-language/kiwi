@@ -18,11 +18,6 @@ public class FunctionCpEntry extends CpEntry {
     }
 
     @Override
-    public Object resolve() {
-        return functionRef.resolve();
-    }
-
-    @Override
     public void write(KlassOutput output) {
         functionRef.write(output);
     }

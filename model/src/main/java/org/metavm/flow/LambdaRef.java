@@ -2,7 +2,8 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.util.MvInput;
+import org.metavm.object.type.FunctionType;
+import org.metavm.object.type.TypeMetadata;
 import org.metavm.util.WireTypes;
 
 import java.util.Objects;
@@ -10,40 +11,62 @@ import java.util.Objects;
 @EntityType
 public class LambdaRef extends CallableRef  {
 
-    public static LambdaRef read(MvInput input) {
-        return new LambdaRef(input.getLambda(input.readId()));
+    public static LambdaRef read(KlassInput input) {
+        return new LambdaRef(
+                (FlowRef) input.readElement(),
+                input.getLambda(input.readId()));
     }
 
-    private final Lambda lambda;
+    private final FlowRef flowRef;
+    private final Lambda rawLambda;
 
-    public LambdaRef(Lambda lambda) {
-        this.lambda = lambda;
+    public LambdaRef(FlowRef flowRef, Lambda rawLambda) {
+        this.flowRef = flowRef;
+        this.rawLambda = rawLambda;
     }
 
     @Override
     protected boolean equals0(Object obj) {
         if (this == obj) return true;
         if (!(obj instanceof LambdaRef that)) return false;
-        return Objects.equals(lambda, that.lambda);
+        return Objects.equals(rawLambda, that.rawLambda);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(lambda);
+        return Objects.hash(rawLambda);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitLambdaNodeRef(this);
+        return visitor.visitLambdaRef(this);
     }
 
     @Override
-    public Lambda resolve() {
-        return lambda;
+    public TypeMetadata getTypeMetadata() {
+        return flowRef.getTypeMetadata();
     }
 
     public void write(KlassOutput output) {
         output.write(WireTypes.LAMBDA_REF);
-        output.writeEntityId(lambda);
+        flowRef.write(output);
+        output.writeEntityId(rawLambda);
+    }
+
+    public FunctionType getFunctionType() {
+        return flowRef.getTypeMetadata().getFunctionType(rawLambda.getTypeIndex());
+    }
+
+    public FlowRef getFlowRef() {
+        return flowRef;
+    }
+
+    public Lambda getRawLambda() {
+        return rawLambda;
+    }
+
+    @Override
+    protected String toString0() {
+        return "LambdaRef " + flowRef + ".<lambda>";
     }
 }

@@ -6,7 +6,6 @@ import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
-import org.metavm.entity.EntityQueryService;
 import org.metavm.entity.IEntityContext;
 import org.metavm.flow.DeployKlassInput;
 import org.metavm.flow.FlowExecutionService;
@@ -18,7 +17,6 @@ import org.metavm.object.type.rest.dto.TreeResponse;
 import org.metavm.object.type.rest.dto.TypeTreeQuery;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.version.Versions;
-import org.metavm.task.TaskManager;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.NncUtils;
@@ -42,23 +40,14 @@ public class TypeManager extends EntityContextFactoryAware {
 
     public static final Logger logger = LoggerFactory.getLogger(TypeManager.class);
 
-    private final EntityQueryService entityQueryService;
-
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private final TaskManager taskManager;
-
     private FlowExecutionService flowExecutionService;
 
     private VersionManager versionManager;
 
     private final BeanManager beanManager;
 
-    public TypeManager(EntityContextFactory entityContextFactory,
-                       EntityQueryService entityQueryService,
-                       TaskManager taskManager, BeanManager beanManager) {
+    public TypeManager(EntityContextFactory entityContextFactory, BeanManager beanManager) {
         super(entityContextFactory);
-        this.entityQueryService = entityQueryService;
-        this.taskManager = taskManager;
         this.beanManager = beanManager;
     }
 
@@ -108,7 +97,7 @@ public class TypeManager extends EntityContextFactoryAware {
         var classInit = klass.findMethodByName("__cinit__");
         if (classInit != null) {
             flowExecutionService.executeInternal(
-                    classInit, null,
+                    classInit.getRef(), null,
                     List.of(),
                     context
             );
@@ -176,7 +165,7 @@ public class TypeManager extends EntityContextFactoryAware {
             if(klass == null)
                 throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, klassName);
             if(klass.isEnum()) {
-                var sft = StaticFieldTable.getInstance(klass, context);
+                var sft = StaticFieldTable.getInstance(klass.getType(), context);
                 var ec = sft.getEnumConstantByName(enumConstantName);
                 return ec.getStringId();
             }
@@ -186,7 +175,7 @@ public class TypeManager extends EntityContextFactoryAware {
     }
 
     private void createEnumConstant(EnumConstantDef enumConstantDef, IEntityContext context) {
-        var sft = StaticFieldTable.getInstance(enumConstantDef.getKlass(), context);
+        var sft = StaticFieldTable.getInstance(enumConstantDef.getKlass().getType(), context);
         var value = enumConstantDef.createEnumConstant(context.getInstanceContext());
         sft.set(enumConstantDef.getField(), value.getReference());
     }

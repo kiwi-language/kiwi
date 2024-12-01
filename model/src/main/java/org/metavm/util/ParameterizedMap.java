@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 
 public class ParameterizedMap {
 
-    private final WeakHashMap<GenericDeclaration, WeakHashMap<List<? extends Type>, WeakReference<Object>>> map = new WeakHashMap<>();
+    private final WeakHashMap<Object, WeakHashMap<List<? extends Type>, WeakReference<Object>>> map = new WeakHashMap<>();
 
     public Object get(GenericDeclaration genericDeclaration, List<? extends Type> typeArguments) {
         var subMap = map.get(genericDeclaration);
@@ -28,7 +28,7 @@ public class ParameterizedMap {
                 .put(typeArguments, new WeakReference<>(parameterized));
     }
 
-    public void forEach(GenericDeclaration genericDeclaration, BiConsumer<List<? extends Type>, Object> action) {
+    public void forEach(Object genericDeclaration, BiConsumer<List<? extends Type>, Object> action) {
         var subMap = map.get(genericDeclaration);
         if(subMap != null)
             subMap.forEach((typeArgs, ref) -> {

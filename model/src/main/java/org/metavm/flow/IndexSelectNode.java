@@ -5,7 +5,6 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Index;
 import org.metavm.object.type.IndexRef;
 
 import java.util.List;
@@ -21,14 +20,10 @@ public class IndexSelectNode extends Node {
         this.indexRef = indexRef;
     }
 
-    public Index getIndex() {
-        return indexRef.resolve();
-    }
-
     @Override
     @NotNull
     public ClassType getType() {
-        return new ClassType(null, StdKlass.arrayList.get(), List.of(getIndex().getDeclaringType().getType()));
+        return new ClassType(null, StdKlass.arrayList.get(), List.of(indexRef.getDeclaringType()));
     }
 
     @Override
@@ -38,12 +33,12 @@ public class IndexSelectNode extends Node {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("indexSelect(" + getIndex().getName() + ")");
+        writer.write("indexSelect(" + indexRef.getName() + ")");
     }
 
     @Override
     public int getStackChange() {
-        return 1 - getIndex().getFields().size();
+        return 1 - indexRef.getFieldCount();
     }
 
     @Override

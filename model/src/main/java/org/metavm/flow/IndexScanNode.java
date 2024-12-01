@@ -4,7 +4,6 @@ import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.Index;
 import org.metavm.object.type.IndexRef;
 
 @EntityType
@@ -19,7 +18,7 @@ public class IndexScanNode extends Node {
 
     @Override
     public ArrayType getType() {
-        return new ArrayType(getIndex().getDeclaringType().getType(), ArrayKind.READ_ONLY);
+        return new ArrayType(indexRef.getDeclaringType(), ArrayKind.READ_ONLY);
     }
 
     @Override
@@ -27,18 +26,14 @@ public class IndexScanNode extends Node {
         return true;
     }
 
-    public Index getIndex() {
-        return indexRef.resolve();
-    }
-
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("indexScan(" + getIndex().getName() + ")");
+        writer.write("indexScan(" + indexRef.getName() + ")");
     }
 
     @Override
     public int getStackChange() {
-        return 1 - (getIndex().getFields().size() << 1);
+        return 1 - (indexRef.getFieldCount() << 1);
     }
 
     @Override

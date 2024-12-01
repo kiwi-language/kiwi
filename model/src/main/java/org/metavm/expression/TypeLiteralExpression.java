@@ -51,7 +51,7 @@ public class TypeLiteralExpression extends Expression {
     @Override
     protected Value evaluateSelf(EvaluationContext context) {
         var klass = Types.getKlass(type);
-        return ContextUtil.getEntityContext().getInstance(klass.getEffectiveTemplate()).getReference();
+        return ContextUtil.getEntityContext().getInstance(klass).getReference();
     }
 
     public Type getTypeObject() {

@@ -25,12 +25,8 @@ public class MethodBuilder {
     private boolean isSynthetic;
     private Access access = Access.PUBLIC;
     private Type returnType;
-    private List<Parameter> parameters = List.of();
+    private List<NameAndType> parameters = List.of();
     private List<TypeVariable> typeParameters = List.of();
-    private Method horizontalTemplate;
-    private Method verticalTemplate;
-    private List<? extends Type> typeArguments = List.of();
-    private FunctionType type;
     private boolean hidden;
     private FunctionType staticType;
     private Method existing;
@@ -79,7 +75,7 @@ public class MethodBuilder {
         return this;
     }
 
-    public MethodBuilder parameters(List<Parameter> parameters) {
+    public MethodBuilder parameters(List<NameAndType> parameters) {
         this.parameters = parameters;
         return this;
     }
@@ -94,27 +90,12 @@ public class MethodBuilder {
         return this;
     }
 
-    public MethodBuilder parameters(Parameter... parameters) {
+    public MethodBuilder parameters(NameAndType... parameters) {
         return parameters(List.of(parameters));
     }
 
     public MethodBuilder tmpId(Long tmpId) {
         this.tmpId = tmpId;
-        return this;
-    }
-
-    public MethodBuilder horizontalTemplate(Method horizontalTemplate) {
-        this.horizontalTemplate = horizontalTemplate;
-        return this;
-    }
-
-    public MethodBuilder verticalTemplate(Method verticalTemplate) {
-        this.verticalTemplate = verticalTemplate;
-        return this;
-    }
-
-    public MethodBuilder type(FunctionType type) {
-        this.type = type;
         return this;
     }
 
@@ -125,11 +106,6 @@ public class MethodBuilder {
 
     public MethodBuilder typeParameters(List<TypeVariable> typeParameters) {
         this.typeParameters = typeParameters;
-        return this;
-    }
-
-    public MethodBuilder typeArguments(List<? extends Type> typeArguments) {
-        this.typeArguments = typeArguments;
         return this;
     }
 
@@ -151,8 +127,6 @@ public class MethodBuilder {
             else
                 returnType = NncUtils.orElse(Types.getVoidType(), Types::getVoidType);
         }
-        if(!hidden && !typeArguments.isEmpty())
-            hidden = NncUtils.anyMatch(typeArguments, Type::isCaptured);
         Method method;
         if (existing == null) {
             if (state == null)
@@ -168,9 +142,7 @@ public class MethodBuilder {
                     parameters,
                     returnType,
                     typeParameters,
-                    typeArguments,
                     _static,
-                    horizontalTemplate,
                     access,
                     codeSource,
                     hidden,
@@ -179,11 +151,10 @@ public class MethodBuilder {
         } else {
             method = existing;
             existing.setName(name);
-            existing.setParameters(parameters);
             existing.setReturnType(returnType);
             existing.setTypeParameters(typeParameters);
-            existing.setTypeArguments(typeArguments);
             existing.setStaticType(staticType);
+            existing.setParameters(NncUtils.map(parameters, p -> new Parameter(null, p.name(), p.type(), method)));
             if (state != null)
                 existing.setState(state);
         }

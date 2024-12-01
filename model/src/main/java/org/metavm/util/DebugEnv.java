@@ -4,6 +4,7 @@ import org.metavm.entity.SystemDefContext;
 import org.metavm.flow.Function;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodCallNode;
+import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
@@ -82,6 +83,8 @@ public class DebugEnv {
     public static volatile SystemDefContext defContext;
 
     public static volatile boolean saveClassFile = true;
+
+    public static volatile MethodRef methodRef;
 
     public static void exitPathItem() {
         path.removeLast();

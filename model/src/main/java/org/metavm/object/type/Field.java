@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType
-public class Field extends Element implements ChangeAware, GenericElement, Property, ITypeDef {
+public class Field extends Element implements ChangeAware, Property, ITypeDef {
 
     @EntityField(asTitle = true)
     private String name;
@@ -30,12 +30,10 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     private boolean isChild;
     @Nullable
     private Expression initializer;
-    @Nullable
-    @CopyIgnore
-    private Field copySource;
     private boolean readonly;
     private boolean isTransient;
     private MetadataState state;
+    private int typeIndex;
     private Type type;
     private int originalTag = -1;
     private int tag;
@@ -71,6 +69,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         this.access = access;
         this.state = state;
         this.type = type;
+        this.typeIndex = declaringType.addConstant(type);
         this.tag = tag;
         this.sourceTag = sourceTag;
         this.readonly = readonly;
@@ -110,10 +109,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
 
     public Type getConcreteType() {
         return getType().getConcreteType();
-    }
-
-    public Field getEffectiveTemplate() {
-        return declaringType.isParameterized() ? Objects.requireNonNull(copySource) : this;
     }
 
     public void setDefaultValue(Value defaultValue) {
@@ -183,15 +178,8 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         this.initializer = initializer;
     }
 
-    @Override
-    public void onBind(IEntityContext context) {
-        if (isNullable() || isStatic() || getState() == MetadataState.INITIALIZING
-                || isChild() && getType().isArray()) {
-            return;
-        }
-        if (declaringType.isDeployed()) {
-            throw BusinessException.notNullFieldWithoutDefaultValue(this);
-        }
+    public Type getType() {
+        return type;
     }
 
     public boolean isEnum() {
@@ -286,16 +274,6 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         return getQualifiedName() + ":" + getType().getName();
     }
 
-    @Nullable
-    public Field getCopySource() {
-        return this.copySource;
-    }
-
-    @Override
-    public void setCopySource(@Nullable Object copySource) {
-        this.copySource = (Field) copySource;
-    }
-
     @Override
     public void onChange(ClassInstance instance, IEntityContext context) {
 //        if (_static) {
@@ -369,12 +347,17 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     @Override
-    public Type getType() {
-        return type;
+    public Type getType(TypeMetadata typeMetadata) {
+        return typeMetadata.getType(typeIndex);
     }
 
     public void setType(Type type) {
         this.type = type;
+        resetTypeIndex();
+    }
+
+    public void resetTypeIndex() {
+        typeIndex = declaringType.addConstant(type);
     }
 
     public void initTag(int tag) {
@@ -407,24 +390,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     }
 
     public FieldRef getRef() {
-        return new FieldRef(declaringType.getType(), this.getEffectiveTemplate());
-    }
-
-    public boolean isTagNotNull() {
-        return getEffectiveTemplate().isIdNotNull();
-    }
-
-    public Id getTagId() {
-        return getEffectiveTemplate().getId();
-    }
-
-    @Override
-    public Field getUltimateTemplate() {
-        return getEffectiveTemplate();
-    }
-
-    public String getStringTag() {
-        return getTagId().toString();
+        return new FieldRef(declaringType.getType(), this);
     }
 
     public long getKlassTag() {
@@ -508,7 +474,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         output.writeEntityId(this);
         output.writeUTF(name);
         output.write(access.code());
-        type.write(output);
+        output.writeShort(typeIndex);
         output.writeInt(getFlags());
         output.write(state.code());
         output.writeInt(tag);
@@ -521,7 +487,8 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
     public void read(KlassInput input) {
         name = input.readUTF();
         access = Access.fromCode(input.read());
-        type = input.readType();
+        typeIndex = input.readShort();
+        type = declaringType.getConstantPool().getType(typeIndex);
         setFlags(input.readInt());
         state = MetadataState.fromCode(input.read());
         tag = input.readInt();
@@ -533,4 +500,7 @@ public class Field extends Element implements ChangeAware, GenericElement, Prope
         defaultValue = (Value) input.readElement();
     }
 
+    public int getTypeIndex() {
+        return typeIndex;
+    }
 }

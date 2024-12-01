@@ -2,10 +2,7 @@ package org.metavm.entity.natives;
 
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.Field;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.Type;
+import org.metavm.object.type.*;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -26,21 +23,21 @@ public class MapNative extends NativeBase {
     private final ClassInstance instance;
     private final Type keyType;
     private final Type valueType;
-    private final Field keyArrayField;
-    private final Field valueArrayField;
+    private final FieldRef keyArrayField;
+    private final FieldRef valueArrayField;
     private ArrayInstance keyArray;
     private ArrayInstance valueArray;
 
     public MapNative(ClassInstance instance) {
         this.instance = instance;
-        Klass type = instance.getKlass();
+        var type = instance.getType();
         keyArrayField = Objects.requireNonNull(type.findFieldByName("keyArray"));
         valueArrayField = Objects.requireNonNull(type.findFieldByName("valueArray"));
         keyType = ((ArrayType) keyArrayField.getType()).getElementType();
         valueType = ((ArrayType) valueArrayField.getType()).getElementType();
-        if (instance.isFieldInitialized(keyArrayField)) {
-            keyArray = instance.getField(keyArrayField).resolveArray();
-            valueArray = instance.getField(valueArrayField).resolveArray();
+        if (instance.isFieldInitialized(keyArrayField.getRawField())) {
+            keyArray = instance.getField(keyArrayField.getRawField()).resolveArray();
+            valueArray = instance.getField(valueArrayField.getRawField()).resolveArray();
             if (valueArray == null || keyArray.length() != valueArray.length()) {
                 throw new InternalException("Map data corrupted");
             }
@@ -54,14 +51,14 @@ public class MapNative extends NativeBase {
     public Value HashMap(CallContext callContext) {
         keyArray = new ArrayInstance((ArrayType) keyArrayField.getType());
         valueArray = new ArrayInstance((ArrayType) valueArrayField.getType());
-        instance.initField(keyArrayField, keyArray.getReference());
-        instance.initField(valueArrayField, valueArray.getReference());
+        instance.initField(keyArrayField.getRawField(), keyArray.getReference());
+        instance.initField(valueArrayField.getRawField(), valueArray.getReference());
         return instance.getReference();
     }
 
     public Reference keySet(CallContext callContext) {
-        var keySetKlass = StdKlass.hashSet.get().getParameterized(List.of(instance.getKlass().getFirstTypeArgument()));
-        ClassInstance keySet = ClassInstance.allocate(keySetKlass.getType());
+        var keySetKlass = ClassType.create(StdKlass.hashSet.get(), List.of(instance.getType().getFirstTypeArgument()));
+        ClassInstance keySet = ClassInstance.allocate(keySetKlass);
         var setNative = (HashSetNative) NativeMethods.getNativeObject(keySet);
         setNative.HashSet(callContext);
         for (Value key : keyArray) {
@@ -155,7 +152,7 @@ public class MapNative extends NativeBase {
     public BooleanValue equals(Value o, CallContext callContext) {
         if(o instanceof Reference ref) {
             if(ref.resolve() instanceof ClassInstance that
-                    && that.getKlass().findAncestorKlassByTemplate(StdKlass.map.get()) == instance.getKlass().findAncestorKlassByTemplate(StdKlass.map.get())) {
+                    && Objects.equals(that.getType().findAncestorByKlass(StdKlass.map.get()), instance.getType().findAncestorByKlass(StdKlass.map.get()))) {
                 var thatNat = new MapNative(that);
                 if(keyArray.size() == thatNat.size()) {
                     int i = 0;

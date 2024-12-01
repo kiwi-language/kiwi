@@ -88,7 +88,12 @@ public class Declarator extends VisitorBase {
         if(klass.isEnum())
             classInfo.visitedMethods.add(Flows.saveValuesMethod(klass));
         var removedFields = NncUtils.exclude(klass.getFields(), classInfo.visitedFields::contains);
-        removedFields.forEach(Field::setMetadataRemoved);
+        removedFields.forEach(f -> {
+            f.setMetadataRemoved();
+            f.resetTypeIndex();
+        });
+        var removedStaticFields = NncUtils.exclude(klass.getStaticFields(), classInfo.visitedFields::contains);
+        removedStaticFields.forEach(klass::removeField);
         var removedMethods = NncUtils.filter(klass.getMethods(),
                 m -> !classInfo.visitedMethods.contains(m));
         var fieldIndices = new HashMap<String, Integer>();
@@ -139,6 +144,7 @@ public class Declarator extends VisitorBase {
                     .build();
             method.putUserData(Keys.Method, flow);
         } else {
+            flow.clearContent();
             flow.setName(getFlowName(method));
             flow.setAccess(access);
             flow.setStatic(isStatic);
@@ -153,8 +159,7 @@ public class Declarator extends VisitorBase {
         if (method.isConstructor() && klass.isEnum())
             parameters.addAll(getEnumConstructorParams(flow));
         parameters.addAll(processParameters(method.getParameterList(), flow));
-        flow.setParameters(parameters);
-        flow.setReturnType(getReturnType(method));
+        flow.update(parameters, getReturnType(method));
 
         flow.clearAttributes();
         var beanAnnotation = TranspileUtils.getAnnotation(method, Bean.class);
@@ -201,10 +206,14 @@ public class Declarator extends VisitorBase {
     private List<Parameter> getEnumConstructorParams(Method method) {
         var nameParam = method.findParameter(p -> "__name__".equals(p.getName()));
         if(nameParam == null)
-            nameParam = new Parameter(null, "name", Types.getStringType());
+            nameParam = new Parameter(null, "name", Types.getStringType(), method);
+        else
+            nameParam.setType(Types.getStringType()); // Adding type constant into constant pool
         var ordinalParam = method.findParameter(p -> "__ordinal__".equals(p.getName()));
         if(ordinalParam == null)
-            ordinalParam = new Parameter(null, "ordinal", Types.getLongType());
+            ordinalParam = new Parameter(null, "ordinal", Types.getLongType(), method);
+        else
+            ordinalParam.setType(Types.getLongType());
         return List.of(nameParam, ordinalParam);
     }
 
@@ -216,7 +225,7 @@ public class Declarator extends VisitorBase {
                     var name = param.getName();
                     var type = resolveParameterType(param);
                     if(p == null)
-                        p = new Parameter(null, name, type);
+                        p = new Parameter(null, name, type, method);
                     else {
                         p.setName(name);
                         p.setType(type);
@@ -299,8 +308,11 @@ public class Declarator extends VisitorBase {
                     .isChild(true)
                     .isStatic(true)
                     .build();
-        } else
+        } else {
             field.setName(getEnumConstantName(enumConstant));
+            field.resetTypeIndex();
+        }
+        classInfo.visitedFields.add(field);
         var ecd = klass.findEnumConstantDef(e -> e.getName().equals(enumConstant.getName()));
         if(ecd == null) {
         var name = enumConstant.getName();

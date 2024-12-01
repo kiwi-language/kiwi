@@ -195,8 +195,6 @@ public class InnerClassTransformer extends VisitorBase {
                 && !(reference.getContext() instanceof PsiThisExpression)
                 && !(reference.getContext() instanceof PsiImportStatementBase)
         ) {
-//            log.debug("Creating type text for reference {} in context {}", reference.getText(),
-//                    Objects.requireNonNull(reference.getContext()).getText());
             return new TypeText(getClassTypeText(klass, resolveResult.getSubstitutor()));
         }
         else

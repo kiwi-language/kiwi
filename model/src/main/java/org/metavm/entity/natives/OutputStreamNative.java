@@ -35,7 +35,7 @@ public class OutputStreamNative extends NativeBase {
         var writeMethod = StdMethod.outputStreamWrite.get();
         for (int i = o; i < o + l; i++) {
             var v = ((LongValue) buf.get(i));
-            Flows.invokeVirtual(writeMethod, instance, List.of(v), callContext);
+            Flows.invokeVirtual(writeMethod.getRef(), instance, List.of(v), callContext);
         }
     }
 

@@ -598,13 +598,13 @@ public class EntityUtils {
     }
 
     public static String getEntityDesc(Object entity) {
-        if (entity instanceof Flow flow)
-            return getRealType(entity).getSimpleName() + "-" + flow.getNameWithTypeArguments();
-        if (entity instanceof ReadonlyArray<?> array)
-            return getRealType(array.getClass()).getSimpleName();
-        if(entity instanceof Klass klass)
-            return "Klass-" + klass.getTypeDesc();
-        return getRealType(entity).getSimpleName() + "-" + entity;
+        return switch (entity) {
+            case org.metavm.flow.Method method -> method.toString();
+            case Function func -> func.toString();
+            case Klass klass -> klass.toString();
+            case ReadonlyArray<?> array -> getRealType(array.getClass()).getSimpleName();
+            default -> getRealType(entity).getSimpleName() + "-" + entity;
+        };
     }
 
     public static String getEntityPath(Object entity) {

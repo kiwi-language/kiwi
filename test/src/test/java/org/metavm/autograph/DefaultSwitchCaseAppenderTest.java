@@ -8,6 +8,8 @@ public class DefaultSwitchCaseAppenderTest extends TestCase {
     public void test() {
         var file = TranspileTestTools.getPsiJavaFile(AstSwitchCoverFoo.class);
         TranspileTestTools.executeCommand(() -> {
+            file.accept(new QnResolver());
+            file.accept(new ActivityAnalyzer());
             file.accept(new SwitchExpressionTransformer());
             file.accept(new SwitchLabelStatementTransformer());
             file.accept(new DefaultSwitchCaseAppender());

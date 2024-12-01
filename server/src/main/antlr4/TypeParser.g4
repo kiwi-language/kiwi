@@ -33,7 +33,7 @@ arrayKind: R | C | V | '[' ']';
 
 classType: qualifiedName typeArguments? (':' DECIMAL_LITERAL)?;
 
-variableType:  genericDeclarationRef '@' IDENTIFIER;
+variableType: '@' IDENTIFIER;
 
 typeArguments: '<' typeList '>';
 

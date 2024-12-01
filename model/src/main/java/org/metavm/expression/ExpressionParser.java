@@ -179,7 +179,7 @@ public class ExpressionParser {
     }
 
     private StaticPropertyExpression parseStaticField(MetaVMParser.ExpressionContext expression) {
-        var klass = ((ClassType) parseTypeType(expression.typeType(0))).resolve();
+        var klass = ((ClassType) parseTypeType(expression.typeType(0))).getKlass();
         String identifier = expression.identifier().IDENTIFIER().getText();
         Field field = identifier.startsWith(Constants.ID_PREFIX) ?
                 klass.getField(Id.parse(identifier.substring(Constants.ID_PREFIX.length()))) :
@@ -285,11 +285,10 @@ public class ExpressionParser {
             klass = context.getTypeDefProvider().getKlass(Id.parse(Constants.removeIdPrefix(name)));
         else
             klass = requireNonNull(context.getTypeDefProvider().findKlassByName(name));
-        if(ctx.typeArguments() != null) {
-            var typeArgs = NncUtils.map(ctx.typeArguments().typeType(), this::parseTypeType);
-            klass = klass.getParameterized(typeArgs);
-        }
-        return klass.getType();
+        if(ctx.typeArguments() != null)
+            return ClassType.create(klass, NncUtils.map(ctx.typeArguments().typeType(), this::parseTypeType));
+        else
+            return klass.getType();
     }
 
     private PrimitiveType parsePrimitiveType(MetaVMParser.PrimitiveTypeContext ctx) {

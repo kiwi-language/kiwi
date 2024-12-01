@@ -21,12 +21,12 @@ public class FunctionTest extends TestCase {
         var function = FunctionBuilder.newBuilder("test")
                 .typeParameters(List.of(typeVar))
                 .build();
-        function.setParameters(List.of(new Parameter(null, "p1", typeVar.getType())));
+        function.setParameters(List.of(new Parameter(null, "p1", typeVar.getType(), function)));
         Assert.assertFalse(function.getTypeParameters().isEmpty());
-        var parameterizedFunc = function.getParameterized(List.of(Types.getStringType()));
-        Assert.assertSame(function, parameterizedFunc.getHorizontalTemplate());
+        var parameterizedFunc = new FunctionRef(function, List.of(Types.getStringType()));
+        Assert.assertSame(function, parameterizedFunc.getRawFlow());
         Assert.assertEquals(List.of(Types.getStringType()), parameterizedFunc.getTypeArguments());
-        Assert.assertEquals(Types.getStringType(), parameterizedFunc.getParameter(0).getType());
+        Assert.assertEquals(Types.getStringType(), parameterizedFunc.getParameterTypes().get(0));
     }
 
 }

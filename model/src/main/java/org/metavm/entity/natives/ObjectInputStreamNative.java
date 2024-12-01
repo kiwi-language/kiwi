@@ -21,7 +21,7 @@ public class ObjectInputStreamNative extends NativeBase {
     }
 
     public Value readObject(CallContext callContext) {
-        return Objects.requireNonNull(Flows.invoke(readObjectOverride, instance, List.of(), callContext));
+        return Objects.requireNonNull(Flows.invoke(readObjectOverride.getRef(), instance, List.of(), callContext));
     }
 
 }

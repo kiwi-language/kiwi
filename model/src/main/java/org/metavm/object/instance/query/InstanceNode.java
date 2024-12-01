@@ -69,7 +69,7 @@ public abstract class InstanceNode<I extends Value> {
             type = type.getUnderlyingType();
         }
         if(type instanceof ClassType classType) {
-            return new ObjectNode(path, classType.resolve());
+            return new ObjectNode(path, classType.getKlass());
         }
         if(type instanceof ArrayType arrayType) {
             return new ArrayNode(path, arrayType);

@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
-import org.metavm.flow.Method;
+import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.FlowValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
@@ -41,7 +41,7 @@ public class StaticPropertyExpression extends Expression {
 
     @Override
     public Type getType() {
-        return getProperty().getType();
+        return propertyRef.getType();
     }
 
     @Override
@@ -50,20 +50,19 @@ public class StaticPropertyExpression extends Expression {
     }
 
     public Property getProperty() {
-        return propertyRef.resolve();
+        return propertyRef.getProperty();
     }
 
     @Override
     protected Value evaluateSelf(EvaluationContext context) {
-        var property = getProperty();
-        if(property instanceof Field field) {
-            var staticFieldTable = StaticFieldTable.getInstance(field.getDeclaringType(), ContextUtil.getEntityContext());
-            return staticFieldTable.get(field);
+        if(propertyRef instanceof FieldRef fieldRef) {
+            var staticFieldTable = StaticFieldTable.getInstance(fieldRef.getDeclaringType(), ContextUtil.getEntityContext());
+            return staticFieldTable.get(fieldRef.getRawField());
         }
-        else if (property instanceof Method method)
+        else if (propertyRef instanceof MethodRef method)
             return new FlowValue(method, null);
         else
-            throw new IllegalStateException("Unknown property type: " + property);
+            throw new IllegalStateException("Unknown property type: " + propertyRef);
     }
 
     @Override

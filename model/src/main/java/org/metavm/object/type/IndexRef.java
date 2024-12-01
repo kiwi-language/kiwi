@@ -13,26 +13,10 @@ public class IndexRef extends ValueElement implements Reference {
 
     private final ClassType declaringType;
     private final Index rawIndex;
-    private transient Index resolved;
 
     public IndexRef(ClassType declaringType, Index rawIndex) {
         this.declaringType = declaringType;
         this.rawIndex = rawIndex;
-    }
-
-    public Index resolve() {
-        if(resolved != null)
-            return resolved;
-        var klass = declaringType.resolve();
-        var resolved = klass.findIndex(f -> f.getEffectiveTemplate() == rawIndex);
-        if(resolved == null) {
-            for (Constraint constraint : klass.getConstraints()) {
-                logger.debug("Constraint {}, matches: {}", constraint, constraint instanceof Index idx && idx.getEffectiveTemplate() == rawIndex);
-            }
-            logger.debug("Raw index name: {}, declaring klass: {}", rawIndex.getName(), rawIndex.getDeclaringType().getTypeDesc());
-            throw new NullPointerException("Cannot find index with template " + rawIndex.getClass().getSimpleName() + " in klass " + klass.getTypeDesc());
-        }
-        return resolved;
     }
 
     @Override
@@ -62,4 +46,19 @@ public class IndexRef extends ValueElement implements Reference {
         return new IndexRef(classType, rawIndex);
     }
 
+    public Index getRawIndex() {
+        return rawIndex;
+    }
+
+    public String getName() {
+        return rawIndex.getName();
+    }
+
+    public int getFieldCount() {
+        return rawIndex.getNumFields();
+    }
+
+    public ClassType getDeclaringType() {
+        return declaringType;
+    }
 }

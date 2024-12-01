@@ -6,23 +6,49 @@ import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.ITypeDef;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.TypeDef;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public interface GenericDeclarationRef extends ValueObject {
 
-    GenericDeclaration resolve();
-
     void write(MvOutput output);
+
+    default @Nullable GenericDeclarationRef getOwner() {
+        return null;
+    }
 
     GenericDeclarationRefKey toGenericDeclarationKey(Function<ITypeDef, Id> getTypeDefId);
 
+    default GenericDeclarationRefKey toGenericDeclarationKey() {
+        return toGenericDeclarationKey(ITypeDef::getId);
+    }
+
     String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr);
+
+    List<Type> getTypeArguments();
+
+    default List<Type> getAllTypeArguments() {
+        var typeArgs = new ArrayList<Type>();
+        foreachEnclosing(t -> typeArgs.addAll(t.getTypeArguments()));
+        return typeArgs;
+    }
+
+    default void foreachEnclosing(Consumer<GenericDeclarationRef> action) {
+        var owner = getOwner();
+        if(owner != null)
+            owner.foreachEnclosing(action);
+        action.accept(this);
+    }
 
     static GenericDeclarationRef read(MvInput input) {
         var kind = input.read();
@@ -36,4 +62,11 @@ public interface GenericDeclarationRef extends ValueObject {
         };
     }
 
+    default void forEachTypeDef(Consumer<TypeDef> action) {
+        getTypeArguments().forEach(t -> t.forEachTypeDef(action));
+    }
+
+    String getTypeDesc();
+
+    <R> R accept(ElementVisitor<R> visitor);
 }

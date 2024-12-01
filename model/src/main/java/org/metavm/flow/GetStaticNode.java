@@ -22,7 +22,7 @@ public class GetStaticNode extends Node {
     @NotNull
     @Override
     public Type getType() {
-        return propertyRef.resolve().getType();
+        return propertyRef.getType();
     }
 
     @Override

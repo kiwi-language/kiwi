@@ -1,81 +1,69 @@
 package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.metavm.flow.Method;
+import org.metavm.flow.MethodRef;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static java.util.Objects.requireNonNullElse;
+
 @Slf4j
 public class MethodTable {
 
-    private final Klass classType;
-    private final Map<Method, Method> overriddenIndex = new IdentityHashMap<>();
-    private final Map<Method, Method> verticalTemplateIndex = new IdentityHashMap<>();
+    private final Klass klass;
+    private final ConstantPool constantPool;
+    private final Map<Method, Integer> overriddenIndex = new HashMap<>();
     private @Nullable Method hashCodeMethod;
     private @Nullable Method equalsMethod;
     private @Nullable Method toStringMethod;
     private @Nullable Method writeObjectMethod;
     private @Nullable Method readObjectMethod;
 
-    public MethodTable(Klass classType) {
-        this.classType = classType;
+    public MethodTable(Klass klass) {
+        this.klass = klass;
+        constantPool = klass.getConstantPool();
         rebuild();
     }
 
     public void rebuild() {
-        hashCodeMethod = classType.findMethod(m -> "hashCode".equals(m.getName()) && m.getParameters().isEmpty());
-        equalsMethod = classType.findMethod(m -> "equals".equals(m.getName()) && m.getParameterTypes().equals(List.of(Types.getNullableAnyType())));
-        toStringMethod = classType.findMethod(m -> "toString".equals(m.getName()) && m.getParameters().isEmpty());
-        writeObjectMethod = classType.findSelfMethod(m -> "writeObject".equals(m.getName())
+        hashCodeMethod = klass.findMethod(m -> "hashCode".equals(m.getName()) && m.getParameters().isEmpty());
+        equalsMethod = klass.findMethod(m -> "equals".equals(m.getName()) && m.getParameterTypes().equals(List.of(Types.getNullableAnyType())));
+        toStringMethod = klass.findMethod(m -> "toString".equals(m.getName()) && m.getParameters().isEmpty());
+        writeObjectMethod = klass.findSelfMethod(m -> "writeObject".equals(m.getName())
                 && m.getParameters().size() == 1);
-        readObjectMethod = classType.findSelfMethod(m -> "readObject".equals(m.getName())
+        readObjectMethod = klass.findSelfMethod(m -> "readObject".equals(m.getName())
                 && m.getParameters().size() == 1);
-        verticalTemplateIndex.clear();
         overriddenIndex.clear();
-        var sig2methods = new HashMap<SimpleSignature, List<Method>>();
-        classType.forEachSuperClass(s -> {
-            for (Method method : s.getMethods()) {
-                if(method.isVirtual() && !method.isAbstract())
-                    sig2methods.computeIfAbsent(SimpleSignature.of(method), k -> new ArrayList<>()).add(method);
-            }
+        var sig2methods = new HashMap<SimpleSignature, List<MethodRef>>();
+        var type = klass.getType();
+        type.foreachSuperClass(s -> {
+            s.foreachSelfMethod(m -> {
+                if(m.isVirtual() && !m.isAbstract())
+                    sig2methods.computeIfAbsent(SimpleSignature.of(m.getRawFlow()), k -> new ArrayList<>()).add(m);
+            });
         });
-        classType.foreachAncestor(s -> {
+        type.foreachAncestor(s -> {
             if(s.isInterface()) {
-                for (Method method : s.getMethods()) {
-                    if (method.isVirtual() && !method.isAbstract())
-                        sig2methods.computeIfAbsent(SimpleSignature.of(method), k -> new ArrayList<>()).add(method);
-                }
+                s.foreachSelfMethod(m -> {
+                    if (m.isVirtual() && !m.isAbstract())
+                        sig2methods.computeIfAbsent(SimpleSignature.of(m.getRawFlow()), k -> new ArrayList<>()).add(m);
+                });
             }
         });
-        classType.forEachMethod(method -> {
+        type.foreachMethod((method) -> {
             if(method.isVirtual()) {
-                var override = NncUtils.find(sig2methods.get(SimpleSignature.of(method)), m -> m.isOverrideOf(method));
-                overriddenIndex.put(method, Objects.requireNonNullElse(override, method));
-            }
-        });
-        classType.foreachAncestor(t -> {
-            for (Method method : t.getMethods()) {
-                var template = method.getVerticalTemplate();
-                if (template != null)
-                    verticalTemplateIndex.put(template, method);
+                var override = NncUtils.find(sig2methods.get(SimpleSignature.of(method.getRawFlow())), m -> m.isOverrideOf(method));
+                overriddenIndex.put(method.getRawFlow(), constantPool.addValue(requireNonNullElse(override, method)));
             }
         });
     }
 
-    public Method findByVerticalTemplate(@NotNull Method template) {
-        return verticalTemplateIndex.get(template);
-    }
-
-    public Method findByOverridden(Method overridden) {
-        return overriddenIndex.get(overridden);
-    }
-
-    public Method lookup(Method methodRef) {
-        return NncUtils.requireNonNull(
-                findByOverridden(methodRef), "Can not resolve method " + methodRef + " in class " + classType);
+    public MethodRef findOverride(Method overridden, TypeMetadata typeMetadata) {
+        var i = overriddenIndex.get(overridden);
+        return i != null ? typeMetadata.getMethodRef(i) : null;
     }
 
     public @Nullable Method getHashCodeMethod() {
@@ -98,6 +86,12 @@ public class MethodTable {
     @Nullable
     public Method getReadObjectMethod() {
         return readObjectMethod;
+    }
+
+    public Map<Method, MethodRef> getOverriddenIndex(TypeMetadata typeMetadata) {
+        var m = new HashMap<Method, MethodRef>();
+        overriddenIndex.forEach((method, idx) -> m.put(method, typeMetadata.getMethodRef(idx)));
+        return m;
     }
 
     private record SimpleSignature(

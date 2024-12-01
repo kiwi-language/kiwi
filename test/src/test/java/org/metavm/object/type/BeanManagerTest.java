@@ -7,8 +7,8 @@ import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.NameAndType;
 import org.metavm.flow.Nodes;
-import org.metavm.flow.Parameter;
 import org.metavm.util.BootstrapUtils;
 import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
@@ -51,7 +51,7 @@ public class BeanManagerTest extends TestCase {
                     .build();
             var constructor = MethodBuilder.newBuilder(barServiceKlass, "BarService")
                     .isConstructor(true)
-                    .parameters(new Parameter(null, "fooService", fooServiceKlass.getType()))
+                    .parameters(new NameAndType("fooService", fooServiceKlass.getType()))
                     .returnType(barServiceKlass.getType())
                     .build();
             {
@@ -59,19 +59,19 @@ public class BeanManagerTest extends TestCase {
                 Nodes.this_(code);
                 Nodes.dup(code);
                 Nodes.argument(constructor, 0);
-                Nodes.setField(field, code);
+                Nodes.setField(field.getRef(), code);
                 Nodes.ret(code);
             }
             var factoryMethod = MethodBuilder.newBuilder(configKlass, "barService")
                     .addAttribute(AttributeNames.BEAN_NAME, "barService")
-                    .parameters(new Parameter(null, "fooService", fooServiceKlass.getType()))
+                    .parameters(new NameAndType("fooService", fooServiceKlass.getType()))
                     .returnType(barServiceKlass.getType())
                     .build();
             {
                 Nodes.argument(factoryMethod, 0);
                 Nodes.newObject(
                         factoryMethod.getCode(),
-                        constructor,
+                        constructor.getRef(),
                         false,
                         false
                 );

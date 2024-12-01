@@ -286,9 +286,6 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
     }
 
     protected Klass createKlass() {
-        var templateDef = javaType != javaClass ? defContext.getPojoDef(javaClass, INIT) : null;
-//        PojoDef<? super T> superDef = getSuperDef();
-//        List<InterfaceDef<? super T>> interfaceDefs = getInterfaceDefs();
         ClassType superClass;
         if(javaClass.getSuperclass() != null && javaClass.getSuperclass() != Object.class)
             superClass = (ClassType) defContext.getType(javaClass.getGenericSuperclass());
@@ -298,7 +295,6 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
         return KlassBuilder.newBuilder(Types.getTypeName(javaType), Types.getTypeCode(javaType))
                 .kind(ClassKind.fromTypeCategory(getTypeCategory()))
                 .source(ClassSource.BUILTIN)
-                .template(NncUtils.get(templateDef, PojoDef::getKlass))
                 .superType(superClass)
                 .interfaces(NncUtils.map(javaClass.getGenericInterfaces(), t -> (ClassType) defContext.getType(t)))
                 .typeParameters(NncUtils.map(javaClass.getTypeParameters(), this::createTypeVariable))
@@ -330,12 +326,13 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
 
     protected abstract TypeCategory getTypeCategory();
 
-    protected Parameter createParameter(java.lang.reflect.Parameter javaParameter) {
+    protected Parameter createParameter(java.lang.reflect.Parameter javaParameter, org.metavm.flow.Method method) {
         var type = defContext.getNullableType(javaParameter.getParameterizedType());
         return new Parameter(
                 null,
                 javaParameter.getName(),
-                type
+                type,
+                method
         );
     }
 
@@ -345,11 +342,11 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 : defContext.getNullableType(javaMethod.getGenericReturnType());
         var klass = get().klass;
         var method = MethodBuilder.newBuilder(klass, javaMethod.getName())
-                .parameters(NncUtils.map(javaMethod.getParameters(), this::createParameter))
                 .typeParameters(NncUtils.map(javaMethod.getTypeParameters(), this::createTypeVariable))
                 .returnType(returnType)
                 .isNative(isNative)
                 .build();
+        method.setParameters(NncUtils.map(javaMethod.getParameters(), p -> createParameter(p, method)));
         if(isNative)
             method.setJavaMethod(javaMethod);
         NncUtils.biForEach(

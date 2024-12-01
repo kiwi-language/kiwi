@@ -64,11 +64,6 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
 //    <T> List<T> getByType(Class<? extends T> type, @Nullable T startExclusive, long limit);
 
-    default List<Klass> getTemplateInstances(Klass template) {
-        NncUtils.requireTrue(template.isTemplate());
-        return selectByKey(Klass.TEMPLATE_IDX, template);
-    }
-
     <T> List<T> getAllBufferedEntities(Class<T> entityClass);
 
     void close();

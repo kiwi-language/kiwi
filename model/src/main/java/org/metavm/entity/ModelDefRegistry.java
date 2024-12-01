@@ -89,7 +89,7 @@ public class ModelDefRegistry {
     }
 
     public static Class<?> getEntityType(ClassType type) {
-        return ((EntityDef<?>) holder.get().getDef(type.resolve())).getEntityClass();
+        return ((EntityDef<?>) holder.get().getDef(type.getKlass())).getEntityClass();
     }
 
     public static java.lang.reflect.Type getJavaType(Type type) {

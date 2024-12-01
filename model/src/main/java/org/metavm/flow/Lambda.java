@@ -5,10 +5,7 @@ import org.metavm.api.ChildEntity;
 import org.metavm.entity.ChildArray;
 import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.type.FunctionType;
-import org.metavm.object.type.ITypeDef;
-import org.metavm.object.type.Type;
-import org.metavm.object.type.Types;
+import org.metavm.object.type.*;
 import org.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -18,17 +15,17 @@ public class Lambda extends Element implements Callable, ITypeDef {
 
     @ChildEntity
     private final ChildArray<Parameter> parameters = addChild(new ChildArray<>(Parameter.class), "parameters");
-    private Type returnType;
-    private FunctionType functionType;
+    private int returnTypeIndex;
+    private int typeIndex;
     @ChildEntity
     private final Code code;
     private Flow flow;
 
     public Lambda(Long tmpId, List<Parameter> parameters, @NotNull Type returnType, Flow flow) {
         super(tmpId);
-        this.returnType = returnType;
+        this.returnTypeIndex = flow.getConstantPool().addValue(returnType);
         setParameters(parameters, false);
-        this.functionType = Types.getFunctionType(parameters, returnType);
+        this.typeIndex = flow.getConstantPool().addValue(Types.getFunctionType(parameters, returnType));
         this.code = addChild(new Code(this), "code");
         this.flow = flow;
         flow.addLambda(this);
@@ -36,11 +33,11 @@ public class Lambda extends Element implements Callable, ITypeDef {
 
     @Override
     public Type getReturnType() {
-        return returnType;
+        return flow.getConstantPool().getType(returnTypeIndex);
     }
 
     public void setReturnType(Type returnType) {
-        this.returnType = returnType;
+        this.returnTypeIndex = flow.getConstantPool().addValue(returnType);
         resetType();
     }
 
@@ -71,22 +68,32 @@ public class Lambda extends Element implements Callable, ITypeDef {
     }
 
     private void resetType() {
-        functionType = new FunctionType(getParameterTypes(), returnType);
+        typeIndex = flow.getConstantPool().addValue(new FunctionType(getParameterTypes(), getReturnType()));
 //        setOutputType(functionalInterface != null ? functionalInterface : functionType);
     }
 
     @Override
+    public int getTypeIndex() {
+        return typeIndex;
+    }
+
+    @Override
     public FunctionType getFunctionType() {
-        return functionType;
+        return flow.getConstantPool().getFunctionType(typeIndex);
     }
 
     @Override
     public LambdaRef getRef() {
-        return new LambdaRef(this);
+        return new LambdaRef(getFlow().getRef(), this);
     }
 
     public Code getCode() {
         return code;
+    }
+
+    @Override
+    public ConstantPool getConstantPool() {
+        return flow.getConstantPool();
     }
 
     public void emitCode() {
@@ -121,8 +128,8 @@ public class Lambda extends Element implements Callable, ITypeDef {
         for (Parameter parameter : parameters) {
             parameter.write(output);
         }
-        returnType.write(output);
-        functionType.write(output);
+        output.writeShort(returnTypeIndex);
+        output.writeShort(typeIndex);
         code.write(output);
     }
 
@@ -133,8 +140,8 @@ public class Lambda extends Element implements Callable, ITypeDef {
             params.add(input.readParameter());
         }
         setParameters(params);
-        returnType = input.readType();
-        functionType = (FunctionType) input.readType();
+        returnTypeIndex = input.readShort();
+        typeIndex = input.readShort();
         code.read(input);
     }
 

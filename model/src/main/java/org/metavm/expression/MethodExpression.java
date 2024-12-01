@@ -3,9 +3,8 @@ package org.metavm.expression;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.flow.Method;
 import org.metavm.flow.MethodRef;
-import org.metavm.flow.Parameter;
+import org.metavm.flow.ParameterRef;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.NncUtils;
@@ -28,15 +27,10 @@ public class MethodExpression extends Expression {
         return self;
     }
 
-    public Method getMethod() {
-        return methodRef.resolve();
-    }
-
     @Override
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
-        var method = getMethod();
-        return self.buildSelf(symbolType, relaxedCheck) + "." + method.getName()
-                + "(" + NncUtils.join(method.getParameters(), Parameter::getName, ", ") + ")";
+        return self.buildSelf(symbolType, relaxedCheck) + "." + methodRef.getName()
+                + "(" + NncUtils.join(methodRef.getParameters(), ParameterRef::getName, ", ") + ")";
     }
 
     @Override
@@ -46,7 +40,7 @@ public class MethodExpression extends Expression {
 
     @Override
     public Type getType() {
-        return getMethod().getType();
+        return methodRef.getType();
     }
 
     @Override
@@ -56,7 +50,7 @@ public class MethodExpression extends Expression {
 
     @Override
     protected Value evaluateSelf(EvaluationContext context) {
-        return self.evaluate(context).resolveObject().getFunction(getMethod());
+        return self.evaluate(context).resolveObject().getFunction(methodRef);
     }
 
     @Override

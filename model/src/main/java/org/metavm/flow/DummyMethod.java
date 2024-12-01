@@ -29,9 +29,7 @@ public class DummyMethod extends Method {
                 List.of(),
                 Types.getVoidType(),
                 List.of(),
-                List.of(),
                 false,
-                null,
                 Access.PUBLIC,
                 null,
                 false,
@@ -50,12 +48,7 @@ public class DummyMethod extends Method {
     }
 
     @Override
-    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected Method createParameterized(List<? extends Type> typeArguments) {
+    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext) {
         throw new UnsupportedOperationException();
     }
 
@@ -76,8 +69,10 @@ public class DummyMethod extends Method {
     public void addLambda(Lambda lambda) {
     }
 
+    @Nullable
     @Override
-    public void addParameterized(Flow parameterized) {
+    public FunctionType getStaticType() {
+        return new FunctionType(List.of(DummyKlass.INSTANCE.getType()), Types.getVoidType());
     }
 
     @Override
@@ -98,4 +93,14 @@ public class DummyMethod extends Method {
         return attributes;
     }
 
+    @Override
+    public ConstantPool getConstantPool() {
+        return new ConstantPool() {
+
+            @Override
+            public int addValue(Object value) {
+                return 0;
+            }
+        };
+    }
 }

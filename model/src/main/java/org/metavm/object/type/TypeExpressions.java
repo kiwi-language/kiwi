@@ -1,38 +1,12 @@
 package org.metavm.object.type;
 
 import org.metavm.entity.StdKlass;
-import org.metavm.object.type.rest.dto.*;
-import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class TypeExpressions {
-
-    /**
-     *
-     * @param type to be substituted
-     * @param variableMap key: variable type, value: substitution type
-     * @return the substituted type
-     */
-    public static String substitute(String type, Map<String, String> variableMap) {
-        var typeKey = TypeKey.fromExpression(type);
-        var typeKeyMap = new HashMap<VariableTypeKey, TypeKey>();
-        variableMap.forEach((variableType, substType) -> typeKeyMap.put((VariableTypeKey) TypeKey.fromExpression(variableType), TypeKey.fromExpression(substType)));
-        return TypeKeys.substitute(typeKey, typeKeyMap).toTypeExpression();
-    }
-
-    public static String extractKlassId(String type) {
-        var typeKey = TypeKey.fromExpression(type);
-        if(typeKey instanceof ClassTypeKey classTypeKey)
-            return classTypeKey.id().toString();
-        if(typeKey instanceof ParameterizedTypeKey parameterizedTypeKey)
-            return parameterizedTypeKey.templateId().toString();
-        throw new InternalException("Can not extract klass id from type: " + type);
-    }
 
     public static String getClassType(Klass klass) {
         return getClassType(klass.getStringId());

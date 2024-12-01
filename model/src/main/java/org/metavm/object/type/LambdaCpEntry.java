@@ -18,11 +18,6 @@ public class LambdaCpEntry extends CpEntry {
     }
 
     @Override
-    public Object resolve() {
-        return lambdaRef.resolve();
-    }
-
-    @Override
     public void write(KlassOutput output) {
         lambdaRef.write(output);
     }

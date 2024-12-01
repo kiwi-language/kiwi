@@ -331,7 +331,7 @@ public abstract class ElementVisitor<R> {
         return visitElement(parameterRef);
     }
 
-    public R visitLambdaNodeRef(LambdaRef lambdaRef) {
+    public R visitLambdaRef(LambdaRef lambdaRef) {
         return visitElement(lambdaRef);
     }
 
@@ -569,5 +569,9 @@ public abstract class ElementVisitor<R> {
 
     public R visitNewChild(NewChildNode node) {
         return visitNewObjectNode(node);
+    }
+
+    public R visitConstantPool(ConstantPool constantPool) {
+        return visitElement(constantPool);
     }
 }

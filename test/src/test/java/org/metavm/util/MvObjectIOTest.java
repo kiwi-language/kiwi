@@ -38,7 +38,7 @@ public class MvObjectIOTest extends TestCase {
                 var output = new MarkingInstanceOutput();
                 var objOut = context.bind( MvObjectOutputStream.create(output, context));
                 var objOutInst = (ClassInstance) context.getInstance(objOut);
-                Flows.invoke(StdMethod.objectOutputStreamWriteObject.get(),
+                Flows.invoke(StdMethod.objectOutputStreamWriteObject.get().getRef(),
                         objOutInst,
                         List.of(context.getInstance(foo).getReference()),
                         context);
@@ -52,7 +52,7 @@ public class MvObjectIOTest extends TestCase {
             var objInput = context.bind(new MvObjectInputStream(input, context));
             var objInputInst = (ClassInstance) context.getInstance(objInput);
             var readObjectMethod = StdMethod.objectInputStreamReadObject.get();
-            var r = Objects.requireNonNull(Flows.invoke(readObjectMethod, objInputInst, List.of(), context));
+            var r = Objects.requireNonNull(Flows.invoke(readObjectMethod.getRef(), objInputInst, List.of(), context));
             var inst = r.resolveObject();
             Assert.assertEquals(Instances.stringInstance("foo"), inst.getField("name"));
         }

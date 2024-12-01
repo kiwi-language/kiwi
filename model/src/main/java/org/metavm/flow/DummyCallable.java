@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
+import org.metavm.object.type.ConstantPool;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Type;
 
@@ -22,6 +23,11 @@ public class DummyCallable implements Callable {
     @Override
     public List<Parameter> getParameters() {
         return null;
+    }
+
+    @Override
+    public int getTypeIndex() {
+        return 0;
     }
 
     @Override
@@ -52,6 +58,16 @@ public class DummyCallable implements Callable {
     @Override
     public Code getCode() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ConstantPool getConstantPool() {
+        return new ConstantPool() {
+            @Override
+            public int addValue(Object value) {
+                return 0;
+            }
+        };
     }
 
 }

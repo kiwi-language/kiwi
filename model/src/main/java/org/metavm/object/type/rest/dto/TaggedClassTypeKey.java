@@ -20,6 +20,11 @@ public record TaggedClassTypeKey(Id id, int tag) implements TypeKey, GenericDecl
     }
 
     @Override
+    public GenericDeclarationRef toGenericDeclarationRef(TypeDefProvider typeDefProvider) {
+        return toType(typeDefProvider);
+    }
+
+    @Override
     public String toTypeExpression() {
         return Constants.ID_PREFIX + id + ":" + tag;
     }

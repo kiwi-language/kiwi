@@ -5,7 +5,8 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.Field;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
@@ -18,22 +19,22 @@ public class HashSetNative extends SetNative {
 
     private final ClassInstance instance;
     private final Set<HashKeyWrap> set = new HashSet<>();
-    private final Field arrayField;
+    private final FieldRef arrayField;
     private ArrayInstance array;
 
     public HashSetNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByName("array"));
-        if (instance.isFieldInitialized(arrayField)) {
+        arrayField = NncUtils.requireNonNull(instance.getType().findFieldByName("array"));
+        if (instance.isFieldInitialized(arrayField.getRawField())) {
             var instCtx = Objects.requireNonNull(instance.getContext(), "InstanceContext is missing in " + instance);
-            array = instance.getField(arrayField).resolveArray();
+            array = instance.getField(arrayField.getRawField()).resolveArray();
             initializeElementToIndex(instCtx);
         }
     }
 
     public Value HashSet(CallContext callContext) {
         array = new ArrayInstance((ArrayType) arrayField.getType());
-        instance.initField(arrayField, array.getReference());
+        instance.initField(arrayField.getRawField(), array.getReference());
         return instance.getReference();
     }
 
@@ -42,8 +43,8 @@ public class HashSetNative extends SetNative {
             var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
             var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
             array = new ArrayInstance((ArrayType) arrayField.getType(),
-                    new InstanceParentRef(instance.getReference(), arrayField));
-            instance.initField(arrayField, array.getReference());
+                    new InstanceParentRef(instance.getReference(), arrayField.getRawField()));
+            instance.initField(arrayField.getRawField(), array.getReference());
             array.addAll(thatArray);
             initializeElementToIndex(callContext);
             return instance.getReference();
@@ -53,8 +54,8 @@ public class HashSetNative extends SetNative {
     }
 
     public Reference iterator(CallContext callContext) {
-        var iteratorImplType = StdKlass.iteratorImpl.get().getParameterized(List.of(instance.getKlass().getFirstTypeArgument()));
-        var it = ClassInstance.allocate(iteratorImplType.getType());
+        var iteratorImplType = ClassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getType().getFirstTypeArgument()));
+        var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);
         return it.getReference();

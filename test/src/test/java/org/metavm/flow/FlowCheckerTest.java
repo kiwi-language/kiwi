@@ -23,7 +23,7 @@ public class FlowCheckerTest extends TestCase {
         var method = MethodBuilder.newBuilder(klass, "requireNonNull")
                 .isStatic(true)
                 .returnType(Types.getAnyType())
-                .parameters(new Parameter(null, "value", Types.getNullableAnyType()))
+                .parameters(new NameAndType("value", Types.getNullableAnyType()))
                 .build();
         var code = method.getCode();
         Nodes.argument(method, 0);
@@ -45,7 +45,7 @@ public class FlowCheckerTest extends TestCase {
         var method = MethodBuilder.newBuilder(klass, "requireNonNull")
                 .isStatic(true)
                 .returnType(Types.getAnyType())
-                .parameters(new Parameter(null, "value", Types.getNullableAnyType()))
+                .parameters(new NameAndType("value", Types.getNullableAnyType()))
                 .build();
         var code = method.getCode();
         Nodes.argument(method, 0);
