@@ -1,15 +1,16 @@
 package org.metavm.object.type;
 
+import org.metavm.entity.Writable;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.Reference;
 import org.metavm.entity.ValueElement;
 import org.metavm.flow.KlassInput;
-import org.metavm.flow.KlassOutput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 import java.util.Objects;
 
-public class IndexRef extends ValueElement implements Reference {
+public class IndexRef extends ValueElement implements Reference, Writable {
 
     private final ClassType declaringType;
     private final Index rawIndex;
@@ -34,7 +35,7 @@ public class IndexRef extends ValueElement implements Reference {
         return Objects.hash(declaringType, rawIndex);
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.write(WireTypes.INDEX_REF);
         declaringType.write(output);
         output.writeEntityId(rawIndex);

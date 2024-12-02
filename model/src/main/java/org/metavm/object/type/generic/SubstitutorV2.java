@@ -1,10 +1,13 @@
 package org.metavm.object.type.generic;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.CopyVisitor;
 import org.metavm.entity.Element;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.EntityUtils;
 import org.metavm.entity.GenericDeclarationRef;
+import org.metavm.flow.FlowRef;
+import org.metavm.flow.FunctionRef;
+import org.metavm.flow.LambdaRef;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.type.*;
 import org.metavm.util.DebugEnv;
@@ -17,7 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
-public class SubstitutorV2 extends CopyVisitor {
+public class SubstitutorV2 extends ElementVisitor<Element> {
 
     public static SubstitutorV2 create(Object root,
                                        List<TypeVariable> typeParameters,
@@ -37,7 +40,6 @@ public class SubstitutorV2 extends CopyVisitor {
                          List<? extends Type> typeArguments,
                          Object existingRoot,
                          ResolutionStage stage) {
-        super(root, true);
         if (DebugEnv.debugging) {
             log.debug("substituting {}, type parameters: {}, type arguments: {}, stage: {}",
                     EntityUtils.getEntityDesc(root), NncUtils.map(typeParameters, TypeVariable::getTypeDesc),
@@ -50,14 +52,8 @@ public class SubstitutorV2 extends CopyVisitor {
         }
     }
 
-    @Override
     protected @Nullable Object getExistingCopy(Object object) {
         return existingCopies.get(object);
-    }
-
-    @Override
-    protected Object allocateCopy(Object entity) {
-        return super.allocateCopy(entity);
     }
 
     @Override
@@ -65,8 +61,15 @@ public class SubstitutorV2 extends CopyVisitor {
         var copy = (ConstantPool) Objects.requireNonNull(getExistingCopy(constantPool));
         copy.setStage(stage);
         copy.clear();
-        for (CpEntry entry : constantPool.getEntries()) {
-            copy.addEntry((CpEntry) copy0(entry));
+        int i = 0;
+        for (var entry : constantPool.getEntries()) {
+            if(entry instanceof ValueCpEntry valueEntry)
+                copy.addEntry(valueEntry);
+            else if(entry instanceof ElementCpEntry elementEntry)
+                copy.addEntry(new ElementCpEntry(i, elementEntry.getValue().accept(this)));
+            else
+                throw new IllegalStateException("Unexpected cp entry " + entry);
+            i++;
         }
         copy.onLoadPrepare();
         copy.onLoad();
@@ -96,29 +99,83 @@ public class SubstitutorV2 extends CopyVisitor {
     }
 
     @Override
+    public Element visitFunctionRef(FunctionRef functionRef) {
+        return FunctionRef.create(functionRef.getRawFlow(),
+                NncUtils.map(functionRef.getTypeArguments(), t -> (Type) t.accept(this)));
+    }
+
+    @Override
+    public Element visitFieldRef(FieldRef fieldRef) {
+        return new FieldRef(
+                (ClassType) fieldRef.getDeclaringType().accept(this),
+                fieldRef.getRawField()
+        );
+    }
+
+    @Override
+    public Element visitUncertainType(UncertainType type) {
+        return new UncertainType(
+                (Type) type.getLowerBound().accept(this),
+                (Type) type.getUpperBound().accept(this)
+        );
+    }
+
+    @Override
+    public Element visitUnionType(UnionType type) {
+        var members = NncUtils.mapUnique(type.getMembers(), t -> (Type) t.accept(this));
+        if(members.size() == 1)
+            return members.iterator().next();
+        else
+            return new UnionType(members);
+    }
+
+
+    @Override
+    public Element visitIntersectionType(IntersectionType type) {
+        var members = NncUtils.mapUnique(type.getTypes(), t -> (Type) t.accept(this));
+        if(members.size() == 1)
+            return members.iterator().next();
+        else
+            return new IntersectionType(members);
+    }
+
+    @Override
+    public Element visitArrayType(ArrayType type) {
+        return new ArrayType((Type) type.getElementType().accept(this), type.getKind());
+    }
+
+    @Override
+    public Element visitFunctionType(FunctionType type) {
+        return new FunctionType(
+                NncUtils.map(type.getParameterTypes(), t -> (Type) t.accept(this)),
+                (Type) type.getReturnType().accept(this)
+        );
+    }
+
+    @Override
     public Element visitVariableType(VariableType type) {
         return Objects.requireNonNullElse(typeSubstitutor.getVariableMap().get(type), type);
     }
 
     @Override
-    public Element visitPrimitiveType(PrimitiveType type) {
-        return type;
+    public Element visitLambdaRef(LambdaRef lambdaRef) {
+        return new LambdaRef(
+                (FlowRef) lambdaRef.getFlowRef().accept(this),
+                lambdaRef.getRawLambda()
+        );
     }
 
     @Override
-    public Element visitAnyType(AnyType type) {
-        return type;
-    }
-
-    @Override
-    public Element visitNeverType(NeverType type) {
-        return type;
+    public Element visitIndexRef(IndexRef indexRef) {
+        return new IndexRef(
+                (ClassType) indexRef.getDeclaringType().accept(this),
+                indexRef.getRawIndex()
+        );
     }
 
     @Override
     public Element visitType(Type type) {
-        return Objects.requireNonNullElseGet(typeSubstitutor.getVariableMap().get(type),
-                () -> super.visitType(type));
+        return type;
     }
 
 }

@@ -446,10 +446,6 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return stage;
     }
 
-    protected Flow substitute(SubstitutorV2 substitutor) {
-        return (Flow) substitutor.copy(this);
-    }
-
     public abstract FlowRef getRef();
 
     public String nextNodeName(String prefix) {
@@ -646,7 +642,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         var existingTm = typeMetadata;
         var subst = new SubstitutorV2(
                 constantPool, getAllTypeParameters(), typeArguments, typeMetadata, stage);
-        typeMetadata = (ConstantPool) subst.copy(constantPool);
+        typeMetadata = (ConstantPool) constantPool.accept(subst);
         assert typeMetadata == existingTm;
         return typeMetadata;
     }

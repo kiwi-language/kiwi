@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
+import org.metavm.entity.Writable;
 import org.metavm.entity.CopyIgnore;
 import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.ValueArray;
@@ -15,12 +16,10 @@ import java.util.List;
 import java.util.Objects;
 
 @EntityType
-public abstract class FlowRef extends CallableRef implements GenericDeclarationRef {
+public abstract class FlowRef extends CallableRef implements GenericDeclarationRef, Writable {
 
     private final Flow rawFlow;
     protected final ValueArray<Type> typeArguments;
-    @CopyIgnore
-    protected transient Flow resolved;
     @CopyIgnore
     private transient TypeMetadata typeMetadata;
 

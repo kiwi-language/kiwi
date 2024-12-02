@@ -55,12 +55,7 @@ public class ConstantPool extends Element implements LoadAware, TypeMetadata {
         int i = entries.size();
         var entry = switch (value) {
             case Value v -> new ValueCpEntry(i, v);
-            case FieldRef fieldRef -> new FieldCpEntry(i, fieldRef);
-            case MethodRef methodRef -> new MethodCpEntry(i, methodRef);
-            case FunctionRef funcRef -> new FunctionCpEntry(i, funcRef);
-            case LambdaRef lambdaRef -> new LambdaCpEntry(i, lambdaRef);
-            case Type type -> new TypeCpEntry(i, type);
-            case IndexRef indexRef -> new IndexCpEntry(i, indexRef);
+            case Element element -> new ElementCpEntry(i, element);
             default -> throw new IllegalStateException("Unexpected value: " + value);
         };
         addEntry(entry);

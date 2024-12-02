@@ -1178,7 +1178,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
             p.setStage(ResolutionStage.INIT);
             var subst = new SubstitutorV2(
                     this, typeParameters.toList(), typeArgs, k, stage);
-            subst.copy(constantPool);
+            constantPool.accept(subst);
         });
     }
 
@@ -1874,7 +1874,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
             return typeMetadata;
         var subst = new SubstitutorV2(
                 constantPool, getAllTypeParameters(), typeArguments, typeMetadata, stage);
-        typeMetadata = (ConstantPool) subst.copy(constantPool);
+        typeMetadata = (ConstantPool) constantPool.accept(subst);
         return typeMetadata;
     }
 

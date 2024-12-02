@@ -1,6 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.api.EntityType;
+import org.metavm.entity.Writable;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.ValueElement;
@@ -21,7 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 @EntityType
-public abstract class Type extends ValueElement implements TypeOrTypeKey {
+public abstract class Type extends ValueElement implements TypeOrTypeKey, Writable {
 
     public abstract String getName();
 

@@ -313,14 +313,6 @@ public class Method extends Flow implements Property {
         return isStatic() ? getParameters().size() : getParameters().size() + 1;
     }
 
-    @Override
-    protected Flow substitute(SubstitutorV2 substitutor) {
-        substitutor.enterElement(declaringType);
-        var result = substitutor.copy(this);
-        substitutor.exitElement();
-        return (Flow) result;
-    }
-
     public boolean isGetter() {
         if (!isPublic())
             return false;

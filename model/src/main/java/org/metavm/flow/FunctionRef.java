@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import org.metavm.api.EntityType;
+import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.rest.FunctionRefKey;
@@ -20,6 +21,12 @@ public class FunctionRef extends FlowRef {
 
     public FunctionRef(Function rawFlow, List<? extends Type> typeArguments) {
         super(rawFlow, typeArguments);
+    }
+
+    public static Element create(Function rawFlow, List<Type> typeArguments) {
+        if(typeArguments.equals(rawFlow.getDefaultTypeArguments()))
+            typeArguments = List.of();
+        return new FunctionRef(rawFlow, typeArguments);
     }
 
     @Override

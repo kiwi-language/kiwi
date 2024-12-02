@@ -1,7 +1,6 @@
 package org.metavm.object.type;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.CopyIgnore;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.ValueElement;
 import org.metavm.object.instance.core.Id;
@@ -23,8 +22,6 @@ public class FieldRef extends ValueElement implements PropertyRef {
 
     private final ClassType declaringType;
     private final Field rawField;
-    @CopyIgnore
-    private transient Field resolved;
 
     public FieldRef(ClassType declaringType, Field rawField) {
         this.declaringType = declaringType;
