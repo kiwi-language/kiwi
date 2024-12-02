@@ -109,10 +109,15 @@ class AsmExpressionResolver {
     }
 
     private Type resolveCast(AssemblyParser.ExpressionContext operand, AssemblyParser.TypeTypeContext type) {
-        resolve0(operand);
-        var t = parseType(type);
-        Nodes.cast(t, code);
-        return t;
+        var operandType = resolve0(operand);
+        var castType = parseType(type);
+        if(operandType.isLong() && castType.isDouble())
+            Nodes.longToDouble(code);
+        else if(operandType.isDouble() && castType.isLong())
+            Nodes.doubleToLong(code);
+        else
+            Nodes.cast(castType, code);
+        return castType;
     }
 
     private Type resolveAllocate(AssemblyParser.AllocatorContext allocator) {
@@ -267,24 +272,23 @@ class AsmExpressionResolver {
             return resolveInstanceOf(ctx.expression(0), ctx.typeType());
         if(ctx.methodCall() != null)
             return resolveMethodCall(ctx.expression(0), ctx.methodCall());
-        var firstType = resolve0(ctx.expression(0));
-        var secondType = resolve0(ctx.expression(1));
-        var type = Types.getCompatibleType(firstType, secondType);
+        var type = resolve0(ctx.expression(0));
+        resolve0(ctx.expression(1));
         return switch (bop) {
             case AssemblyParser.ADD -> {
-                Nodes.add(code);
+                Nodes.add(type, code);
                 yield type;
             }
             case AssemblyParser.SUB -> {
-                Nodes.sub(code);
+                Nodes.sub(type, code);
                 yield type;
             }
             case AssemblyParser.MUL -> {
-                Nodes.mul(code);
+                Nodes.mul(type, code);
                 yield type;
             }
             case AssemblyParser.DIV -> {
-                Nodes.div(code);
+                Nodes.div(type, code);
                 yield type;
             }
             case AssemblyParser.BITOR -> {
@@ -308,7 +312,7 @@ class AsmExpressionResolver {
                 yield Types.getBooleanType();
             }
             case AssemblyParser.MOD -> {
-                Nodes.rem(code);
+                Nodes.rem(type, code);
                 yield type;
             }
             case AssemblyParser.EQUAL -> {
@@ -479,7 +483,7 @@ class AsmExpressionResolver {
         var type = resolve0(operand);
          return switch (prefix.getType()) {
             case AssemblyParser.SUB -> {
-                Nodes.negate(code);
+                Nodes.neg(type, code);
                 yield type;
             }
             case AssemblyParser.TILDE -> {

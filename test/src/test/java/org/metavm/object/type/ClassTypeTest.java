@@ -120,7 +120,7 @@ public class ClassTypeTest extends TestCase {
 
         var fooType = fooKlass.getType();
         Assert.assertSame(m1, fooType.resolveMethod("test", List.of(Types.getBooleanType()), List.of(), false).getRawFlow());
-        Assert.assertSame(m4, fooType.resolveMethod("test", List.of(Types.getLongType()), List.of(), false).getRawFlow());
+        Assert.assertSame(m2, fooType.resolveMethod("test", List.of(Types.getLongType()), List.of(), false).getRawFlow());
         Assert.assertSame(m3, fooType.resolveMethod("test", List.of(Types.getStringType()), List.of(), false).getRawFlow());
     }
 

@@ -229,7 +229,7 @@ public class Generator extends VisitorBase {
         }
         builder.exitScope();
         builders.pop();
-//        if(method.getName().equals("Inner2")) {
+//        if(method.getName().equals("inc")) {
 //            logger.debug("{}", method.getText());
 //        }
     }
@@ -505,7 +505,7 @@ public class Generator extends VisitorBase {
             var continuePoint = builder().createNoop();
             builder().createLoad(indexVar, Types.getLongType());
             builder().createLoadConstant(Instances.longOne());
-            builder().createAdd();
+            builder().createLongAdd();
             builder().createStore(indexVar);
             builder().createGoto(entry);
             var exit = builder().createNoop();

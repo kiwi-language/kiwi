@@ -198,7 +198,7 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     public Value setElement(int index, Value element) {
         ensureLoaded();
         checkIndex(index);
-        element = checkElement(element);
+        checkElement(element);
         if (isChildArray() && element.isNotNull())
             element.resolveDurable().setParent(this, null);
         var removed = elements.set(index, element);
@@ -208,12 +208,9 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
         return removed;
     }
 
-    private Value checkElement(Value element) {
-        var elementType = getType().getElementType();
-        if (elementType.isAssignableFrom(element.getType()))
-            return element;
-        else
-            return element.convert(elementType);
+    private void checkElement(Value element) {
+        if (!getType().getElementType().isAssignableFrom(element.getType()))
+            throw new BusinessException(ErrorCode.INCORRECT_ARRAY_ELEMENT, element, getType());
     }
 
     private void checkIndex(int index) {
@@ -221,7 +218,7 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     private boolean addInternally(Value element) {
-        element = checkElement(element);
+        checkElement(element);
         if (isChildArray() && element.isNotNull())
             element.resolveDurable().setParent(this, null);
         elements.add(element);

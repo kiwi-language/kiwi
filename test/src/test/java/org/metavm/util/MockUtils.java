@@ -142,7 +142,7 @@ public class MockUtils {
                         shoppingTypes.couponTitleField(),
                         Instances.stringInstance("5 Yuan Off"),
                         shoppingTypes.couponDiscountField(),
-                        Instances.longInstance(5L)
+                        Instances.doubleInstance(5)
                 ))
                 .build();
         var couponTenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
@@ -150,7 +150,7 @@ public class MockUtils {
                         shoppingTypes.couponTitleField(),
                         Instances.stringInstance("10 Yuan Off"),
                         shoppingTypes.couponDiscountField(),
-                        Instances.longInstance(10L)
+                        Instances.doubleInstance(10L)
                 ))
                 .build();
         var couponFifteenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
@@ -158,7 +158,7 @@ public class MockUtils {
                         shoppingTypes.couponTitleField(),
                         Instances.stringInstance("15 Yuan Off"),
                         shoppingTypes.couponDiscountField(),
-                        Instances.longInstance(15L)
+                        Instances.doubleInstance(15)
                 ))
                 .build();
         return new ShoppingInstances(

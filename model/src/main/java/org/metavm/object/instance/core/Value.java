@@ -1,7 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.common.ErrorCode;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.SerializeContext;
@@ -55,14 +54,9 @@ public abstract class Value {
         return type.isPassword();
     }
 
-    public Value convert(Type type) {
-        throw new BusinessException(ErrorCode.CONVERSION_FAILED, getQualifiedTitle(), type.getName());
-    }
-
     public StringValue toStringInstance() {
         return Instances.stringInstance(getTitle());
     }
-
 
     @NoProxy
     public boolean isArray() {
@@ -119,10 +113,6 @@ public abstract class Value {
     public abstract FieldValue toFieldValueDTO();
 
     public abstract String getTitle();
-
-    public String getQualifiedTitle() {
-        return getType().getName() + "-" + getTitle();
-    }
 
 
     @Override

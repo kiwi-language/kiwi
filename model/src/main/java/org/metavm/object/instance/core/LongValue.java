@@ -2,7 +2,6 @@ package org.metavm.object.instance.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.PrimitiveType;
-import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.MvOutput;
@@ -11,7 +10,7 @@ import org.metavm.util.WireTypes;
 @Slf4j
 public class LongValue extends NumberValue {
 
-    private final long value;
+    public final long value;
 
     public LongValue(long value, PrimitiveType type) {
         super(type);
@@ -20,14 +19,6 @@ public class LongValue extends NumberValue {
 
     public Long getValue() {
         return value;
-    }
-
-    @Override
-    public Value convert(Type type) {
-        if (type.isAssignableFrom(PrimitiveType.doubleType))
-            return toDouble();
-        else
-            return super.convert(type);
     }
 
     public DoubleValue toDouble() {

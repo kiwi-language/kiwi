@@ -7,22 +7,22 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class MulNode extends Node {
+public class LongRemNode extends Node {
 
-    public MulNode(String name,
-                   @Nullable Node previous,
-                   @NotNull Code code) {
+    public LongRemNode(String name,
+                       @Nullable Node previous,
+                       @NotNull Code code) {
         super(name, null, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitMulNode(this);
+        return visitor.visitLongRemNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("mul");
+        writer.write("lrem");
     }
 
     @Override
@@ -32,7 +32,7 @@ public class MulNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.MUL);
+        output.write(Bytecodes.LONG_REM);
     }
 
     @Override

@@ -813,6 +813,13 @@ public class TranspileUtils {
         return parent != null ? findParent(parent, parentClasses) : null;
     }
 
+    public static PsiElement getParent(PsiElement element, Set<Class<?>> parentClasses) {
+        return Objects.requireNonNull(
+                findParent(element, parentClasses),
+                () -> "Cannot find parent of element '" + element.getText() + "' with classes " + parentClasses
+        );
+    }
+
     public static @Nullable PsiElement findParent(PsiElement element, Set<Class<?>> parentClasses) {
         PsiElement current = element;
         while (current != null && !ReflectionUtils.isInstance(parentClasses, current)) {
@@ -1537,6 +1544,41 @@ public class TranspileUtils {
 
     public static String getClassName(PsiClass klass) {
         return Objects.requireNonNullElse(klass.getQualifiedName(), klass.getName());
+    }
+
+    public static boolean isIntegerType(PsiType type) {
+        if (type instanceof PsiPrimitiveType primitiveType) {
+            var kind = primitiveType.getKind();
+            return kind == JvmPrimitiveTypeKind.BYTE || kind == JvmPrimitiveTypeKind.SHORT
+                    || kind == JvmPrimitiveTypeKind.INT || kind == JvmPrimitiveTypeKind.LONG;
+        }
+        else
+            return false;
+    }
+
+    public static boolean isFloatType(PsiType type) {
+       if (type instanceof PsiPrimitiveType primitiveType) {
+           var kind = primitiveType.getKind();
+           return kind == JvmPrimitiveTypeKind.DOUBLE || kind == JvmPrimitiveTypeKind.FLOAT;
+       }
+       else
+           return false;
+    }
+
+    public static boolean isIntType(PsiType type) {
+        return type instanceof PsiPrimitiveType primitiveType && primitiveType.getKind() == JvmPrimitiveTypeKind.INT;
+    }
+
+    public static boolean isLongType(PsiType type) {
+        return type instanceof PsiPrimitiveType primitiveType && primitiveType.getKind() == JvmPrimitiveTypeKind.LONG;
+    }
+
+    public static boolean isDoubleType(PsiType type) {
+        return type instanceof PsiPrimitiveType primitiveType && primitiveType.getKind() == JvmPrimitiveTypeKind.DOUBLE;
+    }
+
+    public static boolean isSingleFloatType(PsiType type) {
+        return type instanceof PsiPrimitiveType primitiveType && primitiveType.getKind() == JvmPrimitiveTypeKind.FLOAT;
     }
 
 }

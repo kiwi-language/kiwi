@@ -127,25 +127,6 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
         };
     }
 
-    public boolean isConvertibleFrom(Type that) {
-        if(isAssignableFrom(that))
-            return true;
-        return switch (that) {
-            case UnionType unionType -> NncUtils.allMatch(unionType.getMembers(), this::isConvertibleFrom);
-            case IntersectionType intersectionType ->
-                    NncUtils.anyMatch(intersectionType.getTypes(), this::isConvertibleFrom);
-            default -> isConvertibleFrom0(that);
-        };
-    }
-
-    protected boolean isConvertibleFrom0(Type that) {
-        return false;
-    }
-
-    public Value convert(Value instance) {
-        throw new UnsupportedOperationException();
-    }
-
     public boolean isUncertain() {
         return false;
     }

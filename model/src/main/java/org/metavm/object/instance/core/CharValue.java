@@ -1,7 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.object.type.PrimitiveType;
-import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.MvOutput;
@@ -9,7 +8,7 @@ import org.metavm.util.WireTypes;
 
 public class CharValue extends PrimitiveValue {
 
-    private final char value;
+    public final char value;
 
     public CharValue(char value, PrimitiveType type) {
         super(type);
@@ -18,14 +17,6 @@ public class CharValue extends PrimitiveValue {
 
     public Character getValue() {
         return value;
-    }
-
-    @Override
-    public Value convert(Type type) {
-        if (type.isAssignableFrom(PrimitiveType.doubleType))
-            return toDouble();
-        else
-            return super.convert(type);
     }
 
     public DoubleValue toDouble() {

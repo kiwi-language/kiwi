@@ -7,7 +7,7 @@ import org.metavm.util.WireTypes;
 
 public class BooleanValue extends PrimitiveValue {
 
-    private final boolean value;
+    public final boolean value;
 
     public BooleanValue(boolean value, PrimitiveType type) {
         super(type);

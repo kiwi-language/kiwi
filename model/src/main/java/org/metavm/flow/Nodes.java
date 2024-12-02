@@ -86,7 +86,7 @@ public class Nodes {
         action.accept(elementSupplier, indexSupplier);
         indexSupplier.get();
         loadConstant(Instances.longInstance(1), code);
-        add(code);
+        longAdd(code);
         Nodes.store(i, code);
         goto_(entry, code);
         ifNode.setTarget(noop(code));
@@ -196,33 +196,116 @@ public class Nodes {
         return new NoopNode(name, code.getLastNode(), code);
     }
 
-    public static Node add(Code code) {
-        return new AddNode(
-                code.nextNodeName("add"),
+    public static Node add(Type type, Code code) {
+        if(type.isLong())
+            return longAdd(code);
+        else
+            return doubleAdd(code);
+    }
+
+    public static Node sub(Type type, Code code) {
+        if(type.isLong())
+            return longSub(code);
+        else
+            return doubleSub(code);
+    }
+
+    public static Node mul(Type type, Code code) {
+        if(type.isLong())
+            return longMul(code);
+        else
+            return doubleMul(code);
+    }
+
+    public static Node div(Type type, Code code) {
+        if(type.isLong())
+            return longDiv(code);
+        else
+            return doubleDiv(code);
+    }
+
+    public static Node rem(Type type, Code code) {
+        if(type.isLong())
+            return longRem(code);
+        else
+            return doubleRem(code);
+    }
+
+    public static Node longAdd(Code code) {
+        return new LongAddNode(
+                code.nextNodeName("ladd"),
                 code.getLastNode(),
                 code
         );
     }
 
-    public static Node sub(Code code) {
-        return new SubNode(
-                code.nextNodeName("sub"),
+    public static Node longSub(Code code) {
+        return new LongSubNode(
+                code.nextNodeName("lsub"),
                 code.getLastNode(),
                 code
         );
     }
 
-    public static Node mul(Code code) {
-        return new MulNode(
-                code.nextNodeName("mul"),
+    public static Node longMul(Code code) {
+        return new LongMulNode(
+                code.nextNodeName("lmul"),
                 code.getLastNode(),
                 code
         );
     }
 
-    public static Node div(Code code) {
-        return new DivNode(
-                code.nextNodeName("div"),
+    public static Node longDiv(Code code) {
+        return new LongDivNode(
+                code.nextNodeName("ldiv"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node longRem(Code code) {
+        return new LongRemNode(
+                code.nextNodeName("lrem"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node doubleAdd(Code code) {
+        return new DoubleAddNode(
+                code.nextNodeName("dadd"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node doubleSub(Code code) {
+        return new DoubleSubNode(
+                code.nextNodeName("dsub"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node doubleMul(Code code) {
+        return new DoubleMulNode(
+                code.nextNodeName("dmul"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node doubleDiv(Code code) {
+        return new DoubleDivNode(
+                code.nextNodeName("ddiv"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node doubleRem(Code code) {
+        return new DoubleRemNode(
+                code.nextNodeName("drem"),
                 code.getLastNode(),
                 code
         );
@@ -308,17 +391,24 @@ public class Nodes {
         );
     }
 
-    public static Node negate(Code code) {
-        return new NegateNode(
-                code.nextNodeName("negate"),
+    public static Node neg(Type type, Code code) {
+        if(type.isLong())
+            return longNeg(code);
+        else
+            return doubleNeg(code);
+    }
+
+    public static Node longNeg(Code code) {
+        return new LongNegNode(
+                code.nextNodeName("lneg"),
                 code.getLastNode(),
                 code
         );
     }
 
-    public static Node rem(Code code) {
-        return new RemainderNode(
-                code.nextNodeName("rem"),
+    public static Node doubleNeg(Code code) {
+        return new DoubleNegNode(
+                code.nextNodeName("dneg"),
                 code.getLastNode(),
                 code
         );
@@ -509,5 +599,13 @@ public class Nodes {
 
     public static Node pop(Code code) {
         return new PopNode(code.nextNodeName("pop"), code.getLastNode(), code);
+    }
+
+    public static Node longToDouble(Code code) {
+        return new LongToDoubleNode(code.nextNodeName("l2d"), code.getLastNode(), code);
+    }
+
+    public static Node doubleToLong(Code code) {
+        return new DoubleToLongNode(code.nextNodeName("d2l"), code.getLastNode(), code);
     }
 }

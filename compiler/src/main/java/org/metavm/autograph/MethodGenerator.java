@@ -1,15 +1,13 @@
 package org.metavm.autograph;
 
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiStatement;
-import com.intellij.psi.PsiVariable;
+import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expression;
 import org.metavm.expression.TypeNarrower;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
+import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -377,36 +375,137 @@ public class MethodGenerator {
                 code().getLastNode(), code()));
     }
 
-    AddNode createAdd() {
-        return onNodeCreated(new AddNode(
-                        nextName("add"),
+    Node createAdd(PsiType type) {
+        if(TranspileUtils.isIntegerType(type))
+            return createLongAdd();
+        else
+            return createDoubleAdd();
+    }
+
+    Node createSub(PsiType type) {
+        if(TranspileUtils.isIntegerType(type))
+            return createLongSub();
+        else
+            return createDoubleSub();
+    }
+
+    Node createMul(PsiType type) {
+        if(TranspileUtils.isIntegerType(type))
+            return createLongMul();
+        else
+            return createDoubleMul();
+    }
+
+    Node createDiv(PsiType type) {
+        if(TranspileUtils.isIntegerType(type))
+            return createLongDiv();
+        else
+            return createDoubleDiv();
+    }
+
+    Node createRem(PsiType type) {
+        if(TranspileUtils.isIntegerType(type))
+            return createLongRem();
+        else
+            return createDoubleRem();
+    }
+
+    Node createNeg(PsiType type) {
+        if(TranspileUtils.isIntegerType(type))
+            return createLongNeg();
+        else
+            return createDoubleNeg();
+    }
+
+    Node createInc(PsiType type) {
+        if(TranspileUtils.isIntegerType(type)) {
+            createLoadConstant(Instances.longInstance(1));
+            return createLongAdd();
+        }
+        else {
+            createLoadConstant(Instances.doubleInstance(1));
+            return createDoubleAdd();
+        }
+    }
+
+    Node createDec(PsiType type) {
+        if(TranspileUtils.isIntegerType(type)) {
+            createLoadConstant(Instances.longInstance(1));
+            return createLongSub();
+        }
+        else {
+            createLoadConstant(Instances.doubleInstance(1));
+            return createDoubleSub();
+        }
+    }
+
+    LongAddNode createLongAdd() {
+        return onNodeCreated(new LongAddNode(
+                        nextName("ladd"),
                         code().getLastNode(),
                         code()
                 )
         );
     }
 
-    SubNode createSub() {
-        return onNodeCreated(new SubNode(
-                        nextName("sub"),
+    LongSubNode createLongSub() {
+        return onNodeCreated(new LongSubNode(
+                        nextName("lsub"),
                         code().getLastNode(),
                         code()
                 )
         );
     }
 
-    MulNode createMul() {
-        return onNodeCreated(new MulNode(
-                        nextName("mul"),
+    LongMulNode createLongMul() {
+        return onNodeCreated(new LongMulNode(
+                        nextName("lmul"),
                         code().getLastNode(),
                         code()
                 )
         );
     }
 
-    DivNode createDiv() {
-        return onNodeCreated(new DivNode(
-                        nextName("div"),
+    LongDivNode createLongDiv() {
+        return onNodeCreated(new LongDivNode(
+                        nextName("ldiv"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+
+    DoubleAddNode createDoubleAdd() {
+        return onNodeCreated(new DoubleAddNode(
+                        nextName("dadd"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    DoubleSubNode createDoubleSub() {
+        return onNodeCreated(new DoubleSubNode(
+                        nextName("dsub"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    DoubleMulNode createDoubleMul() {
+        return onNodeCreated(new DoubleMulNode(
+                        nextName("dmul"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    DoubleDivNode createDoubleDiv() {
+        return onNodeCreated(new DoubleDivNode(
+                        nextName("ddiv"),
                         code().getLastNode(),
                         code()
                 )
@@ -485,9 +584,18 @@ public class MethodGenerator {
         );
     }
 
-    RemainderNode createRem() {
-        return onNodeCreated(new RemainderNode(
-                        nextName("rem"),
+    LongRemNode createLongRem() {
+        return onNodeCreated(new LongRemNode(
+                        nextName("lrem"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    DoubleRemNode createDoubleRem() {
+        return onNodeCreated(new DoubleRemNode(
+                        nextName("drem"),
                         code().getLastNode(),
                         code()
                 )
@@ -576,9 +684,18 @@ public class MethodGenerator {
         );
     }
 
-    NegateNode createNegate() {
-        return onNodeCreated(new NegateNode(
-                        nextName("negate"),
+    LongNegNode createLongNeg() {
+        return onNodeCreated(new LongNegNode(
+                        nextName("lneg"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    DoubleNegNode createDoubleNeg() {
+        return onNodeCreated(new DoubleNegNode(
+                        nextName("dneg"),
                         code().getLastNode(),
                         code()
                 )
@@ -695,6 +812,14 @@ public class MethodGenerator {
         return onNodeCreated(new PopNode(nextName("pop"),
                 code().getLastNode(), code()
         ));
+    }
+
+    public LongToDoubleNode createLongToDouble() {
+        return onNodeCreated(new LongToDoubleNode(nextName("l2d"), code().getLastNode(), code()));
+    }
+
+    public DoubleToLongNode createDoubleToLong() {
+        return onNodeCreated(new DoubleToLongNode(nextName("d2l"), code().getLastNode(), code()));
     }
 
     public LoadParentNode createLoadParent(int index) {

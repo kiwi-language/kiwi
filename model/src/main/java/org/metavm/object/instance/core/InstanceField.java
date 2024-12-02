@@ -73,7 +73,7 @@ public class InstanceField implements IInstanceField {
     }
 
     public void set(Value value) {
-        value = checkValue(value);
+        checkValue(value);
         if (field.isChild() && value.isNotNull())
             ((Reference) value).resolve().setParent(this.owner, this.field);
         this.value = value;
@@ -93,19 +93,12 @@ public class InstanceField implements IInstanceField {
         this.value = null;
     }
 
-    Value checkValue(Value value) {
-        if (type.isInstance(value)) {
-            return value;
-        }
-        else if(field.isMetadataRemoved() && value.isNull())
-            return value;
-        else {
-            try {
-                return value.convert(type);
-            } catch (Exception e) {
-                throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
-                        field.getQualifiedName(), e.getMessage());
-            }
+    void checkValue(Value value) {
+        if(field.isMetadataRemoved() && value.isNull())
+            return;
+        if (!type.isInstance(value)) {
+            throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
+                    field.getQualifiedName(), value);
         }
     }
 

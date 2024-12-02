@@ -75,19 +75,6 @@ public class PrimitiveType extends Type {
         return Objects.hash(kind);
     }
 
-    @Override
-    protected boolean isConvertibleFrom0(Type that) {
-        return that instanceof PrimitiveType pt && kind.isConvertibleFrom(pt.kind);
-    }
-
-    @Override
-    public Value convert(Value instance) {
-        if(isConvertibleFrom(instance.getType()))
-            return kind.convert(instance);
-        else
-            throw new IllegalArgumentException(instance.getType() + " is not convertible to " + this);
-    }
-
     public boolean isPrimitive() {
         return true;
     }

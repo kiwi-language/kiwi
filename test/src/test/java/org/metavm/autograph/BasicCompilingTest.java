@@ -103,6 +103,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processInnerClassExtension();
             processIndexSelect();
             processGenericObjectIO();
+            processPrimitiveConversion();
         });
     }
 
@@ -1046,6 +1047,27 @@ public class BasicCompilingTest extends CompilerTestBase {
         var id = saveInstance(className, Map.of("value", "foo"));
         var foo = getObject(id);
         Assert.assertEquals("foo", foo.getString("value"));
+    }
+
+    private void processPrimitiveConversion() {
+        var className = "primitives.PrimitiveConversionFoo";
+        Assert.assertEquals(
+                2.5, (double) callMethod(className, "add", List.of(1, 1.5)), 0.001);
+        Assert.assertEquals(
+                1.0,
+                (double) callMethod(className, "setValue", List.of(1)),
+                0.001
+        );
+        Assert.assertEquals(
+                2.0,
+                (double) callMethod(className, "inc", List.of(1)),
+                0.001
+        );
+        Assert.assertEquals(
+                1.0,
+                (double) callMethod(className, "getValue", List.of(0)),
+                0.001
+        );
     }
 
 }

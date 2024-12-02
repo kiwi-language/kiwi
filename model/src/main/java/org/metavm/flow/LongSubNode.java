@@ -7,22 +7,23 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class DivNode extends Node {
+public class LongSubNode extends Node {
 
-    public DivNode(String name,
-                   @Nullable Node previous,
-                   @NotNull Code code) {
+    public LongSubNode(String name,
+                       @Nullable Node previous,
+                       @NotNull Code code
+                   ) {
         super(name, null, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitDivNode(this);
+        return visitor.visitLongSubNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("div");
+        writer.write("lsub");
     }
 
     @Override
@@ -32,7 +33,7 @@ public class DivNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.DIV);
+        output.write(Bytecodes.LONG_SUB);
     }
 
     @Override

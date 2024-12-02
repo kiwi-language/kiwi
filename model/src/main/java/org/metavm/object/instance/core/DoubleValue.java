@@ -11,7 +11,7 @@ public class DoubleValue extends NumberValue {
 
     private static final DecimalFormat DF = new DecimalFormat("0.##");
 
-    private final double value;
+    public final double value;
 
     public DoubleValue(double value, PrimitiveType type) {
         super(type);

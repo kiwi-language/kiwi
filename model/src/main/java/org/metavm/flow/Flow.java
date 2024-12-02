@@ -342,39 +342,16 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.state = state;
     }
 
-    protected List<Value> checkArguments(List<? extends Value> arguments, TypeMetadata typeMetadata) {
-        List<Value> convertedArgs = new ArrayList<>();
-        out:
-        if (arguments.size() == parameters.size()) {
-            var paramIt = parameters.iterator();
-            var argIt = arguments.iterator();
-            while (paramIt.hasNext() && argIt.hasNext()) {
-                var param = paramIt.next();
-                var arg = argIt.next();
-                var paramType = param.getType(typeMetadata);
-                if (paramType.isInstance(arg)) {
-                    convertedArgs.add(arg);
-                } else {
-                    try {
-                        convertedArgs.add(arg.convert(paramType));
-                    } catch (BusinessException e) {
-//                        if (DebugEnv.debugging) {
-                            logger.info("Argument type mismatch: {} is not assignable from {}, constants: {}",
-                                    paramType.getTypeDesc(),
-                                    arg.getType().getTypeDesc(),
-                                    typeMetadata
-                                    );
-//                        }
-                        break out;
-                    }
-                }
-            }
-            return convertedArgs;
+    protected void checkArguments(List<? extends Value> arguments, TypeMetadata typeMetadata) {
+        if (arguments.size() != parameters.size())
+            throw new BusinessException(ErrorCode.INCORRECT_ARGUMENT_COUNT, this, parameters.size(), arguments.size());
+        var argIt = arguments.iterator();
+        for (Parameter param : parameters) {
+            var arg = argIt.next();
+            var paramType = param.getType(typeMetadata);
+            if (!paramType.isInstance(arg))
+                throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT2, arg, this, param.getName());
         }
-        logger.info("class: {}, number type parameters: {}", EntityUtils.getRealType(this).getSimpleName(), getTypeParameters().size());
-        throw new BusinessException(ErrorCode.ILLEGAL_FUNCTION_ARGUMENT, getQualifiedName(),
-                NncUtils.join(getParameterTypes(typeMetadata), Type::getTypeDesc),
-                NncUtils.join(arguments, arg -> arg.getType().getTypeDesc()));
     }
 
     @Override

@@ -40,10 +40,10 @@ public class Bytecodes {
     public static final int SET_ELEMENT = 43;
     public static final int IF = 44;
     public static final int NOOP = 46;
-    public static final int ADD = 48;
-    public static final int SUB = 49;
-    public static final int MUL = 50;
-    public static final int DIV = 51;
+    public static final int LONG_ADD = 48;
+    public static final int LONG_SUB = 49;
+    public static final int LONG_MUL = 50;
+    public static final int LONG_DIV = 51;
     public static final int LEFT_SHIFT = 52;
     public static final int RIGHT_SHIFT = 53;
     public static final int UNSIGNED_RIGHT_SHIFT = 54;
@@ -54,8 +54,8 @@ public class Bytecodes {
     public static final int OR = 59;
     public static final int BIT_NOT = 60;
     public static final int NOT = 61;
-    public static final int NEGATE = 62;
-    public static final int REM = 63;
+    public static final int LONG_NEGATE = 62;
+    public static final int LONG_REM = 63;
     public static final int EQ = 64;
     public static final int NE = 65;
     public static final int GE = 66;
@@ -81,6 +81,15 @@ public class Bytecodes {
     public static final int DUP_X2 = 86;
     public static final int LOAD_PARENT = 87;
     public static final int NEW_CHILD = 88;
+    public static final int LONG_TO_DOUBLE = 89;
+    public static final int DOUBLE_TO_LONG = 90;
+    public static final int DOUBLE_ADD = 91;
+    public static final int DOUBLE_SUB = 92;
+    public static final int DOUBLE_MUL = 93;
+    public static final int DOUBLE_DIV = 94;
+    public static final int DOUBLE_REM = 95;
+    public static final int DOUBLE_NEGATE = 96;
+
 
     private static final String[] names = new String[256];
 

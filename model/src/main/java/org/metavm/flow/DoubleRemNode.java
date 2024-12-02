@@ -7,23 +7,22 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class SubNode extends Node {
+public class DoubleRemNode extends Node {
 
-    public SubNode(String name,
-                   @Nullable Node previous,
-                   @NotNull Code code
-                   ) {
+    public DoubleRemNode(String name,
+                         @Nullable Node previous,
+                         @NotNull Code code) {
         super(name, null, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitSubNode(this);
+        return visitor.visitDoubleRemNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("sub");
+        writer.write("drem");
     }
 
     @Override
@@ -33,7 +32,7 @@ public class SubNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.SUB);
+        output.write(Bytecodes.DOUBLE_REM);
     }
 
     @Override
@@ -44,7 +43,7 @@ public class SubNode extends Node {
     @NotNull
     @Override
     public Type getType() {
-        return Types.getLongType();
+        return Types.getDoubleType();
     }
 
     @Override

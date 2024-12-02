@@ -67,7 +67,7 @@ public abstract class FlowRef extends CallableRef implements GenericDeclarationR
                 for (int i = 0; i < parameters.size(); i++) {
                     var paramType = parameters.get(i).getType(getTypeMetadata());
                     var argType = argumentTypes.get(i);
-                    if (!paramType.isConvertibleFrom(argType))
+                    if (!paramType.isAssignableFrom(argType))
                         return false;
                 }
                 return true;

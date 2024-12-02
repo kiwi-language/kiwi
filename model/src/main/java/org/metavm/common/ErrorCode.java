@@ -59,6 +59,7 @@ public enum ErrorCode {
     FAILED_TO_RESOLVE_VALUE(417, "Failed to resolve value: {}"),
     FAILED_TO_RESOLVE_VALUE_OF_TYPE(418, "Failed to resolve value of type {}"),
     FAILED_TO_FORMAT_VALUE(419, "Failed to format value {}"),
+    INCORRECT_ARRAY_ELEMENT(420, "Invalid element '{}' for array {}"),
 
     // Flow
     FLOW_NOT_FOUND(401, "Flow {} not found"),
@@ -104,6 +105,8 @@ public enum ErrorCode {
     MODIFYING_SYNTHETIC_FLOW(439, "{} is a synthetic flow and cannot be modified"),
     METHOD_RESOLUTION_FAILED(440, "Unable to resolve method {} with arguments {}"),
     ILLEGAL_ARGUMENT1(441, "Invalid function call argument: {}"),
+    ILLEGAL_ARGUMENT2(442, "Invalid argument '{}' in flow {} for parameter {}"),
+    INCORRECT_ARGUMENT_COUNT(443, "Flow {} expects {} arguments but got {}"),
 
     // expression
     EXPRESSION_INVALID(501, "Invalid expression: {}"),

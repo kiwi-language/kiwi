@@ -128,9 +128,16 @@ public class ExpressionResolver {
     }
 
     private Node resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {
-        resolve(typeCastExpression.getOperand(), context);
-        var targetType = typeResolver.resolveDeclaration(requireNonNull(typeCastExpression.getCastType()).getType());
-        return methodGenerator.createTypeCast(targetType);
+        var operand = Objects.requireNonNull(typeCastExpression.getOperand());
+        var sourceType = operand.getType();
+        resolve(operand, context);
+        var castType = requireNonNull(typeCastExpression.getCastType()).getType();
+        if(TranspileUtils.isIntegerType(sourceType) && TranspileUtils.isFloatType(castType))
+            return methodGenerator.createLongToDouble();
+        else if(TranspileUtils.isFloatType(sourceType) && TranspileUtils.isIntegerType(castType))
+            return methodGenerator.createDoubleToLong();
+        else
+            return methodGenerator.createTypeCast(typeResolver.resolveDeclaration(castType));
     }
 
     private Node resolvePolyadic(PsiPolyadicExpression psiExpression, ResolutionContext context) {
@@ -139,7 +146,7 @@ public class ExpressionResolver {
         var current = resolve(operands[0], context);
         for (int i = 1; i < operands.length; i++) {
             resolve(operands[i]);
-            current = resolveBinary(op);
+            current = resolveBinary(op, psiExpression.getType());
         }
         return current;
     }
@@ -347,27 +354,22 @@ public class ExpressionResolver {
     private Node resolvePrefix(PsiPrefixExpression psiPrefixExpression, ResolutionContext context) {
         var operand = requireNonNull(psiPrefixExpression.getOperand());
         var op = psiPrefixExpression.getOperationSign().getTokenType();
+        var type = psiPrefixExpression.getType();
         if (op == JavaTokenType.EXCL) {
             resolve(operand, context);
             return methodGenerator.createNot();
         } else if(op == JavaTokenType.MINUS) {
             resolve(operand, context);
-            return methodGenerator.createNegate();
+            return methodGenerator.createNeg(type);
         } else if(op == JavaTokenType.PLUS) {
             return resolve(operand, context);
         } else if(op == JavaTokenType.TILDE) {
             resolve(operand, context);
             return methodGenerator.createBitNot();
         } else if (op == JavaTokenType.PLUSPLUS) {
-            return resolveCompoundAssignment(operand, node -> {
-                methodGenerator.createLoadConstant(Instances.longInstance(1L));
-                return methodGenerator.createAdd();
-            }, () -> {}, context);
+            return resolveCompoundAssignment(operand, node -> methodGenerator.createInc(type), () -> {}, context);
         } else if (op == JavaTokenType.MINUSMINUS) {
-            return resolveCompoundAssignment(operand, node -> {
-                methodGenerator.createLoadConstant(Instances.longInstance(1L));
-                return methodGenerator.createSub();
-            }, () -> {}, context);
+            return resolveCompoundAssignment(operand, node -> methodGenerator.createDec(type), () -> {}, context);
         } else {
             throw new InternalException("Unsupported prefix operator " + op);
         }
@@ -378,24 +380,19 @@ public class ExpressionResolver {
             return resolvePrefix(prefixExpression, context);
         }
         var op = psiUnaryExpression.getOperationSign().getTokenType();
+        var type = psiUnaryExpression.getType();
         if (op == JavaTokenType.PLUSPLUS) {
             return resolveCompoundAssignment(
                     psiUnaryExpression.getOperand(),
                     node -> node,
-                    () -> {
-                        methodGenerator.createLoadConstant(Instances.longInstance(1));
-                        methodGenerator.createAdd();
-                    },
+                    () -> methodGenerator.createInc(type),
                     context
             );
         } else if (op == JavaTokenType.MINUSMINUS) {
             return resolveCompoundAssignment(
                     psiUnaryExpression.getOperand(),
                     node -> node,
-                    () -> {
-                        methodGenerator.createLoadConstant(Instances.longInstance(1));
-                        methodGenerator.createSub();
-                    },
+                    () -> methodGenerator.createDec(type),
                     context
             );
         } else
@@ -406,19 +403,19 @@ public class ExpressionResolver {
         var op = psiExpression.getOperationSign().getTokenType();
         resolve(psiExpression.getLOperand(), context);
         resolve(psiExpression.getROperand(), context);
-        return resolveBinary(op);
+        return resolveBinary(op, psiExpression.getType());
     }
 
-    private Node resolveBinary(IElementType op) {
+    private Node resolveBinary(IElementType op, PsiType type) {
         Node node;
         if(op.equals(JavaTokenType.PLUS))
-            node = methodGenerator.createAdd();
+            node = methodGenerator.createAdd(type);
         else if(op.equals(JavaTokenType.MINUS))
-            node = methodGenerator.createSub();
+            node = methodGenerator.createSub(type);
         else if(op.equals(JavaTokenType.ASTERISK))
-            node = methodGenerator.createMul();
+            node = methodGenerator.createMul(type);
         else if(op.equals(JavaTokenType.DIV))
-            node = methodGenerator.createDiv();
+            node = methodGenerator.createDiv(type);
         else if(op.equals(JavaTokenType.LTLT))
             node = methodGenerator.createLeftShift();
         else if(op.equals(JavaTokenType.GTGT))
@@ -436,7 +433,7 @@ public class ExpressionResolver {
         else if(op.equals(JavaTokenType.OROR))
             node = methodGenerator.createOr();
         else if(op.equals(JavaTokenType.PERC))
-            node = methodGenerator.createRem();
+            node = methodGenerator.createRem(type);
         else if(op.equals(JavaTokenType.EQEQ))
             node = methodGenerator.createEq();
         else if(op.equals(JavaTokenType.NE))
@@ -669,6 +666,7 @@ public class ExpressionResolver {
 
     private Node resolveAssignment(PsiAssignmentExpression expression, ResolutionContext context) {
         var op = expression.getOperationSign().getTokenType();
+        var type = expression.getType();
         if (op == JavaTokenType.EQ)
             return resolveDirectAssignment(expression.getLExpression(), expression.getRExpression(), context);
         else {
@@ -677,13 +675,13 @@ public class ExpressionResolver {
                     node -> {
                         resolve(requireNonNull(expression.getRExpression()), context);
                         if (op == JavaTokenType.PLUSEQ) {
-                            return methodGenerator.createAdd();
+                            return methodGenerator.createAdd(type);
                         } else if (op == JavaTokenType.MINUSEQ) {
-                            return methodGenerator.createSub();
+                            return methodGenerator.createSub(type);
                         } else if (op == JavaTokenType.ASTERISKEQ) {
-                            return methodGenerator.createMul();
+                            return methodGenerator.createMul(type);
                         } else if (op == JavaTokenType.DIVEQ) {
-                            return methodGenerator.createDiv();
+                            return methodGenerator.createDiv(type);
                         } else if (op == JavaTokenType.OREQ) {
                             return methodGenerator.createBitOr();
                         } else if (op == JavaTokenType.ANDEQ) {

@@ -7,33 +7,32 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class NegateNode extends Node {
+public class LongAddNode extends Node {
 
-    public NegateNode(String name,
-                      @Nullable Node previous,
-                      @NotNull Code code
-                      ) {
+    public LongAddNode(String name,
+                       @Nullable Node previous,
+                       @NotNull Code code) {
         super(name, null, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitNegateNode(this);
+        return visitor.visitLongAddNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("neg");
+        writer.write("ladd");
     }
 
     @Override
     public int getStackChange() {
-        return 0;
+        return -1;
     }
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.NEGATE);
+        output.write(Bytecodes.LONG_ADD);
     }
 
     @Override

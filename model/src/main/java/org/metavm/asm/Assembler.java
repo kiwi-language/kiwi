@@ -875,7 +875,9 @@ public class Assembler {
                 }
                 if (typeParameters != null)
                     typeParameters.accept(this);
-//                logger.debug("{}", method.getText());
+//                if(method.getName().equals("decQuantity")) {
+//                    logger.debug("{}", method.getText());
+//                }
             } finally {
                 exitScope();
             }

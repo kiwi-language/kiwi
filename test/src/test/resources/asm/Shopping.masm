@@ -62,7 +62,7 @@ struct SKU {
             i = i + 1;
             totalDiscount = totalDiscount + discount;
         }
-        return new Order(this.name, quantity, this.price * quantity - totalDiscount, this, coupons);
+        return new Order(this.name, quantity, this.price * (double) quantity - totalDiscount, this, coupons);
     }
 
     public string getName() {

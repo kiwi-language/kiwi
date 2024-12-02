@@ -160,7 +160,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
         for (int i = 0; i < paramTypes.size(); i++) {
             var paramType = paramTypes.get(i);
             var thatParamType = thatParamTypes.get(i);
-            if (!paramType.isConvertibleFrom(thatParamType))
+            if (!paramType.isAssignableFrom(thatParamType))
                 return false;
         }
         return true;

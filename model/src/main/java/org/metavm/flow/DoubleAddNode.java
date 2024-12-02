@@ -7,9 +7,9 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class RemainderNode extends Node {
+public class DoubleAddNode extends Node {
 
-    public RemainderNode(String name,
+    public DoubleAddNode(String name,
                          @Nullable Node previous,
                          @NotNull Code code) {
         super(name, null, previous, code);
@@ -17,12 +17,12 @@ public class RemainderNode extends Node {
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitRemainderNode(this);
+        return visitor.visitDoubleAddNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("rem");
+        writer.write("dadd");
     }
 
     @Override
@@ -32,7 +32,7 @@ public class RemainderNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.REM);
+        output.write(Bytecodes.DOUBLE_ADD);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class RemainderNode extends Node {
     @NotNull
     @Override
     public Type getType() {
-        return Types.getLongType();
+        return Types.getDoubleType();
     }
 
     @Override

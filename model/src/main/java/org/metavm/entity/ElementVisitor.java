@@ -367,7 +367,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitAddNode(AddNode node) {
+    public R visitLongAddNode(LongAddNode node) {
         return visitNode(node);
     }
 
@@ -379,19 +379,19 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitSubNode(SubNode node) {
+    public R visitLongSubNode(LongSubNode node) {
         return visitNode(node);
     }
 
-    public R visitMulNode(MulNode node) {
+    public R visitLongMulNode(LongMulNode node) {
         return visitNode(node);
     }
 
-    public R visitDivNode(DivNode node) {
+    public R visitLongDivNode(LongDivNode node) {
         return visitNode(node);
     }
 
-    public R visitRemainderNode(RemainderNode node) {
+    public R visitLongRemNode(LongRemNode node) {
         return visitNode(node);
     }
 
@@ -419,7 +419,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitNegateNode(NegateNode node) {
+    public R visitLongNegNode(LongNegNode node) {
         return visitNode(node);
     }
 
@@ -573,5 +573,37 @@ public abstract class ElementVisitor<R> {
 
     public R visitConstantPool(ConstantPool constantPool) {
         return visitElement(constantPool);
+    }
+
+    public R visitLongToDoubleNode(LongToDoubleNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDoubleToLongNode(DoubleToLongNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDoubleAddNode(DoubleAddNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDoubleDivNode(DoubleDivNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDoubleSubNode(DoubleSubNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDoubleMulNode(DoubleMulNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDoubleRemNode(DoubleRemNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDoubleNegNode(DoubleNegNode node) {
+        return visitNode(node);
     }
 }

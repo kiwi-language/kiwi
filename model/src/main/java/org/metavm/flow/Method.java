@@ -206,7 +206,7 @@ public class Method extends Flow implements Property {
                 NncUtils.requireNull(self);
             else
                 Objects.requireNonNull(self);
-            arguments = checkArguments(arguments, flowRef.getTypeMetadata());
+            checkArguments(arguments, flowRef.getTypeMetadata());
             FlowExecResult result;
             if (isNative()) {
                 if(javaMethod != null && self != null && self.getMappedEntity() != null)

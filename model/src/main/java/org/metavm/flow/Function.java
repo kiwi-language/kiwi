@@ -57,7 +57,7 @@ public class Function extends Flow implements GlobalKey {
     @Override
     public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext) {
         NncUtils.requireNull(self);
-        arguments = checkArguments(arguments, flowRef.getTypeMetadata());
+        checkArguments(arguments, flowRef.getTypeMetadata());
         if (isNative()) {
             return Objects.requireNonNull(
                     nativeCode, "Native function " + this + " is not initialized"
