@@ -221,6 +221,12 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
+    public void visitInt() {
+        output.write(WireTypes.INT);
+        output.writeLong(readInt());
+    }
+
+    @Override
     public void visitChar() {
         output.write(WireTypes.CHAR);
         output.writeChar(readChar());

@@ -125,8 +125,8 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public LongValue size(CallContext callContext) {
-        return Instances.longInstance(size());
+    public IntValue size(CallContext callContext) {
+        return Instances.intInstance(size());
     }
 
     private int size() {
@@ -139,14 +139,14 @@ public class MapNative extends NativeBase {
         valueArray.clear();
     }
 
-    public LongValue hashCode(CallContext callContext) {
+    public IntValue hashCode(CallContext callContext) {
         int h = 0;
         int i = 0;
         for (Value key : keyArray) {
             var value = valueArray.get(i++);
             h = h + (Instances.hashCode(key, callContext) ^ Instances.hashCode(value, callContext));
         }
-        return Instances.longInstance(h);
+        return Instances.intInstance(h);
     }
 
     public BooleanValue equals(Value o, CallContext callContext) {

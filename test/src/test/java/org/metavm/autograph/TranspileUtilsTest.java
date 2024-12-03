@@ -94,7 +94,7 @@ public class TranspileUtilsTest extends TestCase {
                 TranspileUtils.createType(String.class),
                 TranspileUtils.createPrimitiveType(int.class)
         ));
-        Assert.assertEquals("org.metavm.autograph.mocks.SignatureFoo.test(String,Long,Any|Null)", internalName);
+        Assert.assertEquals("org.metavm.autograph.mocks.SignatureFoo.test(String,Int,Any|Null)", internalName);
     }
 
     public void testIsStruct() {

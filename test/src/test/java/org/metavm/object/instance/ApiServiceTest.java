@@ -37,14 +37,14 @@ public class ApiServiceTest extends TestCase {
         MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
         var title = "Shoes-40";
         var price = 100.0;
-        var quantity = 100L;
+        var quantity = 100;
         var skuId = (String) TestUtils.doInTransaction(() -> apiClient.newInstance(
                 "SKU", List.of(title, price, quantity)
         ));
         var sku = apiClient.getObject(skuId);
         Assert.assertEquals(title, sku.getString("name"));
         Assert.assertEquals(price, sku.getDouble("price"), 0.0001);
-        Assert.assertEquals(quantity, sku.getLong("quantity"));
+        Assert.assertEquals(quantity, sku.getInt("quantity"));
     }
 
     public void testHandleInstanceMethodCall() {
@@ -55,7 +55,7 @@ public class ApiServiceTest extends TestCase {
         var skuId = TestUtils.doInTransaction(() -> apiClient.saveInstance("SKU", Map.of(
             "name", "Shoes-40",
             "price", 100.0,
-            "quantity", 100L
+            "quantity", 100
         )));
         // decrease quantity
         TestUtils.doInTransaction(() -> apiClient.callMethod(
@@ -64,7 +64,7 @@ public class ApiServiceTest extends TestCase {
                 List.of(1)
         ));
         var sku = apiClient.getObject(skuId);
-        Assert.assertEquals(99L, sku.getLong("quantity"));
+        Assert.assertEquals(99, sku.getInt("quantity"));
         // create coupons
         var coupon1Id = TestUtils.doInTransaction(() -> apiClient.newInstance(
                 "Coupon",
@@ -81,7 +81,7 @@ public class ApiServiceTest extends TestCase {
                 List.of(1, List.of(coupon1Id, coupon2Id))
         ));
         var order = apiClient.getObject(orderId);
-        Assert.assertEquals(1L, order.getLong("quantity"));
+        Assert.assertEquals(1, order.getInt("quantity"));
         Assert.assertEquals(85.0, order.getDouble("price"), 0.0001);
     }
 

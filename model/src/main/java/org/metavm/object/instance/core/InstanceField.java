@@ -98,7 +98,7 @@ public class InstanceField implements IInstanceField {
             return;
         if (!type.isInstance(value)) {
             throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
-                    field.getQualifiedName(), value);
+                    value, field.getQualifiedName(), field.getType());
         }
     }
 

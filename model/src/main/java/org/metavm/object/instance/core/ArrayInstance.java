@@ -457,8 +457,8 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     @SuppressWarnings("unused")
-    public LongValue __size__() {
-        return Instances.longInstance(size());
+    public IntValue __size__() {
+        return Instances.intInstance(size());
     }
 
     @Override

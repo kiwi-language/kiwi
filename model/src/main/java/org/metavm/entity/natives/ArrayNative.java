@@ -1,9 +1,6 @@
 package org.metavm.entity.natives;
 
-import org.metavm.object.instance.core.ArrayInstance;
-import org.metavm.object.instance.core.BooleanValue;
-import org.metavm.object.instance.core.LongValue;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 
@@ -52,8 +49,8 @@ public class ArrayNative {
         array.addElement(instance);
     }
 
-    public LongValue size() {
-        return Instances.longInstance(array.size());
+    public IntValue size() {
+        return Instances.intInstance(array.size());
     }
 
 }

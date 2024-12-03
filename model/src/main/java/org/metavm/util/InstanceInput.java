@@ -127,6 +127,7 @@ public class InstanceInput extends MvInput {
             case WireTypes.DOUBLE -> new DoubleValue(readDouble(), Types.getDoubleType());
             case WireTypes.STRING -> new StringValue(readUTF(), Types.getStringType());
             case WireTypes.LONG -> new LongValue(readLong(), Types.getLongType());
+            case WireTypes.INT -> new IntValue(readInt(), Types.getIntType());
             case WireTypes.CHAR -> new CharValue(readChar(), Types.getCharType());
             case WireTypes.BOOLEAN -> new BooleanValue(readBoolean(), Types.getBooleanType());
             case WireTypes.TIME -> new TimeValue(readLong(), Types.getTimeType());

@@ -28,12 +28,12 @@ public abstract class SetNative extends IterableNative {
         return Instances.falseInstance();
     }
 
-    public LongValue hashCode(CallContext callContext) {
+    public IntValue hashCode(CallContext callContext) {
         int h = 0;
         for (Value value : this) {
             h = h + Instances.hashCode(value, callContext);
         }
-        return Instances.longInstance(h);
+        return Instances.intInstance(h);
     }
 
     public Value addAll(Value values, CallContext callContext) {
@@ -80,7 +80,7 @@ public abstract class SetNative extends IterableNative {
     }
 
     public Value size(CallContext callContext) {
-        return Instances.longInstance(size());
+        return Instances.intInstance(size());
     }
 
     public abstract int size();

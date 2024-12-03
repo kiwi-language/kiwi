@@ -45,8 +45,8 @@ public class StringBuilderNative extends NativeBase {
         return Instances.booleanInstance(array.isEmpty());
     }
 
-    public LongValue length(CallContext callContext) {
-        return Instances.longInstance(array.length());
+    public IntValue length(CallContext callContext) {
+        return Instances.intInstance(array.length());
     }
 
     public StringValue toString(CallContext callContext) {

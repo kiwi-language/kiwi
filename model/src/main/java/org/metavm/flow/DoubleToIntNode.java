@@ -1,0 +1,51 @@
+package org.metavm.flow;
+
+import org.jetbrains.annotations.NotNull;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.Types;
+
+import javax.annotation.Nullable;
+
+public class DoubleToIntNode extends Node {
+
+    public DoubleToIntNode(@NotNull String name, @Nullable Node previous, @NotNull Code code) {
+        super(name, null, previous, code);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitDoubleToIntNode(this);
+    }
+
+    @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("d2i");
+    }
+
+    @Override
+    public int getStackChange() {
+        return 0;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.DOUBLE_TO_INT);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
+    }
+
+    @Override
+    @NotNull
+    public Type getType() {
+        return Types.getIntType();
+    }
+}

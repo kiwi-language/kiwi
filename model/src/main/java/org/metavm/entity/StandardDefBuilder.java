@@ -111,7 +111,7 @@ public class StandardDefBuilder {
 
         enumOrdinalDef = createFieldDef(
                 ENUM_ORDINAL_FIELD,
-                createField(ENUM_ORDINAL_FIELD, false, Types.getLongType(), Access.PRIVATE,
+                createField(ENUM_ORDINAL_FIELD, false, Types.getIntType(), Access.PRIVATE,
                         ColumnKind.INT.getColumn(0), 1, enumKlass),
                 enumDef
         );
@@ -230,7 +230,7 @@ public class StandardDefBuilder {
                 .build();
         MethodBuilder.newBuilder(enumKlass, "ordinal")
                 .isNative(true)
-                .returnType(Types.getLongType())
+                .returnType(Types.getIntType())
                 .build();
     }
 
@@ -512,7 +512,7 @@ public class StandardDefBuilder {
         MethodBuilder.newBuilder(klass, klass.getName())
                 .isConstructor(true)
                 .isNative(true)
-                .parameters(new NameAndType("index", Types.getLongType()))
+                .parameters(new NameAndType("index", Types.getIntType()))
                 .returnType(klass.getType())
                 .build();
     }

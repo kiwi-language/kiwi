@@ -165,8 +165,8 @@ public class ListNative extends IterableNative {
         return Instances.booleanInstance(array.isEmpty());
     }
 
-    public LongValue size(CallContext callContext) {
-        return Instances.longInstance(array.size());
+    public IntValue size(CallContext callContext) {
+        return Instances.intInstance(array.size());
     }
 
     public void sort(CallContext callContext) {
@@ -183,12 +183,12 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public LongValue hashCode(CallContext callContext) {
+    public IntValue hashCode(CallContext callContext) {
         int h = 0;
         for (Value value : array) {
             h = 31 * h + Instances.hashCode(value, callContext);
         }
-        return Instances.longInstance(h);
+        return Instances.intInstance(h);
     }
 
     public BooleanValue equals(Value o, CallContext callContext) {

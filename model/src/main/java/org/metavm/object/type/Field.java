@@ -103,10 +103,6 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         return declaringType.getTitleField() == this;
     }
 
-    public TypeCategory getConcreteTypeCategory() {
-        return getConcreteType().getCategory();
-    }
-
     public Type getConcreteType() {
         return getType().getConcreteType();
     }

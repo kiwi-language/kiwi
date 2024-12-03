@@ -69,7 +69,7 @@ public class SchedulerTest extends TestCase {
         }
         scheduler.schedule();
         try(var context = newPlatformContext()) {
-            var tasks = context.selectByKey(ShadowTask.IDX_EXECUTOR_IP_START_AT, NetworkUtils.localIP, 0);
+            var tasks = context.selectByKey(ShadowTask.IDX_EXECUTOR_IP_START_AT, NetworkUtils.localIP, 0L);
             Assert.assertEquals(1, tasks.size());
         }
         Assert.assertTrue(worker.waitFor(t -> t.idEquals(ref.task.getId()), 10, 0));

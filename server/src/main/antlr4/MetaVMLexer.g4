@@ -10,6 +10,7 @@ ANY:                'any';
 NEVER:              'never';
 BOOLEAN:            'boolean';
 LONG:               'long';
+INT:                'int';
 CHAR:               'char';
 DOUBLE:             'dobule';
 STRING:             'string';

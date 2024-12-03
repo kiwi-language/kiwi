@@ -138,14 +138,14 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     Instances.stringInstance(Instances.toString(args.get(0), callContext)))
     ),
     hashCode(
-            "long hashCode(any instance)",
+            "int hashCode(any instance)",
             true,
             List.of(ReflectionUtils.getMethod(Object.class, "hashCode")
             ),
             (func, args, callContext) -> {
                 var value = args.get(0);
                 if(value instanceof PrimitiveValue primitiveValue)
-                    return FlowExecResult.of(Instances.longInstance(primitiveValue.getValue().hashCode()));
+                    return FlowExecResult.of(Instances.intInstance(primitiveValue.getValue().hashCode()));
                 else {
                     var exception = ClassInstance.allocate(StdKlass.illegalArgumentException.get().getType());
                     var nat = new IllegalArgumentExceptionNative(exception);
@@ -364,11 +364,11 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(null);
             }),
     secureRandom(
-            "string secureRandom(long length)",
+            "string secureRandom(int length)",
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "secureRandom", int.class)),
             (func, args, callContext) -> {
-                var len = ((LongValue) args.get(0)).getValue().intValue();
+                var len = ((IntValue) args.get(0)).value;
                 return FlowExecResult.of(Instances.stringInstance(EncodingUtils.secureRandom(len)));
             }
     ),
@@ -436,15 +436,15 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     sortArray(
-            "void sortArray([never, any|null][] array, long from, long to, java.util.Comparator<[never,any]>|null comparator)",
+            "void sortArray([never, any|null][] array, int from, int to, java.util.Comparator<[never,any]>|null comparator)",
             false,
             List.of(
                     ReflectionUtils.getMethod(Arrays.class, "sort", Object[].class, int.class, int.class, Comparator.class)
             ),
             (func, args, callContext) -> {
                 var array = args.get(0).resolveArray();
-                var from = ((LongValue) args.get(1)).getValue().intValue();
-                var to = ((LongValue) args.get(2)).getValue().intValue();
+                var from = ((IntValue) args.get(1)).value;
+                var to = ((IntValue) args.get(2)).value;
                 var c = args.get(3);
                 if(c.isNull())
                     array.sort(from, to, (e1,e2) -> Instances.compare(e1, e2, callContext));
@@ -459,81 +459,81 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     copyOfArray(
-            "(T|null)[] copyOfArray<T>((T|null)[] array, long newLength)",
+            "(T|null)[] copyOfArray<T>((T|null)[] array, int newLength)",
             false,
             List.of(
                     ReflectionUtils.getMethod(Arrays.class, "copyOf", Object[].class, int.class)
             ),
             (func, args, callContext) -> {
                 var array = args.get(0).resolveArray();
-                var newLength = ((LongValue) args.get(1)).getValue().intValue();
+                var newLength = ((IntValue) args.get(1)).value;
                 return FlowExecResult.of(array.copyOf(newLength).getReference());
             }
     ),
     copyOfLongArray(
-            "long[] copyOfLongArray(long[] array, long newLength)",
+            "long[] copyOfLongArray(long[] array, int newLength)",
             false,
             List.of(
                     ReflectionUtils.getMethod(Arrays.class, "copyOf", long[].class, int.class)
             ),
             (func, args, callContext) -> {
                 var array = args.get(0).resolveArray();
-                var newLength = ((LongValue) args.get(1)).getValue().intValue();
+                var newLength = ((IntValue) args.get(1)).value;
                 return FlowExecResult.of(array.copyOf(newLength).getReference());
             }
     ),
     copyOfArray2(
-            "(T|null)[] copyOfArray2<T, U>((U|null)[] array, long newLength, org.metavm.object.type.Klass newType)",
+            "(T|null)[] copyOfArray2<T, U>((U|null)[] array, int newLength, org.metavm.object.type.Klass newType)",
             false,
             List.of(
                     ReflectionUtils.getMethod(Arrays.class, "copyOf", Object[].class, int.class, Class.class)
             ),
             (func, args, callContext) -> {
                 var array = args.get(0).resolveArray();
-                var newLength = ((LongValue) args.get(1)).getValue().intValue();
+                var newLength = ((IntValue) args.get(1)).value;
                 var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().get(0)), ArrayKind.READ_WRITE);
                 return FlowExecResult.of(array.copyOf(newLength, newType).getReference());
             }
     ),
     copyOfArrayRange(
-            "(T|null)[] copyOfArrayRange<T>((T|null)[] array, long from, long to)",
+            "(T|null)[] copyOfArrayRange<T>((T|null)[] array, int from, int to)",
             false,
             List.of(
                     ReflectionUtils.getMethod(Arrays.class, "copyOfRange", Object[].class, int.class, int.class)
             ),
             (func, args, callContext) -> {
                 var array = args.get(0).resolveArray();
-                var from = ((LongValue) args.get(1)).getValue().intValue();
-                var to = ((LongValue) args.get(2)).getValue().intValue();
+                var from = ((IntValue) args.get(1)).value;
+                var to = ((IntValue) args.get(2)).value;
                 return FlowExecResult.of(array.copyOfRange(from, to).getReference());
             }
     ),
     copyOfArrayRange2(
-            "(T|null)[] copyOfArrayRange2<T, U>((U|null)[] array, long from, long to, org.metavm.object.type.Klass newType)",
+            "(T|null)[] copyOfArrayRange2<T, U>((U|null)[] array, int from, int to, org.metavm.object.type.Klass newType)",
             false,
             List.of(
                     ReflectionUtils.getMethod(Arrays.class, "copyOfRange", Object[].class, int.class, int.class, Class.class)
             ),
             (func, args, callContext) -> {
                 var array = args.get(0).resolveArray();
-                var from = ((LongValue) args.get(1)).getValue().intValue();
-                var to = ((LongValue) args.get(2)).getValue().intValue();
+                var from = ((IntValue) args.get(1)).value;
+                var to = ((IntValue) args.get(2)).value;
                 var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().get(0)), ArrayKind.READ_WRITE);
                 return FlowExecResult.of(array.copyOfRange(from, to, newType).getReference());
             }
     ),
     arraycopy(
-            "void arraycopy(any source, long srcPos, any dest, long destPos, long length)",
+            "void arraycopy(any source, int srcPos, any dest, int destPos, int length)",
             false,
             List.of(
                     ReflectionUtils.getMethod(System.class, "arraycopy", Object.class, int.class, Object.class, int.class, int.class)
             ),
             (func, args, callContext) -> {
                 var src = args.get(0).resolveArray();
-                var srcPos = ((LongValue) args.get(1)).getValue().intValue();
+                var srcPos = ((IntValue) args.get(1)).value;
                 var dest = args.get(2).resolveArray();
-                var destPos = ((LongValue) args.get(3)).getValue().intValue();
-                var length = ((LongValue) args.get(4)).getValue().intValue();
+                var destPos = ((IntValue) args.get(3)).value;
+                var length = ((IntValue) args.get(4)).value;
                 for(int i = srcPos, j = destPos, k = 0; k < length; i++, j++, k++)
                     dest.setElement(j, src.getElement(i));
                 return FlowExecResult.of(null);
@@ -563,12 +563,12 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     newArray(
-            "any newArray(org.metavm.object.type.Klass klass, long length)",
+            "any newArray(org.metavm.object.type.Klass klass, int length)",
             false,
             List.of(ReflectionUtils.getMethod(Array.class, "newInstance", Class.class, int.class)),
             (func, args, callContext) -> {
                 var k = ContextUtil.getEntityContext().getEntity(Klass.class, args.get(0).resolveObject());
-                var len = ((LongValue) args.get(1)).getValue().intValue();
+                var len = ((IntValue) args.get(1)).value;
                 var type = new ArrayType(Types.getNullableType(Types.getGeneralType(k)), ArrayKind.READ_WRITE);
                 var array = new ArrayInstance(type);
                 Instances.initArray(array, new int[] {len}, 0);
@@ -586,14 +586,14 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     checkIndex(
-            "long checkIndex(long index, long length)",
+            "int checkIndex(int index, int length)",
             false,
             List.of(ReflectionUtils.getMethod(Objects.class, "checkIndex", int.class, int.class)),
             (func, args, callContext) -> {
-                var index = ((LongValue) args.get(0)).getValue().intValue();
-                var length = ((LongValue) args.get(1)).getValue().intValue();
+                var index = ((IntValue) args.get(0)).value;
+                var length = ((IntValue) args.get(1)).value;
                 if(index >= 0 && index < length)
-                    return FlowExecResult.of(Instances.longInstance(index));
+                    return FlowExecResult.of(Instances.intInstance(index));
                 else {
                     var exception = ClassInstance.allocate(StdKlass.indexOutOfBoundsException.type());
                     var nat = new IndexOutOfBoundsExceptionNative(exception);
@@ -602,18 +602,30 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 }
             }
     ),
-    max(
-            "long max(long v1, long v2)",
+    maxInt(
+            "int maxInt(int v1, int v2)",
             false,
-            List.of(ReflectionUtils.getMethod(Math.class, "max", int.class, int.class),
-                    ReflectionUtils.getMethod(Math.class, "max", long.class, long.class)),
+            List.of(ReflectionUtils.getMethod(Math.class, "max", int.class, int.class)),
             (func, args, callContext) -> {
-                var v1 = ((LongValue) args.get(0)).getValue().intValue();
-                var v2 = ((LongValue) args.get(1)).getValue().intValue();
-                if(v1 >= v2)
-                    return FlowExecResult.of(Instances.longInstance(v1));
+                var v1 = ((IntValue) args.get(0));
+                var v2 = ((IntValue) args.get(1));
+                if(v1.value >= v2.value)
+                    return FlowExecResult.of(v1);
                 else
-                    return FlowExecResult.of(Instances.longInstance(v2));
+                    return FlowExecResult.of(v2);
+            }
+    ),
+    maxLong(
+            "long maxLong(long v1, long v2)",
+            false,
+            List.of(ReflectionUtils.getMethod(Math.class, "max", long.class, long.class)),
+            (func, args, callContext) -> {
+                var v1 = ((LongValue) args.get(0));
+                var v2 = ((LongValue) args.get(1));
+                if(v1.value >= v2.value)
+                    return FlowExecResult.of(v1);
+                else
+                    return FlowExecResult.of(v2);
             }
     ),
     clone(
@@ -637,20 +649,20 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             }
     ),
     checkFromIndexSize(
-            "long checkFromIndexSize(long fromIndex, long size, long length)",
+            "int checkFromIndexSize(int fromIndex, int size, int length)",
             false,
             List.of(ReflectionUtils.getMethod(Objects.class, "checkFromIndexSize", int.class, int.class, int.class)),
             (func, args, callContext) -> {
-                var from = ((LongValue) args.get(0)).getValue();
-                var size = ((LongValue) args.get(1)).getValue();
-                var len = ((LongValue) args.get(2)).getValue();
+                var from = ((IntValue) args.get(0)).getValue();
+                var size = ((IntValue) args.get(1)).getValue();
+                var len = ((IntValue) args.get(2)).getValue();
                 if(from < 0 || size < 0 || from + size > len || len < 0) {
                     var e = ClassInstance.allocate(StdKlass.indexOutOfBoundsException.type());
                     var nat = new IndexOutOfBoundsExceptionNative(e);
                     nat.IndexOutOfBoundsException(callContext);
                     return FlowExecResult.ofException(e);
                 }
-                return FlowExecResult.of(Instances.longInstance(from));
+                return FlowExecResult.of(Instances.intInstance(from));
             }
     ),
     ;

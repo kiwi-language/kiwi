@@ -46,10 +46,6 @@ enum ProductKind {
         this.code = code;
     }
 
-    public ProductKind(int code) {
-        this.code = code;
-    }
-
     public int getCode() {
         return this.code;
     }

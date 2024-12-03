@@ -7,22 +7,22 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class UnsignedRightShiftNode extends Node {
+public class LongBitAndNode extends Node {
 
-    public UnsignedRightShiftNode(String name,
-                                  @Nullable Node previous,
-                                  @NotNull Code code) {
+    public LongBitAndNode(String name,
+                          @Nullable Node previous,
+                          @NotNull Code code) {
         super(name, null, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitUnsignedRightShift(this);
+        return visitor.visitLongBitAndNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("ushr");
+        writer.write("land");
     }
 
     @Override
@@ -32,7 +32,7 @@ public class UnsignedRightShiftNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.UNSIGNED_RIGHT_SHIFT);
+        output.write(Bytecodes.LONG_BIT_AND);
     }
 
     @Override

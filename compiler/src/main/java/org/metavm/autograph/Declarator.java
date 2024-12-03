@@ -211,9 +211,9 @@ public class Declarator extends VisitorBase {
             nameParam.setType(Types.getStringType()); // Adding type constant into constant pool
         var ordinalParam = method.findParameter(p -> "__ordinal__".equals(p.getName()));
         if(ordinalParam == null)
-            ordinalParam = new Parameter(null, "ordinal", Types.getLongType(), method);
+            ordinalParam = new Parameter(null, "ordinal", Types.getIntType(), method);
         else
-            ordinalParam.setType(Types.getLongType());
+            ordinalParam.setType(Types.getIntType());
         return List.of(nameParam, ordinalParam);
     }
 

@@ -341,6 +341,9 @@ public class ApiService extends EntityContextFactoryAware {
             case LONG -> ValueUtils.isInteger(rawValue) ?
                     ValueResolutionResult.of(Instances.longInstance(((Number) rawValue).longValue())) :
                     ValueResolutionResult.failed;
+            case INT -> ValueUtils.isInteger(rawValue) ?
+                    ValueResolutionResult.of(Instances.intInstance(((Number) rawValue).intValue())) :
+                    ValueResolutionResult.failed;
             case DOUBLE -> rawValue instanceof Number n ?
                     ValueResolutionResult.of(Instances.doubleInstance(n.doubleValue())) : ValueResolutionResult.failed;
             case BOOLEAN -> rawValue instanceof Boolean b ?
@@ -478,8 +481,10 @@ public class ApiService extends EntityContextFactoryAware {
         }
         if(rawValue instanceof Character c)
             return Instances.charInstance(c);
-        if (ValueUtils.isInteger(rawValue))
+        if(ValueUtils.isLong(rawValue))
             return Instances.longInstance(((Number) rawValue).longValue());
+        if (ValueUtils.isInteger(rawValue))
+            return Instances.intInstance(((Number) rawValue).intValue());
         if (ValueUtils.isFloat(rawValue))
             return Instances.doubleInstance(((Number) rawValue).doubleValue());
         if (rawValue instanceof Boolean b)

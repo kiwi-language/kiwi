@@ -26,6 +26,7 @@ public class PrimitiveType extends Type {
     public static final PrimitiveType timeType = new PrimitiveType(PrimitiveKind.TIME);
     public static final PrimitiveType voidType = new PrimitiveType(PrimitiveKind.VOID);
     public static final PrimitiveType passwordType = new PrimitiveType(PrimitiveKind.PASSWORD);
+    public static final PrimitiveType intType = new PrimitiveType(PrimitiveKind.INT);
 
     private final PrimitiveKind kind;
 
@@ -82,6 +83,11 @@ public class PrimitiveType extends Type {
     @Override
     public boolean isNull() {
         return kind == PrimitiveKind.NULL;
+    }
+
+    @Override
+    public boolean isInt() {
+        return kind == PrimitiveKind.INT;
     }
 
     @Override

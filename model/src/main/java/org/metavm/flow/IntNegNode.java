@@ -7,32 +7,33 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class BitXorNode extends Node {
+public class IntNegNode extends Node {
 
-    public BitXorNode(String name,
+    public IntNegNode(String name,
                       @Nullable Node previous,
-                      @NotNull Code code) {
+                      @NotNull Code code
+                      ) {
         super(name, null, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitBitXorNode(this);
+        return visitor.visitIntNegNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("bitxor");
+        writer.write("ineg");
     }
 
     @Override
     public int getStackChange() {
-        return -1;
+        return 0;
     }
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.BIT_XOR);
+        output.write(Bytecodes.INT_NEG);
     }
 
     @Override
@@ -43,12 +44,11 @@ public class BitXorNode extends Node {
     @NotNull
     @Override
     public Type getType() {
-        return Types.getLongType();
+        return Types.getIntType();
     }
 
     @Override
     public boolean hasOutput() {
         return true;
     }
-
 }

@@ -104,12 +104,12 @@ public class AssemblerTest extends TestCase {
         TestUtils.doInTransaction(() -> apiClient.callMethod(id, "addAll", List.of(elements)));
         var containsAll = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "containsAll", List.of(elements)));
         Assert.assertTrue(containsAll);
-        var removed = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "remove", List.of(1L)));
+        var removed = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "remove", List.of(1)));
         Assert.assertTrue(removed);
         var first = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "first", List.of()));
-        Assert.assertEquals(2L, first);
+        Assert.assertEquals(2, first);
         TestUtils.doInTransaction(() -> apiClient.callMethod(id, "retainAll", List.of(List.of(5, 3, 2))));
-        var size = (long) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "size", List.of()));
+        var size = (int) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "size", List.of()));
         Assert.assertEquals(3, size);
     }
 
@@ -120,7 +120,7 @@ public class AssemblerTest extends TestCase {
         ));
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/swap_super_after.masm");
         Assert.assertEquals(
-                2L,
+                2,
                 callMethod(id, "getValue2", List.of())
         );
     }

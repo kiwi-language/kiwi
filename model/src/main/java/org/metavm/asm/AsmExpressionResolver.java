@@ -111,10 +111,18 @@ class AsmExpressionResolver {
     private Type resolveCast(AssemblyParser.ExpressionContext operand, AssemblyParser.TypeTypeContext type) {
         var operandType = resolve0(operand);
         var castType = parseType(type);
-        if(operandType.isLong() && castType.isDouble())
+        if (operandType.isLong() && castType.isDouble())
             Nodes.longToDouble(code);
-        else if(operandType.isDouble() && castType.isLong())
+        else if (operandType.isDouble() && castType.isLong())
             Nodes.doubleToLong(code);
+        else if (operandType.isInt() && castType.isLong())
+            Nodes.intToLong(code);
+        else if (operandType.isLong() && castType.isInt())
+            Nodes.longToInt(code);
+        else if (operandType.isInt() && castType.isDouble())
+            Nodes.intToDouble(code);
+        else if (operandType.isDouble() && castType.isInt())
+            Nodes.doubleToInt(code);
         else
             Nodes.cast(castType, code);
         return castType;
@@ -195,14 +203,14 @@ class AsmExpressionResolver {
     }
 
     private Type resolveShift(AssemblyParser.ExpressionContext ctx) {
-        resolve0(ctx.expression(0));
+        var type = resolve0(ctx.expression(0));
         resolve0(ctx.expression(1));
         if(ctx.LT().size() == 2)
-            Nodes.leftShift(code);
+            Nodes.shiftLeft(type, code);
         else if(ctx.GT().size() == 2)
-            Nodes.rightShift(code);
+            Nodes.shiftRight(type, code);
         else if(ctx.GT().size() == 3)
-            Nodes.unsignedRightShift(code);
+            Nodes.unsignedShiftRight(type, code);
         else
             throw new IllegalStateException("Invalid shift expression: " + ctx.getText());
         return Types.getLongType();
@@ -236,9 +244,13 @@ class AsmExpressionResolver {
     private Type resolveLiteral(AssemblyParser.LiteralContext literal) {
         var text = literal.getText();
         org.metavm.object.instance.core.Value value;
-        if(literal.integerLiteral() != null)
-            value = Instances.longInstance(Long.parseLong(text));
-        else if(literal.floatLiteral() != null)
+        if(literal.integerLiteral() != null) {
+            var intText = literal.integerLiteral().getText();
+            if(intText.endsWith("l") || intText.endsWith("L"))
+                value = Instances.longInstance(Long.parseLong(text.substring(0, text.length() - 1)));
+            else
+                value = Instances.intInstance(Integer.parseInt(text));
+        } else if(literal.floatLiteral() != null)
             value = Instances.doubleInstance(Double.parseDouble(text));
         else if (literal.BOOL_LITERAL() != null)
             value = Instances.booleanInstance(Boolean.parseBoolean(text));
@@ -292,16 +304,16 @@ class AsmExpressionResolver {
                 yield type;
             }
             case AssemblyParser.BITOR -> {
-                Nodes.bitOr(code);
-                yield Types.getLongType();
+                Nodes.bitOr(type, code);
+                yield type;
             }
             case AssemblyParser.BITAND -> {
-                Nodes.bitAnd(code);
-                yield Types.getLongType();
+                Nodes.bitAnd(type, code);
+                yield type;
             }
             case AssemblyParser.CARET -> {
-                Nodes.bitXor(code);
-                yield Types.getLongType();
+                Nodes.bitXor(type, code);
+                yield type;
             }
             case AssemblyParser.AND -> {
                 Nodes.and(code);
@@ -437,7 +449,7 @@ class AsmExpressionResolver {
         var type = resolve0(qualifier);
         if(type instanceof ArrayType && name.equals("length")) {
             Nodes.arrayLength(code.nextNodeName("length"), code);
-            return Types.getLongType();
+            return Types.getIntType();
         } else {
             assert type instanceof ClassType;
             var klass = ((ClassType) type);
@@ -487,8 +499,8 @@ class AsmExpressionResolver {
                 yield type;
             }
             case AssemblyParser.TILDE -> {
-                Nodes.bitNot(code);
-                yield Types.getLongType();
+                Nodes.bitNot(type, code);
+                yield type;
             }
             case AssemblyParser.BANG -> {
                 Nodes.not(code);

@@ -7,22 +7,22 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class LeftShiftNode extends Node {
+public class IntMulNode extends Node {
 
-    public LeftShiftNode(String name,
-                         @Nullable Node previous,
-                         @NotNull Code code) {
+    public IntMulNode(String name,
+                      @Nullable Node previous,
+                      @NotNull Code code) {
         super(name, null, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitLeftShiftNode(this);
+        return visitor.visitIntMulNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("shl");
+        writer.write("imul");
     }
 
     @Override
@@ -32,7 +32,7 @@ public class LeftShiftNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.LEFT_SHIFT);
+        output.write(Bytecodes.INT_MUL);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class LeftShiftNode extends Node {
     @NotNull
     @Override
     public Type getType() {
-        return Types.getLongType();
+        return Types.getIntType();
     }
 
     @Override

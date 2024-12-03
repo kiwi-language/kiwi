@@ -7,22 +7,22 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class BitAndNode extends Node {
+public class IntBitXorNode extends Node {
 
-    public BitAndNode(String name,
-                      @Nullable Node previous,
-                      @NotNull Code code) {
+    public IntBitXorNode(String name,
+                         @Nullable Node previous,
+                         @NotNull Code code) {
         super(name, null, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitBitAndNode(this);
+        return visitor.visitIntBitXorNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("bitand");
+        writer.write("ior");
     }
 
     @Override
@@ -32,7 +32,7 @@ public class BitAndNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.BIT_AND);
+        output.write(Bytecodes.INT_BIT_XOR);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class BitAndNode extends Node {
     @NotNull
     @Override
     public Type getType() {
-        return Types.getLongType();
+        return Types.getIntType();
     }
 
     @Override

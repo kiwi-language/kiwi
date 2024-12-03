@@ -1,9 +1,6 @@
 package org.metavm.entity.natives;
 
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.LongValue;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.util.Instances;
 
 public class ArrayIndexOutOfBoundsExceptionNative extends IndexOutOfBoundsExceptionNative {
@@ -17,9 +14,9 @@ public class ArrayIndexOutOfBoundsExceptionNative extends IndexOutOfBoundsExcept
     }
 
     public Reference ArrayIndexOutOfBoundsException(Value causeOrMessage, CallContext callContext) {
-        if(causeOrMessage instanceof LongValue index) {
+        if(causeOrMessage instanceof IntValue index) {
             return IndexOutOfBoundsException(
-                    Instances.stringInstance("Array index out of range: " + index.getValue()),
+                    Instances.stringInstance("Array index out of range: " + index.value),
                     callContext
             );
         }

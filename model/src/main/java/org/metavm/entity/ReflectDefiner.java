@@ -134,7 +134,7 @@ public class ReflectDefiner {
         if(field.isStatic()) {
             var value = ReflectionUtils.get(null, javaField);
             if(value instanceof Integer i) {
-                staticInitialValues.put(field, Instances.longInstance(i.longValue()));
+                staticInitialValues.put(field, Instances.intInstance(i));
             }
         }
     }
@@ -173,7 +173,9 @@ public class ReflectDefiner {
                 if (k == String.class)
                     yield Types.getStringType();
                 if (k == int.class || k == Integer.class || k == byte.class || k == Byte.class
-                        || k == short.class || k == Short.class || k == long.class || k == Long.class)
+                        || k == short.class || k == Short.class)
+                    yield Types.getIntType();
+                if (k == long.class || k == Long.class)
                     yield Types.getLongType();
                 if (k == float.class || k == Float.class || k == double.class || k == Double.class)
                     yield Types.getDoubleType();

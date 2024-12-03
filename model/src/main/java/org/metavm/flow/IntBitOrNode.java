@@ -7,22 +7,22 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class RightShiftNode extends Node {
+public class IntBitOrNode extends Node {
 
-    public RightShiftNode(String name,
-                          @Nullable Node previous,
-                          @NotNull Code code) {
+    public IntBitOrNode(String name,
+                        @Nullable Node previous,
+                        @NotNull Code code) {
         super(name, null, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitRightShiftNode(this);
+        return visitor.visitIntBitOrNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("shr");
+        writer.write("ior");
     }
 
     @Override
@@ -32,7 +32,7 @@ public class RightShiftNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.RIGHT_SHIFT);
+        output.write(Bytecodes.INT_BIT_OR);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class RightShiftNode extends Node {
     @NotNull
     @Override
     public Type getType() {
-        return Types.getLongType();
+        return Types.getIntType();
     }
 
     @Override

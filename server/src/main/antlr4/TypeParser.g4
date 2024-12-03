@@ -39,6 +39,7 @@ typeArguments: '<' typeList '>';
 
 primitiveType
     : LONG
+    | INT
     | DOUBLE
     | CHAR
     | TIME

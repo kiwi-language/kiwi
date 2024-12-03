@@ -68,7 +68,7 @@ public class Generator extends VisitorBase {
         var builder = new MethodGenerator(initializer, typeResolver, this);
         builder.enterScope(initializer.getCode());
         builder.createLoadConstant(Instances.stringInstance(ecd.getName()));
-        builder.createLoadConstant(Instances.longInstance(ecd.getOrdinal()));
+        builder.createLoadConstant(Instances.intInstance(ecd.getOrdinal()));
         var argList = enumConstant.getArgumentList();
         if(argList != null) {
             for (var arg :  argList.getExpressions()){
@@ -77,7 +77,7 @@ public class Generator extends VisitorBase {
         }
         var paramTypes = new ArrayList<Type>();
         paramTypes.add(Types.getStringType());
-        paramTypes.add(Types.getLongType());
+        paramTypes.add(Types.getIntType());
         var generics = enumConstant.resolveMethodGenerics();
         var method = (PsiMethod) requireNonNull(generics.getElement());
         for (var psiParam : method.getParameterList().getParameters()) {
@@ -212,7 +212,7 @@ public class Generator extends VisitorBase {
                     builder.createLoad(1, Types.getStringType());
                     builder.createSetField(new FieldRef(enumType, StdField.enumName.get()));
                     builder.getThis();
-                    builder.createLoad(2, Types.getLongType());
+                    builder.createLoad(2, Types.getIntType());
                     builder.createSetField(new FieldRef(enumType, StdField.enumOrdinal.get()));
                 }
             }
@@ -229,7 +229,7 @@ public class Generator extends VisitorBase {
         }
         builder.exitScope();
         builders.pop();
-//        if(method.getName().equals("inc")) {
+//        if(method.getQualifiedName().equals("exceptions.ArrayIndexOutOfBoundsFoo.test")) {
 //            logger.debug("{}", method.getText());
 //        }
     }
@@ -478,10 +478,10 @@ public class Generator extends VisitorBase {
         var iteratedType = typeResolver.resolveDeclaration(statement.getIteratedValue().getType());
         if (iteratedType instanceof ArrayType) {
             var indexVar = builder().nextVariableIndex();
-            builder().createLoadConstant(Instances.longInstance(0));
+            builder().createLoadConstant(Instances.intInstance(0));
             builder().createStore(indexVar);
             var entry = builder().createNoop();
-            builder().createLoad(indexVar, Types.getLongType());
+            builder().createLoad(indexVar, Types.getIntType());
             builder().createLoad(iteratedVar, iteratedType);
             builder().createArrayLength();
             builder().createGe();
@@ -495,7 +495,7 @@ public class Generator extends VisitorBase {
             else
                 ifNode1 = null;
             builder().createLoad(iteratedVar, iteratedType);
-            builder().createLoad(indexVar, Types.getLongType());
+            builder().createLoad(indexVar, Types.getIntType());
             builder().createGetElement();
             builder().createStore(builder().getVariableIndex(statement.getIterationParameter()));
             builder().enterBlock(statement);
@@ -503,9 +503,9 @@ public class Generator extends VisitorBase {
                 statement.getBody().accept(this);
             var block = builder().exitBlock();
             var continuePoint = builder().createNoop();
-            builder().createLoad(indexVar, Types.getLongType());
-            builder().createLoadConstant(Instances.longOne());
-            builder().createLongAdd();
+            builder().createLoad(indexVar, Types.getIntType());
+            builder().createLoadConstant(Instances.intOne());
+            builder().createIntAdd();
             builder().createStore(indexVar);
             builder().createGoto(entry);
             var exit = builder().createNoop();

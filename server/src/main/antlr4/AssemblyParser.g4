@@ -382,6 +382,7 @@ typeArguments
 primitiveType
     : BOOLEAN
     | INT
+    | LONG
     | DOUBLE
     | STRING
     | PASSWORD

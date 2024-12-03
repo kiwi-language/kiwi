@@ -33,7 +33,7 @@ public class LongNegNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.LONG_NEGATE);
+        output.write(Bytecodes.LONG_NEG);
     }
 
     @Override

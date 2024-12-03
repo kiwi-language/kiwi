@@ -56,10 +56,10 @@ public class ShoppingTest extends TestCase {
         var productId = createProduct();
         var product = getObject(productId);
         var firstSku = product.getArray("skuList").getObject(0);
-        long originalAmount = firstSku.getLong("quantity");
+        int originalAmount = firstSku.getInt("quantity");
         callMethod(firstSku.id(), "decQuantity", List.of(1));
         var updatedFirstSku = getObject(firstSku.id());
-        long newAmount = updatedFirstSku.getLong("quantity");
+        int newAmount = updatedFirstSku.getInt("quantity");
         assertEquals(originalAmount - 1, newAmount);
         try {
             callMethod(firstSku.id(), "decQuantity", List.of(originalAmount));
@@ -77,15 +77,15 @@ public class ShoppingTest extends TestCase {
         var firstSku = product.getArray("skuList").getObject(0);
         var orderId = (String) callMethod(firstSku.id(), "buy", List.of(1, couponsIds));
         var order = getObject(orderId);
-        Assert.assertEquals(1L, order.getLong("quantity"));
+        Assert.assertEquals(1, order.getInt("quantity"));
         Assert.assertEquals(70.0, order.getDouble("price"), 0.0001);
         for (var couponId : couponsIds) {
             var coupon = getObject(couponId);
             Assert.assertEquals(shoppingTypeIds.couponUsedStateId(), coupon.getString("state"));
         }
         var reloadedFirstSkuDTO = getObject(firstSku.id());
-        var originalQuantity = firstSku.getLong("quantity");
-        var skuQuantity = reloadedFirstSkuDTO.getLong("quantity");
+        var originalQuantity = firstSku.getInt("quantity");
+        var skuQuantity = reloadedFirstSkuDTO.getInt("quantity");
         Assert.assertEquals(originalQuantity - 1, skuQuantity);
     }
 

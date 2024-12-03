@@ -7,43 +7,15 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class BitOrNode extends Node {
+public class IntToDoubleNode extends Node {
 
-    public BitOrNode(String name,
-                     @Nullable Node previous,
-                     @NotNull Code code) {
+    public IntToDoubleNode(@NotNull String name, @Nullable Node previous, @NotNull Code code) {
         super(name, null, previous, code);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitBitOrNode(this);
-    }
-
-    @Override
-    public void writeContent(CodeWriter writer) {
-        writer.write("bitor");
-    }
-
-    @Override
-    public int getStackChange() {
-        return -1;
-    }
-
-    @Override
-    public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.BIT_OR);
-    }
-
-    @Override
-    public int getLength() {
-        return 1;
-    }
-
-    @NotNull
-    @Override
-    public Type getType() {
-        return Types.getLongType();
+        return visitor.visitIntToDoubleNode(this);
     }
 
     @Override
@@ -51,4 +23,29 @@ public class BitOrNode extends Node {
         return true;
     }
 
+    @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("i2d");
+    }
+
+    @Override
+    public int getStackChange() {
+        return 0;
+    }
+
+    @Override
+    public void writeCode(CodeOutput output) {
+        output.write(Bytecodes.INT_TO_DOUBLE);
+    }
+
+    @Override
+    public int getLength() {
+        return 1;
+    }
+
+    @Override
+    @NotNull
+    public Type getType() {
+        return Types.getDoubleType();
+    }
 }

@@ -607,12 +607,12 @@ public class Assembler {
                     ordinalParam = new Parameter(
                             NncUtils.randomNonNegative(),
                             "_ordinal",
-                            PrimitiveType.longType,
+                            PrimitiveType.intType,
                             method
                     );
                 }
                 else
-                    ordinalParam.setType(PrimitiveType.longType);
+                    ordinalParam.setType(PrimitiveType.intType);
                 parameters.add(ordinalParam);
             }
             parameters.addAll(parseParameterList(formalParameterList, method, methodInfo, getCompilationUnit()));
@@ -863,7 +863,7 @@ public class Assembler {
                         Values.node(Nodes.load(1, Types.getStringType(), code));
                         Nodes.setField(StdField.enumName.get().getRef(), code);
                         Values.node(Nodes.this_(code));
-                        Values.node(Nodes.load(2, Types.getLongType(), code));
+                        Values.node(Nodes.load(2, Types.getIntType(), code));
                         Nodes.setField(StdField.enumOrdinal.get().getRef(), code);
                     }
                     processBlock(block, method.getCode());
@@ -906,9 +906,9 @@ public class Assembler {
             enterScope(new AsmMethod(classInfo, initializer));
             var code = initializer.getCode();
             Nodes.loadConstant(Instances.stringInstance(name), code);
-            Nodes.loadConstant(Instances.longInstance(enumConstantDef.getOrdinal()), code);
+            Nodes.loadConstant(Instances.intInstance(enumConstantDef.getOrdinal()), code);
             var types = NncUtils.merge(
-                    List.of(Types.getStringType(), Types.getLongType()),
+                    List.of(Types.getStringType(), Types.getIntType()),
                     NncUtils.map(argCtx, this::parseExpression)
             );
             var constructor = klass.getType().resolveMethod(klass.getName(), types, List.of(), false);
@@ -1111,6 +1111,8 @@ public class Assembler {
 
     private static PrimitiveType parsePrimitiveType(AssemblyParser.PrimitiveTypeContext primitiveType) {
         if (primitiveType.INT() != null)
+            return PrimitiveType.intType;
+        if (primitiveType.LONG() != null)
             return PrimitiveType.longType;
         else if(primitiveType.CHAR() != null)
             return PrimitiveType.charType;

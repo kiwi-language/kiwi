@@ -23,6 +23,10 @@ public class ClassInstanceWrap extends InstanceWrap {
         return (long) get(fieldName);
     }
 
+    public int getInt(String fieldName) {
+        return (int) get(fieldName);
+    }
+
     public double getDouble(String fieldName) {
         return (double) get(fieldName);
     }

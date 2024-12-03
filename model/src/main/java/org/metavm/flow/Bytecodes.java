@@ -44,17 +44,17 @@ public class Bytecodes {
     public static final int LONG_SUB = 49;
     public static final int LONG_MUL = 50;
     public static final int LONG_DIV = 51;
-    public static final int LEFT_SHIFT = 52;
-    public static final int RIGHT_SHIFT = 53;
-    public static final int UNSIGNED_RIGHT_SHIFT = 54;
-    public static final int BIT_OR = 55;
-    public static final int BIT_AND = 56;
-    public static final int BIT_XOR = 57;
+    public static final int LONG_SHIFT_LEFT = 52;
+    public static final int LONG_SHIFT_RIGHT = 53;
+    public static final int LONG_UNSIGNED_SHIFT_RIGHT = 54;
+    public static final int LONG_BIT_OR = 55;
+    public static final int LONG_BIT_AND = 56;
+    public static final int LONG_BIT_XOR = 57;
     public static final int AND = 58;
     public static final int OR = 59;
     public static final int BIT_NOT = 60;
     public static final int NOT = 61;
-    public static final int LONG_NEGATE = 62;
+    public static final int LONG_NEG = 62;
     public static final int LONG_REM = 63;
     public static final int EQ = 64;
     public static final int NE = 65;
@@ -88,8 +88,23 @@ public class Bytecodes {
     public static final int DOUBLE_MUL = 93;
     public static final int DOUBLE_DIV = 94;
     public static final int DOUBLE_REM = 95;
-    public static final int DOUBLE_NEGATE = 96;
-
+    public static final int DOUBLE_NEG = 96;
+    public static final int INT_TO_DOUBLE = 97;
+    public static final int DOUBLE_TO_INT = 98;
+    public static final int INT_TO_LONG = 99;
+    public static final int LONG_TO_INT = 100;
+    public static final int INT_ADD = 101;
+    public static final int INT_SUB = 102;
+    public static final int INT_MUL = 103;
+    public static final int INT_DIV = 104;
+    public static final int INT_REM = 105;
+    public static final int INT_NEG = 106;
+    public static final int INT_SHIFT_LEFT = 107;
+    public static final int INT_SHIFT_RIGHT = 108;
+    public static final int INT_UNSIGNED_SHIFT_RIGHT = 109;
+    public static final int INT_BIT_AND = 110;
+    public static final int INT_BIT_OR = 111;
+    public static final int INT_BIT_XOR = 112;
 
     private static final String[] names = new String[256];
 

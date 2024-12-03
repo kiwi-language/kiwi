@@ -296,6 +296,8 @@ public class ExpressionParser {
             return PrimitiveType.booleanType;
         if(ctx.STRING() != null)
             return PrimitiveType.stringType;
+        if (ctx.INT() != null)
+            return PrimitiveType.intType;
         if(ctx.LONG() != null)
             return PrimitiveType.longType;
         if(ctx.CHAR() != null)

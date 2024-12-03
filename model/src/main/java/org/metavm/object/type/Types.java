@@ -537,6 +537,7 @@ public class Types {
             return switch (primitiveType.getKind()) {
                 case BOOLEAN -> Boolean.class;
                 case LONG -> Long.class;
+                case INT -> Integer.class;
                 case STRING -> String.class;
                 case TIME -> Date.class;
                 case NULL -> Null.class;
@@ -586,11 +587,12 @@ public class Types {
                 return getNeverType();
             if (javaClass == String.class)
                 return getStringType();
-            if (javaClass == Long.class || javaClass == long.class
-                    || javaClass == Integer.class || javaClass == int.class
+            if (javaClass == Long.class || javaClass == long.class)
+                return getLongType();
+            else if( javaClass == Integer.class || javaClass == int.class
                     || javaClass == Short.class || javaClass == short.class
                     || javaClass == Byte.class || javaClass == byte.class)
-                return getLongType();
+                return getIntType();
             if (javaClass == char.class || javaClass == Character.class)
                 return getCharType();
             if (javaClass == Boolean.class || javaClass == boolean.class)
@@ -820,5 +822,9 @@ public class Types {
            t.forEachSuper(queue::offer);
        }
        throw new IllegalStateException("Klass " + type.getName() + " is not an inheritor of java.util.Iterable");
+    }
+
+    public static PrimitiveType getIntType() {
+        return PrimitiveType.intType;
     }
 }

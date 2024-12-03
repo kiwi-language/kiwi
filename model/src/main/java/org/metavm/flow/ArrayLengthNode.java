@@ -43,7 +43,7 @@ public class ArrayLengthNode extends Node {
     @NotNull
     @Override
     public Type getType() {
-        return Types.getLongType();
+        return Types.getIntType();
     }
 
     @Override

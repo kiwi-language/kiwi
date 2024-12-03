@@ -133,6 +133,7 @@ public interface TypeKey extends TypeOrTypeKey {
             case WireTypes.NEVER_TYPE -> new NeverTypeKey();
             case WireTypes.BOOLEAN_TYPE -> new PrimitiveTypeKey(PrimitiveKind.BOOLEAN.code());
             case WireTypes.LONG_TYPE -> new PrimitiveTypeKey(PrimitiveKind.LONG.code());
+            case WireTypes.INT_TYPE -> new PrimitiveTypeKey(PrimitiveKind.INT.code());
             case WireTypes.CHAR_TYPE -> new PrimitiveTypeKey(PrimitiveKind.CHAR.code());
             case WireTypes.DOUBLE_TYPE -> new PrimitiveTypeKey(PrimitiveKind.DOUBLE.code());
             case WireTypes.STRING_TYPE -> new PrimitiveTypeKey(PrimitiveKind.STRING.code());

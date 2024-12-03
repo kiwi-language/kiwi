@@ -55,7 +55,7 @@ public enum ErrorCode {
     NOT_A_PHYSICAL_INSTANCE(413, "Object '{}' is not a physical entity"),
     NOT_A_CLASS_INSTANCE(414, "Object '{}' is not a class entity"),
     DELETE_NON_DURABLE_INSTANCE(415, "Cannot delete non-persistent object"),
-    INCORRECT_INSTANCE_FIELD_VALUE(416, "Invalid value for field '{}': {}"),
+    INCORRECT_INSTANCE_FIELD_VALUE(416, "Invalid value '{}' for field {} with type {}"),
     FAILED_TO_RESOLVE_VALUE(417, "Failed to resolve value: {}"),
     FAILED_TO_RESOLVE_VALUE_OF_TYPE(418, "Failed to resolve value of type {}"),
     FAILED_TO_FORMAT_VALUE(419, "Failed to format value {}"),

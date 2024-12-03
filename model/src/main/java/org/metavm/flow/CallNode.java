@@ -19,7 +19,7 @@ public abstract class CallNode extends Node {
     @ChildEntity
     protected final ReadWriteArray<Type> capturedVariableTypes = addChild(new ReadWriteArray<>(Type.class), "capturedVariableTypes");
     @ChildEntity
-    protected final ReadWriteArray<Long> capturedVariableIndexes = addChild(new ReadWriteArray<>(Long.class), "capturedVariableIndexes");
+    protected final ReadWriteArray<Integer> capturedVariableIndexes = addChild(new ReadWriteArray<>(Integer.class), "capturedVariableIndexes");
 
     public CallNode(String name, Node prev, Code code, @NotNull FlowRef flowRef) {
         super(name, null, prev, code);
@@ -38,7 +38,7 @@ public abstract class CallNode extends Node {
         this.capturedVariableTypes.reset(capturedVariableTypes);
     }
 
-    public void setCapturedVariableIndexes(List<Long> capturedVariableIndexes) {
+    public void setCapturedVariableIndexes(List<Integer> capturedVariableIndexes) {
         this.capturedVariableIndexes.reset(capturedVariableIndexes);
     }
 
@@ -74,7 +74,7 @@ public abstract class CallNode extends Node {
     public void writeCallCode(CodeOutput output) {
         output.writeConstant(flowRef);
         output.writeShort(capturedVariableTypes.size());
-        for (Long capturedVariableIndex : capturedVariableIndexes) {
+        for (var capturedVariableIndex : capturedVariableIndexes) {
             output.writeShort(capturedVariableIndex.shortValue());
         }
         for (Type capturedVariableType : capturedVariableTypes) {

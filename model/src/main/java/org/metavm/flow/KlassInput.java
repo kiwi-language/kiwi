@@ -240,6 +240,7 @@ public class KlassInput extends MvInput {
         return switch (tag) {
             case WireTypes.NULL -> Instances.nullInstance();
             case WireTypes.LONG -> Instances.longInstance(readLong());
+            case WireTypes.INT -> Instances.intInstance(readInt());
             case WireTypes.DOUBLE -> Instances.doubleInstance(readDouble());
             case WireTypes.STRING -> Instances.stringInstance(readUTF());
             case WireTypes.CHAR -> Instances.charInstance(readChar());

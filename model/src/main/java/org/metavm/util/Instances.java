@@ -35,7 +35,7 @@ public class Instances {
     private static final Logger logger = LoggerFactory.getLogger(Instances.class);
 
     public static final Map<Class<?>, Type> JAVA_CLASS_TO_BASIC_TYPE = Map.of(
-            Integer.class, PrimitiveType.longType,
+            Integer.class, PrimitiveType.intType,
             Long.class, PrimitiveType.longType,
             Character.class, PrimitiveType.charType,
             Double.class, PrimitiveType.doubleType,
@@ -50,7 +50,7 @@ public class Instances {
     public static final Map<Type, Class<?>> BASIC_TYPE_JAVA_CLASS;
 
     public static final Map<Class<?>, Class<?>> JAVA_CLASS_TO_INSTANCE_CLASS = Map.ofEntries(
-            Map.entry(Integer.class, LongValue.class),
+            Map.entry(Integer.class, IntValue.class),
             Map.entry(Long.class, LongValue.class),
             Map.entry(Double.class, DoubleValue.class),
             Map.entry(Boolean.class, BooleanValue.class),
@@ -86,18 +86,6 @@ public class Instances {
         return instance1 instanceof TimeValue || instance2 instanceof TimeValue;
     }
 
-    public static boolean isAllIntegers(Value instance1, Value instance2) {
-        return isInteger(instance1) && isInteger(instance2);
-    }
-
-    public static boolean isAllNumbers(Value instance1, Value instance2) {
-        return isNumber(instance1) && isNumber(instance2);
-    }
-
-    public static boolean isNumber(Value instance) {
-        return isInteger(instance) || instance instanceof DoubleValue;
-    }
-
     public static <T extends Reference> List<T> sort(List<T> instances, boolean desc) {
         if (desc)
             instances.sort((i1, i2) -> NncUtils.compareId(i2.tryGetTreeId(), i1.tryGetTreeId()));
@@ -119,10 +107,6 @@ public class Instances {
             return instance1.getId().compareTo(instance2.getId());
         else
             return Integer.compare(instance1.getSeq(), instance2.getSeq());
-    }
-
-    private static boolean isInteger(Value instance) {
-        return instance instanceof LongValue;
     }
 
     public static boolean isAnyNull(Value... instances) {
@@ -156,8 +140,10 @@ public class Instances {
     public static @Nullable PrimitiveValue trySerializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
         if (value == null)
             return Instances.nullInstance();
-        if (ValueUtils.isInteger(value))
+        if (ValueUtils.isLong(value))
             return Instances.longInstance(((Number) value).longValue(), getTypeFunc);
+        if(ValueUtils.isInteger(value))
+            return Instances.intInstance(((Number) value).intValue());
         if (ValueUtils.isFloat(value))
             return Instances.doubleInstance(((Number) value).doubleValue(), getTypeFunc);
         if (value instanceof Boolean bool)
@@ -231,32 +217,37 @@ public class Instances {
     @SuppressWarnings("unchecked")
     public static <T> T deserializePrimitive(PrimitiveValue instance, Class<T> javaClass) {
         javaClass = (Class<T>) ReflectionUtils.getBoxedClass(javaClass);
-        if (instance.isNull()) {
-            return null;
-        }
-        if (instance instanceof LongValue longInstance) {
-            if (javaClass == int.class || javaClass == Integer.class)
-                return (T) Integer.valueOf(longInstance.getValue().intValue());
-            else if (javaClass == short.class || javaClass == Short.class)
-                return (T) Short.valueOf(longInstance.getValue().shortValue());
-            else if (javaClass == byte.class || javaClass == Byte.class)
-                return (T) Byte.valueOf(longInstance.getValue().byteValue());
-            else
+        switch (instance) {
+            case NullValue ignored -> {
+                return null;
+            }
+            case IntValue intValue -> {
+                if (javaClass == short.class || javaClass == Short.class)
+                    return (T) Short.valueOf(intValue.getValue().shortValue());
+                else if (javaClass == byte.class || javaClass == Byte.class)
+                    return (T) Byte.valueOf(intValue.getValue().byteValue());
+                else
+                    return javaClass.cast(intValue.getValue());
+            }
+            case LongValue longInstance -> {
                 return javaClass.cast(longInstance.getValue());
+            }
+            case DoubleValue doubleInstance -> {
+                if (javaClass == float.class || javaClass == Float.class)
+                    return (T) Float.valueOf(doubleInstance.getValue().floatValue());
+                else
+                    return javaClass.cast(doubleInstance.getValue());
+            }
+            case PasswordValue passwordInstance -> {
+                return javaClass.cast(new Password(passwordInstance));
+            }
+            case TimeValue timeInstance -> {
+                return javaClass.cast(new Date(timeInstance.getValue()));
+            }
+            default -> {
+                return javaClass.cast(instance.getValue());
+            }
         }
-        if (instance instanceof DoubleValue doubleInstance) {
-            if (javaClass == float.class || javaClass == Float.class)
-                return (T) Float.valueOf(doubleInstance.getValue().floatValue());
-            else if (javaClass == double.class || javaClass == Double.class)
-                return javaClass.cast(doubleInstance.getValue());
-        }
-        if (instance instanceof PasswordValue passwordInstance) {
-            return javaClass.cast(new Password(passwordInstance));
-        }
-        if (instance instanceof TimeValue timeInstance) {
-            return javaClass.cast(new Date(timeInstance.getValue()));
-        }
-        return javaClass.cast(instance.getValue());
     }
 
     public static PrimitiveValue primitiveInstance(Object value) {
@@ -264,7 +255,7 @@ public class Instances {
             return nullInstance();
         }
         if (value instanceof Integer i) {
-            return longInstance(i);
+            return intInstance(i);
         }
         if (value instanceof Long l) {
             return longInstance(l);
@@ -289,6 +280,10 @@ public class Instances {
 
     public static LongValue longInstance(long value) {
         return new LongValue(value, Types.getLongType());
+    }
+
+    public static IntValue intOne() {
+        return intInstance(1);
     }
 
     public static LongValue longOne() {
@@ -408,14 +403,6 @@ public class Instances {
         return new StringValue(value, Types.getStringType());
     }
 
-    public static LongValue createLong(long value) {
-        return new LongValue(value, Types.getLongType());
-    }
-
-    public static DoubleValue createDouble(double value) {
-        return new DoubleValue(value, Types.getDoubleType());
-    }
-
     public static BooleanValue createBoolean(boolean b) {
         return b ? trueInstance() : falseInstance();
     }
@@ -424,24 +411,8 @@ public class Instances {
         return new ArrayType(AnyType.instance, ArrayKind.READ_WRITE);
     }
 
-    public static ArrayInstance createArray() {
-        return createArray(List.of());
-    }
-
     public static ArrayInstance createArray(List<Value> instances) {
         return new ArrayInstance(getAnyArrayType(), instances);
-    }
-
-    public static PrimitiveType getPrimitiveType(Class<?> javaClass) {
-        return getPrimitiveType(javaClass, defaultGetTypeFunc());
-    }
-
-    public static PrimitiveType getPrimitiveType(Class<?> javaClass, Function<Class<?>, Type> getTypeFunc) {
-        return NncUtils.cast(
-                PrimitiveType.class,
-                getBasicType(javaClass, getTypeFunc),
-                "Can not get a primitive type for java class '" + javaClass + "'. "
-        );
     }
 
     public static Type getBasicType(Class<?> javaClass) {
@@ -450,7 +421,9 @@ public class Instances {
 
     public static Type getBasicType(Class<?> javaClass, Function<Class<?>, Type> getTypeFunc) {
         javaClass = ReflectionUtils.getBoxedClass(javaClass);
-        if (javaClass == Long.class || javaClass == Integer.class)
+        if (javaClass == Integer.class)
+            return Types.getIntType();
+        if (javaClass == Long.class)
             return Types.getLongType();
         if (javaClass == Double.class || javaClass == Float.class)
             return Types.getDoubleType();
@@ -682,7 +655,7 @@ public class Instances {
                 if(referent instanceof ClassInstance object && object.getKlass() == enumClass && !sft.isEnumConstant(object.getReference())) {
                     var r1 = object.getReference();
                     object.setField(StdField.enumName.get(), Instances.stringInstance(""));
-                    object.setField(StdField.enumOrdinal.get(), Instances.longInstance(-1L));
+                    object.setField(StdField.enumOrdinal.get(), Instances.intInstance(-1));
                     var ec = mapEnumConstant(r1 ,enumClass, context);
                     return new RedirectingReference(referent, ec, commit);
                 }
@@ -723,7 +696,7 @@ public class Instances {
         var found = klass.findMethodByNameAndParamTypes(initMethodName, List.of());
         if(found != null || !includeFromEnum)
             return found;
-        return klass.findMethodByNameAndParamTypes(initMethodName, List.of(Types.getStringType(), Types.getLongType()));
+        return klass.findMethodByNameAndParamTypes(initMethodName, List.of(Types.getStringType(), Types.getIntType()));
     }
 
     public static @Nullable Value getDefaultValue(Field field, IEntityContext context) {
@@ -747,7 +720,7 @@ public class Instances {
         if (initMethod != null) {
             if(initMethod.getParameters().isEmpty())
                 return Flows.invoke(initMethod.getRef(), instance, List.of(), context);
-            else if(initMethod.getParameterTypes().equals(List.of(Types.getStringType(), Types.getLongType()))){
+            else if(initMethod.getParameterTypes().equals(List.of(Types.getStringType(), Types.getIntType()))){
                 return Flows.invoke(
                         initMethod.getRef(),
                         instance,
@@ -883,6 +856,8 @@ public class Instances {
     }
 
     public static int compare(Value value1, Value value2, CallContext callContext) {
+        if(value1 instanceof IntValue i1 && value2 instanceof IntValue i2)
+            return Integer.compare(i1.getValue(), i2.getValue());
         if(value1 instanceof LongValue l1 && value2 instanceof LongValue l2)
             return Long.compare(l1.getValue(), l2.getValue());
         if(value1 instanceof DoubleValue d1 && value2 instanceof DoubleValue d2)
@@ -900,7 +875,7 @@ public class Instances {
         else if(value1 instanceof Reference r1 && value2 instanceof Reference r2)
             return compare(r1.resolve(), r2.resolve(), callContext);
         else
-            throw new IllegalArgumentException("Cannot get hash code for value: " + value1);
+            throw new IllegalArgumentException("Cannot compare values " + value1 + " and " + value2);
     }
 
     public static int compare(Instance instance1, Instance instance2, CallContext callContext) {
@@ -908,8 +883,8 @@ public class Instances {
             var comparableType = clsInst1.getType().findAncestorByKlass(StdKlass.comparable.get());
             if(comparableType != null && comparableType.getTypeArguments().get(0).isInstance(clsInst2.getReference())) {
                 var compareToMethod = comparableType.getMethod(StdMethod.comparableCompareTo.get());
-                var r = (LongValue) requireNonNull(Flows.invokeVirtual(compareToMethod, clsInst1, List.of(clsInst2.getReference()), callContext));
-                return r.getValue().intValue();
+                var r = (IntValue) requireNonNull(Flows.invokeVirtual(compareToMethod, clsInst1, List.of(clsInst2.getReference()), callContext));
+                return r.value;
             }
         }
         throw new InternalException("Cannot compare " + instance1 + " with " + instance2);
@@ -929,7 +904,7 @@ public class Instances {
             var method = clsInst.getKlass().getHashCodeMethod();
             if(method != null) {
                 var ret = Flows.invoke(method.getRef(), clsInst, List.of(), callContext);
-                return ((LongValue) requireNonNull(ret)).getValue().intValue();
+                return ((IntValue) requireNonNull(ret)).value;
             }
             if(clsInst.isValue()) {
                 var ref = new Object() {
@@ -1012,7 +987,7 @@ public class Instances {
     }
 
     public static int toInt(@Nullable Value value) {
-        return ((LongValue) requireNonNull(value)).getValue().intValue();
+        return ((IntValue) requireNonNull(value)).value;
     }
 
     public static boolean toBoolean(@Nullable Value value) {
@@ -1069,9 +1044,9 @@ public class Instances {
     public static Value fromJavaValue(Object value, Supplier<Value> defaultSupplier) {
         return switch (value) {
             case Long l -> longInstance(l);
-            case Integer i -> longInstance(i);
-            case Short s -> longInstance(s);
-            case Byte b -> longInstance(b);
+            case Integer i -> intInstance(i);
+            case Short s -> intInstance(s);
+            case Byte b -> intInstance(b);
             case Double d -> doubleInstance(d);
             case Float f -> doubleInstance(f);
             case Character c -> charInstance(c);
@@ -1093,14 +1068,13 @@ public class Instances {
     public static Object toJavaValue(Value value, Class<?> javaType) {
         return switch (value) {
             case NullValue ignored -> null;
-            case LongValue longValue -> {
-                var v = longValue.getValue();
+            case LongValue longValue -> longValue.value;
+            case IntValue intValue -> {
+                var v = intValue.getValue();
                 if(javaType == byte.class || javaType == Byte.class)
                     yield v.byteValue();
                 if(javaType == short.class || javaType == Short.class)
                     yield v.shortValue();
-                if(javaType == int.class || javaType == Integer.class)
-                    yield v.intValue();
                 yield v;
             }
             case DoubleValue doubleValue -> {
@@ -1137,4 +1111,7 @@ public class Instances {
         };
     }
 
+    public static IntValue intInstance(int i) {
+        return new IntValue(i, PrimitiveType.intType);
+    }
 }

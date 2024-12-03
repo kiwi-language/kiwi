@@ -395,35 +395,31 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitLeftShiftNode(LeftShiftNode node) {
+    public R visitLongShiftLeftNode(LongShiftLeftNode node) {
         return visitNode(node);
     }
 
-    public R visitRightShiftNode(RightShiftNode node) {
+    public R visitLongShiftRightNode(LongShiftRightNode node) {
         return visitNode(node);
     }
 
-    public R visitUnsignedRightShift(UnsignedRightShiftNode node) {
+    public R visitLongUnsignedShiftRightNode(LongUnsignedShiftRightNode node) {
         return visitNode(node);
     }
 
-    public R visitBitAndNode(BitAndNode node) {
+    public R visitLongBitAndNode(LongBitAndNode node) {
         return visitNode(node);
     }
 
-    public R visitBitOrNode(BitOrNode node) {
+    public R visitLongBitOrNode(LongBitOrNode node) {
         return visitNode(node);
     }
 
-    public R visitBitXorNode(BitXorNode node) {
+    public R visitLongBitXorNode(LongBitXorNode node) {
         return visitNode(node);
     }
 
     public R visitLongNegNode(LongNegNode node) {
-        return visitNode(node);
-    }
-
-    public R visitBitNotNode(BitNotNode node) {
         return visitNode(node);
     }
 
@@ -604,6 +600,70 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitDoubleNegNode(DoubleNegNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntAddNode(IntAddNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntSubNode(IntSubNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntMulNode(IntMulNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntDivNode(IntDivNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntRemNode(IntRemNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntNegNode(IntNegNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntToLongNode(IntToLongNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLongToIntNode(LongToIntNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntToDoubleNode(IntToDoubleNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDoubleToIntNode(DoubleToIntNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntShiftLeftNod(IntShiftLeftNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntShiftRightNode(IntShiftRightNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntUnsignedShiftRight(IntUnsignedShiftRightNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntBitAndNode(IntBitAndNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntBitOrNode(IntBitOrNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntBitXorNode(IntBitXorNode node) {
         return visitNode(node);
     }
 }

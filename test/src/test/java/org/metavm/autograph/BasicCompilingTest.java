@@ -104,6 +104,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processIndexSelect();
             processGenericObjectIO();
             processPrimitiveConversion();
+            processInt();
         });
     }
 
@@ -133,7 +134,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var result = TestUtils.doInTransaction(() ->
                 apiClient.callMethod("capturedtypes.BoundCaptureFoo", "test", List.of())
         );
-        Assert.assertEquals(-1L ,result);
+        Assert.assertEquals(-1 ,result);
     }
 
     private void processGenericOverride() {
@@ -319,7 +320,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var foo1Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("sorting.ComparableFoo", Map.of("seq", 1)));
         var foo2Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("sorting.ComparableFoo", Map.of("seq", 2)));
         var cmp = callMethod(foo1Id, "compareTo", List.of(foo2Id));
-        Assert.assertEquals(-1L, cmp);
+        Assert.assertEquals(-1, cmp);
         var labId = TestUtils.doInTransaction(() -> apiClient.saveInstance("sorting.SortLab", Map.of(
                 "foos", List.of(foo2Id, foo1Id)
         )));
@@ -394,7 +395,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         }
         var fooId = TestUtils.doInTransaction(() -> apiClient.saveInstance("defaultmethod.Foo", Map.of()));
         var result = callMethod(fooId, "foo", List.of());
-        Assert.assertEquals(0L, result);
+        Assert.assertEquals(0, result);
     }
 
     private void processBranching() {
@@ -429,19 +430,19 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processLambda() {
-        var r = (Long) TestUtils.doInTransaction(
+        var r = (Integer) TestUtils.doInTransaction(
                 () -> apiClient.callMethod("lambda.LambdaFoo", "compare", List.of(1, 2))
         );
         Assert.assertNotNull(r);
-        Assert.assertEquals(-1L, r.longValue());
+        Assert.assertEquals(-1, r.intValue());
     }
 
     private void processTemplateMethod() {
-        var r = (Long) TestUtils.doInTransaction(() ->
+        var r = (Integer) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("templatemethod.TemplateMethodFoo", "compare", List.of("s1", "s2"))
         );
         Assert.assertNotNull(r);
-        Assert.assertEquals(-1L, r.longValue());
+        Assert.assertEquals(-1, r.intValue());
     }
 
     private void processAnonymousClass() {
@@ -485,8 +486,8 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processMyCollection() {
         var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("mycollection.MyCollection<string>", Map.of()));
-        var size = (long) callMethod(id, "size", List.of());
-        Assert.assertEquals(0L, size);
+        var size = (int) callMethod(id, "size", List.of());
+        Assert.assertEquals(0, size);
     }
 
     private void processBreak() {
@@ -505,23 +506,23 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processContinue() {
-        var index = (long) TestUtils.doInTransaction(() -> apiClient.callMethod(
+        var index = (int) TestUtils.doInTransaction(() -> apiClient.callMethod(
                 "continue_.ContinueFoo", "oddIndexOf",
                 List.of(List.of(1,1,2,2,3,3), 2)
         ));
-        Assert.assertEquals(3L, index);
+        Assert.assertEquals(3, index);
     }
 
     private void processDoWhile() {
-        var sum = (long) TestUtils.doInTransaction(() ->
+        var sum = (int) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("dowhile.DoWhileFoo", "sum", List.of(1, 5))
         );
-        Assert.assertEquals(15L, sum);
+        Assert.assertEquals(15, sum);
 
-        var sum1 = (long) TestUtils.doInTransaction(() ->
+        var sum1 = (int) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("dowhile.DoWhileFoo", "sum", List.of(1, 1))
         );
-        Assert.assertEquals(1L, sum1);
+        Assert.assertEquals(1, sum1);
     }
 
     private void processInnerExtendsOwner() {
@@ -558,11 +559,11 @@ public class BasicCompilingTest extends CompilerTestBase {
         var v1 = callMethod(id, "get", List.of(0));
         Assert.assertEquals("metavm", v1);
 
-        var v2 = (long) callMethod(id, "getInt", List.of(0));
-        Assert.assertEquals(0L, v2);
+        var v2 = (int) callMethod(id, "getInt", List.of(0));
+        Assert.assertEquals(0, v2);
         callMethod(id, "setInt", List.of(0, 1));
-        var v3 = (long) callMethod(id, "getInt", List.of(0));
-        Assert.assertEquals(1L, v3);
+        var v3 = (int) callMethod(id, "getInt", List.of(0));
+        Assert.assertEquals(1, v3);
 
         var v4 = callMethod(id, "getMulti", List.of(0, 0));
         Assert.assertNull(v4);
@@ -573,7 +574,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var v6 = callMethod(id, "getInitialized", List.of(0, 0));
         Assert.assertEquals("metavm", v6);
         var v7 = callMethod(id, "getInitialized", List.of(2, 2));
-        Assert.assertEquals(6L, v7);
+        Assert.assertEquals(6, v7);
     }
 
     private void processArrayUtils() {
@@ -638,21 +639,21 @@ public class BasicCompilingTest extends CompilerTestBase {
         var v = TestUtils.doInTransaction(
                 () -> apiClient.callMethod("stdstatic.StdStaticFoo", "get", List.of())
         );
-        Assert.assertEquals((long) Spliterator.ORDERED, v);
+        Assert.assertEquals(Spliterator.ORDERED, v);
     }
 
     private void processMax() {
-        var max = (long) TestUtils.doInTransaction(() ->
+        var max = (int) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("utils.UtilsFoo", "max", List.of(1,2))
         );
-        Assert.assertEquals(2L, max);
+        Assert.assertEquals(2, max);
     }
 
     private void processCheckIndex() {
-        var index = (long) TestUtils.doInTransaction(() ->
+        var index = (int) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("utils.UtilsFoo", "checkIndex", List.of(0, 1))
         );
-        Assert.assertEquals(0L, index);
+        Assert.assertEquals(0, index);
         try {
             TestUtils.doInTransaction(() ->
                     apiClient.callMethod("utils.UtilsFoo", "checkIndex", List.of(-1, 1))
@@ -698,10 +699,10 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processCatchUnchecked() {
         var v0 = TestUtils.doInTransaction(() -> apiClient.callMethod("trycatch.UncheckedExceptionFoo", "get",
                 List.of(1)));
-        Assert.assertEquals(1L, v0);
+        Assert.assertEquals(1, v0);
         var v1 = TestUtils.doInTransaction(() -> apiClient.callMethod("trycatch.UncheckedExceptionFoo", "get",
                 List.of(-1)));
-        Assert.assertEquals(1L, v1);
+        Assert.assertEquals(1, v1);
     }
 
     private void processCaptureTypeCast() {
@@ -736,10 +737,10 @@ public class BasicCompilingTest extends CompilerTestBase {
         var id = TestUtils.doInTransaction(() ->
                 apiClient.saveInstance("assignment.CompoundAssignmentFoo", Map.of("size", 4))
         );
-        var s = (long) TestUtils.doInTransaction(() ->
+        var s = (int) TestUtils.doInTransaction(() ->
                 apiClient.callMethod(id, "decrementSize", List.of(1))
         );
-        Assert.assertEquals(3L, s);
+        Assert.assertEquals(3, s);
     }
 
     private void processDynamicOverride() {
@@ -748,7 +749,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processPrimitiveStaticFields() {
-        var v = (long) TestUtils.doInTransaction(() ->
+        var v = (int) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("statics.PrimitiveStaticFieldsFoo", "getMaxInt", List.of()));
         Assert.assertEquals(Integer.MAX_VALUE, v);
     }
@@ -762,8 +763,8 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processObjects() {
         Assert.assertEquals(
-                0L,
-                (long) callMethod("utils.ObjectsFoo", "checkFromIndexSize", List.of(0, 5, 10))
+                0,
+                (int) callMethod("utils.ObjectsFoo", "checkFromIndexSize", List.of(0, 5, 10))
         );
         try {
             callMethod("utils.ObjectsFoo", "checkFromIndexSize", List.of(0, 10, 5));
@@ -779,9 +780,9 @@ public class BasicCompilingTest extends CompilerTestBase {
         var foo = getObject(id);
         Assert.assertEquals("001", foo.getString("id"));
         var elements = foo.getArray("elements");
-        Assert.assertEquals(List.of(1L,2L,3L), elements.toList());
+        Assert.assertEquals(List.of(1,2,3), elements.toList());
         var modCount = foo.get("modCount");
-        Assert.assertEquals(0L, modCount);
+        Assert.assertEquals(0, modCount);
         var id2 = saveInstance("objectio.CustomObjectIOFoo",
                 Map.of("id", "002", "elements", List.of()));
         callMethod(id, "add", List.of(id2));
@@ -797,10 +798,10 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processUnaryAndPrefix() {
         var klass = "assignment.UnaryAndPrefixFoo";
-        Assert.assertEquals(0L, callMethod(klass, "getAndIncrement", List.of()));
-        Assert.assertEquals(2L, callMethod(klass, "incrementAndGet", List.of()));
-        Assert.assertEquals(2L, callMethod(klass, "getAndDecrement", List.of()));
-        Assert.assertEquals(0L, callMethod(klass, "decrementAndGet", List.of()));
+        Assert.assertEquals(0, callMethod(klass, "getAndIncrement", List.of()));
+        Assert.assertEquals(2, callMethod(klass, "incrementAndGet", List.of()));
+        Assert.assertEquals(2, callMethod(klass, "getAndDecrement", List.of()));
+        Assert.assertEquals(0, callMethod(klass, "decrementAndGet", List.of()));
     }
 
     private void processFieldAssignment() {
@@ -808,7 +809,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var id = saveInstance(className, Map.of());
         callMethod(className, "setValue", List.of(id, 1));
         var foo = getObject(id);
-        Assert.assertEquals(1L, foo.get("value"));
+        Assert.assertEquals(1, foo.get("value"));
     }
 
     private void processLocalClass() {
@@ -826,7 +827,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processAnonymousClassSuperclassField() {
         var className = "anonymousclass.SuperclassFieldFoo";
-        Assert.assertEquals(0L, callMethod(className, "test", List.of()));
+        Assert.assertEquals(0, callMethod(className, "test", List.of()));
     }
 
     private void processBitNot() {
@@ -861,24 +862,24 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processModifyVariableInWhileCondition() {
         var klassName = "loops.ModifyVariableInWhileCondition";
-        Assert.assertEquals(100L, (long) callMethod(klassName, "test", List.of(200)));
+        Assert.assertEquals(100, (int) callMethod(klassName, "test", List.of(200)));
     }
 
     private void processNullableLoopField() {
         var id = saveInstance("loops.NullableLoopField", Map.of("values", List.of(1,2,3)));
-        Assert.assertEquals(6L, callMethod(id, "sum", List.of()));
+        Assert.assertEquals(6, callMethod(id, "sum", List.of()));
     }
 
     private void processMultiLevelInheritance() {
         var klassName = "objectio.MultiLevelInheritance";
         var id = saveInstance(klassName, Map.of());
-        Assert.assertEquals(1L, (long) callMethod(id, "getModCount", List.of()));
+        Assert.assertEquals(1, (int) callMethod(id, "getModCount", List.of()));
     }
 
     private void processInnerCallsExternal() {
         var klassName = "innerclass.InnerCallsExternal";
         Assert.assertEquals(
-                1L,
+                1,
                 callMethod(klassName, "test", List.of(1))
         );
     }
@@ -887,25 +888,25 @@ public class BasicCompilingTest extends CompilerTestBase {
         var klassName = "utils.PrimitiveUtilMethods";
         var l = NncUtils.random();
         Assert.assertEquals(
-                (long) Long.numberOfLeadingZeros(l),
+                Long.numberOfLeadingZeros(l),
                 callMethod(klassName, "numberOfLeadingZeros", List.of(l))
         );
         Assert.assertEquals(
-                (long) Long.numberOfTrailingZeros(l),
+                Long.numberOfTrailingZeros(l),
                 callMethod(klassName, "numberOfTrailingZeros", List.of(l))
         );
         var i = NncUtils.randomInt(Integer.MAX_VALUE);
         Assert.assertEquals(
-                (long) Integer.numberOfLeadingZeros(i),
+                Integer.numberOfLeadingZeros(i),
                 callMethod(klassName, "intNumberOfLeadingZeros", List.of(i))
         );
         Assert.assertEquals(
-                (long) Integer.numberOfTrailingZeros(i),
+                Integer.numberOfTrailingZeros(i),
                 callMethod(klassName, "intNumberOfTrailingZeros", List.of(i))
         );
         var f = (float) i;
         Assert.assertEquals(
-                (long) Float.floatToRawIntBits(f),
+                Float.floatToRawIntBits(f),
                 callMethod(klassName, "floatToRawIntBits", List.of(f))
         );
         var d = (double) l;
@@ -918,7 +919,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processMultiLevelInnerClass() {
         var className = "innerclass.MultiLevelInnerFoo";
         Assert.assertEquals(
-                1L,
+                1,
                 callMethod(className, "test", List.of(1))
         );
     }
@@ -926,7 +927,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processReturnInLambda() {
         var className = "lambda.ReturnInLambda";
         Assert.assertEquals(
-                -1L,
+                -1,
                 callMethod(className, "test", List.of("a", "b"))
         );
     }
@@ -951,7 +952,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processCapturedTypesInFieldInitializer() {
         var klassName = "capturedtypes.CapturedTypesInFieldInitializer";
         Assert.assertEquals(
-                -1L,
+                -1,
                 callMethod(klassName, "test", List.of("a", "b"))
         );
     }
@@ -959,13 +960,13 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processNewObject() {
         var klassName = "std.NewObjectFoo";
         Assert.assertNotNull(callMethod(klassName, "newObject", List.of()));
-        Assert.assertEquals(0L, callMethod(klassName, "testNewObjectArray", List.of()));
-        Assert.assertEquals(1L, callMethod(klassName, "testNewAnonymous", List.of()));
+        Assert.assertEquals(0, callMethod(klassName, "testNewObjectArray", List.of()));
+        Assert.assertEquals(1, callMethod(klassName, "testNewAnonymous", List.of()));
     }
 
     private void processLoopWithinTry() {
         var className = "loops.LoopWithinTry";
-        Assert.assertEquals(15L, callMethod(className, "sum", List.of(5)));
+        Assert.assertEquals(15, callMethod(className, "sum", List.of(5)));
     }
 
     private void processBooleanConditional() {
@@ -978,7 +979,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var fooClassName = className + ".Foo";
         var foo = saveInstance(fooClassName, Map.of("value", 1));
         Assert.assertEquals(
-                1L, callMethod(className, "test", List.of(foo))
+                1, callMethod(className, "test", List.of(foo))
         );
     }
 
@@ -1027,12 +1028,12 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processInnerClassExtension() {
-        var sum = (long) callMethod(
+        var sum = callMethod(
                 "innerclass.InnerClassExtension",
                 "sum",
                 List.of(1,2,3,4)
         );
-        Assert.assertEquals(10L, sum);
+        Assert.assertEquals(10, sum);
     }
 
     private void processIndexSelect() {
@@ -1068,6 +1069,11 @@ public class BasicCompilingTest extends CompilerTestBase {
                 (double) callMethod(className, "getValue", List.of(0)),
                 0.001
         );
+    }
+
+    private void processInt() {
+        var className = "primitives.IntFoo";
+        Assert.assertEquals(3, (int) callMethod(className, "add", List.of(1 ,2)));
     }
 
 }

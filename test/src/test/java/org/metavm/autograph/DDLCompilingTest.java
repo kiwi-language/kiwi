@@ -54,7 +54,7 @@ public class DDLCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(0.14, rate);
                 var errors = productKlass.getErrors();
                 Assert.assertEquals(0, errors.size());
-                Assert.assertEquals(2L, callMethod(ref.derivedInstanceId.toString(), "getValue2", List.of()));
+                Assert.assertEquals(2, callMethod(ref.derivedInstanceId.toString(), "getValue2", List.of()));
             }
         });
         compile(DDL4_SOURCE_ROOT);

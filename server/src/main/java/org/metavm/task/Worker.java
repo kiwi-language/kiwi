@@ -90,7 +90,7 @@ public class Worker extends EntityContextFactoryAware {
             var tasks = context.query(
                     new EntityIndexQuery<>(
                             ShadowTask.IDX_EXECUTOR_IP_START_AT,
-                            new EntityIndexKey(List.of(NetworkUtils.localIP, 0)),
+                            new EntityIndexKey(List.of(NetworkUtils.localIP, 0L)),
                             new EntityIndexKey(List.of(NetworkUtils.localIP, System.currentTimeMillis())),
                             false,
                             16

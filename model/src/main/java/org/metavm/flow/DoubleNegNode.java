@@ -33,7 +33,7 @@ public class DoubleNegNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.DOUBLE_NEGATE);
+        output.write(Bytecodes.DOUBLE_NEG);
     }
 
     @Override

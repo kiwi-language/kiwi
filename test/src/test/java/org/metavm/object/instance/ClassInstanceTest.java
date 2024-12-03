@@ -60,8 +60,8 @@ public class ClassInstanceTest extends TestCase {
                 .build();
         type.setTitleField(titleField);
         Field statusField = FieldBuilder
-                .newBuilder("status", type, Types.getLongType())
-                .defaultValue(Instances.longInstance(0L))
+                .newBuilder("status", type, Types.getIntType())
+                .defaultValue(Instances.intInstance(0))
                 .state(MetadataState.READY)
                 .build();
         ClassInstance instance = ClassInstance.create(

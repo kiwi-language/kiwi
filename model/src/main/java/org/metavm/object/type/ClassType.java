@@ -166,7 +166,7 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
     }
 
     public List<ClassType> getInterfaces() {
-        return NncUtils.map(klass.getInterfaceIndexes(), idx -> getTypeMetadata().getClasType(idx.intValue()));
+        return NncUtils.map(klass.getInterfaceIndexes(), idx -> getTypeMetadata().getClasType(idx));
     }
 
     @Override

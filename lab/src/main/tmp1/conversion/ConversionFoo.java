@@ -36,4 +36,16 @@ public class ConversionFoo {
         return () -> value;
     }
 
+    public static boolean isGreaterThan(long v1, int v2) {
+        return v1 > v2;
+    }
+
+    public static boolean equals(long v1, int v2) {
+        return v1 == v2;
+    }
+
+    public static boolean isZero(long v) {
+        return v == 0;
+    }
+
 }

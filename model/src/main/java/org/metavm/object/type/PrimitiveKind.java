@@ -7,44 +7,19 @@ import javax.annotation.Nullable;
 import java.util.Date;
 
 public enum PrimitiveKind {
+    INT(10, "int", Integer.class, IntValue.class, TypeCategory.INT) {
+        @Override
+        public Value getDefaultValue() {
+            return Instances.intInstance(0);
+        }
+    },
     LONG(1, "long", Long.class, LongValue.class, TypeCategory.LONG) {
-        @Override
-        public boolean isConvertibleFrom(PrimitiveKind kind) {
-            return kind == DOUBLE || kind == CHAR;
-        }
-
-        @Override
-        public Value convert(Value instance) {
-            if (instance instanceof DoubleValue d)
-                return Instances.longInstance(d.getValue().longValue());
-            if(instance instanceof CharValue c)
-                return Instances.longInstance(c.getValue());
-            else
-                throw new IllegalArgumentException();
-        }
-
         @Override
         public Value getDefaultValue() {
             return Instances.longInstance(0L);
         }
     },
     DOUBLE(2, "double", Double.class, DoubleValue.class, TypeCategory.DOUBLE) {
-        @Override
-        public boolean isConvertibleFrom(PrimitiveKind kind) {
-            return kind == LONG || kind == CHAR;
-        }
-
-        @Override
-        public Value convert(Value instance) {
-            if (instance instanceof LongValue l)
-                return Instances.doubleInstance(l.getValue().doubleValue());
-            if(instance instanceof CharValue c) {
-                return Instances.doubleInstance(c.getValue());
-            }
-            else
-                throw new IllegalArgumentException();
-        }
-
         @Override
         public Value getDefaultValue() {
             return Instances.doubleInstance(0.0);
@@ -127,14 +102,6 @@ public enum PrimitiveKind {
 
     void setType(PrimitiveType type) {
         this.type = type;
-    }
-
-    public boolean isConvertibleFrom(PrimitiveKind kind) {
-        return false;
-    }
-
-    public Value convert(Value instance) {
-        throw new UnsupportedOperationException();
     }
 
     public @Nullable Value getDefaultValue() {

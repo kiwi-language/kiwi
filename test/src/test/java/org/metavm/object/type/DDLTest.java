@@ -69,11 +69,11 @@ public class DDLTest extends TestCase {
                 "manufacturer", "AppEase"
         ));
         var shoes = apiClient.getObject(shoesId);
-        Assert.assertEquals(100L, shoes.get("price"));
+        Assert.assertEquals(100, shoes.get("price"));
 //        var inventory = shoes.getObject("inventory");
         var inventoryId = shoes.getString("inventory");
         var inventory = apiClient.getObject(inventoryId);
-        Assert.assertEquals(100L, inventory.get("quantity"));
+        Assert.assertEquals(100, inventory.get("quantity"));
         var boxId = saveInstance("Box<Inventory>", Map.of(
                 "item", inventoryId
         ));
@@ -93,7 +93,7 @@ public class DDLTest extends TestCase {
             try (var cachingContext = entityContextFactory.newLoadedContext(TestConstants.APP_ID, commit.getWal())) {
                 var hat = (ClassInstance) cachingContext.getInstanceContext().get(Id.parse(hatId));
                 var ver = hat.getField("version").resolveObject();
-                Assert.assertEquals(Instances.longInstance(0L), ver.getField("majorVersion"));
+                Assert.assertEquals(Instances.intInstance(0), ver.getField("majorVersion"));
             }
         }
         TestUtils.waitForDDLPrepared(schedulerAndWorker);
@@ -106,16 +106,16 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(true, shoes1.get("available"));
         Assert.assertNull(shoes1.get("description"));
         Assert.assertEquals(100.0, shoes1.get("price"));
-        Assert.assertEquals(100L, shoes1.getObject("inventory").get("quantity"));
-        Assert.assertEquals(0L, shoes1.getObject("version").get("majorVersion"));
-        Assert.assertEquals(0L, hat.getObject("version").get("majorVersion"));
+        Assert.assertEquals(100, shoes1.getObject("inventory").get("quantity"));
+        Assert.assertEquals(0, shoes1.getObject("version").get("majorVersion"));
+        Assert.assertEquals(0, hat.getObject("version").get("majorVersion"));
         // check that index entries have been generated
         var foundId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("Product", "findByName", List.of("Shoes")));
         Assert.assertEquals(shoesId, foundId);
         var foundId2 = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("Product", "findByName", List.of("Hat")));
         Assert.assertEquals(hatId, foundId2);
         var box = apiClient.getObject(boxId);
-        Assert.assertEquals(1L, box.get("count"));
+        Assert.assertEquals(1, box.get("count"));
         var commitState = apiClient.getObject(apiClient.getObject(commitId).getString("state"));
         Assert.assertEquals(CommitState.RELOCATING.name(), commitState.get("name"));
         TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, schedulerAndWorker);
@@ -215,7 +215,7 @@ public class DDLTest extends TestCase {
                 "manufacturer", "AppEase"
         ));
         var shoes = apiClient.getObject(shoesId);
-        Assert.assertEquals(100L, shoes.get("price"));
+        Assert.assertEquals(100, shoes.get("price"));
         try {
             assemble("ddl_after_failed.masm", false);
             Assert.fail("Should have thrown exception");
@@ -501,7 +501,7 @@ public class DDLTest extends TestCase {
             var kind = shoesInst.getField("kind").resolveObject();
             Assert.assertFalse(kind.getKlass().isEnum());
             Assert.assertEquals(Instances.stringInstance("DEFAULT"), kind.getField("name"));
-            Assert.assertEquals(Instances.longInstance(0), kind.getField("code"));
+            Assert.assertEquals(Instances.intInstance(0), kind.getField("code"));
             try {
                 instCtx.get(Id.parse(hotelKind));
                 Assert.fail("Should have been removed");
@@ -787,7 +787,7 @@ public class DDLTest extends TestCase {
                     var boxInst = ClassInstanceBuilder.newBuilder(boxOfInvKlass)
                             .data(Map.of(
                                     boxOfInvKlass.getKlass().getFieldByName("item"), invInst.getReference(),
-                                    boxOfInvKlass.getKlass().getFieldByName("count"), Instances.longInstance(1)
+                                    boxOfInvKlass.getKlass().getFieldByName("count"), Instances.intInstance(1)
                             ))
                             .build();
                     instCtx.bind(boxInst);
@@ -878,9 +878,9 @@ public class DDLTest extends TestCase {
         var fieldId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Field", Map.of(
                 "name", "count"
         )));
-        TestUtils.doInTransaction(() -> apiClient.callMethod(fieldId, "setValue", List.of(1L)));
+        TestUtils.doInTransaction(() -> apiClient.callMethod(fieldId, "setValue", List.of(1)));
         var value = apiClient.getObject(fieldId).get("value");
-        Assert.assertEquals(1L, value);
+        Assert.assertEquals(1, value);
         assemble("custom_runner_after.masm");
         var value1 = TestUtils.doInTransaction(() -> apiClient.callMethod("lab", "getFieldValue", List.of(fieldId)));
         Assert.assertEquals(value, value1);

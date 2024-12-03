@@ -17,26 +17,22 @@ public class ValueUtils {
     public static final Pattern INT_PATTERN = Pattern.compile("-?[0-9]+");
 
     public static Type getValueType(Object value) {
-        if (value instanceof String) {
+        if (value instanceof String)
             return Types.getStringType();
-        }
-        if (isFloat(value)) {
+        if (isFloat(value))
             return Types.getDoubleType();
-        }
-        if (value instanceof Long || value instanceof Integer) {
+        if(value instanceof Integer)
+            return Types.getIntType();
+        if (value instanceof Long)
             return Types.getLongType();
-        }
         if(value instanceof Character)
             return Types.getCharType();
-        if (isBoolean(value)) {
+        if (isBoolean(value))
             return Types.getBooleanType();
-        }
-        if (isTime(value)) {
+        if (isTime(value))
             return Types.getTimeType();
-        }
-        if (value instanceof Value instance) {
+        if (value instanceof Value instance)
             return instance.getType();
-        }
         throw new InternalException("Unsupported value: " + value);
     }
 
@@ -141,23 +137,20 @@ public class ValueUtils {
     }
 
     public static Type getPrimitiveType(Class<?> klass) {
-        if (isBoolean(klass)) {
+        if (isBoolean(klass))
             return Types.getBooleanType();
-        }
-        if (isString(klass)) {
+        if (isString(klass))
             return Types.getStringType();
-        }
-        if (isLong(klass) || isInteger(klass)) {
+        if (isLong(klass))
             return Types.getLongType();
-        }
+        if(isInteger(klass))
+            return Types.getIntType();
         if(isChar(klass))
             return Types.getCharType();
-        if (isTime(klass)) {
+        if (isTime(klass))
             return Types.getTimeType();
-        }
-        if (isFloat(klass)) {
+        if (isFloat(klass))
             return Types.getDoubleType();
-        }
         throw new InternalException("Type " + klass.getName() + " is not a primitive type");
     }
 
@@ -171,7 +164,9 @@ public class ValueUtils {
                 return TypeCategory.UNION;
             if (klass.isInterface())
                 return TypeCategory.INTERFACE;
-            if (isLong(klass) || isInteger(klass))
+            if(isInteger(klass))
+                return TypeCategory.INT;
+            if (isLong(klass))
                 return TypeCategory.LONG;
             if (isDouble(klass))
                 return TypeCategory.DOUBLE;
@@ -249,6 +244,10 @@ public class ValueUtils {
 
     public static boolean isTime(Object value) {
         return value instanceof Date;
+    }
+
+    public static boolean isLong(Object value) {
+        return value instanceof Long;
     }
 
     public static boolean isInteger(Object value) {

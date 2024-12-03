@@ -195,7 +195,17 @@ public class LongValue extends NumberValue {
             return that.ge(this);
     }
 
-//    @Override
+    @Override
+    protected void writeTree(TreeWriter treeWriter) {
+        treeWriter.write(value + "L");
+    }
+
+    @Override
+    public String toString() {
+        return value + "L";
+    }
+
+    //    @Override
 //    public int compareTo(@NotNull NumberInstance o) {
 //        return switch (o) {
 //            case LongInstance l -> Long.compare(value, l.value);

@@ -142,7 +142,17 @@ public class DoubleValue extends NumberValue {
         return value;
     }
 
-//    @Override
+    @Override
+    protected void writeTree(TreeWriter treeWriter) {
+        treeWriter.write(value + "D");
+    }
+
+    @Override
+    public String toString() {
+        return value + "D";
+    }
+
+    //    @Override
 //    public int compareTo(@NotNull NumberInstance o) {
 //        return Double.compare(value, o.doubleValue());
 //    }

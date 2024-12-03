@@ -7,9 +7,9 @@ import org.metavm.object.type.Types;
 
 import javax.annotation.Nullable;
 
-public class BitNotNode extends Node {
+public class IntAddNode extends Node {
 
-    public BitNotNode(String name,
+    public IntAddNode(String name,
                       @Nullable Node previous,
                       @NotNull Code code) {
         super(name, null, previous, code);
@@ -17,22 +17,22 @@ public class BitNotNode extends Node {
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitBitNotNode(this);
+        return visitor.visitIntAddNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("bitnot");
+        writer.write("iadd");
     }
 
     @Override
     public int getStackChange() {
-        return 0;
+        return -1;
     }
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.BIT_NOT);
+        output.write(Bytecodes.INT_ADD);
     }
 
     @Override
@@ -43,12 +43,11 @@ public class BitNotNode extends Node {
     @NotNull
     @Override
     public Type getType() {
-        return Types.getLongType();
+        return Types.getIntType();
     }
 
     @Override
     public boolean hasOutput() {
         return true;
     }
-
 }

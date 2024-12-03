@@ -193,9 +193,9 @@ public class FunctionMethods {
         return from.isAssignableFrom(to);
     }
 
-    public static LongValue LEN(Value instance) {
+    public static IntValue LEN(Value instance) {
         if(instance.isArray())
-            return Instances.longInstance(instance.resolveArray().length());
+            return Instances.intInstance(instance.resolveArray().length());
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT, "LEN");
     }

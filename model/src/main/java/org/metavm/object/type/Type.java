@@ -159,6 +159,10 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
         return isAssignableFrom(value.getType());
     }
 
+    public boolean isInt() {
+        return false;
+    }
+
     @NoProxy
     public boolean isLong() {
         return false;
@@ -298,6 +302,7 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
             case WireTypes.VARIABLE_TYPE -> VariableType.read(input);
             case WireTypes.CAPTURED_TYPE -> CapturedType.read(input);
             case WireTypes.LONG_TYPE -> PrimitiveType.longType;
+            case WireTypes.INT_TYPE -> PrimitiveType.intType;
             case WireTypes.CHAR_TYPE -> PrimitiveType.charType;
             case WireTypes.DOUBLE_TYPE -> PrimitiveType.doubleType;
             case WireTypes.NULL_TYPE -> PrimitiveType.nullType;

@@ -88,13 +88,13 @@ public class TypeManagerTest extends TestCase {
         TestUtils.doInTransaction(() -> apiClient.callMethod("UpdateStaticFoo", "set", List.of(2)));
         metaContextCache.invalidate(TestConstants.APP_ID, null);
         var value = TestUtils.doInTransaction(() -> apiClient.callMethod("UpdateStaticFoo", "get", List.of()));
-        Assert.assertEquals(2L, value);
+        Assert.assertEquals(2, value);
 
         var opt1Id = typeManager.getEnumConstantId("Option", "opt1");
         TestUtils.doInTransaction(() -> apiClient.callMethod(opt1Id, "setValue", List.of(1)));
         metaContextCache.invalidate(TestConstants.APP_ID, null);
         var optValue = TestUtils.doInTransaction(() -> apiClient.callMethod(opt1Id, "getValue", List.of()));
-        Assert.assertEquals(1L, optValue);
+        Assert.assertEquals(1, optValue);
     }
 
     public void testRemoveField() {

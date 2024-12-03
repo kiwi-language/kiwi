@@ -31,6 +31,7 @@ IF:                 'if';
 IMPLEMENTS:         'implements';
 INSTANCEOF:         'instanceof';
 INT:                'int';
+LONG:               'long';
 CHAR:               'char';
 INTERFACE:          'interface';
 NATIVE:             'native';

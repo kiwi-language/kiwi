@@ -31,17 +31,17 @@ public class StandardStaticMethodsTest extends TestCase {
         var numberOfTrailingZeros = ReflectionUtils.getMethod(Long.class, "numberOfTrailingZeros", long.class);
         var l = NncUtils.random();
         var r = getFunction(numberOfTrailingZeros).execute(null, List.of(Instances.longInstance(l)), () -> null);
-        Assert.assertEquals(Instances.longInstance(Long.numberOfTrailingZeros(l)), r.ret());
+        Assert.assertEquals(Instances.intInstance(Long.numberOfTrailingZeros(l)), r.ret());
 
         var byteCompareTo = ReflectionUtils.getMethod(Byte.class, "compareTo", Byte.class);
         var r1 = getFunction(byteCompareTo).execute(null,
-                List.of(Instances.longInstance(1), Instances.longInstance(2)), () -> null);
-        Assert.assertEquals(Instances.longInstance(-1L), r1.ret());
+                List.of(Instances.intInstance(1), Instances.intInstance(2)), () -> null);
+        Assert.assertEquals(Instances.intInstance(-1), r1.ret());
 
         var stringCompareTo = ReflectionUtils.getMethod(String.class, "compareTo", String.class);
         var r2 = getFunction(stringCompareTo).execute(null,
                 List.of(stringInstance("a"), stringInstance("b")), () -> null);
-        Assert.assertEquals(Instances.longInstance(-1L), r2.ret());
+        Assert.assertEquals(Instances.intInstance(-1), r2.ret());
 
         var stringSplit = ReflectionUtils.getMethod(String.class, "split", String.class);
         var r3 = getFunction(stringSplit).execute(null,
@@ -54,7 +54,7 @@ public class StandardStaticMethodsTest extends TestCase {
         var stringFormat = ReflectionUtils.getMethod(String.class, "format", String.class, Object[].class);
         var r4 = getFunction(stringFormat).execute(null,
                 List.of(stringInstance("%d"),
-                        arrayInstance(Types.getArrayType(Types.getNullableAnyType()), List.of(Instances.longInstance(1L))).getReference()
+                        arrayInstance(Types.getArrayType(Types.getNullableAnyType()), List.of(Instances.intInstance(1))).getReference()
                 ),
                 () -> null
         );
@@ -64,8 +64,8 @@ public class StandardStaticMethodsTest extends TestCase {
         var r5 = getFunction(substringMethod).execute(null,
                 List.of(
                         stringInstance("MetaVM"),
-                        longInstance(4),
-                        longInstance(6)
+                        intInstance(4),
+                        intInstance(6)
                 ), () -> null);
         Assert.assertEquals(stringInstance("VM"), r5.ret());
     }

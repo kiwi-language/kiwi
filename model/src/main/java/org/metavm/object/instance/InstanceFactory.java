@@ -216,6 +216,7 @@ public class InstanceFactory {
         var value = fieldValue.getValue();
         return switch (kind) {
             case LONG -> Instances.longInstance(((Number) value).longValue());
+            case INT -> Instances.intInstance(((Number) value).intValue());
             case DOUBLE -> Instances.doubleInstance(((Number) value).doubleValue());
             case BOOLEAN -> Instances.booleanInstance((Boolean) value);
             case PASSWORD -> Instances.passwordInstance((String) value);

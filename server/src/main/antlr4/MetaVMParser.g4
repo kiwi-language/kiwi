@@ -268,6 +268,7 @@ primitiveType
     : BOOLEAN
     | STRING
     | LONG
+    | INT
     | CHAR
     | DOUBLE
     | TIME

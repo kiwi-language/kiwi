@@ -172,10 +172,10 @@ public class InstanceManagerTest extends TestCase {
 
     public void testLambda() {
         MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Lambda.masm", typeManager, schedulerAndWorker);
-        var result = (long) callMethod("Utils", "findGt", List.of(
+        var result = (int) callMethod("Utils", "findGt", List.of(
                 List.of(1, 2, 3), 2
         ));
-        Assert.assertEquals(3L, result);
+        Assert.assertEquals(3, result);
     }
 
     public void testLivingBeing() {
@@ -187,9 +187,9 @@ public class InstanceManagerTest extends TestCase {
                 )
         );
         var human = getObject(humanId);
-        Assert.assertEquals(30L, human.getLong(("age")));
+        Assert.assertEquals(30, human.getInt(("age")));
         Assert.assertNull(human.get("extra"));
-        Assert.assertEquals(180L, human.getLong("intelligence"));
+        Assert.assertEquals(180, human.getInt("intelligence"));
         Assert.assertEquals("Inventor", human.getString("occupation"));
         Assert.assertFalse(human.getBoolean("thinking"));
         var makeSoundResult = callMethod(humanId, "makeSound", List.of());
@@ -247,7 +247,7 @@ public class InstanceManagerTest extends TestCase {
                 var inventory = ClassInstance.create(
                         Map.of(
                                 inventoryKlass.getFieldByName("quantity"),
-                                Instances.longInstance(0L)
+                                Instances.longInstance(0)
                         ),
                         inventoryKlass.getType()
                 );

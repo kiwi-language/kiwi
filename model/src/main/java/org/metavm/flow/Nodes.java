@@ -69,10 +69,10 @@ public class Nodes {
                                BiConsumer<Supplier<Node>, Supplier<Node>> action,
                                Code code) {
         var i = code.nextVariableIndex();
-        loadConstant(Instances.longInstance(0), code);
+        loadConstant(Instances.intInstance(0), code);
         Nodes.store(i, code);
         var entry = noop(code.nextNodeName("noop"), code);
-        Supplier<Node> indexSupplier = () -> Nodes.load(i, Types.getLongType(), code);
+        Supplier<Node> indexSupplier = () -> Nodes.load(i, Types.getIntType(), code);
         indexSupplier.get();
         arraySupplier.get();
         arrayLength("len", code);
@@ -85,7 +85,7 @@ public class Nodes {
         };
         action.accept(elementSupplier, indexSupplier);
         indexSupplier.get();
-        loadConstant(Instances.longInstance(1), code);
+        loadConstant(Instances.intInstance(1), code);
         longAdd(code);
         Nodes.store(i, code);
         goto_(entry, code);
@@ -197,38 +197,88 @@ public class Nodes {
     }
 
     public static Node add(Type type, Code code) {
-        if(type.isLong())
+        if (type.isInt())
+            return intAdd(code);
+        else if (type.isLong())
             return longAdd(code);
         else
             return doubleAdd(code);
     }
 
     public static Node sub(Type type, Code code) {
-        if(type.isLong())
+        if (type.isInt())
+            return intSub(code);
+        else if (type.isLong())
             return longSub(code);
         else
             return doubleSub(code);
     }
 
     public static Node mul(Type type, Code code) {
-        if(type.isLong())
+        if (type.isInt())
+            return intMul(code);
+        else if (type.isLong())
             return longMul(code);
         else
             return doubleMul(code);
     }
 
     public static Node div(Type type, Code code) {
-        if(type.isLong())
+        if (type.isInt())
+            return intDiv(code);
+        else if (type.isLong())
             return longDiv(code);
         else
             return doubleDiv(code);
     }
 
     public static Node rem(Type type, Code code) {
-        if(type.isLong())
+        if (type.isInt())
+            return intRem(code);
+        else if (type.isLong())
             return longRem(code);
         else
             return doubleRem(code);
+    }
+
+    public static Node intAdd(Code code) {
+        return new IntAddNode(
+                code.nextNodeName("iadd"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node intSub(Code code) {
+        return new IntSubNode(
+                code.nextNodeName("isub"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node intMul(Code code) {
+        return new IntMulNode(
+                code.nextNodeName("imul"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node intDiv(Code code) {
+        return new IntDivNode(
+                code.nextNodeName("idiv"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node intRem(Code code) {
+        return new IntRemNode(
+                code.nextNodeName("irem"),
+                code.getLastNode(),
+                code
+        );
     }
 
     public static Node longAdd(Code code) {
@@ -311,49 +361,118 @@ public class Nodes {
         );
     }
 
-    public static Node leftShift(Code code) {
-        return new LeftShiftNode(
-                code.nextNodeName("leftShift"),
+    public static Node shiftLeft(Type type, Code code) {
+        if (type.isLong())
+            return longShiftLeft(code);
+        else
+            return intShiftLeft(code);
+    }
+
+    public static Node shiftRight(Type type, Code code) {
+        if (type.isLong())
+            return longShiftRight(code);
+        else
+            return intShiftRight(code);
+    }
+
+    public static Node unsignedShiftRight(Type type, Code code) {
+        if (type.isLong())
+            return longUnsignedShiftRight(code);
+        else
+            return intUnsignedShiftRight(code);
+    }
+
+    public static Node intShiftLeft(Code code) {
+        return new IntShiftLeftNode(
+                code.nextNodeName("ishl"),
                 code.getLastNode(),
                 code
         );
     }
 
-    public static Node rightShift(Code code) {
-        return new RightShiftNode(
-                code.nextNodeName("rightShift"),
+    public static Node intShiftRight(Code code) {
+        return new IntShiftRightNode(
+                code.nextNodeName("ishr"),
                 code.getLastNode(),
                 code
         );
     }
 
-    public static Node unsignedRightShift(Code code) {
-        return new UnsignedRightShiftNode(
-                code.nextNodeName("unsignedRightShift"),
+    public static Node intUnsignedShiftRight(Code code) {
+        return new IntUnsignedShiftRightNode(
+                code.nextNodeName("iushr"),
                 code.getLastNode(),
                 code
         );
     }
 
-    public static Node bitOr(Code code) {
-        return new BitOrNode(
-                code.nextNodeName("bitor"),
+    public static Node longShiftLeft(Code code) {
+        return new LongShiftLeftNode(
+                code.nextNodeName("lshl"),
                 code.getLastNode(),
                 code
         );
     }
 
-    public static Node bitAnd(Code code) {
-        return new BitAndNode(
-                code.nextNodeName("bitand"),
+    public static Node longShiftRight(Code code) {
+        return new LongShiftRightNode(
+                code.nextNodeName("lshr"),
                 code.getLastNode(),
                 code
         );
     }
 
-    public static Node bitXor(Code code) {
-        return new BitXorNode(
-                code.nextNodeName("bitxor"),
+    public static Node longUnsignedShiftRight(Code code) {
+        return new LongUnsignedShiftRightNode(
+                code.nextNodeName("lushr"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node intBitOr(Code code) {
+        return new IntBitOrNode(
+                code.nextNodeName("ior"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node intBitAnd(Code code) {
+        return new IntBitAndNode(
+                code.nextNodeName("iand"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node intBitXor(Code code) {
+        return new IntBitXorNode(
+                code.nextNodeName("ixor"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node longBitOr(Code code) {
+        return new LongBitOrNode(
+                code.nextNodeName("lor"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node longBitAnd(Code code) {
+        return new LongBitAndNode(
+                code.nextNodeName("land"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node longBitXor(Code code) {
+        return new LongBitXorNode(
+                code.nextNodeName("lxor"),
                 code.getLastNode(),
                 code
         );
@@ -375,12 +494,42 @@ public class Nodes {
         );
     }
 
-    public static Node bitNot(Code code) {
-        return new BitNotNode(
-                code.nextNodeName("bitnot"),
-                code.getLastNode(),
-                code
-        );
+    public static Node bitAnd(Type type, Code code) {
+        if (type.isLong())
+            return longBitAnd(code);
+        else
+            return intBitAnd(code);
+    }
+
+    public static Node bitOr(Type type, Code code) {
+        if (type.isLong())
+            return longBitOr(code);
+        else
+            return intBitOr(code);
+    }
+
+    public static Node bitXor(Type type, Code code) {
+        if (type.isLong())
+            return longBitXor(code);
+        else
+            return intBitXor(code);
+    }
+
+    public static Node bitNot(Type type, Code code) {
+        if (type.isLong())
+            return longBitNot(code);
+        else
+            return intBitNot(code);
+    }
+
+    public static Node intBitNot(Code code) {
+        loadConstant(Instances.intInstance(-1), code);
+        return intBitXor(code);
+    }
+
+    public static Node longBitNot(Code code) {
+        loadConstant(Instances.longInstance(-1), code);
+        return longBitXor(code);
     }
 
     public static Node not(Code code) {
@@ -392,10 +541,20 @@ public class Nodes {
     }
 
     public static Node neg(Type type, Code code) {
-        if(type.isLong())
+        if (type.isInt())
+            return intNeg(code);
+        else if(type.isLong())
             return longNeg(code);
         else
             return doubleNeg(code);
+    }
+
+    public static Node intNeg(Code code) {
+        return new IntNegNode(
+                code.nextNodeName("ineg"),
+                code.getLastNode(),
+                code
+        );
     }
 
     public static Node longNeg(Code code) {
@@ -608,4 +767,21 @@ public class Nodes {
     public static Node doubleToLong(Code code) {
         return new DoubleToLongNode(code.nextNodeName("d2l"), code.getLastNode(), code);
     }
+
+    public static Node intToDouble(Code code) {
+        return new IntToDoubleNode(code.nextNodeName("i2d"), code.getLastNode(), code);
+    }
+
+    public static Node doubleToInt(Code code) {
+        return new DoubleToIntNode(code.nextNodeName("d2i"), code.getLastNode(), code);
+    }
+
+    public static Node intToLong(Code code) {
+        return new IntToLongNode(code.nextNodeName("i2l"), code.getLastNode(), code);
+    }
+
+    public static Node longToInt(Code code) {
+        return new LongToIntNode(code.nextNodeName("l2i"), code.getLastNode(), code);
+    }
+
 }

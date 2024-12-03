@@ -52,7 +52,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     @Nullable
     private Integer superTypeIndex;
     @ChildEntity
-    private final ReadWriteArray<Long> interfaceIndexes = addChild(new ReadWriteArray<>(Long.class), "interfaceIndexes");
+    private final ReadWriteArray<Integer> interfaceIndexes = addChild(new ReadWriteArray<>(Integer.class), "interfaceIndexes");
     @ChildEntity
     private final ReadWriteArray<Klass> interfaces = addChild(new ReadWriteArray<>(Klass.class), "interfaces");
     private @Nullable Klass superKlass;
@@ -1079,10 +1079,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     }
 
     public List<ClassType> getInterfaces() {
-        return Collections.unmodifiableList(NncUtils.map(interfaceIndexes, idx -> constantPool.getClassType(idx.intValue())));
+        return Collections.unmodifiableList(NncUtils.map(interfaceIndexes, constantPool::getClassType));
     }
 
-    public List<Long> getInterfaceIndexes() {
+    public List<Integer> getInterfaceIndexes() {
         return interfaceIndexes.toList();
     }
 
@@ -1095,7 +1095,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     public void forEachSuperType(Consumer<ClassType> action, TypeMetadata typeMetadata) {
         if(superTypeIndex != null)
             action.accept((ClassType) typeMetadata.getType(superTypeIndex));
-        interfaceIndexes.forEach(i -> action.accept((ClassType) typeMetadata.getType(i.intValue())));
+        interfaceIndexes.forEach(i -> action.accept((ClassType) typeMetadata.getType(i)));
     }
 
     public void forEachSuperClass(Consumer<Klass> action) {
@@ -1330,7 +1330,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     public void setInterfaces(List<ClassType> interfaces, boolean skipMaintenance) {
         if(skipMaintenance) {
             this.interfaces.reset(NncUtils.map(interfaces, ClassType::getKlass));
-            this.interfaceIndexes.reset(NncUtils.map(interfaces, it -> (long) constantPool.addValue(it)));
+            this.interfaceIndexes.reset(NncUtils.map(interfaces, constantPool::addValue));
         }
         else {
             for (var anInterface : this.interfaces) {
@@ -1340,7 +1340,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
             this.interfaceIndexes.clear();
             for (var anInterface : interfaces) {
                 this.interfaces.add(anInterface.getKlass());
-                this.interfaceIndexes.add((long) constantPool.addValue(anInterface));
+                this.interfaceIndexes.add(constantPool.addValue(anInterface));
                 anInterface.getKlass().addImplementation(this);
             }
             onSuperTypesChanged();
@@ -1761,7 +1761,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         interfaces.clear();
         for (int i = 0; i < interfaceCount; i++) {
             var idx = input.readShort();
-            interfaceIndexes.add((long) idx);
+            interfaceIndexes.add(idx);
             interfaces.add(constantPool.getClassType(idx).getKlass());
         }
         var fieldCount = input.readInt();

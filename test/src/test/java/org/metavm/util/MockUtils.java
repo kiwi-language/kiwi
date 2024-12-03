@@ -41,7 +41,7 @@ public class MockUtils {
                         enumNameField,
                         Instances.stringInstance("NORMAL"),
                         enumOrdinalField,
-                        Instances.longInstance(0L)
+                        Instances.intInstance(0)
                 ))
                 .id(TmpId.of(NncUtils.randomNonNegative()))
                 .build();
@@ -50,7 +50,7 @@ public class MockUtils {
                         enumNameField,
                         Instances.stringInstance("USED"),
                         enumOrdinalField,
-                        Instances.longInstance(1L)
+                        Instances.intInstance(1)
                 ))
                 .id(TmpId.of(NncUtils.randomNonNegative()))
                 .build();

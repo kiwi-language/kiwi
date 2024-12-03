@@ -288,7 +288,7 @@ public class MethodGenerator {
 
     MethodCallNode createMethodCall(MethodRef methodRef,
                                     List<Type> capturedExpressionTypes,
-                                    List<Long> capturedVariables) {
+                                    List<Integer> capturedVariables) {
         var node = new MethodCallNode(nextName(methodRef.getRawFlow().getName()),
                 code().getLastNode(), code(), methodRef);
         node.setCapturedVariableIndexes(capturedVariables);
@@ -376,67 +376,136 @@ public class MethodGenerator {
     }
 
     Node createAdd(PsiType type) {
-        if(TranspileUtils.isIntegerType(type))
+        if(TranspileUtils.isLongType(type))
             return createLongAdd();
+        else if (TranspileUtils.isIntegerType(type))
+            return createIntAdd();
         else
             return createDoubleAdd();
     }
 
     Node createSub(PsiType type) {
-        if(TranspileUtils.isIntegerType(type))
+        if(TranspileUtils.isLongType(type))
             return createLongSub();
+        else if(TranspileUtils.isIntegerType(type))
+            return createIntSub();
         else
             return createDoubleSub();
     }
 
     Node createMul(PsiType type) {
-        if(TranspileUtils.isIntegerType(type))
+        if(TranspileUtils.isLongType(type))
             return createLongMul();
+        else if(TranspileUtils.isIntegerType(type))
+            return createIntMul();
         else
             return createDoubleMul();
     }
 
     Node createDiv(PsiType type) {
-        if(TranspileUtils.isIntegerType(type))
+        if(TranspileUtils.isLongType(type))
             return createLongDiv();
+        else if(TranspileUtils.isIntegerType(type))
+            return createIntDiv();
         else
             return createDoubleDiv();
     }
 
     Node createRem(PsiType type) {
-        if(TranspileUtils.isIntegerType(type))
+        if(TranspileUtils.isLongType(type))
             return createLongRem();
+        else if(TranspileUtils.isIntegerType(type))
+            return createIntRem();
         else
             return createDoubleRem();
     }
 
     Node createNeg(PsiType type) {
-        if(TranspileUtils.isIntegerType(type))
+        if(TranspileUtils.isLongType(type))
             return createLongNeg();
+        else if(TranspileUtils.isIntegerType(type))
+            return createIntNeg();
         else
             return createDoubleNeg();
     }
 
     Node createInc(PsiType type) {
-        if(TranspileUtils.isIntegerType(type)) {
+        if(TranspileUtils.isLongType(type)) {
             createLoadConstant(Instances.longInstance(1));
             return createLongAdd();
-        }
-        else {
+        } else if(TranspileUtils.isIntegerType(type)) {
+            createLoadConstant(Instances.intInstance(1));
+            return createIntAdd();
+        } else {
             createLoadConstant(Instances.doubleInstance(1));
             return createDoubleAdd();
         }
     }
 
     Node createDec(PsiType type) {
-        if(TranspileUtils.isIntegerType(type)) {
+        if(TranspileUtils.isLongType(type)) {
             createLoadConstant(Instances.longInstance(1));
             return createLongSub();
-        }
-        else {
+        } else if(TranspileUtils.isIntegerType(type)) {
+            createLoadConstant(Instances.intInstance(1));
+            return createIntSub();
+        } else {
             createLoadConstant(Instances.doubleInstance(1));
             return createDoubleSub();
         }
+    }
+
+    IntAddNode createIntAdd() {
+        return onNodeCreated(new IntAddNode(
+                        nextName("iadd"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    IntSubNode createIntSub() {
+        return onNodeCreated(new IntSubNode(
+                        nextName("isub"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+    IntMulNode createIntMul() {
+        return onNodeCreated(new IntMulNode(
+                        nextName("imul"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    IntDivNode createIntDiv() {
+        return onNodeCreated(new IntDivNode(
+                        nextName("idiv"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    IntRemNode createIntRem() {
+        return onNodeCreated(new IntRemNode(
+                        nextName("irem"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    IntNegNode createIntNeg() {
+        return onNodeCreated(new IntNegNode(
+                        nextName("ineg"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
     }
 
     LongAddNode createLongAdd() {
@@ -512,54 +581,150 @@ public class MethodGenerator {
         );
     }
 
-    LeftShiftNode createLeftShift() {
-        return onNodeCreated(new LeftShiftNode(
-                        nextName("lshift"),
+    Node createShiftLeft(PsiType type) {
+        if(TranspileUtils.isLongType(type))
+            return createLongShiftLeft();
+        else
+            return createIntShiftLeft();
+    }
+
+    Node createShiftRight(PsiType type) {
+        if(TranspileUtils.isLongType(type))
+            return createLongShiftRight();
+        else
+            return createIntShiftRight();
+    }
+
+    Node createUnsignedShiftRight(PsiType type) {
+        if(TranspileUtils.isLongType(type))
+            return createLongUnsignedShiftRight();
+        else
+            return createIntUnsignedShiftRight();
+    }
+
+    IntShiftLeftNode createIntShiftLeft() {
+        return onNodeCreated(new IntShiftLeftNode(
+                        nextName("ishl"),
                         code().getLastNode(),
                         code()
                 )
         );
     }
 
-    RightShiftNode createRightShift() {
-        return onNodeCreated(new RightShiftNode(
-                        nextName("rshift"),
+    IntShiftRightNode createIntShiftRight() {
+        return onNodeCreated(new IntShiftRightNode(
+                        nextName("ishr"),
                         code().getLastNode(),
                         code()
                 )
         );
     }
 
-    UnsignedRightShiftNode createUnsignedRightShift() {
-        return onNodeCreated(new UnsignedRightShiftNode(
-                        nextName("urshift"),
+    IntUnsignedShiftRightNode createIntUnsignedShiftRight() {
+        return onNodeCreated(new IntUnsignedShiftRightNode(
+                        nextName("iushr"),
                         code().getLastNode(),
                         code()
                 )
         );
     }
 
-    BitOrNode createBitOr() {
-        return onNodeCreated(new BitOrNode(
-                        nextName("bitor"),
+    LongShiftLeftNode createLongShiftLeft() {
+        return onNodeCreated(new LongShiftLeftNode(
+                        nextName("lshl"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    LongShiftRightNode createLongShiftRight() {
+        return onNodeCreated(new LongShiftRightNode(
+                        nextName("lshr"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    LongUnsignedShiftRightNode createLongUnsignedShiftRight() {
+        return onNodeCreated(new LongUnsignedShiftRightNode(
+                        nextName("lushr"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    Node createBitOr(PsiType type) {
+        if (TranspileUtils.isLongType(type))
+            return createLongBitOr();
+        else
+            return createIntBitOr();
+    }
+
+    Node createBitAnd(PsiType type) {
+        if (TranspileUtils.isLongType(type))
+            return createLongBitAnd();
+        else
+            return createIntBitAnd();
+    }
+
+    Node createBitXor(PsiType type) {
+        if (TranspileUtils.isLongType(type))
+            return createLongBitXor();
+        else
+            return createIntBitXor();
+    }
+
+    IntBitOrNode createIntBitOr() {
+        return onNodeCreated(new IntBitOrNode(
+                        nextName("ior"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    IntBitAndNode createIntBitAnd() {
+        return onNodeCreated(new IntBitAndNode(
+                        nextName("iand"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    IntBitXorNode createIntBitXor() {
+        return onNodeCreated(new IntBitXorNode(
+                        nextName("ixor"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    LongBitOrNode createLongBitOr() {
+        return onNodeCreated(new LongBitOrNode(
+                        nextName("lor"),
                 code().getLastNode(),
                         code()
                 )
         );
     }
 
-    BitAndNode createBitAnd() {
-        return onNodeCreated(new BitAndNode(
-                        nextName("bitand"),
+    LongBitAndNode createLongBitAnd() {
+        return onNodeCreated(new LongBitAndNode(
+                        nextName("land"),
                         code().getLastNode(),
                         code()
                 )
         );
     }
 
-    BitXorNode createBitXor() {
-        return onNodeCreated(new BitXorNode(
-                        nextName("bitxor"),
+    LongBitXorNode createLongBitXor() {
+        return onNodeCreated(new LongBitXorNode(
+                        nextName("lxor"),
                         code().getLastNode(),
                         code()
                 )
@@ -666,13 +831,21 @@ public class MethodGenerator {
         );
     }
 
-    BitNotNode createBitNot() {
-        return onNodeCreated(new BitNotNode(
-                        nextName("bitnot"),
-                        code().getLastNode(),
-                        code()
-                )
-        );
+    Node createBitNot(PsiType type) {
+        if (TranspileUtils.isLongType(type))
+            return createLongBitNot();
+        else
+            return createIntBitNot();
+    }
+
+    Node createIntBitNot() {
+        createLoadConstant(Instances.intInstance(-1));
+        return createIntBitXor();
+    }
+
+    Node createLongBitNot() {
+        createLoadConstant(Instances.longInstance(-1));
+        return createLongBitXor();
     }
 
     NotNode createNot() {
@@ -820,6 +993,22 @@ public class MethodGenerator {
 
     public DoubleToLongNode createDoubleToLong() {
         return onNodeCreated(new DoubleToLongNode(nextName("d2l"), code().getLastNode(), code()));
+    }
+
+    public IntToLongNode createIntToLong() {
+        return onNodeCreated(new IntToLongNode(nextName("i2l"), code().getLastNode(), code()));
+    }
+
+    public LongToIntNode createLongToInt() {
+        return onNodeCreated(new LongToIntNode(nextName("l2i"), code().getLastNode(), code()));
+    }
+
+    public IntToDoubleNode createIntToDouble() {
+        return onNodeCreated(new IntToDoubleNode(nextName("i2d"), code().getLastNode(), code()));
+    }
+
+    public DoubleToIntNode createDoubleToInt() {
+        return onNodeCreated(new DoubleToIntNode(nextName("d2i"), code().getLastNode(), code()));
     }
 
     public LoadParentNode createLoadParent(int index) {

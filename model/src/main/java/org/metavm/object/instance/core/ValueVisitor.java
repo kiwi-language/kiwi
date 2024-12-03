@@ -32,6 +32,10 @@ public abstract class ValueVisitor<R> {
         return visitNumberValue(value);
     }
 
+    public R visitIntValue(IntValue value) {
+        return visitNumberValue(value);
+    }
+
     public R visitCharValue(CharValue value) {
         return visitValue(value);
     }

@@ -565,6 +565,10 @@ public class TranspileUtils {
             return null;
     }
 
+    public static PsiPrimitiveType createIntType() {
+        return elementFactory.createPrimitiveType("int");
+    }
+
     private static class UpwardsClassVisitor extends JavaElementVisitor {
 
         @Override
@@ -1182,9 +1186,11 @@ public class TranspileUtils {
 
     private static final Map<String, String> typeNameMap = Map.ofEntries(
             Map.entry(String.class.getName(), "String"),
+            Map.entry(Character.class.getName(), "Char"),
             Map.entry(Long.class.getName(), "Long"),
-            Map.entry(Integer.class.getName(), "Long"),
-            Map.entry(Short.class.getName(), "Long"),
+            Map.entry(Integer.class.getName(), "Int"),
+            Map.entry(Short.class.getName(), "Int"),
+            Map.entry(Byte.class.getName(), "Int"),
             Map.entry(Double.class.getName(), "Double"),
             Map.entry(Float.class.getName(), "Double"),
             Map.entry(Boolean.class.getName(), "Boolean"),

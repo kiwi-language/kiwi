@@ -6,10 +6,6 @@ import com.intellij.psi.tree.IElementType;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.BinaryOperator;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.BooleanValue;
-import org.metavm.object.instance.core.DoubleValue;
-import org.metavm.object.instance.core.LongValue;
-import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -132,10 +128,18 @@ public class ExpressionResolver {
         var sourceType = operand.getType();
         resolve(operand, context);
         var castType = requireNonNull(typeCastExpression.getCastType()).getType();
-        if(TranspileUtils.isIntegerType(sourceType) && TranspileUtils.isFloatType(castType))
+        if(TranspileUtils.isLongType(sourceType) && TranspileUtils.isFloatType(castType))
             return methodGenerator.createLongToDouble();
-        else if(TranspileUtils.isFloatType(sourceType) && TranspileUtils.isIntegerType(castType))
+        else if(TranspileUtils.isFloatType(sourceType) && TranspileUtils.isLongType(castType))
             return methodGenerator.createDoubleToLong();
+        else if (TranspileUtils.isIntegerType(sourceType) && TranspileUtils.isFloatType(castType))
+            return methodGenerator.createIntToDouble();
+        else if(TranspileUtils.isFloatType(sourceType) && TranspileUtils.isIntegerType(castType))
+            return methodGenerator.createDoubleToInt();
+        else if(TranspileUtils.isIntType(sourceType) && TranspileUtils.isLongType(castType))
+            return methodGenerator.createIntToLong();
+        else if(TranspileUtils.isLongType(sourceType) && TranspileUtils.isIntType(castType))
+            return methodGenerator.createLongToInt();
         else
             return methodGenerator.createTypeCast(typeResolver.resolveDeclaration(castType));
     }
@@ -247,20 +251,16 @@ public class ExpressionResolver {
 
     private Node resolveLiteral(PsiLiteralExpression literalExpression) {
         Object value = literalExpression.getValue();
-        if (value == null) {
-            return methodGenerator.createLoadConstant(Instances.nullInstance());
-        }
-        Value instance;
-        PrimitiveType valueType = (PrimitiveType) typeResolver.resolve(literalExpression.getType());
-        instance = switch (value) {
-            case Boolean boolValue -> new BooleanValue(boolValue, valueType);
-            case Integer integer -> new LongValue(integer, valueType);
-            case Float floatValue -> new DoubleValue(floatValue.doubleValue(), valueType);
-            case Double doubleValue -> new DoubleValue(doubleValue, valueType);
-            case Long longValue -> new LongValue(longValue, valueType);
-            case String string -> Instances.stringInstance(string);
+        var instance = switch (value) {
+            case null -> Instances.nullInstance();
+            case Boolean boolValue -> Instances.booleanInstance(boolValue);
+            case Integer integer -> Instances.intInstance(integer);
+            case Long longValue -> Instances.longInstance(longValue);
+            case Float floatValue -> Instances.doubleInstance(floatValue);
+            case Double doubleValue -> Instances.doubleInstance(doubleValue);
             case Character c -> Instances.charInstance(c);
-            case null, default -> throw new InternalException("Unrecognized literal value: " + value);
+            case String string -> Instances.stringInstance(string);
+            default -> throw new InternalException("Unrecognized literal: " + value);
         };
         return methodGenerator.createLoadConstant(instance);
     }
@@ -365,7 +365,7 @@ public class ExpressionResolver {
             return resolve(operand, context);
         } else if(op == JavaTokenType.TILDE) {
             resolve(operand, context);
-            return methodGenerator.createBitNot();
+            return methodGenerator.createBitNot(type);
         } else if (op == JavaTokenType.PLUSPLUS) {
             return resolveCompoundAssignment(operand, node -> methodGenerator.createInc(type), () -> {}, context);
         } else if (op == JavaTokenType.MINUSMINUS) {
@@ -417,17 +417,17 @@ public class ExpressionResolver {
         else if(op.equals(JavaTokenType.DIV))
             node = methodGenerator.createDiv(type);
         else if(op.equals(JavaTokenType.LTLT))
-            node = methodGenerator.createLeftShift();
+            node = methodGenerator.createShiftLeft(type);
         else if(op.equals(JavaTokenType.GTGT))
-            node = methodGenerator.createRightShift();
+            node = methodGenerator.createShiftRight(type);
         else if(op.equals(JavaTokenType.GTGTGT))
-            node = methodGenerator.createUnsignedRightShift();
+            node = methodGenerator.createUnsignedShiftRight(type);
         else if(op.equals(JavaTokenType.OR))
-            node = methodGenerator.createBitOr();
+            node = methodGenerator.createBitOr(type);
         else if(op.equals(JavaTokenType.AND))
-            node = methodGenerator.createBitAnd();
+            node = methodGenerator.createBitAnd(type);
         else if(op.equals(JavaTokenType.XOR))
-            node = methodGenerator.createBitXor();
+            node = methodGenerator.createBitXor(type);
         else if(op.equals(JavaTokenType.ANDAND))
             node = methodGenerator.createAnd();
         else if(op.equals(JavaTokenType.OROR))
@@ -572,10 +572,10 @@ public class ExpressionResolver {
                         () -> "Captured expression '" + e.getText() + "' has not yet been resolved"));
         var captureVariableTypes = NncUtils.map(
                 capturedPsiExpressions, e -> typeResolver.resolveDeclaration(e.getType()));
-        var capturedVariableIndexes = new ArrayList<Long>();
+        var capturedVariableIndexes = new ArrayList<Integer>();
         for (Node anchor : anchors) {
             var v = methodGenerator.nextVariableIndex();
-            capturedVariableIndexes.add((long) v);
+            capturedVariableIndexes.add(v);
             methodGenerator.recordValue(anchor, v);
         }
         node.setCapturedVariableIndexes(capturedVariableIndexes);
@@ -683,15 +683,17 @@ public class ExpressionResolver {
                         } else if (op == JavaTokenType.DIVEQ) {
                             return methodGenerator.createDiv(type);
                         } else if (op == JavaTokenType.OREQ) {
-                            return methodGenerator.createBitOr();
+                            return methodGenerator.createBitOr(type);
                         } else if (op == JavaTokenType.ANDEQ) {
-                            return methodGenerator.createBitAnd();
+                            return methodGenerator.createBitAnd(type);
+                        } else if (op == JavaTokenType.XOREQ) {
+                            return methodGenerator.createBitXor(type);
                         } else if (op == JavaTokenType.GTGTGTEQ)
-                            return methodGenerator.createUnsignedRightShift();
+                            return methodGenerator.createUnsignedShiftRight(type);
                         else if (op == JavaTokenType.GTGTEQ)
-                            return methodGenerator.createRightShift();
+                            return methodGenerator.createShiftRight(type);
                         else if (op == JavaTokenType.LTLTEQ)
-                            return methodGenerator.createLeftShift();
+                            return methodGenerator.createShiftLeft(type);
                         else {
                             throw new InternalException("Unsupported assignment operator " + op);
                         }

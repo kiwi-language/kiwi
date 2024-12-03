@@ -105,6 +105,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
         return switch (kind) {
             case PASSWORD -> Instances.passwordInstance((String) primitiveValue.getValue());
             case NULL -> Instances.nullInstance();
+            case INT -> Instances.intInstance((Integer) primitiveValue.getValue());
             case BOOLEAN -> Instances.booleanInstance((Boolean) primitiveValue.getValue());
             case STRING -> Instances.stringInstance((String) primitiveValue.getValue());
             case LONG -> Instances.longInstance((Long) primitiveValue.getValue());

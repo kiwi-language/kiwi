@@ -29,6 +29,7 @@ public class StreamVisitor {
             case WireTypes.DOUBLE -> visitDouble();
             case WireTypes.STRING -> visitString();
             case WireTypes.LONG -> visitLong();
+            case WireTypes.INT -> visitInt();
             case WireTypes.BOOLEAN -> visitBoolean();
             case WireTypes.CHAR -> visitChar();
             case WireTypes.TIME -> visitTime();
@@ -234,6 +235,10 @@ public class StreamVisitor {
 
     public void visitLong() {
         input.readLong();
+    }
+
+    public void visitInt() {
+        input.readInt();
     }
 
     public void visitDouble() {
