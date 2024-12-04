@@ -5,12 +5,14 @@ import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import static org.metavm.autograph.TranspileUtils.createExpressionFromText;
 
 @Slf4j
-public class PrimitiveConversionTransformer extends VisitorBase {
+public class UnboxingTransformer extends VisitorBase {
 
     public static final Set<IElementType> operators = Set.of(
             JavaTokenType.PLUS,
@@ -60,12 +62,13 @@ public class PrimitiveConversionTransformer extends VisitorBase {
         var op = expression.getOperationTokenType();
         if(operators.contains(op)) {
             for (PsiExpression operand : expression.getOperands()) {
-                processExpression(operand, type);
+                tryUnbox(operand, type);
             }
         } else if(shiftOperators.contains(op)) {
             var operands = expression.getOperands();
+            tryUnbox(operands[0], type);
             for (int i = 1; i < operands.length; i++) {
-                processExpression(operands[i], TranspileUtils.intType);
+                tryUnbox(operands[i], TranspileUtils.intType);
             }
         }
     }
@@ -76,16 +79,9 @@ public class PrimitiveConversionTransformer extends VisitorBase {
         var op = expression.getOperationSign().getTokenType();
         if (compareOperators.contains(op)) {
             var first = expression.getLOperand();
-            var second = expression.getROperand();
-            if (first.getType() instanceof PsiPrimitiveType t1
-                    && second.getType() instanceof PsiPrimitiveType t2) {
-                int i1 = numericPrimitiveKinds.indexOf(t1.getKind());
-                var i2 = numericPrimitiveKinds.indexOf(t2.getKind());
-                if(i1 < i2)
-                    processExpression(second, t1);
-                else if(i2 < i1)
-                    processExpression(first, t2);
-            }
+            var second = Objects.requireNonNull(expression.getROperand());
+            tryUnbox(second, first.getType());
+            tryUnbox(first, second.getType());
         }
     }
 
@@ -107,7 +103,7 @@ public class PrimitiveConversionTransformer extends VisitorBase {
         var args = Objects.requireNonNull(call.getArgumentList()).getExpressions();
         var params = Objects.requireNonNull(call.resolveMethod()).getParameterList().getParameters();
         for (int i = 0; i < args.length; i++) {
-            processExpression(args[i], params[i].getType());
+            tryUnbox(args[i], params[i].getType());
         }
     }
 
@@ -117,7 +113,7 @@ public class PrimitiveConversionTransformer extends VisitorBase {
         var elementType = ((PsiArrayType) Objects.requireNonNull(expression.getType())).getComponentType();
         if(elementType instanceof PsiPrimitiveType) {
             for (PsiExpression initializer : expression.getInitializers()) {
-                processExpression(initializer, elementType);
+                tryUnbox(initializer, elementType);
             }
         }
     }
@@ -128,9 +124,9 @@ public class PrimitiveConversionTransformer extends VisitorBase {
         var op = expression.getOperationSign().getTokenType();
         var assignment = Objects.requireNonNull(expression.getRExpression());
         if (shiftOperators.contains(op))
-            processExpression(assignment, TranspileUtils.intType);
+            tryUnbox(assignment, TranspileUtils.intType);
         else
-            processExpression(assignment, expression.getType());
+            tryUnbox(assignment, expression.getType());
     }
 
     @Override
@@ -146,7 +142,7 @@ public class PrimitiveConversionTransformer extends VisitorBase {
                         "Cannot find an enclosing callable for return statement '" + statement.getText() + "'"
                 );
             };
-            processExpression(value, returnType);
+            tryUnbox(value, returnType);
         }
     }
 
@@ -154,7 +150,7 @@ public class PrimitiveConversionTransformer extends VisitorBase {
     public void visitYieldStatement(PsiYieldStatement statement) {
         super.visitYieldStatement(statement);
         var switchExpr = TranspileUtils.getParent(statement, PsiSwitchExpression.class);
-        processExpression(statement.getExpression(), switchExpr.getType());
+        tryUnbox(statement.getExpression(), switchExpr.getType());
     }
 
     @Override
@@ -163,7 +159,7 @@ public class PrimitiveConversionTransformer extends VisitorBase {
         if(statement.getBody() instanceof PsiExpressionStatement exprStmt
                 &&  TranspileUtils.findParent(statement, Set.of(PsiSwitchExpression.class, PsiSwitchStatement.class))
                 instanceof PsiSwitchExpression switchExpr) {
-            processExpression(exprStmt.getExpression(), switchExpr.getType());
+            tryUnbox(exprStmt.getExpression(), switchExpr.getType());
         }
     }
 
@@ -171,19 +167,19 @@ public class PrimitiveConversionTransformer extends VisitorBase {
     public void visitLambdaExpression(PsiLambdaExpression expression) {
         super.visitLambdaExpression(expression);
         if(expression.getBody() instanceof PsiExpression bodyExpr)
-            processExpression(bodyExpr, TranspileUtils.getLambdaReturnType(expression));
+            tryUnbox(bodyExpr, TranspileUtils.getLambdaReturnType(expression));
     }
 
-    private void processExpression(PsiExpression expression, PsiType assignedType) {
-        if (TranspileUtils.isLongType(assignedType)) {
-            if(!TranspileUtils.isLongType(expression.getType()))
-                replace(expression, createExpressionFromText("(long) (" + expression.getText() + ")"));
-        } else if(TranspileUtils.isIntType(assignedType)) {
-            if (!TranspileUtils.isIntType(expression.getType()))
-                replace(expression, createExpressionFromText("(int) (" + expression.getText() + ")"));
-        } else if(TranspileUtils.isDoubleType(assignedType)) {
-            if(!TranspileUtils.isDoubleType(expression.getType()))
-                replace(expression, createExpressionFromText("(double) (" + expression.getText() + ")"));
+    private void tryUnbox(PsiExpression expression, PsiType assignedType) {
+        if (assignedType instanceof PsiPrimitiveType) {
+            var type = expression.getType();
+            if (TranspileUtils.isLongWrapperType(type)) {
+                replace(expression, createExpressionFromText(expression.getText() + ".longValue()"));
+            } else if (TranspileUtils.isIntWrapperType(type)) {
+                replace(expression, createExpressionFromText(expression.getText() + ".intValue()"));
+            } else if (TranspileUtils.isDoubleWrapperType(type)) {
+                replace(expression, createExpressionFromText(expression.getText() + ".doubleValue()"));
+            }
         }
     }
 

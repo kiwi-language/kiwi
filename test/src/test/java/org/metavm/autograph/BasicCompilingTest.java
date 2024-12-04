@@ -105,6 +105,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processGenericObjectIO();
             processPrimitiveConversion();
             processInt();
+            processUnboxing();
         });
     }
 
@@ -1074,6 +1075,11 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processInt() {
         var className = "primitives.IntFoo";
         Assert.assertEquals(3, (int) callMethod(className, "add", List.of(1 ,2)));
+    }
+
+    private void processUnboxing() {
+        var className = "boxing.UnboxingFoo";
+        Assert.assertTrue((boolean) callMethod(className, "gt", List.of(1)));
     }
 
 }

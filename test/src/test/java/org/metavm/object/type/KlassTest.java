@@ -86,7 +86,7 @@ public class KlassTest extends TestCase {
             var code = lambda.getCode();
             Nodes.argument(lambda, 0);
             Nodes.argument(lambda, 1);
-            Nodes.eq(code);
+            Nodes.compareEq(Types.getLongType(), code);
             var if1 = Nodes.if_(null, code);
             Nodes.argument(lambda, 0);
             Nodes.argument(lambda, 1);

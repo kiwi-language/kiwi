@@ -27,7 +27,7 @@ public class GtNode extends Node {
 
     @Override
     public int getStackChange() {
-        return -1;
+        return 0;
     }
 
     @Override

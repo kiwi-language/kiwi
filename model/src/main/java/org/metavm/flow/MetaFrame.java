@@ -60,7 +60,7 @@ public class MetaFrame implements Frame, CallContext {
 
     public static final int MAX_STEPS = 100000;
 
-    @SuppressWarnings("DuplicatedCode")
+    @SuppressWarnings({"DuplicatedCode", "UseCompareMethod"})
     public @NotNull FlowExecResult execute(Code code,
                                            Value[] arguments,
                                            TypeMetadata constantPool,
@@ -692,39 +692,67 @@ public class MetaFrame implements Frame, CallContext {
                             pc++;
                         }
                         case Bytecodes.EQ -> {
-                            var v2 = stack[--top];
-                            var v1 = stack[--top];
-                            stack[top++] = Instances.equals(v1, v2);
+                            var v = ((IntValue) stack[--top]).value;
+                            stack[top++] = new BooleanValue(v == 0, PrimitiveType.booleanType);
                             pc++;
                         }
                         case Bytecodes.NE -> {
-                            var v2 = stack[--top];
-                            var v1 = stack[--top];
-                            stack[top++] = Instances.notEquals(v1, v2);
+                            var v = ((IntValue) stack[--top]).value;
+                            stack[top++] = new BooleanValue(v != 0, PrimitiveType.booleanType);
                             pc++;
                         }
                         case Bytecodes.GE -> {
-                            var v2 = (NumberValue) stack[--top];
-                            var v1 = (NumberValue) stack[--top];
-                            stack[top++] = v1.ge(v2);
+                            var v = ((IntValue) stack[--top]).value;
+                            stack[top++] = new BooleanValue(v >= 0, PrimitiveType.booleanType);
                             pc++;
+
                         }
                         case Bytecodes.GT -> {
-                            var v2 = (NumberValue) stack[--top];
-                            var v1 = (NumberValue) stack[--top];
-                            stack[top++] = v1.gt(v2);
+                            var v = ((IntValue) stack[--top]).value;
+                            stack[top++] = new BooleanValue(v > 0, PrimitiveType.booleanType);
                             pc++;
                         }
                         case Bytecodes.LT -> {
-                            var v2 = (NumberValue) stack[--top];
-                            var v1 = (NumberValue) stack[--top];
-                            stack[top++] = v1.lt(v2);
+                            var v = ((IntValue) stack[--top]).value;
+                            stack[top++] = new BooleanValue(v < 0, PrimitiveType.booleanType);
                             pc++;
                         }
                         case Bytecodes.LE -> {
-                            var v2 = (NumberValue) stack[--top];
-                            var v1 = (NumberValue) stack[--top];
-                            stack[top++] = v1.le(v2);
+                            var v = ((IntValue) stack[--top]).value;
+                            stack[top++] = new BooleanValue(v <= 0, PrimitiveType.booleanType);
+                            pc++;
+                        }
+                        case Bytecodes.INT_COMPARE -> {
+                            var v2 = ((IntValue) stack[--top]).value;
+                            var v1 = ((IntValue) stack[--top]).value;
+                            var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
+                            stack[top++] = new IntValue(r, PrimitiveType.intType);
+                            pc++;
+                        }
+                        case Bytecodes.LONG_COMPARE -> {
+                            var v2 = ((LongValue) stack[--top]).value;
+                            var v1 = ((LongValue) stack[--top]).value;
+                            var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
+                            stack[top++] = new IntValue(r, PrimitiveType.intType);
+                            pc++;
+                        }
+                        case Bytecodes.DOUBLE_COMPARE -> {
+                            var v2 = ((DoubleValue) stack[--top]).value;
+                            var v1 = ((DoubleValue) stack[--top]).value;
+                            var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
+                            stack[top++] = new IntValue(r, PrimitiveType.intType);
+                            pc++;
+                        }
+                        case Bytecodes.REF_COMPARE_EQ -> {
+                            var v2 = (Value) stack[--top];
+                            var v1 = (Value) stack[--top];
+                            stack[top++] = new BooleanValue(v1.equals(v2), PrimitiveType.booleanType);
+                            pc++;
+                        }
+                        case Bytecodes.REF_COMPARE_NE -> {
+                            var v2 = (Value) stack[--top];
+                            var v1 = (Value) stack[--top];
+                            stack[top++] = new BooleanValue(!v1.equals(v2), PrimitiveType.booleanType);
                             pc++;
                         }
                         case Bytecodes.GET_PROPERTY -> {

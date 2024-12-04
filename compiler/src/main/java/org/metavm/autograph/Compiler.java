@@ -84,6 +84,7 @@ public class Compiler {
                         file.accept(new DefaultSwitchCaseAppender());
                         resolveQnAndActivity(file);
                         file.accept(new StringConcatTransformer());
+                        file.accept(new UnboxingTransformer());
                         file.accept(new PrimitiveConversionTransformer());
                     }
             )

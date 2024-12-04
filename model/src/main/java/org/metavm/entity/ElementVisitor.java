@@ -666,4 +666,25 @@ public abstract class ElementVisitor<R> {
     public R visitIntBitXorNode(IntBitXorNode node) {
         return visitNode(node);
     }
+
+    public R visitLongCompareNode(LongCompareNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntCompareNode(IntCompareNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDoubleCompareNode(DoubleCompareNode node) {
+        return visitNode(node);
+    }
+
+    public R visitRefCompareEqNode(RefCompareEqNode node) {
+        return visitNode(node);
+    }
+
+    public R visitRefCompareNeNode(RefCompareNeNode node) {
+        return visitNode(node);
+    }
+
 }

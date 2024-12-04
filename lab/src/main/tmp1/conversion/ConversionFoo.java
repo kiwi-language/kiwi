@@ -48,4 +48,17 @@ public class ConversionFoo {
         return v == 0;
     }
 
+    public static boolean isGt(Long l) {
+        return l > 0L;
+    }
+
+    public static String toString(Integer i) {
+        return switch (i) {
+            case 0 -> "zero";
+            case 1 -> "one";
+            case 2 -> "two";
+            default -> "unknown";
+        };
+    }
+
 }

@@ -28,7 +28,7 @@ public class FlowCheckerTest extends TestCase {
         var code = method.getCode();
         Nodes.argument(method, 0);
         Nodes.loadConstant(Instances.nullInstance(), code);
-        Nodes.ne(code);
+        Nodes.refCompareNe(code);
         var ifNode = Nodes.if_( null, code);
         Nodes.loadConstant(Instances.stringInstance("Value required"), code);
         Nodes.raiseWithMessage(code);
@@ -50,7 +50,7 @@ public class FlowCheckerTest extends TestCase {
         var code = method.getCode();
         Nodes.argument(method, 0);
         Nodes.loadConstant(Instances.nullInstance(), code);
-        Nodes.eq(code);
+        Nodes.refCompareEq(code);
         var ifNode = Nodes.if_(null, code);
         Nodes.argument(method, 0);
         Nodes.ret(code);

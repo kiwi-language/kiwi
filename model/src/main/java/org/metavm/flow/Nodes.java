@@ -76,7 +76,7 @@ public class Nodes {
         indexSupplier.get();
         arraySupplier.get();
         arrayLength("len", code);
-        Nodes.ge(code);
+        Nodes.compareGe(Types.getIntType(), code);
         var ifNode = if_(null, code);
         Supplier<Node> elementSupplier = () -> {
             arraySupplier.get();
@@ -573,6 +573,60 @@ public class Nodes {
         );
     }
 
+    public static Node intCompare(Code code) {
+        return new IntCompareNode(code.nextNodeName("icmp"), code.getLastNode(), code);
+    }
+
+    public static Node compareEq(Type type, Code code) {
+        if(type instanceof PrimitiveType primitiveType) {
+            var kind = primitiveType.getKind();
+            if (kind == PrimitiveKind.STRING)
+                return refCompareEq(code);
+            switch (kind) {
+                case LONG -> longCompare(code);
+                case INT ->  intCompare(code);
+                case DOUBLE -> doubleCompare(code);
+                default -> throw new IllegalStateException("Cannot generate compareEq for type " + type);
+            }
+            return eq(code);
+        }
+        else
+            return refCompareEq(code);
+    }
+
+    public static Node compareNe(Type type, Code code) {
+        if(type instanceof PrimitiveType primitiveType) {
+            var kind = primitiveType.getKind();
+            if (kind == PrimitiveKind.STRING)
+                return refCompareNe(code);
+            switch (kind) {
+                case LONG -> longCompare(code);
+                case INT ->  intCompare(code);
+                case DOUBLE -> doubleCompare(code);
+                default -> throw new IllegalStateException("Cannot generate compareNe for type " + type);
+            }
+            return ne(code);
+        }
+        else
+            return refCompareNe(code);
+    }
+
+    public static Node longCompare(Code code) {
+        return new LongCompareNode(code.nextNodeName("lcmp"), code.getLastNode(), code);
+    }
+
+    public static Node doubleCompare(Code code) {
+        return new DoubleCompareNode(code.nextNodeName("dcmp"), code.getLastNode(), code);
+    }
+
+    public static Node refCompareEq(Code code) {
+        return new RefCompareEqNode(code.nextNodeName("acmpeq"), code.getLastNode(), code);
+    }
+
+    public static Node refCompareNe(Code code) {
+        return new RefCompareNeNode(code.nextNodeName("acmpne"), code.getLastNode(), code);
+    }
+
     public static Node eq(Code code) {
         return new EqNode(
                 code.nextNodeName("eq"),
@@ -595,6 +649,62 @@ public class Nodes {
                 code.getLastNode(),
                 code
         );
+    }
+
+    public static Node compareGt(Type type, Code code) {
+        if(type instanceof PrimitiveType primitiveType) {
+            switch (primitiveType.getKind()) {
+                case LONG -> longCompare(code);
+                case INT ->  intCompare(code);
+                case DOUBLE -> doubleCompare(code);
+                default -> throw new IllegalStateException("Cannot generate compareGt for type " + type);
+            }
+            return gt(code);
+        }
+        else
+            throw new IllegalStateException("Cannot generate compareGt for type " + type);
+    }
+
+    public static Node compareGe(Type type, Code code) {
+        if(type instanceof PrimitiveType primitiveType) {
+            switch (primitiveType.getKind()) {
+                case LONG -> longCompare(code);
+                case INT ->  intCompare(code);
+                case DOUBLE -> doubleCompare(code);
+                default -> throw new IllegalStateException("Cannot generate compareGe for type " + type);
+            }
+            return ge(code);
+        }
+        else
+            throw new IllegalStateException("Cannot generate compareGe for type " + type);
+    }
+
+    public static Node compareLt(Type type, Code code) {
+        if(type instanceof PrimitiveType primitiveType) {
+            switch (primitiveType.getKind()) {
+                case LONG -> longCompare(code);
+                case INT ->  intCompare(code);
+                case DOUBLE -> doubleCompare(code);
+                default -> throw new IllegalStateException("Cannot generate compareLt for type " + type);
+            }
+            return lt(code);
+        }
+        else
+            throw new IllegalStateException("Cannot generate compareLt for type " + type);
+    }
+
+    public static Node compareLe(Type type, Code code) {
+        if(type instanceof PrimitiveType primitiveType) {
+            switch (primitiveType.getKind()) {
+                case LONG -> longCompare(code);
+                case INT ->  intCompare(code);
+                case DOUBLE -> doubleCompare(code);
+                default -> throw new IllegalStateException("Cannot generate compareLe for type " + type);
+            }
+            return le(code);
+        }
+        else
+            throw new IllegalStateException("Cannot generate compareLe for type " + type);
     }
 
     public static Node gt(Code code) {

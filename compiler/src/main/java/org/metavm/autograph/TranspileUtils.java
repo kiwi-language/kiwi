@@ -36,6 +36,7 @@ import static java.util.Objects.requireNonNull;
 public class TranspileUtils {
 
     public static final Logger logger = LoggerFactory.getLogger(TranspileUtils.class);
+    public static PsiPrimitiveType intType;
 
     private static final String DUMMY_FILE_NAME = "_Dummy_." + JavaFileType.INSTANCE.getDefaultExtension();
 
@@ -616,6 +617,7 @@ public class TranspileUtils {
     public static void init(PsiElementFactory elementFactory, Project project) {
         TranspileUtils.elementFactory = elementFactory;
         TranspileUtils.project = project;
+        intType = createIntType();
         nativeFunctionCallResolvers.clear();
         for (StdFunction def : StdFunction.values()) {
             for (Method javaMethod : def.getJavaMethods()) {
@@ -1585,6 +1587,33 @@ public class TranspileUtils {
 
     public static boolean isSingleFloatType(PsiType type) {
         return type instanceof PsiPrimitiveType primitiveType && primitiveType.getKind() == JvmPrimitiveTypeKind.FLOAT;
+    }
+
+    public static boolean isLongWrapperType(PsiType type) {
+        if (type instanceof PsiClassType classType) {
+            var k = requireNonNull(classType.resolve());
+            return "java.lang.Long".equals(k.getQualifiedName());
+        }
+        else
+            return false;
+    }
+
+    public static boolean isDoubleWrapperType(PsiType type) {
+        if (type instanceof PsiClassType classType) {
+            var k = requireNonNull(classType.resolve());
+            return "java.lang.Double".equals(k.getQualifiedName());
+        }
+        else
+            return false;
+    }
+
+    public static boolean isIntWrapperType(PsiType type) {
+        if (type instanceof PsiClassType classType) {
+            var k = requireNonNull(classType.resolve());
+            return "java.lang.Integer".equals(k.getQualifiedName());
+        }
+        else
+            return false;
     }
 
 }

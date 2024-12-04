@@ -177,7 +177,7 @@ public class Generator extends VisitorBase {
         }
         builder().createLoad(exceptionVar, StdKlass.exception.type());
         builder().createLoadConstant(Instances.nullInstance());
-        builder().createEq();
+        builder().createRefCompareEq();
         var if1 = builder().createIf(null);
         builder().createLoad(caught, Types.getBooleanType());
         var if2 = builder().createIf(null);
@@ -229,7 +229,7 @@ public class Generator extends VisitorBase {
         }
         builder.exitScope();
         builders.pop();
-//        if(method.getQualifiedName().equals("exceptions.ArrayIndexOutOfBoundsFoo.test")) {
+//        if(method.getQualifiedName().equals("branching.BranchingFoo.getOrDefault")) {
 //            logger.debug("{}", method.getText());
 //        }
     }
@@ -272,7 +272,8 @@ public class Generator extends VisitorBase {
     private void processLabeledRuleSwitch(PsiSwitchStatement statement) {
         var valueVar = builder().nextVariableIndex();
         var expr = Objects.requireNonNull(statement.getExpression());
-        var valueType = typeResolver.resolveDeclaration(expr.getType());
+        var psiType = expr.getType();
+        var valueType = typeResolver.resolveDeclaration(psiType);
         resolveExpression(expr);
         builder().createStore(valueVar);
         var statements = requireNonNull(statement.getBody()).getStatements();
@@ -299,7 +300,7 @@ public class Generator extends VisitorBase {
                 for (var expression : caseLabelElementList.getElements()) {
                     builder().createLoad(valueVar, valueType);
                     resolveExpression((PsiExpression) expression);
-                    builder().createEq();
+                    builder().createCompareEq(psiType);
                     ifNodes.add(builder().createIfNot(null));
                 }
             }
@@ -484,7 +485,7 @@ public class Generator extends VisitorBase {
             builder().createLoad(indexVar, Types.getIntType());
             builder().createLoad(iteratedVar, iteratedType);
             builder().createArrayLength();
-            builder().createGe();
+            builder().createCompareGe(TranspileUtils.intType);
             var ifNode = builder().createIf(null);
             var condition = getExtraLoopTest(statement);
             IfNotNode ifNode1;

@@ -52,7 +52,6 @@ public class Bytecodes {
     public static final int LONG_BIT_XOR = 57;
     public static final int AND = 58;
     public static final int OR = 59;
-    public static final int BIT_NOT = 60;
     public static final int NOT = 61;
     public static final int LONG_NEG = 62;
     public static final int LONG_REM = 63;
@@ -105,6 +104,11 @@ public class Bytecodes {
     public static final int INT_BIT_AND = 110;
     public static final int INT_BIT_OR = 111;
     public static final int INT_BIT_XOR = 112;
+    public static final int LONG_COMPARE = 113;
+    public static final int INT_COMPARE = 114;
+    public static final int DOUBLE_COMPARE = 115;
+    public static final int REF_COMPARE_EQ = 116;
+    public static final int REF_COMPARE_NE = 117;
 
     private static final String[] names = new String[256];
 

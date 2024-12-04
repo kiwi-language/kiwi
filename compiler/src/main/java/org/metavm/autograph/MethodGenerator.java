@@ -767,6 +767,93 @@ public class MethodGenerator {
         );
     }
 
+    Node createCompareGt(PsiType type) {
+        if (TranspileUtils.isLongType(type))
+            createLongCompare();
+        else if (TranspileUtils.isIntegerType(type))
+            createIntCompare();
+        else
+            createDoubleCompare();
+        return createGt();
+    }
+
+
+    Node createCompareGe(PsiType type) {
+        if (TranspileUtils.isLongType(type))
+            createLongCompare();
+        else if (TranspileUtils.isIntegerType(type))
+            createIntCompare();
+        else
+            createDoubleCompare();
+        return createGe();
+    }
+
+    Node createCompareLt(PsiType type) {
+        if (TranspileUtils.isLongType(type))
+            createLongCompare();
+        else if (TranspileUtils.isIntegerType(type))
+            createIntCompare();
+        else
+            createDoubleCompare();
+        return createLt();
+    }
+
+    Node createCompareLe(PsiType type) {
+        if (TranspileUtils.isLongType(type))
+            createLongCompare();
+        else if (TranspileUtils.isIntegerType(type))
+            createIntCompare();
+        else
+            createDoubleCompare();
+        return createLe();
+    }
+
+    Node createCompareEq(PsiType type) {
+        if (type instanceof PsiPrimitiveType) {
+            if (TranspileUtils.isLongType(type))
+                createLongCompare();
+            else if (TranspileUtils.isIntegerType(type))
+                createIntCompare();
+            else
+                createDoubleCompare();
+            return createEq();
+        } else
+          return createRefCompareEq();
+    }
+
+    Node createCompareNe(PsiType type) {
+        if (type instanceof PsiPrimitiveType) {
+            if (TranspileUtils.isLongType(type))
+                createLongCompare();
+            else if (TranspileUtils.isIntegerType(type))
+                createIntCompare();
+            else
+                createDoubleCompare();
+            return createNe();
+        } else
+            return createRefCompareNe();
+    }
+
+    IntCompareNode createIntCompare() {
+        return onNodeCreated(new IntCompareNode(nextName("icmp"), code().getLastNode(), code()));
+    }
+
+    LongCompareNode createLongCompare() {
+        return onNodeCreated(new LongCompareNode(nextName("lcmp"), code().getLastNode(), code()));
+    }
+
+    DoubleCompareNode createDoubleCompare() {
+        return onNodeCreated(new DoubleCompareNode(nextName("dcmp"), code().getLastNode(), code()));
+    }
+
+    RefCompareEqNode createRefCompareEq() {
+        return onNodeCreated(new RefCompareEqNode(nextName("acmpeq"), code().getLastNode(), code()));
+    }
+
+    RefCompareNeNode createRefCompareNe() {
+        return onNodeCreated(new RefCompareNeNode(nextName("acmpne"), code().getLastNode(), code()));
+    }
+
     EqNode createEq() {
         return onNodeCreated(new EqNode(
                         nextName("eq"),

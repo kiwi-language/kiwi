@@ -403,7 +403,7 @@ public class ExpressionResolver {
         var op = psiExpression.getOperationSign().getTokenType();
         resolve(psiExpression.getLOperand(), context);
         resolve(psiExpression.getROperand(), context);
-        return resolveBinary(op, psiExpression.getType());
+        return resolveBinary(op, psiExpression.getLOperand().getType());
     }
 
     private Node resolveBinary(IElementType op, PsiType type) {
@@ -435,17 +435,17 @@ public class ExpressionResolver {
         else if(op.equals(JavaTokenType.PERC))
             node = methodGenerator.createRem(type);
         else if(op.equals(JavaTokenType.EQEQ))
-            node = methodGenerator.createEq();
+            node = methodGenerator.createCompareEq(type);
         else if(op.equals(JavaTokenType.NE))
-            node = methodGenerator.createNe();
+            node = methodGenerator.createCompareNe(type);
         else if(op.equals(JavaTokenType.GE))
-            node = methodGenerator.createGe();
+            node = methodGenerator.createCompareGe(type);
         else if(op.equals(JavaTokenType.GT))
-            node = methodGenerator.createGt();
+            node = methodGenerator.createCompareGt(type);
         else if(op.equals(JavaTokenType.LT))
-            node = methodGenerator.createLt();
+            node = methodGenerator.createCompareLt(type);
         else if(op.equals(JavaTokenType.LE))
-            node = methodGenerator.createLe();
+            node = methodGenerator.createCompareLe(type);
         else
             throw new IllegalStateException("Unrecognized operator " + op);
         return node;
@@ -1014,9 +1014,9 @@ public class ExpressionResolver {
     private Node resolveSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
         var y = methodGenerator.enterSwitchExpression();
         var switchVarIndex = methodGenerator.nextVariableIndex();
-        resolve(psiSwitchExpression.getExpression(), context);
+        var value = Objects.requireNonNull(psiSwitchExpression.getExpression());
+        resolve(value, context);
         methodGenerator.createStore(switchVarIndex);
-        var switchVarType = typeResolver.resolveDeclaration(psiSwitchExpression.getType());
         var body = requireNonNull(psiSwitchExpression.getBody());
         var statements = requireNonNull(body.getStatements());
         List<IfNotNode> lastIfNodes = List.of();
@@ -1030,7 +1030,7 @@ public class ExpressionResolver {
                 var caseElementList = requireNonNull(labeledRuleStatement.getCaseLabelElementList());
                 var ifNodes = new ArrayList<IfNotNode>();
                 for (PsiCaseLabelElement element : caseElementList.getElements()) {
-                    ifNodes.add(resolveSwitchCaseLabel(switchVarIndex, switchVarType, element, context));
+                    ifNodes.add(resolveSwitchCaseLabel(switchVarIndex, value.getType(), element, context));
                 }
                 if(lastGoto != null) {
                     for (IfNotNode lastIfNode : lastIfNodes) {
@@ -1058,20 +1058,21 @@ public class ExpressionResolver {
         return methodGenerator.createLoad(y, type);
     }
 
-    private IfNotNode resolveSwitchCaseLabel(int switchVarIndex, Type switchVarType, PsiElement label, ResolutionContext context) {
+    private IfNotNode resolveSwitchCaseLabel(int switchVarIndex, PsiType switchVarType, PsiElement label, ResolutionContext context) {
+        var type = typeResolver.resolveDeclaration(switchVarType);
         if(label instanceof PsiExpression expression) {
-            methodGenerator.createLoad(switchVarIndex, switchVarType);
+            methodGenerator.createLoad(switchVarIndex, type);
             resolve(expression, context);
-            methodGenerator.createEq();
+            methodGenerator.createCompareEq(switchVarType);
             return methodGenerator.createIfNot(null);
         }
         if(label instanceof PsiTypeTestPattern typeTestPattern) {
             var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
-           methodGenerator.createLoad(switchVarIndex, switchVarType);
+           methodGenerator.createLoad(switchVarIndex, type);
             methodGenerator.createStore(
                     methodGenerator.getVariableIndex(Objects.requireNonNull(typeTestPattern.getPatternVariable()))
             );
-            methodGenerator.createLoad(switchVarIndex, switchVarType);
+            methodGenerator.createLoad(switchVarIndex, type);
             methodGenerator.createInstanceOf(typeResolver.resolveDeclaration(checkType));
             return methodGenerator.createIfNot(null);
         }

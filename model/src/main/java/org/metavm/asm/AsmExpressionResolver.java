@@ -328,27 +328,27 @@ class AsmExpressionResolver {
                 yield type;
             }
             case AssemblyParser.EQUAL -> {
-                Nodes.eq(code);
+                Nodes.compareEq(type, code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.NOTEQUAL -> {
-                Nodes.ne(code);
+                Nodes.compareNe(type, code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.GE -> {
-                Nodes.ge(code);
+                Nodes.compareGe(type, code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.GT -> {
-                Nodes.gt(code);
+                Nodes.compareGt(type, code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.LT -> {
-                Nodes.lt(code);
+                Nodes.compareLt(type, code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.LE -> {
-                Nodes.le(code);
+                Nodes.compareLe(type, code);
                 yield Types.getBooleanType();
             }
             default -> throw new IllegalStateException("Unrecognized operator: " + ctx.bop.getText());
