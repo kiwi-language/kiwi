@@ -281,49 +281,6 @@ public class Expressions {
         }
     }
 
-    public static LongValue castInteger(Value value) {
-        if (value instanceof LongValue longInstance) {
-            return longInstance;
-        } else {
-            throw BusinessException.invalidExpressionValue("integer", value);
-        }
-    }
-
-    public static DoubleValue castFloat(Value value) {
-        if (value instanceof DoubleValue doubleInstance) {
-            return doubleInstance;
-        }
-        if (value instanceof LongValue longInstance) {
-            return Instances.doubleInstance(longInstance.getValue());
-        } else {
-            throw BusinessException.invalidExpressionValue("float", value);
-        }
-    }
-
-    public static BooleanValue castBoolean(Value value) {
-        if (value instanceof BooleanValue booleanInstance) {
-            return booleanInstance;
-        } else {
-            throw BusinessException.invalidExpressionValue("boolean", value);
-        }
-    }
-
-    public static StringValue castString(Value value) {
-        if (value instanceof StringValue stringInstance) {
-            return stringInstance;
-        } else {
-            return Instances.stringInstance(Objects.toString(value.getTitle()));
-        }
-    }
-
-    public static ArrayInstance castCollection(Value value) {
-        if (value.isArray()) {
-            return value.resolveArray();
-        } else {
-            throw BusinessException.invalidExpressionValue("Collection", value);
-        }
-    }
-
     public static String constantToExpression(FieldValue fieldValue) {
         if (fieldValue instanceof PrimitiveFieldValue primitiveFieldValue) {
             Object value = primitiveFieldValue.getValue();

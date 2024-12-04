@@ -111,6 +111,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
             case LONG -> Instances.longInstance((Long) primitiveValue.getValue());
             case CHAR -> Instances.charInstance((Character) primitiveValue.getValue());
             case DOUBLE -> Instances.doubleInstance((Double) primitiveValue.getValue());
+            case FLOAT -> Instances.floatInstance((Float) primitiveValue.getValue());
             case TIME -> Instances.timeInstance((Long) primitiveValue.getValue());
             case VOID -> throw new InternalException("Can not create a void instance");
         };

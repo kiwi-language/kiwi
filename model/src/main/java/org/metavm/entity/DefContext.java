@@ -22,10 +22,8 @@ import static org.metavm.object.type.ResolutionStage.*;
 public abstract class DefContext extends BaseEntityContext implements IEntityContext, TypeRegistry {
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
-            Map.entry(Byte.class, Long.class),
-            Map.entry(Short.class, Long.class),
-            Map.entry(Integer.class, Long.class),
-            Map.entry(Float.class, Double.class)
+            Map.entry(Byte.class, Integer.class),
+            Map.entry(Short.class, Integer.class)
     );
 
     public DefContext(IInstanceContext instanceContext) {

@@ -570,6 +570,15 @@ public class TranspileUtils {
         return elementFactory.createPrimitiveType("int");
     }
 
+    public static boolean isFloatWrapperType(PsiType type) {
+        if (type instanceof PsiClassType classType) {
+            var k = requireNonNull(classType.resolve());
+            return "java.lang.Float".equals(k.getQualifiedName());
+        }
+        else
+            return false;
+    }
+
     private static class UpwardsClassVisitor extends JavaElementVisitor {
 
         @Override
@@ -1194,7 +1203,7 @@ public class TranspileUtils {
             Map.entry(Short.class.getName(), "Int"),
             Map.entry(Byte.class.getName(), "Int"),
             Map.entry(Double.class.getName(), "Double"),
-            Map.entry(Float.class.getName(), "Double"),
+            Map.entry(Float.class.getName(), "Float"),
             Map.entry(Boolean.class.getName(), "Boolean"),
             Map.entry(Date.class.getName(), "Time"),
             Map.entry(Object.class.getName(), "Any"),
@@ -1565,10 +1574,8 @@ public class TranspileUtils {
     }
 
     public static boolean isFloatType(PsiType type) {
-       if (type instanceof PsiPrimitiveType primitiveType) {
-           var kind = primitiveType.getKind();
-           return kind == JvmPrimitiveTypeKind.DOUBLE || kind == JvmPrimitiveTypeKind.FLOAT;
-       }
+       if (type instanceof PsiPrimitiveType primitiveType)
+           return primitiveType.getKind() == JvmPrimitiveTypeKind.FLOAT;
        else
            return false;
     }
@@ -1583,10 +1590,6 @@ public class TranspileUtils {
 
     public static boolean isDoubleType(PsiType type) {
         return type instanceof PsiPrimitiveType primitiveType && primitiveType.getKind() == JvmPrimitiveTypeKind.DOUBLE;
-    }
-
-    public static boolean isSingleFloatType(PsiType type) {
-        return type instanceof PsiPrimitiveType primitiveType && primitiveType.getKind() == JvmPrimitiveTypeKind.FLOAT;
     }
 
     public static boolean isLongWrapperType(PsiType type) {

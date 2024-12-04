@@ -184,6 +184,9 @@ public class PrimitiveConversionTransformer extends VisitorBase {
         } else if(TranspileUtils.isDoubleType(assignedType)) {
             if(!TranspileUtils.isDoubleType(expression.getType()))
                 replace(expression, createExpressionFromText("(double) (" + expression.getText() + ")"));
+        } else if(TranspileUtils.isFloatType(assignedType)) {
+            if(!TranspileUtils.isFloatType(expression.getType()))
+                replace(expression, createExpressionFromText("(float) (" + expression.getText() + ")"));
         }
     }
 

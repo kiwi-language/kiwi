@@ -48,6 +48,7 @@ primitiveType
     | NULL
     | VOID
     | BOOLEAN
+    | FLOAT
     ;
 
 typeList: type (',' type) *;

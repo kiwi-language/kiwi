@@ -380,8 +380,10 @@ public class MethodGenerator {
             return createLongAdd();
         else if (TranspileUtils.isIntegerType(type))
             return createIntAdd();
-        else
+        else if (TranspileUtils.isDoubleType(type))
             return createDoubleAdd();
+        else
+            return createFloatAdd();
     }
 
     Node createSub(PsiType type) {
@@ -389,8 +391,10 @@ public class MethodGenerator {
             return createLongSub();
         else if(TranspileUtils.isIntegerType(type))
             return createIntSub();
-        else
+        else if (TranspileUtils.isDoubleType(type))
             return createDoubleSub();
+        else
+            return createFloatSub();
     }
 
     Node createMul(PsiType type) {
@@ -398,8 +402,10 @@ public class MethodGenerator {
             return createLongMul();
         else if(TranspileUtils.isIntegerType(type))
             return createIntMul();
-        else
+        else if (TranspileUtils.isDoubleType(type))
             return createDoubleMul();
+        else
+            return createFloatMul();
     }
 
     Node createDiv(PsiType type) {
@@ -407,8 +413,10 @@ public class MethodGenerator {
             return createLongDiv();
         else if(TranspileUtils.isIntegerType(type))
             return createIntDiv();
-        else
+        else if (TranspileUtils.isDoubleType(type))
             return createDoubleDiv();
+        else
+            return createFloatDiv();
     }
 
     Node createRem(PsiType type) {
@@ -416,8 +424,10 @@ public class MethodGenerator {
             return createLongRem();
         else if(TranspileUtils.isIntegerType(type))
             return createIntRem();
-        else
+        else if (TranspileUtils.isDoubleType(type))
             return createDoubleRem();
+        else
+            return createFloatRem();
     }
 
     Node createNeg(PsiType type) {
@@ -425,8 +435,10 @@ public class MethodGenerator {
             return createLongNeg();
         else if(TranspileUtils.isIntegerType(type))
             return createIntNeg();
-        else
+        else if (TranspileUtils.isDoubleType(type))
             return createDoubleNeg();
+        else
+            return createFloatNeg();
     }
 
     Node createInc(PsiType type) {
@@ -436,9 +448,12 @@ public class MethodGenerator {
         } else if(TranspileUtils.isIntegerType(type)) {
             createLoadConstant(Instances.intInstance(1));
             return createIntAdd();
-        } else {
+        } else if (TranspileUtils.isDoubleType(type)){
             createLoadConstant(Instances.doubleInstance(1));
             return createDoubleAdd();
+        } else {
+            createLoadConstant(Instances.floatInstance(1));
+            return createFloatAdd();
         }
     }
 
@@ -449,9 +464,12 @@ public class MethodGenerator {
         } else if(TranspileUtils.isIntegerType(type)) {
             createLoadConstant(Instances.intInstance(1));
             return createIntSub();
-        } else {
+        } else if (TranspileUtils.isDoubleType(type)) {
             createLoadConstant(Instances.doubleInstance(1));
             return createDoubleSub();
+        } else {
+            createLoadConstant(Instances.floatInstance(1));
+            return createFloatSub();
         }
     }
 
@@ -575,6 +593,42 @@ public class MethodGenerator {
     DoubleDivNode createDoubleDiv() {
         return onNodeCreated(new DoubleDivNode(
                         nextName("ddiv"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    FloatAddNode createFloatAdd() {
+        return onNodeCreated(new FloatAddNode(
+                        nextName("fadd"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    FloatSubNode createFloatSub() {
+        return onNodeCreated(new FloatSubNode(
+                        nextName("fsub"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    FloatMulNode createFloatMul() {
+        return onNodeCreated(new FloatMulNode(
+                        nextName("fmul"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    FloatDivNode createFloatDiv() {
+        return onNodeCreated(new FloatDivNode(
+                        nextName("fdiv"),
                         code().getLastNode(),
                         code()
                 )
@@ -767,13 +821,24 @@ public class MethodGenerator {
         );
     }
 
+    FloatRemNode createFloatRem() {
+        return onNodeCreated(new FloatRemNode(
+                        nextName("frem"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
     Node createCompareGt(PsiType type) {
         if (TranspileUtils.isLongType(type))
             createLongCompare();
         else if (TranspileUtils.isIntegerType(type))
             createIntCompare();
-        else
+        else if (TranspileUtils.isDoubleType(type))
             createDoubleCompare();
+        else
+            createFloatCompare();
         return createGt();
     }
 
@@ -783,8 +848,10 @@ public class MethodGenerator {
             createLongCompare();
         else if (TranspileUtils.isIntegerType(type))
             createIntCompare();
-        else
+        else if (TranspileUtils.isDoubleType(type))
             createDoubleCompare();
+        else
+            createFloatCompare();
         return createGe();
     }
 
@@ -793,8 +860,10 @@ public class MethodGenerator {
             createLongCompare();
         else if (TranspileUtils.isIntegerType(type))
             createIntCompare();
-        else
+        else if (TranspileUtils.isDoubleType(type))
             createDoubleCompare();
+        else
+            createFloatCompare();
         return createLt();
     }
 
@@ -803,8 +872,10 @@ public class MethodGenerator {
             createLongCompare();
         else if (TranspileUtils.isIntegerType(type))
             createIntCompare();
-        else
+        else if (TranspileUtils.isDoubleType(type))
             createDoubleCompare();
+        else
+            createFloatCompare();
         return createLe();
     }
 
@@ -814,8 +885,10 @@ public class MethodGenerator {
                 createLongCompare();
             else if (TranspileUtils.isIntegerType(type))
                 createIntCompare();
-            else
+            else if (TranspileUtils.isDoubleType(type))
                 createDoubleCompare();
+            else
+                createFloatCompare();
             return createEq();
         } else
           return createRefCompareEq();
@@ -827,8 +900,10 @@ public class MethodGenerator {
                 createLongCompare();
             else if (TranspileUtils.isIntegerType(type))
                 createIntCompare();
-            else
+            else if (TranspileUtils.isDoubleType(type))
                 createDoubleCompare();
+            else
+                createFloatCompare();
             return createNe();
         } else
             return createRefCompareNe();
@@ -844,6 +919,10 @@ public class MethodGenerator {
 
     DoubleCompareNode createDoubleCompare() {
         return onNodeCreated(new DoubleCompareNode(nextName("dcmp"), code().getLastNode(), code()));
+    }
+
+    FloatCompareNode createFloatCompare() {
+        return onNodeCreated(new FloatCompareNode(nextName("fcmp"), code().getLastNode(), code()));
     }
 
     RefCompareEqNode createRefCompareEq() {
@@ -956,6 +1035,15 @@ public class MethodGenerator {
     DoubleNegNode createDoubleNeg() {
         return onNodeCreated(new DoubleNegNode(
                         nextName("dneg"),
+                        code().getLastNode(),
+                        code()
+                )
+        );
+    }
+
+    FloatNegNode createFloatNeg() {
+        return onNodeCreated(new FloatNegNode(
+                        nextName("fneg"),
                         code().getLastNode(),
                         code()
                 )
@@ -1116,6 +1204,30 @@ public class MethodGenerator {
 
     public BlockInfo currentBlock() {
         return Objects.requireNonNull(blocks.peek());
+    }
+
+    public Node createFloatToInt() {
+        return onNodeCreated(new FloatToIntNode(nextName("f2i"), code().getLastNode(), code()));
+    }
+
+    public Node createFloatToLong() {
+        return onNodeCreated(new FloatToLongNode(nextName("f2l"), code().getLastNode(), code()));
+    }
+
+    public Node createFloatToDouble() {
+        return onNodeCreated(new FloattoDoubleNode(nextName("f2d"), code().getLastNode(), code()));
+    }
+
+    public Node createIntToFloat() {
+        return onNodeCreated(new IntToFloatNode(nextName("i2f"), code().getLastNode(), code()));
+    }
+
+    public Node createLongToFloat() {
+        return onNodeCreated(new LongToFloatNode(nextName("l2f"), code().getLastNode(), code()));
+    }
+
+    public Node createDoubleToFloat() {
+        return onNodeCreated(new DoubleToFloat(nextName("d2f"), code().getLastNode(), code()));
     }
 
     private record ScopeInfo(Code code) {

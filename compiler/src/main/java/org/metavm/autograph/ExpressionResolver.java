@@ -128,18 +128,30 @@ public class ExpressionResolver {
         var sourceType = operand.getType();
         resolve(operand, context);
         var castType = requireNonNull(typeCastExpression.getCastType()).getType();
-        if(TranspileUtils.isLongType(sourceType) && TranspileUtils.isFloatType(castType))
+        if(TranspileUtils.isLongType(sourceType) && TranspileUtils.isDoubleType(castType))
             return methodGenerator.createLongToDouble();
-        else if(TranspileUtils.isFloatType(sourceType) && TranspileUtils.isLongType(castType))
+        else if(TranspileUtils.isDoubleType(sourceType) && TranspileUtils.isLongType(castType))
             return methodGenerator.createDoubleToLong();
-        else if (TranspileUtils.isIntegerType(sourceType) && TranspileUtils.isFloatType(castType))
+        else if (TranspileUtils.isIntegerType(sourceType) && TranspileUtils.isDoubleType(castType))
             return methodGenerator.createIntToDouble();
-        else if(TranspileUtils.isFloatType(sourceType) && TranspileUtils.isIntegerType(castType))
+        else if(TranspileUtils.isDoubleType(sourceType) && TranspileUtils.isIntegerType(castType))
             return methodGenerator.createDoubleToInt();
         else if(TranspileUtils.isIntType(sourceType) && TranspileUtils.isLongType(castType))
             return methodGenerator.createIntToLong();
         else if(TranspileUtils.isLongType(sourceType) && TranspileUtils.isIntType(castType))
             return methodGenerator.createLongToInt();
+        else if (TranspileUtils.isFloatType(sourceType) && TranspileUtils.isIntType(castType))
+            return methodGenerator.createFloatToInt();
+        else if (TranspileUtils.isFloatType(sourceType) && TranspileUtils.isLongType(castType))
+            return methodGenerator.createFloatToLong();
+        else if (TranspileUtils.isFloatType(sourceType) && TranspileUtils.isDoubleType(castType))
+            return methodGenerator.createFloatToDouble();
+        else if (TranspileUtils.isIntType(sourceType) && TranspileUtils.isFloatType(castType))
+            return methodGenerator.createIntToFloat();
+        else if (TranspileUtils.isLongType(sourceType) && TranspileUtils.isFloatType(castType))
+            return methodGenerator.createLongToFloat();
+        else if (TranspileUtils.isDoubleType(sourceType) && TranspileUtils.isFloatType(castType))
+            return methodGenerator.createDoubleToFloat();
         else
             return methodGenerator.createTypeCast(typeResolver.resolveDeclaration(castType));
     }
@@ -256,7 +268,7 @@ public class ExpressionResolver {
             case Boolean boolValue -> Instances.booleanInstance(boolValue);
             case Integer integer -> Instances.intInstance(integer);
             case Long longValue -> Instances.longInstance(longValue);
-            case Float floatValue -> Instances.doubleInstance(floatValue);
+            case Float floatValue -> Instances.floatInstance(floatValue);
             case Double doubleValue -> Instances.doubleInstance(doubleValue);
             case Character c -> Instances.charInstance(c);
             case String string -> Instances.stringInstance(string);

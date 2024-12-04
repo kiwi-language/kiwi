@@ -4,6 +4,7 @@ lexer grammar TypeLexer;
 
 BOOLEAN:            'boolean';
 DOUBLE:             'double';
+FLOAT:              'float';
 LONG:               'long';
 INT:                'int';
 CHAR:               'char';

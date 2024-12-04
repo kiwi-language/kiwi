@@ -27,6 +27,7 @@ public class StreamVisitor {
         switch (wireType) {
             case WireTypes.NULL -> visitNull();
             case WireTypes.DOUBLE -> visitDouble();
+            case WireTypes.FLOAT -> visitFloat();
             case WireTypes.STRING -> visitString();
             case WireTypes.LONG -> visitLong();
             case WireTypes.INT -> visitInt();
@@ -150,6 +151,10 @@ public class StreamVisitor {
         return input.readDouble();
     }
 
+    public float readFloat() {
+        return input.readFloat();
+    }
+
     public long readLong() {
         return input.readLong();
     }
@@ -243,6 +248,10 @@ public class StreamVisitor {
 
     public void visitDouble() {
         input.readDouble();
+    }
+
+    public void visitFloat() {
+        input.readFloat();
     }
 
     public void visitBoolean() {

@@ -40,7 +40,8 @@ public enum TypeCategory {
     UNCERTAIN(TypeCategoryCodes.UNCERTAIN, ColumnKind.UNSPECIFIED, 5),
     NEVER(TypeCategoryCodes.NOTHING, ColumnKind.UNSPECIFIED, 5),
     CAPTURED(TypeCategoryCodes.CAPTURED, ColumnKind.UNSPECIFIED, 5),
-    INT(TypeCategoryCodes.INT, ColumnKind.INT, 5);
+    INT(TypeCategoryCodes.INT, ColumnKind.INT, 5),
+    FLOAT(TypeCategoryCodes.FLOAT, ColumnKind.DOUBLE, 5);
 
     private final int code;
     private final int closurePrecedence;

@@ -557,6 +557,36 @@ public class MetaFrame implements Frame, CallContext {
                             stack[top++] = new DoubleValue(v1.value % v2.value, PrimitiveType.doubleType);
                             pc++;
                         }
+                        case Bytecodes.FLOAT_ADD -> {
+                            var v2 = (FloatValue) stack[--top];
+                            var v1 = (FloatValue) stack[--top];
+                            stack[top++] = new FloatValue(v1.value + v2.value, PrimitiveType.floatType);
+                            pc++;
+                        }
+                        case Bytecodes.FLOAT_SUB -> {
+                            var v2 = (FloatValue) stack[--top];
+                            var v1 = (FloatValue) stack[--top];
+                            stack[top++] = new FloatValue(v1.value - v2.value, PrimitiveType.floatType);
+                            pc++;
+                        }
+                        case Bytecodes.FLOAT_MUL -> {
+                            var v2 = (FloatValue) stack[--top];
+                            var v1 = (FloatValue) stack[--top];
+                            stack[top++] = new FloatValue(v1.value * v2.value, PrimitiveType.floatType);
+                            pc++;
+                        }
+                        case Bytecodes.FLOAT_DIV -> {
+                            var v2 = (FloatValue) stack[--top];
+                            var v1 = (FloatValue) stack[--top];
+                            stack[top++] = new FloatValue(v1.value / v2.value, PrimitiveType.floatType);
+                            pc++;
+                        }
+                        case Bytecodes.FLOAT_REM -> {
+                            var v2 = (FloatValue) stack[--top];
+                            var v1 = (FloatValue) stack[--top];
+                            stack[top++] = new FloatValue(v1.value % v2.value, PrimitiveType.floatType);
+                            pc++;
+                        }
                         case Bytecodes.INT_SHIFT_LEFT -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
@@ -661,6 +691,11 @@ public class MetaFrame implements Frame, CallContext {
                             stack[top++] = new DoubleValue(-v.value, PrimitiveType.doubleType);
                             pc++;
                         }
+                        case Bytecodes.FLOAT_NEG -> {
+                            var v = (FloatValue) stack[--top];
+                            stack[top++] = new FloatValue(-v.value, PrimitiveType.doubleType);
+                            pc++;
+                        }
                         case Bytecodes.LONG_TO_DOUBLE -> {
                             var v = (LongValue) stack[--top];
                             stack[top++] = new DoubleValue(v.value, PrimitiveType.doubleType);
@@ -689,6 +724,36 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.DOUBLE_TO_INT -> {
                             var v = (DoubleValue) stack[--top];
                             stack[top++] = new IntValue((int) v.value, PrimitiveType.intType);
+                            pc++;
+                        }
+                        case Bytecodes.INT_TO_FLOAT -> {
+                            var v = (IntValue) stack[--top];
+                            stack[top++] = new FloatValue((float) v.value, PrimitiveType.floatType);
+                            pc++;
+                        }
+                        case Bytecodes.LONG_TO_FLOAT -> {
+                            var v = (LongValue) stack[--top];
+                            stack[top++] = new FloatValue((float) v.value, PrimitiveType.floatType);
+                            pc++;
+                        }
+                        case Bytecodes.DOUBLE_TO_FLOAT -> {
+                            var v = (DoubleValue) stack[--top];
+                            stack[top++] = new FloatValue((float) v.value, PrimitiveType.floatType);
+                            pc++;
+                        }
+                        case Bytecodes.FLOAT_TO_INT -> {
+                            var v = (FloatValue) stack[--top];
+                            stack[top++] = new IntValue((int) v.value, PrimitiveType.intType);
+                            pc++;
+                        }
+                        case Bytecodes.FLOAT_TO_LONG -> {
+                            var v = (FloatValue) stack[--top];
+                            stack[top++] = new LongValue((long) v.value, PrimitiveType.longType);
+                            pc++;
+                        }
+                        case Bytecodes.FLOAT_TO_DOUBLE -> {
+                            var v = (FloatValue) stack[--top];
+                            stack[top++] = new DoubleValue(v.value, PrimitiveType.doubleType);
                             pc++;
                         }
                         case Bytecodes.EQ -> {
@@ -739,6 +804,13 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.DOUBLE_COMPARE -> {
                             var v2 = ((DoubleValue) stack[--top]).value;
                             var v1 = ((DoubleValue) stack[--top]).value;
+                            var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
+                            stack[top++] = new IntValue(r, PrimitiveType.intType);
+                            pc++;
+                        }
+                        case Bytecodes.FLOAT_COMPARE -> {
+                            var v2 = ((FloatValue) stack[--top]).value;
+                            var v1 = ((FloatValue) stack[--top]).value;
                             var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
                             stack[top++] = new IntValue(r, PrimitiveType.intType);
                             pc++;

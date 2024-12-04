@@ -687,4 +687,55 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
+    public R visitFloatAddNode(FloatAddNode node) {
+        return visitNode(node);
+    }
+
+    public R visitFloatSubNode(FloatSubNode node) {
+        return visitNode(node);
+    }
+
+    public R visitFloatMulNode(FloatMulNode node) {
+        return visitNode(node);
+    }
+
+    public R visitFloatDivNode(FloatDivNode node) {
+        return visitNode(node);
+    }
+
+    public R visitFloatRemNode(FloatRemNode node) {
+        return visitNode(node);
+    }
+
+    public R visitFloatNegNode(FloatNegNode node) {
+        return visitNode(node);
+    }
+
+    public R visitFloatCompareNode(FloatCompareNode node) {
+        return visitNode(node);
+    }
+
+    public R visitFloatToDoubleNode(FloattoDoubleNode node) {
+        return visitNode(node);
+    }
+
+    public R visitFloatToLongNode(FloatToLongNode node) {
+        return visitNode(node);
+    }
+
+    public R visitFloatToIntNode(FloatToIntNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLongToFloatNode(LongToFloatNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntToFloatNode(IntToFloatNode node) {
+        return visitNode(node);
+    }
+
+    public R visitDoubleToFloatNode(DoubleToFloat node) {
+        return visitNode(node);
+    }
 }

@@ -7,12 +7,6 @@ import javax.annotation.Nullable;
 import java.util.Date;
 
 public enum PrimitiveKind {
-    INT(10, "int", Integer.class, IntValue.class, TypeCategory.INT) {
-        @Override
-        public Value getDefaultValue() {
-            return Instances.intInstance(0);
-        }
-    },
     LONG(1, "long", Long.class, LongValue.class, TypeCategory.LONG) {
         @Override
         public Value getDefaultValue() {
@@ -41,7 +35,21 @@ public enum PrimitiveKind {
         }
     },
     VOID(8, "void", Void.class, null, TypeCategory.VOID),
-    CHAR(9, "char", Character.class, null, TypeCategory.CHAR);
+    CHAR(9, "char", Character.class, CharValue.class, TypeCategory.CHAR),
+    INT(10, "int", Integer.class, IntValue.class, TypeCategory.INT) {
+        @Override
+        public Value getDefaultValue() {
+            return Instances.intInstance(0);
+        }
+    },
+    FLOAT(11, "float", Float.class, FloatValue.class, TypeCategory.FLOAT) {
+        @Override
+        public Value getDefaultValue() {
+            return Instances.floatInstance(0);
+        }
+    }
+    ;
+
 
     private final int code;
     private final String name;

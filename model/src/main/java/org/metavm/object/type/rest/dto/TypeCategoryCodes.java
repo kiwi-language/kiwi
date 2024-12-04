@@ -55,4 +55,6 @@ public class TypeCategoryCodes {
     public static final int CHAR = 31;
 
     public static final int INT = 32;
+
+    public static final int FLOAT = 33;
 }

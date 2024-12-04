@@ -545,6 +545,7 @@ public class Types {
                 case PASSWORD -> Password.class;
                 case DOUBLE -> Double.class;
                 case CHAR -> Character.class;
+                case FLOAT -> Float.class;
             };
         }
         if (type instanceof AnyType)
@@ -597,8 +598,10 @@ public class Types {
                 return getCharType();
             if (javaClass == Boolean.class || javaClass == boolean.class)
                 return getBooleanType();
-            if (javaClass == Double.class || javaClass == double.class || javaClass == Float.class || javaClass == float.class)
+            if (javaClass == Double.class || javaClass == double.class)
                 return getDoubleType();
+            if (javaClass == Float.class || javaClass == float.class)
+                return getFloatType();
             if (javaClass == Void.class || javaClass == void.class)
                 return getVoidType();
             if (javaClass == Password.class)
@@ -826,5 +829,9 @@ public class Types {
 
     public static PrimitiveType getIntType() {
         return PrimitiveType.intType;
+    }
+
+    public static PrimitiveType getFloatType() {
+        return PrimitiveType.floatType;
     }
 }

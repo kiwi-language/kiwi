@@ -177,7 +177,9 @@ public class ReflectDefiner {
                     yield Types.getIntType();
                 if (k == long.class || k == Long.class)
                     yield Types.getLongType();
-                if (k == float.class || k == Float.class || k == double.class || k == Double.class)
+                if (k == float.class || k == Float.class)
+                    yield Types.getFloatType();
+                if (k == double.class || k == Double.class)
                     yield Types.getDoubleType();
                 if (k == char.class || k == Character.class)
                     yield Types.getCharType();

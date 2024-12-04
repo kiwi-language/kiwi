@@ -123,6 +123,18 @@ class AsmExpressionResolver {
             Nodes.intToDouble(code);
         else if (operandType.isDouble() && castType.isInt())
             Nodes.doubleToInt(code);
+        else if (operandType.isFloat() && castType.isInt())
+            Nodes.floatToInt(code);
+        else if (operandType.isFloat() && castType.isLong())
+            Nodes.floatToLong(code);
+        else if (operandType.isFloat() && castType.isDouble())
+            Nodes.floatToDouble(code);
+        else if (operandType.isInt() && castType.isFloat())
+            Nodes.intToFloat(code);
+        else if (operandType.isLong() && castType.isFloat())
+            Nodes.longToFloat(code);
+        else if (operandType.isDouble() && castType.isFloat())
+            Nodes.doubleToFloat(code);
         else
             Nodes.cast(castType, code);
         return castType;
@@ -245,14 +257,18 @@ class AsmExpressionResolver {
         var text = literal.getText();
         org.metavm.object.instance.core.Value value;
         if(literal.integerLiteral() != null) {
-            var intText = literal.integerLiteral().getText();
-            if(intText.endsWith("l") || intText.endsWith("L"))
+            if(text.endsWith("l") || text.endsWith("L"))
                 value = Instances.longInstance(Long.parseLong(text.substring(0, text.length() - 1)));
             else
                 value = Instances.intInstance(Integer.parseInt(text));
-        } else if(literal.floatLiteral() != null)
-            value = Instances.doubleInstance(Double.parseDouble(text));
-        else if (literal.BOOL_LITERAL() != null)
+        } else if(literal.floatLiteral() != null) {
+            if (text.endsWith("f") || text.endsWith("F"))
+                value = Instances.floatInstance(Float.parseFloat(text.substring(0, text.length() - 1)));
+            else if (text.endsWith("d") || text.endsWith("D"))
+                value = Instances.doubleInstance(Double.parseDouble(text.substring(0, text.length() - 1)));
+            else
+                value = Instances.doubleInstance(Double.parseDouble(text));
+        } else if (literal.BOOL_LITERAL() != null)
             value = Instances.booleanInstance(Boolean.parseBoolean(text));
         else if (literal.CHAR_LITERAL() != null)
             value = Instances.charInstance(Expressions.deEscapeChar(text));

@@ -173,13 +173,14 @@ public class UnboxingTransformer extends VisitorBase {
     private void tryUnbox(PsiExpression expression, PsiType assignedType) {
         if (assignedType instanceof PsiPrimitiveType) {
             var type = expression.getType();
-            if (TranspileUtils.isLongWrapperType(type)) {
+            if (TranspileUtils.isLongWrapperType(type))
                 replace(expression, createExpressionFromText(expression.getText() + ".longValue()"));
-            } else if (TranspileUtils.isIntWrapperType(type)) {
+            else if (TranspileUtils.isIntWrapperType(type))
                 replace(expression, createExpressionFromText(expression.getText() + ".intValue()"));
-            } else if (TranspileUtils.isDoubleWrapperType(type)) {
+            else if (TranspileUtils.isDoubleWrapperType(type))
                 replace(expression, createExpressionFromText(expression.getText() + ".doubleValue()"));
-            }
+            else if (TranspileUtils.isFloatWrapperType(type))
+                replace(expression, createExpressionFromText(expression.getText()  + ".floatValue()"));
         }
     }
 

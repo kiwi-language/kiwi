@@ -229,7 +229,7 @@ public class Generator extends VisitorBase {
         }
         builder.exitScope();
         builders.pop();
-//        if(method.getQualifiedName().equals("branching.BranchingFoo.getOrDefault")) {
+//        if(method.getName().equals("unbox")) {
 //            logger.debug("{}", method.getText());
 //        }
     }

@@ -239,6 +239,12 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
+    public void visitFloat() {
+        output.write(WireTypes.FLOAT);
+        output.writeFloat(readFloat());
+    }
+
+    @Override
     public void visitBoolean() {
         output.write(WireTypes.BOOLEAN);
         output.writeBoolean(readBoolean());

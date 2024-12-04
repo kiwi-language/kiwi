@@ -27,6 +27,7 @@ public class PrimitiveType extends Type {
     public static final PrimitiveType voidType = new PrimitiveType(PrimitiveKind.VOID);
     public static final PrimitiveType passwordType = new PrimitiveType(PrimitiveKind.PASSWORD);
     public static final PrimitiveType intType = new PrimitiveType(PrimitiveKind.INT);
+    public static final PrimitiveType floatType = new PrimitiveType(PrimitiveKind.FLOAT);
 
     private final PrimitiveKind kind;
 
@@ -105,8 +106,13 @@ public class PrimitiveType extends Type {
     }
 
     @Override
+    public boolean isFloat() {
+        return kind == PrimitiveKind.FLOAT;
+    }
+
+    @Override
     public boolean isNumber() {
-        return kind == PrimitiveKind.DOUBLE || kind == PrimitiveKind.LONG;
+        return kind == PrimitiveKind.DOUBLE || kind == PrimitiveKind.LONG || kind == PrimitiveKind.FLOAT || kind == PrimitiveKind.INT;
     }
 
     @Override

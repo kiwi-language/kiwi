@@ -203,7 +203,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
     }
 
     public boolean isNumber() {
-        return getConcreteType().isDouble();
+        return getConcreteType().isNumber();
     }
 
     public boolean isBool() {

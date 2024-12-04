@@ -201,6 +201,8 @@ public class Nodes {
             return intAdd(code);
         else if (type.isLong())
             return longAdd(code);
+        else if (type.isFloat())
+            return floatAdd(code);
         else
             return doubleAdd(code);
     }
@@ -210,6 +212,8 @@ public class Nodes {
             return intSub(code);
         else if (type.isLong())
             return longSub(code);
+        else if (type.isFloat())
+            return floatSub(code);
         else
             return doubleSub(code);
     }
@@ -219,6 +223,8 @@ public class Nodes {
             return intMul(code);
         else if (type.isLong())
             return longMul(code);
+        else if (type.isFloat())
+            return floatMul(code);
         else
             return doubleMul(code);
     }
@@ -228,6 +234,8 @@ public class Nodes {
             return intDiv(code);
         else if (type.isLong())
             return longDiv(code);
+        else if (type.isFloat())
+            return floatDiv(code);
         else
             return doubleDiv(code);
     }
@@ -237,6 +245,8 @@ public class Nodes {
             return intRem(code);
         else if (type.isLong())
             return longRem(code);
+        else if (type.isFloat())
+            return floatRem(code);
         else
             return doubleRem(code);
     }
@@ -356,6 +366,47 @@ public class Nodes {
     public static Node doubleRem(Code code) {
         return new DoubleRemNode(
                 code.nextNodeName("drem"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+
+    public static Node floatAdd(Code code) {
+        return new FloatAddNode(
+                code.nextNodeName("fadd"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node floatSub(Code code) {
+        return new FloatSubNode(
+                code.nextNodeName("fsub"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node floatMul(Code code) {
+        return new FloatMulNode(
+                code.nextNodeName("fmul"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node floatDiv(Code code) {
+        return new FloatDivNode(
+                code.nextNodeName("fdiv"),
+                code.getLastNode(),
+                code
+        );
+    }
+
+    public static Node floatRem(Code code) {
+        return new FloatRemNode(
+                code.nextNodeName("frem"),
                 code.getLastNode(),
                 code
         );
@@ -545,6 +596,8 @@ public class Nodes {
             return intNeg(code);
         else if(type.isLong())
             return longNeg(code);
+        else if (type.isFloat())
+            return floatNeg(code);
         else
             return doubleNeg(code);
     }
@@ -573,6 +626,14 @@ public class Nodes {
         );
     }
 
+    public static Node floatNeg(Code code) {
+        return new FloatNegNode(
+                code.nextNodeName("fneg"),
+                code.getLastNode(),
+                code
+        );
+    }
+
     public static Node intCompare(Code code) {
         return new IntCompareNode(code.nextNodeName("icmp"), code.getLastNode(), code);
     }
@@ -582,16 +643,15 @@ public class Nodes {
             var kind = primitiveType.getKind();
             if (kind == PrimitiveKind.STRING)
                 return refCompareEq(code);
-            switch (kind) {
-                case LONG -> longCompare(code);
-                case INT ->  intCompare(code);
-                case DOUBLE -> doubleCompare(code);
-                default -> throw new IllegalStateException("Cannot generate compareEq for type " + type);
-            }
+            compare(type, code);
             return eq(code);
         }
         else
             return refCompareEq(code);
+    }
+
+    private static Node floatCompare(Code code) {
+        return new FloatCompareNode(code.nextNodeName("fcmp"), code.getLastNode(), code);
     }
 
     public static Node compareNe(Type type, Code code) {
@@ -599,12 +659,7 @@ public class Nodes {
             var kind = primitiveType.getKind();
             if (kind == PrimitiveKind.STRING)
                 return refCompareNe(code);
-            switch (kind) {
-                case LONG -> longCompare(code);
-                case INT ->  intCompare(code);
-                case DOUBLE -> doubleCompare(code);
-                default -> throw new IllegalStateException("Cannot generate compareNe for type " + type);
-            }
+            compare(type, code);
             return ne(code);
         }
         else
@@ -651,60 +706,38 @@ public class Nodes {
         );
     }
 
-    public static Node compareGt(Type type, Code code) {
+    public static Node compare(Type type, Code code) {
         if(type instanceof PrimitiveType primitiveType) {
-            switch (primitiveType.getKind()) {
+            return switch (primitiveType.getKind()) {
                 case LONG -> longCompare(code);
-                case INT ->  intCompare(code);
+                case INT -> intCompare(code);
                 case DOUBLE -> doubleCompare(code);
-                default -> throw new IllegalStateException("Cannot generate compareGt for type " + type);
-            }
-            return gt(code);
+                case FLOAT -> floatCompare(code);
+                default -> throw new IllegalStateException("Cannot generate compare for type " + type);
+            };
         }
         else
-            throw new IllegalStateException("Cannot generate compareGt for type " + type);
+            throw new IllegalStateException("Cannot generate compare for type " + type);
+    }
+
+    public static Node compareGt(Type type, Code code) {
+        compare(type, code);
+        return gt(code);
     }
 
     public static Node compareGe(Type type, Code code) {
-        if(type instanceof PrimitiveType primitiveType) {
-            switch (primitiveType.getKind()) {
-                case LONG -> longCompare(code);
-                case INT ->  intCompare(code);
-                case DOUBLE -> doubleCompare(code);
-                default -> throw new IllegalStateException("Cannot generate compareGe for type " + type);
-            }
-            return ge(code);
-        }
-        else
-            throw new IllegalStateException("Cannot generate compareGe for type " + type);
+        compare(type, code);
+        return ge(code);
     }
 
     public static Node compareLt(Type type, Code code) {
-        if(type instanceof PrimitiveType primitiveType) {
-            switch (primitiveType.getKind()) {
-                case LONG -> longCompare(code);
-                case INT ->  intCompare(code);
-                case DOUBLE -> doubleCompare(code);
-                default -> throw new IllegalStateException("Cannot generate compareLt for type " + type);
-            }
-            return lt(code);
-        }
-        else
-            throw new IllegalStateException("Cannot generate compareLt for type " + type);
+        compare(type, code);
+        return lt(code);
     }
 
     public static Node compareLe(Type type, Code code) {
-        if(type instanceof PrimitiveType primitiveType) {
-            switch (primitiveType.getKind()) {
-                case LONG -> longCompare(code);
-                case INT ->  intCompare(code);
-                case DOUBLE -> doubleCompare(code);
-                default -> throw new IllegalStateException("Cannot generate compareLe for type " + type);
-            }
-            return le(code);
-        }
-        else
-            throw new IllegalStateException("Cannot generate compareLe for type " + type);
+        compare(type, code);
+        return le(code);
     }
 
     public static Node gt(Code code) {
@@ -892,6 +925,30 @@ public class Nodes {
 
     public static Node longToInt(Code code) {
         return new LongToIntNode(code.nextNodeName("l2i"), code.getLastNode(), code);
+    }
+
+    public static Node floatToInt(Code code) {
+        return new FloatToIntNode(code.nextNodeName("f2i"), code.getLastNode(), code);
+    }
+
+    public static Node floatToLong(Code code) {
+        return new FloatToLongNode(code.nextNodeName("f2l"), code.getLastNode(), code);
+    }
+
+    public static Node floatToDouble(Code code) {
+        return new FloattoDoubleNode(code.nextNodeName("f2d"), code.getLastNode(), code);
+    }
+
+    public static Node intToFloat(Code code) {
+        return new IntToFloatNode(code.nextNodeName("i2f"), code.getLastNode(), code);
+    }
+
+    public static Node longToFloat(Code code) {
+        return new LongToFloatNode(code.nextNodeName("l2f"), code.getLastNode(), code);
+    }
+
+    public static Node doubleToFloat(Code code) {
+        return new DoubleToFloat(code.nextNodeName("d2f"), code.getLastNode(), code);
     }
 
 }

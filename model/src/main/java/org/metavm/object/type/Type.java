@@ -305,6 +305,7 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
             case WireTypes.INT_TYPE -> PrimitiveType.intType;
             case WireTypes.CHAR_TYPE -> PrimitiveType.charType;
             case WireTypes.DOUBLE_TYPE -> PrimitiveType.doubleType;
+            case WireTypes.FLOAT_TYPE -> PrimitiveType.floatType;
             case WireTypes.NULL_TYPE -> PrimitiveType.nullType;
             case WireTypes.VOID_TYPE -> PrimitiveType.voidType;
             case WireTypes.TIME_TYPE -> PrimitiveType.timeType;
@@ -327,4 +328,7 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
 
     public abstract int getPrecedence();
 
+    public boolean isFloat() {
+        return false;
+    }
 }

@@ -80,4 +80,7 @@ public abstract class ValueVisitor<R> {
         return visitValue(reference);
     }
 
+    public R visitFloatValue(FloatValue value) {
+        return visitNumberValue(value);
+    }
 }

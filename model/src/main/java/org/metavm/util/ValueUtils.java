@@ -19,7 +19,7 @@ public class ValueUtils {
     public static Type getValueType(Object value) {
         if (value instanceof String)
             return Types.getStringType();
-        if (isFloat(value))
+        if (isFloatOrDouble(value))
             return Types.getDoubleType();
         if(value instanceof Integer)
             return Types.getIntType();
@@ -42,15 +42,6 @@ public class ValueUtils {
             return true;
         }
         return from.isLong() && to.isDouble();
-    }
-
-    public static Value convert(Value instance, Type type) {
-        if (instance instanceof LongValue longInstance) {
-            if (type.isDouble()) {
-                return Instances.doubleInstance(longInstance.getValue());
-            }
-        }
-        throw new InternalException("Can not convert instance '" + instance + "' to type '" + type + "'");
     }
 
     private static final Set<Class<?>> PRIMITIVE_TYPES = Set.of(
@@ -81,7 +72,7 @@ public class ValueUtils {
     }
 
     public static boolean isDouble(Class<?> klass) {
-        return klass == double.class || klass == Double.class || klass == float.class || klass == Float.class;
+        return klass == double.class || klass == Double.class;
     }
 
     public static boolean isString(Class<?> klass) {
@@ -97,7 +88,7 @@ public class ValueUtils {
     }
 
     public static boolean isFloat(Class<?> klass) {
-        return klass == Double.class || klass == double.class || klass == Float.class || klass == float.class;
+        return klass == Float.class || klass == float.class;
     }
 
     public static boolean isPrimitive(Object object) {
@@ -149,8 +140,10 @@ public class ValueUtils {
             return Types.getCharType();
         if (isTime(klass))
             return Types.getTimeType();
-        if (isFloat(klass))
+        if (isDouble(klass))
             return Types.getDoubleType();
+        if (isFloat(klass))
+            return Types.getFloatType();
         throw new InternalException("Type " + klass.getName() + " is not a primitive type");
     }
 
@@ -239,7 +232,7 @@ public class ValueUtils {
     }
 
     public static boolean isNumber(Object value) {
-        return isInteger(value) || isFloat(value);
+        return isInteger(value) || isFloatOrDouble(value);
     }
 
     public static boolean isTime(Object value) {
@@ -262,8 +255,16 @@ public class ValueUtils {
         return value instanceof Boolean;
     }
 
-    public static boolean isFloat(Object value) {
+    public static boolean isFloatOrDouble(Object value) {
         return value instanceof Float || value instanceof Double;
+    }
+
+    public static boolean isDouble(Object value) {
+        return value instanceof Double;
+    }
+
+    public static boolean isFloat(Object value) {
+        return value instanceof Float;
     }
 
     public static boolean isCollection(Object value) {

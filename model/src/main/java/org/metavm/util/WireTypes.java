@@ -10,6 +10,7 @@ public class WireTypes {
     public static final int PASSWORD = 6;
     public static final int CHAR = 7;
     public static final int INT = 8;
+    public static final int FLOAT = 9;
 
     public static final int REFERENCE = 10;
     public static final int INSTANCE = 11;
@@ -46,6 +47,8 @@ public class WireTypes {
     public static final int TAGGED_CLASS_TYPE = 43;
     public static final int VALUE_ARRAY_TYPE = 44;
     public static final int INT_TYPE = 45;
+    public static final int FLOAT_TYPE = 46;
+
 
     // Element references
     public static final int METHOD_REF = 70;

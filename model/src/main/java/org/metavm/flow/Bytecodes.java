@@ -109,6 +109,20 @@ public class Bytecodes {
     public static final int DOUBLE_COMPARE = 115;
     public static final int REF_COMPARE_EQ = 116;
     public static final int REF_COMPARE_NE = 117;
+    public static final int FLOAT_ADD = 118;
+    public static final int FLOAT_SUB = 119;
+    public static final int FLOAT_MUL = 120;
+    public static final int FLOAT_DIV = 121;
+    public static final int FLOAT_REM = 122;
+    public static final int FLOAT_NEG = 123;
+    public static final int FLOAT_COMPARE = 124;
+    public static final int FLOAT_TO_INT = 125;
+    public static final int FLOAT_TO_LONG = 126;
+    public static final int FLOAT_TO_DOUBLE = 127;
+    public static final int INT_TO_FLOAT = 128;
+    public static final int LONG_TO_FLOAT = 129;
+    public static final int DOUBLE_TO_FLOAT = 130;
+
 
     private static final String[] names = new String[256];
 

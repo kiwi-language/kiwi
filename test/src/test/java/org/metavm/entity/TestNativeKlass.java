@@ -7,7 +7,6 @@ import org.metavm.flow.Flows;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.util.BootstrapUtils;
-import org.metavm.util.ContextUtil;
 import org.metavm.util.TestConstants;
 
 import java.util.List;

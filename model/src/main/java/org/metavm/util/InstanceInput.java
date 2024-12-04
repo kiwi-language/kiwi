@@ -125,6 +125,7 @@ public class InstanceInput extends MvInput {
         return switch (wireType) {
             case WireTypes.NULL -> new NullValue(Types.getNullType());
             case WireTypes.DOUBLE -> new DoubleValue(readDouble(), Types.getDoubleType());
+            case WireTypes.FLOAT -> new FloatValue(readFloat(), Types.getFloatType());
             case WireTypes.STRING -> new StringValue(readUTF(), Types.getStringType());
             case WireTypes.LONG -> new LongValue(readLong(), Types.getLongType());
             case WireTypes.INT -> new IntValue(readInt(), Types.getIntType());

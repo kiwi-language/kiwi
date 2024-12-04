@@ -106,6 +106,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processPrimitiveConversion();
             processInt();
             processUnboxing();
+            processFloat();
         });
     }
 
@@ -1080,6 +1081,13 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processUnboxing() {
         var className = "boxing.UnboxingFoo";
         Assert.assertTrue((boolean) callMethod(className, "gt", List.of(1)));
+    }
+
+    private void processFloat() {
+        var className = "primitives.FloatFoo";
+        Assert.assertEquals((float) 3.0, (float) callMethod(className, "add", List.of(1.5, 1.5)), 0.001);
+        Assert.assertEquals((float) 1.0, (float) callMethod(className, "unbox", List.of(1.0)), 0.001);
+        Assert.assertEquals(1.0, callMethod(className, "toDouble", List.of(1.0)));
     }
 
 }
