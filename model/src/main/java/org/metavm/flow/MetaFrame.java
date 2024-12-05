@@ -994,7 +994,6 @@ public class MetaFrame implements Frame, CallContext {
         var typeMetadata = indexRef.getDeclaringType().getTypeMetadata();
         var index = indexRef.getRawIndex();
         for (IndexField field : index.getFields()) {
-            log.warn("Adding index field {} with type {}", field.getName(), field.getType(typeMetadata));
             values.addFirst(field.getType(typeMetadata).fromStackValue(stack[--top]));
         }
         return index.createIndexKey(values);

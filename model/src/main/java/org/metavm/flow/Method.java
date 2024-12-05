@@ -41,6 +41,7 @@ public class Method extends Flow implements Property {
 
     private transient @Nullable java.lang.reflect.Method javaMethod;
     private transient String nativeName;
+    private transient volatile java.lang.reflect.Method nativeMethod;
 
     public Method(Long tmpId,
                   @NotNull Klass declaringType,
@@ -441,4 +442,11 @@ public class Method extends Flow implements Property {
         return nativeName;
     }
 
+    public java.lang.reflect.Method getNativeMethod() {
+        return nativeMethod;
+    }
+
+    public void setNativeMethod(java.lang.reflect.Method nativeMethod) {
+        this.nativeMethod = nativeMethod;
+    }
 }

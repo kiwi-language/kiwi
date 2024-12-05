@@ -24,16 +24,13 @@ public class NativeMethods {
 
     public static @NotNull FlowExecResult invoke(Method method, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         if (method.isStatic()) {
-            var nativeClass = tryGetNativeClass(method.getDeclaringType());
-            NncUtils.requireNonNull(nativeClass,
-                    "Native class not available for type '" + method.getDeclaringType().getName() + "'");
             Object[] args = new Object[2 + arguments.size()];
             args[0] = method.getDeclaringType();
             for (int i = 0; i < arguments.size(); i++) {
                 args[i + 1] = arguments.get(i);
             }
             args[arguments.size() + 1] = callContext;
-            var javaMethod = getNativeMethod(nativeClass, method);
+            var javaMethod = getNativeMethod(method, null);
             var result = (Value) ReflectionUtils.invoke(null, javaMethod, args);
             if (method.getReturnType().isVoid()) {
                 return new FlowExecResult(null, null);
@@ -43,13 +40,12 @@ public class NativeMethods {
         } else {
             if (self instanceof ClassInstance classInstance) {
                 Object nativeObject = getNativeObject(classInstance);
-                var instanceClass = nativeObject.getClass();
                 var args = new Object[arguments.size() + 1];
                 for (int i = 0; i < arguments.size(); i++) {
                     args[i] = arguments.get(i);
                 }
                 args[arguments.size()] = callContext;
-                var javaMethod = getNativeMethod(instanceClass, method);
+                var javaMethod = getNativeMethod(method, nativeObject);
                 var result = (Value) ReflectionUtils.invoke(nativeObject, javaMethod, args);
                 if (method.getReturnType().isVoid()) {
                     return new FlowExecResult(null, null);
@@ -61,19 +57,26 @@ public class NativeMethods {
         }
     }
 
-    private static java.lang.reflect.Method getNativeMethod(Class<?> nativeClass, Method method) {
-        List<Class<?>> paramTypes = new ArrayList<>();
-        if (method.isStatic())
-            paramTypes.add(Klass.class);
-        paramTypes.addAll(NncUtils.multipleOf(Value.class, method.getParameters().size()));
-        paramTypes.add(CallContext.class);
-        try {
-            return ReflectionUtils.getMethod(nativeClass, method.getNativeName(), paramTypes);
+    private static java.lang.reflect.Method getNativeMethod(Method method, @Nullable Object nativeObject) {
+        var nativeMethod = method.getNativeMethod();
+        if (nativeMethod == null) {
+            var nativeClass = nativeObject != null ? nativeObject.getClass() : tryGetNativeClass(method.getDeclaringType());
+            NncUtils.requireNonNull(nativeClass,
+                    "Native class not available for type '" + method.getDeclaringType().getName() + "'");
+            List<Class<?>> paramTypes = new ArrayList<>();
+            if (method.isStatic())
+                paramTypes.add(Klass.class);
+            paramTypes.addAll(NncUtils.multipleOf(Value.class, method.getParameters().size()));
+            paramTypes.add(CallContext.class);
+            try {
+                nativeMethod = ReflectionUtils.getMethod(nativeClass, method.getNativeName(), paramTypes);
+            } catch (Exception e) {
+                logger.warn("Cannot find native method for method " + method + " using native name '" + method.getNativeName() + "'");
+                nativeMethod = ReflectionUtils.getMethod(nativeClass, method.getName(), paramTypes);
+            }
+            method.setNativeMethod(nativeMethod);
         }
-        catch (Exception e) {
-            logger.warn("Cannot find native method for method " + method + " using native name '" + method.getNativeName() + "'");
-            return ReflectionUtils.getMethod(nativeClass, method.getName(), paramTypes);
-        }
+        return nativeMethod;
     }
 
     public static Object getNativeObject(ClassInstance instance) {
