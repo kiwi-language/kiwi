@@ -8,6 +8,8 @@ FLOAT:              'float';
 LONG:               'long';
 INT:                'int';
 CHAR:               'char';
+SHORT:              'short';
+BYTE:               'byte';
 VOID:               'void';
 NULL:               'null';
 TIME:               'time';

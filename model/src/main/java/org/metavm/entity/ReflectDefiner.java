@@ -7,7 +7,6 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.*;
-import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -172,8 +171,11 @@ public class ReflectDefiner {
             case Class<?> k -> {
                 if (k == String.class)
                     yield Types.getStringType();
-                if (k == int.class || k == Integer.class || k == byte.class || k == Byte.class
-                        || k == short.class || k == Short.class)
+                if (k == byte.class || k == Byte.class)
+                    yield Types.getByteType();
+                if (k == short.class || k == Short.class)
+                    yield Types.getShortType();
+                if (k == int.class || k == Integer.class)
                     yield Types.getIntType();
                 if (k == long.class || k == Long.class)
                     yield Types.getLongType();

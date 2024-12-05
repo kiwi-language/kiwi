@@ -130,6 +130,8 @@ public class InstanceInput extends MvInput {
             case WireTypes.LONG -> new LongValue(readLong());
             case WireTypes.INT -> new IntValue(readInt());
             case WireTypes.CHAR -> new CharValue(readChar());
+            case WireTypes.SHORT -> new ShortValue((short) readShort());
+            case WireTypes.BYTE -> new ByteValue((byte) read());
             case WireTypes.BOOLEAN -> new BooleanValue(readBoolean());
             case WireTypes.TIME -> new TimeValue(readLong());
             case WireTypes.PASSWORD -> new PasswordValue(readUTF());

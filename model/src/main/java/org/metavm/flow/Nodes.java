@@ -193,7 +193,7 @@ public class Nodes {
     }
 
     public static Node add(Type type, Code code) {
-        if (type.isInt())
+        if (type.isStackInt())
             return intAdd(code);
         else if (type.isLong())
             return longAdd(code);
@@ -204,7 +204,7 @@ public class Nodes {
     }
 
     public static Node sub(Type type, Code code) {
-        if (type.isInt())
+        if (type.isStackInt())
             return intSub(code);
         else if (type.isLong())
             return longSub(code);
@@ -215,7 +215,7 @@ public class Nodes {
     }
 
     public static Node mul(Type type, Code code) {
-        if (type.isInt())
+        if (type.isStackInt())
             return intMul(code);
         else if (type.isLong())
             return longMul(code);
@@ -226,7 +226,7 @@ public class Nodes {
     }
 
     public static Node div(Type type, Code code) {
-        if (type.isInt())
+        if (type.isStackInt())
             return intDiv(code);
         else if (type.isLong())
             return longDiv(code);
@@ -237,7 +237,7 @@ public class Nodes {
     }
 
     public static Node rem(Type type, Code code) {
-        if (type.isInt())
+        if (type.isStackInt())
             return intRem(code);
         else if (type.isLong())
             return longRem(code);
@@ -564,7 +564,7 @@ public class Nodes {
     }
 
     public static Node neg(Type type, Code code) {
-        if (type.isInt())
+        if (type.isStackInt())
             return intNeg(code);
         else if(type.isLong())
             return longNeg(code);
@@ -923,4 +923,60 @@ public class Nodes {
         return new DoubleToFloat(code.nextNodeName("d2f"), code.getLastNode(), code);
     }
 
+    public static Node intToShort(Code code) {
+        return new IntToShortNode(code.nextNodeName("i2s"), code.getLastNode(), code);
+    }
+
+    public static Node intToByte(Code code) {
+        return new IntToByteNode(code.nextNodeName("i2b"), code.getLastNode(), code);
+    }
+
+    public static Node intToChar(Code code) {
+        return new IntToCharNode(code.nextNodeName("i2c"), code.getLastNode(), code);
+    }
+
+    public static Node doubleToShort(Code code) {
+        doubleToInt(code);
+        return intToShort(code);
+    }
+
+    public static Node doubleToByte(Code code) {
+        doubleToInt(code);
+        return intToByte(code);
+    }
+
+    public static Node doubleToChar(Code code) {
+        doubleToInt(code);
+        return intToChar(code);
+    }
+
+    public static Node floatToShort(Code code) {
+        floatToInt(code);
+        return intToShort(code);
+    }
+
+    public static Node floatToByte(Code code) {
+        floatToInt(code);
+        return intToByte(code);
+    }
+
+    public static Node floatToChar(Code code) {
+        floatToInt(code);
+        return intToChar(code);
+    }
+
+    public static Node longToShort(Code code) {
+        longToInt(code);
+        return intToShort(code);
+    }
+
+    public static Node longToByte(Code code) {
+        longToInt(code);
+        return intToByte(code);
+    }
+
+    public static Node longToChar(Code code) {
+        longToInt(code);
+        return intToChar(code);
+    }
 }

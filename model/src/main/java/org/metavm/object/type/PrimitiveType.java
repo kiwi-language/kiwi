@@ -28,6 +28,8 @@ public class PrimitiveType extends Type {
     public static final PrimitiveType passwordType = new PrimitiveType(PrimitiveKind.PASSWORD);
     public static final PrimitiveType intType = new PrimitiveType(PrimitiveKind.INT);
     public static final PrimitiveType floatType = new PrimitiveType(PrimitiveKind.FLOAT);
+    public static final PrimitiveType shortType = new PrimitiveType(PrimitiveKind.SHORT);
+    public static final PrimitiveType byteType = new PrimitiveType(PrimitiveKind.BYTE);
 
     private final PrimitiveKind kind;
 
@@ -92,12 +94,29 @@ public class PrimitiveType extends Type {
     }
 
     @Override
+    public boolean isStackInt() {
+        return kind == PrimitiveKind.INT || kind == PrimitiveKind.SHORT
+                || kind == PrimitiveKind.CHAR || kind == PrimitiveKind.BYTE;
+    }
+
+    @Override
     public boolean isLong() {
         return kind == PrimitiveKind.LONG;
     }
 
+    @Override
     public boolean isChar() {
         return kind == PrimitiveKind.CHAR;
+    }
+
+    @Override
+    public boolean isShort() {
+        return kind == PrimitiveKind.SHORT;
+    }
+
+    @Override
+    public boolean isByte() {
+        return kind == PrimitiveKind.BYTE;
     }
 
     @Override

@@ -30,6 +30,8 @@ FOR:                'for';
 IF:                 'if';
 IMPLEMENTS:         'implements';
 INSTANCEOF:         'instanceof';
+BYTE:               'byte';
+SHORT:              'short';
 INT:                'int';
 LONG:               'long';
 CHAR:               'char';

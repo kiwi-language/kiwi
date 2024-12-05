@@ -113,6 +113,8 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
             case DOUBLE -> Instances.doubleInstance((Double) primitiveValue.getValue());
             case FLOAT -> Instances.floatInstance((Float) primitiveValue.getValue());
             case TIME -> Instances.timeInstance((Long) primitiveValue.getValue());
+            case SHORT -> Instances.shortInstance((Short) primitiveValue.getValue());
+            case BYTE -> Instances.byteInstance((Byte) primitiveValue.getValue());
             case VOID -> throw new InternalException("Can not create a void instance");
         };
     }

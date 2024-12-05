@@ -1159,6 +1159,18 @@ public class MethodGenerator {
         return onNodeCreated(new DoubleToIntNode(nextName("d2i"), code().getLastNode(), code()));
     }
 
+    public Node createIntToShort() {
+        return onNodeCreated(new IntToShortNode(nextName("i2s"), code().getLastNode(), code()));
+    }
+
+    public Node createIntToChar() {
+        return onNodeCreated(new IntToCharNode(nextName("i2c"), code().getLastNode(), code()));
+    }
+
+    public Node createIntToByte() {
+        return onNodeCreated(new IntToByteNode(nextName("i2b"), code().getLastNode(), code()));
+    }
+
     public LoadParentNode createLoadParent(int index) {
         return new LoadParentNode(nextName("loadparent"), code().getLastNode(), code(), index);
     }
@@ -1201,6 +1213,51 @@ public class MethodGenerator {
 
     public Node createDoubleToFloat() {
         return onNodeCreated(new DoubleToFloat(nextName("d2f"), code().getLastNode(), code()));
+    }
+
+    public Node createDoubleToShort() {
+        createDoubleToInt();
+        return createIntToShort();
+    }
+
+    public Node createDoubleToByte() {
+        createDoubleToInt();
+        return createIntToByte();
+    }
+
+    public Node createDoubleToChar() {
+        createDoubleToInt();
+        return createIntToChar();
+    }
+
+    public Node createFloatToShort() {
+        createFloatToInt();
+        return createIntToShort();
+    }
+
+    public Node createFloatToByte() {
+        createFloatToInt();
+        return createIntToByte();
+    }
+
+    public Node createFloatToChar() {
+        createFloatToInt();
+        return createIntToChar();
+    }
+
+    public Node createLongToShort() {
+        createLongToInt();
+        return createIntToShort();
+    }
+
+    public Node createLongToByte() {
+        createLongToInt();
+        return createIntToByte();
+    }
+
+    public Node createLongToChar() {
+        createLongToInt();
+        return createIntToChar();
     }
 
     private record ScopeInfo(Code code) {

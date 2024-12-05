@@ -53,6 +53,10 @@ public interface TypeKey extends TypeOrTypeKey {
                 return new PrimitiveTypeKey(PrimitiveKind.LONG.code());
             if(primitiveType.CHAR() != null)
                 return new PrimitiveTypeKey(PrimitiveKind.CHAR.code());
+            if(primitiveType.SHORT() != null)
+                return new PrimitiveTypeKey(PrimitiveKind.SHORT.code());
+            if(primitiveType.BYTE() != null)
+                return new PrimitiveTypeKey(PrimitiveKind.BYTE.code());
             if (primitiveType.DOUBLE() != null)
                 return new PrimitiveTypeKey(PrimitiveKind.DOUBLE.code());
             if (primitiveType.FLOAT() != null)
@@ -137,6 +141,8 @@ public interface TypeKey extends TypeOrTypeKey {
             case WireTypes.LONG_TYPE -> new PrimitiveTypeKey(PrimitiveKind.LONG.code());
             case WireTypes.INT_TYPE -> new PrimitiveTypeKey(PrimitiveKind.INT.code());
             case WireTypes.CHAR_TYPE -> new PrimitiveTypeKey(PrimitiveKind.CHAR.code());
+            case WireTypes.SHORT_TYPE -> new PrimitiveTypeKey(PrimitiveKind.SHORT.code());
+            case WireTypes.BYTE_TYPE -> new PrimitiveTypeKey(PrimitiveKind.BYTE.code());
             case WireTypes.DOUBLE_TYPE -> new PrimitiveTypeKey(PrimitiveKind.DOUBLE.code());
             case WireTypes.FLOAT_TYPE -> new PrimitiveTypeKey(PrimitiveKind.FLOAT.code());
             case WireTypes.STRING_TYPE -> new PrimitiveTypeKey(PrimitiveKind.STRING.code());

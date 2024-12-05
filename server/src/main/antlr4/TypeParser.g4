@@ -42,6 +42,8 @@ primitiveType
     | INT
     | DOUBLE
     | CHAR
+    | SHORT
+    | BYTE
     | TIME
     | STRING
     | PASSWORD

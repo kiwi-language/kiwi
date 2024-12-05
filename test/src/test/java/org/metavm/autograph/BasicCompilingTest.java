@@ -107,6 +107,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processInt();
             processUnboxing();
             processFloat();
+            processSmallInt();
         });
     }
 
@@ -1088,6 +1089,16 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals((float) 3.0, (float) callMethod(className, "add", List.of(1.5, 1.5)), 0.001);
         Assert.assertEquals((float) 1.0, (float) callMethod(className, "unbox", List.of(1.0)), 0.001);
         Assert.assertEquals(1.0, callMethod(className, "toDouble", List.of(1.0)));
+    }
+
+    private void processSmallInt() {
+        var className = "primitives.SmallIntFoo";
+        Assert.assertEquals((short) 3, callMethod(className, "addShorts", List.of(1 ,2)));
+        Assert.assertEquals(3.0, callMethod(className, "addShortAndDouble", List.of(1 ,2)));
+        callMethod(className, "byteArraySet", List.of(1, 0));
+        Assert.assertEquals((byte) 0, callMethod(className, "byteArrayGet", List.of(1)));
+        Assert.assertEquals(1, callMethod(className, "shortShiftRight", List.of(8, 3)));
+        Assert.assertEquals((byte) 0, callMethod(className, "toByte", List.of(1 << 8)));
     }
 
 }

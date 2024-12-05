@@ -11,6 +11,8 @@ public class WireTypes {
     public static final int CHAR = 7;
     public static final int INT = 8;
     public static final int FLOAT = 9;
+    public static final int SHORT = 18;
+    public static final int BYTE = 19;
 
     public static final int REFERENCE = 10;
     public static final int INSTANCE = 11;
@@ -48,6 +50,8 @@ public class WireTypes {
     public static final int VALUE_ARRAY_TYPE = 44;
     public static final int INT_TYPE = 45;
     public static final int FLOAT_TYPE = 46;
+    public static final int SHORT_TYPE = 47;
+    public static final int BYTE_TYPE = 48;
 
 
     // Element references

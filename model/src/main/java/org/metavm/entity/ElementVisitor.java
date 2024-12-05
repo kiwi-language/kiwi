@@ -726,4 +726,16 @@ public abstract class ElementVisitor<R> {
     public R visitDoubleToFloatNode(DoubleToFloat node) {
         return visitNode(node);
     }
+
+    public R visitIntToShortNode(IntToShortNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntToByteNode(IntToByteNode node) {
+        return visitNode(node);
+    }
+
+    public R visitIntToCharNode(IntToCharNode node) {
+        return visitNode(node);
+    }
 }

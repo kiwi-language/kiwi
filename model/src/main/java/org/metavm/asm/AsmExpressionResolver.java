@@ -111,30 +111,96 @@ class AsmExpressionResolver {
     private Type resolveCast(AssemblyParser.ExpressionContext operand, AssemblyParser.TypeTypeContext type) {
         var operandType = resolve0(operand);
         var castType = parseType(type);
-        if (operandType.isLong() && castType.isDouble())
-            Nodes.longToDouble(code);
-        else if (operandType.isDouble() && castType.isLong())
-            Nodes.doubleToLong(code);
-        else if (operandType.isInt() && castType.isLong())
-            Nodes.intToLong(code);
-        else if (operandType.isLong() && castType.isInt())
-            Nodes.longToInt(code);
-        else if (operandType.isInt() && castType.isDouble())
-            Nodes.intToDouble(code);
-        else if (operandType.isDouble() && castType.isInt())
-            Nodes.doubleToInt(code);
-        else if (operandType.isFloat() && castType.isInt())
-            Nodes.floatToInt(code);
-        else if (operandType.isFloat() && castType.isLong())
-            Nodes.floatToLong(code);
-        else if (operandType.isFloat() && castType.isDouble())
-            Nodes.floatToDouble(code);
-        else if (operandType.isInt() && castType.isFloat())
-            Nodes.intToFloat(code);
-        else if (operandType.isLong() && castType.isFloat())
-            Nodes.longToFloat(code);
-        else if (operandType.isDouble() && castType.isFloat())
-            Nodes.doubleToFloat(code);
+        if (operandType instanceof PrimitiveType t1 && castType instanceof PrimitiveType t2) {
+            var kind1 = t1.getKind();
+            var kind2 = t2.getKind();
+            if (kind1 == PrimitiveKind.DOUBLE) {
+                if (kind2 == PrimitiveKind.FLOAT)
+                    Nodes.doubleToFloat(code);
+                else if (kind2 == PrimitiveKind.LONG)
+                    Nodes.doubleToLong(code);
+                else if (kind2 == PrimitiveKind.INT)
+                    Nodes.doubleToInt(code);
+                else if (kind2 == PrimitiveKind.SHORT)
+                    Nodes.doubleToShort(code);
+                else if (kind2 == PrimitiveKind.BYTE)
+                    Nodes.doubleToByte(code);
+                else if (kind2 == PrimitiveKind.CHAR)
+                    Nodes.doubleToChar(code);
+            } else if (kind1 == PrimitiveKind.FLOAT) {
+                if (kind2 == PrimitiveKind.DOUBLE)
+                    Nodes.floatToDouble(code);
+                else if (kind2 == PrimitiveKind.LONG)
+                    Nodes.floatToLong(code);
+                else if (kind2 == PrimitiveKind.INT)
+                    Nodes.floatToInt(code);
+                else if (kind2 == PrimitiveKind.SHORT)
+                    Nodes.floatToShort(code);
+                else if (kind2 == PrimitiveKind.BYTE)
+                    Nodes.floatToByte(code);
+                else if (kind2 == PrimitiveKind.CHAR)
+                    Nodes.floatToChar(code);
+            } else if (kind1 == PrimitiveKind.LONG) {
+                if (kind2 == PrimitiveKind.DOUBLE)
+                    Nodes.longToDouble(code);
+                else if (kind2 == PrimitiveKind.FLOAT)
+                    Nodes.longToFloat(code);
+                else if (kind2 == PrimitiveKind.INT)
+                    Nodes.longToInt(code);
+                else if (kind2 == PrimitiveKind.SHORT)
+                    Nodes.longToShort(code);
+                else if (kind2 == PrimitiveKind.BYTE)
+                    Nodes.longToByte(code);
+                else if (kind2 == PrimitiveKind.CHAR)
+                    Nodes.longToChar(code);
+            } else if (kind1 == PrimitiveKind.INT) {
+                if (kind2 == PrimitiveKind.DOUBLE)
+                    Nodes.intToDouble(code);
+                else if (kind2 == PrimitiveKind.FLOAT)
+                    Nodes.intToFloat(code);
+                else if (kind2 == PrimitiveKind.LONG)
+                    Nodes.intToLong(code);
+                else if (kind2 == PrimitiveKind.SHORT)
+                    Nodes.intToShort(code);
+                else if (kind2 == PrimitiveKind.BYTE)
+                    Nodes.intToByte(code);
+                else if (kind2 == PrimitiveKind.CHAR)
+                    Nodes.intToChar(code);
+            } else if (kind1 == PrimitiveKind.SHORT) {
+                if (kind2 == PrimitiveKind.DOUBLE)
+                    Nodes.intToDouble(code);
+                else if (kind2 == PrimitiveKind.FLOAT)
+                    Nodes.intToFloat(code);
+                else if (kind2 == PrimitiveKind.LONG)
+                    Nodes.intToLong(code);
+                else if (kind2 == PrimitiveKind.BYTE)
+                    Nodes.intToByte(code);
+                else if (kind2 == PrimitiveKind.CHAR)
+                    Nodes.intToChar(code);
+            } else if (kind1 == PrimitiveKind.BYTE) {
+                if (kind2 == PrimitiveKind.DOUBLE)
+                    Nodes.intToDouble(code);
+                else if (kind2 == PrimitiveKind.FLOAT)
+                    Nodes.intToFloat(code);
+                else if (kind2 == PrimitiveKind.LONG)
+                    Nodes.intToLong(code);
+                else if (kind2 == PrimitiveKind.SHORT)
+                    Nodes.intToShort(code);
+                else if (kind2 == PrimitiveKind.CHAR)
+                    Nodes.intToChar(code);
+            } else if (kind1 == PrimitiveKind.CHAR) {
+                if (kind2 == PrimitiveKind.DOUBLE)
+                    Nodes.intToDouble(code);
+                else if (kind2 == PrimitiveKind.FLOAT)
+                    Nodes.intToFloat(code);
+                else if (kind2 == PrimitiveKind.LONG)
+                    Nodes.intToLong(code);
+                else if (kind2 == PrimitiveKind.SHORT)
+                    Nodes.intToShort(code);
+                else if (kind2 == PrimitiveKind.BYTE)
+                    Nodes.intToByte(code);
+            }
+        }
         else
             Nodes.cast(castType, code);
         return castType;

@@ -163,6 +163,10 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
         return false;
     }
 
+    public boolean isStackInt() {
+        return false;
+    }
+
     @NoProxy
     public boolean isLong() {
         return false;
@@ -170,6 +174,21 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
 
     @NoProxy
     public boolean isNumber() {
+        return false;
+    }
+
+    @NoProxy
+    public boolean isChar() {
+        return false;
+    }
+
+    @NoProxy
+    public boolean isShort() {
+        return false;
+    }
+
+    @NoProxy
+    public boolean isByte() {
         return false;
     }
 
@@ -304,6 +323,8 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
             case WireTypes.LONG_TYPE -> PrimitiveType.longType;
             case WireTypes.INT_TYPE -> PrimitiveType.intType;
             case WireTypes.CHAR_TYPE -> PrimitiveType.charType;
+            case WireTypes.SHORT_TYPE -> PrimitiveType.shortType;
+            case WireTypes.BYTE_TYPE -> PrimitiveType.byteType;
             case WireTypes.DOUBLE_TYPE -> PrimitiveType.doubleType;
             case WireTypes.FLOAT_TYPE -> PrimitiveType.floatType;
             case WireTypes.NULL_TYPE -> PrimitiveType.nullType;

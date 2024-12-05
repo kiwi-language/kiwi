@@ -245,6 +245,8 @@ public class KlassInput extends MvInput {
             case WireTypes.FLOAT -> Instances.floatInstance(readFloat());
             case WireTypes.STRING -> Instances.stringInstance(readUTF());
             case WireTypes.CHAR -> Instances.charInstance(readChar());
+            case WireTypes.SHORT -> Instances.shortInstance((short) readShort());
+            case WireTypes.BYTE -> Instances.byteInstance((byte) read());
             case WireTypes.BOOLEAN -> Instances.booleanInstance(readBoolean());
             case WireTypes.TIME -> Instances.timeInstance(readLong());
             case WireTypes.PASSWORD -> Instances.passwordInstance(readUTF());

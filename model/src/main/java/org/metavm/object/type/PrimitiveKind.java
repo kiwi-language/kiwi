@@ -59,8 +59,30 @@ public enum PrimitiveKind {
         public Value getDefaultValue() {
             return Instances.floatInstance(0);
         }
-    }
-    ;
+    },
+    SHORT(12, "short", short.class, ShortValue.class, TypeCategory.SHORT) {
+        @Override
+        public Value getDefaultValue() {
+            return new ShortValue((short) 0);
+        }
+
+        @Override
+        public Value fromStackValue(Value value) {
+            return new ShortValue((short) ((IntValue) value).value);
+        }
+    },
+    BYTE(13, "byte", byte.class, ByteValue.class, TypeCategory.BYTE) {
+        @Override
+        public Value getDefaultValue() {
+            return new ByteValue((byte) 0);
+        }
+
+        @Override
+        public Value fromStackValue(Value value) {
+            return new ByteValue((byte) ((IntValue) value).value);
+        }
+
+    };
 
 
     private final int code;

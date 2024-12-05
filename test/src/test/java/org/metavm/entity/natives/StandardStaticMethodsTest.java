@@ -33,7 +33,7 @@ public class StandardStaticMethodsTest extends TestCase {
         var r = getFunction(numberOfTrailingZeros).execute(null, List.of(Instances.longInstance(l)), () -> null);
         Assert.assertEquals(Instances.intInstance(Long.numberOfTrailingZeros(l)), r.ret());
 
-        var byteCompareTo = ReflectionUtils.getMethod(Byte.class, "compareTo", Byte.class);
+        var byteCompareTo = ReflectionUtils.getMethod(Byte.class, "compare", byte.class, byte.class);
         var r1 = getFunction(byteCompareTo).execute(null,
                 List.of(Instances.intInstance(1), Instances.intInstance(2)), () -> null);
         Assert.assertEquals(Instances.intInstance(-1), r1.ret());

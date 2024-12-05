@@ -57,4 +57,8 @@ public class TypeCategoryCodes {
     public static final int INT = 32;
 
     public static final int FLOAT = 33;
+
+    public static final int SHORT = 34;
+
+    public static final int BYTE = 35;
 }

@@ -1113,8 +1113,12 @@ public class Assembler {
     private static PrimitiveType parsePrimitiveType(AssemblyParser.PrimitiveTypeContext primitiveType) {
         if (primitiveType.INT() != null)
             return PrimitiveType.intType;
-        if (primitiveType.LONG() != null)
+        else if (primitiveType.LONG() != null)
             return PrimitiveType.longType;
+        else if (primitiveType.SHORT() != null)
+            return PrimitiveType.shortType;
+        else if (primitiveType.BYTE() != null)
+            return PrimitiveType.byteType;
         else if(primitiveType.CHAR() != null)
             return PrimitiveType.charType;
         else if (primitiveType.DOUBLE() != null)

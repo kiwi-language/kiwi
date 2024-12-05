@@ -233,6 +233,18 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
+    protected void visitShort() {
+        output.write(WireTypes.SHORT);
+        output.writeShort(readShort());
+    }
+
+    @Override
+    protected void visitByte() {
+        output.write(WireTypes.BYTE);
+        output.write(read());
+    }
+
+    @Override
     public void visitDouble() {
         output.write(WireTypes.DOUBLE);
         output.writeDouble(readDouble());

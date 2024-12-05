@@ -322,7 +322,7 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.ADD_ELEMENT -> {
                             var e = stack[--top];
                             var a = stack[--top].resolveArray();
-                            a.addElement(e);
+                            a.addElement(a.getType().getElementType().fromStackValue(e));
                             pc++;
                         }
                         case Bytecodes.DELETE_ELEMENT -> {
@@ -694,6 +694,21 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.INT_TO_LONG -> {
                             var v = (IntValue) stack[--top];
                             stack[top++] = new LongValue(v.value);
+                            pc++;
+                        }
+                        case Bytecodes.INT_TO_CHAR -> {
+                            var v = (IntValue) stack[--top];
+                            stack[top++] = new IntValue((char) v.value);
+                            pc++;
+                        }
+                        case Bytecodes.INT_TO_SHORT -> {
+                            var v = (IntValue) stack[--top];
+                            stack[top++] = new IntValue((short) v.value);
+                            pc++;
+                        }
+                        case Bytecodes.INT_TO_BYTE -> {
+                            var v = (IntValue) stack[--top];
+                            stack[top++] = new IntValue((byte) v.value);
                             pc++;
                         }
                         case Bytecodes.LONG_TO_INT -> {

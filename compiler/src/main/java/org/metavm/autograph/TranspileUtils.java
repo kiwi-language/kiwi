@@ -579,6 +579,63 @@ public class TranspileUtils {
             return false;
     }
 
+    public static boolean isShortWrapperType(PsiType type) {
+        if (type instanceof PsiClassType classType) {
+            var k = requireNonNull(classType.resolve());
+            return "java.lang.Short".equals(k.getQualifiedName());
+        }
+        else
+            return false;
+    }
+
+    public static boolean isCharWrapperType(PsiType type) {
+        if (type instanceof PsiClassType classType) {
+            var k = requireNonNull(classType.resolve());
+            return "java.lang.Character".equals(k.getQualifiedName());
+        }
+        else
+            return false;
+    }
+
+    public static boolean isByteWrapperType(PsiType type) {
+        if (type instanceof PsiClassType classType) {
+            var k = requireNonNull(classType.resolve());
+            return "java.lang.Byte".equals(k.getQualifiedName());
+        }
+        else
+            return false;
+    }
+
+    public static boolean isBooleanWrapperType(PsiType type) {
+        if (type instanceof PsiClassType classType) {
+            var k = requireNonNull(classType.resolve());
+            return "java.lang.Boolean".equals(k.getQualifiedName());
+        }
+        else
+            return false;
+    }
+
+    public static boolean isShortType(PsiType type) {
+        if (type instanceof PsiPrimitiveType primitiveType)
+            return primitiveType.getKind() == JvmPrimitiveTypeKind.SHORT;
+        else
+            return false;
+    }
+
+    public static boolean isByteType(PsiType type) {
+        if (type instanceof PsiPrimitiveType primitiveType)
+            return primitiveType.getKind() == JvmPrimitiveTypeKind.BYTE;
+        else
+            return false;
+    }
+
+    public static boolean isCharType(PsiType type) {
+        if (type instanceof PsiPrimitiveType primitiveType)
+            return primitiveType.getKind() == JvmPrimitiveTypeKind.CHAR;
+        else
+            return false;
+    }
+
     private static class UpwardsClassVisitor extends JavaElementVisitor {
 
         @Override
@@ -1200,8 +1257,8 @@ public class TranspileUtils {
             Map.entry(Character.class.getName(), "Char"),
             Map.entry(Long.class.getName(), "Long"),
             Map.entry(Integer.class.getName(), "Int"),
-            Map.entry(Short.class.getName(), "Int"),
-            Map.entry(Byte.class.getName(), "Int"),
+            Map.entry(Short.class.getName(), "Short"),
+            Map.entry(Byte.class.getName(), "Byte"),
             Map.entry(Double.class.getName(), "Double"),
             Map.entry(Float.class.getName(), "Float"),
             Map.entry(Boolean.class.getName(), "Boolean"),

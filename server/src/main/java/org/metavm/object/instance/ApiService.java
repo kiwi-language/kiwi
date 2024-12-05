@@ -358,6 +358,10 @@ public class ApiService extends EntityContextFactoryAware {
                     ValueResolutionResult.of(Instances.passwordInstance(s)) : ValueResolutionResult.failed;
             case CHAR -> rawValue instanceof Character c ?
                     ValueResolutionResult.of(Instances.charInstance(c)) : ValueResolutionResult.failed;
+            case SHORT -> ValueUtils.isInteger(rawValue) ?
+                    ValueResolutionResult.of(Instances.shortInstance(((Number) rawValue).shortValue())) : ValueResolutionResult.failed;
+            case BYTE -> ValueUtils.isInteger(rawValue) ?
+                    ValueResolutionResult.of(Instances.byteInstance(((Number) rawValue).byteValue())) : ValueResolutionResult.failed;
             case TIME -> ValueUtils.isInteger(rawValue) ?
                     ValueResolutionResult.of(Instances.timeInstance(((Number) rawValue).longValue())) : ValueResolutionResult.failed;
             case VOID -> throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE_OF_TYPE, "void");

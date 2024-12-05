@@ -544,6 +544,8 @@ public class Types {
                 case DOUBLE -> Double.class;
                 case CHAR -> Character.class;
                 case FLOAT -> Float.class;
+                case SHORT -> Short.class;
+                case BYTE -> Byte.class;
             };
         }
         if (type instanceof AnyType)
@@ -588,10 +590,12 @@ public class Types {
                 return getStringType();
             if (javaClass == Long.class || javaClass == long.class)
                 return getLongType();
-            else if( javaClass == Integer.class || javaClass == int.class
-                    || javaClass == Short.class || javaClass == short.class
-                    || javaClass == Byte.class || javaClass == byte.class)
+            if( javaClass == Integer.class || javaClass == int.class)
                 return getIntType();
+            if (javaClass == Short.class || javaClass == short.class)
+                return getShortType();
+            if (javaClass == Byte.class || javaClass == byte.class)
+                return getByteType();
             if (javaClass == char.class || javaClass == Character.class)
                 return getCharType();
             if (javaClass == Boolean.class || javaClass == boolean.class)
@@ -831,5 +835,13 @@ public class Types {
 
     public static PrimitiveType getFloatType() {
         return PrimitiveType.floatType;
+    }
+
+    public static PrimitiveType getShortType() {
+        return PrimitiveType.shortType;
+    }
+
+    public static PrimitiveType getByteType() {
+        return PrimitiveType.byteType;
     }
 }

@@ -381,6 +381,8 @@ typeArguments
 
 primitiveType
     : BOOLEAN
+    | BYTE
+    | SHORT
     | INT
     | LONG
     | DOUBLE

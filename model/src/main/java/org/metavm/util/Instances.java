@@ -33,6 +33,8 @@ public class Instances {
 
     public static final Map<Class<?>, Type> JAVA_CLASS_TO_BASIC_TYPE = Map.ofEntries(
             Map.entry(Integer.class, PrimitiveType.intType),
+            Map.entry(Short.class, PrimitiveType.shortType),
+            Map.entry(Byte.class, PrimitiveType.byteType),
             Map.entry(Long.class, PrimitiveType.longType),
             Map.entry(Character.class, PrimitiveType.charType),
             Map.entry(Double.class, PrimitiveType.doubleType),
@@ -55,6 +57,9 @@ public class Instances {
             Map.entry(Boolean.class, BooleanValue.class),
             Map.entry(String.class, StringValue.class),
             Map.entry(Date.class, TimeValue.class),
+            Map.entry(Character.class, CharValue.class),
+            Map.entry(Short.class, ShortValue.class),
+            Map.entry(Byte.class, ByteValue.class),
             Map.entry(Password.class, PasswordValue.class),
             Map.entry(Null.class, NullValue.class),
             Map.entry(Object.class, Value.class),
@@ -400,6 +405,10 @@ public class Instances {
 
     public static Type getBasicType(Class<?> javaClass, Function<Class<?>, Type> getTypeFunc) {
         javaClass = ReflectionUtils.getWrapperClass(javaClass);
+        if (javaClass == Byte.class)
+            return Types.getByteType();
+        if (javaClass == Short.class)
+            return Types.getShortType();
         if (javaClass == Integer.class)
             return Types.getIntType();
         if (javaClass == Long.class)
@@ -1079,5 +1088,13 @@ public class Instances {
 
     public static FloatValue floatInstance(float v) {
         return new FloatValue(v);
+    }
+
+    public static ShortValue shortInstance(short v) {
+        return new ShortValue(v);
+    }
+
+    public static ByteValue byteInstance(byte v) {
+        return new ByteValue(v);
     }
 }

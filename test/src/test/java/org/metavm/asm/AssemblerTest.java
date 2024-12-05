@@ -131,6 +131,13 @@ public class AssemblerTest extends TestCase {
         getObject(id);
     }
 
+    public void testSmallInt() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/smallint.masm");
+        var className = "SmallIntFoo";
+        Assert.assertEquals((short) 3, callMethod(className, "addShorts", List.of(1, 2)));
+        Assert.assertEquals(3.0, callMethod(className, "addShortAndDouble", List.of(1, 2)));
+    }
+
     private void assemble(List<String> sources, Assembler assembler) {
         assembler.assemble(sources);
         assembler.generateClasses(TestConstants.TARGET);

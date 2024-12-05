@@ -117,6 +117,9 @@ public class Bytecodes {
     public static final int INT_TO_FLOAT = 128;
     public static final int LONG_TO_FLOAT = 129;
     public static final int DOUBLE_TO_FLOAT = 130;
+    public static final int INT_TO_SHORT = 131;
+    public static final int INT_TO_BYTE = 132;
+    public static final int INT_TO_CHAR = 133;
 
 
     private static final String[] names = new String[256];

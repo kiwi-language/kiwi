@@ -33,6 +33,8 @@ public class StreamVisitor {
             case WireTypes.INT -> visitInt();
             case WireTypes.BOOLEAN -> visitBoolean();
             case WireTypes.CHAR -> visitChar();
+            case WireTypes.SHORT -> visitShort();
+            case WireTypes.BYTE -> visitByte();
             case WireTypes.TIME -> visitTime();
             case WireTypes.PASSWORD -> visitPassword();
             case WireTypes.REFERENCE -> visitReference();
@@ -45,6 +47,18 @@ public class StreamVisitor {
             case WireTypes.REMOVING_INSTANCE -> visitRemovingInstance();
             default -> throw new InternalException("Invalid wire type: " + wireType);
         }
+    }
+
+    protected void visitShort() {
+        input.readShort();
+    }
+
+    protected void visitByte() {
+        input.read();
+    }
+
+    protected int readShort() {
+        return input.readShort();
     }
 
     protected void visitRemovingInstance() {

@@ -234,6 +234,8 @@ public class BytesUtils {
                 case WireTypes.LONG, WireTypes.TIME -> readLong();
                 case WireTypes.INT -> readInt();
                 case WireTypes.CHAR -> readChar();
+                case WireTypes.SHORT -> readShort();
+                case WireTypes.BYTE -> read();
                 case WireTypes.DOUBLE -> readDouble();
                 case WireTypes.FLOAT -> readFloat();
                 case WireTypes.PASSWORD, WireTypes.STRING -> readUTF();

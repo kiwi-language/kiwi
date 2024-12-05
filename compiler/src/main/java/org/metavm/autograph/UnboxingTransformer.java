@@ -181,6 +181,14 @@ public class UnboxingTransformer extends VisitorBase {
                 replace(expression, createExpressionFromText(expression.getText() + ".doubleValue()"));
             else if (TranspileUtils.isFloatWrapperType(type))
                 replace(expression, createExpressionFromText(expression.getText()  + ".floatValue()"));
+            else if (TranspileUtils.isShortWrapperType(type))
+                replace(expression, createExpressionFromText(expression.getText()  + ".shortValue()"));
+            else if (TranspileUtils.isByteWrapperType(type))
+                replace(expression, createExpressionFromText(expression.getText()  + ".byteValue()"));
+            else if (TranspileUtils.isCharWrapperType(type))
+                replace(expression, createExpressionFromText(expression.getText()  + ".charValue()"));
+            else if (TranspileUtils.isBooleanWrapperType(type))
+                replace(expression, createExpressionFromText(expression.getText()  + ".booleanValue()"));
         }
     }
 

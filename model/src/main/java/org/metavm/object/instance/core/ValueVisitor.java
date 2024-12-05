@@ -83,4 +83,12 @@ public abstract class ValueVisitor<R> {
     public R visitFloatValue(FloatValue value) {
         return visitNumberValue(value);
     }
+
+    public R visitShortValue(ShortValue value) {
+        return visitNumberValue(value);
+    }
+
+    public R visitByteValue(ByteValue value) {
+        return visitNumberValue(value);
+    }
 }

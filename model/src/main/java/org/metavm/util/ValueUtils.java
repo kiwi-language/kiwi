@@ -2,39 +2,20 @@ package org.metavm.util;
 
 import org.metavm.api.ValueObject;
 import org.metavm.entity.*;
-import org.metavm.object.instance.core.LongValue;
-import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeCategory;
 import org.metavm.object.type.Types;
 
 import java.lang.reflect.ParameterizedType;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public class ValueUtils {
 
     public static final Pattern INT_PATTERN = Pattern.compile("-?[0-9]+");
-
-    public static Type getValueType(Object value) {
-        if (value instanceof String)
-            return Types.getStringType();
-        if (isFloatOrDouble(value))
-            return Types.getDoubleType();
-        if(value instanceof Integer)
-            return Types.getIntType();
-        if (value instanceof Long)
-            return Types.getLongType();
-        if(value instanceof Character)
-            return Types.getCharType();
-        if (isBoolean(value))
-            return Types.getBooleanType();
-        if (isTime(value))
-            return Types.getTimeType();
-        if (value instanceof Value instance)
-            return instance.getType();
-        throw new InternalException("Unsupported value: " + value);
-    }
 
     public static boolean isConvertible(Type from, Type to) {
         if (to.isString()) return true;
@@ -67,8 +48,12 @@ public class ValueUtils {
         return klass == long.class || klass == Long.class;
     }
 
-    public static boolean isChar(Class<?> klass) {
-        return klass == char.class || klass == Character.class;
+    public static boolean isShort(Class<?> klass) {
+        return klass == short.class || klass == Short.class;
+    }
+
+    public static boolean isByte(Class<?> klass) {
+        return klass == byte.class || klass == Byte.class;
     }
 
     public static boolean isDouble(Class<?> klass) {
@@ -85,10 +70,6 @@ public class ValueUtils {
 
     public static boolean isTime(Class<?> klass) {
         return klass == Date.class;
-    }
-
-    public static boolean isFloat(Class<?> klass) {
-        return klass == Float.class || klass == float.class;
     }
 
     public static boolean isPrimitive(Object object) {
@@ -125,26 +106,6 @@ public class ValueUtils {
 
     public static boolean isEnumType(Class<?> klass) {
         return Enum.class.isAssignableFrom(klass);
-    }
-
-    public static Type getPrimitiveType(Class<?> klass) {
-        if (isBoolean(klass))
-            return Types.getBooleanType();
-        if (isString(klass))
-            return Types.getStringType();
-        if (isLong(klass))
-            return Types.getLongType();
-        if(isInteger(klass))
-            return Types.getIntType();
-        if(isChar(klass))
-            return Types.getCharType();
-        if (isTime(klass))
-            return Types.getTimeType();
-        if (isDouble(klass))
-            return Types.getDoubleType();
-        if (isFloat(klass))
-            return Types.getFloatType();
-        throw new InternalException("Type " + klass.getName() + " is not a primitive type");
     }
 
     public static TypeCategory getTypeCategory(Class<?> klass) {
@@ -235,10 +196,6 @@ public class ValueUtils {
         return isInteger(value) || isFloatOrDouble(value);
     }
 
-    public static boolean isTime(Object value) {
-        return value instanceof Date;
-    }
-
     public static boolean isLong(Object value) {
         return value instanceof Long;
     }
@@ -249,10 +206,6 @@ public class ValueUtils {
 
     public static boolean isString(Object value) {
         return value instanceof String;
-    }
-
-    public static boolean isBoolean(Object value) {
-        return value instanceof Boolean;
     }
 
     public static boolean isFloatOrDouble(Object value) {
