@@ -465,16 +465,14 @@ public class Types {
     public static String getTypeName(java.lang.reflect.Type javaType) {
         return switch (javaType) {
             case Class<?> klass -> {
-                if (klass.isPrimitive()) {
-                    klass = ReflectionUtils.getBoxedClass(klass);
-                }
-                if (ReflectionUtils.isPrimitiveWrapper(klass)) {
-                    yield PrimitiveKind.getByJavaClass(klass).getName();
-                } else if (klass.isArray()) {
+                if (klass.isPrimitive())
+                    yield PrimitiveKind.fromJavaClass(klass).getName();
+                if (ReflectionUtils.isPrimitiveWrapper(klass))
+                    yield PrimitiveKind.fromJavaClass(ReflectionUtils.unbox(klass)).getName();
+                else if (klass.isArray())
                     yield getTypeName(klass.getComponentType()) + "[]";
-                } else {
+                else
                     yield EntityUtils.getMetaTypeName(klass);
-                }
             }
             case GenericArrayType genericArrayType -> getTypeName(genericArrayType.getGenericComponentType()) + "[]";
             case ParameterizedType pType -> parameterizedName(getTypeName(pType.getRawType()),
@@ -488,7 +486,7 @@ public class Types {
     public static String getTypeCode(java.lang.reflect.Type javaType) {
         return switch (javaType) {
             case Class<?> klass -> {
-                klass = ReflectionUtils.getBoxedClass(klass);
+                klass = ReflectionUtils.getWrapperClass(klass);
                 yield klass.isArray() ? getTypeCode(klass.getComponentType()) + "[]" : klass.getName();
             }
             case GenericArrayType genericArrayType -> getTypeCode(genericArrayType.getGenericComponentType()) + "[]";

@@ -21,20 +21,8 @@ public class Values {
         return constant(Instances.stringInstance(string));
     }
 
-    public static Value constantBoolean(boolean bool) {
-        return constant(Instances.booleanInstance(bool));
-    }
-
     public static Value constant(org.metavm.object.instance.core.Value value) {
         return new ConstantValue(value);
-    }
-
-    public static Value constantTrue() {
-        return constant(Instances.trueInstance());
-    }
-
-    public static Value constantFalse() {
-        return constant(Instances.falseInstance());
     }
 
     public static Value nullValue() {

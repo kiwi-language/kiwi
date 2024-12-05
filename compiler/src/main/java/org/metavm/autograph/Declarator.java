@@ -187,8 +187,11 @@ public class Declarator extends VisitorBase {
             for (PsiField field : indexKlass.getFields()) {
                 if(!TranspileUtils.isStatic(field) && !TranspileUtils.isTransient(field)) {
                     var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), field.getName()));
+                    var type = resolveNullableType(field.getType());
                     if (indexField == null)
-                        new IndexField(index, field.getName(), Values.nullValue());
+                        new IndexField(index, field.getName(), type, Values.nullValue());
+                    else
+                        indexField.setType(type);
                 }
             }
             indexKlass.putUserData(Keys.INDEX, index);
@@ -249,7 +252,9 @@ public class Declarator extends VisitorBase {
             var index = requireNonNull(currentIndex);
             var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), psiField.getName()));
             if (indexField == null)
-                new IndexField(index, psiField.getName(), Values.nullValue());
+                new IndexField(index, psiField.getName(), resolveNullableType(psiField.getType()), Values.nullValue());
+            else
+                indexField.setType(resolveNullableType(psiField.getType()));
             return;
         }
         var type = resolveNullableType(psiField.getType());

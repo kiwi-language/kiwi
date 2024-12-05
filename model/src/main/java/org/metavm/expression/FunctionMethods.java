@@ -3,11 +3,13 @@ package org.metavm.expression;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.natives.IteratorImplNative;
 import org.metavm.entity.natives.NativeMethods;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
-import org.metavm.util.*;
+import org.metavm.util.BusinessException;
+import org.metavm.util.EncodingUtils;
+import org.metavm.util.Instances;
+import org.metavm.util.NncUtils;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -79,11 +81,11 @@ public class FunctionMethods {
         return Instances.stringInstance(password.getValue());
     }
 
-    public static BooleanValue DATE_BEFORE(TimeValue date1, TimeValue date2) {
+    public static Value DATE_BEFORE(TimeValue date1, TimeValue date2) {
         return date1.before(date2);
     }
 
-    public static BooleanValue DATE_AFTER(TimeValue date1, TimeValue date2) {
+    public static Value DATE_AFTER(TimeValue date1, TimeValue date2) {
         return date1.after(date2);
     }
 
@@ -102,17 +104,17 @@ public class FunctionMethods {
             return Instances.longInstance(0L);
     }
 
-    public static BooleanValue STARTS_WITH(Value first, StringValue prefix) {
+    public static Value STARTS_WITH(Value first, StringValue prefix) {
         if(first instanceof NullValue)
-            return Instances.falseInstance();
+            return Instances.zero();
         else if(first instanceof StringValue str)
             return str.startsWith(prefix);
         throw new IllegalArgumentException("Invalid argument for starts_with function: " + first);
     }
 
-    public static BooleanValue CONTAINS(Value first, StringValue prefix) {
+    public static Value CONTAINS(Value first, StringValue prefix) {
         if(first instanceof NullValue)
-            return Instances.falseInstance();
+            return Instances.zero();
         if(first instanceof StringValue str)
             return str.contains(prefix);
         else
@@ -120,7 +122,7 @@ public class FunctionMethods {
     }
 
     public static StringValue CONCAT(Value str1, Value str2) {
-        return new StringValue(str1.getTitle() + str2.getTitle(), Types.getStringType());
+        return new StringValue(str1.getTitle() + str2.getTitle());
     }
 
     public static StringValue REPLACE(StringValue string, StringValue target, StringValue replacement) {
@@ -132,7 +134,7 @@ public class FunctionMethods {
     }
 
     public static LongValue RANDOM() {
-        return new LongValue(NncUtils.random(), Types.getLongType());
+        return new LongValue(NncUtils.random());
     }
 
     public static Value IF(BooleanValue condition, Value value1, Value value2) {
@@ -175,8 +177,8 @@ public class FunctionMethods {
         return Instances.stringInstance(instance.getTitle());
     }
 
-    public static BooleanValue ARRAY_CONTAINS(ArrayInstance array, Value value) {
-        return Instances.booleanInstance(array.contains(value));
+    public static Value ARRAY_CONTAINS(ArrayInstance array, Value value) {
+        return Instances.intInstance(array.contains(value));
     }
 
     public static StringValue RANDOM_PASSWORD() {
@@ -200,13 +202,13 @@ public class FunctionMethods {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT, "LEN");
     }
 
-    public static BooleanValue HAS_NEXT(Value iterator) {
+    public static Value HAS_NEXT(Value iterator) {
         var iteratorNative = (IteratorImplNative) NativeMethods.getNativeObject(iterator.resolveObject());
         return iteratorNative.hasNext();
     }
 
-    public static BooleanValue REGEX_MATCH(StringValue regex, StringValue value) {
-        return Instances.booleanInstance(Pattern.compile(regex.getValue()).matcher(value.getValue()).matches());
+    public static Value REGEX_MATCH(StringValue regex, StringValue value) {
+        return Instances.intInstance(Pattern.compile(regex.getValue()).matcher(value.getValue()).matches());
     }
 
     public static StringValue NUMBER_FORMAT(StringValue format, LongValue value) {

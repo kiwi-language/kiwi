@@ -1,7 +1,8 @@
 package org.metavm.expression;
 
 import org.metavm.flow.Node;
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.PrimitiveValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
@@ -9,7 +10,6 @@ import org.metavm.util.*;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 public class Expressions {
 
@@ -310,10 +310,6 @@ public class Expressions {
 
     public static @Nullable String getAlias(Expression expression) {
         return expression instanceof AsExpression asExpression ? asExpression.getAlias() : null;
-    }
-
-    public static Expression constantBoolean(boolean bool) {
-        return new ConstantExpression(Instances.booleanInstance(bool));
     }
 
     public static Expression never() {

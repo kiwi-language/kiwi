@@ -3,6 +3,7 @@ package org.metavm.entity.natives;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Field;
+import org.metavm.object.type.PrimitiveType;
 import org.metavm.util.Instances;
 import org.metavm.util.NncUtils;
 
@@ -24,7 +25,7 @@ public class StringBuilderNative extends NativeBase {
         return StringBuilder();
     }
 
-    public Value StringBuilder(Value value, CallContext callContext) {
+    public Value StringBuilder__string(Value value, CallContext callContext) {
         var sb = StringBuilder();
         append(value, callContext);
         return sb;
@@ -41,8 +42,40 @@ public class StringBuilderNative extends NativeBase {
         return instance.getReference();
     }
 
-    public BooleanValue isEmpty(CallContext callContext) {
-        return Instances.booleanInstance(array.isEmpty());
+    public Value append__char(Value value, CallContext callContext) {
+        return append(PrimitiveType.charType.fromStackValue(value), callContext);
+    }
+
+    public Value append__boolean(Value value, CallContext callContext) {
+        return append(PrimitiveType.booleanType.fromStackValue(value), callContext);
+    }
+
+    public Value append__int(Value value, CallContext callContext) {
+        return append(value, callContext);
+    }
+
+    public Value append__long(Value value, CallContext callContext) {
+        return append(value, callContext);
+    }
+
+    public Value append__double(Value value, CallContext callContext) {
+        return append(value, callContext);
+    }
+
+    public Value append__float(Value value, CallContext callContext) {
+        return append(value, callContext);
+    }
+
+    public Value append__string(Value value, CallContext callContext) {
+        return append(value, callContext);
+    }
+
+    public Value append__Any(Value value, CallContext callContext) {
+        return append(value, callContext);
+    }
+
+    public Value isEmpty(CallContext callContext) {
+        return Instances.intInstance(array.isEmpty());
     }
 
     public IntValue length(CallContext callContext) {

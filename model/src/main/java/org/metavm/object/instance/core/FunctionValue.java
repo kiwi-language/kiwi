@@ -12,8 +12,7 @@ import java.util.List;
 
 public abstract class FunctionValue extends Value {
 
-    public FunctionValue(FunctionType type) {
-        super(type);
+    public FunctionValue() {
     }
 
     @Override
@@ -32,9 +31,7 @@ public abstract class FunctionValue extends Value {
     public abstract FlowExecResult execute(List<? extends Value> arguments, CallContext callContext);
 
     @Override
-    public FunctionType getType() {
-        return (FunctionType) super.getType();
-    }
+    public abstract FunctionType getType();
 
 //    public abstract Frame createFrame(FlowStack stack, List<Instance> arguments);
 

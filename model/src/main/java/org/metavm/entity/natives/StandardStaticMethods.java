@@ -3,7 +3,10 @@ package org.metavm.entity.natives;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.DefContext;
 import org.metavm.entity.DummyGenericDeclaration;
-import org.metavm.flow.*;
+import org.metavm.flow.FlowExecResult;
+import org.metavm.flow.Function;
+import org.metavm.flow.FunctionBuilder;
+import org.metavm.flow.NameAndType;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.Types;
@@ -13,7 +16,10 @@ import org.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 public class StandardStaticMethods {
@@ -88,7 +94,7 @@ public class StandardStaticMethods {
                         javaArgs[i] = Instances.toJavaValue(argument, paramTypes[i++]);
                     }
                     var r = ReflectionUtils.invoke(null, method, javaArgs);
-                    return FlowExecResult.of(Instances.fromJavaValue(r, Instances::nullInstance));
+                    return FlowExecResult.of(Instances.fromJavaValue(r, true, Instances::nullInstance));
                 };
             }
             else {
@@ -100,7 +106,7 @@ public class StandardStaticMethods {
                     while(it.hasNext())
                         javaArgs[i] = Instances.toJavaValue(it.next(), paramTypes[i++]);
                     var r = ReflectionUtils.invoke(self, method, javaArgs);
-                    return FlowExecResult.of(Instances.fromJavaValue(r, Instances::nullInstance));
+                    return FlowExecResult.of(Instances.fromJavaValue(r, true, Instances::nullInstance));
                 };
             }
         }

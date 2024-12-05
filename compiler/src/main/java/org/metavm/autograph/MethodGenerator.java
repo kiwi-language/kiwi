@@ -42,8 +42,8 @@ public class MethodGenerator {
         return method.getDeclaringType().getType();
     }
 
-    IfNode createIf( @Nullable Node target) {
-        return onNodeCreated(new IfNode(
+    IfNeNode createIfNe(@Nullable Node target) {
+        return onNodeCreated(new IfNeNode(
                 nextName("if"),
                 code().getLastNode(),
                 code(),
@@ -51,8 +51,8 @@ public class MethodGenerator {
         ));
     }
 
-    IfNotNode createIfNot(@Nullable Node target) {
-        return onNodeCreated(new IfNotNode(
+    IfEqNode createIfEq(@Nullable Node target) {
+        return onNodeCreated(new IfEqNode(
                 nextName("ifnot"),
                 code().getLastNode(),
                 code(),
@@ -785,24 +785,6 @@ public class MethodGenerator {
         );
     }
 
-    AndNode createAnd() {
-        return onNodeCreated(new AndNode(
-                        nextName("and"),
-                        code().getLastNode(),
-                        code()
-                )
-        );
-    }
-
-    OrNode createOr() {
-        return onNodeCreated(new OrNode(
-                        nextName("or"),
-                        code().getLastNode(),
-                        code()
-                )
-        );
-    }
-
     LongRemNode createLongRem() {
         return onNodeCreated(new LongRemNode(
                         nextName("lrem"),
@@ -1012,15 +994,6 @@ public class MethodGenerator {
     Node createLongBitNot() {
         createLoadConstant(Instances.longInstance(-1));
         return createLongBitXor();
-    }
-
-    NotNode createNot() {
-        return onNodeCreated(new NotNode(
-                        nextName("not"),
-                        code().getLastNode(),
-                        code()
-                )
-        );
     }
 
     LongNegNode createLongNeg() {

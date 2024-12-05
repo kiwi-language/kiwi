@@ -87,11 +87,11 @@ public class KlassTest extends TestCase {
             Nodes.argument(lambda, 0);
             Nodes.argument(lambda, 1);
             Nodes.compareEq(Types.getLongType(), code);
-            var if1 = Nodes.if_(null, code);
+            var if1 = Nodes.ifNe(null, code);
             Nodes.argument(lambda, 0);
             Nodes.argument(lambda, 1);
             Nodes.lt(code);
-            var if2 = Nodes.if_(null, code);
+            var if2 = Nodes.ifNe(null, code);
             Nodes.loadConstant(Instances.longOne(), code);
             Nodes.ret(code);
             if2.setTarget(Nodes.loadConstant(Instances.longInstance(-1), code));
@@ -130,7 +130,7 @@ public class KlassTest extends TestCase {
         }
         var index = new org.metavm.object.type.Index(fooKlass, "nameIndex", "", true,
                 List.of(), nameIndexMethod);
-        new IndexField(index, "name", Values.nullValue());
+        new IndexField(index, "name", Types.getStringType(), Values.nullValue());
         var getByNameMethod = MethodBuilder.newBuilder(fooKlass, "getByName")
                 .isStatic(true)
                 .parameters(new NameAndType("name", Types.getStringType()))

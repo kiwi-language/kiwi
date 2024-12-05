@@ -1,9 +1,9 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.Writable;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.Reference;
 import org.metavm.entity.ValueElement;
+import org.metavm.entity.Writable;
 import org.metavm.flow.KlassInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;

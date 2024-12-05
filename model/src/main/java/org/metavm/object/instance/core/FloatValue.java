@@ -13,8 +13,7 @@ public class FloatValue extends NumberValue {
 
     public final float value;
 
-    public FloatValue(float value, PrimitiveType type) {
-        super(type);
+    public FloatValue(float value) {
         this.value = value;
     }
 
@@ -24,33 +23,38 @@ public class FloatValue extends NumberValue {
     }
 
     @Override
+    public PrimitiveType getType() {
+        return PrimitiveType.floatType;
+    }
+
+    @Override
     public void write(MvOutput output) {
         output.write(WireTypes.FLOAT);
         output.writeFloat(value);
     }
 
     public FloatValue inc(int inc) {
-        return new FloatValue(value + inc, getType());
+        return new FloatValue(value + inc);
     }
 
     public FloatValue dec(int dec) {
-        return new FloatValue(value - dec, getType());
+        return new FloatValue(value - dec);
     }
 
     public FloatValue minus(DoubleValue that) {
-        return new FloatValue(value - (float) that.value, getType());
+        return new FloatValue(value - (float) that.value);
     }
 
     public FloatValue add(FloatValue that) {
-        return new FloatValue(value + that.value, getType());
+        return new FloatValue(value + that.value);
     }
 
     public FloatValue mul(FloatValue that) {
-        return new FloatValue(value * that.value, getType());
+        return new FloatValue(value * that.value);
     }
 
     public FloatValue div(FloatValue that) {
-        return new FloatValue(value / that.value, getType());
+        return new FloatValue(value / that.value);
     }
 
     public BooleanValue gt(FloatValue that) {
@@ -70,7 +74,7 @@ public class FloatValue extends NumberValue {
     }
 
     public FloatValue mod(DoubleValue that) {
-        return new FloatValue(value % (float) that.value, getType());
+        return new FloatValue(value % (float) that.value);
     }
 
     @Override
@@ -85,12 +89,12 @@ public class FloatValue extends NumberValue {
 
     @Override
     public FloatValue negate() {
-        return new FloatValue(-value, getType());
+        return new FloatValue(-value);
     }
 
     @Override
     public DoubleValue toDouble() {
-        return new DoubleValue(value, PrimitiveType.doubleType);
+        return new DoubleValue(value);
     }
 
     @Override

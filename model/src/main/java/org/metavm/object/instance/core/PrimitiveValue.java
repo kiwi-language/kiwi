@@ -12,8 +12,8 @@ import java.util.Objects;
 
 public abstract class PrimitiveValue extends Value implements Comparable<PrimitiveValue> {
 
-    public PrimitiveValue(PrimitiveType type) {
-        super(type);
+    public PrimitiveValue() {
+        super();
     }
 
     public abstract Object getValue();
@@ -64,9 +64,7 @@ public abstract class PrimitiveValue extends Value implements Comparable<Primiti
     }
 
     @Override
-    public PrimitiveType getType() {
-        return (PrimitiveType) super.getType();
-    }
+    public abstract PrimitiveType getType();
 
     @Override
     public int hashCode() {

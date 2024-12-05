@@ -43,8 +43,8 @@ public class TreeSizeTest extends TestCase {
             var numField = FieldBuilder.newBuilder("num", klass, Types.getLongType()).build();
             context.bind(klass);
             var inst = ClassInstance.create(Map.of(
-                    nameField, new StringValue("foo", Types.getStringType()),
-                    numField, new LongValue(1, Types.getLongType())
+                    nameField, new StringValue("foo"),
+                    numField, new LongValue(1)
             ), klass.getType());
             context.getInstanceContext().bind(inst);
             context.initIds();

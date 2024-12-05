@@ -76,7 +76,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var session = entityContext.selectFirstByKey(Session.IDX_TOKEN, ContextUtil.getToken());
                 if (session == null || !session.isActive())
                     throw new BusinessException(ErrorCode.LOGIN_REQUIRED);
-                return FlowExecResult.of(Instances.booleanInstance(session.removeEntry(key)));
+                return FlowExecResult.of(Instances.intInstance(session.removeEntry(key)));
             }),
     typeCast(
             "T typeCast<T>(any|null instance)",
@@ -260,7 +260,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Objects.class, "equals", Object.class, Object.class),
                     ReflectionUtils.getMethod(Object.class, "equals", Object.class)),
-            (func, args, ctx) -> FlowExecResult.of(Instances.booleanInstance(args.get(0).equals(args.get(1))))
+            (func, args, ctx) -> FlowExecResult.of(Instances.intInstance(args.get(0).equals(args.get(1))))
     ),
     md5(
             "string md5(string str)",
@@ -292,7 +292,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             (func, args, ctx) -> {
                 var pattern = (StringValue) args.get(0);
                 var str = (StringValue) args.get(1);
-                return FlowExecResult.of(Instances.booleanInstance(Pattern.compile(pattern.getValue()).matcher(str.getValue()).matches()));
+                return FlowExecResult.of(Instances.intInstance(Pattern.compile(pattern.getValue()).matcher(str.getValue()).matches()));
             }),
     random(
             "long random(long bound)",

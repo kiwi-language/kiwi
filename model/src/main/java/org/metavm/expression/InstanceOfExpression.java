@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
-import org.metavm.object.instance.core.BooleanValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
@@ -47,8 +47,8 @@ public class InstanceOfExpression extends Expression {
     }
 
     @Override
-    protected BooleanValue evaluateSelf(EvaluationContext context) {
-        return Instances.booleanInstance(targetType.isInstance(operand.evaluate(context)));
+    protected Value evaluateSelf(EvaluationContext context) {
+        return Instances.intInstance(targetType.isInstance(operand.evaluate(context)));
     }
 
     public Expression getOperand() {

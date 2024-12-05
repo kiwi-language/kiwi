@@ -20,16 +20,19 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
         return new IndexField(
                 constraint,
                 field.getName(),
+                field.getType(),
                 Values.property(field)
         );
     }
 
     private Index index;
     private String name;
+    private int typeIndex;
     private org.metavm.flow.Value value;
 
-    public IndexField(Index index, String name, org.metavm.flow.Value value) {
+    public IndexField(Index index, String name, Type type, org.metavm.flow.Value value) {
         setName(name);
+        typeIndex = index.getDeclaringType().addConstant(type);
         this.index = index;
         this.value = value;
         index.addField(this);
@@ -37,6 +40,10 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
 
     public String getName() {
         return name;
+    }
+
+    public Type getType(TypeMetadata typeMetadata) {
+        return typeMetadata.getType(typeIndex);
     }
 
     public String getQualifiedName() {
@@ -97,11 +104,13 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
     public void write(KlassOutput output) {
         output.writeEntityId(this);
         output.writeUTF(name);
+        output.writeShort(typeIndex);
     }
 
     public void read(KlassInput input) {
         name = input.readUTF();
         value = Values.nullValue();
+        typeIndex = input.readShort();
     }
 
     public void setIndex(Index index) {
@@ -111,5 +120,9 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitIndexField(this);
+    }
+
+    public void setType(Type type) {
+        typeIndex = getIndex().getDeclaringType().addConstant(type);
     }
 }

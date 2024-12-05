@@ -47,7 +47,7 @@ public class DefaultObjectInstanceMap implements ObjectInstanceMap {
 
     public <T> T getEntity(Class<T> klass, Value instance, Mapper<T, ?> mapper) {
         //noinspection unchecked
-        klass = (Class<T>) ReflectionUtils.getBoxedClass(klass);
+        klass = (Class<T>) ReflectionUtils.getWrapperClass(klass);
         if (instance instanceof PrimitiveValue primitiveValue)
             return klass.cast(Instances.deserializePrimitive(primitiveValue, klass));
         else if(instance instanceof Reference r) {

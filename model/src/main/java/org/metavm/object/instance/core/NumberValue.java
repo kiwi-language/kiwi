@@ -1,11 +1,8 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.object.type.PrimitiveType;
-
 public abstract class NumberValue extends PrimitiveValue/* implements Comparable<NumberInstance>*/ {
 
-    public NumberValue(PrimitiveType type) {
-        super(type);
+    public NumberValue() {
     }
 
     public abstract DoubleValue toDouble();

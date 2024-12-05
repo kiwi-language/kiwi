@@ -11,7 +11,6 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
-import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +40,7 @@ public class Method extends Flow implements Property {
     private boolean hidden;
 
     private transient @Nullable java.lang.reflect.Method javaMethod;
+    private transient String nativeName;
 
     public Method(Long tmpId,
                   @NotNull Klass declaringType,
@@ -428,4 +428,17 @@ public class Method extends Flow implements Property {
         declaringType.foreachGenericDeclaration(action);
         super.foreachGenericDeclaration(action);
     }
+
+
+    public String getNativeName() {
+        if (nativeName == null) {
+            if (!getParameters().isEmpty() && NncUtils.count(declaringType.getMethods(),
+                            m -> m.getName().equals(getName()) && m.getParameters().size() == getParameters().size()) > 1)
+                nativeName = getName() + "__" + NncUtils.join(getParameterTypes(), t -> t.getUnderlyingType().getName(), "_");
+            else
+                nativeName = getName();
+        }
+        return nativeName;
+    }
+
 }

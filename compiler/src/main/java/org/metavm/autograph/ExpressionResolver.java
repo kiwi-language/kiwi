@@ -265,12 +265,12 @@ public class ExpressionResolver {
         Object value = literalExpression.getValue();
         var instance = switch (value) {
             case null -> Instances.nullInstance();
-            case Boolean boolValue -> Instances.booleanInstance(boolValue);
+            case Boolean boolValue -> Instances.intInstance(boolValue);
             case Integer integer -> Instances.intInstance(integer);
             case Long longValue -> Instances.longInstance(longValue);
             case Float floatValue -> Instances.floatInstance(floatValue);
             case Double doubleValue -> Instances.doubleInstance(doubleValue);
-            case Character c -> Instances.charInstance(c);
+            case Character c -> Instances.intInstance(c);
             case String string -> Instances.stringInstance(string);
             default -> throw new InternalException("Unrecognized literal: " + value);
         };
@@ -369,7 +369,7 @@ public class ExpressionResolver {
         var type = psiPrefixExpression.getType();
         if (op == JavaTokenType.EXCL) {
             resolve(operand, context);
-            return methodGenerator.createNot();
+            return methodGenerator.createNe();
         } else if(op == JavaTokenType.MINUS) {
             resolve(operand, context);
             return methodGenerator.createNeg(type);
@@ -441,9 +441,9 @@ public class ExpressionResolver {
         else if(op.equals(JavaTokenType.XOR))
             node = methodGenerator.createBitXor(type);
         else if(op.equals(JavaTokenType.ANDAND))
-            node = methodGenerator.createAnd();
+            node = methodGenerator.createIntBitAnd();
         else if(op.equals(JavaTokenType.OROR))
-            node = methodGenerator.createOr();
+            node = methodGenerator.createIntBitOr();
         else if(op.equals(JavaTokenType.PERC))
             node = methodGenerator.createRem(type);
         else if(op.equals(JavaTokenType.EQEQ))
@@ -966,8 +966,8 @@ public class ExpressionResolver {
     private Node constructAtomicIf(PsiExpression condition, boolean negated, Runnable thenAction,
                                    Runnable elseAction, ResolutionContext context) {
         resolveNormal(condition, context);
-        var ifNode = negated ? methodGenerator.createIf(null)
-                : methodGenerator.createIfNot(null);
+        var ifNode = negated ? methodGenerator.createIfNe(null)
+                : methodGenerator.createIfEq(null);
         thenAction.run();
         var g = methodGenerator.createGoto(null);
         ifNode.setTarget(methodGenerator.createNoop());
@@ -981,11 +981,11 @@ public class ExpressionResolver {
         var i = methodGenerator.nextVariableIndex();
          constructIf(expression, false,
                 () -> {
-                    methodGenerator.createLoadConstant(Instances.trueInstance());
+                    methodGenerator.createLoadConstant(Instances.one());
                     methodGenerator.createStore(i);
                 },
                 () -> {
-                    methodGenerator.createLoadConstant(Instances.falseInstance());
+                    methodGenerator.createLoadConstant(Instances.zero());
                     methodGenerator.createStore(i);
                 }, context);
         return methodGenerator.createLoad(i, Types.getBooleanType());
@@ -1031,7 +1031,7 @@ public class ExpressionResolver {
         methodGenerator.createStore(switchVarIndex);
         var body = requireNonNull(psiSwitchExpression.getBody());
         var statements = requireNonNull(body.getStatements());
-        List<IfNotNode> lastIfNodes = List.of();
+        List<IfEqNode> lastIfNodes = List.of();
         GotoNode lastGoto = null;
         var gotoNodes = new ArrayList<GotoNode>();
         var type = typeResolver.resolveDeclaration(psiSwitchExpression.getType());
@@ -1040,12 +1040,12 @@ public class ExpressionResolver {
                 if(labeledRuleStatement.isDefaultCase())
                     continue;
                 var caseElementList = requireNonNull(labeledRuleStatement.getCaseLabelElementList());
-                var ifNodes = new ArrayList<IfNotNode>();
+                var ifNodes = new ArrayList<IfEqNode>();
                 for (PsiCaseLabelElement element : caseElementList.getElements()) {
                     ifNodes.add(resolveSwitchCaseLabel(switchVarIndex, value.getType(), element, context));
                 }
                 if(lastGoto != null) {
-                    for (IfNotNode lastIfNode : lastIfNodes) {
+                    for (IfEqNode lastIfNode : lastIfNodes) {
                         lastIfNode.setTarget(lastGoto.getSuccessor());
                     }
                 }
@@ -1070,13 +1070,13 @@ public class ExpressionResolver {
         return methodGenerator.createLoad(y, type);
     }
 
-    private IfNotNode resolveSwitchCaseLabel(int switchVarIndex, PsiType switchVarType, PsiElement label, ResolutionContext context) {
+    private IfEqNode resolveSwitchCaseLabel(int switchVarIndex, PsiType switchVarType, PsiElement label, ResolutionContext context) {
         var type = typeResolver.resolveDeclaration(switchVarType);
         if(label instanceof PsiExpression expression) {
             methodGenerator.createLoad(switchVarIndex, type);
             resolve(expression, context);
             methodGenerator.createCompareEq(switchVarType);
-            return methodGenerator.createIfNot(null);
+            return methodGenerator.createIfEq(null);
         }
         if(label instanceof PsiTypeTestPattern typeTestPattern) {
             var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
@@ -1086,7 +1086,7 @@ public class ExpressionResolver {
             );
             methodGenerator.createLoad(switchVarIndex, type);
             methodGenerator.createInstanceOf(typeResolver.resolveDeclaration(checkType));
-            return methodGenerator.createIfNot(null);
+            return methodGenerator.createIfEq(null);
         }
         throw new IllegalArgumentException("Invalid switch case: " + label);
     }

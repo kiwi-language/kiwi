@@ -5,6 +5,7 @@ import org.metavm.entity.natives.CallContext;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.FlowRef;
 import org.metavm.flow.Flows;
+import org.metavm.object.type.FunctionType;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.MvOutput;
 
@@ -19,7 +20,6 @@ public class FlowValue extends FunctionValue {
     private final ClassInstance boundSelf;
 
     public FlowValue(FlowRef flow, @Nullable ClassInstance boundSelf) {
-        super(!Flows.isInstanceMethod(flow.getRawFlow()) || boundSelf != null ? flow.getType() : Flows.getStaticType(flow));
         this.flow = flow;
         this.boundSelf = boundSelf;
     }
@@ -61,5 +61,10 @@ public class FlowValue extends FunctionValue {
 
     public FlowRef getFlow() {
         return flow;
+    }
+
+    @Override
+    public FunctionType getType() {
+        return !Flows.isInstanceMethod(flow.getRawFlow()) || boundSelf != null ? flow.getType() : Flows.getStaticType(flow);
     }
 }

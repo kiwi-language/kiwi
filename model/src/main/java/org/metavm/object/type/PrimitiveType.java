@@ -182,4 +182,9 @@ public class PrimitiveType extends Type {
     public @Nullable Value getDefaultValue() {
         return kind.getDefaultValue();
     }
+
+    @Override
+    public Value fromStackValue(Value value) {
+        return kind.fromStackValue(value);
+    }
 }

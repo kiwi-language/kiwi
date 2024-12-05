@@ -7,7 +7,6 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityQueryService;
 import org.metavm.entity.MetaContextCache;
 import org.metavm.event.MockEventQueue;
-import org.metavm.flow.FlowExecutionService;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceManager;
@@ -17,7 +16,6 @@ import org.metavm.object.type.*;
 import org.metavm.object.version.VersionManager;
 import org.metavm.system.BlockManager;
 import org.metavm.system.IdService;
-import org.metavm.task.TaskManager;
 import org.metavm.user.LoginService;
 import org.metavm.user.PlatformUserManager;
 import org.metavm.user.RoleManager;
@@ -50,7 +48,6 @@ public abstract class CompilerTestBase extends TestCase  {
     protected AllocatorStore allocatorStore;
     protected ColumnStore columnStore;
     protected TypeTagStore typeTagStore;
-    protected FlowExecutionService flowExecutionService;
     protected ApplicationManager applicationManager;
     protected LoginService loginService;
     protected PlatformUserManager platformUserManager;
@@ -80,8 +77,6 @@ public abstract class CompilerTestBase extends TestCase  {
         typeManager = new TypeManager(bootResult.entityContextFactory(), new BeanManager());
         instanceManager = new InstanceManager(entityContextFactory,
                 bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
-        flowExecutionService = new FlowExecutionService(entityContextFactory);
-        typeManager.setFlowExecutionService(flowExecutionService);
         var blockManager = new BlockManager(bootResult.blockMapper());
         typeClient = new MockTypeClient(typeManager, blockManager, instanceManager, executor, new MockTransactionOperations());
         FlowSavingContext.initConfig();
@@ -111,7 +106,6 @@ public abstract class CompilerTestBase extends TestCase  {
         allocatorStore = null;
         columnStore = null;
         typeTagStore = null;
-        flowExecutionService = null;
         applicationManager = null;
         loginService = null;
         platformUserManager = null;

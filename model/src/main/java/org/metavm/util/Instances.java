@@ -14,9 +14,6 @@ import org.metavm.flow.Method;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.PrimitiveFieldValue;
-import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,18 +71,6 @@ public class Instances {
         Map<Class<?>, Class<?>> classMap = new HashMap<>();
         JAVA_CLASS_TO_INSTANCE_CLASS.forEach((javaClass, instanceClass) -> classMap.put(instanceClass, javaClass));
         INSTANCE_CLASS_TO_JAVA_CLASS = Collections.unmodifiableMap(classMap);
-    }
-
-    public static BooleanValue equals(Value first, Value second) {
-        return createBoolean(Objects.equals(first, second));
-    }
-
-    public static BooleanValue notEquals(Value first, Value second) {
-        return createBoolean(!Objects.equals(first, second));
-    }
-
-    public static boolean isAllTime(Value instance1, Value instance2) {
-        return instance1 instanceof TimeValue || instance2 instanceof TimeValue;
     }
 
     public static <T extends Reference> List<T> sort(List<T> instances, boolean desc) {
@@ -220,7 +205,7 @@ public class Instances {
 
     @SuppressWarnings("unchecked")
     public static <T> T deserializePrimitive(PrimitiveValue instance, Class<T> javaClass) {
-        javaClass = (Class<T>) ReflectionUtils.getBoxedClass(javaClass);
+        javaClass = (Class<T>) ReflectionUtils.getWrapperClass(javaClass);
         switch (instance) {
             case NullValue ignored -> {
                 return null;
@@ -285,7 +270,7 @@ public class Instances {
     }
 
     public static LongValue longInstance(long value) {
-        return new LongValue(value, Types.getLongType());
+        return new LongValue(value);
     }
 
     public static IntValue intOne() {
@@ -301,39 +286,51 @@ public class Instances {
     }
 
     public static CharValue charInstance(char value) {
-        return new CharValue(value, Types.getCharType());
+        return new CharValue(value);
     }
 
     public static BooleanValue booleanInstance(boolean value) {
-        return new BooleanValue(value, Types.getBooleanType());
+        return new BooleanValue(value);
+    }
+
+    public static IntValue intInstance(boolean value) {
+        return value ? IntValue.one : IntValue.zero;
     }
 
     public static DoubleValue doubleInstance(double value) {
-        return new DoubleValue(value, Types.getDoubleType());
+        return new DoubleValue(value);
     }
 
     public static TimeValue timeInstance(long value) {
-        return new TimeValue(value, Types.getTimeType());
+        return new TimeValue(value);
     }
 
     public static NullValue nullInstance() {
-        return new NullValue(Types.getNullType());
+        return new NullValue();
     }
 
     public static BooleanValue trueInstance() {
-        return new BooleanValue(true, Types.getBooleanType());
+        return new BooleanValue(true);
     }
 
     public static BooleanValue falseInstance() {
-        return new BooleanValue(false, Types.getBooleanType());
+        return new BooleanValue(false);
+    }
+
+    public static IntValue one() {
+        return IntValue.one;
+    }
+
+    public static IntValue zero() {
+        return IntValue.zero;
     }
 
     public static PasswordValue passwordInstance(String password) {
-        return new PasswordValue(password, Types.getPasswordType());
+        return new PasswordValue(password);
     }
 
     public static StringValue stringInstance(String value) {
-        return new StringValue(value, Types.getStringType());
+        return new StringValue(value);
     }
 
     public static Set<Instance> getAllNonValueInstances(Instance root) {
@@ -382,7 +379,7 @@ public class Instances {
     }
 
     public static StringValue createString(String value) {
-        return new StringValue(value, Types.getStringType());
+        return new StringValue(value);
     }
 
     public static BooleanValue createBoolean(boolean b) {
@@ -402,7 +399,7 @@ public class Instances {
     }
 
     public static Type getBasicType(Class<?> javaClass, Function<Class<?>, Type> getTypeFunc) {
-        javaClass = ReflectionUtils.getBoxedClass(javaClass);
+        javaClass = ReflectionUtils.getWrapperClass(javaClass);
         if (javaClass == Integer.class)
             return Types.getIntType();
         if (javaClass == Long.class)
@@ -703,9 +700,9 @@ public class Instances {
         var initMethod = findFieldInitializer(field, true);
         if (initMethod != null) {
             if (initMethod.getParameters().isEmpty())
-                return Flows.invoke(initMethod.getRef(), instance, List.of(), context);
+                return field.getType().fromStackValue(Flows.invoke(initMethod.getRef(), instance, List.of(), context));
             else if (initMethod.getParameterTypes().equals(List.of(Types.getStringType(), Types.getIntType()))) {
-                return Flows.invoke(
+                return field.getType().fromStackValue(Flows.invoke(
                         initMethod.getRef(),
                         instance,
                         List.of(
@@ -713,7 +710,7 @@ public class Instances {
                                 instance.getUnknownField(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag())
                         ),
                         callContext
-                );
+                ));
             } else
                 throw new IllegalStateException("Invalid initializer method: " + initMethod.getSignatureString());
         } else
@@ -738,7 +735,7 @@ public class Instances {
     public static Value computeConvertedFieldValue(ClassInstance instance, Field field, IInstanceContext context) {
         var converter = requireNonNull(findTypeConverter(field));
         var originalValue = instance.getUnknownField(field.getDeclaringType().getTag(), field.getOriginalTag());
-        return Flows.invoke(converter.getRef(), instance, List.of(originalValue), context);
+        return field.getType().fromStackValue(Flows.invoke(converter.getRef(), instance, List.of(originalValue), context));
     }
 
     private static void initializeSuper(ClassInstance instance, Klass klass, IEntityContext context) {
@@ -921,7 +918,7 @@ public class Instances {
             var method = clsInst.getKlass().getEqualsMethod();
             if (method != null) {
                 var ret = Flows.invoke(method.getRef(), clsInst, List.of(instance2.getReference()), callContext);
-                return ((BooleanValue) requireNonNull(ret)).getValue();
+                return ((IntValue) requireNonNull(ret)).value != 0;
             }
             if (clsInst.isValue() && instance2 instanceof ClassInstance clsInst2 && clsInst2.isValue()
                     && clsInst.getType().equals(clsInst2.getType())) {
@@ -972,7 +969,7 @@ public class Instances {
     }
 
     public static boolean toBoolean(@Nullable Value value) {
-        return ((BooleanValue) requireNonNull(value)).getValue();
+        return ((IntValue) requireNonNull(value)).value != 0;
     }
 
     public static void forEach(Value value, Consumer<? super Value> action) {
@@ -1019,12 +1016,12 @@ public class Instances {
     }
 
     public static Value fromConstant(Object value) {
-        return fromJavaValue(value, () -> {
+        return fromJavaValue(value, true, () -> {
             throw new IllegalArgumentException("Cannot create a value for " + value);
         });
     }
 
-    public static Value fromJavaValue(Object value, Supplier<Value> defaultSupplier) {
+    public static Value fromJavaValue(Object value, boolean useStackValue, Supplier<Value> defaultSupplier) {
         return switch (value) {
             case Long l -> longInstance(l);
             case Integer i -> intInstance(i);
@@ -1032,14 +1029,14 @@ public class Instances {
             case Byte b -> intInstance(b);
             case Double d -> doubleInstance(d);
             case Float f -> floatInstance(f);
-            case Character c -> charInstance(c);
-            case Boolean b -> booleanInstance(b);
+            case Character c -> useStackValue ? intInstance(c) : charInstance(c);
+            case Boolean b -> useStackValue ? intInstance(b) : booleanInstance(b);
             case String s -> stringInstance(s);
             case Date t -> timeInstance(t.getTime());
             case Object[] array -> arrayInstance(
                     (ArrayType) Types.fromJavaType(array.getClass()).getUnderlyingType(),
                     NncUtils.map(
-                            array, e -> fromJavaValue(e, Instances::nullInstance)
+                            array, e -> fromJavaValue(e, false, Instances::nullInstance)
                     )
             ).getReference();
             case null -> nullInstance();
@@ -1076,22 +1073,11 @@ public class Instances {
         };
     }
 
-    public static Value fromFieldValue(FieldValue fieldValue, Function<Id, Value> getInstance) {
-        return switch (fieldValue) {
-            case PrimitiveFieldValue primitiveFieldValue -> fromJavaValue(primitiveFieldValue.getValue(),
-                    () -> {
-                        throw new UnsupportedOperationException();
-                    });
-            case ReferenceFieldValue referenceFieldValue -> getInstance.apply(Id.parse(referenceFieldValue.getId()));
-            default -> throw new IllegalStateException("Unexpected value: " + fieldValue);
-        };
-    }
-
     public static IntValue intInstance(int i) {
-        return new IntValue(i, PrimitiveType.intType);
+        return new IntValue(i);
     }
 
     public static FloatValue floatInstance(float v) {
-        return new FloatValue(v, PrimitiveType.floatType);
+        return new FloatValue(v);
     }
 }

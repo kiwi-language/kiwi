@@ -77,7 +77,7 @@ public class Nodes {
         arraySupplier.get();
         arrayLength("len", code);
         Nodes.compareGe(Types.getIntType(), code);
-        var ifNode = if_(null, code);
+        var ifNode = ifNe(null, code);
         Supplier<Node> elementSupplier = () -> {
             arraySupplier.get();
             indexSupplier.get();
@@ -114,22 +114,18 @@ public class Nodes {
         return new CastNode(code.nextNodeName("cast"), outputType, code.getLastNode(), code);
     }
 
-    public static IfNode if_(@Nullable Node target, Code code) {
-        return new IfNode(
-                code.nextNodeName("if"),
+    public static IfNeNode ifNe(@Nullable Node target, Code code) {
+        return new IfNeNode(
+                code.nextNodeName("ifne"),
                 code.getLastNode(),
                 code,
                 target
         );
     }
 
-    public static IfNotNode ifNot(@Nullable Node target, Code code) {
-        return ifNot(code.nextNodeName("ifNot"), target, code);
-    }
-
-    public static IfNotNode ifNot(String name, @Nullable Node target, Code code) {
-        return new IfNotNode(
-                name,
+    public static IfEqNode ifEq(@Nullable Node target, Code code) {
+        return new IfEqNode(
+                code.nextNodeName("ifeq"),
                 code.getLastNode(),
                 code,
                 target
@@ -529,22 +525,6 @@ public class Nodes {
         );
     }
 
-    public static Node and(Code code) {
-        return new AndNode(
-                code.nextNodeName("and"),
-                code.getLastNode(),
-                code
-        );
-    }
-
-    public static Node or(Code code) {
-        return new OrNode(
-                code.nextNodeName("or"),
-                code.getLastNode(),
-                code
-        );
-    }
-
     public static Node bitAnd(Type type, Code code) {
         if (type.isLong())
             return longBitAnd(code);
@@ -581,14 +561,6 @@ public class Nodes {
     public static Node longBitNot(Code code) {
         loadConstant(Instances.longInstance(-1), code);
         return longBitXor(code);
-    }
-
-    public static Node not(Code code) {
-        return new NotNode(
-                code.nextNodeName("not"),
-                code.getLastNode(),
-                code
-        );
     }
 
     public static Node neg(Type type, Code code) {

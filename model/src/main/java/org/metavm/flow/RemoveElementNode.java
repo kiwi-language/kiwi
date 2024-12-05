@@ -2,13 +2,12 @@ package org.metavm.flow;
 
 import org.metavm.api.EntityType;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.type.Types;
 
 @EntityType
 public class RemoveElementNode extends Node {
 
     public RemoveElementNode(String name, Node previous, Code code) {
-        super(name, Types.getBooleanType(), previous, code);
+        super(name, null, previous, code);
     }
 
     @Override
@@ -23,7 +22,7 @@ public class RemoveElementNode extends Node {
 
     @Override
     public int getStackChange() {
-        return -1;
+        return -2;
     }
 
     @Override

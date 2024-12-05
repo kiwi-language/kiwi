@@ -1,7 +1,6 @@
 package org.metavm.entity.natives;
 
 import org.metavm.object.instance.core.ArrayInstance;
-import org.metavm.object.instance.core.BooleanValue;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
@@ -25,12 +24,12 @@ public class IteratorImplNative extends NativeBase {
         return instance.getReference();
     }
 
-    public BooleanValue hasNext(CallContext callContext) {
+    public Value hasNext(CallContext callContext) {
         return hasNext();
     }
 
-    public BooleanValue hasNext() {
-        return Instances.booleanInstance(index < size);
+    public Value hasNext() {
+        return Instances.intInstance(index < size);
     }
 
     public Value next(CallContext callContext) {

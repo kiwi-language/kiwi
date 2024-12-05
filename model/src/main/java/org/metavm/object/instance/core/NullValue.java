@@ -8,13 +8,17 @@ import org.metavm.util.WireTypes;
 
 public class NullValue extends PrimitiveValue {
 
-    public NullValue(PrimitiveType type) {
-        super(type);
+    public NullValue() {
     }
 
     @Override
     public Null getValue() {
         return null;
+    }
+
+    @Override
+    public PrimitiveType getType() {
+        return PrimitiveType.nullType;
     }
 
     @Override

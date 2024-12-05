@@ -65,6 +65,7 @@ public class Generator extends VisitorBase {
         var ecd = Objects.requireNonNull(enumConstant.getUserData(Keys.ENUM_CONSTANT_DEF));
         var initializer = ecd.getInitializer();
         initializer.clearContent();
+        initializer.setReturnType(initializer.getDeclaringType().getType());
         var builder = new MethodGenerator(initializer, typeResolver, this);
         builder.enterScope(initializer.getCode());
         builder.createLoadConstant(Instances.stringInstance(ecd.getName()));
@@ -154,9 +155,9 @@ public class Generator extends VisitorBase {
                 if(lastIfNode != null)
                     lastIfNode.setTarget(sectionEntry);
                 Values.node(builder().createInstanceOf(resolveType(catchSection.getCatchType())));
-                lastIfNode = builder().createIfNot(null);
+                lastIfNode = builder().createIfEq(null);
                 var param = requireNonNull(catchSection.getParameter());
-                builder().createLoadConstant(Instances.trueInstance());
+                builder().createLoadConstant(Instances.one());
                 builder().createStore(caught);
                 builder().createLoad(exceptionVar, StdKlass.exception.type());
                 builder().createTypeCast(typeResolver.resolveDeclaration(param.getType()));
@@ -164,12 +165,12 @@ public class Generator extends VisitorBase {
                 catchBlock.accept(this);
                 gotoNodes.add(builder().createGoto(null));
             }
-            requireNonNull(lastIfNode).setTarget(builder().createLoadConstant(Instances.falseInstance()));
+            requireNonNull(lastIfNode).setTarget(builder().createLoadConstant(Instances.zero()));
             builder().createStore(caught);
             var joinNode = builder().createNoop();
             gotoNodes.forEach(g -> g.setTarget(joinNode));
         } else {
-            builder().createLoadConstant(Instances.falseInstance());
+            builder().createLoadConstant(Instances.zero());
             builder().createStore(caught);
         }
         if (statement.getFinallyBlock() != null) {
@@ -178,9 +179,9 @@ public class Generator extends VisitorBase {
         builder().createLoad(exceptionVar, StdKlass.exception.type());
         builder().createLoadConstant(Instances.nullInstance());
         builder().createRefCompareEq();
-        var if1 = builder().createIf(null);
+        var if1 = builder().createIfNe(null);
         builder().createLoad(caught, Types.getBooleanType());
-        var if2 = builder().createIf(null);
+        var if2 = builder().createIfNe(null);
         builder().createLoad(exceptionVar, StdKlass.exception.type());
         builder().createRaise();
         var exit = builder().createNoop();
@@ -229,7 +230,7 @@ public class Generator extends VisitorBase {
         }
         builder.exitScope();
         builders.pop();
-//        if(method.getName().equals("unbox")) {
+//        if(method.getName().equals("concatKeys")) {
 //            logger.debug("{}", method.getText());
 //        }
     }
@@ -278,21 +279,21 @@ public class Generator extends VisitorBase {
         builder().createStore(valueVar);
         var statements = requireNonNull(statement.getBody()).getStatements();
         var gotoNodes = new ArrayList<GotoNode>();
-        List<IfNotNode> lastIfNodes = List.of();
+        List<IfEqNode> lastIfNodes = List.of();
         GotoNode lastGoto = null;
         for (PsiStatement stmt : statements) {
             var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) stmt;
             var caseLabelElementList = labeledRuleStmt.getCaseLabelElementList();
             if (caseLabelElementList == null || caseLabelElementList.getElementCount() == 0)
                 continue;
-            List<IfNotNode> ifNodes;
+            List<IfEqNode> ifNodes;
             if (isTypePatternCase(caseLabelElementList)) {
                 var typeTestPattern = (PsiTypeTestPattern) caseLabelElementList.getElements()[0];
                 var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
                 var patternVar = requireNonNull(typeTestPattern.getPatternVariable());
                 builder().createLoad(valueVar, valueType);
                 builder().createInstanceOf(typeResolver.resolveDeclaration(checkType));
-                ifNodes = List.of(builder().createIfNot(null));
+                ifNodes = List.of(builder().createIfEq(null));
                 builder().createLoad(valueVar, valueType);
                 builder().createStore(builder().getVariableIndex(patternVar));
             } else {
@@ -301,7 +302,7 @@ public class Generator extends VisitorBase {
                     builder().createLoad(valueVar, valueType);
                     resolveExpression((PsiExpression) expression);
                     builder().createCompareEq(psiType);
-                    ifNodes.add(builder().createIfNot(null));
+                    ifNodes.add(builder().createIfEq(null));
                 }
             }
             if(lastGoto != null) {
@@ -405,10 +406,10 @@ public class Generator extends VisitorBase {
             processExpressions(init);
         var entry = builder().createNoop();
         var cond = statement.getCondition();
-        IfNotNode ifNode;
+        IfEqNode ifNode;
         if(cond != null) {
             resolveExpression(cond);
-            ifNode = builder().createIfNot(null);
+            ifNode = builder().createIfEq(null);
         }
         else
             ifNode = null;
@@ -445,7 +446,7 @@ public class Generator extends VisitorBase {
         var entry = builder().createNoop();
         var condition = Objects.requireNonNull(statement.getCondition());
         resolveExpression(condition);
-        var ifNode = builder().createIfNot(null);
+        var ifNode = builder().createIfEq(null);
         builder().enterBlock(statement);
         if (statement.getBody() != null)
             statement.getBody().accept(this);
@@ -465,7 +466,7 @@ public class Generator extends VisitorBase {
         var block = builder().exitBlock();
         var condition = statement.getCondition();
         resolveExpression(condition);
-        builder().createIf(entry);
+        builder().createIfNe(entry);
         var exit = builder().createNoop();
         block.connect(entry, exit);
     }
@@ -486,12 +487,12 @@ public class Generator extends VisitorBase {
             builder().createLoad(iteratedVar, iteratedType);
             builder().createArrayLength();
             builder().createCompareGe(TranspileUtils.intType);
-            var ifNode = builder().createIf(null);
+            var ifNode = builder().createIfNe(null);
             var condition = getExtraLoopTest(statement);
-            IfNotNode ifNode1;
+            IfEqNode ifNode1;
             if(condition != null) {
                 resolveExpression(condition);
-                ifNode1 = builder().createIfNot(null);
+                ifNode1 = builder().createIfEq(null);
             }
             else
                 ifNode1 = null;
@@ -526,12 +527,12 @@ public class Generator extends VisitorBase {
             var entry = builder().createNoop();
             builder().createLoad(itVar, itType);
             builder().createMethodCall(new MethodRef(itType, StdMethod.iteratorHasNext.get(), List.of()));
-            var ifNode = builder().createIfNot(null);
+            var ifNode = builder().createIfEq(null);
             var condition = getExtraLoopTest(statement);
-            IfNotNode ifNode1;
+            IfEqNode ifNode1;
             if(condition != null) {
                 resolveExpression(condition);
-                ifNode1 = builder().createIfNot(null);
+                ifNode1 = builder().createIfEq(null);
             }
             else
                 ifNode1 = null;

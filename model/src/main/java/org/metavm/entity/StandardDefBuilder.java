@@ -309,8 +309,8 @@ public class StandardDefBuilder {
                 .column(column)
                 .tag(tag)
                 .access(access)
-                .defaultValue(new NullValue(Types.getNullType()))
-                .staticValue(new NullValue(Types.getNullType()))
+                .defaultValue(new NullValue())
+                .staticValue(new NullValue())
                 .build();
     }
 

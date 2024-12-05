@@ -133,7 +133,7 @@ public class TypeResolverImpl implements TypeResolver {
             case PsiPrimitiveType primitiveType -> {
                 if (primitiveType.getName().equals("null"))
                     yield Types.getNullType();
-                var klass = ReflectionUtils.getBoxedClass(KIND_2_PRIM_CLASS.get(primitiveType.getKind()));
+                var klass = ReflectionUtils.getWrapperClass(KIND_2_PRIM_CLASS.get(primitiveType.getKind()));
                 yield context.getType(klass);
             }
             case PsiClassType classType -> resolveClassType(classType, stage);

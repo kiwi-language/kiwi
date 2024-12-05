@@ -1,6 +1,5 @@
 package org.metavm.object.instance.core;
 
-import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.SerializeContext;
@@ -8,31 +7,21 @@ import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.Type;
-import org.metavm.util.*;
+import org.metavm.util.InstanceOutput;
+import org.metavm.util.Instances;
+import org.metavm.util.MvOutput;
+import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
-import java.util.IdentityHashMap;
-import java.util.Map;
 import java.util.Objects;
 
 public abstract class Value {
 
-    private Type type;
-
-    public static final Map<Value, Exception> STACKS = new IdentityHashMap<>();
-
-    public Value(@NotNull Type type) {
-        this.type = type;
+    public Value() {
     }
 
     @NoProxy
-    public Type getType() {
-        return type;
-    }
-
-    protected void setType(Type type) {
-        this.type = type;
-    }
+    public abstract Type getType();
 
     @NoProxy
     public boolean isValue() {
@@ -51,7 +40,7 @@ public abstract class Value {
 
     @NoProxy
     public boolean isPassword() {
-        return type.isPassword();
+        return getType().isPassword();
     }
 
     public StringValue toStringInstance() {
@@ -180,6 +169,10 @@ public abstract class Value {
 
     public Instance resolveDurable(){
         return ((Reference) this).resolve();
+    }
+
+    public Value toStackValue() {
+        return this;
     }
 
 }

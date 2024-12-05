@@ -6,7 +6,6 @@ import org.metavm.object.instance.core.*;
 import org.metavm.object.type.EnumConstantRT;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Klass;
-import org.metavm.object.type.PrimitiveType;
 import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,14 +115,11 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
         }
         instance.setField(
                 klass.getFieldByName("name"),
-                new StringValue(
-                        EntityUtils.getMetaEnumConstantName(value),
-                        PrimitiveType.stringType
-                )
+                new StringValue(EntityUtils.getMetaEnumConstantName(value))
         );
         var enumConstant = createEnumConstant(instance);
         FieldBuilder.newBuilder(enumConstant.getName(), klass, klass.getType())
-                .defaultValue(new NullValue(PrimitiveType.nullType))
+                .defaultValue(new NullValue())
                 .isChild(true)
                 .isStatic(true)
                 .staticValue(instance.getReference())

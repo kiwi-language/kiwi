@@ -8,12 +8,12 @@ import org.metavm.expression.ExpressionTypeMap;
 import javax.annotation.Nullable;
 
 @EntityType
-public class IfNotNode extends JumpNode {
+public class IfEqNode extends JumpNode {
 
     private transient ExpressionTypeMap nextExpressionTypes;
 
-    public IfNotNode(@NotNull String name, @Nullable Node previous, @NotNull Code code,
-                     Node target) {
+    public IfEqNode(@NotNull String name, @Nullable Node previous, @NotNull Code code,
+                    Node target) {
         super(name, null, previous, code);
         if(target != null)
             setTarget(target);
@@ -21,7 +21,7 @@ public class IfNotNode extends JumpNode {
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitIfNotNode(this);
+        return visitor.visitIfEqNode(this);
     }
 
     @Override
@@ -31,7 +31,7 @@ public class IfNotNode extends JumpNode {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("if not " + getTarget().getName());
+        writer.write("ifeq " + getTarget().getName());
     }
 
     @Override
@@ -51,7 +51,7 @@ public class IfNotNode extends JumpNode {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.IF_NOT);
+        output.write(Bytecodes.IF_EQ);
         output.writeShort(getTarget().getOffset());
     }
 

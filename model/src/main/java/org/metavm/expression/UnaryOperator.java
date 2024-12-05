@@ -52,7 +52,7 @@ public enum UnaryOperator {
     IS_NULL(16, "is null", 6, false, Boolean.class) {
         @Override
         public Value evaluate(Value operand) {
-            return Instances.booleanInstance(operand == null);
+            return Instances.intInstance(operand == null);
         }
 
         @Override
@@ -63,7 +63,7 @@ public enum UnaryOperator {
     IS_NOT_NULL(17, "is not null", 6, false, Boolean.class) {
         @Override
         public Value evaluate(Value operand) {
-            return Instances.booleanInstance(operand != null);
+            return Instances.intInstance(operand != null);
         }
 
         @Override

@@ -202,7 +202,7 @@ public class KlassInput extends MvInput {
     public IndexField getIndexField(Id id) {
         var indexField = repository.getEntity(IndexField.class, id);
         if (indexField == null) {
-            indexField = new IndexField(DummyIndex.INSTANCE, UNNAMED, Values.nullValue());
+            indexField = new IndexField(DummyIndex.INSTANCE, UNNAMED, Types.getAnyType(), Values.nullValue());
             indexField.setTmpId(id.tmpId());
             repository.bind(indexField);
         }

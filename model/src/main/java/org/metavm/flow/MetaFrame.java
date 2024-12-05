@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
+import static org.metavm.object.instance.core.IntValue.one;
+import static org.metavm.object.instance.core.IntValue.zero;
 
 @Slf4j
 public class MetaFrame implements Frame, CallContext {
@@ -99,7 +101,7 @@ public class MetaFrame implements Frame, CallContext {
                             for (int i = 0; i < numFields; i++) {
                                 fieldValues.addFirst(stack[--top]);
                             }
-                            NncUtils.biForEach(fields, fieldValues, instance::initField);
+                            NncUtils.biForEach(fields, fieldValues, (f,v) -> instance.initField(f, f.getType().fromStackValue(v)));
                             if (!instance.isEphemeral())
                                 addInstance(instance);
                             stack[top++] = instance.getReference();
@@ -110,7 +112,7 @@ public class MetaFrame implements Frame, CallContext {
                             var field = (FieldRef) constants[fieldIndex];
                             var value = stack[--top];
                             var instance = stack[--top].resolveObject();
-                            instance.setField(field.getRawField(), value);
+                            instance.setField(field.getRawField(), field.getType().fromStackValue(value));
                             pc += 3;
                         }
                         case Bytecodes.DELETE_OBJECT -> {
@@ -161,11 +163,11 @@ public class MetaFrame implements Frame, CallContext {
                             }
                         }
                         case Bytecodes.GET_UNIQUE -> {
-                            var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getRawIndex();
+                            var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]);
                             Value result = instanceRepository().selectFirstByKey(loadIndexKey(index, stack, top));
-                            top -= index.getFields().size();
+                            top -= index.getFieldCount();
                             if (result == null)
-                                result = Instances.nullInstance();
+                                result = new NullValue();
                             stack[top++] = result;
                             pc += 3;
                         }
@@ -280,7 +282,7 @@ public class MetaFrame implements Frame, CallContext {
                             if (exception != null)
                                 stack[top++] = exception.getReference();
                             else
-                                stack[top++] = Instances.nullInstance();
+                                stack[top++] = new NullValue();
                             locals[((bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff)] = stack[--top];
                             pc += 3;
                         }
@@ -326,13 +328,13 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.DELETE_ELEMENT -> {
                             var arrayInst = stack[--top].resolveArray();
                             var elementInst = stack[--top];
-                            stack[top++] = Instances.booleanInstance(arrayInst.removeElement(elementInst));
+                            arrayInst.removeElement(elementInst);
                             pc++;
                         }
                         case Bytecodes.GET_ELEMENT -> {
                             var index = ((IntValue) stack[--top]).value;
                             var arrayInst = stack[--top].resolveArray();
-                            stack[top++] = arrayInst.get(index);
+                            stack[top++] = arrayInst.get(index).toStackValue();
                             pc++;
                         }
                         case Bytecodes.FUNCTION_CALL -> {
@@ -381,7 +383,7 @@ public class MetaFrame implements Frame, CallContext {
                             } else {
                                 var exception = ClassInstance.allocate(StdKlass.exception.get().getType());
                                 var exceptionNative = new ExceptionNative(exception);
-                                exceptionNative.Exception(Instances.stringInstance(
+                                exceptionNative.Exception(new StringValue(
                                         String.format("Can not cast instance '%s' to type '%s'", inst.getTitle(), type.getName())
                                 ), this);
                                 if ((pc = catchException(exception)) == -1)
@@ -401,32 +403,32 @@ public class MetaFrame implements Frame, CallContext {
                         }
                         case Bytecodes.INDEX_SCAN -> {
                             //noinspection DuplicatedCode
-                            var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getRawIndex();
+                            var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                             var to = loadIndexKey(index, stack, top);
-                            top -= index.getFields().size();
+                            top -= index.getFieldCount();
                             var from = loadIndexKey(index, stack, top);
-                            top -= index.getFields().size();
+                            top -= index.getFieldCount();
                             var result = instanceRepository().indexScan(from, to);
-                            var type = new ArrayType(index.getDeclaringType().getType(), ArrayKind.READ_ONLY);
+                            var type = new ArrayType(index.getDeclaringType(), ArrayKind.READ_ONLY);
                             stack[top++] = new ArrayInstance(type, result).getReference();
                             pc += 3;
                         }
                         case Bytecodes.INDEX_COUNT -> {
                             //noinspection DuplicatedCode
-                            var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getRawIndex();
+                            var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                             var to = loadIndexKey(index, stack, top);
-                            top -= index.getFields().size();
+                            top -= index.getFieldCount();
                             var from = loadIndexKey(index, stack, top);
-                            top -= index.getFields().size();
+                            top -= index.getFieldCount();
                             var count = instanceRepository().indexCount(from, to);
-                            stack[top++] = Instances.longInstance(count);
+                            stack[top++] = new LongValue(count);
                             pc += 3;
                         }
                         case Bytecodes.INDEX_SELECT -> {
-                            var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getRawIndex();
+                            var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                             var result = instanceRepository().indexSelect(loadIndexKey(index, stack, top));
-                            top -= index.getFields().size();
-                            var type = new ClassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType().getType()));
+                            top -= index.getFieldCount();
+                            var type = new ClassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType()));
                             var list = ClassInstance.allocate(type);
                             var listNative = new ListNative(list);
                             listNative.List(this);
@@ -435,10 +437,10 @@ public class MetaFrame implements Frame, CallContext {
                             pc += 3;
                         }
                         case Bytecodes.INDEX_SELECT_FIRST -> {
-                            var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getRawIndex();
+                            var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                             var result = instanceRepository().selectFirstByKey(loadIndexKey(index, stack, top));
-                            top -= index.getFields().size();
-                            stack[top++] = NncUtils.orElse(result, Instances.nullInstance());
+                            top -= index.getFieldCount();
+                            stack[top++] = NncUtils.orElse(result, new NullValue());
                             pc += 3;
                         }
                         case Bytecodes.GOTO -> pc = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
@@ -458,11 +460,11 @@ public class MetaFrame implements Frame, CallContext {
                             var e = stack[--top];
                             var i = ((IntValue) stack[--top]).value;
                             var a = stack[--top].resolveArray();
-                            a.setElement(i, e);
+                            a.setElement(i, a.getType().getElementType().fromStackValue(e));
                             pc++;
                         }
-                        case Bytecodes.IF -> {
-                            if (((BooleanValue) stack[--top]).getValue())
+                        case Bytecodes.IF_NE -> {
+                            if (((IntValue) stack[--top]).value != 0)
                                 pc = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                             else
                                 pc += 3;
@@ -470,367 +472,349 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.INT_ADD -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(v1.value + v2.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(v1.value + v2.value);
                             pc++;
                         }
                         case Bytecodes.INT_SUB -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(v1.value - v2.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(v1.value - v2.value);
                             pc++;
                         }
                         case Bytecodes.INT_MUL -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(v1.value * v2.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(v1.value * v2.value);
                             pc++;
                         }
                         case Bytecodes.INT_DIV -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(v1.value / v2.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(v1.value / v2.value);
                             pc++;
                         }
                         case Bytecodes.INT_REM -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(v1.value % v2.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(v1.value % v2.value);
                             pc++;
                         }
                         case Bytecodes.LONG_ADD -> {
                             var v2 = (LongValue) stack[--top];
                             var v1 = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(v1.value + v2.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(v1.value + v2.value);
                             pc++;
                         }
                         case Bytecodes.LONG_SUB -> {
                             var v2 = (LongValue) stack[--top];
                             var v1 = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(v1.value - v2.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(v1.value - v2.value);
                             pc++;
                         }
                         case Bytecodes.LONG_MUL -> {
                             var v2 = (LongValue) stack[--top];
                             var v1 = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(v1.value * v2.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(v1.value * v2.value);
                             pc++;
                         }
                         case Bytecodes.LONG_DIV -> {
                             var v2 = (LongValue) stack[--top];
                             var v1 = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(v1.value / v2.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(v1.value / v2.value);
                             pc++;
                         }
                         case Bytecodes.LONG_REM -> {
                             var v2 = (LongValue) stack[--top];
                             var v1 = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(v1.value % v2.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(v1.value % v2.value);
                             pc++;
                         }
                         case Bytecodes.DOUBLE_ADD -> {
                             var v2 = (DoubleValue) stack[--top];
                             var v1 = (DoubleValue) stack[--top];
-                            stack[top++] = new DoubleValue(v1.value + v2.value, PrimitiveType.doubleType);
+                            stack[top++] = new DoubleValue(v1.value + v2.value);
                             pc++;
                         }
                         case Bytecodes.DOUBLE_SUB -> {
                             var v2 = (DoubleValue) stack[--top];
                             var v1 = (DoubleValue) stack[--top];
-                            stack[top++] = new DoubleValue(v1.value - v2.value, PrimitiveType.doubleType);
+                            stack[top++] = new DoubleValue(v1.value - v2.value);
                             pc++;
                         }
                         case Bytecodes.DOUBLE_MUL -> {
                             var v2 = (DoubleValue) stack[--top];
                             var v1 = (DoubleValue) stack[--top];
-                            stack[top++] = new DoubleValue(v1.value * v2.value, PrimitiveType.doubleType);
+                            stack[top++] = new DoubleValue(v1.value * v2.value);
                             pc++;
                         }
                         case Bytecodes.DOUBLE_DIV -> {
                             var v2 = (DoubleValue) stack[--top];
                             var v1 = (DoubleValue) stack[--top];
-                            stack[top++] = new DoubleValue(v1.value / v2.value, PrimitiveType.doubleType);
+                            stack[top++] = new DoubleValue(v1.value / v2.value);
                             pc++;
                         }
                         case Bytecodes.DOUBLE_REM -> {
                             var v2 = (DoubleValue) stack[--top];
                             var v1 = (DoubleValue) stack[--top];
-                            stack[top++] = new DoubleValue(v1.value % v2.value, PrimitiveType.doubleType);
+                            stack[top++] = new DoubleValue(v1.value % v2.value);
                             pc++;
                         }
                         case Bytecodes.FLOAT_ADD -> {
                             var v2 = (FloatValue) stack[--top];
                             var v1 = (FloatValue) stack[--top];
-                            stack[top++] = new FloatValue(v1.value + v2.value, PrimitiveType.floatType);
+                            stack[top++] = new FloatValue(v1.value + v2.value);
                             pc++;
                         }
                         case Bytecodes.FLOAT_SUB -> {
                             var v2 = (FloatValue) stack[--top];
                             var v1 = (FloatValue) stack[--top];
-                            stack[top++] = new FloatValue(v1.value - v2.value, PrimitiveType.floatType);
+                            stack[top++] = new FloatValue(v1.value - v2.value);
                             pc++;
                         }
                         case Bytecodes.FLOAT_MUL -> {
                             var v2 = (FloatValue) stack[--top];
                             var v1 = (FloatValue) stack[--top];
-                            stack[top++] = new FloatValue(v1.value * v2.value, PrimitiveType.floatType);
+                            stack[top++] = new FloatValue(v1.value * v2.value);
                             pc++;
                         }
                         case Bytecodes.FLOAT_DIV -> {
                             var v2 = (FloatValue) stack[--top];
                             var v1 = (FloatValue) stack[--top];
-                            stack[top++] = new FloatValue(v1.value / v2.value, PrimitiveType.floatType);
+                            stack[top++] = new FloatValue(v1.value / v2.value);
                             pc++;
                         }
                         case Bytecodes.FLOAT_REM -> {
                             var v2 = (FloatValue) stack[--top];
                             var v1 = (FloatValue) stack[--top];
-                            stack[top++] = new FloatValue(v1.value % v2.value, PrimitiveType.floatType);
+                            stack[top++] = new FloatValue(v1.value % v2.value);
                             pc++;
                         }
                         case Bytecodes.INT_SHIFT_LEFT -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(v1.value << v2.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(v1.value << v2.value);
                             pc++;
                         }
                         case Bytecodes.INT_SHIFT_RIGHT -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(v1.value >> v2.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(v1.value >> v2.value);
                             pc++;
                         }
                         case Bytecodes.INT_UNSIGNED_SHIFT_RIGHT -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(v1.value >>> v2.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(v1.value >>> v2.value);
                             pc++;
                         }
                         case Bytecodes.LONG_SHIFT_LEFT -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(v1.value << v2.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(v1.value << v2.value);
                             pc++;
                         }
                         case Bytecodes.LONG_SHIFT_RIGHT -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(v1.value >> v2.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(v1.value >> v2.value);
                             pc++;
                         }
                         case Bytecodes.LONG_UNSIGNED_SHIFT_RIGHT -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(v1.value >>> v2.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(v1.value >>> v2.value);
                             pc++;
                         }
                         case Bytecodes.INT_BIT_OR -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(v1.value | v2.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(v1.value | v2.value);
                             pc++;
                         }
                         case Bytecodes.INT_BIT_AND -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(v1.value & v2.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(v1.value & v2.value);
                             pc++;
                         }
                         case Bytecodes.INT_BIT_XOR -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(v1.value ^ v2.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(v1.value ^ v2.value);
                             pc++;
                         }
                         case Bytecodes.LONG_BIT_OR -> {
                             var v2 = (LongValue) stack[--top];
                             var v1 = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(v1.value | v2.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(v1.value | v2.value);
                             pc++;
                         }
                         case Bytecodes.LONG_BIT_AND -> {
                             var v2 = (LongValue) stack[--top];
                             var v1 = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(v1.value & v2.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(v1.value & v2.value);
                             pc++;
                         }
                         case Bytecodes.LONG_BIT_XOR -> {
                             var v2 = (LongValue) stack[--top];
                             var v1 = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(v1.value ^ v2.value, PrimitiveType.longType);
-                            pc++;
-                        }
-                        case Bytecodes.AND -> {
-                            var v2 = (BooleanValue) stack[--top];
-                            var v1 = (BooleanValue) stack[--top];
-                            stack[top++] = new BooleanValue(v1.value && v2.value, PrimitiveType.booleanType);
-                            pc++;
-                        }
-                        case Bytecodes.OR -> {
-                            var v2 = (BooleanValue) stack[--top];
-                            var v1 = (BooleanValue) stack[--top];
-                            stack[top++] = new BooleanValue(v1.value || v2.value, PrimitiveType.booleanType);
-                            pc++;
-                        }
-                        case Bytecodes.NOT -> {
-                            var v = (BooleanValue) stack[--top];
-                            stack[top++] = new BooleanValue(!v.value, PrimitiveType.booleanType);
+                            stack[top++] = new LongValue(v1.value ^ v2.value);
                             pc++;
                         }
                         case Bytecodes.INT_NEG -> {
                             var v = (IntValue) stack[--top];
-                            stack[top++] = new IntValue(-v.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue(-v.value);
                             pc++;
                         }
                         case Bytecodes.LONG_NEG -> {
                             var v = (LongValue) stack[--top];
-                            stack[top++] = new LongValue(-v.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(-v.value);
                             pc++;
                         }
                         case Bytecodes.DOUBLE_NEG -> {
                             var v = (DoubleValue) stack[--top];
-                            stack[top++] = new DoubleValue(-v.value, PrimitiveType.doubleType);
+                            stack[top++] = new DoubleValue(-v.value);
                             pc++;
                         }
                         case Bytecodes.FLOAT_NEG -> {
                             var v = (FloatValue) stack[--top];
-                            stack[top++] = new FloatValue(-v.value, PrimitiveType.doubleType);
+                            stack[top++] = new FloatValue(-v.value);
                             pc++;
                         }
                         case Bytecodes.LONG_TO_DOUBLE -> {
                             var v = (LongValue) stack[--top];
-                            stack[top++] = new DoubleValue(v.value, PrimitiveType.doubleType);
+                            stack[top++] = new DoubleValue(v.value);
                             pc++;
                         }
                         case Bytecodes.DOUBLE_TO_LONG -> {
                             var v = (DoubleValue) stack[--top];
-                            stack[top++] = new LongValue((long) v.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue((long) v.value);
                             pc++;
                         }
                         case Bytecodes.INT_TO_LONG -> {
                             var v = (IntValue) stack[--top];
-                            stack[top++] = new LongValue(v.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue(v.value);
                             pc++;
                         }
                         case Bytecodes.LONG_TO_INT -> {
                             var v = (LongValue) stack[--top];
-                            stack[top++] = new IntValue((int) v.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue((int) v.value);
                             pc++;
                         }
                         case Bytecodes.INT_TO_DOUBLE -> {
                             var v = (IntValue) stack[--top];
-                            stack[top++] = new DoubleValue(v.value, PrimitiveType.doubleType);
+                            stack[top++] = new DoubleValue(v.value);
                             pc++;
                         }
                         case Bytecodes.DOUBLE_TO_INT -> {
                             var v = (DoubleValue) stack[--top];
-                            stack[top++] = new IntValue((int) v.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue((int) v.value);
                             pc++;
                         }
                         case Bytecodes.INT_TO_FLOAT -> {
                             var v = (IntValue) stack[--top];
-                            stack[top++] = new FloatValue((float) v.value, PrimitiveType.floatType);
+                            stack[top++] = new FloatValue((float) v.value);
                             pc++;
                         }
                         case Bytecodes.LONG_TO_FLOAT -> {
                             var v = (LongValue) stack[--top];
-                            stack[top++] = new FloatValue((float) v.value, PrimitiveType.floatType);
+                            stack[top++] = new FloatValue((float) v.value);
                             pc++;
                         }
                         case Bytecodes.DOUBLE_TO_FLOAT -> {
                             var v = (DoubleValue) stack[--top];
-                            stack[top++] = new FloatValue((float) v.value, PrimitiveType.floatType);
+                            stack[top++] = new FloatValue((float) v.value);
                             pc++;
                         }
                         case Bytecodes.FLOAT_TO_INT -> {
                             var v = (FloatValue) stack[--top];
-                            stack[top++] = new IntValue((int) v.value, PrimitiveType.intType);
+                            stack[top++] = new IntValue((int) v.value);
                             pc++;
                         }
                         case Bytecodes.FLOAT_TO_LONG -> {
                             var v = (FloatValue) stack[--top];
-                            stack[top++] = new LongValue((long) v.value, PrimitiveType.longType);
+                            stack[top++] = new LongValue((long) v.value);
                             pc++;
                         }
                         case Bytecodes.FLOAT_TO_DOUBLE -> {
                             var v = (FloatValue) stack[--top];
-                            stack[top++] = new DoubleValue(v.value, PrimitiveType.doubleType);
+                            stack[top++] = new DoubleValue(v.value);
                             pc++;
                         }
                         case Bytecodes.EQ -> {
                             var v = ((IntValue) stack[--top]).value;
-                            stack[top++] = new BooleanValue(v == 0, PrimitiveType.booleanType);
+                            stack[top++] = v == 0 ? one : zero;
                             pc++;
                         }
                         case Bytecodes.NE -> {
                             var v = ((IntValue) stack[--top]).value;
-                            stack[top++] = new BooleanValue(v != 0, PrimitiveType.booleanType);
+                            stack[top++] = v != 0 ? one : zero;
                             pc++;
                         }
                         case Bytecodes.GE -> {
                             var v = ((IntValue) stack[--top]).value;
-                            stack[top++] = new BooleanValue(v >= 0, PrimitiveType.booleanType);
+                            stack[top++] = v >= 0 ? one : zero;
                             pc++;
-
                         }
                         case Bytecodes.GT -> {
                             var v = ((IntValue) stack[--top]).value;
-                            stack[top++] = new BooleanValue(v > 0, PrimitiveType.booleanType);
+                            stack[top++] = v > 0 ? one : zero;
                             pc++;
                         }
                         case Bytecodes.LT -> {
                             var v = ((IntValue) stack[--top]).value;
-                            stack[top++] = new BooleanValue(v < 0, PrimitiveType.booleanType);
+                            stack[top++] = v < 0 ? one : zero;
                             pc++;
                         }
                         case Bytecodes.LE -> {
                             var v = ((IntValue) stack[--top]).value;
-                            stack[top++] = new BooleanValue(v <= 0, PrimitiveType.booleanType);
+                            stack[top++] = v <= 0 ? one : zero;
                             pc++;
                         }
                         case Bytecodes.INT_COMPARE -> {
                             var v2 = ((IntValue) stack[--top]).value;
                             var v1 = ((IntValue) stack[--top]).value;
                             var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
-                            stack[top++] = new IntValue(r, PrimitiveType.intType);
+                            stack[top++] = new IntValue(r);
                             pc++;
                         }
                         case Bytecodes.LONG_COMPARE -> {
                             var v2 = ((LongValue) stack[--top]).value;
                             var v1 = ((LongValue) stack[--top]).value;
                             var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
-                            stack[top++] = new IntValue(r, PrimitiveType.intType);
+                            stack[top++] = new IntValue(r);
                             pc++;
                         }
                         case Bytecodes.DOUBLE_COMPARE -> {
                             var v2 = ((DoubleValue) stack[--top]).value;
                             var v1 = ((DoubleValue) stack[--top]).value;
                             var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
-                            stack[top++] = new IntValue(r, PrimitiveType.intType);
+                            stack[top++] = new IntValue(r);
                             pc++;
                         }
                         case Bytecodes.FLOAT_COMPARE -> {
                             var v2 = ((FloatValue) stack[--top]).value;
                             var v1 = ((FloatValue) stack[--top]).value;
                             var r = (v1 < v2) ? -1 : ((v1 == v2) ? 0 : 1);
-                            stack[top++] = new IntValue(r, PrimitiveType.intType);
+                            stack[top++] = new IntValue(r);
                             pc++;
                         }
                         case Bytecodes.REF_COMPARE_EQ -> {
                             var v2 = (Value) stack[--top];
                             var v1 = (Value) stack[--top];
-                            stack[top++] = new BooleanValue(v1.equals(v2), PrimitiveType.booleanType);
+                            stack[top++] = v1.equals(v2) ? one : zero;
                             pc++;
                         }
                         case Bytecodes.REF_COMPARE_NE -> {
                             var v2 = (Value) stack[--top];
                             var v1 = (Value) stack[--top];
-                            stack[top++] = new BooleanValue(!v1.equals(v2), PrimitiveType.booleanType);
+                            stack[top++] = !v1.equals(v2) ? one : zero;
                             pc++;
                         }
                         case Bytecodes.GET_PROPERTY -> {
                             var i = stack[--top].resolveObject();
                             var p = (PropertyRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                            stack[top++] = i.getProperty(p);
+                            stack[top++] = i.getProperty(p).toStackValue();
                             pc += 3;
                         }
                         case Bytecodes.GET_STATIC -> {
@@ -847,19 +831,19 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.INSTANCE_OF -> {
                             var v = stack[--top];
                             var targetType = (Type) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                            stack[top++] = Instances.booleanInstance(targetType.isInstance(v));
+                            stack[top++] = targetType.isInstance(v) ? one : zero;
                             pc += 3;
                         }
                         case Bytecodes.ARRAY_LENGTH -> {
                             var a = stack[--top].resolveArray();
-                            stack[top++] = Instances.intInstance(a.length());
+                            stack[top++] = new IntValue(a.length());
                             pc++;
                         }
-                        case Bytecodes.IF_NOT -> {
-                            if (((BooleanValue) stack[--top]).getValue())
-                                pc += 3;
-                            else
+                        case Bytecodes.IF_EQ -> {
+                            if (((IntValue) stack[--top]).value == 0)
                                 pc = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
+                            else
+                                pc += 3;
                         }
                         case Bytecodes.STORE -> {
                             var index = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
@@ -1005,11 +989,13 @@ public class MetaFrame implements Frame, CallContext {
         return instanceRepository;
     }
 
-    public IndexKeyRT loadIndexKey(Index index, Value[] stack, int top) {
+    public IndexKeyRT loadIndexKey(IndexRef indexRef, Value[] stack, int top) {
         var values = new LinkedList<Value>();
-        var numFields = index.getFields().size();
-        for (int i = 0; i < numFields; i++) {
-            values.addFirst(stack[--top]);
+        var typeMetadata = indexRef.getDeclaringType().getTypeMetadata();
+        var index = indexRef.getRawIndex();
+        for (IndexField field : index.getFields()) {
+            log.warn("Adding index field {} with type {}", field.getName(), field.getType(typeMetadata));
+            values.addFirst(field.getType(typeMetadata).fromStackValue(stack[--top]));
         }
         return index.createIndexKey(values);
     }

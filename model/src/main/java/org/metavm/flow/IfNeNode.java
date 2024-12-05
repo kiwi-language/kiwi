@@ -8,12 +8,12 @@ import org.metavm.expression.ExpressionTypeMap;
 import javax.annotation.Nullable;
 
 @EntityType
-public class IfNode extends JumpNode {
+public class IfNeNode extends JumpNode {
 
     private transient ExpressionTypeMap nextExpressionTypes;
 
-    public IfNode(@NotNull String name, @Nullable Node previous, @NotNull Code code,
-                  Node target) {
+    public IfNeNode(@NotNull String name, @Nullable Node previous, @NotNull Code code,
+                    Node target) {
         super(name, null, previous, code);
 //        var narrower = new TypeNarrower(getExpressionTypes()::getType);
 //        mergeExpressionTypes(narrower.narrowType(Expressions.not(condition.getExpression())));
@@ -23,7 +23,7 @@ public class IfNode extends JumpNode {
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitIfNode(this);
+        return visitor.visitIfNeNode(this);
     }
 
     @Override
@@ -33,7 +33,7 @@ public class IfNode extends JumpNode {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("if " + getTarget().getName());
+        writer.write("ifne " + getTarget().getName());
     }
 
     @Override
@@ -53,7 +53,7 @@ public class IfNode extends JumpNode {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.IF);
+        output.write(Bytecodes.IF_NE);
         output.writeShort(getTarget().getOffset());
     }
 

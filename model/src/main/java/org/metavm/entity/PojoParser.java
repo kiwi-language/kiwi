@@ -257,9 +257,9 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 .readonly(Modifier.isFinal(javaField.getModifiers()))
                 .column(colAndTag.column())
                 .tag(colAndTag.tag())
-                .defaultValue(new NullValue(Types.getNullType()))
+                .defaultValue(new NullValue())
                 .isChild(isChild)
-                .staticValue(new NullValue(Types.getNullType()))
+                .staticValue(new NullValue())
                 .access(parseAccess(javaField.getModifiers()))
                 .since(annotation != null ? annotation.since() : (childEntity != null ? childEntity.since() : 0))
                 .build();

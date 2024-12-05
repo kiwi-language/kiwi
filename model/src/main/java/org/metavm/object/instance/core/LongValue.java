@@ -2,7 +2,6 @@ package org.metavm.object.instance.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.PrimitiveType;
-import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
@@ -12,8 +11,7 @@ public class LongValue extends NumberValue {
 
     public final long value;
 
-    public LongValue(long value, PrimitiveType type) {
-        super(type);
+    public LongValue(long value) {
         this.value = value;
     }
 
@@ -21,8 +19,13 @@ public class LongValue extends NumberValue {
         return value;
     }
 
+    @Override
+    public PrimitiveType getType() {
+        return PrimitiveType.longType;
+    }
+
     public DoubleValue toDouble() {
-        return new DoubleValue(value, Types.getDoubleType());
+        return new DoubleValue(value);
     }
 
     @Override
@@ -31,59 +34,59 @@ public class LongValue extends NumberValue {
     }
 
     public LongValue inc(long inc) {
-        return new LongValue(value + inc, getType());
+        return new LongValue(value + inc);
     }
 
     public LongValue dec(long dec) {
-        return new LongValue(value - dec, getType());
+        return new LongValue(value - dec);
     }
 
     public LongValue minus(LongValue that) {
-        return new LongValue(value - that.value, getType());
+        return new LongValue(value - that.value);
     }
 
     public LongValue add(LongValue that) {
-        return new LongValue(value + that.value, getType());
+        return new LongValue(value + that.value);
     }
 
     public LongValue bitAnd(LongValue that) {
-        return new LongValue(value & that.value, getType());
+        return new LongValue(value & that.value);
     }
 
     public LongValue bitXor(LongValue that) {
-        return new LongValue(value ^ that.value, getType());
+        return new LongValue(value ^ that.value);
     }
 
     public LongValue bitOr(LongValue that) {
-        return new LongValue(value | that.value, getType());
+        return new LongValue(value | that.value);
     }
 
     public LongValue bitNot() {
-        return new LongValue(~value, getType());
+        return new LongValue(~value);
     }
 
     public LongValue mul(LongValue that) {
-        return new LongValue(value * that.value, getType());
+        return new LongValue(value * that.value);
     }
 
     public LongValue div(LongValue that) {
-        return new LongValue(value / that.value, getType());
+        return new LongValue(value / that.value);
     }
 
     public LongValue leftShift(LongValue that) {
-        return new LongValue(value << that.value, getType());
+        return new LongValue(value << that.value);
     }
 
     public LongValue rightShift(LongValue that) {
-        return new LongValue(value >> that.value, getType());
+        return new LongValue(value >> that.value);
     }
 
     public LongValue unsignedRightShift(LongValue that) {
-        return new LongValue(value >>> that.value, getType());
+        return new LongValue(value >>> that.value);
     }
 
     public LongValue mod(LongValue that) {
-        return new LongValue(value % that.value, getType());
+        return new LongValue(value % that.value);
     }
 
     public BooleanValue gt(LongValue that) {
@@ -120,7 +123,7 @@ public class LongValue extends NumberValue {
 
     @Override
     public LongValue negate() {
-        return new LongValue(-value, getType());
+        return new LongValue(-value);
     }
 
     @Override

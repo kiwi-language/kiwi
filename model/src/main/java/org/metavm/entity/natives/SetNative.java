@@ -3,7 +3,10 @@ package org.metavm.entity.natives;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
 import org.metavm.flow.Flows;
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.IntValue;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
 
 import java.util.List;
@@ -11,7 +14,7 @@ import java.util.Objects;
 
 public abstract class SetNative extends IterableNative {
 
-    public BooleanValue equals(Value o, CallContext callContext) {
+    public Value equals(Value o, CallContext callContext) {
         if(o instanceof Reference ref) {
             if(ref.resolve() instanceof ClassInstance that
                     && Objects.equals(that.getType().findAncestorByKlass(StdKlass.set.get()), getInstance().getType().findAncestorByKlass(StdKlass.set.get()))) {
@@ -19,13 +22,13 @@ public abstract class SetNative extends IterableNative {
                 if(size() == thatNat.size()) {
                     for (Value value : thatNat) {
                         if(!thatNat.contains0(value, callContext))
-                            return Instances.falseInstance();
+                            return Instances.zero();
                     }
-                    return Instances.trueInstance();
+                    return Instances.one();
                 }
             }
         }
-        return Instances.falseInstance();
+        return Instances.zero();
     }
 
     public IntValue hashCode(CallContext callContext) {
@@ -44,7 +47,7 @@ public abstract class SetNative extends IterableNative {
             if(Instances.toBoolean(add(e, callContext)))
                 ref.changed = true;
         });
-        return Instances.booleanInstance(ref.changed);
+        return Instances.intInstance(ref.changed);
     }
 
     public Value containsAll(Value values, CallContext callContext) {
@@ -55,7 +58,7 @@ public abstract class SetNative extends IterableNative {
             if(!Instances.toBoolean(contains(e, callContext)))
                 ref.containsAll = false;
         });
-        return Instances.booleanInstance(ref.containsAll);
+        return Instances.intInstance(ref.containsAll);
     }
 
     public Value retainAll(Value value, CallContext callContext) {
@@ -70,13 +73,13 @@ public abstract class SetNative extends IterableNative {
                 changed = true;
             }
         }
-        return Instances.booleanInstance(changed);
+        return Instances.intInstance(changed);
     }
 
     public abstract Value add(Value value, CallContext callContext);
 
     public Value contains(Value value, CallContext callContext) {
-        return Instances.booleanInstance(contains0(value, callContext));
+        return Instances.intInstance(contains0(value, callContext));
     }
 
     public Value size(CallContext callContext) {

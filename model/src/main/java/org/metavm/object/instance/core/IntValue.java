@@ -2,7 +2,6 @@ package org.metavm.object.instance.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.PrimitiveType;
-import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
@@ -10,10 +9,13 @@ import org.metavm.util.WireTypes;
 @Slf4j
 public class IntValue extends NumberValue {
 
+    public static final IntValue zero = new IntValue(0);
+
+    public static final IntValue one = new IntValue(1);
+
     public final int value;
 
-    public IntValue(int value, PrimitiveType type) {
-        super(type);
+    public IntValue(int value) {
         this.value = value;
     }
 
@@ -21,8 +23,13 @@ public class IntValue extends NumberValue {
         return value;
     }
 
+    @Override
+    public PrimitiveType getType() {
+        return PrimitiveType.intType;
+    }
+
     public DoubleValue toDouble() {
-        return new DoubleValue(value, Types.getDoubleType());
+        return new DoubleValue(value);
     }
 
     @Override
@@ -31,59 +38,59 @@ public class IntValue extends NumberValue {
     }
 
     public IntValue inc(int inc) {
-        return new IntValue(value + inc, getType());
+        return new IntValue(value + inc);
     }
 
     public IntValue dec(int dec) {
-        return new IntValue(value - dec, getType());
+        return new IntValue(value - dec);
     }
 
     public IntValue minus(IntValue that) {
-        return new IntValue(value - that.value, getType());
+        return new IntValue(value - that.value);
     }
 
     public IntValue add(IntValue that) {
-        return new IntValue(value + that.value, getType());
+        return new IntValue(value + that.value);
     }
 
     public IntValue bitAnd(IntValue that) {
-        return new IntValue(value & that.value, getType());
+        return new IntValue(value & that.value);
     }
 
     public IntValue bitXor(IntValue that) {
-        return new IntValue(value ^ that.value, getType());
+        return new IntValue(value ^ that.value);
     }
 
     public IntValue bitOr(IntValue that) {
-        return new IntValue(value | that.value, getType());
+        return new IntValue(value | that.value);
     }
 
     public IntValue bitNot() {
-        return new IntValue(~value, getType());
+        return new IntValue(~value);
     }
 
     public IntValue mul(IntValue that) {
-        return new IntValue(value * that.value, getType());
+        return new IntValue(value * that.value);
     }
 
     public IntValue div(IntValue that) {
-        return new IntValue(value / that.value, getType());
+        return new IntValue(value / that.value);
     }
 
     public IntValue leftShift(IntValue that) {
-        return new IntValue(value << that.value, getType());
+        return new IntValue(value << that.value);
     }
 
     public IntValue rightShift(IntValue that) {
-        return new IntValue(value >> that.value, getType());
+        return new IntValue(value >> that.value);
     }
 
     public IntValue unsignedRightShift(IntValue that) {
-        return new IntValue(value >>> that.value, getType());
+        return new IntValue(value >>> that.value);
     }
 
     public IntValue mod(IntValue that) {
-        return new IntValue(value % that.value, getType());
+        return new IntValue(value % that.value);
     }
 
     public BooleanValue gt(IntValue that) {
@@ -120,7 +127,7 @@ public class IntValue extends NumberValue {
 
     @Override
     public IntValue negate() {
-        return new IntValue(-value, getType());
+        return new IntValue(-value);
     }
 
     @Override

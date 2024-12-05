@@ -429,8 +429,8 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     @SuppressWarnings("unused")
-    public BooleanValue __remove__(Value instance) {
-        return Instances.booleanInstance(removeElement(instance));
+    public Value __remove__(Value instance) {
+        return Instances.intInstance(removeElement(instance));
     }
 
     @SuppressWarnings("unused")

@@ -13,8 +13,7 @@ public class DoubleValue extends NumberValue {
 
     public final double value;
 
-    public DoubleValue(double value, PrimitiveType type) {
-        super(type);
+    public DoubleValue(double value) {
         this.value = value;
     }
 
@@ -24,33 +23,38 @@ public class DoubleValue extends NumberValue {
     }
 
     @Override
+    public PrimitiveType getType() {
+        return PrimitiveType.doubleType;
+    }
+
+    @Override
     public void write(MvOutput output) {
         output.write(WireTypes.DOUBLE);
         output.writeDouble(value);
     }
 
     public DoubleValue inc(int inc) {
-        return new DoubleValue(value + inc, getType());
+        return new DoubleValue(value + inc);
     }
 
     public DoubleValue dec(int dec) {
-        return new DoubleValue(value - dec, getType());
+        return new DoubleValue(value - dec);
     }
 
     public DoubleValue minus(DoubleValue that) {
-        return new DoubleValue(value - that.value, getType());
+        return new DoubleValue(value - that.value);
     }
 
     public DoubleValue add(DoubleValue that) {
-        return new DoubleValue(value + that.value, getType());
+        return new DoubleValue(value + that.value);
     }
 
     public DoubleValue mul(DoubleValue that) {
-        return new DoubleValue(value * that.value, getType());
+        return new DoubleValue(value * that.value);
     }
 
     public DoubleValue div(DoubleValue that) {
-        return new DoubleValue(value / that.value, getType());
+        return new DoubleValue(value / that.value);
     }
 
     public BooleanValue gt(DoubleValue that) {
@@ -70,7 +74,7 @@ public class DoubleValue extends NumberValue {
     }
 
     public DoubleValue mod(DoubleValue that) {
-        return new DoubleValue(value % that.value, getType());
+        return new DoubleValue(value % that.value);
     }
 
     @Override
@@ -85,7 +89,7 @@ public class DoubleValue extends NumberValue {
 
     @Override
     public DoubleValue negate() {
-        return new DoubleValue(-value, getType());
+        return new DoubleValue(-value);
     }
 
     @Override

@@ -8,7 +8,7 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.IEntityContext;
 import org.metavm.flow.DeployKlassInput;
-import org.metavm.flow.FlowExecutionService;
+import org.metavm.flow.Flows;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.WAL;
@@ -39,8 +39,6 @@ import static org.metavm.util.Constants.DDL_SESSION_TIMEOUT;
 public class TypeManager extends EntityContextFactoryAware {
 
     public static final Logger logger = LoggerFactory.getLogger(TypeManager.class);
-
-    private FlowExecutionService flowExecutionService;
 
     private VersionManager versionManager;
 
@@ -95,13 +93,8 @@ public class TypeManager extends EntityContextFactoryAware {
 
     private void initClass(Klass klass, IEntityContext context) {
         var classInit = klass.findMethodByName("__cinit__");
-        if (classInit != null) {
-            flowExecutionService.executeInternal(
-                    classInit.getRef(), null,
-                    List.of(),
-                    context
-            );
-        }
+        if (classInit != null)
+            Flows.execute(classInit.getRef(), null, List.of(), context);
     }
 
     @Transactional
@@ -178,11 +171,6 @@ public class TypeManager extends EntityContextFactoryAware {
         var sft = StaticFieldTable.getInstance(enumConstantDef.getKlass().getType(), context);
         var value = enumConstantDef.createEnumConstant(context.getInstanceContext());
         sft.set(enumConstantDef.getField(), value.getReference());
-    }
-
-    @Autowired
-    public void setFlowExecutionService(FlowExecutionService flowExecutionService) {
-        this.flowExecutionService = flowExecutionService;
     }
 
     @Autowired

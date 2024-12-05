@@ -7,23 +7,29 @@ import javax.annotation.Nullable;
 import java.util.Date;
 
 public enum PrimitiveKind {
-    LONG(1, "long", Long.class, LongValue.class, TypeCategory.LONG) {
+    LONG(1, "long", long.class, LongValue.class, TypeCategory.LONG) {
         @Override
         public Value getDefaultValue() {
             return Instances.longInstance(0L);
         }
     },
-    DOUBLE(2, "double", Double.class, DoubleValue.class, TypeCategory.DOUBLE) {
+    DOUBLE(2, "double", double.class, DoubleValue.class, TypeCategory.DOUBLE) {
         @Override
         public Value getDefaultValue() {
             return Instances.doubleInstance(0.0);
         }
     },
     STRING(3, "string", String.class, StringValue.class, TypeCategory.STRING),
-    BOOLEAN(4, "boolean", Boolean.class, BooleanValue.class, TypeCategory.BOOLEAN) {
+    BOOLEAN(4, "boolean", boolean.class, BooleanValue.class, TypeCategory.BOOLEAN) {
         @Override
         public Value getDefaultValue() {
             return Instances.booleanInstance(false);
+        }
+
+        @Override
+        public Value fromStackValue(Value value) {
+            var i = ((IntValue) value).value;
+            return i == 0 ? BooleanValue.false_ : BooleanValue.true_;
         }
     },
     TIME(5, "time", Date.class, TimeValue.class, TypeCategory.TIME),
@@ -34,15 +40,21 @@ public enum PrimitiveKind {
             return Instances.nullInstance();
         }
     },
-    VOID(8, "void", Void.class, null, TypeCategory.VOID),
-    CHAR(9, "char", Character.class, CharValue.class, TypeCategory.CHAR),
-    INT(10, "int", Integer.class, IntValue.class, TypeCategory.INT) {
+    VOID(8, "void", void.class, null, TypeCategory.VOID),
+    CHAR(9, "char", char.class, CharValue.class, TypeCategory.CHAR) {
+        @Override
+        public Value fromStackValue(Value value) {
+            var i = ((IntValue) value).value;
+            return new CharValue((char) i);
+        }
+    },
+    INT(10, "int", int.class, IntValue.class, TypeCategory.INT) {
         @Override
         public Value getDefaultValue() {
             return Instances.intInstance(0);
         }
     },
-    FLOAT(11, "float", Float.class, FloatValue.class, TypeCategory.FLOAT) {
+    FLOAT(11, "float", float.class, FloatValue.class, TypeCategory.FLOAT) {
         @Override
         public Value getDefaultValue() {
             return Instances.floatInstance(0);
@@ -88,7 +100,7 @@ public enum PrimitiveKind {
         return typeCategory;
     }
 
-    public static PrimitiveKind getByJavaClass(Class<?> javaClass) {
+    public static PrimitiveKind fromJavaClass(Class<?> javaClass) {
         return NncUtils.findRequired(values(), v -> v.javaClass == javaClass);
     }
 
@@ -115,4 +127,9 @@ public enum PrimitiveKind {
     public @Nullable Value getDefaultValue() {
         return null;
     }
+
+    public Value fromStackValue(Value value) {
+        return value;
+    }
+
 }

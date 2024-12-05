@@ -15,7 +15,6 @@ import org.metavm.api.ValueObject;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
 import org.metavm.event.MockEventQueue;
-import org.metavm.flow.FlowExecutionService;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.cache.LocalCache;
@@ -306,16 +305,13 @@ public class TestUtils {
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         var transactionOps = new MockTransactionOperations();
         var typeManager = new TypeManager(entityContextFactory, new BeanManager());
-        var flowExecutionService = new FlowExecutionService(entityContextFactory);
         var instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
         var scheduler = new Scheduler(entityContextFactory, transactionOps);
         var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), bootResult.metaContextCache());
-        typeManager.setFlowExecutionService(flowExecutionService);
         typeManager.setVersionManager(new VersionManager(entityContextFactory));
         return new CommonManagers(
                 typeManager,
                 instanceManager,
-                flowExecutionService,
                 scheduler,
                 worker
         );

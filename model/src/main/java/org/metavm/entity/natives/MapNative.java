@@ -2,7 +2,10 @@ package org.metavm.entity.natives;
 
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.*;
+import org.metavm.object.type.ArrayType;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.FieldRef;
+import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -100,9 +103,9 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public BooleanValue containsKey(Value key, CallContext callContext) {
+    public IntValue containsKey(Value key, CallContext callContext) {
         checkKey(key, callContext);
-        return Instances.booleanInstance(map.containsKey(new HashKeyWrap(key, callContext)));
+        return Instances.intInstance(map.containsKey(new HashKeyWrap(key, callContext)));
     }
 
     public Value remove(Value key, CallContext callContext) {
@@ -149,7 +152,7 @@ public class MapNative extends NativeBase {
         return Instances.intInstance(h);
     }
 
-    public BooleanValue equals(Value o, CallContext callContext) {
+    public Value equals(Value o, CallContext callContext) {
         if(o instanceof Reference ref) {
             if(ref.resolve() instanceof ClassInstance that
                     && Objects.equals(that.getType().findAncestorByKlass(StdKlass.map.get()), instance.getType().findAncestorByKlass(StdKlass.map.get()))) {
@@ -157,16 +160,16 @@ public class MapNative extends NativeBase {
                 if(keyArray.size() == thatNat.size()) {
                     int i = 0;
                     for (Value key : keyArray) {
-                        if(!thatNat.containsKey(key, callContext).getValue())
-                            return Instances.falseInstance();
+                        if(thatNat.containsKey(key, callContext).value == 0)
+                            return Instances.zero();
                         if(!Instances.equals(valueArray.get(i++), thatNat.get(key, callContext), callContext))
-                            return Instances.falseInstance();
+                            return Instances.zero();
                     }
-                    return Instances.trueInstance();
+                    return Instances.one();
                 }
             }
         }
-        return Instances.falseInstance();
+        return Instances.zero();
     }
 
     private boolean getBoolean(Value instance, CallContext callContext) {

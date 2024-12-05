@@ -10,7 +10,6 @@ import org.metavm.asm.antlr.AssemblyParserBaseVisitor;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
@@ -706,7 +705,9 @@ public class Assembler {
                     if(!field.isStatic() && !field.isTransient()) {
                         var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), field.getName()));
                         if (indexField == null)
-                            new IndexField(index, field.getName(), Values.nullValue());
+                            new IndexField(index, field.getName(), field.getType(), Values.nullValue());
+                        else
+                            indexField.setType(field.getType());
                     }
                 }
             }
@@ -955,7 +956,7 @@ public class Assembler {
                     Nodes.raise(code);
                 } else if (statement.IF() != null) {
                     parseExpression(statement.parExpression().expression());
-                    var ifNode = Nodes.ifNot(null, code);
+                    var ifNode = Nodes.ifEq(null, code);
                     parseBlockNodes(statement.block(0), code);
                     var g = Nodes.goto_(code);
                     ifNode.setTarget(Nodes.noop(code));
@@ -966,7 +967,7 @@ public class Assembler {
                 else if (statement.WHILE() != null) {
                     var entry = Nodes.noop(code);
                     parseExpression(statement.parExpression().expression());
-                    var ifNode = Nodes.ifNot(null, code);
+                    var ifNode = Nodes.ifEq(null, code);
                     parseBlockNodes(statement.block(0), code);
                     var g = Nodes.goto_(code);
                     g.setTarget(entry);

@@ -355,11 +355,11 @@ public abstract class ElementVisitor<R> {
         return visitExpression(neverExpression);
     }
 
-    public R visitIfNode(IfNode node) {
+    public R visitIfNeNode(IfNeNode node) {
         return visitNode(node);
     }
 
-    public R visitIfNotNode(IfNotNode node) {
+    public R visitIfEqNode(IfEqNode node) {
         return visitNode(node);
     }
 
@@ -368,14 +368,6 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitLongAddNode(LongAddNode node) {
-        return visitNode(node);
-    }
-
-    public R visitAndNode(AndNode node) {
-        return visitNode(node);
-    }
-
-    public R visitOrNode(OrNode node) {
         return visitNode(node);
     }
 
@@ -456,10 +448,6 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitGetStaticNode(GetStaticNode node) {
-        return visitNode(node);
-    }
-
-    public R visitNodeNode(NotNode node) {
         return visitNode(node);
     }
 

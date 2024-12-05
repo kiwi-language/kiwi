@@ -77,16 +77,16 @@ public class TreeSetNative extends SetNative {
 
     public Value add(Value value, CallContext callContext) {
         var keyWrap = new ComparableKeyWrap(value, callContext);
-        return Instances.booleanInstance(set.add(keyWrap));
+        return Instances.intInstance(set.add(keyWrap));
     }
 
     public Value remove(Value value, CallContext callContext) {
         var keyWrap = new ComparableKeyWrap(value, callContext);
-        return Instances.booleanInstance(set.remove(keyWrap));
+        return Instances.intInstance(set.remove(keyWrap));
     }
 
     public Value isEmpty(CallContext callContext) {
-        return Instances.booleanInstance(set.isEmpty());
+        return Instances.intInstance(set.isEmpty());
     }
 
     @Override

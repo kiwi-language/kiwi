@@ -10,14 +10,18 @@ public class StringValue extends PrimitiveValue {
 
     private final String value;
 
-    public StringValue(String value, PrimitiveType type) {
-        super(type);
+    public StringValue(String value) {
         this.value = value;
     }
 
     @Override
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public PrimitiveType getType() {
+        return PrimitiveType.stringType;
     }
 
     @Override
@@ -39,7 +43,7 @@ public class StringValue extends PrimitiveValue {
     }
 
     public StringValue concat(StringValue that) {
-        return new StringValue(value + that.value, getType());
+        return new StringValue(value + that.value);
     }
 
     public BooleanValue isBlank() {

@@ -1,10 +1,10 @@
 package org.metavm.object.type;
 
 import org.metavm.api.EntityType;
-import org.metavm.entity.Writable;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.ValueElement;
+import org.metavm.entity.Writable;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
@@ -331,4 +331,9 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
     public boolean isFloat() {
         return false;
     }
+
+    public Value fromStackValue(Value value) {
+        return value;
+    }
+
 }

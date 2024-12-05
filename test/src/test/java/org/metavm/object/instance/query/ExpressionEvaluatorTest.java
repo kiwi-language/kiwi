@@ -78,7 +78,7 @@ public class ExpressionEvaluatorTest extends TestCase {
                 )
                 .build();
         Value result = expression.evaluate(new InstanceEvaluationContext(fooInst));
-        Assert.assertTrue(Instances.isTrue(result));
+        Assert.assertEquals(Instances.trueInstance(), result);
     }
 
     public void testAllMatchListView() {
@@ -110,7 +110,7 @@ public class ExpressionEvaluatorTest extends TestCase {
                 str, new TypeParsingContext(instanceProvider, typeDefProvider, fooType)
         );
         Value result = expression.evaluate(new InstanceEvaluationContext(foo));
-        Assert.assertTrue(Instances.isTrue(result));
+        Assert.assertEquals(Instances.trueInstance(), result);
     }
 
 }

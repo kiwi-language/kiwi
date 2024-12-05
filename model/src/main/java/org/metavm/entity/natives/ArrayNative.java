@@ -1,6 +1,9 @@
 package org.metavm.entity.natives;
 
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.ArrayInstance;
+import org.metavm.object.instance.core.IntValue;
+import org.metavm.object.instance.core.LongValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 
@@ -24,8 +27,8 @@ public class ArrayNative {
         return array.setElement(getIndex(index), value);
     }
 
-    public BooleanValue remove(Value instance) {
-        return Instances.booleanInstance(array.removeElement(instance));
+    public Value remove(Value instance) {
+        return Instances.intInstance(array.removeElement(instance));
     }
 
     public Value removeAt(Value index) {

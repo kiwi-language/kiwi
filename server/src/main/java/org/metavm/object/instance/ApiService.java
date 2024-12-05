@@ -99,7 +99,8 @@ public class ApiService extends EntityContextFactoryAware {
                                         HttpResponse response,
                                         IEntityContext context) {
         var r = resolveMethod(self.getType(), methodCode, rawArguments, false, false, context);
-        return execute(r.method, self, r.arguments, request, response, context);
+        var method = r.method;
+        return execute(method, self, r.arguments, request, response, context);
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
@@ -120,14 +121,15 @@ public class ApiService extends EntityContextFactoryAware {
                           HttpResponse response,
                           IEntityContext context) {
         return doIntercepted(
-                () -> handleExecutionResult(Flows.execute(method, self, arguments, context)),
+                () -> handleExecutionResult(Flows.execute(method, self, NncUtils.map(arguments, Value::toStackValue), context)),
                 request,
                 response,
+                method.getReturnType(),
                 context
         );
     }
 
-    private Value doIntercepted(Supplier<Value> action, HttpRequest request, HttpResponse response, IEntityContext context) {
+    private Value doIntercepted(Supplier<Value> action, HttpRequest request, HttpResponse response, Type returnType, IEntityContext context) {
         var registry = BeanDefinitionRegistry.getInstance(context);
         var beforeMethod = StdMethod.interceptorBefore.get();
         var afterMethod = StdMethod.interceptorAfter.get();
@@ -141,7 +143,7 @@ public class ApiService extends EntityContextFactoryAware {
         for (ClassInstance interceptor : interceptors) {
             result = Objects.requireNonNull(Flows.invokeVirtual(afterMethod.getRef(), interceptor, List.of(reqInst.getReference(), respInst.getReference(), result), context));
         }
-        return result;
+        return returnType.fromStackValue(result);
     }
 
     private void ensureSuccessful(FlowExecResult result) {
@@ -186,15 +188,15 @@ public class ApiService extends EntityContextFactoryAware {
     public String saveInstance(String classCode, Map<String, Object> object, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
 //            logTxId();
-            ClassType klass;
+            ClassType type;
             if(object.containsKey(KEY_ID)) {
                 var inst0 = (ClassInstance) context.getInstanceContext().get(Id.parse((String) object.get(KEY_ID)));
-                klass = inst0.getType();
+                type = inst0.getType();
             }
             else
-                klass = getKlass(classCode, context);
+                type = getKlass(classCode, context);
             var inst = doIntercepted(() -> {
-                var r = tryResolveValue(object, klass, true, null, context);
+                var r = tryResolveValue(object, type, true, null, context);
                 if (r.successful()) {
                     var i = (Reference) r.resolved();
                     var instanceContext = context.getInstanceContext();
@@ -203,7 +205,7 @@ public class ApiService extends EntityContextFactoryAware {
                     return i;
                 } else
                     return null;
-            }, request, response, context);
+            }, request, response, type, context);
             if (inst != null) {
                 context.finish();
                 return inst.getStringId();
@@ -508,7 +510,7 @@ public class ApiService extends EntityContextFactoryAware {
         var r = resolveConstructor(actualType, map, context);
         var self = ClassInstance.allocate(actualType);
         context.getInstanceContext().bind(self);
-        var result = Flows.execute(r.method, self, r.arguments, context);
+        var result = Flows.execute(r.method, self, NncUtils.map(r.arguments, Value::toStackValue), context);
         if (result.exception() != null)
             throw new InternalException("Failed to instantiate " + type.getTypeDesc() + " with value " + map
                     + ": " + ThrowableNative.getMessage(result.exception()));

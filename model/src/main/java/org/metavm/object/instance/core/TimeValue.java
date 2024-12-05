@@ -9,14 +9,13 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class TimeValue extends PrimitiveValue /*implements Comparable<TimeInstance>*/ {
+public class TimeValue extends PrimitiveValue {
 
     public static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private final long value;
 
-    public TimeValue(long value, PrimitiveType type) {
-        super(type);
+    public TimeValue(long value) {
         this.value = value;
     }
 
@@ -26,25 +25,22 @@ public class TimeValue extends PrimitiveValue /*implements Comparable<TimeInstan
         output.writeLong(value);
     }
 
-    public BooleanValue before(TimeValue that) {
-        return Instances.booleanInstance(value < that.value);
+    public Value before(TimeValue that) {
+        return Instances.intInstance(value < that.value);
     }
 
-    public BooleanValue beforeOrEqual(TimeValue that) {
-        return Instances.booleanInstance(value <= that.value);
-    }
-
-    public BooleanValue after(TimeValue that) {
-        return Instances.booleanInstance(value > that.value);
-    }
-
-    public BooleanValue afterOrEqual(TimeValue that) {
-        return Instances.booleanInstance(value >= that.value);
+    public Value after(TimeValue that) {
+        return Instances.intInstance(value > that.value);
     }
 
     @Override
     public Long getValue() {
         return value;
+    }
+
+    @Override
+    public PrimitiveType getType() {
+        return PrimitiveType.timeType;
     }
 
     @Override

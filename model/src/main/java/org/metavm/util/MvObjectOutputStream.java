@@ -32,7 +32,7 @@ public class MvObjectOutputStream extends ObjectOutputStream {
 
     @Override
     protected void writeObjectOverride(Object obj) {
-        var v = Instances.fromJavaValue(obj, () -> context.getInstance(obj).getReference());
+        var v = Instances.fromJavaValue(obj, false, () -> context.getInstance(obj).getReference());
         out.writeValue(v);
     }
 

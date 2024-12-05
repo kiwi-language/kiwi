@@ -349,7 +349,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         for (Parameter param : parameters) {
             var arg = argIt.next();
             var paramType = param.getType(typeMetadata);
-            if (!paramType.isInstance(arg))
+            if (!paramType.isInstance(paramType.fromStackValue(arg)))
                 throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT2, arg, this, param.getName());
         }
     }

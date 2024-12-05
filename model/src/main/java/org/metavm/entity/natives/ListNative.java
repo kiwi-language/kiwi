@@ -6,7 +6,10 @@ import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.*;
+import org.metavm.object.type.ArrayType;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.FieldRef;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
@@ -71,7 +74,7 @@ public class ListNative extends IterableNative {
         return List(callContext);
     }
 
-    public Value ArrayList(Value c, CallContext callContext) {
+    public Value ArrayList__Collection(Value c, CallContext callContext) {
         return List(c, callContext);
     }
 
@@ -109,8 +112,8 @@ public class ListNative extends IterableNative {
         return array.setElement(getInt(index), value);
     }
 
-    public BooleanValue remove(Value instance, CallContext callContext) {
-        return Instances.booleanInstance(array.removeElement(instance));
+    public Value remove(Value instance, CallContext callContext) {
+        return Instances.intInstance(array.removeElement(instance));
     }
 
     public Value removeAt(Value index, CallContext callContext) {
@@ -118,7 +121,7 @@ public class ListNative extends IterableNative {
     }
 
     public Value contains(Value value, CallContext callContext) {
-        return Instances.booleanInstance(array.contains(value));
+        return Instances.intInstance(array.contains(value));
     }
 
     public void clear(CallContext callContext) {
@@ -129,21 +132,21 @@ public class ListNative extends IterableNative {
         array.clear();
     }
 
-    public BooleanValue add(Value instance, CallContext callContext) {
+    public Value add(Value instance, CallContext callContext) {
         return add(instance);
     }
 
-    public BooleanValue add(Value instance) {
+    public Value add(Value instance) {
         array.addElement(instance);
-        return Instances.trueInstance();
+        return Instances.one();
     }
 
-    public BooleanValue addAll(Value c, CallContext callContext) {
+    public Value addAll(Value c, CallContext callContext) {
         if(c instanceof Reference collection && collection.resolveObject().isList()) {
             var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
             var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
             array.addAll(thatArray);
-            return Instances.trueInstance();
+            return Instances.one();
         }
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
@@ -162,7 +165,7 @@ public class ListNative extends IterableNative {
     }
 
     public Value isEmpty(CallContext callContext) {
-        return Instances.booleanInstance(array.isEmpty());
+        return Instances.intInstance(array.isEmpty());
     }
 
     public IntValue size(CallContext callContext) {
@@ -173,10 +176,10 @@ public class ListNative extends IterableNative {
         array.sort((e1, e2) -> Instances.compare(e1, e2, callContext));
     }
 
-    public BooleanValue removeIf(Value filter, CallContext callContext) {
+    public Value removeIf(Value filter, CallContext callContext) {
         if(filter instanceof Reference r) {
             var method = r.resolveObject().getType().getMethods().get(0);
-            return Instances.booleanInstance(array.removeIf(e -> method.execute(
+            return Instances.intInstance(array.removeIf(e -> method.execute(
                     r.resolveObject(), List.of(e), callContext).booleanRet()));
         }
         else
@@ -191,7 +194,7 @@ public class ListNative extends IterableNative {
         return Instances.intInstance(h);
     }
 
-    public BooleanValue equals(Value o, CallContext callContext) {
+    public Value equals(Value o, CallContext callContext) {
         if(o instanceof Reference ref) {
             if(ref.resolve() instanceof ClassInstance that
                     && Objects.equals(that.getType().findAncestorByKlass(StdKlass.list.get()), instance.getType().findAncestorByKlass(StdKlass.list.get()))) {
@@ -201,13 +204,13 @@ public class ListNative extends IterableNative {
                     var i = 0;
                     for (Value value : array) {
                         if(!Instances.equals(value, thatArray.get(i++), callContext))
-                            return Instances.falseInstance();
+                            return Instances.zero();
                     }
-                    return Instances.trueInstance();
+                    return Instances.one();
                 }
             }
         }
-        return Instances.falseInstance();
+        return Instances.zero();
     }
 
     public ArrayInstance toArray() {

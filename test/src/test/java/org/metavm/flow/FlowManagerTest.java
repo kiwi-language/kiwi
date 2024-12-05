@@ -39,12 +39,12 @@ public class FlowManagerTest extends TestCase {
                         .build();
                 var code = method.getCode();
                 Nodes.argument(method, 0);
-                var if_ = Nodes.if_(null, code);
+                var if_ = Nodes.ifNe(null, code);
                 var i = code.nextVariableIndex();
-                Nodes.loadConstant(Instances.falseInstance(), code);
+                Nodes.loadConstant(Instances.zero(), code);
                 Nodes.store(i, code);
                 var g = Nodes.goto_(code);
-                if_.setTarget(Nodes.loadConstant(Instances.trueInstance(), code));
+                if_.setTarget(Nodes.loadConstant(Instances.one(), code));
                 Nodes.store(i, code);
                 g.setTarget(Nodes.noop(code));
                 Nodes.load(i, Types.getBooleanType(), code);
@@ -58,9 +58,9 @@ public class FlowManagerTest extends TestCase {
         });
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var method = context.getMethod(methodId);
-            var r = Flows.execute(method.getRef(), null, List.of(Instances.trueInstance()), context).ret();
+            var r = Flows.execute(method.getRef(), null, List.of(Instances.one()), context).ret();
             Assert.assertNotNull(r);
-            Assert.assertEquals(Instances.trueInstance(), r);
+            Assert.assertEquals(Instances.one(), r);
         }
     }
 

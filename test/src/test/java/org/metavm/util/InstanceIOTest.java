@@ -136,7 +136,7 @@ public class InstanceIOTest extends TestCase {
                 PhysicalId.of(30001L, 1L, TestUtils.mockClassType()),
                 Map.of(
                         barCodeField,
-                        new StringValue(barCode, Types.getStringType())
+                        new StringValue(barCode)
                 ),
                 barType
         );
@@ -145,7 +145,7 @@ public class InstanceIOTest extends TestCase {
                 PhysicalId.of(30002L, 0L, TestUtils.mockClassType()),
                 Map.of(
                         quxNameField,
-                        new StringValue("qux001", Types.getStringType())
+                        new StringValue("qux001")
                 ),
                 quxType
         );
@@ -153,7 +153,7 @@ public class InstanceIOTest extends TestCase {
         var fooInst = new ClassInstance(
                 PhysicalId.of(30001L, 0L, TestUtils.mockClassType()),
                 Map.of(
-                        nameField, new StringValue(fooName, Types.getStringType()),
+                        nameField, new StringValue(fooName),
                         barField, barInst.getReference(),
                         quxField, quxInst.getReference()
                 ),

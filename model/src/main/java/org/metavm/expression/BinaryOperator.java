@@ -119,7 +119,7 @@ public enum BinaryOperator {
     // equality
     EQ(11, "=", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
-        public BooleanValue evaluate(Value first, Value second) {
+        public Value evaluate(Value first, Value second) {
             return Instances.booleanInstance(first.equals(second));
         }
 
@@ -130,7 +130,7 @@ public enum BinaryOperator {
     },
     NE(12, "!=", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
-        public BooleanValue evaluate(Value first, Value second) {
+        public Value evaluate(Value first, Value second) {
             return Instances.booleanInstance(!first.equals(second));
         }
 
@@ -153,7 +153,7 @@ public enum BinaryOperator {
     },
     IN(15, "in", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
-        public BooleanValue evaluate(Value first, Value second) {
+        public Value evaluate(Value first, Value second) {
             return Instances.booleanInstance((second.resolveArray()).contains(first));
         }
     },

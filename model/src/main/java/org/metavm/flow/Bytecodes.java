@@ -28,8 +28,6 @@ public class Bytecodes {
     public static final int CAST = 31;
     public static final int CLEAR_ARRAY = 32;
     public static final int COPY = 33;
-    public static final int MAP = 34;
-    public static final int UNMAP = 35;
     public static final int INDEX_SCAN = 36;
     public static final int INDEX_COUNT = 37;
     public static final int INDEX_SELECT = 38;
@@ -38,7 +36,7 @@ public class Bytecodes {
     public static final int TARGET = 41;
     public static final int NON_NULL = 42;
     public static final int SET_ELEMENT = 43;
-    public static final int IF = 44;
+    public static final int IF_NE = 44;
     public static final int NOOP = 46;
     public static final int LONG_ADD = 48;
     public static final int LONG_SUB = 49;
@@ -50,9 +48,6 @@ public class Bytecodes {
     public static final int LONG_BIT_OR = 55;
     public static final int LONG_BIT_AND = 56;
     public static final int LONG_BIT_XOR = 57;
-    public static final int AND = 58;
-    public static final int OR = 59;
-    public static final int NOT = 61;
     public static final int LONG_NEG = 62;
     public static final int LONG_REM = 63;
     public static final int EQ = 64;
@@ -65,7 +60,7 @@ public class Bytecodes {
     public static final int GET_STATIC = 71;
     public static final int INSTANCE_OF = 72;
     public static final int ARRAY_LENGTH = 73;
-    public static final int IF_NOT = 74;
+    public static final int IF_EQ = 74;
     public static final int STORE = 75;
     public static final int LOAD = 76;
     public static final int LOAD_CONTEXT_SLOT = 77;

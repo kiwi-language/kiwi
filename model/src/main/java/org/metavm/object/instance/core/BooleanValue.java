@@ -7,16 +7,24 @@ import org.metavm.util.WireTypes;
 
 public class BooleanValue extends PrimitiveValue {
 
+    public static final BooleanValue true_ = new BooleanValue(true);
+
+    public static final BooleanValue false_ = new BooleanValue(false);
+
     public final boolean value;
 
-    public BooleanValue(boolean value, PrimitiveType type) {
-        super(type);
+    public BooleanValue(boolean value) {
         this.value = value;
     }
 
     @Override
     public Boolean getValue() {
         return value;
+    }
+
+    @Override
+    public PrimitiveType getType() {
+        return PrimitiveType.booleanType;
     }
 
     @Override
@@ -34,15 +42,15 @@ public class BooleanValue extends PrimitiveValue {
     }
 
     public BooleanValue not() {
-        return new BooleanValue(!value, getType());
+        return new BooleanValue(!value);
     }
 
     public BooleanValue and(BooleanValue that) {
-        return new BooleanValue(value && that.value, getType());
+        return new BooleanValue(value && that.value);
     }
 
     public BooleanValue or(BooleanValue that) {
-        return new BooleanValue(value || that.value, getType());
+        return new BooleanValue(value || that.value);
     }
 
     @Override
@@ -58,5 +66,10 @@ public class BooleanValue extends PrimitiveValue {
     @Override
     public PrimitiveFieldValue toFieldValueDTO() {
         return value ? PrimitiveFieldValue.TRUE : PrimitiveFieldValue.FALSE;
+    }
+
+    @Override
+    public Value toStackValue() {
+        return value ? IntValue.one : IntValue.zero;
     }
 }

@@ -38,19 +38,16 @@ public class HashSetNative extends SetNative {
         return instance.getReference();
     }
 
-    public Value HashSet(Value c, CallContext callContext) {
-        if(c instanceof Reference collection) {
-            var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
-            var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
-            array = new ArrayInstance((ArrayType) arrayField.getType(),
-                    new InstanceParentRef(instance.getReference(), arrayField.getRawField()));
-            instance.initField(arrayField.getRawField(), array.getReference());
-            array.addAll(thatArray);
-            initializeElementToIndex(callContext);
-            return instance.getReference();
-        }
-        else
-            throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
+    public Value HashSet__Collection(Value c, CallContext callContext) {
+        var collection = (Reference) c;
+        var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
+        var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
+        array = new ArrayInstance((ArrayType) arrayField.getType(),
+                new InstanceParentRef(instance.getReference(), arrayField.getRawField()));
+        instance.initField(arrayField.getRawField(), array.getReference());
+        array.addAll(thatArray);
+        initializeElementToIndex(callContext);
+        return instance.getReference();
     }
 
     public Reference iterator(CallContext callContext) {
@@ -73,16 +70,16 @@ public class HashSetNative extends SetNative {
 
     public Value add(Value value, CallContext callContext) {
         var keyWrap = new HashKeyWrap(value, callContext);
-        return Instances.booleanInstance(set.add(keyWrap));
+        return Instances.intInstance(set.add(keyWrap));
     }
 
     public Value remove(Value value, CallContext callContext) {
         var keyWrap = new HashKeyWrap(value, callContext);
-        return Instances.booleanInstance(set.remove(keyWrap));
+        return Instances.intInstance(set.remove(keyWrap));
     }
 
     public Value isEmpty(CallContext callContext) {
-        return Instances.booleanInstance(set.isEmpty());
+        return Instances.intInstance(set.isEmpty());
     }
 
     public boolean contains0(Value value, CallContext callContext) {

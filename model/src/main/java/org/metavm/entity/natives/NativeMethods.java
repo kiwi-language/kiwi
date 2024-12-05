@@ -27,17 +27,13 @@ public class NativeMethods {
             var nativeClass = tryGetNativeClass(method.getDeclaringType());
             NncUtils.requireNonNull(nativeClass,
                     "Native class not available for type '" + method.getDeclaringType().getName() + "'");
-            List<Class<?>> paramTypes = new ArrayList<>();
-            paramTypes.add(Klass.class);
-            paramTypes.addAll(NncUtils.multipleOf(Value.class, method.getParameters().size()));
-            paramTypes.add(CallContext.class);
             Object[] args = new Object[2 + arguments.size()];
             args[0] = method.getDeclaringType();
             for (int i = 0; i < arguments.size(); i++) {
                 args[i + 1] = arguments.get(i);
             }
             args[arguments.size() + 1] = callContext;
-            var javaMethod = ReflectionUtils.getMethod(nativeClass, method.getName(), paramTypes);
+            var javaMethod = getNativeMethod(nativeClass, method);
             var result = (Value) ReflectionUtils.invoke(null, javaMethod, args);
             if (method.getReturnType().isVoid()) {
                 return new FlowExecResult(null, null);
@@ -48,14 +44,12 @@ public class NativeMethods {
             if (self instanceof ClassInstance classInstance) {
                 Object nativeObject = getNativeObject(classInstance);
                 var instanceClass = nativeObject.getClass();
-                List<Class<?>> paramTypes = new ArrayList<>(NncUtils.multipleOf(Value.class, method.getParameters().size()));
-                paramTypes.add(CallContext.class);
                 var args = new Object[arguments.size() + 1];
                 for (int i = 0; i < arguments.size(); i++) {
                     args[i] = arguments.get(i);
                 }
                 args[arguments.size()] = callContext;
-                var javaMethod = ReflectionUtils.getMethod(instanceClass, method.getName(), paramTypes);
+                var javaMethod = getNativeMethod(instanceClass, method);
                 var result = (Value) ReflectionUtils.invoke(nativeObject, javaMethod, args);
                 if (method.getReturnType().isVoid()) {
                     return new FlowExecResult(null, null);
@@ -64,6 +58,21 @@ public class NativeMethods {
                 }
             } else
                 throw new InternalException("Native invocation is not supported for non class instances");
+        }
+    }
+
+    private static java.lang.reflect.Method getNativeMethod(Class<?> nativeClass, Method method) {
+        List<Class<?>> paramTypes = new ArrayList<>();
+        if (method.isStatic())
+            paramTypes.add(Klass.class);
+        paramTypes.addAll(NncUtils.multipleOf(Value.class, method.getParameters().size()));
+        paramTypes.add(CallContext.class);
+        try {
+            return ReflectionUtils.getMethod(nativeClass, method.getNativeName(), paramTypes);
+        }
+        catch (Exception e) {
+            logger.warn("Cannot find native method for method " + method + " using native name '" + method.getNativeName() + "'");
+            return ReflectionUtils.getMethod(nativeClass, method.getName(), paramTypes);
         }
     }
 

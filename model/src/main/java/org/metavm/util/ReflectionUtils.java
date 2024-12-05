@@ -54,7 +54,7 @@ public class ReflectionUtils {
         INTERNAL_NAME_2_PRIMITIVE_CLASS = Collections.unmodifiableMap(internalName2PrimClass);
     }
 
-    public static final Map<Class<?>, Class<?>> PRIMITIVE_BOXING_MAP = Map.of(
+    public static final Map<Class<?>, Class<?>> primitive2wrapper = Map.of(
             byte.class, Byte.class,
             short.class, Short.class,
             int.class, Integer.class,
@@ -66,7 +66,7 @@ public class ReflectionUtils {
             void.class, Void.class
     );
 
-    public static final Map<Class<?>, Class<?>> PRIMITIVE_UNBOXING_MAP = Map.of(
+    public static final Map<Class<?>, Class<?>> wrapper2primitive = Map.of(
             Byte.class, byte.class,
             Short.class, short.class,
             Integer.class, int.class,
@@ -104,7 +104,7 @@ public class ReflectionUtils {
 
     public static Type getBoxedType(Type type) {
         if (type instanceof Class<?> klass) {
-            return getBoxedClass(klass);
+            return getWrapperClass(klass);
         }
         return type;
     }
@@ -113,9 +113,9 @@ public class ReflectionUtils {
         NncUtils.requireTrue(field.getDeclaringClass().isAssignableFrom(klass));
     }
 
-    public static Class<?> getBoxedClass(Class<?> klass) {
-        if (PRIMITIVE_BOXING_MAP.containsKey(klass)) {
-            return PRIMITIVE_BOXING_MAP.get(klass);
+    public static Class<?> getWrapperClass(Class<?> klass) {
+        if (primitive2wrapper.containsKey(klass)) {
+            return primitive2wrapper.get(klass);
         }
         return klass;
     }
@@ -129,7 +129,7 @@ public class ReflectionUtils {
     }
 
     public static boolean isPrimitiveBoxClassName(String name) {
-        return NncUtils.anyMatch(PRIMITIVE_UNBOXING_MAP.keySet(), k -> k.getName().equals(name));
+        return NncUtils.anyMatch(wrapper2primitive.keySet(), k -> k.getName().equals(name));
     }
 
     public static String getMethodQualifiedSignature(Method method) {
@@ -337,7 +337,7 @@ public class ReflectionUtils {
     }
 
     public static boolean isPrimitiveType(Class<?> klass) {
-        return klass.isPrimitive() || PRIMITIVE_UNBOXING_MAP.containsKey(klass);
+        return klass.isPrimitive() || wrapper2primitive.containsKey(klass);
     }
 
     public static Class<?> unbox(Class<?> klass) {
@@ -345,13 +345,13 @@ public class ReflectionUtils {
             return klass;
         }
         return NncUtils.requireNonNull(
-                PRIMITIVE_UNBOXING_MAP.get(klass),
+                wrapper2primitive.get(klass),
                 "klass '" + klass + "' is not a primitive type"
         );
     }
 
     public static boolean isPrimitiveWrapper(Class<?> klass) {
-        return PRIMITIVE_UNBOXING_MAP.containsKey(klass);
+        return wrapper2primitive.containsKey(klass);
     }
 
     public static String getMethodQualifiedName(Method method) {

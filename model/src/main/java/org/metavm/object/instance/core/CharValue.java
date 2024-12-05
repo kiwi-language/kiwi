@@ -1,7 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.object.type.PrimitiveType;
-import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
@@ -10,8 +9,7 @@ public class CharValue extends PrimitiveValue {
 
     public final char value;
 
-    public CharValue(char value, PrimitiveType type) {
-        super(type);
+    public CharValue(char value) {
         this.value = value;
     }
 
@@ -19,8 +17,13 @@ public class CharValue extends PrimitiveValue {
         return value;
     }
 
+    @Override
+    public PrimitiveType getType() {
+        return PrimitiveType.charType;
+    }
+
     public DoubleValue toDouble() {
-        return new DoubleValue(value, Types.getDoubleType());
+        return new DoubleValue(value);
     }
 
     public BooleanValue gt(CharValue that) {
@@ -55,4 +58,8 @@ public class CharValue extends PrimitiveValue {
         return visitor.visitCharValue(this);
     }
 
+    @Override
+    public Value toStackValue() {
+        return new IntValue(value);
+    }
 }

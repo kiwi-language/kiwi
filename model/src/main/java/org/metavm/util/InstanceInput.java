@@ -123,16 +123,16 @@ public class InstanceInput extends MvInput {
     public Value readValue() {
         var wireType = read();
         return switch (wireType) {
-            case WireTypes.NULL -> new NullValue(Types.getNullType());
-            case WireTypes.DOUBLE -> new DoubleValue(readDouble(), Types.getDoubleType());
-            case WireTypes.FLOAT -> new FloatValue(readFloat(), Types.getFloatType());
-            case WireTypes.STRING -> new StringValue(readUTF(), Types.getStringType());
-            case WireTypes.LONG -> new LongValue(readLong(), Types.getLongType());
-            case WireTypes.INT -> new IntValue(readInt(), Types.getIntType());
-            case WireTypes.CHAR -> new CharValue(readChar(), Types.getCharType());
-            case WireTypes.BOOLEAN -> new BooleanValue(readBoolean(), Types.getBooleanType());
-            case WireTypes.TIME -> new TimeValue(readLong(), Types.getTimeType());
-            case WireTypes.PASSWORD -> new PasswordValue(readUTF(), Types.getPasswordType());
+            case WireTypes.NULL -> new NullValue();
+            case WireTypes.DOUBLE -> new DoubleValue(readDouble());
+            case WireTypes.FLOAT -> new FloatValue(readFloat());
+            case WireTypes.STRING -> new StringValue(readUTF());
+            case WireTypes.LONG -> new LongValue(readLong());
+            case WireTypes.INT -> new IntValue(readInt());
+            case WireTypes.CHAR -> new CharValue(readChar());
+            case WireTypes.BOOLEAN -> new BooleanValue(readBoolean());
+            case WireTypes.TIME -> new TimeValue(readLong());
+            case WireTypes.PASSWORD -> new PasswordValue(readUTF());
             case WireTypes.FLAGGED_REFERENCE -> readFlaggedReference();
             case WireTypes.REFERENCE -> readReference();
             case WireTypes.REDIRECTING_REFERENCE -> readRedirectingReference();

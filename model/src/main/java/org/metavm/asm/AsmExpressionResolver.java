@@ -269,9 +269,9 @@ class AsmExpressionResolver {
             else
                 value = Instances.doubleInstance(Double.parseDouble(text));
         } else if (literal.BOOL_LITERAL() != null)
-            value = Instances.booleanInstance(Boolean.parseBoolean(text));
+            value = Instances.intInstance(Boolean.parseBoolean(text));
         else if (literal.CHAR_LITERAL() != null)
-            value = Instances.charInstance(Expressions.deEscapeChar(text));
+            value = Instances.intInstance(Expressions.deEscapeChar(text));
         else if(literal.STRING_LITERAL() != null)
             value = Instances.stringInstance(Expressions.deEscapeDoubleQuoted(text));
         else if(literal.NULL() != null)
@@ -332,11 +332,11 @@ class AsmExpressionResolver {
                 yield type;
             }
             case AssemblyParser.AND -> {
-                Nodes.and(code);
+                Nodes.intBitAnd(code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.OR -> {
-                Nodes.or(code);
+                Nodes.intBitOr(code);
                 yield Types.getBooleanType();
             }
             case AssemblyParser.MOD -> {
@@ -480,7 +480,7 @@ class AsmExpressionResolver {
                                     AssemblyParser.ExpressionContext second) {
         var i = callable.nextVariableIndex();
         resolve0(condition);
-        var ifNot = Nodes.ifNot(null, code);
+        var ifNot = Nodes.ifEq(null, code);
         var type1 = resolve0(first);
         Nodes.store(i, code);
         var g = Nodes.goto_(code);
@@ -519,7 +519,7 @@ class AsmExpressionResolver {
                 yield type;
             }
             case AssemblyParser.BANG -> {
-                Nodes.not(code);
+                Nodes.ne(code);
                 yield Types.getBooleanType();
             }
             default -> throw new IllegalStateException("Unrecognized operator: " + prefix.getText());

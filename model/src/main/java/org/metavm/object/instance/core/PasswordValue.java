@@ -10,14 +10,18 @@ public class PasswordValue extends PrimitiveValue {
 
     private final String value;
 
-    public PasswordValue(String value, PrimitiveType type) {
-        super(type);
+    public PasswordValue(String value) {
         this.value = value;
     }
 
     @Override
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public PrimitiveType getType() {
+        return PrimitiveType.passwordType;
     }
 
     @Override

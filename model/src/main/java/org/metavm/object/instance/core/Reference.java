@@ -8,7 +8,6 @@ import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.Types;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
@@ -43,7 +42,6 @@ public class Reference extends Value {
     private int flags = 0;
 
     public Reference(Instance resolved) {
-        super(resolved.getType());
         this.target = resolved;
         this.id = resolved.tryGetId();
         resolver = () -> {
@@ -52,7 +50,7 @@ public class Reference extends Value {
     }
 
     public Reference(@Nullable Id id, Supplier<Instance> resolver) {
-        super(Types.getAnyType());
+        super();
         this.id = id;
         this.resolver = resolver;
     }
