@@ -14,7 +14,20 @@ public class Lab {
     );
 
     public static void main(String[] args) {
-        generateAsmTypeCastCode();
+        switch (args.length) {
+            default:
+                System.out.println(2);
+            case 1:
+                System.out.println(1);
+        }
+    }
+
+    public static void test(Object o) {
+        switch (o) {
+            case String s -> System.out.println(0);
+            case Integer i -> System.out.println(1);
+            default -> System.out.println(2);
+        }
     }
 
     private static void generateTypeCastCode() {

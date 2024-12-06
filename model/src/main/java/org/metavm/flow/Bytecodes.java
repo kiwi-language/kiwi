@@ -120,6 +120,7 @@ public class Bytecodes {
     public static final int INT_TO_SHORT = 131;
     public static final int INT_TO_BYTE = 132;
     public static final int INT_TO_CHAR = 133;
+    public static final int TABLESWITCH = 134;
 
 
     private static final String[] names = new String[256];

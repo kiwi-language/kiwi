@@ -120,4 +120,11 @@ public abstract class MvOutput extends OutputStream {
         writeInt(list.size());
         list.forEach(write);
     }
+
+    public void writeFixedInt(int i) {
+        write(i >> 24 & 0xff);
+        write(i >> 16 & 0xff);
+        write(i >> 8 & 0xff);
+        write(i & 0xff);
+    }
 }

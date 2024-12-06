@@ -108,6 +108,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processUnboxing();
             processFloat();
             processSmallInt();
+            processFallThroughSwitch();
         });
     }
 
@@ -1007,7 +1008,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processTypePatternSwitch() {
         var klassName = "switch_.TypePatternSwitchFoo";
-        callMethod(klassName, "test", List.of());
+        Assert.assertEquals("foo", callMethod(klassName, "test", List.of()));
     }
 
     private void processTypePatternSwitchExpression() {
@@ -1099,6 +1100,11 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals((byte) 0, callMethod(className, "byteArrayGet", List.of(1)));
         Assert.assertEquals(1, callMethod(className, "shortShiftRight", List.of(8, 3)));
         Assert.assertEquals((byte) 0, callMethod(className, "toByte", List.of(1 << 8)));
+    }
+
+    private void processFallThroughSwitch() {
+        var className = "switch_.FallThroughSwitchFoo";
+        Assert.assertEquals(1, callMethod(className, "test", List.of(3)));
     }
 
 }

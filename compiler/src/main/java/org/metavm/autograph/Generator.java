@@ -126,7 +126,6 @@ public class Generator extends VisitorBase {
                 indexFields.add(indexField);
             }
             index.setFields(indexFields);
-            return;
         }
     }
 
@@ -230,7 +229,7 @@ public class Generator extends VisitorBase {
         }
         builder.exitScope();
         builders.pop();
-//        if(method.getName().equals("concatKeys")) {
+//        if(method.getName().equals("test")) {
 //            logger.debug("{}", method.getText());
 //        }
     }
@@ -264,13 +263,13 @@ public class Generator extends VisitorBase {
         if (statement.getBody() != null && statement.getBody().getStatementCount() > 0) {
             var fistStmt = statement.getBody().getStatements()[0];
             if (fistStmt instanceof PsiSwitchLabeledRuleStatement)
-                processLabeledRuleSwitch(statement);
+                processEnhancedSwitch(statement);
             else
-                processClassicSwitch(statement);
+                processLegacySwitch(statement);
         }
     }
 
-    private void processLabeledRuleSwitch(PsiSwitchStatement statement) {
+    private void processEnhancedSwitch(PsiSwitchStatement statement) {
         var valueVar = builder().nextVariableIndex();
         var expr = Objects.requireNonNull(statement.getExpression());
         var psiType = expr.getType();
@@ -279,69 +278,100 @@ public class Generator extends VisitorBase {
         builder().createStore(valueVar);
         var statements = requireNonNull(statement.getBody()).getStatements();
         var gotoNodes = new ArrayList<GotoNode>();
-        List<IfEqNode> lastIfNodes = List.of();
-        GotoNode lastGoto = null;
+        int i = 0;
         for (PsiStatement stmt : statements) {
             var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) stmt;
-            var caseLabelElementList = labeledRuleStmt.getCaseLabelElementList();
-            if (caseLabelElementList == null || caseLabelElementList.getElementCount() == 0)
+            if (labeledRuleStmt.isDefaultCase())
                 continue;
-            List<IfEqNode> ifNodes;
-            if (isTypePatternCase(caseLabelElementList)) {
-                var typeTestPattern = (PsiTypeTestPattern) caseLabelElementList.getElements()[0];
-                var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
-                var patternVar = requireNonNull(typeTestPattern.getPatternVariable());
-                builder().createLoad(valueVar, valueType);
-                builder().createInstanceOf(typeResolver.resolveDeclaration(checkType));
-                ifNodes = List.of(builder().createIfEq(null));
-                builder().createLoad(valueVar, valueType);
-                builder().createStore(builder().getVariableIndex(patternVar));
-            } else {
-                ifNodes = new ArrayList<>();
-                for (var expression : caseLabelElementList.getElements()) {
-                    builder().createLoad(valueVar, valueType);
-                    resolveExpression((PsiExpression) expression);
-                    builder().createCompareEq(psiType);
-                    ifNodes.add(builder().createIfEq(null));
-                }
+            var elements = requireNonNull(labeledRuleStmt.getCaseLabelElementList()).getElements();
+            for (var element : elements) {
+                var ifNode = builder().processCaseElement(element, valueVar, valueType, psiType);
+                builder().createLoadConstant(Instances.intInstance(i++));
+                gotoNodes.add(builder().createGoto(null));
+                ifNode.setTarget(builder().createLabel());
             }
-            if(lastGoto != null) {
-                for (JumpNode lastIfNode : lastIfNodes) {
-                    lastIfNode.setTarget(lastGoto.getSuccessor());
-                }
-            }
-            lastIfNodes = ifNodes;
-            processSwitchCaseBody(labeledRuleStmt.getBody());
-            gotoNodes.add(lastGoto = builder().createGoto(null));
         }
-        var defaultStmt = (PsiSwitchLabeledRuleStatement)
-                NncUtils.findRequired(statements, stmt -> ((PsiSwitchLabeledRuleStatement) stmt).isDefaultCase());
-        var d = builder().createNoop();
-        lastIfNodes.forEach(n -> n.setTarget(d));
-        processSwitchCaseBody(defaultStmt.getBody());
-        var exit = builder().createNoop();
-        gotoNodes.forEach(g -> g.setTarget(exit));
+        builder().createLoadConstant(Instances.intInstance(-1));
+        var tableSwitch = builder().createTableSwitch(0, statements.length - 2);
+        gotoNodes.forEach(g -> g.setTarget(tableSwitch));
+        builder().enterBlock(statement);
+        var gotoNodes2 = new ArrayList<GotoNode>();
+        for (PsiStatement stmt : statements) {
+            var label = (PsiSwitchLabeledRuleStatement) stmt;
+            var target = builder().createLabel();
+            if (label.isDefaultCase())
+                tableSwitch.setDefaultTarget(target);
+            else {
+                var elementCount = requireNonNull(label.getCaseLabelElementList()).getElementCount();
+                for (int j = 0; j < elementCount; j++) {
+                    tableSwitch.addTarget(target);
+                }
+            }
+            processSwitchCaseBody(label.getBody());
+            gotoNodes2.add(builder().createGoto(null));
+        }
+        var exit = builder().createLabel();
+        if (tableSwitch.getDefaultTarget() == tableSwitch)
+            tableSwitch.setDefaultTarget(exit);
+        gotoNodes2.forEach(g -> g.setTarget(exit));
+        builder().exitBlock().connectBreaks(exit);
     }
 
     private void processSwitchCaseBody(PsiElement element) {
         if (element != null) {
             element.accept(this);
-            if (element instanceof PsiExpression bodyExpression) {
-                resolveExpression(bodyExpression);
-                builder().createYieldStore();
-            }
+//            if (element instanceof PsiExpression bodyExpression) {
+//                resolveExpression(bodyExpression);
+//                builder().createYield();
+//            }
         }
     }
 
-    private void processClassicSwitch(PsiSwitchStatement ignored) {
-        throw new UnsupportedOperationException();
+    private void processLegacySwitch(PsiSwitchStatement statement) {
+        var valueVar = builder().nextVariableIndex();
+        var expr = Objects.requireNonNull(statement.getExpression());
+        var psiType = expr.getType();
+        var valueType = typeResolver.resolveDeclaration(psiType);
+        resolveExpression(expr);
+        builder().createStore(valueVar);
+        var statements = requireNonNull(statement.getBody()).getStatements();
+        var gotoNodes = new ArrayList<GotoNode>();
+        var labels = NncUtils.filterByType(List.of(statements), PsiSwitchLabelStatement.class);
+        int i = 0;
+        for (var label : labels) {
+            if (label.isDefaultCase())
+                continue;
+            var elements = Objects.requireNonNull(label.getCaseLabelElementList()).getElements();
+            for (var element : elements) {
+                var ifNode = builder().processCaseElement(element, valueVar, valueType, psiType);
+                builder().createLoadConstant(Instances.intInstance(i++));
+                gotoNodes.add(builder().createGoto(null));
+                ifNode.setTarget(builder().createLabel());
+            }
+        }
+        builder().createLoadConstant(Instances.intInstance(-1));
+        var tableSwitch = builder().createTableSwitch(0, labels.size() - 2);
+        gotoNodes.forEach(g -> g.setTarget(tableSwitch));
+        builder().enterBlock(statement);
+        for (PsiStatement stmt : statements) {
+            if (stmt instanceof PsiSwitchLabelStatement label) {
+                var target = builder().createLabel();
+                if (label.isDefaultCase())
+                    tableSwitch.setDefaultTarget(target);
+                else {
+                    var elementCount = requireNonNull(label.getCaseLabelElementList()).getElementCount();
+                    for (int j = 0; j < elementCount; j++) {
+                        tableSwitch.addTarget(target);
+                    }
+                }
+            } else
+                stmt.accept(this);
+        }
+        var exit = builder().createLabel();
+        if (tableSwitch.getDefaultTarget() == tableSwitch)
+            tableSwitch.setDefaultTarget(exit);
+        builder().exitBlock().connectBreaks(exit);
     }
-
-    private boolean isTypePatternCase(PsiCaseLabelElementList caseLabelElementList) {
-        return caseLabelElementList.getElementCount() == 1 &&
-                caseLabelElementList.getElements()[0] instanceof PsiTypeTestPattern;
-    }
-
 
     private void processParameters(PsiParameterList parameterList, Method method) {
         var i = method.isStatic() ? 0 : (method.isConstructor() && method.getDeclaringType().isEnum() ? 3 : 1);
@@ -586,7 +616,7 @@ public class Generator extends VisitorBase {
     @Override
     public void visitYieldStatement(PsiYieldStatement statement) {
         resolveExpression(statement.getExpression());
-        builder().createYieldStore();
+        builder().createYield();
     }
 
     @Override

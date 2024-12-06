@@ -979,4 +979,9 @@ public class Nodes {
         longToInt(code);
         return intToChar(code);
     }
+
+    public static Node label(Code code) {
+        return new LabelNode(code.nextNodeName("label"), code.getLastNode(), code);
+    }
+
 }

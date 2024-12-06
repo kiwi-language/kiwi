@@ -14,6 +14,8 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
+
 @Slf4j
 public class MethodGenerator {
 
@@ -24,7 +26,7 @@ public class MethodGenerator {
     private final Set<String> generatedNames = new HashSet<>();
     private final TypeNarrower typeNarrower = new TypeNarrower(this::getExpressionType);
     private final Map<String, Integer> varNames = new HashMap<>();
-    private final LinkedList<Integer> yieldVariables = new LinkedList<>();
+    private final LinkedList<SwitchExpression> switchExpressions = new LinkedList<>();
     private final LinkedList<BlockInfo> blocks = new LinkedList<>();
 
     public MethodGenerator(Method method, TypeResolver typeResolver, VisitorBase visitor) {
@@ -131,22 +133,22 @@ public class MethodGenerator {
         );
     }
 
-    int enterSwitchExpression() {
-        var i = nextVariableIndex();
-        yieldVariables.push(i);
-        return i;
+    void enterSwitchExpression() {
+        switchExpressions.push(new SwitchExpression());
     }
 
-    void exitSwitchExpression() {
-        yieldVariables.pop();
+    SwitchExpression exitSwitchExpression() {
+        return switchExpressions.pop();
     }
 
-    int yieldVariable() {
-        return Objects.requireNonNull(yieldVariables.peek());
+    SwitchExpression currentSwitchExpression() {
+        return requireNonNull(switchExpressions.peek());
     }
 
-    void createYieldStore() {
-        createStore(yieldVariable());
+    void createYield() {
+        var switchExpr = currentSwitchExpression();
+//        createStore(switchExpr.yieldVariable);
+        switchExpr.addYield(createGoto(null));
     }
 
     private ScopeInfo currentScope() {
@@ -1184,11 +1186,11 @@ public class MethodGenerator {
     }
 
     public BlockInfo exitBlock() {
-        return Objects.requireNonNull(blocks.pop());
+        return requireNonNull(blocks.pop());
     }
 
     public BlockInfo currentBlock() {
-        return Objects.requireNonNull(blocks.peek());
+        return requireNonNull(blocks.peek());
     }
 
     public Node createFloatToInt() {
@@ -1260,7 +1262,48 @@ public class MethodGenerator {
         return createIntToChar();
     }
 
+    public Node createLabel() {
+        return new LabelNode(nextName("label"), code().getLastNode(), code());
+    }
+
+    public TableSwitchNode createTableSwitch(int low, int high) {
+        return new TableSwitchNode(nextName("tableswitch"), code().getLastNode(), code(), low, high);
+    }
+
+    public JumpNode processCaseElement(PsiCaseLabelElement element, int valueVar, Type valueType, PsiType psiType) {
+        JumpNode ifNode;
+        if (element instanceof PsiTypeTestPattern typeTestPattern) {
+            var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
+            var patternVar = requireNonNull(typeTestPattern.getPatternVariable());
+            createLoad(valueVar, valueType);
+            createInstanceOf(typeResolver.resolveDeclaration(checkType));
+            ifNode = createIfEq(null);
+            createLoad(valueVar, valueType);
+            createStore(getVariableIndex(patternVar));
+        } else {
+            createLoad(valueVar, valueType);
+            expressionResolver.resolve((PsiExpression) element);
+            createCompareEq(psiType);
+            ifNode = createIfEq(null);
+        }
+        return ifNode;
+    }
+
     private record ScopeInfo(Code code) {
+    }
+
+    static class SwitchExpression {
+
+        private final List<GotoNode> yields = new ArrayList<>();
+
+        void addYield(GotoNode gotoNode) {
+            yields.add(gotoNode);
+        }
+
+        void connectYields(Node exit) {
+            yields.forEach(g -> g.setTarget(exit));
+        }
+
     }
 
 }

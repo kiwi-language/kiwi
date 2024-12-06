@@ -738,4 +738,12 @@ public abstract class ElementVisitor<R> {
     public R visitIntToCharNode(IntToCharNode node) {
         return visitNode(node);
     }
+
+    public R visitTableSwitchNode(TableSwitchNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLabelNode(LabelNode node) {
+        return visitNode(node);
+    }
 }

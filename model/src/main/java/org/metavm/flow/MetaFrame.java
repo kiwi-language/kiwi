@@ -937,6 +937,25 @@ public class MetaFrame implements Frame, CallContext {
                             stack[top++] = requireNonNull(v.resolveObject().getParent(idx)).getReference();
                             pc += 3;
                         }
+                        case Bytecodes.TABLESWITCH ->  {
+                            var v = ((IntValue) stack[--top]).value;
+                            int p = pc + 4 & 0xfffffffc;
+                            int defaultOffset = (bytes[p] & 0xff) << 24 | (bytes[p + 1] & 0xff) << 16
+                                    | (bytes[p + 2] & 0xff) << 8 | bytes[p + 3] & 0xff;
+                            int low = (bytes[p + 4] & 0xff) << 24 | (bytes[p + 5] & 0xff) << 16
+                                    | (bytes[p + 6] & 0xff) << 8 | bytes[p + 7] & 0xff;
+                            int high = (bytes[p + 8] & 0xff) << 24 | (bytes[p + 9] & 0xff) << 16
+                                    | (bytes[p + 10] & 0xff) << 8 | bytes[p + 11] & 0xff;
+                            int offset;
+                            if ( v < low || v > high) {
+                                offset = defaultOffset;
+                            } else {
+                                p = p + 12 + (v - low << 2);
+                                offset = (bytes[p] & 0xff) << 24 | (bytes[p + 1] & 0xff) << 16
+                                        | (bytes[p + 2] & 0xff) << 8 | bytes[p + 3] & 0xff;
+                            }
+                            pc += offset;
+                        }
                         default -> throw new IllegalStateException("Invalid bytecode: " + b);
                     }
                 } catch (Exception e) {

@@ -1098,51 +1098,63 @@ public class ExpressionResolver {
         return methodGenerator.createLambda(lambda, funcInterface);
     }
 
-    private Node resolveSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
-        var y = methodGenerator.enterSwitchExpression();
-        var switchVarIndex = methodGenerator.nextVariableIndex();
-        var value = Objects.requireNonNull(psiSwitchExpression.getExpression());
-        resolve(value, context);
-        methodGenerator.createStore(switchVarIndex);
-        var body = requireNonNull(psiSwitchExpression.getBody());
-        var statements = requireNonNull(body.getStatements());
-        List<IfEqNode> lastIfNodes = List.of();
-        GotoNode lastGoto = null;
+    private Node resolveSwitchExpression(PsiSwitchExpression expression, ResolutionContext context) {
+        if (expression.getBody() != null && expression.getBody().getStatementCount() > 0) {
+            var fistStmt = expression.getBody().getStatements()[0];
+            if (fistStmt instanceof PsiSwitchLabeledRuleStatement)
+                return resolveEnhancedSwitchExpression(expression, context);
+            else
+                return resolveLegacySwitchExpression(expression, context);
+        }
+        throw new InternalException("Encountered an empty switch expression: " + expression.getText());
+    }
+
+    private Node resolveEnhancedSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
+        var valueVar = methodGenerator.nextVariableIndex();
+        var expr = Objects.requireNonNull(psiSwitchExpression.getExpression());
+        var psiType = expr.getType();
+        var valueType = typeResolver.resolveDeclaration(psiType);
+        resolve(expr, context);
+        methodGenerator.createStore(valueVar);
+        var statements = requireNonNull(psiSwitchExpression.getBody()).getStatements();
         var gotoNodes = new ArrayList<GotoNode>();
-        var type = typeResolver.resolveDeclaration(psiSwitchExpression.getType());
-        for (PsiStatement statement : statements) {
-            if (statement instanceof PsiSwitchLabeledRuleStatement labeledRuleStatement) {
-                if(labeledRuleStatement.isDefaultCase())
-                    continue;
-                var caseElementList = requireNonNull(labeledRuleStatement.getCaseLabelElementList());
-                var ifNodes = new ArrayList<IfEqNode>();
-                for (PsiCaseLabelElement element : caseElementList.getElements()) {
-                    ifNodes.add(resolveSwitchCaseLabel(switchVarIndex, value.getType(), element, context));
-                }
-                if(lastGoto != null) {
-                    for (IfEqNode lastIfNode : lastIfNodes) {
-                        lastIfNode.setTarget(lastGoto.getSuccessor());
-                    }
-                }
-                lastIfNodes = ifNodes;
-                var caseBody = requireNonNull(labeledRuleStatement.getBody());
-                processSwitchCaseBody(caseBody, context);
-                var lastNode = Objects.requireNonNull(methodGenerator.code().getLastNode());
-                if(lastNode.isExit())
-                    lastGoto = null;
-                else
-                    gotoNodes.add(lastGoto = methodGenerator.createGoto(null));
+        int i = 0;
+        for (PsiStatement stmt : statements) {
+            var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) stmt;
+            if (labeledRuleStmt.isDefaultCase())
+                continue;
+            var elements = requireNonNull(labeledRuleStmt.getCaseLabelElementList()).getElements();
+            for (var element : elements) {
+                var ifNode = methodGenerator.processCaseElement(element, valueVar, valueType, psiType);
+                methodGenerator.createLoadConstant(Instances.intInstance(i++));
+                gotoNodes.add(methodGenerator.createGoto(null));
+                ifNode.setTarget(methodGenerator.createLabel());
             }
         }
-        var defaultStmt = (PsiSwitchLabeledRuleStatement) NncUtils.findRequired(statements,
-                stmt -> stmt instanceof PsiSwitchLabeledRuleStatement ruleStmt && ruleStmt.isDefaultCase());
-        var defaultCase = methodGenerator.createNoop();
-        lastIfNodes.forEach(n -> n.setTarget(defaultCase));
-        processSwitchCaseBody(defaultStmt.getBody(), context);
-        var joinNode = methodGenerator.createNoop();
-        gotoNodes.forEach(g -> g.setTarget(joinNode));
-        methodGenerator.exitSwitchExpression();
-        return methodGenerator.createLoad(y, type);
+        methodGenerator.createLoadConstant(Instances.intInstance(-1));
+        var tableSwitch = methodGenerator.createTableSwitch(0, statements.length - 2);
+        gotoNodes.forEach(g -> g.setTarget(tableSwitch));
+        methodGenerator.enterSwitchExpression();
+        for (PsiStatement stmt : statements) {
+            var label = (PsiSwitchLabeledRuleStatement) stmt;
+            var target = methodGenerator.createLabel();
+            if (label.isDefaultCase())
+                tableSwitch.setDefaultTarget(target);
+            else {
+                var elementCount = requireNonNull(label.getCaseLabelElementList()).getElementCount();
+                for (int j = 0; j < elementCount; j++) {
+                    tableSwitch.addTarget(target);
+                }
+            }
+            processSwitchCaseBody(label.getBody(), context);
+        }
+        assert tableSwitch.getDefaultTarget() != tableSwitch;
+        methodGenerator.exitSwitchExpression().connectYields(methodGenerator.createLabel());
+        return tableSwitch;
+    }
+
+    private Node resolveLegacySwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
+        throw new UnsupportedOperationException();
     }
 
     private IfEqNode resolveSwitchCaseLabel(int switchVarIndex, PsiType switchVarType, PsiElement label, ResolutionContext context) {
@@ -1169,7 +1181,7 @@ public class ExpressionResolver {
     private void processSwitchCaseBody(PsiElement caseBody, ResolutionContext context) {
         if (caseBody instanceof PsiExpressionStatement exprStmt) {
             resolve(exprStmt.getExpression(), context);
-            methodGenerator.createYieldStore();
+            methodGenerator.createYield();
         }
         else
             caseBody.accept(visitor);

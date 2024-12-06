@@ -1,20 +1,20 @@
 package switch_;
 
-import org.metavm.api.lang.Lang;
-
 public class TypePatternSwitchFoo {
 
-    public static void test() {
+    public static String test() {
         var foo = new Foo("foo");
-        print(foo);
+        return print(foo);
     }
 
-    public static void print(Object o) {
+    public static String print(Object o) {
+        String name;
         switch(o) {
-            case Foo foo -> Lang.print(foo.name);
-            case Bar bar -> Lang.print(bar.code);
-            default -> Lang.print("Invalid object");
+            case Foo foo -> name = foo.name;
+            case Bar bar -> name = bar.code;
+            default -> name = "Invalid object";
         }
+        return name;
     }
 
     public record Foo(String name) {}
