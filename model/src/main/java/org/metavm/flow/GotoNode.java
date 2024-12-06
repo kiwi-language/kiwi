@@ -36,7 +36,7 @@ public class GotoNode extends JumpNode {
     @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.GOTO);
-        output.writeShort(getTarget().getOffset());
+        output.writeShort(getTarget().getOffset() - getOffset());
     }
 
     @Override

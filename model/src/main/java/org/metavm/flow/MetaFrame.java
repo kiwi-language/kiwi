@@ -443,7 +443,6 @@ public class MetaFrame implements Frame, CallContext {
                             stack[top++] = NncUtils.orElse(result, new NullValue());
                             pc += 3;
                         }
-                        case Bytecodes.GOTO -> pc = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                         case Bytecodes.TARGET, Bytecodes.NOOP -> pc++;
                         case Bytecodes.NON_NULL -> {
                             var inst = stack[top - 1];
@@ -463,12 +462,19 @@ public class MetaFrame implements Frame, CallContext {
                             a.setElement(i, a.getType().getElementType().fromStackValue(e));
                             pc++;
                         }
-                        case Bytecodes.IF_NE -> {
-                            if (((IntValue) stack[--top]).value != 0)
-                                pc = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
+                        case Bytecodes.IF_EQ -> {
+                            if (((IntValue) stack[--top]).value == 0)
+                                pc += (short) ((bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff);
                             else
                                 pc += 3;
                         }
+                        case Bytecodes.IF_NE -> {
+                            if (((IntValue) stack[--top]).value != 0)
+                                pc += (short) ((bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff);
+                            else
+                                pc += 3;
+                        }
+                        case Bytecodes.GOTO -> pc += (short) ((bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff);
                         case Bytecodes.INT_ADD -> {
                             var v2 = (IntValue) stack[--top];
                             var v1 = (IntValue) stack[--top];
@@ -853,12 +859,6 @@ public class MetaFrame implements Frame, CallContext {
                             var a = stack[--top].resolveArray();
                             stack[top++] = new IntValue(a.length());
                             pc++;
-                        }
-                        case Bytecodes.IF_EQ -> {
-                            if (((IntValue) stack[--top]).value == 0)
-                                pc = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                            else
-                                pc += 3;
                         }
                         case Bytecodes.STORE -> {
                             var index = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;

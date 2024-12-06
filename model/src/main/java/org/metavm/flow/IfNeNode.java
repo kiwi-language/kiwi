@@ -54,7 +54,7 @@ public class IfNeNode extends JumpNode {
     @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.IF_NE);
-        output.writeShort(getTarget().getOffset());
+        output.writeShort(getTarget().getOffset() - getOffset());
     }
 
     @Override

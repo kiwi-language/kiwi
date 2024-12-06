@@ -52,7 +52,7 @@ public class IfEqNode extends JumpNode {
     @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.IF_EQ);
-        output.writeShort(getTarget().getOffset());
+        output.writeShort(getTarget().getOffset() - getOffset());
     }
 
     @Override
