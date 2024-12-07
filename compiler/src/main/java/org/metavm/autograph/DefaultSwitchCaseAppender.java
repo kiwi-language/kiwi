@@ -25,21 +25,21 @@ public class DefaultSwitchCaseAppender extends SkipDiscardedVisitor {
             var statements = requireNonNull(statement.getBody()).getStatements();
             boolean hasDefault = false;
             for (var stmt : statements) {
-                var labelStmt = (PsiSwitchLabeledRuleStatement) stmt;
-                if (labelStmt.isDefaultCase()) {
-                    hasDefault = true;
-                    break;
+                if(stmt instanceof PsiSwitchLabelStatement labelStmt) {
+                    if (labelStmt.isDefaultCase()) {
+                        hasDefault = true;
+                        break;
+                    }
                 }
             }
             if (!hasDefault) {
+                statement.getBody().addBefore(
+                        TranspileUtils.createStatementFromText("default:"),
+                        null
+                );
                 if (isAllCasesCovered(statement)) {
                     statement.getBody().addBefore(
-                            TranspileUtils.createStatementFromText("default -> throw new IllegalStateException();"),
-                            null
-                    );
-                } else {
-                    statement.getBody().addBefore(
-                            TranspileUtils.createStatementFromText("default -> {}"),
+                            TranspileUtils.createStatementFromText("throw new IllegalStateException(\"Match error\");"),
                             null
                     );
                 }

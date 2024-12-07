@@ -1,9 +1,13 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
 
+import static org.metavm.autograph.TranspileUtils.createStatementFromText;
+
+@Slf4j
 public class NullSwitchCaseAppender extends SkipDiscardedVisitor {
 
     @Override
@@ -20,7 +24,7 @@ public class NullSwitchCaseAppender extends SkipDiscardedVisitor {
 
     private boolean isNullCaseCovered(PsiSwitchBlock switchBlock) {
         for (PsiStatement statement : Objects.requireNonNull(switchBlock.getBody()).getStatements()) {
-            if(statement instanceof PsiSwitchLabeledRuleStatement labeledRuleStmt) {
+            if(statement instanceof PsiSwitchLabelStatement labeledRuleStmt) {
                 if(labeledRuleStmt.isDefaultCase())
                     return true;
                 for (PsiCaseLabelElement element : Objects.requireNonNull(labeledRuleStmt.getCaseLabelElementList()).getElements()) {
@@ -34,10 +38,9 @@ public class NullSwitchCaseAppender extends SkipDiscardedVisitor {
 
     private void processSwitch(PsiSwitchBlock statement) {
         if(TranspileUtils.isEnum(Objects.requireNonNull(statement.getExpression()).getType()) && !isNullCaseCovered(statement)) {
-            Objects.requireNonNull(statement.getBody()).addBefore(
-                    TranspileUtils.createStatementFromText("case null -> throw new NullPointerException();"),
-                    null
-            );
+            var body = Objects.requireNonNull(statement.getBody());
+            body.addBefore(createStatementFromText("case null:"), null);
+            body.addBefore(createStatementFromText("throw new NullPointerException();"), null);
         }
     }
 

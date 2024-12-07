@@ -1,5 +1,6 @@
 package org.metavm.autograph;
 
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiLoopStatement;
 import com.intellij.psi.PsiStatement;
 import lombok.extern.slf4j.Slf4j;
@@ -16,16 +17,16 @@ public class BlockInfo {
 
     private final @Nullable BlockInfo parent;
     private final @Nullable String label;
-    private final PsiStatement statement;
+    private final PsiElement element;
     private final List<GotoNode> breaks = new ArrayList<>();
     private final List<GotoNode> continues = new ArrayList<>();
     private final boolean isLoop;
 
-    public BlockInfo(@Nullable BlockInfo parent, PsiStatement statement) {
+    public BlockInfo(@Nullable BlockInfo parent, PsiElement element) {
         this.parent = parent;
-        this.statement = statement;
-        this.label = TranspileUtils.getLabel(statement);
-        isLoop = statement instanceof PsiLoopStatement;
+        this.element = element;
+        this.label = element instanceof PsiStatement stmt ? TranspileUtils.getLabel(stmt) : null;
+        isLoop = element instanceof PsiLoopStatement;
     }
 
     @Nullable
@@ -82,7 +83,7 @@ public class BlockInfo {
     }
 
     public void printBlocks() {
-        log.debug("{} {}", statement.getClass().getSimpleName(), label);
+        log.debug("{} {}", element.getClass().getSimpleName(), label);
         if(parent != null)
             parent.printBlocks();
     }

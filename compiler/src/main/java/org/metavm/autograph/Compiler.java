@@ -79,6 +79,7 @@ public class Compiler {
                         resolveQnAndActivity(file);
                         file.accept(new VarargsTransformer());
                         resolveQnAndActivity(file);
+                        file.accept(new EnhancedSwitchTransformer());
                         file.accept(new NullSwitchCaseAppender());
                         file.accept(new DefaultSwitchCaseAppender());
                         resolveQnAndActivity(file);

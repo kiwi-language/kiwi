@@ -1181,8 +1181,8 @@ public class MethodGenerator {
         return new NewChildNode(nextName("newchild"), methodRef, code().getLastNode(), code());
     }
 
-    public void enterBlock(PsiStatement statement) {
-        blocks.push(new BlockInfo(blocks.peek(), statement));
+    public void enterBlock(PsiElement element) {
+        blocks.push(new BlockInfo(blocks.peek(), element));
     }
 
     public BlockInfo exitBlock() {
@@ -1287,6 +1287,53 @@ public class MethodGenerator {
             ifNode = createIfEq(null);
         }
         return ifNode;
+    }
+
+    Node processSwitch(PsiSwitchBlock switchBlock) {
+        var valueVar = nextVariableIndex();
+        var expr = Objects.requireNonNull(switchBlock.getExpression());
+        var psiType = expr.getType();
+        var valueType = typeResolver.resolveDeclaration(psiType);
+        expressionResolver.resolve(expr);
+        createStore(valueVar);
+        var statements = requireNonNull(switchBlock.getBody()).getStatements();
+        var gotoNodes = new ArrayList<GotoNode>();
+        var labels = NncUtils.filterByType(List.of(statements), PsiSwitchLabelStatement.class);
+        int i = 0;
+        for (var label : labels) {
+            if (label.isDefaultCase())
+                continue;
+            var elements = Objects.requireNonNull(label.getCaseLabelElementList()).getElements();
+            for (var element : elements) {
+                var ifNode = processCaseElement(element, valueVar, valueType, psiType);
+                createLoadConstant(Instances.intInstance(i++));
+                gotoNodes.add(createGoto(null));
+                ifNode.setTarget(createLabel());
+            }
+        }
+        createLoadConstant(Instances.intInstance(-1));
+        var tableSwitch = createTableSwitch(0, labels.size() - 2);
+        gotoNodes.forEach(g -> g.setTarget(tableSwitch));
+        enterBlock(switchBlock);
+        for (PsiStatement stmt : statements) {
+            if (stmt instanceof PsiSwitchLabelStatement label) {
+                var target = createLabel();
+                if (label.isDefaultCase())
+                    tableSwitch.setDefaultTarget(target);
+                else {
+                    var elementCount = requireNonNull(label.getCaseLabelElementList()).getElementCount();
+                    for (int j = 0; j < elementCount; j++) {
+                        tableSwitch.addTarget(target);
+                    }
+                }
+            } else
+                stmt.accept(expressionResolver.getVisitor());
+        }
+        var exit = createLabel();
+        if (tableSwitch.getDefaultTarget() == tableSwitch)
+            tableSwitch.setDefaultTarget(exit);
+        exitBlock().connectBreaks(exit);
+        return exit;
     }
 
     private record ScopeInfo(Code code) {

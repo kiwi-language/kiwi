@@ -268,6 +268,10 @@ public class ExpressionResolver {
         return typeResolver;
     }
 
+    public VisitorBase getVisitor() {
+        return visitor;
+    }
+
     private boolean isBoolExpression(PsiExpression psiExpression) {
         return psiExpression.getType() == PsiType.BOOLEAN;
     }
@@ -1099,92 +1103,10 @@ public class ExpressionResolver {
     }
 
     private Node resolveSwitchExpression(PsiSwitchExpression expression, ResolutionContext context) {
-        if (expression.getBody() != null && expression.getBody().getStatementCount() > 0) {
-            var fistStmt = expression.getBody().getStatements()[0];
-            if (fistStmt instanceof PsiSwitchLabeledRuleStatement)
-                return resolveEnhancedSwitchExpression(expression, context);
-            else
-                return resolveLegacySwitchExpression(expression, context);
-        }
-        throw new InternalException("Encountered an empty switch expression: " + expression.getText());
-    }
-
-    private Node resolveEnhancedSwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
-        var valueVar = methodGenerator.nextVariableIndex();
-        var expr = Objects.requireNonNull(psiSwitchExpression.getExpression());
-        var psiType = expr.getType();
-        var valueType = typeResolver.resolveDeclaration(psiType);
-        resolve(expr, context);
-        methodGenerator.createStore(valueVar);
-        var statements = requireNonNull(psiSwitchExpression.getBody()).getStatements();
-        var gotoNodes = new ArrayList<GotoNode>();
-        int i = 0;
-        for (PsiStatement stmt : statements) {
-            var labeledRuleStmt = (PsiSwitchLabeledRuleStatement) stmt;
-            if (labeledRuleStmt.isDefaultCase())
-                continue;
-            var elements = requireNonNull(labeledRuleStmt.getCaseLabelElementList()).getElements();
-            for (var element : elements) {
-                var ifNode = methodGenerator.processCaseElement(element, valueVar, valueType, psiType);
-                methodGenerator.createLoadConstant(Instances.intInstance(i++));
-                gotoNodes.add(methodGenerator.createGoto(null));
-                ifNode.setTarget(methodGenerator.createLabel());
-            }
-        }
-        methodGenerator.createLoadConstant(Instances.intInstance(-1));
-        var tableSwitch = methodGenerator.createTableSwitch(0, statements.length - 2);
-        gotoNodes.forEach(g -> g.setTarget(tableSwitch));
         methodGenerator.enterSwitchExpression();
-        for (PsiStatement stmt : statements) {
-            var label = (PsiSwitchLabeledRuleStatement) stmt;
-            var target = methodGenerator.createLabel();
-            if (label.isDefaultCase())
-                tableSwitch.setDefaultTarget(target);
-            else {
-                var elementCount = requireNonNull(label.getCaseLabelElementList()).getElementCount();
-                for (int j = 0; j < elementCount; j++) {
-                    tableSwitch.addTarget(target);
-                }
-            }
-            processSwitchCaseBody(label.getBody(), context);
-        }
-        assert tableSwitch.getDefaultTarget() != tableSwitch;
-        methodGenerator.exitSwitchExpression().connectYields(methodGenerator.createLabel());
-        return tableSwitch;
-    }
-
-    private Node resolveLegacySwitchExpression(PsiSwitchExpression psiSwitchExpression, ResolutionContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    private IfEqNode resolveSwitchCaseLabel(int switchVarIndex, PsiType switchVarType, PsiElement label, ResolutionContext context) {
-        var type = typeResolver.resolveDeclaration(switchVarType);
-        if(label instanceof PsiExpression expression) {
-            methodGenerator.createLoad(switchVarIndex, type);
-            resolve(expression, context);
-            methodGenerator.createCompareEq(switchVarType);
-            return methodGenerator.createIfEq(null);
-        }
-        if(label instanceof PsiTypeTestPattern typeTestPattern) {
-            var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
-           methodGenerator.createLoad(switchVarIndex, type);
-            methodGenerator.createStore(
-                    methodGenerator.getVariableIndex(Objects.requireNonNull(typeTestPattern.getPatternVariable()))
-            );
-            methodGenerator.createLoad(switchVarIndex, type);
-            methodGenerator.createInstanceOf(typeResolver.resolveDeclaration(checkType));
-            return methodGenerator.createIfEq(null);
-        }
-        throw new IllegalArgumentException("Invalid switch case: " + label);
-    }
-
-    private void processSwitchCaseBody(PsiElement caseBody, ResolutionContext context) {
-        if (caseBody instanceof PsiExpressionStatement exprStmt) {
-            resolve(exprStmt.getExpression(), context);
-            methodGenerator.createYield();
-        }
-        else
-            caseBody.accept(visitor);
+        var exit = methodGenerator.processSwitch(expression);
+        methodGenerator.exitSwitchExpression().connectYields(exit);
+        return exit;
     }
 
     private Parameter resolveParameter(PsiParameter psiParameter, Callable callable) {
