@@ -29,10 +29,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.stream.*;
 
 public class NncUtils {
 
@@ -712,6 +709,10 @@ public class NncUtils {
 
     public static List<Long> range(long start, long end) {
         return LongStream.range(start, end).boxed().collect(Collectors.toList());
+    }
+
+    public static List<Integer> range(int start, int end) {
+        return IntStream.range(start, end).boxed().collect(Collectors.toList());
     }
 
     public static <T> List<T> union(Collection<? extends T> coll1, Collection<? extends T> coll2) {

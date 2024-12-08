@@ -33,6 +33,7 @@ public enum StdMethod implements ValueHolderOwner<Method> {
     outputStreamWrite(OutputStream.class, "write", List.of(int.class)),
     objectOutputStreamWriteObject(ObjectOutputStream.class, "writeObject", List.of(Object.class)),
     objectInputStreamReadObject(ObjectInputStream.class, "readObject", List.of()),
+    enumOrdinal(Enum.class, "ordinal", List.of())
 
     ;
 

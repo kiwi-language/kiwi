@@ -229,7 +229,7 @@ public class Generator extends VisitorBase {
         }
         builder.exitScope();
         builders.pop();
-//        if(method.getName().equals("test")) {
+//        if(method.getName().equals("test") && method.getDeclaringType().getName().equals("SparseSwitchFoo")) {
 //            logger.debug("{}", method.getText());
 //        }
     }
@@ -260,7 +260,7 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitSwitchStatement(PsiSwitchStatement statement) {
-        builder().processSwitch(statement);
+        builder().createSwitch(statement);
     }
 
     private void processParameters(PsiParameterList parameterList, Method method) {

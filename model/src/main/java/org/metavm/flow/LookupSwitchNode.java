@@ -2,25 +2,27 @@ package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.ChildEntity;
 import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.ReadWriteArray;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 @Slf4j
-public class TableSwitchNode extends SwitchNode {
+public class LookupSwitchNode extends SwitchNode {
 
-    private final int low;
-    private final int high;
+    @ChildEntity
+    private final ReadWriteArray<Integer> matches = addChild(new ReadWriteArray<>(Integer.class), "matches");
 
-    public TableSwitchNode(@NotNull String name, @Nullable Node previous, @NotNull Code code, int low, int high) {
+    public LookupSwitchNode(@NotNull String name, @Nullable Node previous, @NotNull Code code, List<Integer> matches) {
         super(name, null, previous, code);
-        this.low = low;
-        this.high = high;
+        this.matches.reset(matches);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitTableSwitchNode(this);
+        return visitor.visitLookupSwitch(this);
     }
 
     @Override
@@ -30,14 +32,12 @@ public class TableSwitchNode extends SwitchNode {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("tableswitch");
+        writer.write("lookupswitch");
         writer.indent();
-        writer.writeNewLine("low: " + low);
-        writer.writeNewLine("high: " + high);
         writer.writeNewLine("default: " + defaultTarget.getName());
-        int i = 0;
+        var matchIt = matches.iterator();
         for (Node target : targets) {
-            writer.writeNewLine(i++ + ": " + target.getName());
+            writer.writeNewLine(matchIt.next() + ": " + target.getName());
         }
         writer.unindent();
     }
@@ -49,15 +49,18 @@ public class TableSwitchNode extends SwitchNode {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.TABLE_SWITCH);
+        output.write(Bytecodes.LOOKUP_SWITCH);
         var paddings = calcPaddings();
         for(int i = 0; i < paddings; i++)
             output.write(0);
         var base = getOffset();
         output.writeFixedInt(defaultTarget.getOffset() - base);
-        output.writeFixedInt(low);
-        output.writeFixedInt(high);
-        targets.forEach(t -> output.writeFixedInt(t.getOffset() - base));
+        output.writeFixedInt(matches.size());
+        var matchIt = matches.iterator();
+        targets.forEach(t -> {
+            output.writeFixedInt(matchIt.next());
+            output.writeFixedInt(t.getOffset() - base);
+        });
     }
 
     private int calcPaddings() {
@@ -67,10 +70,7 @@ public class TableSwitchNode extends SwitchNode {
 
     @Override
     public int getLength() {
-        return (targets.size() << 2) + 13 + calcPaddings();
+        return (targets.size() << 3) + 9 + calcPaddings();
     }
 
-    public Node getDefaultTarget() {
-        return defaultTarget;
-    }
 }

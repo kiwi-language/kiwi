@@ -2,9 +2,8 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.entity.StdMethod;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.expression.Expression;
-import org.metavm.expression.TypeNarrower;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
 import org.metavm.util.Instances;
@@ -24,8 +23,6 @@ public class MethodGenerator {
     private final TypeResolver typeResolver;
     private final ExpressionResolver expressionResolver;
     private final Set<String> generatedNames = new HashSet<>();
-    private final TypeNarrower typeNarrower = new TypeNarrower(this::getExpressionType);
-    private final Map<String, Integer> varNames = new HashMap<>();
     private final LinkedList<SwitchExpression> switchExpressions = new LinkedList<>();
     private final LinkedList<BlockInfo> blocks = new LinkedList<>();
 
@@ -81,12 +78,6 @@ public class MethodGenerator {
 
     TryEnterNode createTryEnter() {
         return onNodeCreated(new TryEnterNode(nextName("tryenter"), code().getLastNode(), code()));
-    }
-
-    String nextVarName(String name) {
-        String varName = "__" + name + "__";
-        var count = varNames.compute(varName, (k, v) -> v == null ? 1 : v + 1);
-        return varName + count;
     }
 
     TryExitNode createTryExit() {
@@ -169,19 +160,6 @@ public class MethodGenerator {
         return scopes.pop();
     }
 
-    Type getExpressionType(Expression expression) {
-        if (scopes.isEmpty()) {
-            return expression.getType();
-        } else {
-            var lastNode = code().getLastNode();
-            if (lastNode == null) {
-                return expression.getType();
-            } else {
-                return lastNode.getNextExpressionTypes().getType(expression);
-            }
-        }
-    }
-
     Code code() {
         return currentScope().code;
     }
@@ -218,16 +196,6 @@ public class MethodGenerator {
         return onNodeCreated(
                 new AddElementNode(
                         nextName("arrayadd"),
-                        code().getLastNode(),
-                        code()
-                )
-        );
-    }
-
-    RemoveElementNode createRemoveElement() {
-        return onNodeCreated(
-                new RemoveElementNode(
-                        nextName("arrayremove"),
                         code().getLastNode(),
                         code()
                 )
@@ -358,16 +326,6 @@ public class MethodGenerator {
     public RaiseNode createRaise() {
         return onNodeCreated(new RaiseNode(
                 nextName("raise"),
-                code().getLastNode(), code()
-        ));
-    }
-
-    public PsiMethod getJavaMethod() {
-        return null;
-    }
-
-    public ClearArrayNode createClearArray() {
-        return onNodeCreated(new ClearArrayNode(nextName("arrayclear"),
                 code().getLastNode(), code()
         ));
     }
@@ -1270,70 +1228,138 @@ public class MethodGenerator {
         return new TableSwitchNode(nextName("tableswitch"), code().getLastNode(), code(), low, high);
     }
 
-    public JumpNode processCaseElement(PsiCaseLabelElement element, int valueVar, Type valueType, PsiType psiType) {
+    public LookupSwitchNode createLookupSwitch(List<Integer> matches) {
+        return new LookupSwitchNode(nextName("lookupswitch"), code().getLastNode(), code(), matches);
+    }
+
+    public JumpNode processCase(PsiCaseLabelElement c, int keyVar, Type keyType) {
         JumpNode ifNode;
-        if (element instanceof PsiTypeTestPattern typeTestPattern) {
+        if (c instanceof PsiTypeTestPattern typeTestPattern) {
             var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
             var patternVar = requireNonNull(typeTestPattern.getPatternVariable());
-            createLoad(valueVar, valueType);
+            createLoad(keyVar, keyType);
             createInstanceOf(typeResolver.resolveDeclaration(checkType));
             ifNode = createIfEq(null);
-            createLoad(valueVar, valueType);
+            createLoad(keyVar, keyType);
             createStore(getVariableIndex(patternVar));
         } else {
-            createLoad(valueVar, valueType);
-            expressionResolver.resolve((PsiExpression) element);
-            createCompareEq(psiType);
+            createLoad(keyVar, keyType);
+            expressionResolver.resolve((PsiExpression) c);
+            createRefCompareEq();
             ifNode = createIfEq(null);
         }
         return ifNode;
     }
 
-    Node processSwitch(PsiSwitchBlock switchBlock) {
-        var valueVar = nextVariableIndex();
-        var expr = Objects.requireNonNull(switchBlock.getExpression());
-        var psiType = expr.getType();
-        var valueType = typeResolver.resolveDeclaration(psiType);
-        expressionResolver.resolve(expr);
-        createStore(valueVar);
+    Node createSwitch(PsiSwitchBlock switchBlock) {
+        var keyVar = nextVariableIndex();
+        var keyExpr = Objects.requireNonNull(switchBlock.getExpression());
         var statements = requireNonNull(switchBlock.getBody()).getStatements();
-        var gotoNodes = new ArrayList<GotoNode>();
-        var labels = NncUtils.filterByType(List.of(statements), PsiSwitchLabelStatement.class);
+        var cases = new ArrayList<PsiCaseLabelElement>();
         int i = 0;
-        for (var label : labels) {
-            if (label.isDefaultCase())
-                continue;
-            var elements = Objects.requireNonNull(label.getCaseLabelElementList()).getElements();
-            for (var element : elements) {
-                var ifNode = processCaseElement(element, valueVar, valueType, psiType);
-                createLoadConstant(Instances.intInstance(i++));
-                gotoNodes.add(createGoto(null));
-                ifNode.setTarget(createLabel());
+        for (PsiStatement statement : statements) {
+            if (statement instanceof PsiSwitchLabelStatement label) {
+                var l = label.getCaseLabelElementList();
+                if (l != null) {
+                    for (var c : l.getElements()) {
+                        cases.add(c);
+                        c.putUserData(Keys.CASE_INDEX, i++);
+                    }
+                }
             }
         }
-        createLoadConstant(Instances.intInstance(-1));
-        var tableSwitch = createTableSwitch(0, labels.size() - 2);
-        gotoNodes.forEach(g -> g.setTarget(tableSwitch));
+        var keyType = typeResolver.resolveDeclaration(keyExpr.getType());
+        var matches = getSwitchMatches(cases, keyType);
+        var low = matches.isEmpty() ? 0 :matches.get(0);
+        var high = matches.isEmpty() ? -1 : matches.get(matches.size() - 1);
+        expressionResolver.resolve(keyExpr);
+        createStore(keyVar);
+        createLoadSwitchKey(cases, keyVar, keyType);
+        var switchNode = high - low + 1 == matches.size() ?
+                createTableSwitch(low, high) : createLookupSwitch(matches);
+        var targets = new Node[matches.size()];
         enterBlock(switchBlock);
         for (PsiStatement stmt : statements) {
             if (stmt instanceof PsiSwitchLabelStatement label) {
                 var target = createLabel();
                 if (label.isDefaultCase())
-                    tableSwitch.setDefaultTarget(target);
+                    switchNode.setDefaultTarget(target);
                 else {
-                    var elementCount = requireNonNull(label.getCaseLabelElementList()).getElementCount();
-                    for (int j = 0; j < elementCount; j++) {
-                        tableSwitch.addTarget(target);
+                    var elements = requireNonNull(label.getCaseLabelElementList()).getElements();
+                    for (var element : elements) {
+                        var match = getSwitchMatch(element, keyType);
+                        var idx = Collections.binarySearch(matches, match);
+                        targets[idx] = target;
                     }
                 }
             } else
                 stmt.accept(expressionResolver.getVisitor());
         }
         var exit = createLabel();
-        if (tableSwitch.getDefaultTarget() == tableSwitch)
-            tableSwitch.setDefaultTarget(exit);
+        if (switchNode.getDefaultTarget() == switchNode)
+            switchNode.setDefaultTarget(exit);
+        for (int j = 0; j < targets.length; j++) {
+            if (targets[j] == null)
+                targets[j] = switchNode.getDefaultTarget();
+        }
+        switchNode.setTargets(List.of(targets));
         exitBlock().connectBreaks(exit);
         return exit;
+    }
+
+    private void createLoadSwitchKey(List<PsiCaseLabelElement> cases, int keyVar, Type keyType) {
+        var typePatternPresent = NncUtils.anyMatch(cases, e -> e instanceof PsiTypeTestPattern);
+        if (keyType.isInt() && !typePatternPresent) {
+            createLoad(keyVar, keyType);
+        } else if(keyType instanceof ClassType classType && classType.isEnum() && !typePatternPresent) {
+            var nullMatched = NncUtils.anyMatch(cases,
+                  e -> e instanceof PsiLiteralExpression l && l.getValue() == null);
+            createLoad(keyVar, keyType);
+            if (nullMatched) {
+                createLoadConstant(Instances.nullInstance());
+                createRefCompareEq();
+                var ifNode = createIfEq(null);
+                createLoadConstant(Instances.intInstance(-1));
+                var g = createGoto(null);
+                ifNode.setTarget(createLoad(keyVar, keyType));
+                createMethodCall(classType.getMethod(StdMethod.enumOrdinal.get()));
+                g.setTarget(createLabel());
+            } else {
+                createNonNull();
+                createMethodCall(classType.getMethod(StdMethod.enumOrdinal.get()));
+            }
+        } else {
+            var gotoNodes = new ArrayList<GotoNode>();
+            int i = 0;
+            for (var c : cases) {
+                var ifNode = processCase(c, keyVar, keyType);
+                createLoadConstant(Instances.intInstance(i++));
+                gotoNodes.add(createGoto(null));
+                ifNode.setTarget(createLabel());
+            }
+            createLoadConstant(Instances.intInstance(-1));
+            var l = createLabel();
+            gotoNodes.forEach(g -> g.setTarget(l));
+        }
+    }
+
+    private int getSwitchMatch(PsiCaseLabelElement c, Type keyType) {
+        if (c instanceof PsiReferenceExpression refExr && refExr.resolve() instanceof PsiEnumConstant ec)
+            return Objects.requireNonNull(ec.getUserData(Keys.ENUM_CONSTANT_DEF)).getOrdinal();
+        else if (c instanceof PsiExpression expr && TranspileUtils.isIntType(expr.getType()))
+            return (int) TranspileUtils.getConstant((PsiExpression) c);
+        else if (keyType.isEnum() && c instanceof PsiLiteralExpression l && l.getValue() == null)
+            return -1;
+        else
+            return requireNonNull(c.getUserData(Keys.CASE_INDEX));
+    }
+
+    private List<Integer> getSwitchMatches(List<PsiCaseLabelElement> cases, Type keyType) {
+        var matches = NncUtils.map(cases, c -> getSwitchMatch(c, keyType));
+        matches.sort(null);
+        var low = matches.get(0);
+        var high = matches.get(matches.size() - 1);
+        return matches.size() < high - low + 1 >> 1 ? matches : NncUtils.range(low, high + 1);
     }
 
     private record ScopeInfo(Code code) {

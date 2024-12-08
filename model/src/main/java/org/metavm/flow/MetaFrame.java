@@ -62,7 +62,7 @@ public class MetaFrame implements Frame, CallContext {
 
     public static final int MAX_STEPS = 100000;
 
-    @SuppressWarnings({"DuplicatedCode", "UseCompareMethod"})
+    @SuppressWarnings({"DuplicatedCode", "UseCompareMethod", "ExtractMethodRecommender"})
     public @NotNull FlowExecResult execute(Code code,
                                            Value[] arguments,
                                            TypeMetadata constantPool,
@@ -937,8 +937,8 @@ public class MetaFrame implements Frame, CallContext {
                             stack[top++] = requireNonNull(v.resolveObject().getParent(idx)).getReference();
                             pc += 3;
                         }
-                        case Bytecodes.TABLESWITCH ->  {
-                            var v = ((IntValue) stack[--top]).value;
+                        case Bytecodes.TABLE_SWITCH ->  {
+                            var k = ((IntValue) stack[--top]).value;
                             int p = pc + 4 & 0xfffffffc;
                             int defaultOffset = (bytes[p] & 0xff) << 24 | (bytes[p + 1] & 0xff) << 16
                                     | (bytes[p + 2] & 0xff) << 8 | bytes[p + 3] & 0xff;
@@ -947,12 +947,38 @@ public class MetaFrame implements Frame, CallContext {
                             int high = (bytes[p + 8] & 0xff) << 24 | (bytes[p + 9] & 0xff) << 16
                                     | (bytes[p + 10] & 0xff) << 8 | bytes[p + 11] & 0xff;
                             int offset;
-                            if ( v < low || v > high) {
+                            if (k < low || k > high) {
                                 offset = defaultOffset;
                             } else {
-                                p = p + 12 + (v - low << 2);
+                                p = p + 12 + (k - low << 2);
                                 offset = (bytes[p] & 0xff) << 24 | (bytes[p + 1] & 0xff) << 16
                                         | (bytes[p + 2] & 0xff) << 8 | bytes[p + 3] & 0xff;
+                            }
+                            pc += offset;
+                        }
+                        case Bytecodes.LOOKUP_SWITCH ->  {
+                            var k = ((IntValue) stack[--top]).value;
+                            int p = pc + 4 & 0xfffffffc;
+                            int offset = (bytes[p] & 0xff) << 24 | (bytes[p + 1] & 0xff) << 16
+                                    | (bytes[p + 2] & 0xff) << 8 | bytes[p + 3] & 0xff;
+                            int l = 0;
+                            int h = (bytes[p + 4] & 0xff) << 24 | (bytes[p + 5] & 0xff) << 16
+                                    | (bytes[p + 6] & 0xff) << 8 | bytes[p + 7] & 0xff;
+                            p += 8;
+                            while (l < h) {
+                                int m = l + h >> 1;
+                                int p1 = p + (m << 3);
+                                int match = (bytes[p1] & 0xff) << 24 | (bytes[p1 + 1] & 0xff) << 16
+                                        | (bytes[p1 + 2] & 0xff) << 8 | bytes[p1 + 3] & 0xff;
+                                if (k == match) {
+                                    offset = (bytes[p1 + 4] & 0xff) << 24 | (bytes[p1 + 5] & 0xff) << 16
+                                            | (bytes[p1 + 6] & 0xff) << 8 | bytes[p1 + 7] & 0xff;
+                                    break;
+                                }
+                                else if (k < match)
+                                    h = m;
+                                else
+                                    l = m + 1;
                             }
                             pc += offset;
                         }

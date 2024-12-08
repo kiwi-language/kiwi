@@ -746,4 +746,8 @@ public abstract class ElementVisitor<R> {
     public R visitLabelNode(LabelNode node) {
         return visitNode(node);
     }
+
+    public R visitLookupSwitch(LookupSwitchNode node) {
+        return visitNode(node);
+    }
 }

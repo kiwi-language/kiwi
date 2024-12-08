@@ -89,6 +89,8 @@ public class Keys {
 
     public static final Key<Integer> NAX_STACK = Keys.createKey("MaxStack");
 
+    public static final Key<Integer> CASE_INDEX = Keys.createKey("CaseIndex");
+
     public static Set<Key<?>> getKeys() {
         return new HashSet<>(KEYS);
     }

@@ -109,6 +109,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processFloat();
             processSmallInt();
             processFallThroughSwitch();
+            processSparseSwitch();
+            processStringSwitch();
         });
     }
 
@@ -1105,6 +1107,19 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processFallThroughSwitch() {
         var className = "switch_.FallThroughSwitchFoo";
         Assert.assertEquals(1, callMethod(className, "test", List.of(3)));
+    }
+
+    private void processSparseSwitch() {
+        var className = "switch_.SparseSwitchFoo";
+        Assert.assertEquals(1, callMethod(className, "test", List.of(1)));
+        Assert.assertEquals(3, callMethod(className, "test", List.of(3)));
+        Assert.assertEquals(Integer.MAX_VALUE, callMethod(className, "test", List.of(Integer.MAX_VALUE)));
+        Assert.assertEquals(-1, callMethod(className, "test", List.of(10)));
+    }
+
+    private void processStringSwitch() {
+        var className = "switch_.StringSwitchFoo";
+        Assert.assertEquals(3, callMethod(className, "test", List.of("MetaVM")));
     }
 
 }

@@ -1638,7 +1638,17 @@ public class TranspileUtils {
     }
 
     public static boolean isIntType(PsiType type) {
-        return type instanceof PsiPrimitiveType primitiveType && primitiveType.getKind() == JvmPrimitiveTypeKind.INT;
+        return type == PsiType.INT;
+    }
+
+    public static Object getConstant(PsiExpression expression) {
+        return switch (expression) {
+            case PsiLiteralExpression literalExpression -> literalExpression.getValue();
+            case PsiReferenceExpression referenceExpression
+                    when referenceExpression.resolve() instanceof PsiField field && field.getInitializer() != null ->
+                getConstant(field.getInitializer());
+            default -> throw new IllegalStateException("Cannot get constant from expression: " + expression);
+        };
     }
 
     public static boolean isLongType(PsiType type) {
