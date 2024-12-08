@@ -2,7 +2,6 @@ package org.metavm.autograph;
 
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.lang.jvm.annotation.JvmAnnotationConstantValue;
-import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
@@ -250,12 +249,11 @@ public class TranspileUtils {
     }
 
     public static boolean isVoidType(PsiType type) {
-        if (type instanceof PsiPrimitiveType primitiveType) {
-            //noinspection UnstableApiUsage
-            return primitiveType.getKind() == JvmPrimitiveTypeKind.VOID;
-        } else {
-            return false;
-        }
+        return type == PsiType.VOID;
+    }
+
+    public static boolean isNullType(PsiType type) {
+        return type.equals(PsiType.NULL);
     }
 
     public static PsiClass eraseClass(PsiClass klass) {
@@ -616,24 +614,19 @@ public class TranspileUtils {
     }
 
     public static boolean isShortType(PsiType type) {
-        if (type instanceof PsiPrimitiveType primitiveType)
-            return primitiveType.getKind() == JvmPrimitiveTypeKind.SHORT;
-        else
-            return false;
+        return type.equals(PsiType.SHORT);
     }
 
     public static boolean isByteType(PsiType type) {
-        if (type instanceof PsiPrimitiveType primitiveType)
-            return primitiveType.getKind() == JvmPrimitiveTypeKind.BYTE;
-        else
-            return false;
+        return type.equals(PsiType.BYTE);
     }
 
     public static boolean isCharType(PsiType type) {
-        if (type instanceof PsiPrimitiveType primitiveType)
-            return primitiveType.getKind() == JvmPrimitiveTypeKind.CHAR;
-        else
-            return false;
+        return type.equals(PsiType.CHAR);
+    }
+
+    public static boolean isBooleanType(PsiType type) {
+        return type.equals(PsiType.BOOLEAN);
     }
 
     private static class UpwardsClassVisitor extends JavaElementVisitor {
@@ -1621,24 +1614,18 @@ public class TranspileUtils {
     }
 
     public static boolean isIntegerType(PsiType type) {
-        if (type instanceof PsiPrimitiveType primitiveType) {
-            var kind = primitiveType.getKind();
-            return kind == JvmPrimitiveTypeKind.BYTE || kind == JvmPrimitiveTypeKind.SHORT
-                    || kind == JvmPrimitiveTypeKind.INT || kind == JvmPrimitiveTypeKind.LONG;
-        }
+        if (type instanceof PsiPrimitiveType t)
+            return t.equals(PsiType.BYTE) || t.equals(PsiType.SHORT) || t.equals(PsiType.INT) || t.equals(PsiType.LONG);
         else
             return false;
     }
 
     public static boolean isFloatType(PsiType type) {
-       if (type instanceof PsiPrimitiveType primitiveType)
-           return primitiveType.getKind() == JvmPrimitiveTypeKind.FLOAT;
-       else
-           return false;
+       return type.equals(PsiType.FLOAT);
     }
 
     public static boolean isIntType(PsiType type) {
-        return type == PsiType.INT;
+        return type.equals(PsiType.INT);
     }
 
     public static Object getConstant(PsiExpression expression) {
@@ -1652,11 +1639,11 @@ public class TranspileUtils {
     }
 
     public static boolean isLongType(PsiType type) {
-        return type instanceof PsiPrimitiveType primitiveType && primitiveType.getKind() == JvmPrimitiveTypeKind.LONG;
+        return type.equals(PsiType.LONG);
     }
 
     public static boolean isDoubleType(PsiType type) {
-        return type instanceof PsiPrimitiveType primitiveType && primitiveType.getKind() == JvmPrimitiveTypeKind.DOUBLE;
+        return type.equals(PsiType.DOUBLE);
     }
 
     public static boolean isLongWrapperType(PsiType type) {

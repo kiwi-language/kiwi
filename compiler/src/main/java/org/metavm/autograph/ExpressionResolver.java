@@ -124,105 +124,102 @@ public class ExpressionResolver {
         return methodGenerator.createLoadType(type);
     }
 
-    @SuppressWarnings("UnstableApiUsage")
     private Node resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {
         var operand = Objects.requireNonNull(typeCastExpression.getOperand());
         var sourceType = operand.getType();
         var operandNode = resolve(operand, context);
         var castType = requireNonNull(typeCastExpression.getCastType()).getType();
         if (sourceType instanceof PsiPrimitiveType t1 && castType instanceof PsiPrimitiveType t2) {
-            var kind1 = t1.getKind();
-            var kind2 = t2.getKind();
-            if (kind1 == JvmPrimitiveTypeKind.DOUBLE) {
-                if (kind2 == JvmPrimitiveTypeKind.FLOAT)
+            if (t1.equals(PsiType.DOUBLE)) {
+                if (t2.equals(PsiType.FLOAT))
                     return methodGenerator.createDoubleToFloat();
-                else if (kind2 == JvmPrimitiveTypeKind.LONG)
+                else if (t2.equals(PsiType.LONG))
                     return methodGenerator.createDoubleToLong();
-                else if (kind2 == JvmPrimitiveTypeKind.INT)
+                else if (t2.equals(PsiType.INT))
                     return methodGenerator.createDoubleToInt();
-                else if (kind2 == JvmPrimitiveTypeKind.SHORT)
+                else if (t2.equals(PsiType.SHORT))
                     return methodGenerator.createDoubleToShort();
-                else if (kind2 == JvmPrimitiveTypeKind.BYTE)
+                else if (t2.equals(PsiType.BYTE))
                     return methodGenerator.createDoubleToByte();
-                else if (kind2 == JvmPrimitiveTypeKind.CHAR)
+                else if (t2.equals(PsiType.CHAR))
                     return methodGenerator.createDoubleToChar();
-            } else if (kind1 == JvmPrimitiveTypeKind.FLOAT) {
-                if (kind2 == JvmPrimitiveTypeKind.DOUBLE)
+            } else if (t1.equals(PsiType.FLOAT)) {
+                if (t2.equals(PsiType.DOUBLE))
                     return methodGenerator.createFloatToDouble();
-                else if (kind2 == JvmPrimitiveTypeKind.LONG)
+                else if (t2.equals(PsiType.LONG))
                     return methodGenerator.createFloatToLong();
-                else if (kind2 == JvmPrimitiveTypeKind.INT)
+                else if (t2.equals(PsiType.INT))
                     return methodGenerator.createFloatToInt();
-                else if (kind2 == JvmPrimitiveTypeKind.SHORT)
+                else if (t2.equals(PsiType.SHORT))
                     return methodGenerator.createFloatToShort();
-                else if (kind2 == JvmPrimitiveTypeKind.BYTE)
+                else if (t2.equals(PsiType.BYTE))
                     return methodGenerator.createFloatToByte();
-                else if (kind2 == JvmPrimitiveTypeKind.CHAR)
+                else if (t2.equals(PsiType.CHAR))
                     return methodGenerator.createFloatToChar();
-            } else if (kind1 == JvmPrimitiveTypeKind.LONG) {
-                if (kind2 == JvmPrimitiveTypeKind.DOUBLE)
+            } else if (t1.equals(PsiType.LONG)) {
+                if (t2.equals(PsiType.DOUBLE))
                     return methodGenerator.createLongToDouble();
-                else if (kind2 == JvmPrimitiveTypeKind.FLOAT)
+                else if (t2.equals(PsiType.FLOAT))
                     return methodGenerator.createLongToFloat();
-                else if (kind2 == JvmPrimitiveTypeKind.INT)
+                else if (t2.equals(PsiType.INT))
                     return methodGenerator.createLongToInt();
-                else if (kind2 == JvmPrimitiveTypeKind.SHORT)
+                else if (t2.equals(PsiType.SHORT))
                     return methodGenerator.createLongToShort();
-                else if (kind2 == JvmPrimitiveTypeKind.BYTE)
+                else if (t2.equals(PsiType.BYTE))
                     return methodGenerator.createLongToByte();
-                else if (kind2 == JvmPrimitiveTypeKind.CHAR)
+                else if (t2.equals(PsiType.CHAR))
                     return methodGenerator.createLongToChar();
-            } else if (kind1 == JvmPrimitiveTypeKind.INT) {
-                if (kind2 == JvmPrimitiveTypeKind.DOUBLE)
+            } else if (t1.equals(PsiType.INT)) {
+                if (t2.equals(PsiType.DOUBLE))
                     return methodGenerator.createIntToDouble();
-                else if (kind2 == JvmPrimitiveTypeKind.FLOAT)
+                else if (t2.equals(PsiType.FLOAT))
                     return methodGenerator.createIntToFloat();
-                else if (kind2 == JvmPrimitiveTypeKind.LONG)
+                else if (t2.equals(PsiType.LONG))
                     return methodGenerator.createIntToLong();
-                else if (kind2 == JvmPrimitiveTypeKind.SHORT)
+                else if (t2.equals(PsiType.SHORT))
                     return methodGenerator.createIntToShort();
-                else if (kind2 == JvmPrimitiveTypeKind.BYTE)
+                else if (t2.equals(PsiType.BYTE))
                     return methodGenerator.createIntToByte();
-                else if (kind2 == JvmPrimitiveTypeKind.CHAR)
+                else if (t2.equals(PsiType.CHAR))
                     return methodGenerator.createIntToChar();
-            } else if (kind1 == JvmPrimitiveTypeKind.SHORT) {
-                if (kind2 == JvmPrimitiveTypeKind.DOUBLE)
+            } else if (t1.equals(PsiType.SHORT)) {
+                if (t2.equals(PsiType.DOUBLE))
                     return methodGenerator.createIntToDouble();
-                else if (kind2 == JvmPrimitiveTypeKind.FLOAT)
+                else if (t2.equals(PsiType.FLOAT))
                     return methodGenerator.createIntToFloat();
-                else if (kind2 == JvmPrimitiveTypeKind.LONG)
+                else if (t2.equals(PsiType.LONG))
                     return methodGenerator.createIntToLong();
-                else if (kind2 == JvmPrimitiveTypeKind.INT)
+                else if (t2.equals(PsiType.INT))
                     return operandNode;
-                else if (kind2 == JvmPrimitiveTypeKind.BYTE)
+                else if (t2.equals(PsiType.BYTE))
                     return methodGenerator.createIntToByte();
-                else if (kind2 == JvmPrimitiveTypeKind.CHAR)
+                else if (t2.equals(PsiType.CHAR))
                     return methodGenerator.createIntToChar();
-            } else if (kind1 == JvmPrimitiveTypeKind.BYTE) {
-                if (kind2 == JvmPrimitiveTypeKind.DOUBLE)
+            } else if (t1.equals(PsiType.BYTE)) {
+                if (t2.equals(PsiType.DOUBLE))
                     return methodGenerator.createIntToDouble();
-                else if (kind2 == JvmPrimitiveTypeKind.FLOAT)
+                else if (t2.equals(PsiType.FLOAT))
                     return methodGenerator.createIntToFloat();
-                else if (kind2 == JvmPrimitiveTypeKind.LONG)
+                else if (t2.equals(PsiType.LONG))
                     return methodGenerator.createIntToLong();
-                else if (kind2 == JvmPrimitiveTypeKind.INT)
+                else if (t2.equals(PsiType.INT))
                     return operandNode;
-                else if (kind2 == JvmPrimitiveTypeKind.SHORT)
+                else if (t2.equals(PsiType.SHORT))
                     return methodGenerator.createIntToShort();
-                else if (kind2 == JvmPrimitiveTypeKind.CHAR)
+                else if (t2.equals(PsiType.CHAR))
                     return methodGenerator.createIntToChar();
-            } else if (kind1 == JvmPrimitiveTypeKind.CHAR) {
-                if (kind2 == JvmPrimitiveTypeKind.DOUBLE)
+            } else if (t1.equals(PsiType.CHAR)) {
+                if (t2.equals(PsiType.DOUBLE))
                     return methodGenerator.createIntToDouble();
-                else if (kind2 == JvmPrimitiveTypeKind.FLOAT)
+                else if (t2.equals(PsiType.FLOAT))
                     return methodGenerator.createIntToFloat();
-                else if (kind2 == JvmPrimitiveTypeKind.LONG)
+                else if (t2.equals(PsiType.LONG))
                     return methodGenerator.createIntToLong();
-                else if (kind2 == JvmPrimitiveTypeKind.INT)
+                else if (t2.equals(PsiType.INT))
                     return operandNode;
-                else if (kind2 == JvmPrimitiveTypeKind.SHORT)
+                else if (t2.equals(PsiType.SHORT))
                     return methodGenerator.createIntToShort();
-                else if (kind2 == JvmPrimitiveTypeKind.BYTE)
+                else if (t2.equals(PsiType.BYTE))
                     return methodGenerator.createIntToByte();
             }
             throw new InternalException("Unrecognized primitive type cast:" + typeCastExpression.getText());
