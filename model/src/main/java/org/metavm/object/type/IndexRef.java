@@ -95,7 +95,7 @@ public class IndexRef extends ValueElement implements Reference, Writable {
             var indexValues =
                     method.isStatic() ?
                             Indexes.getIndexValues(this, requireNonNull(Flows.execute(method.getRef(), null, List.of(instance.getReference()),entityContext).ret())) :
-                            Indexes.getIndexValues(this, requireNonNull(Flows.execute(new MethodRef(declaringType, method, List.of()), instance, List.of(), entityContext).ret()));
+                            Indexes.getIndexValues(this, requireNonNull(Flows.execute(declaringType.getMethod(method), instance, List.of(), entityContext).ret()));
             var lastIdx = fields.size() - 1;
             for (int i = 0; i < lastIdx; i++) {
                 var field = fields.get(i);
