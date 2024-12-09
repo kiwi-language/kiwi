@@ -112,7 +112,7 @@ public class Scheduler extends EntityContextFactoryAware {
             var timeoutTasks = context.query(
                     new EntityIndexQuery<>(
                             ShadowTask.IDX_RUN_AT,
-                            new EntityIndexKey(List.of(1)),
+                            new EntityIndexKey(List.of(1L)),
                             new EntityIndexKey(List.of(now - timeout)),
                             false,
                             500
