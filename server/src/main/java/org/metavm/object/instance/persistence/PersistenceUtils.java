@@ -28,7 +28,7 @@ public class PersistenceUtils {
 
     // Used for debug. DO NOT REMOVE!!!
     @SuppressWarnings("unused")
-    public static List<IndexEntryPO> getIndexEntries(Index index, ClassInstance instance, long appId) {
+    public static List<IndexEntryPO> getIndexEntries(IndexRef index, ClassInstance instance, long appId) {
         var result = new ArrayList<IndexEntryPO>();
         forEachIndexEntries(index, instance, appId, result::add, e -> {});
         return result;
@@ -36,11 +36,10 @@ public class PersistenceUtils {
 
     public static void forEachIndexEntries(ClassInstance instance, long appId, Consumer<IndexEntryPO> action,
                                            Consumer<IndexEntryPO> actionForUnique) {
-        instance.ensureLoaded();
-        instance.getKlass().getAllConstraints(Index.class).forEach(index -> forEachIndexEntries(index, instance, appId, action, actionForUnique));
+        instance.getType().foreachIndex(index -> forEachIndexEntries(index, instance, appId, action, actionForUnique));
     }
 
-    private static void forEachIndexEntries(Index index, ClassInstance instance,
+    private static void forEachIndexEntries(IndexRef index, ClassInstance instance,
                                             long appId, Consumer<IndexEntryPO> action, Consumer<IndexEntryPO> actionForUnique) {
         index.forEachIndexKey(instance,
                 key -> {

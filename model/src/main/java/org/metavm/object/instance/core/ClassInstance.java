@@ -131,10 +131,9 @@ public class ClassInstance extends Instance {
 
     public Set<IndexKeyRT> getIndexKeys() {
         ensureLoaded();
-        return NncUtils.flatMapUnique(
-                klass.getAllConstraints(Index.class),
-                c -> c.createIndexKey(this)
-        );
+        var keys = new HashSet<IndexKeyRT>();
+        getType().foreachIndex(indexRef -> keys.addAll(indexRef.createIndexKey(this)));
+        return keys;
     }
 
     public Set<Instance> getRefInstances() {

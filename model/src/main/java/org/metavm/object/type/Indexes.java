@@ -9,7 +9,7 @@ import java.util.List;
 
 public class Indexes {
 
-    public static List<Value> getIndexValues(Value key) {
+    public static List<Value> getIndexValues(IndexRef indexRef, Value key) {
         if (key instanceof Reference ref) {
             if (ref.resolve() instanceof ClassInstance obj && obj.isValue()) {
                 var values = new ArrayList<Value>();
@@ -17,7 +17,8 @@ public class Indexes {
                 return values;
             }
         }
-        return List.of(key);
+        var type = indexRef.getIndexFieldTypes().get(0);
+        return List.of(type.fromStackValue(key));
     }
 
 }

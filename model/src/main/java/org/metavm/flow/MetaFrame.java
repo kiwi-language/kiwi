@@ -1043,7 +1043,7 @@ public class MetaFrame implements Frame, CallContext {
     }
 
     public IndexKeyRT loadIndexKey(IndexRef indexRef, Value key) {
-        var values = Indexes.getIndexValues(key);
+        var values = Indexes.getIndexValues(indexRef, key);
         var index = indexRef.getRawIndex();
         return index.createIndexKey(values);
     }

@@ -650,4 +650,26 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
     public MethodRef getMethodByName(String name) {
         return getMethod(m -> m.getName().equals(name));
     }
+
+    public void foreachIndex(Consumer<IndexRef> action) {
+        var superType = getSuperType();
+        if (superType != null)
+            superType.foreachIndex(action);
+        for (Constraint constraint : klass.getConstraints()) {
+            if (constraint instanceof Index index) {
+                action.accept(new IndexRef(this ,index));
+            }
+        }
+    }
+
+    public IndexRef findSelfIndex(Predicate<IndexRef> filter) {
+        for (Constraint constraint : klass.getConstraints()) {
+            if (constraint instanceof Index index) {
+                var indexRef = new IndexRef(this, index);
+                if (filter.test(indexRef))
+                    return indexRef;
+            }
+        }
+        return null;
+    }
 }

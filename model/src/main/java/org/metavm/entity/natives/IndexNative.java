@@ -8,12 +8,9 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.StringValue;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Field;
-import org.metavm.object.type.Index;
+import org.metavm.object.type.*;
 import org.metavm.util.Instances;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -21,7 +18,7 @@ import java.util.Objects;
 public class IndexNative extends NativeBase {
 
     private final ClassInstance instance;
-    private transient Index index;
+    private transient IndexRef index;
 
     public IndexNative(ClassInstance instance) {
         this.instance = instance;
@@ -33,7 +30,7 @@ public class IndexNative extends NativeBase {
     }
 
     public Value getFirst(Value key, CallContext callContext) {
-        var indexKey = buildIndexKey(key, getIndex());
+        var indexKey = buildIndexKey(getIndex(), key);
         return Objects.requireNonNullElseGet(
                 callContext.instanceRepository().selectFirstByKey(indexKey),
                 Instances::nullInstance
@@ -41,22 +38,22 @@ public class IndexNative extends NativeBase {
     }
 
     public Value get(Value key, CallContext callContext) {
-        var result = callContext.instanceRepository().indexSelect(buildIndexKey(key, getIndex()));
+        var result = callContext.instanceRepository().indexSelect(buildIndexKey(getIndex(), key));
         return convertToList(result, callContext);
     }
 
     public Value query(Value min, Value max, CallContext callContext) {
         var result = callContext.instanceRepository().indexScan(
-                buildIndexKey(min, getIndex()),
-                buildIndexKey(max, getIndex())
+                buildIndexKey(getIndex(), min),
+                buildIndexKey(getIndex(), max)
         );
         return convertToList(result, callContext);
     }
 
     public Value count(Value min, Value max, CallContext callContext) {
         return Instances.longInstance(callContext.instanceRepository().indexCount(
-                buildIndexKey(min, getIndex()),
-                buildIndexKey(max, getIndex())
+                buildIndexKey(getIndex(), min),
+                buildIndexKey(getIndex(), max)
         ));
     }
 
@@ -70,29 +67,20 @@ public class IndexNative extends NativeBase {
         return list.getReference();
     }
 
-    private Index getIndex() {
+    private IndexRef getIndex() {
         if (index == null) {
             var indexName = ((StringValue) instance.getField(StdField.indexMapName.get())).getValue();
-            var klass = ((ClassType) instance.getType().getTypeArguments().get(1)).getKlass();
+            var valueType = (ClassType) instance.getType().getTypeArguments().get(1);
             index = Objects.requireNonNull(
-                    klass.findIndex(idx -> idx.getName().equals(indexName)),
-                    () -> "Cannot find index with name '" + indexName + "' in class " + klass
+                    valueType.findSelfIndex(idx -> idx.getName().equals(indexName)),
+                    () -> "Cannot find index with name '" + indexName + "' in class " + valueType
             );
         }
         return index;
     }
 
-    private IndexKeyRT buildIndexKey(Value key, Index index) {
-        if (key instanceof Reference ref) {
-            if(ref.resolve() instanceof ClassInstance obj && obj.isValue()) {
-                var values = new ArrayList<Value>();
-                for (Field field : obj.getKlass().getFields()) {
-                    values.add(obj.getField(field));
-                }
-                return index.createIndexKey(values);
-            }
-        }
-        return index.createIndexKey(List.of(key));
+    private IndexKeyRT buildIndexKey(IndexRef index, Value key) {
+        return index.getRawIndex().createIndexKey(Indexes.getIndexValues(index, key));
     }
 
 }
