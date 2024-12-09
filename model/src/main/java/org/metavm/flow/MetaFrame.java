@@ -164,8 +164,7 @@ public class MetaFrame implements Frame, CallContext {
                         }
                         case Bytecodes.GET_UNIQUE -> {
                             var index = ((IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]);
-                            Value result = instanceRepository().selectFirstByKey(loadIndexKey(index, stack, top));
-                            top -= index.getFieldCount();
+                            Value result = instanceRepository().selectFirstByKey(loadIndexKey(index, stack[--top]));
                             if (result == null)
                                 result = new NullValue();
                             stack[top++] = result;
@@ -404,10 +403,8 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.INDEX_SCAN -> {
                             //noinspection DuplicatedCode
                             var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                            var to = loadIndexKey(index, stack, top);
-                            top -= index.getFieldCount();
-                            var from = loadIndexKey(index, stack, top);
-                            top -= index.getFieldCount();
+                            var to = loadIndexKey(index, stack[--top]);
+                            var from = loadIndexKey(index, stack[--top]);
                             var result = instanceRepository().indexScan(from, to);
                             var type = new ArrayType(index.getDeclaringType(), ArrayKind.READ_ONLY);
                             stack[top++] = new ArrayInstance(type, result).getReference();
@@ -416,18 +413,15 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.INDEX_COUNT -> {
                             //noinspection DuplicatedCode
                             var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                            var to = loadIndexKey(index, stack, top);
-                            top -= index.getFieldCount();
-                            var from = loadIndexKey(index, stack, top);
-                            top -= index.getFieldCount();
+                            var to = loadIndexKey(index, stack[--top]);
+                            var from = loadIndexKey(index, stack[--top]);
                             var count = instanceRepository().indexCount(from, to);
                             stack[top++] = new LongValue(count);
                             pc += 3;
                         }
                         case Bytecodes.INDEX_SELECT -> {
                             var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                            var result = instanceRepository().indexSelect(loadIndexKey(index, stack, top));
-                            top -= index.getFieldCount();
+                            var result = instanceRepository().indexSelect(loadIndexKey(index, stack[--top]));
                             var type = new ClassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType()));
                             var list = ClassInstance.allocate(type);
                             var listNative = new ListNative(list);
@@ -438,8 +432,7 @@ public class MetaFrame implements Frame, CallContext {
                         }
                         case Bytecodes.INDEX_SELECT_FIRST -> {
                             var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                            var result = instanceRepository().selectFirstByKey(loadIndexKey(index, stack, top));
-                            top -= index.getFieldCount();
+                            var result = instanceRepository().selectFirstByKey(loadIndexKey(index, stack[--top]));
                             stack[top++] = NncUtils.orElse(result, new NullValue());
                             pc += 3;
                         }
@@ -1049,13 +1042,9 @@ public class MetaFrame implements Frame, CallContext {
         return instanceRepository;
     }
 
-    public IndexKeyRT loadIndexKey(IndexRef indexRef, Value[] stack, int top) {
-        var values = new LinkedList<Value>();
-        var typeMetadata = indexRef.getDeclaringType().getTypeMetadata();
+    public IndexKeyRT loadIndexKey(IndexRef indexRef, Value key) {
+        var values = Indexes.getIndexValues(key);
         var index = indexRef.getRawIndex();
-        for (IndexField field : index.getFields()) {
-            values.addFirst(field.getType(typeMetadata).fromStackValue(stack[--top]));
-        }
         return index.createIndexKey(values);
     }
 

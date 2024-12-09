@@ -886,6 +886,13 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(value, value1);
     }
 
+    public void testAddIndex() {
+        assemble("add_index_before.masm");
+        var id = saveInstance("Product", Map.of("name", "Shoes"));
+        assemble("add_index_after.masm");
+        Assert.assertEquals(id, callMethod("productService", "findByName", List.of("Shoes")));
+    }
+
     private void assemble(String fileName) {
         assemble(fileName, true);
     }
@@ -896,6 +903,10 @@ public class DDLTest extends TestCase {
 
     private String saveInstance(String className, Map<String, Object> value) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, value));
+    }
+
+    private Object callMethod(String qualifier, String methodName,  List<Object> arguments) {
+        return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
     }
 
     private void doInContext(Consumer<IEntityContext> action) {

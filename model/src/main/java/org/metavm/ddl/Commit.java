@@ -50,6 +50,8 @@ public class Commit extends Entity implements RedirectStatus {
     private final ReadWriteArray<String> fromEnumKlassIds = addChild(new ReadWriteArray<>(String.class), "fromEnumKlassIds");
     @ChildEntity(since = 2)
     private final ReadWriteArray<String> runMethodIds = addChild(new ReadWriteArray<>(String.class), "runMethodIds");
+    @ChildEntity
+    private final ReadWriteArray<String> newIndexIds = addChild(new ReadWriteArray<>(String.class), "newIndexIds");
 
     private CommitState state = CommitState.PREPARING0;
     private boolean running = true;
@@ -68,6 +70,7 @@ public class Commit extends Entity implements RedirectStatus {
                   List<String> toEnumKlassIds,
                   List<String> fromEnumKlassIds,
                   List<String> runMethodIds,
+                  List<String> newIndexIds,
                   List<FieldChange> fieldChanges) {
         this.wal = wal;
         this.newFieldIds.addAll(newFieldIds);
@@ -81,6 +84,7 @@ public class Commit extends Entity implements RedirectStatus {
         this.toEnumKlassIds.addAll(toEnumKlassIds);
         this.fromEnumKlassIds.addAll(fromEnumKlassIds);
         this.runMethodIds.addAll(runMethodIds);
+        this.newIndexIds.addAll(newIndexIds);
         this.fieldChanges.addAll(fieldChanges);
     }
 
@@ -169,12 +173,16 @@ public class Commit extends Entity implements RedirectStatus {
         return toEnumKlassIds.toList();
     }
 
-    public ReadWriteArray<String> getFromEnumKlassIds() {
-        return fromEnumKlassIds;
+    public List<String> getFromEnumKlassIds() {
+        return fromEnumKlassIds.toList();
     }
 
     public List<String> getRunMethodIds() {
         return runMethodIds.toList();
+    }
+
+    public List<String> getNewIndexIds() {
+        return newIndexIds.toList();
     }
 
     public void cancel() {

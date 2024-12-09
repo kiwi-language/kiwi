@@ -40,6 +40,7 @@ public class SaveTypeBatch implements TypeDefProvider {
     private final Set<EnumConstantDef> changedEnumConstantDefs = new HashSet<>();
     private final Set<Klass> klasses = new HashSet<>();
     private final Set<Klass> newKlasses = new HashSet<>();
+    private final Set<Index> newIndexes = new HashSet<>();
 
     private SaveTypeBatch(IEntityContext context) {
         this.context = context;
@@ -47,6 +48,10 @@ public class SaveTypeBatch implements TypeDefProvider {
 
     public void addNewField(Field field) {
         newFields.add(field);
+    }
+
+    public void addNewIndex(Index index) {
+        newIndexes.add(index);
     }
 
     public void addTypeChangedField(Field field) {
@@ -168,6 +173,7 @@ public class SaveTypeBatch implements TypeDefProvider {
                 NncUtils.map(toEnumKlasses, Entity::getStringId),
                 NncUtils.map(fromEnumKlasses, Entity::getStringId),
                 NncUtils.map(runMethods, Entity::getStringId),
+                NncUtils.map(newIndexes, Entity::getStringId),
                 fieldChanges
         );
     }

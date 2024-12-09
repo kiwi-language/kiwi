@@ -9,15 +9,15 @@ import java.util.List;
 
 public class Indexes {
 
-    public static List<Value> getIndexValues(Value value) {
-        if (value instanceof Reference ref) {
+    public static List<Value> getIndexValues(Value key) {
+        if (key instanceof Reference ref) {
             if (ref.resolve() instanceof ClassInstance obj && obj.isValue()) {
                 var values = new ArrayList<Value>();
                 obj.forEachField((f, v) -> values.add(v));
                 return values;
             }
         }
-        return List.of(value);
+        return List.of(key);
     }
 
 }

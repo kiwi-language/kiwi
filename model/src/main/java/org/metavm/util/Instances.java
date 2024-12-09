@@ -539,6 +539,7 @@ public class Instances {
         var toEnumKlasses = NncUtils.map(commit.getToEnumKlassIds(), context::getKlass);
         var removingChildFields = NncUtils.map(commit.getRemovedChildFieldIds(), context::getField);
         var runMethods = NncUtils.map(commit.getRunMethodIds(), context::getMethod);
+        var newIndexes = NncUtils.map(commit.getNewIndexIds(), id -> context.getEntity(Index.class, id));
         for (Instance instance : instances) {
             if (instance instanceof ClassInstance clsInst) {
                 for (Field field : newFields) {
@@ -606,6 +607,12 @@ public class Instances {
                     if (k != null) {
                         var pm = clsInst.getType().getMethod(runMethod);
                         Flows.invoke(pm, clsInst, List.of(), context);
+                    }
+                }
+                for (var index : newIndexes) {
+                    var k = clsInst.getType().findAncestorByKlass(index.getDeclaringType());
+                    if (k != null) {
+                        context.getInstanceContext().forceReindexObject(clsInst);
                     }
                 }
             }

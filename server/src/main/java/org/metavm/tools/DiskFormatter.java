@@ -65,7 +65,7 @@ public class DiskFormatter {
             CONFIG_DB_PASSWORD, "85263670",
             CONFIG_JDBC_URL, "jdbc:postgresql://127.0.0.1:5432/object",
             CONFIG_DB_DRIVER, "org.postgresql.Driver",
-            CONFIG_REBOOT, false
+            CONFIG_REBOOT, true
     );
 
     public static final Map<String, Object> CONFIG = LOCAL_CONFIG;

@@ -1,0 +1,14 @@
+
+class Product {
+
+    private string name;
+
+    public Product(string name) {
+        this.name = name;
+    }
+
+    public string getName() {
+        return this.name;
+    }
+
+}

@@ -1,0 +1,29 @@
+
+class Product {
+
+    private string name;
+
+    public Product(string name) {
+        this.name = name;
+    }
+
+    public string getName() {
+        return this.name;
+    }
+
+    public string uniqueIdxName() {
+        return this.name;
+    }
+
+}
+
+@Component
+class ProductService {
+
+    public ProductService() {}
+
+    public Product|null findByName(string name) {
+        return selectFirst(Product.uniqueIdxName, name);
+    }
+
+}

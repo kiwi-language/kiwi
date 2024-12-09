@@ -135,7 +135,7 @@ public class WALTest extends TestCase {
                     fieldId = field.getStringId();
                 }
                 var commit = new Commit(wal,
-                        List.of(fieldId), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                        List.of(fieldId), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
                 context.bind(new DDLTask(commit, CommitState.PREPARING0));
                 context.finish();
                 return new Id[] {wal.getId(), commit.getId()};

@@ -115,4 +115,13 @@ public class DeployKlassInput extends KlassInput {
             batch.addRunMethod(method);
         return method;
     }
+
+    @Override
+    public Index readIndex() {
+        var index = super.readIndex();
+        var context = batch.getContext();
+        if (context.isNewEntity(index) && !context.isNewEntity(index.getDeclaringType()))
+            batch.addNewIndex(index);
+        return index;
+    }
 }

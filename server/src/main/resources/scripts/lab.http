@@ -1047,3 +1047,60 @@ Content-Type: application/json
   "$id": "0282a9d6b90700bc03",
   "data": "AAAAAAAAAAA"
 }
+
+###
+PUT http://localhost:8080/api/shopping/ast-product
+X-App-ID: 1000000026
+Content-Type: application/json
+
+{
+  "title": "Hat",
+  "price": 100,
+  "inventory": 100
+}
+
+###
+GET http://localhost:8080/api/01a6a9d6b90700
+X-App-ID: 1000000026
+
+###
+POST http://localhost:8080/api/01a6a9d6b90700/dec
+X-App-ID: 1000000026
+Content-Type: application/json
+
+[
+  1
+]
+
+###
+PUT http://localhost:8080/api/shopping/ast-direct-coupon
+X-App-ID: 1000000026
+Content-Type: application/json
+
+{
+  "product": "01a6a9d6b90700",
+  "discount": 10
+}
+
+###
+POST http://localhost:8080/api/01a6a9d6b90700/buy
+X-App-ID: 1000000026
+Content-Type: application/json
+
+[
+   1,
+  ["01a8a9d6b90700"]
+]
+
+###
+GET http://localhost:8080/api/01aca9d6b90700
+X-App-ID: 1000000026
+
+###
+POST http://localhost:8080/api/product-service/find-by-title
+X-App-ID: 1000000026
+Content-Type: application/json
+
+[
+  "Hat"
+]
