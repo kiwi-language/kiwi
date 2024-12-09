@@ -684,7 +684,7 @@ public class Assembler {
             if(!isConstructor
                     && (name.startsWith("idx") || name.startsWith("uniqueIdx"))
                     && method.getParameters().isEmpty()
-                    && method.getReturnType() instanceof ClassType indexType
+                    && !method.getReturnType().isVoid()
                     && !method.isStatic()) {
                 Index index = NncUtils.find(klass.getAllIndices(), idx -> Objects.equals(idx.getName(), name));
                 if (index == null) {
@@ -700,15 +700,24 @@ public class Assembler {
                     index.setName(name);
                 }
                 classInfo.visitedIndices.add(index);
-                var indexKlass = indexType.getKlass();
-                for (var field : indexKlass.getFields()) {
-                    if(!field.isStatic() && !field.isTransient()) {
-                        var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), field.getName()));
-                        if (indexField == null)
-                            new IndexField(index, field.getName(), field.getType(), Values.nullValue());
-                        else
-                            indexField.setType(field.getType());
-                    }
+                var indexF = index;
+                var keyType = method.getReturnType();
+                if(keyType instanceof ClassType ct && ct.isValue()) {
+                    ct.forEachField(field -> {
+                        if (!field.isStatic() && !field.isTransient()) {
+                            var indexField = NncUtils.find(indexF.getFields(), f -> Objects.equals(f.getName(), field.getName()));
+                            if (indexField == null)
+                                new IndexField(indexF, field.getName(), field.getType(), Values.nullValue());
+                            else
+                                indexField.setType(field.getType());
+                        }
+                    });
+                } else {
+                    var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), "value"));
+                    if (indexField == null)
+                        new IndexField(index, "value", keyType, Values.nullValue());
+                    else
+                        indexField.setType(keyType);
                 }
             }
         }

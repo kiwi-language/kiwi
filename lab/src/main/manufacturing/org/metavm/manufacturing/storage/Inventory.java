@@ -1,10 +1,8 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.api.EntityIndex;
 import org.metavm.api.EntityType;
 import org.metavm.api.Index;
 import org.metavm.api.ValueType;
-import org.metavm.api.lang.Indices;
 import org.metavm.api.lang.Lang;
 import org.metavm.manufacturing.material.*;
 import org.metavm.manufacturing.utils.Utils;
@@ -14,6 +12,9 @@ import java.util.Date;
 
 @EntityType(searchable = true)
 public class Inventory {
+
+    public static final Index<Key, Inventory> keyIndex = new Index<>(true, Inventory::key);
+
     private final Material material;
     private long quantity;
     private final Position position;
@@ -178,7 +179,7 @@ public class Inventory {
         arrivalDate = Utils.toDaysNullable(arrivalDate);
         productionDate = Utils.toDaysNullable(productionDate);
         expirationDate = Utils.toDaysNullable(expirationDate);
-        var existing = Indices.selectFirst(new Key(
+        var existing = keyIndex.getFirst(new Key(
                 material,
                 position,
                 batch,
@@ -241,7 +242,7 @@ public class Inventory {
         arrivalDate = Utils.toDaysNullable(arrivalDate);
         productionDate = Utils.toDaysNullable(productionDate);
         expirationDate = Utils.toDaysNullable(expirationDate);
-        var existing = Indices.selectFirst(new Key(
+        var existing = keyIndex.getFirst(new Key(
                 material,
                 position,
                 batch,
@@ -262,7 +263,6 @@ public class Inventory {
         }
     }
 
-
     @ValueType
     public record Key(
             Material material,
@@ -277,10 +277,9 @@ public class Inventory {
             Date expirationDate,
             QualityInspectionState qualityInspectionState,
             InventoryBizState bizState
-    ) implements Index<Inventory> {
+    ) {
     }
 
-    @EntityIndex
     private Key key() {
         return new Key(
                 material,

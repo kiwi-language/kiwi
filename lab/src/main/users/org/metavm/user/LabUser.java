@@ -14,8 +14,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static org.metavm.api.lang.Indices.*;
-
 @EntityType(searchable = true)
 public class LabUser {
 
@@ -24,6 +22,12 @@ public class LabUser {
     public static final long _15_MINUTES_IN_MILLIS = 15 * 60 * 1000;
 
     public static final long TOKEN_TTL = 7 * 24 * 60 * 60 * 1000L;
+
+    public static final Index<ApplicationAndPlatformUser, LabUser> platformUserIndex
+            = new Index<>(false, u -> new ApplicationAndPlatformUser(u.application, u.platformUser));
+
+    public static final Index<ApplicationAndLoginName, LabUser> loginNameIndex
+            = new Index<>(true, u -> new ApplicationAndLoginName(u.application, u.loginName));
 
     private final String loginName;
 
@@ -50,47 +54,32 @@ public class LabUser {
         this.roles.addAll(roles);
     }
 
-    public record IndexAppPlatformUser(LabApplication application,
-                                       LabPlatformUser platformUser) implements Index<LabUser> {
-
-        public IndexAppPlatformUser(LabUser user) {
-            this(user.application, user.platformUser);
-        }
+    @ValueType
+    public record ApplicationAndPlatformUser(LabApplication application,
+                                             LabPlatformUser platformUser) {
     }
 
-    @EntityIndex
-    private IndexAppPlatformUser indexAppPlatformUser() {
-        return new IndexAppPlatformUser(application, platformUser);
-    }
-
-    public record LoginNameIndex(
+    @ValueType
+    public record ApplicationAndLoginName(
             LabApplication application,
-            String loginName) implements Index<LabUser> {
+            String loginName) {
 
-        public LoginNameIndex(LabUser user) {
-            this(user.application, user.loginName);
-        }
-    }
-
-    @EntityIndex(unique = true)
-    private LoginNameIndex loginNameIndex() {
-        return new LoginNameIndex(application, loginName);
     }
 
     public static LabLoginResult login(LabApplication application, String loginName, String password, String clientIP) {
-        var failedCountByIP = count(
+        var failedCountByIP = LabLoginAttempt.ipIndex.count(
                 new LabLoginAttempt.ClientIpSuccTimeIndex(clientIP, false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS)),
                 new LabLoginAttempt.ClientIpSuccTimeIndex(clientIP, false, new Date())
         );
         if (failedCountByIP > MAX_ATTEMPTS_IN_15_MINUTES)
             throw new LabBusinessException(LabErrorCode.TOO_MANY_LOGIN_ATTEMPTS);
-        var failedCountByLoginName = count(
+        var failedCountByLoginName = LabLoginAttempt.nameIndex.count(
                 new LabLoginAttempt.LoginNameSuccTimeIndex(loginName, false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS)),
                 new LabLoginAttempt.LoginNameSuccTimeIndex(loginName, false, new Date())
         );
         if (failedCountByLoginName > MAX_ATTEMPTS_IN_15_MINUTES)
             throw new LabBusinessException(LabErrorCode.TOO_MANY_LOGIN_ATTEMPTS);
-        var users = select(new LoginNameIndex(application, loginName));
+        var users = loginNameIndex.get(new ApplicationAndLoginName(application, loginName));
         if (users.isEmpty())
             throw new LabBusinessException(LabErrorCode.LOGIN_NAME_NOT_FOUND, loginName);
         var user = users.get(0);
@@ -131,7 +120,7 @@ public class LabUser {
 
     public static void logout(List<LabToken> tokens) {
         for (LabToken token : tokens) {
-            var session = selectFirst(new LabSession.TokenIndex(token.token()));
+            var session = LabSession.tokenIndex.getFirst(token.token());
             if (session != null) {
                 if (session.isActive())
                     session.close();
@@ -140,7 +129,7 @@ public class LabUser {
     }
 
     public static LabLoginInfo verify(LabToken token) {
-        var session = selectFirst(new LabSession.TokenIndex(token.token()));
+        var session = LabSession.tokenIndex.getFirst(token.token());
         if (session != null && session.isActive()) {
             return new LabLoginInfo(token.application(), session.getUser());
         } else

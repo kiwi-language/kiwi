@@ -11,6 +11,7 @@ import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.*;
+import org.metavm.api.Index;
 import org.metavm.api.builtin.IndexDef;
 import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
@@ -66,7 +67,8 @@ public class TranspileUtils {
     }
 
     public static PsiType getLambdaReturnType(PsiLambdaExpression lambdaExpression) {
-        var funcTypeGenerics = ((PsiClassType) requireNonNull(lambdaExpression.getFunctionalInterfaceType()))
+        var funcTypeGenerics = ((PsiClassType) requireNonNull(lambdaExpression.getFunctionalInterfaceType(),
+                () -> "Cannot find functional interface for lambda expression: " + lambdaExpression.getText()))
                 .resolveGenerics();
         var funcClass = funcTypeGenerics.getElement();
         var funcMethod = NncUtils.find(requireNonNull(funcClass).getAllMethods(),
@@ -629,6 +631,10 @@ public class TranspileUtils {
         return type.equals(PsiType.BOOLEAN);
     }
 
+    public static boolean isStringType(PsiType type) {
+        return type.getCanonicalText().equals("java.lang.String");
+    }
+
     private static class UpwardsClassVisitor extends JavaElementVisitor {
 
         @Override
@@ -1112,24 +1118,13 @@ public class TranspileUtils {
         return getQualifiedName(requireNonNull(psiMethod.getContainingClass())) + "." + psiMethod.getName();
     }
 
+    public static String getQualifiedName(PsiField psiField) {
+        return getQualifiedName(requireNonNull(psiField.getContainingClass())) + "." + psiField.getName();
+    }
+
     public static String getFlowName(PsiMethod method) {
         String bizName = tryGetNameFromAnnotation(method, EntityFlow.class);
         return bizName != null ? bizName : getFlowCode(method);
-    }
-
-    public static String getIndexName(PsiClass klass) {
-        String bizName = tryGetNameFromAnnotation(klass, EntityIndex.class);
-        return bizName != null ? bizName : klass.getName();
-    }
-
-    public static String getIndexName(PsiMethod method) {
-        String bizName = tryGetNameFromAnnotation(method, EntityIndex.class);
-        return bizName != null ? bizName : method.getName();
-    }
-
-    public static boolean isUniqueIndex(PsiModifierListOwner klass) {
-        var unique = getAnnotationAttribute(klass, EntityIndex.class, "unique");
-        return unique != null ? (Boolean) unique : false;
     }
 
     public static String getFlowCode(PsiMethod method) {
@@ -1598,7 +1593,7 @@ public class TranspileUtils {
         if(enclosingCallable instanceof PsiMethod method)
             return getQualifiedName(method) + "." + klass.getName();
         else
-            return Objects.requireNonNull(klass.getQualifiedName());
+            return Objects.requireNonNullElseGet(klass.getQualifiedName(), klass::getName);
     }
 
     public static void insertAfterSuperCall(PsiStatement statement, PsiMethod constructor) {
@@ -1668,6 +1663,15 @@ public class TranspileUtils {
         if (type instanceof PsiClassType classType) {
             var k = requireNonNull(classType.resolve());
             return "java.lang.Integer".equals(k.getQualifiedName());
+        }
+        else
+            return false;
+    }
+
+    public static boolean isIndexType(PsiType type) {
+        if (type instanceof PsiClassType classType) {
+            var klass = Objects.requireNonNull(classType.resolve());
+            return Index.class.getName().equals(klass.getQualifiedName());
         }
         else
             return false;

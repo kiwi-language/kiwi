@@ -25,6 +25,7 @@ public class CodeGenerator {
     void generateCode(PsiClass psiClass, TypeResolver typeResolver) {
         try (var ignored = ContextUtil.getProfiler().enter("generateCode")) {
             psiClass.accept(new Generator(psiClass, typeResolver));
+            psiClass.accept(new IndexCreator(typeResolver));
         }
     }
 

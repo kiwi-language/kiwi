@@ -111,6 +111,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processFallThroughSwitch();
             processSparseSwitch();
             processStringSwitch();
+            processIndex();
         });
     }
 
@@ -1120,6 +1121,22 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processStringSwitch() {
         var className = "switch_.StringSwitchFoo";
         Assert.assertEquals(3, callMethod(className, "test", List.of("MetaVM")));
+    }
+
+    private void processIndex() {
+        var barClass = "index.Bar";
+        var barId = saveInstance(barClass, Map.of("code", "bar001"));
+        var fooClass = "index.Foo";
+        var fooId = saveInstance(fooClass, Map.of("name", "foo", "seq", 3, "bar", barId));
+        try {
+            saveInstance(fooClass, Map.of("name", "foo", "seq", 3, "bar", barId));
+            Assert.fail("Duplicate key error is expected");
+        } catch (Exception ignored) {}
+        Assert.assertEquals(fooId, callMethod(fooClass, "findByName", List.of("foo")));
+        Assert.assertEquals(1L, (long) callMethod(fooClass, "countBySeq", List.of(0, 5)));
+        Assert.assertEquals(fooId, callMethod(fooClass, "findByBar", List.of(barId)));
+        Assert.assertEquals(fooId, callMethod(fooClass, "findByNameAndSeq", List.of("foo", 3)));
+        Assert.assertEquals(fooId, callMethod("fooService", "findByDesc", List.of("foo-3-bar001")));
     }
 
 }

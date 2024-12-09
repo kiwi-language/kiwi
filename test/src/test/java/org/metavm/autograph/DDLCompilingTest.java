@@ -29,6 +29,8 @@ public class DDLCompilingTest extends CompilerTestBase {
                 ref.stateFieldId = productKlass.getFieldByName("state").getId();
                 ref.derivedInstanceId = Id.parse(saveInstance("swapsuper.Derived",
                         Map.of("value1", 1, "value2", 2, "value3", 3)));
+                var indexFooKlass = context.getKlassByQualifiedName("index.IndexFoo");
+                Assert.assertEquals(1, indexFooKlass.getConstraints().size());
             }
         });
 //        try {
@@ -55,6 +57,8 @@ public class DDLCompilingTest extends CompilerTestBase {
                 var errors = productKlass.getErrors();
                 Assert.assertEquals(0, errors.size());
                 Assert.assertEquals(2, callMethod(ref.derivedInstanceId.toString(), "getValue2", List.of()));
+                var indexFooKlass = context.getKlassByQualifiedName("index.IndexFoo");
+                Assert.assertEquals(0, indexFooKlass.getConstraints().size());
             }
         });
         compile(DDL4_SOURCE_ROOT);

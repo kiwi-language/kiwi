@@ -96,23 +96,26 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         EvaluationContext evaluationContext = new InstanceEvaluationContext(instance);
         Map<IndexField, Value> values = new HashMap<>();
         if(method != null) {
+            var entityContext = ContextUtil.getEntityContext();
             var indexValues =
-                    requireNonNull(Flows.execute(method.getRef(), instance, List.of(), ContextUtil.getEntityContext()).ret())
-                            .resolveObject();
-            for (int i = 0; i < fields.size() - 1; i++) {
+                    method.isStatic() ?
+                    Indexes.getIndexValues(requireNonNull(Flows.execute(method.getRef(), null, List.of(instance.getReference()),entityContext).ret())) :
+                    Indexes.getIndexValues(requireNonNull(Flows.execute(method.getRef(), instance, List.of(), entityContext).ret()));
+            var lastIdx = fields.size() - 1;
+            for (int i = 0; i < lastIdx; i++) {
                 var field = fields.get(i);
-                values.put(field, indexValues.getField(field.getName()));
+                values.put(field, indexValues.get(i));
             }
             // When the last index item is an array, create an index key for each element.
-            var lastField = fields.get(fields.size() - 1);
+            var lastField = fields.get(lastIdx);
             if (lastField.getValue().getType().getUnderlyingType().isArray()) {
-                var lastValues = new HashSet<>(indexValues.getField(lastField.getName()).resolveArray().getElements());
+                var lastValues = new HashSet<>(indexValues.get(lastIdx).resolveArray().getElements());
                 for (Value lastValue : lastValues) {
                     values.put(lastField, lastValue);
                     action.accept(createIndexKey(values));
                 }
             } else {
-                values.put(lastField, indexValues.getField(lastField.getName()));
+                values.put(lastField, indexValues.get(lastIdx));
                 action.accept(new IndexKeyRT(this, values));
             }
         }
@@ -232,6 +235,10 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         setFields(fields);
         unique = input.readBoolean();
         method = input.getMethod(input.readId());
+    }
+
+    public void setMethod(@Nullable Method method) {
+        this.method = method;
     }
 
 }

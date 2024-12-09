@@ -1346,7 +1346,7 @@ public class MethodGenerator {
     private int getSwitchMatch(PsiCaseLabelElement c, Type keyType) {
         if (c instanceof PsiReferenceExpression refExr && refExr.resolve() instanceof PsiEnumConstant ec)
             return Objects.requireNonNull(ec.getUserData(Keys.ENUM_CONSTANT_DEF)).getOrdinal();
-        else if (c instanceof PsiExpression expr && TranspileUtils.isIntType(expr.getType()))
+        else if (c instanceof PsiExpression expr && TranspileUtils.isIntType(Objects.requireNonNull(expr.getType())))
             return (int) TranspileUtils.getConstant((PsiExpression) c);
         else if (keyType.isEnum() && c instanceof PsiLiteralExpression l && l.getValue() == null)
             return -1;

@@ -1,8 +1,10 @@
 package index;
 
-import org.metavm.api.EntityIndex;
+import org.metavm.api.Index;
 
 public class IndexFoo {
+
+    public static final Index<String, IndexFoo> nameIndex = new Index<>(true, IndexFoo::getName);
 
     private String name;
 
@@ -16,14 +18,6 @@ public class IndexFoo {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    @EntityIndex
-    public NameIndex nameIndex() {
-        return new NameIndex(name);
-    }
-
-    public record NameIndex(String name) {
     }
 
 }

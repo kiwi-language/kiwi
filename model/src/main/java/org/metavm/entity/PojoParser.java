@@ -2,26 +2,27 @@ package org.metavm.entity;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
+import org.metavm.api.EntityFlow;
 import org.metavm.api.EntityType;
 import org.metavm.expression.ExpressionParser;
 import org.metavm.expression.TypeParsingContext;
 import org.metavm.flow.ExpressionValue;
 import org.metavm.flow.MethodBuilder;
-import org.metavm.flow.Parameter;
+import org.metavm.flow.NameAndType;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.TypeVariable;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.*;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
 import static org.metavm.object.type.ResolutionStage.*;
@@ -129,6 +130,12 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
         });
         getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
         if(isNativeClass()) {
+            for (Constructor<?> javaMethod : javaClass.getDeclaredConstructors()) {
+                if((Modifier.isPublic(javaMethod.getModifiers()) || Modifier.isProtected(javaMethod.getModifiers()))
+                        && javaMethod.isAnnotationPresent(EntityFlow.class)) {
+                    createConstructor(javaMethod, true);
+                }
+            }
             for (Method javaMethod : javaClass.getDeclaredMethods()) {
                 if((Modifier.isPublic(javaMethod.getModifiers()) || Modifier.isProtected(javaMethod.getModifiers()))
                         && !Modifier.isStatic(javaMethod.getModifiers())) {
@@ -326,14 +333,29 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
 
     protected abstract TypeCategory getTypeCategory();
 
-    protected Parameter createParameter(java.lang.reflect.Parameter javaParameter, org.metavm.flow.Method method) {
+    protected NameAndType createParameter(java.lang.reflect.Parameter javaParameter) {
         var type = defContext.getNullableType(javaParameter.getParameterizedType());
-        return new Parameter(
-                null,
-                javaParameter.getName(),
-                type,
-                method
+        return new NameAndType(javaParameter.getName(), type);
+    }
+
+    protected org.metavm.flow.Method createConstructor(Constructor<?> javaMethod, boolean isNative) {
+        var returnType = defContext.getType(javaMethod.getDeclaringClass());
+        var klass = get().klass;
+        var method = MethodBuilder.newBuilder(klass, klass.getName())
+                .typeParameters(NncUtils.map(javaMethod.getTypeParameters(), this::createTypeVariable))
+                .returnType(returnType)
+                .isConstructor(true)
+                .isNative(isNative)
+                .parameters(NncUtils.map(javaMethod.getParameters(), this::createParameter))
+                .build();
+//        if(isNative)
+//            method.setJavaMethod(javaMethod);
+        NncUtils.biForEach(
+                List.of(javaMethod.getTypeParameters()),
+                method.getTypeParameters(),
+                (javaTypeVar, typeVar) -> typeVar.setBounds(NncUtils.map(javaTypeVar.getBounds(), defContext::getType))
         );
+        return method;
     }
 
     protected org.metavm.flow.Method createMethod(Method javaMethod, boolean isNative) {
@@ -345,8 +367,8 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 .typeParameters(NncUtils.map(javaMethod.getTypeParameters(), this::createTypeVariable))
                 .returnType(returnType)
                 .isNative(isNative)
+                .parameters(NncUtils.map(javaMethod.getParameters(), this::createParameter))
                 .build();
-        method.setParameters(NncUtils.map(javaMethod.getParameters(), p -> createParameter(p, method)));
         if(isNative)
             method.setJavaMethod(javaMethod);
         NncUtils.biForEach(

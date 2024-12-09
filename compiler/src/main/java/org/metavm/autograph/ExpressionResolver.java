@@ -1,7 +1,6 @@
 package org.metavm.autograph;
 
 import com.google.common.collect.Streams;
-import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import org.metavm.entity.natives.StdFunction;
@@ -55,7 +54,7 @@ public class ExpressionResolver {
     private final LinkedList<PsiLambdaExpression> lambdas = new LinkedList<>();
 
     private final List<MethodCallResolver> methodCallResolvers = List.of(
-            new ListOfResolver(), new SetOfResolver(), new IndexUtilsCallResolver()
+            new ListOfResolver(), new SetOfResolver()
     );
 
     private final List<NewResolver> newResolvers = List.of(

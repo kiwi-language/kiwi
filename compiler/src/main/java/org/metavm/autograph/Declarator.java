@@ -1,12 +1,17 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
-import org.metavm.api.*;
+import org.metavm.api.Bean;
+import org.metavm.api.Component;
+import org.metavm.api.Configuration;
+import org.metavm.api.Resource;
 import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
 import org.metavm.entity.IEntityContext;
-import org.metavm.flow.*;
-import org.metavm.object.type.Index;
+import org.metavm.flow.Flows;
+import org.metavm.flow.Method;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Parameter;
 import org.metavm.object.type.*;
 import org.metavm.util.CompilerConfig;
 import org.metavm.util.NamingUtils;
@@ -52,8 +57,10 @@ public class Declarator extends VisitorBase {
             return;
         var klass = typeResolver.getKlass(psiClass);
         var parent = TranspileUtils.getProperParent(psiClass, Set.of(PsiMethod.class, PsiClass.class));
-        if(parent instanceof PsiMethod)
-            requireNonNull(parent.getUserData(Keys.Method)).addLocalKlass(klass);
+        if(parent instanceof PsiMethod parentMethod)
+            requireNonNull(parent.getUserData(Keys.Method),
+                    () -> "Cannot find parent method for class: " + psiClass.getName() + " inside " + TranspileUtils.getQualifiedName(parentMethod) + " in file " + psiClass.getContainingFile().getName())
+                    .addLocalKlass(klass);
         klass.setKlasses(NncUtils.map(psiClass.getInnerClasses(),
                 k -> Objects.requireNonNull(k.getUserData(Keys.MV_CLASS), () -> "Cannot find metavm class for class " + k.getQualifiedName())));
         if (psiClass.getSuperClass() != null &&
@@ -109,8 +116,6 @@ public class Declarator extends VisitorBase {
         }
         klass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, -1)));
         removedMethods.forEach(klass::removeMethod);
-        var removedIndices = NncUtils.exclude(klass.getIndices(), classInfo.visitedIndices::contains);
-        removedIndices.forEach(klass::removeConstraint);
 //        metaClass.setStage(ResolutionStage.DECLARATION);
     }
 
@@ -121,9 +126,6 @@ public class Declarator extends VisitorBase {
     @Override
     public void visitMethod(PsiMethod method) {
         if (CompilerConfig.isMethodBlacklisted(method))
-            return;
-        var psiClass = requireNonNull(method.getContainingClass());
-        if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null)
             return;
         var klass = currentClass().klass;
         List<PsiType> implicitTypeArgs = method.isConstructor() && klass.isEnum() ?
@@ -168,34 +170,6 @@ public class Declarator extends VisitorBase {
             flow.setAttribute(AttributeNames.BEAN_NAME, beanName);
         }
         currentClass().visitedMethods.add(flow);
-        if (TranspileUtils.hasAnnotation(method, EntityIndex.class)) {
-            Index index = NncUtils.find(klass.getAllIndices(), idx -> Objects.equals(idx.getName(), method.getName()));
-            if (index == null) {
-                index = new Index(
-                        klass,
-                        method.getName(),
-                        "",
-                        TranspileUtils.isUniqueIndex(method),
-                        List.of(),
-                        flow
-                );
-            } else {
-                index.setName(TranspileUtils.getIndexName(method));
-            }
-            currentClass().visitedIndices.add(index);
-            var indexKlass =  TranspileUtils.resolvePsiClass((PsiClassType) requireNonNull(method.getReturnType()));
-            for (PsiField field : indexKlass.getFields()) {
-                if(!TranspileUtils.isStatic(field) && !TranspileUtils.isTransient(field)) {
-                    var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), field.getName()));
-                    var type = resolveNullableType(field.getType());
-                    if (indexField == null)
-                        new IndexField(index, field.getName(), type, Values.nullValue());
-                    else
-                        indexField.setType(type);
-                }
-            }
-            indexKlass.putUserData(Keys.INDEX, index);
-        }
     }
 
     private Access resolveAccess(PsiModifierList modifierList) {
@@ -247,16 +221,6 @@ public class Declarator extends VisitorBase {
 
     @Override
     public void visitField(PsiField psiField) {
-        var psiClass = requireNonNull(((PsiMember) psiField).getContainingClass());
-        if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null) {
-            var index = requireNonNull(currentIndex);
-            var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), psiField.getName()));
-            if (indexField == null)
-                new IndexField(index, psiField.getName(), resolveNullableType(psiField.getType()), Values.nullValue());
-            else
-                indexField.setType(resolveNullableType(psiField.getType()));
-            return;
-        }
         var type = resolveNullableType(psiField.getType());
         var klass = currentClass().klass;
         var isStatic = TranspileUtils.isStatic(psiField);
@@ -357,7 +321,6 @@ public class Declarator extends VisitorBase {
         private int nextEnumConstantOrdinal;
         private final Set<Field> visitedFields = new HashSet<>();
         private final Set<Method> visitedMethods = new HashSet<>();
-        private final Set<Index> visitedIndices = new HashSet<>();
 
         private ClassInfo(Klass klass) {
             this.klass = klass;

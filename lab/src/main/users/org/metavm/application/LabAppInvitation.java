@@ -1,9 +1,6 @@
 package org.metavm.application;
 
-import org.metavm.api.EntityIndex;
-import org.metavm.api.EntityType;
-import org.metavm.api.Index;
-import org.metavm.api.ValueType;
+import org.metavm.api.*;
 import org.metavm.user.LabPlatformUser;
 import org.metavm.utils.LabBusinessException;
 import org.metavm.utils.LabErrorCode;
@@ -11,9 +8,8 @@ import org.metavm.utils.LabErrorCode;
 @EntityType
 public class LabAppInvitation {
 
-    @ValueType
-    public record IndexApplication(UserApplication application) implements Index<LabAppInvitation> {
-    }
+    public static final Index<UserApplication, LabAppInvitation> appIndex
+            = new Index<>(false, LabAppInvitation::getApplication);
 
     private final UserApplication application;
     private final LabPlatformUser user;
@@ -24,11 +20,6 @@ public class LabAppInvitation {
         this.application = application;
         this.user = user;
         this.isAdmin = isAdmin;
-    }
-
-    @EntityIndex
-    private IndexApplication indexApplication() {
-        return new IndexApplication(application);
     }
 
     public UserApplication getApplication() {

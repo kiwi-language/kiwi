@@ -84,4 +84,13 @@ public class FieldRef extends ValueElement implements PropertyRef {
     public Id getFieldId() {
         return rawField.getId();
     }
+
+    public boolean isStatic() {
+        return rawField.isStatic();
+    }
+
+    public boolean isTransient() {
+        return rawField.isTransient();
+    }
+
 }

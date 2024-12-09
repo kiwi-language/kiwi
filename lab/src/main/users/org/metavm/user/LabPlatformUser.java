@@ -1,9 +1,7 @@
 package org.metavm.user;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityIndex;
 import org.metavm.api.EntityType;
-import org.metavm.api.lang.Indices;
 import org.metavm.api.lang.Lang;
 import org.metavm.api.lang.PasswordUtils;
 import org.metavm.api.lang.SessionUtils;
@@ -16,8 +14,6 @@ import org.metavm.utils.LabErrorCode;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.metavm.api.lang.Indices.selectFirst;
 
 @EntityType(searchable = true)
 public class LabPlatformUser extends LabUser {
@@ -55,7 +51,7 @@ public class LabPlatformUser extends LabUser {
     public static void joinApplication(LabPlatformUser platformUser, LabApplication app) {
         platformUser.joinApplication(app);
         if (app != PlatformApplication.getInstance()) {
-            var user = selectFirst(new IndexAppPlatformUser(app, platformUser));
+            var user = LabUser.platformUserIndex.getFirst(new ApplicationAndPlatformUser(app, platformUser));
             if (user == null) {
                 user = new LabUser(generateLoginName(app, platformUser.getLoginName()),
                         PasswordUtils.randomPassword(), platformUser.getName(), List.of(), app);
@@ -79,10 +75,10 @@ public class LabPlatformUser extends LabUser {
     private static String generateLoginName(LabApplication application, String prefix) {
         String loginName = prefix;
         int num = 1;
-        boolean exists = selectFirst(new LabUser.LoginNameIndex(application, loginName)) != null;
+        boolean exists = LabUser.loginNameIndex.getFirst(new ApplicationAndLoginName(application, loginName)) != null;
         while (exists) {
             loginName = prefix + num++;
-            exists = selectFirst(new LabUser.LoginNameIndex(application, loginName)) != null;
+            exists = LabUser.loginNameIndex.getFirst(new ApplicationAndLoginName(application, loginName)) != null;
         }
         return loginName;
     }
@@ -92,10 +88,10 @@ public class LabPlatformUser extends LabUser {
             platformUser.leaveApplication(app);
         }
         for (var platformUser : platformUsers) {
-            var user = selectFirst(new IndexAppPlatformUser(app, platformUser));
+            var user = LabUser.platformUserIndex.getFirst(new ApplicationAndPlatformUser(app, platformUser));
             if (user != null) {
                 user.setState(LabUserState.DETACHED);
-                var sessions = Indices.select(new LabSession.UserStateIndex(user, LabSessionState.ACTIVE));
+                var sessions = LabSession.userStateIndex.get(new LabSession.UserAndState(user, LabSessionState.ACTIVE));
                 sessions.forEach(LabSession::close);
             }
         }
@@ -111,7 +107,7 @@ public class LabPlatformUser extends LabUser {
 
     public static LabLoginResult enterApp(LabPlatformUser user, UserApplication app) {
         if (user.hasJoinedApplication(app)) {
-            var appUser = selectFirst(new IndexAppPlatformUser(app, user));
+            var appUser = LabUser.platformUserIndex.getFirst(new ApplicationAndPlatformUser(app, user));
             var token = LabUser.directLogin(app, appUser);
             return new LabLoginResult(token.token(), user);
         } else
@@ -126,7 +122,7 @@ public class LabPlatformUser extends LabUser {
 
     public static void changePassword(LabChangePasswordRequest request) {
         LabVerificationCode.checkVerificationCode(request.loginName(), request.verificationCode());
-        var user = selectFirst(new LabUser.LoginNameIndex(PlatformApplication.getInstance(), request.loginName()));
+        var user = LabUser.loginNameIndex.getFirst(new ApplicationAndLoginName(PlatformApplication.getInstance(), request.loginName()));
         if (user == null)
             throw new LabBusinessException(LabErrorCode.USER_NOT_FOUND);
         user.changePassword(request.password());
@@ -139,19 +135,9 @@ public class LabPlatformUser extends LabUser {
     public static void logout() {
         var user = currentPlatformUser();
         SessionUtils.removeEntry("CurrentApp");
-        Indices.select(new LabSession.UserStateIndex(user, LabSessionState.ACTIVE)).forEach(s -> {
+        LabSession.userStateIndex.get(new LabSession.UserAndState(user, LabSessionState.ACTIVE)).forEach(s -> {
             s.close();
             SessionUtils.removeEntry("LoggedInUser" + Lang.getId(s.getUser().getApplication()));
         });
     }
-
-    public record ApplicationsIndex(List<LabApplication> applications) {
-    }
-
-    @EntityIndex
-    private ApplicationsIndex applicationsIndex() {
-        return new ApplicationsIndex(applications);
-    }
-
-
 }

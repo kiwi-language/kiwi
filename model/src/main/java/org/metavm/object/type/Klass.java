@@ -566,10 +566,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         var found = findMethod(predicate);
         if (found != null)
             return found;
-        if (DebugEnv.resolveVerbose) {
-            logger.info("Fail to resolve method with predicate in klass " + getTypeDesc());
-            forEachMethod(m -> logger.info(m.getQualifiedName()));
-        }
+//        if (DebugEnv.resolveVerbose) {
+//        logger.debug("Fail to resolve method with predicate in klass " + getTypeDesc());
+//        forEachMethod(m -> logger.info(m.getSignatureString()));
+//        }
         throw new NullPointerException(messageSupplier.get());
     }
 
@@ -1184,6 +1184,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     public List<TypeVariable> getTypeParameters() {
         return typeParameters.toList();
+    }
+
+    public TypeVariable getTypeParameterByName(String name) {
+        return NncUtils.findRequired(typeParameters, tp -> tp.getName().equals(name),
+                () -> "Cannot find type parameter with name '" + name + "' in class '" + this + "'");
     }
 
     @Override

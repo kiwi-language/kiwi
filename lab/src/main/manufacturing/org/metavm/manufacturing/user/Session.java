@@ -1,6 +1,5 @@
 package org.metavm.manufacturing.user;
 
-import org.metavm.api.EntityIndex;
 import org.metavm.api.Index;
 import org.metavm.api.lang.Lang;
 
@@ -9,6 +8,8 @@ import java.util.Date;
 public class Session {
 
     public static final long TTL = 7 * 24 * 60 * 60;
+
+    public static final Index<String, Session> tokenIndex = new Index<>(true, s -> s.token);
 
     private final User user;
     private final String token;
@@ -43,14 +44,6 @@ public class Session {
 
     public void setExpiryTime(Date expiryTime) {
         this.expiryTime = expiryTime;
-    }
-
-    public record TokenIndex(String token) implements Index<Session> {
-    }
-
-    @EntityIndex(unique = true)
-    private TokenIndex tokenIndex() {
-        return new TokenIndex(token);
     }
 
 }

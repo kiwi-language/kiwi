@@ -1,10 +1,7 @@
 package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.api.ChildList;
-import org.metavm.api.Index;
-import org.metavm.api.Interceptor;
-import org.metavm.api.ValueList;
+import org.metavm.api.*;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
@@ -32,7 +29,6 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
 
     entity(Entity.class),
     enum_(Enum.class, false, EnumNative.class),
-    index(Index.class),
     record(Record.class),
     collection(Collection.class),
     list(List.class, false, ListNative.class),
@@ -74,6 +70,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     outputStream(OutputStream.class, false, OutputStreamNative.class),
     objectOutputStream(ObjectOutputStream.class, false, ObjectOutputStreamNative.class),
     objectInputStream(ObjectInputStream.class, false, ObjectInputStreamNative.class),
+    index(Index.class, false, IndexNative.class)
     ;
 
     private final Class<?> javaClass;

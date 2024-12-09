@@ -1,8 +1,8 @@
 package org.metavm.message;
 
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityIndex;
 import org.metavm.api.EntityType;
+import org.metavm.api.Index;
 import org.metavm.user.LabUser;
 import org.metavm.utils.LabBusinessException;
 import org.metavm.utils.LabErrorCode;
@@ -11,6 +11,8 @@ import javax.annotation.Nullable;
 
 @EntityType(searchable = true)
 public class LabMessage {
+
+    public static final Index<Object, LabMessage> targetIndex = new Index<>(false, m -> m.target);
 
     private final LabUser receiver;
     @EntityField(asTitle = true)
@@ -64,19 +66,7 @@ public class LabMessage {
         }
     }
 
-    public record IndexTarget(@Nullable Object target) {
-
-        public IndexTarget(LabMessage message) {
-            this(message.target);
-        }
-    }
-
-    @EntityIndex
-    private IndexTarget indexTarget() {
-        return new IndexTarget(target);
-    }
-
-//    public MessageDTO toDTO() {
+    //    public MessageDTO toDTO() {
 //        return new MessageDTO(
 //                getId(),
 //                receiver.getId(), title, kind.code,

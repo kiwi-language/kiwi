@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.api.Index;
 import org.metavm.entity.natives.HybridValueHolder;
 import org.metavm.entity.natives.ValueHolder;
 import org.metavm.entity.natives.ValueHolderOwner;
@@ -9,6 +10,7 @@ public enum StdField implements ValueHolderOwner<Field> {
 
     enumName(Enum.class, "name"),
     enumOrdinal(Enum.class, "ordinal"),
+    indexMapName(Index.class, "name")
 
     ;
 

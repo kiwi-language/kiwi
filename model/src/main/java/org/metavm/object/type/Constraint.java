@@ -18,6 +18,7 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
     private String name;
     @Nullable
     private String message;
+    private transient boolean visited;
 
     public Constraint(@NotNull Klass declaringType,
                       String name, @Nullable String message) {
@@ -67,4 +68,11 @@ public abstract class Constraint extends Element implements  ClassMember, LocalK
         return name;
     }
 
+    public boolean isVisited() {
+        return visited;
+    }
+
+    public void setVisited(boolean visited) {
+        this.visited = visited;
+    }
 }

@@ -1,10 +1,12 @@
 package org.metavm.manufacturing.user;
 
-import org.metavm.api.EntityIndex;
 import org.metavm.api.Index;
 import org.metavm.manufacturing.utils.SecureHash;
 
 public class User {
+
+    public static final Index<String, User> nameIndex = new Index<>(true, u -> u.name);
+
     private final String name;
     private SecureHash password;
 
@@ -23,14 +25,6 @@ public class User {
 
     public SecureHash getPassword() {
         return password;
-    }
-
-    public record NameIndex(String name) implements Index<User> {
-    }
-
-    @EntityIndex(unique = true)
-    private NameIndex nameIndex() {
-        return new NameIndex(name);
     }
 
 }

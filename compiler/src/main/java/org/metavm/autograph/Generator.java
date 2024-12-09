@@ -1,7 +1,6 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
-import org.metavm.api.EntityIndex;
 import org.metavm.entity.StdField;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
@@ -41,8 +40,6 @@ public class Generator extends VisitorBase {
     @Override
     public void visitClass(PsiClass psiClass) {
         if(TranspileUtils.isDiscarded(psiClass))
-            return;
-        if (TranspileUtils.getAnnotation(psiClass, EntityIndex.class) != null)
             return;
         if(psiClass != this.psiClass)
             return;
@@ -229,7 +226,7 @@ public class Generator extends VisitorBase {
         }
         builder.exitScope();
         builders.pop();
-//        if(method.getName().equals("test") && method.getDeclaringType().getName().equals("SparseSwitchFoo")) {
+//        if(method.getName().equals("findByName")) {
 //            logger.debug("{}", method.getText());
 //        }
     }

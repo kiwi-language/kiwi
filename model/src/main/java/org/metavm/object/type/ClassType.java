@@ -52,7 +52,7 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
 
     public ClassType(@Nullable GenericDeclarationRef owner, @NotNull Klass klass, List<? extends Type> typeArguments) {
         assert klass.getEnclosingFlow() == null && klass.getDeclaringKlass() == null || owner != null :
-            "owner is missing for local or inner class type";
+            "owner is missing for local or inner class type " + klass.getName();
         this.owner = owner;
         this.klass = klass;
         this.typeArguments = typeArguments.isEmpty() ? null : new ValueArray<>(Type.class, typeArguments);

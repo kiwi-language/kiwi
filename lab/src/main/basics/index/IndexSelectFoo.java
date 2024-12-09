@@ -1,13 +1,12 @@
 package index;
 
-import org.metavm.api.EntityIndex;
 import org.metavm.api.Index;
-import org.metavm.api.ValueType;
-import org.metavm.api.lang.Indices;
 
 import javax.annotation.Nullable;
 
 public class IndexSelectFoo {
+
+    public static final Index<String, IndexSelectFoo> nameIndex = new Index<>(false, f -> f.name);
 
     private String name;
 
@@ -20,15 +19,8 @@ public class IndexSelectFoo {
     }
 
     public static @Nullable IndexSelectFoo findByName(String name) {
-        return Indices.selectFirst(new NameIndex(name));
-    }
-
-    @EntityIndex
-    NameIndex nameIndex() {
-        return new NameIndex(name);
+        return nameIndex.getFirst(name);
     }
 
 }
 
-@ValueType
-record NameIndex(String name) implements Index<IndexSelectFoo> {}

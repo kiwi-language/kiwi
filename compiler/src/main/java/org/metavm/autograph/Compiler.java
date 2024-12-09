@@ -3,13 +3,13 @@ package org.metavm.autograph;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import org.metavm.api.ChildList;
-import org.metavm.api.EntityIndex;
 import org.metavm.autograph.env.IrCoreApplicationEnvironment;
 import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.KlassOutput;
+import org.metavm.object.type.Constraint;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.ResolutionStage;
 import org.metavm.object.type.TypeDef;
@@ -42,6 +42,7 @@ public class Compiler {
             new CompileStage(
                     file -> true,
                     file -> {
+                        file.accept(new NewIndexTransformer());
                         file.accept(new RecordToClass());
                         file.accept(new BodyNormalizer());
                         file.accept(new RawTypeTransformer());
@@ -156,10 +157,10 @@ public class Compiler {
             for (int i = 0; i < prepareStages.size(); i++) {
                 executeStage(prepareStages.get(i), i, files);
             }
-            var psiClasses = NncUtils.flatMapAndFilter(files, TranspileUtils::getAllClasses,
-                    k -> !TranspileUtils.hasAnnotation(k, EntityIndex.class));
+            var psiClasses = NncUtils.flatMap(files, TranspileUtils::getAllClasses);
             psiClasses.forEach(k -> classNames.add(k.getQualifiedName()));
             for (var stage : stages) {
+//                logger.debug("Stage {}", stage.stage.name());
                 try (var ignored1 = profiler.enter("stage: " + stage)) {
                     var sortedKlasses = stage.sort(psiClasses, typeResolver);
                     var psiClassTypes = NncUtils.map(
@@ -169,7 +170,8 @@ public class Compiler {
                     psiClassTypes.forEach(t -> {
                          typeResolver.resolve(t, stage.stage);
                         if (stage.stage == ResolutionStage.DECLARATION) {
-                            var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS));
+                            var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS),
+                                    () -> "Cannot find MvClass for " + TranspileUtils.getQualifiedName(t.resolve()));
                             if (klass.isTemplate())
                                 klass.updateParameterized();
                         }
@@ -177,6 +179,7 @@ public class Compiler {
                 }
             }
             var generatedTypes = typeResolver.getGeneratedTypeDefs();
+            NncUtils.filterByType(generatedTypes, Klass.class).forEach(this::cleanup);
             long elapsed = System.currentTimeMillis() - start;
             logger.info("Compilation done in {} ms. {} types generated", elapsed, generatedTypes.size());
             deploy(generatedTypes, typeResolver);
@@ -186,6 +189,10 @@ public class Compiler {
             Constants.enableMaintenance();
             logger.info(profiler.finish(false, true).output());
         }
+    }
+
+    private void cleanup(Klass klass) {
+        NncUtils.exclude(klass.getConstraints(), Constraint::isVisited).forEach(klass::removeConstraint);
     }
 
     private static final List<Stage> stages = List.of(

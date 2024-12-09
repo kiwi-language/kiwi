@@ -172,6 +172,12 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
                         pType.getOwnerType() != null ? (ClassType) getDef(pType.getOwnerType()).getType() : null,
                         ((ClassType) getDef(rawClass).getType()).getKlass(), NncUtils.map(pType.getActualTypeArguments(), this::getType)
                 );
+        } else if (javaType instanceof java.lang.reflect.TypeVariable<?> tv) {
+            if (tv.getGenericDeclaration() instanceof Class<?> declaringClass)
+                return getKlass(declaringClass).getTypeParameterByName(tv.getName()).getType();
+            else
+                throw new IllegalArgumentException("Cannot resolve type variable '" + tv
+                        + "'. Only class type parameters are supported");
         } else
             return getDef(javaType, INIT).getType();
     }
