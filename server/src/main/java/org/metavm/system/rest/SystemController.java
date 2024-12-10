@@ -156,4 +156,9 @@ public class SystemController {
         return Result.voidSuccess();
     }
 
+    @GetMapping("/tree-id")
+    public Result<Long> getTreeId(@RequestParam("id") String id) {
+        return Result.success(Id.parse(id).tryGetTreeId());
+    }
+
 }
