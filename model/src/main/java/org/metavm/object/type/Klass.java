@@ -1515,7 +1515,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     }
 
     public boolean isList() {
-        return getNativeClass() == ListNative.class;
+        return StdKlass.list.get().isAssignableFrom(this);
     }
 
     public boolean isChildList() {

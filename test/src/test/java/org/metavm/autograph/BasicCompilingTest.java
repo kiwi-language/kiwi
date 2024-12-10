@@ -1134,6 +1134,11 @@ public class BasicCompilingTest extends CompilerTestBase {
         } catch (Exception ignored) {}
         Assert.assertEquals(fooId, callMethod(fooClass, "findByName", List.of("foo")));
         Assert.assertEquals(1L, (long) callMethod(fooClass, "countBySeq", List.of(0, 5)));
+        //noinspection unchecked
+        var list = (List<String>) callMethod(fooClass, "queryBySeq", List.of(0, 5));
+        Assert.assertNotNull(list);
+        Assert.assertEquals(1, list.size());
+        Assert.assertEquals(fooId, list.get(0));
         Assert.assertEquals(fooId, callMethod(fooClass, "findByBar", List.of(barId)));
         Assert.assertEquals(fooId, callMethod(fooClass, "findByNameAndSeq", List.of("foo", 3)));
         Assert.assertEquals(fooId, callMethod("fooService", "findByDesc", List.of("foo-3-bar001")));

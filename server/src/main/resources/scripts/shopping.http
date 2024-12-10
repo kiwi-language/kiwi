@@ -1,0 +1,69 @@
+###
+PUT http://localhost:8080/api/shopping/product
+X-App-ID: 1000003110
+Content-Type: application/json
+
+{
+  "title": "Hat",
+  "price": 100,
+  "inventory": 100
+}
+
+###
+GET http://localhost:8080/api/01d2d9d6b90700
+X-App-ID: 1000003110
+
+###
+POST http://localhost:8080/api/01a6a9d6b90700/dec
+X-App-ID: 1000003110
+Content-Type: application/json
+
+[
+  1
+]
+
+###
+PUT http://localhost:8080/api/shopping/direct-coupon
+X-App-ID: 1000003110
+Content-Type: application/json
+
+{
+  "product": "01d2d9d6b90700",
+  "discount": 10
+}
+
+###
+POST http://localhost:8080/api/01d2d9d6b90700/buy
+X-App-ID: 1000003110
+Content-Type: application/json
+
+[
+   1,
+  ["01d4d9d6b90700"]
+]
+
+###
+GET http://localhost:8080/api/01d8d9d6b90700
+X-App-ID: 1000003110
+
+###
+GET http://localhost:8080/api/018cd9d6b90700
+X-App-ID: 1000003110
+
+###
+POST http://localhost:8080/api/product-service/find-by-title
+X-App-ID: 1000003110
+Content-Type: application/json
+
+[
+  "Hat"
+]
+
+###
+POST http://localhost:8080/api/product-service/count-by-price
+X-App-ID: 1000003110
+Content-Type: application/json
+
+[
+  500, 1000
+]
