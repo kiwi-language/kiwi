@@ -75,7 +75,8 @@ public class ApiController {
                     var className = NamingUtils.pathToName(path.substring("search/".length()));
                     var page = Objects.requireNonNullElse((Integer) map.remove("$page"), 1);
                     var pageSize = Objects.requireNonNullElse((Integer) map.remove("$pageSize"), 20);
-                    yield apiService.search(className, map, page, pageSize);
+                    var returnObjects = Objects.requireNonNullElse((Boolean) map.remove("$returnObjects"), false);
+                    yield apiService.search(className, map, page, pageSize, returnObjects);
                 }
                 else {
                     var idx = path.lastIndexOf('/');

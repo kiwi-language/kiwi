@@ -74,7 +74,7 @@ public class ApiClient {
     }
 
     public SearchResult search(String className, Map<String, Object> query, int page, int pageSize) {
-        return apiService.search(className, query, page, pageSize);
+        return apiService.search(className, query, page, pageSize, false);
     }
 
     public void deleteInstance(String id) {

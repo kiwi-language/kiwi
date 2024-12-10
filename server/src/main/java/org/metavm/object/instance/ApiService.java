@@ -208,7 +208,7 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
 
-    public SearchResult search(String className, Map<String, Object> query, int page, int pageSize) {
+    public SearchResult search(String className, Map<String, Object> query, int page, int pageSize, boolean returnObjects) {
         try (var entityContext = newContext()) {
             var klass = entityContext.getKlassByQualifiedName(className);
             var classType = klass.getType();
@@ -240,10 +240,17 @@ public class ApiService extends EntityContextFactoryAware {
                     .pageSize(pageSize)
                     .build();
             var dataPage1 = instanceQueryService.query(internalQuery, entityContext);
-            return new SearchResult(
-                    NncUtils.map(dataPage1.data(), Reference::getStringId),
-                    dataPage1.total()
-            );
+            if (returnObjects) {
+              return new SearchResult(
+                      NncUtils.map(dataPage1.data(), i -> formatInstance(i, true)),
+                      dataPage1.total()
+              );
+            } else {
+                return new SearchResult(
+                        NncUtils.map(dataPage1.data(), Reference::getStringId),
+                        dataPage1.total()
+                );
+            }
         }
     }
 
