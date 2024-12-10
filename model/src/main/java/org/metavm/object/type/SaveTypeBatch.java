@@ -41,6 +41,7 @@ public class SaveTypeBatch implements TypeDefProvider {
     private final Set<Klass> klasses = new HashSet<>();
     private final Set<Klass> newKlasses = new HashSet<>();
     private final Set<Index> newIndexes = new HashSet<>();
+    private final Set<Klass> searchEnabledClasses = new HashSet<>();
 
     private SaveTypeBatch(IEntityContext context) {
         this.context = context;
@@ -100,6 +101,10 @@ public class SaveTypeBatch implements TypeDefProvider {
 
     public void addRunMethod(Method method) {
         this.runMethods.add(method);
+    }
+
+    public void addSearchEnabledKlass(Klass klass) {
+        searchEnabledClasses.add(klass);
     }
 
     public Set<EnumConstantDef> getNewEnumConstantDefs() {
@@ -174,6 +179,7 @@ public class SaveTypeBatch implements TypeDefProvider {
                 NncUtils.map(fromEnumKlasses, Entity::getStringId),
                 NncUtils.map(runMethods, Entity::getStringId),
                 NncUtils.map(newIndexes, Entity::getStringId),
+                NncUtils.map(searchEnabledClasses, Entity::getStringId),
                 fieldChanges
         );
     }

@@ -51,7 +51,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final long startAt = System.currentTimeMillis();
     private long timeout;
     private String description = "unnamed";
-    private final Set<ClassInstance> objectsToReindex = new HashSet<>();
+    private final Set<ClassInstance> reindexSet = new HashSet<>();
+    private final Set<ClassInstance> searchReindexSet = new HashSet<>();
 
     public BaseInstanceContext(long appId,
                                IInstanceContext parent,
@@ -755,13 +756,21 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     @Override
-    public void forceReindexObject(ClassInstance instance) {
-        objectsToReindex.add(instance);
+    public void forceReindex(ClassInstance instance) {
+        reindexSet.add(instance);
     }
 
     @Override
-    public Set<ClassInstance> getObjectsToReindex() {
-        return Collections.unmodifiableSet(objectsToReindex);
+    public Set<ClassInstance> getReindexSet() {
+        return Collections.unmodifiableSet(reindexSet);
     }
 
+    @Override
+    public void forceSearchReindex(ClassInstance instance) {
+        searchReindexSet.add(instance);
+    }
+
+    public Set<ClassInstance> getSearchReindexSet() {
+        return Collections.unmodifiableSet(searchReindexSet);
+    }
 }

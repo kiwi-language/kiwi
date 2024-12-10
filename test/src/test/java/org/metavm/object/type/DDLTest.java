@@ -13,6 +13,7 @@ import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.task.DDLTask;
 import org.metavm.task.IDDLTask;
 import org.metavm.task.ScanTask;
@@ -895,6 +896,16 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(id, callMethod("productService", "findByName", List.of("Shoes")));
     }
 
+    public void testEnablingSearch() {
+        var className = "SearchEnableFoo";
+        assemble("enable_search_before.masm");
+        var id = saveInstance(className, Map.of("name", "foo"));
+        assemble("enable_search_after.masm");
+        var page = search(className, Map.of("name", "foo"), 1, 20).page();
+        Assert.assertEquals(1, page.size());
+        Assert.assertEquals(id, page.get(0));
+    }
+
     private void assemble(String fileName) {
         assemble(fileName, true);
     }
@@ -909,6 +920,10 @@ public class DDLTest extends TestCase {
 
     private Object callMethod(String qualifier, String methodName,  List<Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    }
+
+    private SearchResult search(String className, Map<String, Object> fields, int page, int pageSize) {
+        return apiClient.search(className, fields, page, pageSize);
     }
 
     private void doInContext(Consumer<IEntityContext> action) {

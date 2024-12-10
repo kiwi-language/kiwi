@@ -2,10 +2,7 @@ package org.metavm.object.instance;
 
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityChange;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.PersistenceUtils;
@@ -46,7 +43,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         var instanceMap = new HashMap<Id, ClassInstance>();
         var currentEntries = new ArrayList<IndexEntryPO>();
         var currentUniqueKeys = new HashSet<IndexKeyPO>();
-        var objectsToIndex = new HashSet<>(context.getObjectsToReindex());
+        var objectsToIndex = new HashSet<>(NncUtils.exclude(context.getReindexSet(), Instance::isRemoved));
         change.forEachInsertOrUpdate(ver -> {
             var instance = context.get(ver.id());
             if (instance instanceof ClassInstance classInstance)
@@ -71,7 +68,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
             oldIdSet.add(v.id());
             oldIds.add(v.id());
         });
-        for (ClassInstance inst : context.getObjectsToReindex()) {
+        for (ClassInstance inst : context.getReindexSet()) {
             oldIdSet.add(inst.getId());
             oldIds.add(inst.getId());
         }

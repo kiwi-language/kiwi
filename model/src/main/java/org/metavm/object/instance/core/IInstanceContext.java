@@ -179,8 +179,12 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void setDescription(String description);
 
-    void forceReindexObject(ClassInstance instance);
+    void forceReindex(ClassInstance instance);
 
-    Set<ClassInstance> getObjectsToReindex();
+    Set<ClassInstance> getReindexSet();
+
+    void forceSearchReindex(ClassInstance instance);
+
+    Set<ClassInstance> getSearchReindexSet();
 
 }

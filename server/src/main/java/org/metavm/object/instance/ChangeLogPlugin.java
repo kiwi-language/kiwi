@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import static org.metavm.entity.ContextAttributeKey.CHANGE_LOGS;
@@ -58,12 +59,12 @@ public class ChangeLogPlugin implements ContextPlugin {
     @Override
     public void postProcess(IInstanceContext context) {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
-        if (NncUtils.isNotEmpty(logs)) {
+        if (NncUtils.isNotEmpty(logs) || !context.getSearchReindexSet().isEmpty()) {
             instanceLogService.process(context.getAppId(), logs,
                     instanceStore, NncUtils.map(context.getRelocated(), Instance::getId), context.getClientId(), defContextProvider.getDefContext());
             var tasks = new ArrayList<Task>();
-            var changedDocIds = new ArrayList<Id>();
-            var removedDocIds = new ArrayList<Id>();
+            var idsToIndex = new HashSet<>(NncUtils.filterAndMap(context.getSearchReindexSet(), i -> !i.isRemoved(), Instance::getId));
+            var idsToRemove = new ArrayList<Id>();
             for (var log : logs) {
                 var inst = context.internalGet(log.getId());
                 if(log.isInsert()) {
@@ -74,15 +75,15 @@ public class ChangeLogPlugin implements ContextPlugin {
                 }
                 if(inst instanceof ClassInstance clsInst && clsInst.isSearchable()) {
                     if(log.isInsertOrUpdate())
-                        changedDocIds.add(inst.getId());
+                        idsToIndex.add(inst.getId());
                     else
-                        removedDocIds.add(inst.getId());
+                        idsToRemove.add(inst.getId());
                 }
             }
             if(!tasks.isEmpty())
                 ShadowTask.saveShadowTasksHook.accept(context.getAppId(), tasks);
-            if(!changedDocIds.isEmpty() || !removedDocIds.isEmpty())
-                instanceLogService.createSearchSyncTask(context.getAppId(), changedDocIds, removedDocIds, defContextProvider.getDefContext());
+            if(!idsToIndex.isEmpty() || !idsToRemove.isEmpty())
+                instanceLogService.createSearchSyncTask(context.getAppId(), idsToIndex, idsToRemove, defContextProvider.getDefContext());
         }
     }
 

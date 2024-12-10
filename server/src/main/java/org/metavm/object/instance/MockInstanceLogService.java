@@ -7,6 +7,7 @@ import org.metavm.object.instance.log.InstanceLogService;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class MockInstanceLogService implements InstanceLogService {
@@ -19,7 +20,7 @@ public class MockInstanceLogService implements InstanceLogService {
     }
 
     @Override
-    public void createSearchSyncTask(long appId, List<Id> changedIds, List<Id> removedIds, DefContext defContext) {
+    public void createSearchSyncTask(long appId, Collection<Id> idsToIndex, Collection<Id> idsToRemove, DefContext defContext) {
 
     }
 

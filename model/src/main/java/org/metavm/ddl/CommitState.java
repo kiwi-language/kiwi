@@ -39,7 +39,7 @@ public enum CommitState {
                     && commit.getEntityToValueKlassIds().isEmpty() && commit.getValueToEntityKlassIds().isEmpty()
                     && commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty() && commit.getRemovedChildFieldIds().isEmpty()
                     && commit.getChangingSuperKlassIds().isEmpty() && commit.getRunMethodIds().isEmpty()
-                    && commit.getNewIndexIds().isEmpty();
+                    && commit.getNewIndexIds().isEmpty() && commit.getSearchEnabledKlassIds().isEmpty();
         }
 
         @Override

@@ -23,6 +23,7 @@ public class DeployKlassInput extends KlassInput {
         setKlassParent(klass);
         var oldKind = klass.getKind();
         var oldSuperType = klass.getSuperType();
+        var oldSearchable = klass.isSearchable();
         enterElement(klass);
         klass.read(this);
         exitElement();
@@ -47,6 +48,8 @@ public class DeployKlassInput extends KlassInput {
             }
             if(!klass.isEnum() && klass.getSuperType() != null && !Objects.equals(oldSuperType, klass.getSuperType()))
                 batch.addChangingSuperKlass(klass);
+            if (klass.isSearchable() && !oldSearchable)
+                batch.addSearchEnabledKlass(klass);
         }
         context.update(klass);
         return klass;

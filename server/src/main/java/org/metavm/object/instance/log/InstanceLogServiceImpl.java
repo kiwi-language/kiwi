@@ -60,7 +60,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
 
     @Transactional
     @Override
-    public void createSearchSyncTask(long appId, List<Id> changedIds, List<Id> removedIds, DefContext defContext) {
+    public void createSearchSyncTask(long appId, Collection<Id> idsToIndex, Collection<Id> idsToRemove, DefContext defContext) {
         try(var context = newContext(appId);
             var ignored = ContextUtil.getProfiler().enter("createSearchSyncTask")) {
             WAL wal = instanceStore instanceof CachingInstanceStore cachingInstanceStore ?
@@ -68,8 +68,8 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             WAL defWal = defContext instanceof ReversedDefContext reversedDefContext ?
                     DefContextUtils.getWal(reversedDefContext) : null;
             context.bind(new SynchronizeSearchTask(
-                    NncUtils.map(changedIds, Identifier::fromId),
-                    NncUtils.map(removedIds, Identifier::fromId),
+                    NncUtils.map(idsToIndex, Identifier::fromId),
+                    NncUtils.map(idsToRemove, Identifier::fromId),
                     wal, defWal != null ? Identifier.fromId(defWal.getId()) : null));
 //                this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
             context.finish();

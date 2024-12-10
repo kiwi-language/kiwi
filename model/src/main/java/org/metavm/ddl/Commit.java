@@ -52,6 +52,8 @@ public class Commit extends Entity implements RedirectStatus {
     private final ReadWriteArray<String> runMethodIds = addChild(new ReadWriteArray<>(String.class), "runMethodIds");
     @ChildEntity
     private final ReadWriteArray<String> newIndexIds = addChild(new ReadWriteArray<>(String.class), "newIndexIds");
+    @ChildEntity
+    private final ReadWriteArray<String> searchEnabledKlassIds = addChild(new ReadWriteArray<>(String.class), "searchEnabledKlassIds");
 
     private CommitState state = CommitState.PREPARING0;
     private boolean running = true;
@@ -71,6 +73,7 @@ public class Commit extends Entity implements RedirectStatus {
                   List<String> fromEnumKlassIds,
                   List<String> runMethodIds,
                   List<String> newIndexIds,
+                  List<String> searchEnabledKlassIds,
                   List<FieldChange> fieldChanges) {
         this.wal = wal;
         this.newFieldIds.addAll(newFieldIds);
@@ -85,6 +88,7 @@ public class Commit extends Entity implements RedirectStatus {
         this.fromEnumKlassIds.addAll(fromEnumKlassIds);
         this.runMethodIds.addAll(runMethodIds);
         this.newIndexIds.addAll(newIndexIds);
+        this.searchEnabledKlassIds.addAll(searchEnabledKlassIds);
         this.fieldChanges.addAll(fieldChanges);
     }
 
@@ -183,6 +187,10 @@ public class Commit extends Entity implements RedirectStatus {
 
     public List<String> getNewIndexIds() {
         return newIndexIds.toList();
+    }
+
+    public List<String> getSearchEnabledKlassIds() {
+        return searchEnabledKlassIds.toList();
     }
 
     public void cancel() {

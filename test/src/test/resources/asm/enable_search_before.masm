@@ -1,0 +1,14 @@
+
+class SearchEnableFoo {
+
+    private string name;
+
+    public SearchEnableFoo(string name) {
+        this.name = name;
+    }
+
+    public string getName() {
+        return this.name;
+    }
+
+}

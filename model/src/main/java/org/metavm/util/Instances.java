@@ -540,6 +540,7 @@ public class Instances {
         var removingChildFields = NncUtils.map(commit.getRemovedChildFieldIds(), context::getField);
         var runMethods = NncUtils.map(commit.getRunMethodIds(), context::getMethod);
         var newIndexes = NncUtils.map(commit.getNewIndexIds(), id -> context.getEntity(Index.class, id));
+        var searchEnabledKlasses = NncUtils.map(commit.getSearchEnabledKlassIds(), context::getKlass);
         for (Instance instance : instances) {
             if (instance instanceof ClassInstance clsInst) {
                 for (Field field : newFields) {
@@ -612,7 +613,13 @@ public class Instances {
                 for (var index : newIndexes) {
                     var k = clsInst.getType().findAncestorByKlass(index.getDeclaringType());
                     if (k != null) {
-                        context.getInstanceContext().forceReindexObject(clsInst);
+                        context.getInstanceContext().forceReindex(clsInst);
+                    }
+                }
+                for (Klass klass : searchEnabledKlasses) {
+                    var k = clsInst.getType().findAncestorByKlass(klass);
+                    if (k != null) {
+                        context.getInstanceContext().forceSearchReindex(clsInst);
                     }
                 }
             }
