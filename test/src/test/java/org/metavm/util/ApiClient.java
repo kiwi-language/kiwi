@@ -48,6 +48,14 @@ public class ApiClient {
     }
 
     public @Nullable Object callMethod(String qualifier, String methodName, List<Object> arguments) {
+        return callMethod0(qualifier, methodName, arguments);
+    }
+
+    public @Nullable Object callMethod(String qualifier, String methodName, Map<String, Object> arguments) {
+        return callMethod0(qualifier, methodName, arguments);
+    }
+
+    private @Nullable Object callMethod0(String qualifier, String methodName, Object arguments) {
         var uri = "/api/" + NamingUtils.nameToPath(qualifier) + "/" + NamingUtils.camelToHyphen(methodName);
         var req = makeRequest("POST", uri);
         var resp = new HttpResponseImpl();

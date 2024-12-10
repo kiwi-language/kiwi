@@ -78,19 +78,16 @@ public class ApiController {
                     yield apiService.search(className, map, page, pageSize);
                 }
                 else {
-                    if (!(requestBody instanceof List<?>))
-                        throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
                     var idx = path.lastIndexOf('/');
                     if (idx == -1)
                         throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
                     var qualifier = NamingUtils.pathToName(path.substring(0, idx));
                     var methodCode = NamingUtils.hyphenToCamel(path.substring(idx + 1));
-                    //noinspection unchecked
-                    var arguments = (List<Object>) requestBody;
-                    if (methodCode.equals("new"))
-                        yield apiService.handleNewInstance(qualifier, arguments, request, response);
+                    if (requestBody instanceof List<?> || requestBody instanceof Map<?,?>)
+                        yield apiService.handleMethodCall(qualifier, methodCode, requestBody, request, response);
                     else
-                        yield apiService.handleMethodCall(qualifier, methodCode, arguments, request, response);
+                        throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
+
                 }
             }
             case "GET" -> {

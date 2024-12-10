@@ -11,6 +11,7 @@ import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Flows;
 import org.metavm.flow.MethodRef;
+import org.metavm.flow.ParameterRef;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.SearchResult;
@@ -61,7 +62,7 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public Object handleMethodCall(String qualifier, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
+    public Object handleMethodCall(String qualifier, String methodCode, Object rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             Value result;
             if (qualifier.startsWith("0")) {
@@ -84,20 +85,9 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
-    public Object handleBeanMethodCall(String beanName, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
-        try (var context = newContext()) {
-            var registry = BeanDefinitionRegistry.getInstance(context);
-            var bean = registry.getBean(beanName);
-            var result = executeInstanceMethod(bean, methodCode, rawArguments, request, response, context);
-            context.finish();
-            return formatInstance(result, false);
-        }
-    }
-
     private Value executeInstanceMethod(ClassInstance self,
                                         String methodCode,
-                                        List<Object> rawArguments,
+                                        Object rawArguments,
                                         HttpRequest request,
                                         HttpResponse response,
                                         IEntityContext context) {
@@ -313,15 +303,16 @@ public class ApiService extends EntityContextFactoryAware {
         return list;
     }
 
-    private ResolutionResult resolveMethod(@NotNull ClassType klass, String methodCode, List<Object> rawArguments, boolean _static, boolean constructor, IEntityContext context) {
+    private ResolutionResult resolveMethod(@NotNull ClassType klass, String methodCode, Object rawArguments, boolean _static, boolean constructor, IEntityContext context) {
         var methodRef = methodCode != null ?
                 TypeParser.parseSimpleMethodRef(methodCode, name -> getKlass(name, context).getKlass()) : null;
         var queue = new LinkedList<ClassType>();
         klass.foreachSuperClass(queue::offer);
+        var argCount = getArgumentCount(rawArguments);
         do {
             var k = Objects.requireNonNull(queue.poll());
             for (MethodRef method : k.getMethods()) {
-                if (method.isPublic() && !method.isAbstract() && (methodRef == null || methodRef.name().equals(method.getName())) && method.getParameterCount() == rawArguments.size()
+                if (method.isPublic() && !method.isAbstract() && (methodRef == null || methodRef.name().equals(method.getName())) && method.getParameterCount() == argCount
                         && _static == method.isStatic() && constructor == method.isConstructor()) {
                     method = methodRef != null ? method.getParameterized(methodRef.typeArguments()) : method;
                     var resolvedArgs = tryResolveArguments(method, rawArguments, context);
@@ -335,13 +326,30 @@ public class ApiService extends EntityContextFactoryAware {
                 rawArguments);
     }
 
-    private List<Value> tryResolveArguments(MethodRef method, List<Object> rawArguments, IEntityContext context) {
+    private int getArgumentCount(Object rawArgument) {
+        return rawArgument instanceof List<?> list ? list.size() : ((Map<?,?>) rawArgument).size();
+    }
+
+    private List<Value> tryResolveArguments(MethodRef method, Object rawArguments, IEntityContext context) {
         var resolvedArgs = new ArrayList<Value>();
-        for (int i = 0; i < method.getParameterCount(); i++) {
-            var r = tryResolveValue(rawArguments.get(i), method.getParameterType(i), false, null, context);
-            if (!r.successful())
-                return null;
-            resolvedArgs.add(r.resolved());
+        if (rawArguments instanceof List<?> rawArgList) {
+            for (int i = 0; i < method.getParameterCount(); i++) {
+                var r = tryResolveValue(rawArgList.get(i), method.getParameterType(i), false, null, context);
+                if (!r.successful())
+                    return null;
+                resolvedArgs.add(r.resolved());
+            }
+        }
+        else if (rawArguments instanceof Map<?,?> rawArgMap) {
+            for (ParameterRef parameter : method.getParameters()) {
+                var rawArg = rawArgMap.get(parameter.getName());
+                if (rawArg == null)
+                    return null;
+                var r = tryResolveValue(rawArg, parameter.getType(), false, null, context);
+                if (!r.successful())
+                    return null;
+                resolvedArgs.add(r.resolved());
+            }
         }
         return resolvedArgs;
     }

@@ -218,7 +218,10 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "memberIds": [30002, 30006]
+  "memberIds": [
+    30002,
+    30006
+  ]
 }
 
 ###
@@ -276,7 +279,10 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "paths": [ "$1004700100.coupon.discount", "$1004700100.order.coupon.discount" ]
+  "paths": [
+    "$1004700100.coupon.discount",
+    "$1004700100.order.coupon.discount"
+  ]
 }
 
 
@@ -294,7 +300,8 @@ Content-Type: application/json
 {
   "thisId": 1006800142,
   "paths": [
-    "this.coupon.discount","this.order.coupon.discount"
+    "this.coupon.discount",
+    "this.order.coupon.discount"
   ]
 }
 
@@ -336,7 +343,9 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "ids": [1215104319],
+  "ids": [
+    1215104319
+  ],
   "includingFields": true,
   "includingFieldTypes": true
 }
@@ -348,7 +357,9 @@ Content-Type: application/json
 MetaVersion: 0
 
 {
-  "categories": [13],
+  "categories": [
+    13
+  ],
   "includeBuiltin": true,
   "page": 1,
   "pageSize": 20
@@ -461,7 +472,9 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "paths": ["$$13021.fields.*.name"]
+  "paths": [
+    "$$13021.fields.*.name"
+  ]
 }
 
 ###
@@ -563,6 +576,7 @@ X-App-ID: 1839816797
 
 [
 ]
+
 ###
 POST http://localhost:8080/instance/batch-delete
 Accept: application/json
@@ -570,11 +584,12 @@ Content-Type: application/json
 X-App-ID: 1839816797
 
 [
-"01f4b4bfda0d0003a6f3beda0d00",
-"01f6b4bfda0d00038ae9beda0d00",
-"01f8b4bfda0d0003ceebbeda0d00",
-"01fab4bfda0d000380efbeda0d00",
-"01fcb4bfda0d0003cef1beda0d00"]
+  "01f4b4bfda0d0003a6f3beda0d00",
+  "01f6b4bfda0d00038ae9beda0d00",
+  "01f8b4bfda0d0003ceebbeda0d00",
+  "01fab4bfda0d000380efbeda0d00",
+  "01fcb4bfda0d0003cef1beda0d00"
+]
 
 
 ###
@@ -613,7 +628,9 @@ Content-Type: application/json
   "isParameterized": false,
   "isTemplate": false,
   "includeBuiltin": false,
-  "categories": [0]
+  "categories": [
+    0
+  ]
 }
 
 
@@ -646,7 +663,17 @@ sec-ch-ua-mobile: ?0
 sec-ch-ua-platform: "macOS"
 Content-Type: application/json
 
-{"templateRef":{"id":1324106483},"typeArgumentRefs":[{"id":20000}],"contextTypes":[]}
+{
+  "templateRef": {
+    "id": 1324106483
+  },
+  "typeArgumentRefs": [
+    {
+      "id": 20000
+    }
+  ],
+  "contextTypes": []
+}
 
 ###
 
@@ -725,12 +752,12 @@ X-App-Secret: R-pynreMq5GP-3MYu5qjlVa0lOFM-Gg73dd1ccr_iNc
     "unit": "$$01aaefdddd0d00",
     "amount": 10,
     "byQrcodeItems": [
-       {
-          "qrCode": "qr0001"
-       },
-       {
-          "qrCode": "qr0002"
-       }
+      {
+        "qrCode": "qr0001"
+      },
+      {
+        "qrCode": "qr0002"
+      }
     ]
   }
 ]
@@ -765,7 +792,8 @@ Content-Type: application/json
 X-App-ID: 1843616873
 
 [
-  "leen", "123456"
+  "leen",
+  "123456"
 ]
 
 ###
@@ -774,7 +802,8 @@ Content-Type: application/json
 X-App-ID: 1843616873
 
 [
-  "leen", "123456"
+  "leen",
+  "123456"
 ]
 
 ###
@@ -901,6 +930,7 @@ X-App-ID: 1000001021
 Content-Type: application/json
 
 []
+
 ###
 POST http://localhost:8080/system/build-pre-upgrade-request?since=1
 
@@ -914,6 +944,7 @@ Content-Type: application/json
   "newKlassIds": [],
   "walContent": "AAAAAAAAAAA"
 }
+
 ###
 GET http://localhost:8080/type/is-flag1?name=org.metavm.mlab.Product
 X-App-ID: 1850817017
@@ -974,12 +1005,14 @@ Content-Type: application/json
 <> 2024-08-17T160804.200.txt
 <> 2024-08-17T160803.200.txt
 <> 2024-08-16T160035.200.txt
+
 ###
 POST http://localhost:8080/api/01f6a8d6b90700/get-rate
 X-App-ID: 1000000024
 Content-Type: application/json
 
 []
+
 ###
 GET http://localhost:8080/api/01aa87e1b90704
 X-App-ID: 1000000024
@@ -992,7 +1025,10 @@ Content-Type: application/json
 [
   "01aa87e1b90704",
   1,
-  ["01e4c2e2b90700", "01e2c2e2b90700"]
+  [
+    "01e4c2e2b90700",
+    "01e2c2e2b90700"
+  ]
 ]
 
 ###
@@ -1050,7 +1086,7 @@ Content-Type: application/json
 
 ###
 PUT http://localhost:8080/api/shopping/product
-X-App-ID: 1000003110
+X-App-ID: 1000000026
 Content-Type: application/json
 
 {
@@ -1061,20 +1097,20 @@ Content-Type: application/json
 
 ###
 GET http://localhost:8080/api/01a6a9d6b90700
-X-App-ID: 1000003110
+X-App-ID: 1000000026
 
 ###
-POST http://localhost:8080/api/01a6a9d6b90700/dec
-X-App-ID: 1000003110
+POST http://localhost:8080/api/01a6a9d6b90700/decrement-stock
+X-App-ID: 1000000026
 Content-Type: application/json
 
-[
-  1
-]
+{
+  "amount": 1
+}
 
 ###
 PUT http://localhost:8080/api/shopping/direct-coupon
-X-App-ID: 1000003110
+X-App-ID: 1000000026
 Content-Type: application/json
 
 {
@@ -1083,49 +1119,42 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8080/api/01a6a9d6b90700/buy
-X-App-ID: 1000003110
+POST http://localhost:8080/api/order-service/place-order
+X-App-ID: 1000000026
 Content-Type: application/json
 
-[
-   1,
-  ["01a8a9d6b90700"]
-]
+{
+  "sku": "01a6a9d6b90700",
+  "quantity": 1,
+  "coupons": ["01a8a9d6b90700"]
+}
 
 ###
 GET http://localhost:8080/api/01aca9d6b90700
-X-App-ID: 1000003110
+X-App-ID: 1000000026
 
 ###
-POST http://localhost:8080/api/product-service/find-by-title
-X-App-ID: 1000003110
+POST http://localhost:8080/api/product-service/find-by-name
+X-App-ID: 1000000026
 Content-Type: application/json
 
-[
-  "Hat"
-]
-
-###
-POST http://localhost:8080/api/product-service/count-by-price
-X-App-ID: 1000003110
-Content-Type: application/json
-
-[
-  500, 1000
-]
+{
+  "name": "Hat"
+}
 
 ###
 POST http://localhost:8080/api/product-service/query-by-price
-X-App-ID: 1000003110
+X-App-ID: 1000000026
 Content-Type: application/json
 
-[
-  50, 100
-]
+{
+  "min": 50,
+  "max": 100
+}
 
 ###
 POST http://localhost:8080/api/search/shopping/product
-X-App-ID: 1000003110
+X-App-ID: 1000000026
 Content-Type: application/json
 
 {

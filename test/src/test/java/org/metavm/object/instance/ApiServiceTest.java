@@ -86,4 +86,20 @@ public class ApiServiceTest extends TestCase {
         Assert.assertEquals(85.0, order.getDouble("price"), 0.0001);
     }
 
+    public void testMethodCallWithMap() {
+        MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
+        var skuId = TestUtils.doInTransaction(() -> apiClient.saveInstance("SKU", Map.of(
+                "name", "Shoes-40",
+                "price", 100.0,
+                "quantity", 100
+        )));
+        TestUtils.doInTransaction(() -> apiClient.callMethod(
+                skuId,
+                "decQuantity",
+                Map.of("quantity", 1)
+        ));
+        var sku = apiClient.getObject(skuId);
+        Assert.assertEquals(99, sku.getInt("quantity"));
+    }
+
 }

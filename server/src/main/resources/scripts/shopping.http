@@ -4,23 +4,28 @@ X-App-ID: 1000000026
 Content-Type: application/json
 
 {
-  "title": "Hat",
-  "price": 100,
-  "inventory": 100
+  "name": "T-Shirt",
+  "skus": [
+    {
+      "variant": "Default",
+      "price": 100,
+      "stock": 100
+    }
+  ]
 }
 
 ###
-GET http://localhost:8080/api/01d2d9d6b90700
+GET http://localhost:8080/api/019cb8d6b90700
 X-App-ID: 1000000026
 
 ###
-POST http://localhost:8080/api/01a6a9d6b90700/dec
+POST http://localhost:8080/api/019cb8d6b90702/decrement-stock
 X-App-ID: 1000000026
 Content-Type: application/json
 
-[
-  1
-]
+{
+  "amount": 1
+}
 
 ###
 PUT http://localhost:8080/api/shopping/direct-coupon
@@ -33,14 +38,15 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8080/api/01d2d9d6b90700/buy
+POST http://localhost:8080/api/order-service/place-order
 X-App-ID: 1000000026
 Content-Type: application/json
 
-[
-   1,
-  ["01d4d9d6b90700"]
-]
+{
+  "sku": "019cb8d6b90702",
+  "quantity": 1,
+  "coupons": []
+}
 
 ###
 GET http://localhost:8080/api/01d8d9d6b90700
