@@ -6,6 +6,7 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.Klass;
@@ -35,7 +36,8 @@ public class AssemblerTest extends TestCase {
         typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
         entityContextFactory = bootResult.entityContextFactory();
         schedulerAndWorker = bootResult.schedulerAndWorker();
-        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache()));
+        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache(),
+                new InstanceQueryService(bootResult.instanceSearchService())));
     }
 
     @Override

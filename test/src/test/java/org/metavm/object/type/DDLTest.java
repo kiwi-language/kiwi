@@ -10,6 +10,7 @@ import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.IndexKeyRT;
+import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.task.DDLTask;
@@ -43,7 +44,8 @@ public class DDLTest extends TestCase {
         var commonManagers = TestUtils.createCommonManagers(bootResult);
         typeManager = commonManagers.typeManager();
         entityContextFactory = bootResult.entityContextFactory();
-        apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache()));
+        apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache(),
+                new InstanceQueryService(bootResult.instanceSearchService())));
         instanceStore = bootResult.instanceStore();
         schedulerAndWorker  = bootResult.schedulerAndWorker();
         ContextUtil.setAppId(TestConstants.APP_ID);

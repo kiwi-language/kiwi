@@ -1054,7 +1054,7 @@ X-App-ID: 1000003110
 Content-Type: application/json
 
 {
-  "title": "Hat",
+  "title": "Trousers",
   "price": 100,
   "inventory": 100
 }
@@ -1122,3 +1122,12 @@ Content-Type: application/json
 [
   50, 100
 ]
+
+###
+POST http://localhost:8080/api/search/shopping/product
+X-App-ID: 1000003110
+Content-Type: application/json
+
+{
+  "price": 100
+}

@@ -131,7 +131,8 @@ public class PrimitiveType extends Type {
 
     @Override
     public boolean isNumber() {
-        return kind == PrimitiveKind.DOUBLE || kind == PrimitiveKind.LONG || kind == PrimitiveKind.FLOAT || kind == PrimitiveKind.INT;
+        return kind == PrimitiveKind.DOUBLE || kind == PrimitiveKind.LONG || kind == PrimitiveKind.FLOAT || kind == PrimitiveKind.INT
+                || kind == PrimitiveKind.SHORT || kind == PrimitiveKind.BYTE;
     }
 
     @Override

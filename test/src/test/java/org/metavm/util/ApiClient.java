@@ -8,6 +8,7 @@ import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.instance.core.InstanceWrap;
+import org.metavm.object.instance.rest.SearchResult;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -62,6 +63,10 @@ public class ApiClient {
         var rs = apiService.handleNewInstance(className, arguments, req, resp);
         processResponse(resp);
         return rs;
+    }
+
+    public SearchResult search(String className, Map<String, Object> query, int page, int pageSize) {
+        return apiService.search(className, query, page, pageSize);
     }
 
     public void deleteInstance(String id) {

@@ -18,7 +18,8 @@ public class ApiServiceTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
-        apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache()));
+        apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache(),
+                new InstanceQueryService(bootResult.instanceSearchService())));
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
         schedulerAndWorker = bootResult.schedulerAndWorker();

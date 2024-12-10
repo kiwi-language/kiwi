@@ -44,7 +44,8 @@ public class InstanceManagerTest extends TestCase {
         entityContextFactory = bootResult.entityContextFactory();
         instanceManager = managers.instanceManager();
         typeManager = managers.typeManager();
-        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache()));
+        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache(),
+                new InstanceQueryService(bootResult.instanceSearchService())));
         ContextUtil.setAppId(TestConstants.APP_ID);
         FlowSavingContext.initConfig();
     }

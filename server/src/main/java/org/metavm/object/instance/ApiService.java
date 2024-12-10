@@ -13,6 +13,7 @@ import org.metavm.flow.Flows;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
 import org.metavm.util.LinkedList;
@@ -38,10 +39,12 @@ public class ApiService extends EntityContextFactoryAware {
 
     private final MetaContextCache metaContextCache;
     private JdbcTemplate jdbcTemplate;
+    private final InstanceQueryService instanceQueryService;
 
-    public ApiService(EntityContextFactory entityContextFactory, MetaContextCache metaContextCache) {
+    public ApiService(EntityContextFactory entityContextFactory, MetaContextCache metaContextCache,  InstanceQueryService instanceQueryService) {
         super(entityContextFactory);
         this.metaContextCache = metaContextCache;
+        this.instanceQueryService = instanceQueryService;
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
@@ -211,6 +214,46 @@ public class ApiService extends EntityContextFactoryAware {
                 return inst.getStringId();
             } else
                 throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE, object);
+        }
+    }
+
+
+    public SearchResult search(String className, Map<String, Object> query, int page, int pageSize) {
+        try (var entityContext = newContext()) {
+            var klass = entityContext.getKlassByQualifiedName(className);
+            var classType = klass.getType();
+            var fields = new ArrayList<InstanceQueryField>();
+            query.forEach((name, value) -> {
+                var field = klass.findFieldByName(name);
+                if (field != null) {
+                    if (field.getType().isNumber() && value instanceof List<?> list && list.size() == 2) {
+                        var min = resolveValue(list.get(0), field.getType(), false, null, entityContext);
+                        var max = resolveValue(list.get(1), field.getType(), false, null, entityContext);
+                        fields.add(new InstanceQueryField(field, null, min, max));
+                    }
+                    else {
+                        fields.add(new InstanceQueryField(
+                                field,
+                                resolveValue(value, field.getType(), false, null, entityContext),
+                                null,
+                                null
+                        ));
+                    }
+                }
+            });
+            var internalQuery = InstanceQueryBuilder.newBuilder(classType.getKlass())
+//                    .searchText(searchText)
+//                    .newlyCreated(NncUtils.map(query.createdIds(), Id::parse))
+                    .fields(fields)
+//                    .expression(query.expression())
+                    .page(page)
+                    .pageSize(pageSize)
+                    .build();
+            var dataPage1 = instanceQueryService.query(internalQuery, entityContext);
+            return new SearchResult(
+                    NncUtils.map(dataPage1.data(), Reference::getStringId),
+                    dataPage1.total()
+            );
         }
     }
 

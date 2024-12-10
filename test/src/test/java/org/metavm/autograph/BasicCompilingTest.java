@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.type.*;
+import org.metavm.task.SynchronizeSearchTask;
 import org.metavm.util.BusinessException;
 import org.metavm.util.NncUtils;
 import org.metavm.util.TestConstants;
@@ -112,6 +113,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processSparseSwitch();
             processStringSwitch();
             processIndex();
+            processSearch();
         });
     }
 
@@ -1142,6 +1144,15 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(fooId, callMethod(fooClass, "findByBar", List.of(barId)));
         Assert.assertEquals(fooId, callMethod(fooClass, "findByNameAndSeq", List.of("foo", 3)));
         Assert.assertEquals(fooId, callMethod("fooService", "findByDesc", List.of("foo-3-bar001")));
+    }
+
+    private void processSearch() {
+        var className = "search.SearchFoo";
+        var id = saveInstance(className, Map.of("name", "foo", "seq", 100));
+        TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, schedulerAndWorker);
+        var page = search(className, Map.of("name", "foo", "seq", List.of(50, 200)), 1, 20).page();
+        Assert.assertEquals(1, page.size());
+        Assert.assertEquals(id, page.get(0));
     }
 
 }

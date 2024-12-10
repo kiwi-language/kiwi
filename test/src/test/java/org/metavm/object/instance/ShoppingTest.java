@@ -26,7 +26,8 @@ public class ShoppingTest extends TestCase {
         typeManager = managers.typeManager();
         schedulerAndWorker = bootResult.schedulerAndWorker();
         entityContextFactory = bootResult.entityContextFactory();
-        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache()));
+        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache(),
+                new InstanceQueryService(bootResult.instanceSearchService())));
     }
 
     @Override

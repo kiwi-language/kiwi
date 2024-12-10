@@ -12,6 +12,7 @@ import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.*;
 import org.metavm.object.version.VersionManager;
 import org.metavm.system.BlockManager;
@@ -89,7 +90,7 @@ public abstract class CompilerTestBase extends TestCase  {
                 loginService, entityQueryService, new MockEventQueue(), verificationCodeService);
         applicationManager = new ApplicationManager(entityContextFactory, roleManager, platformUserManager,
                 verificationCodeService, (IdService) bootResult.idProvider(), entityQueryService);
-        var apiService = new ApiService(entityContextFactory, bootResult.metaContextCache());
+        var apiService = new ApiService(entityContextFactory, bootResult.metaContextCache(), instanceQueryService);
         apiClient = new ApiClient(apiService);
         ContextUtil.resetProfiler();
     }
@@ -163,6 +164,10 @@ public abstract class CompilerTestBase extends TestCase  {
 
     protected Object callMethod(String qualifier, String methodName, List<Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    }
+
+    protected SearchResult search(String className, Map<String, Object> query, int page, int pageSize) {
+        return apiClient.search(className, query, page, pageSize);
     }
 
     protected ClassInstanceWrap getObject(String id) {

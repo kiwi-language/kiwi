@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
@@ -22,7 +23,8 @@ public class RaceConditionTest extends TestCase {
         entityContextFactory = bootResult.entityContextFactory();
         typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
         schedulerAndWorker = bootResult.schedulerAndWorker();
-        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache()));
+        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache(),
+                new InstanceQueryService(bootResult.instanceSearchService())));
     }
 
     @Override

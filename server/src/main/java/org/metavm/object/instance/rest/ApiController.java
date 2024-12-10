@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api")
@@ -66,23 +67,35 @@ public class ApiController {
         var path = servletRequest.getRequestURI().substring(5);
         var result = switch (method) {
             case "POST" -> {
-                if(!(requestBody instanceof List<?>))
-                    throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
-                var idx = path.lastIndexOf('/');
-                if (idx == -1)
-                    throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
-                var qualifier = NamingUtils.pathToName(path.substring(0, idx));
-                var methodCode = NamingUtils.hyphenToCamel(path.substring(idx + 1));
-                //noinspection unchecked
-                var arguments = (List<Object>) requestBody;
-                if (methodCode.equals("new"))
-                    yield apiService.handleNewInstance(qualifier, arguments, request, response);
-                else
-                    yield apiService.handleMethodCall(qualifier, methodCode, arguments, request, response);
+                if (path.startsWith("search/")) {
+                    if (!(requestBody instanceof Map<?,?>))
+                        throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
+                    //noinspection unchecked
+                    var map = (Map<String, Object>) requestBody;
+                    var className = NamingUtils.pathToName(path.substring("search/".length()));
+                    var page = Objects.requireNonNullElse((Integer) map.remove("$page"), 1);
+                    var pageSize = Objects.requireNonNullElse((Integer) map.remove("$pageSize"), 20);
+                    yield apiService.search(className, map, page, pageSize);
+                }
+                else {
+                    if (!(requestBody instanceof List<?>))
+                        throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
+                    var idx = path.lastIndexOf('/');
+                    if (idx == -1)
+                        throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
+                    var qualifier = NamingUtils.pathToName(path.substring(0, idx));
+                    var methodCode = NamingUtils.hyphenToCamel(path.substring(idx + 1));
+                    //noinspection unchecked
+                    var arguments = (List<Object>) requestBody;
+                    if (methodCode.equals("new"))
+                        yield apiService.handleNewInstance(qualifier, arguments, request, response);
+                    else
+                        yield apiService.handleMethodCall(qualifier, methodCode, arguments, request, response);
+                }
             }
             case "GET" -> {
                 var idx = path.lastIndexOf('/');
-                if(idx == -1)
+                if (idx == -1)
                     yield apiService.getInstance(path);
                 else
                     yield apiService.getStatic(NamingUtils.pathToName(path.substring(0, idx), true), path.substring(idx + 1));
