@@ -10,9 +10,8 @@ import com.intellij.psi.impl.light.LightRecordCanonicalConstructor;
 import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.*;
 import org.metavm.api.Index;
-import org.metavm.api.builtin.IndexDef;
+import org.metavm.api.*;
 import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.object.type.Type;
@@ -54,11 +53,6 @@ public class TranspileUtils {
     public static String getCanonicalName(PsiTypeParameter typeParameter) {
         var owner = NncUtils.requireNonNull(typeParameter.getOwner());
         return getCanonicalName(owner) + "-" + typeParameter.getName();
-    }
-
-    public static boolean isIndexDefField(PsiField psiField) {
-        return requireNonNull(psiField.getModifierList()).hasModifierProperty(PsiModifier.STATIC)
-                && TranspileUtils.getRawType(psiField.getType()).equals(TranspileUtils.createClassType(IndexDef.class));
     }
 
     public static PsiStatement getLastStatement(PsiCodeBlock codeBlock) {
@@ -1621,6 +1615,16 @@ public class TranspileUtils {
 
     public static boolean isIntType(PsiType type) {
         return type.equals(PsiType.INT);
+    }
+
+    public static String getIndexName(PsiNewExpression expression) {
+        var argList = Objects.requireNonNull(expression.getArgumentList());
+        return (String) getConstant(argList.getExpressions()[0]);
+    }
+
+    public static boolean isUniqueIndex(PsiNewExpression expression) {
+        var argList = Objects.requireNonNull(expression.getArgumentList());
+        return (boolean) getConstant(argList.getExpressions()[1]);
     }
 
     public static Object getConstant(PsiExpression expression) {

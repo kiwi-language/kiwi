@@ -96,33 +96,36 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitField(PsiField psiField) {
-        if (TranspileUtils.isIndexDefField(psiField)) {
-            var initializer = (PsiMethodCallExpression) requireNonNull(psiField.getInitializer());
-            var arguments = initializer.getArgumentList().getExpressions();
-            var fields = new ArrayList<Field>();
-            var type = currentClass();
-            var fieldNames = requireNonNull(requireNonNull((PsiNewExpression) arguments[1]).getArrayInitializer())
-                    .getInitializers();
-            for (PsiExpression fieldName : fieldNames) {
-                var fieldCode = (String) ((PsiLiteralExpression) fieldName).getValue();
-                fields.add(type.getFieldByName(fieldCode));
+        if (TranspileUtils.isIndexType(psiField.getType())) {
+            var expr = (PsiNewExpression) Objects.requireNonNull(psiField.getInitializer());
+            var index = Objects.requireNonNull(expr.getUserData(Keys.INDEX));
+            var initializer = Objects.requireNonNull(index.getInitializer());
+            initializer.clearContent();
+            var builder = new MethodGenerator(initializer, typeResolver, this);
+            builder.enterScope(initializer.getCode());
+            var argList = expr.getArgumentList();
+            if(argList != null) {
+                for (var arg :  argList.getExpressions()){
+                    builder.getExpressionResolver().resolve(arg);
+                }
             }
-            var method = (PsiMethod) requireNonNull(initializer.getMethodExpression().resolve());
-            var unique = method.getName().equals("createUnique");
-            var index = (Index) NncUtils.find(type.getConstraints(), c -> c instanceof Index idx &&
-                    Objects.equals(idx.getName(), psiField.getName()));
-            if (index == null)
-                index = new Index(type, psiField.getName(), "", unique, fields, null);
-            var name2indexField = new HashMap<String, IndexField>();
-            index.getFields().forEach(f -> name2indexField.put(f.getName(), f));
-            var indexFields = new ArrayList<IndexField>();
-            for (Field field : fields) {
-                var indexField = name2indexField.get(field.getName());
-                if (indexField == null)
-                    indexField = IndexField.createFieldItem(index, field);
-                indexFields.add(indexField);
+            var paramTypes = new ArrayList<Type>();
+            var generics = expr.resolveMethodGenerics();
+            var method = (PsiMethod) requireNonNull(generics.getElement());
+            for (var psiParam : method.getParameterList().getParameters()) {
+                paramTypes.add(typeResolver.resolveNullable(psiParam.getType(), ResolutionStage.DECLARATION));
             }
-            index.setFields(indexFields);
+            var constructor = StdKlass.index.get().getSelfMethod(
+                    m -> m.isConstructor() && m.getParameterTypes().equals(paramTypes)
+            );
+            var indexType = (ClassType) typeResolver.resolveDeclaration(expr.getType());
+            var methodRef = indexType.getMethod(constructor);
+            builder.createNew(methodRef, false, false);
+            var field = index.getDeclaringType().getStaticFieldByName(index.getName());
+            var valueType = (ClassType) indexType.getTypeArguments().get(1);
+            builder.createSetStatic(new FieldRef(valueType, field));
+            builder.createVoidReturn();
+            builder.exitScope();
         }
     }
 

@@ -3,11 +3,13 @@ package org.metavm.object.type;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.entity.*;
+import org.metavm.flow.Flows;
 import org.metavm.flow.KlassInput;
 import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.NullId;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -25,6 +27,7 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     private final ChildArray<IndexField> fields = addChild(new ChildArray<>(IndexField.class), "fields");
     private boolean unique;
     private @Nullable Method method;
+    private @Nullable Method initializer;
     private transient IndexDef<?> indexDef;
 
     public Index(Klass type, String name, String message, boolean unique, List<Field> fields,
@@ -162,6 +165,10 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         }
         output.writeBoolean(unique);
         output.writeEntityId(Objects.requireNonNull(method));
+        if (initializer != null)
+            output.writeEntityId(initializer);
+        else
+            output.writeId(new NullId());
     }
 
     @Override
@@ -175,6 +182,8 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         setFields(fields);
         unique = input.readBoolean();
         method = input.getMethod(input.readId());
+        var initializerId = input.readId();
+        initializer = initializerId instanceof NullId ? null : input.getMethod(initializerId);
     }
 
     public void setMethod(@Nullable Method method) {
@@ -184,4 +193,19 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     public @Nullable Method getMethod() {
         return method;
     }
+
+    @Nullable
+    public Method getInitializer() {
+        return initializer;
+    }
+
+    public void setInitializer(@Nullable Method initializer) {
+        this.initializer = initializer;
+    }
+
+    public void initialize(IEntityContext context) {
+        if (initializer != null)
+            Flows.execute(initializer.getRef(), null, List.of(), context);
+    }
+
 }

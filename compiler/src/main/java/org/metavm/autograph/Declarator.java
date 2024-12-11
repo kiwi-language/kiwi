@@ -101,8 +101,6 @@ public class Declarator extends VisitorBase {
         });
         var removedStaticFields = NncUtils.exclude(klass.getStaticFields(), classInfo.visitedFields::contains);
         removedStaticFields.forEach(klass::removeField);
-        var removedMethods = NncUtils.filter(klass.getMethods(),
-                m -> !classInfo.visitedMethods.contains(m));
         var fieldIndices = new HashMap<String, Integer>();
         for (int i = 0; i < psiClass.getFields().length; i++) {
             fieldIndices.put(psiClass.getFields()[i].getName(), i);
@@ -115,7 +113,8 @@ public class Declarator extends VisitorBase {
                 methodIndices.put(method, i);
         }
         klass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, -1)));
-        removedMethods.forEach(klass::removeMethod);
+        NncUtils.exclude(klass.getMethods(), classInfo.visitedMethods::contains).forEach(klass::removeMethod);
+        NncUtils.exclude(klass.getIndices(), classInfo.visitedIndexes::contains).forEach(klass::removeConstraint);
 //        metaClass.setStage(ResolutionStage.DECLARATION);
     }
 
@@ -221,6 +220,23 @@ public class Declarator extends VisitorBase {
 
     @Override
     public void visitField(PsiField psiField) {
+        if (TranspileUtils.isIndexType(psiField.getType())) {
+            var expression = (PsiNewExpression) Objects.requireNonNull(psiField.getInitializer());
+            var classInfo = currentClass();
+            var klass = classInfo.klass;
+            var name = TranspileUtils.getIndexName(expression);
+            var index = klass.findIndex(i -> i.getName().equals(name));
+            if(index == null) {
+                var initializer = MethodBuilder.newBuilder(klass, "$" + name)
+                        .isStatic(true)
+                        .build();
+                index = new Index(klass, name, "", TranspileUtils.isUniqueIndex(expression), List.of(), null);
+                index.setInitializer(initializer);
+            }
+            expression.putUserData(Keys.INDEX, index);
+            classInfo.visitedMethods.add(Objects.requireNonNull(index.getInitializer()));
+            classInfo.visitedIndexes.add(index);
+        }
         var type = resolveNullableType(psiField.getType());
         var klass = currentClass().klass;
         var isStatic = TranspileUtils.isStatic(psiField);
@@ -284,8 +300,8 @@ public class Declarator extends VisitorBase {
         classInfo.visitedFields.add(field);
         var ecd = klass.findEnumConstantDef(e -> e.getName().equals(enumConstant.getName()));
         if(ecd == null) {
-        var name = enumConstant.getName();
-        var initializer = MethodBuilder.newBuilder(klass, "$" + name)
+            var name = enumConstant.getName();
+            var initializer = MethodBuilder.newBuilder(klass, "$" + name)
                     .isStatic(true)
                     .returnType(klass.getType())
                     .build();
@@ -321,6 +337,7 @@ public class Declarator extends VisitorBase {
         private int nextEnumConstantOrdinal;
         private final Set<Field> visitedFields = new HashSet<>();
         private final Set<Method> visitedMethods = new HashSet<>();
+        private final Set<Index> visitedIndexes = new HashSet<>();
 
         private ClassInfo(Klass klass) {
             this.klass = klass;

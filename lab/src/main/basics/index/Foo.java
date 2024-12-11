@@ -12,6 +12,8 @@ public class Foo {
     private static final Index<Bar, Foo> barIndex = new Index<>(false, Foo::getBar);
     public static final Index<Pair<String, Integer>, Foo> nameSeqIndex =
             new Index<>(false, f -> new Pair<>(f.name, f.seq));
+    public static final Index<String, Foo> descIndex = new Index<>(false,
+            f -> f.getName() + "-" + f.getSeq() + "-" + f.getBar().getCode());
 
     private String name;
     private int seq;

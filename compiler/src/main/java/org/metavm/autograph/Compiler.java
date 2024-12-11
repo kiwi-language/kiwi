@@ -179,7 +179,6 @@ public class Compiler {
                 }
             }
             var generatedTypes = typeResolver.getGeneratedTypeDefs();
-            NncUtils.filterByType(generatedTypes, Klass.class).forEach(this::cleanup);
             long elapsed = System.currentTimeMillis() - start;
             logger.info("Compilation done in {} ms. {} types generated", elapsed, generatedTypes.size());
             deploy(generatedTypes, typeResolver);
@@ -189,10 +188,6 @@ public class Compiler {
             Constants.enableMaintenance();
             logger.info(profiler.finish(false, true).output());
         }
-    }
-
-    private void cleanup(Klass klass) {
-        NncUtils.exclude(klass.getConstraints(), Constraint::isVisited).forEach(klass::removeConstraint);
     }
 
     private static final List<Stage> stages = List.of(

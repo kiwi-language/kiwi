@@ -21,6 +21,7 @@ public class DDLCompilingTest extends CompilerTestBase {
           Id stateFieldId;
           Id stateKlassId;
           Id derivedInstanceId;
+          String fooId;
         };
         submit(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
@@ -32,6 +33,7 @@ public class DDLCompilingTest extends CompilerTestBase {
                 var indexFooKlass = context.getKlassByQualifiedName("index.IndexFoo");
                 Assert.assertEquals(1, indexFooKlass.getConstraints().size());
             }
+            ref.fooId = saveInstance("index.IndexFoo", Map.of("name", "foo", "seq", 1));
         });
 //        try {
 //            compile(DDL2_SOURCE_ROOT);
@@ -58,8 +60,9 @@ public class DDLCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(0, errors.size());
                 Assert.assertEquals(2, callMethod(ref.derivedInstanceId.toString(), "getValue2", List.of()));
                 var indexFooKlass = context.getKlassByQualifiedName("index.IndexFoo");
-                Assert.assertEquals(0, indexFooKlass.getConstraints().size());
+                Assert.assertEquals(1, indexFooKlass.getConstraints().size());
             }
+            Assert.assertEquals(ref.fooId, callMethod("index.IndexFoo", "findBySeq", List.of(1)));
         });
         compile(DDL4_SOURCE_ROOT);
 //        compile(DDL3_SOURCE_ROOT);

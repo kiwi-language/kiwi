@@ -123,7 +123,7 @@ public class DeployKlassInput extends KlassInput {
     public Index readIndex() {
         var index = super.readIndex();
         var context = batch.getContext();
-        if (context.isNewEntity(index) && !context.isNewEntity(index.getDeclaringType()))
+        if (context.isNewEntity(index))
             batch.addNewIndex(index);
         return index;
     }

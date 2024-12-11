@@ -178,7 +178,7 @@ public class SaveTypeBatch implements TypeDefProvider {
                 NncUtils.map(toEnumKlasses, Entity::getStringId),
                 NncUtils.map(fromEnumKlasses, Entity::getStringId),
                 NncUtils.map(runMethods, Entity::getStringId),
-                NncUtils.map(newIndexes, Entity::getStringId),
+                NncUtils.filterAndMap(newIndexes, i -> !context.isNewEntity(i.getDeclaringType()), Entity::getStringId),
                 NncUtils.map(searchEnabledClasses, Entity::getStringId),
                 fieldChanges
         );
@@ -217,5 +217,9 @@ public class SaveTypeBatch implements TypeDefProvider {
 
     public Set<Klass> getNewKlasses() {
         return Collections.unmodifiableSet(newKlasses);
+    }
+
+    public Set<Index> getNewIndexes() {
+        return Collections.unmodifiableSet(newIndexes);
     }
 }

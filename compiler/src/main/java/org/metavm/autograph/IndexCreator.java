@@ -32,30 +32,16 @@ public class IndexCreator extends VisitorBase {
             var valueKlass = ((ClassType) classType.getTypeArguments().get(1)).getKlass();
             var args = requireNonNull(expression.getArgumentList()).getExpressions();
             var name = (String) TranspileUtils.getConstant(args[0]);
-            var unique = (boolean) TranspileUtils.getConstant(args[1]);
-            var index = NncUtils.find(valueKlass.getAllIndices(), idx -> Objects.equals(idx.getName(), name));
+            var index = NncUtils.findRequired(valueKlass.getIndices(), idx -> Objects.equals(idx.getName(), name));
             var methodRef = (PsiMethodReferenceExpression) args[2];
-            if (index == null) {
-                index = new Index(
-                        valueKlass,
-                        name,
-                        "",
-                        unique,
-                        List.of(),
-                        requireNonNull(requireNonNull(methodRef.resolve()).getUserData(Keys.Method))
-                );
-            } else {
-                index.setName(name);
-            }
-            index.setVisited(true);
+            index.setMethod(requireNonNull(requireNonNull(methodRef.resolve()).getUserData(Keys.Method)));
             var keyType = classType.getTypeArguments().get(0);
             if (keyType instanceof ClassType ct && ct.isValue()) {
-                var indexF = index;
                 ct.foreachField(keyField -> {
                     if (!keyField.isStatic() && !keyField.isTransient()) {
-                        var indexField = NncUtils.find(indexF.getFields(), f -> Objects.equals(f.getName(), keyField.getName()));
+                        var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), keyField.getName()));
                         if (indexField == null)
-                            new IndexField(indexF, keyField.getName(), keyField.getType(), Values.nullValue());
+                            new IndexField(index, keyField.getName(), keyField.getType(), Values.nullValue());
                         else
                             indexField.setType(keyField.getType());
                     }

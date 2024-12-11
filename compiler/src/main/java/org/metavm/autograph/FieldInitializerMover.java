@@ -48,7 +48,7 @@ public class FieldInitializerMover extends VisitorBase {
     public void visitField(PsiField field) {
         super.visitField(field);
         var initializer = field.getInitializer();
-        if(initializer != null) {
+        if(initializer != null && !TranspileUtils.isIndexType(initializer.getType())) {
             var klass = requireNonNull(field.getContainingClass());
             var isStatic = TranspileUtils.isStatic(field);
             var method =  isStatic ?

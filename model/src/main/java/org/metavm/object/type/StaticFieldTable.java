@@ -77,7 +77,7 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     }
 
     public void set(Field field, Value value) {
-        assert field.getDeclaringType() == klass;
+        assert field.getDeclaringType() == klass : "Field " + field.getQualifiedName() + " is not defined in class " + klass ;
         var entry = map.get(field);
         if(entry != null)
             entry.setValue(value);
