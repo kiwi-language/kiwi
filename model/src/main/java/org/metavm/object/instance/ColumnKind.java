@@ -9,7 +9,7 @@ public enum ColumnKind {
 
     INT(1, "bigint", "long", "l", 20) ,
 
-    STRING(2, "varchar(256)","keyword","s",10),
+    STRING(2, "varchar(256)","text","s",10),
 
     BOOL(3, "bool","boolean","b",20),
 
