@@ -1071,11 +1071,13 @@ public class Instances {
     public static Object toJavaValue(Value value, Class<?> javaType) {
         return switch (value) {
             case IntValue intValue -> {
-                var v = intValue.getValue();
+                var v = intValue.value;
                 if (javaType == byte.class || javaType == Byte.class)
-                    yield v.byteValue();
+                    yield (byte) v;
                 if (javaType == short.class || javaType == Short.class)
-                    yield v.shortValue();
+                    yield (short) v;
+                if (javaType == char.class || javaType == Character.class)
+                    yield (char) v;
                 yield v;
             }
             case PrimitiveValue primitiveValue -> primitiveValue.getValue();

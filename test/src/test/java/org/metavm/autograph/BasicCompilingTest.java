@@ -114,6 +114,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processStringSwitch();
             processIndex();
             processSearch();
+            processCharReplace();
         });
     }
 
@@ -1151,6 +1152,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         var page = search(className, Map.of("name", "foo", "seq", List.of(50, 200)), 1, 20).page();
         Assert.assertEquals(1, page.size());
         Assert.assertEquals(id, page.get(0));
+    }
+
+    private void processCharReplace() {
+        var className = "misc.CharReplaceFoo";
+        Assert.assertEquals(
+                "MacBook_Pro",
+                callMethod(className, "replaceWhiteSpace", List.of("MacBook Pro"))
+        );
     }
 
 }
