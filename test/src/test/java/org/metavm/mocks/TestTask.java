@@ -1,10 +1,10 @@
 package org.metavm.mocks;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.task.Task;
 
-@EntityType
+@Entity
 public class TestTask extends Task {
 
     private int count = 0;

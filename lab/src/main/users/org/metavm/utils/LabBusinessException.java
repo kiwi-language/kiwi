@@ -1,10 +1,10 @@
 package org.metavm.utils;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class LabBusinessException extends RuntimeException {
 
     public LabBusinessException(LabErrorCode errorCode, Object...params) {

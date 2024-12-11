@@ -1,6 +1,6 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.Writable;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.FunctionType;
@@ -10,7 +10,7 @@ import org.metavm.util.WireTypes;
 
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class LambdaRef extends CallableRef implements Writable {
 
     public static LambdaRef read(KlassInput input) {

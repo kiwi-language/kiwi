@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.ChildList;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.manufacturing.common.OwnedEntity;
 import org.metavm.manufacturing.storage.Position;
 import org.metavm.manufacturing.storage.Warehouse;
@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType
+@Entity
 public class Material extends OwnedEntity {
 
     private final @NotNull String code;

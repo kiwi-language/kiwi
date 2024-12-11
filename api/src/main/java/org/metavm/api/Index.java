@@ -4,7 +4,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Function;
 
-@EntityType(systemAPI = true, isNative = true)
+@Entity(systemAPI = true, isNative = true)
 public class Index<K, V> {
 
     private static Object value;

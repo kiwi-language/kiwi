@@ -1,8 +1,8 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.Index;
-import org.metavm.api.ValueType;
+import org.metavm.api.Value;
 import org.metavm.api.lang.Lang;
 import org.metavm.manufacturing.material.*;
 import org.metavm.manufacturing.utils.Utils;
@@ -10,7 +10,7 @@ import org.metavm.manufacturing.utils.Utils;
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityType(searchable = true)
+@Entity(searchable = true)
 public class Inventory {
 
     public static final Index<Key, Inventory> keyIndex = new Index<>(true, Inventory::key);
@@ -263,7 +263,7 @@ public class Inventory {
         }
     }
 
-    @ValueType
+    @Value
     public record Key(
             Material material,
             Position position,

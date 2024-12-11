@@ -1,13 +1,13 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.expression.ExpressionTypeMap;
 
 import javax.annotation.Nullable;
 
-@EntityType
+@Entity
 public class IfEqNode extends JumpNode {
 
     private transient ExpressionTypeMap nextExpressionTypes;

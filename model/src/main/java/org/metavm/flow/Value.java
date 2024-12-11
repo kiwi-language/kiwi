@@ -1,7 +1,7 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.ValueObject;
 import org.metavm.entity.Element;
 import org.metavm.entity.EntityParentRef;
@@ -11,7 +11,7 @@ import org.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 
-@EntityType
+@Entity
 public abstract class Value extends Element implements ValueObject {
 
     public Value() {

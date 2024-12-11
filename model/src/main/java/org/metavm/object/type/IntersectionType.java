@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.ValueArray;
@@ -17,7 +17,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 
-@EntityType
+@Entity
 public class IntersectionType extends CompositeType {
 
     private final ValueArray<Type> types;

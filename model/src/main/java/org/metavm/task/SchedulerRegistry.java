@@ -1,15 +1,14 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType
-public class SchedulerRegistry extends Entity {
+@Entity
+public class SchedulerRegistry extends org.metavm.entity.Entity {
 
     public static final IndexDef<SchedulerRegistry> IDX_ALL_FLAG = IndexDef.create(SchedulerRegistry.class, "allFlag");
 

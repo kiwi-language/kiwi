@@ -1,8 +1,8 @@
 package org.metavm.application;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType(searchable = true)
+@Entity(searchable = true)
 public class PlatformApplication extends LabApplication {
 
     private final static PlatformApplication INSTANCE = new PlatformApplication();

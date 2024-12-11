@@ -1,7 +1,7 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-@EntityType
+@Entity
 public class Method extends Flow implements Property {
 
     public static final Logger logger = LoggerFactory.getLogger(Method.class);

@@ -1,9 +1,9 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 
-@EntityType
+@Entity
 public class MethodCallNode extends CallNode {
 
     public MethodCallNode(String name,

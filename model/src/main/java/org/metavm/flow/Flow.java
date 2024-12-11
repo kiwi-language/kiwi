@@ -3,7 +3,7 @@ package org.metavm.flow;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
@@ -21,7 +21,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-@EntityType
+@Entity
 public abstract class Flow extends AttributedElement implements GenericDeclaration, Callable, LoadAware, CapturedTypeScope, ITypeDef {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");

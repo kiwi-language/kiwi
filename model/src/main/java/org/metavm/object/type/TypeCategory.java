@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.natives.ArrayNative;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.type.rest.dto.TypeCategoryCodes;
@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-@EntityType
+@Entity
 public enum TypeCategory {
     CLASS(TypeCategoryCodes.CLASS, ColumnKind.REFERENCE, 2),
     ENUM(TypeCategoryCodes.ENUM, ColumnKind.REFERENCE, 2),

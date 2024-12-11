@@ -1,13 +1,13 @@
 package org.metavm.manufacturing.storage;
 
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.manufacturing.material.*;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityType
+@Entity
 public record InboundRecord(
         @EntityField(asTitle = true) String inboundOrderCode,
         InboundOrderItem inboundOrderItem,

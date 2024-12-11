@@ -6,7 +6,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.HybridValueHolder;
 import org.metavm.entity.natives.StdFunction;
@@ -264,7 +264,7 @@ public class DDLManagerTest extends TestCase {
         var classBlacklist = new HashSet<Class<?>>();
         var fieldBlacklist = new HashSet<Field>();
         for (Class<?> k : klasses) {
-            var entityType = k.getAnnotation(EntityType.class);
+            var entityType = k.getAnnotation(Entity.class);
             if(entityType != null && entityType.since() > since)
                 classBlacklist.add(k);
             else {

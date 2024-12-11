@@ -1,9 +1,9 @@
 package org.metavm.manufacturing.material;
 
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType
+@Entity
 public class Client {
     private String code;
     @EntityField(asTitle = true)

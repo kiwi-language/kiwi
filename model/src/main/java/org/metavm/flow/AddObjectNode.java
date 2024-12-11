@@ -1,17 +1,16 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class AddObjectNode extends Node {
 
     private boolean ephemeral;

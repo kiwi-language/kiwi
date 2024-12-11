@@ -1,11 +1,11 @@
 package org.metavm.manufacturing.material;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityType
+@Entity
 public class Batch {
 
     private String code;

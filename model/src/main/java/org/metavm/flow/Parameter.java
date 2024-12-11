@@ -2,14 +2,14 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.*;
 import org.metavm.object.type.ITypeDef;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeMetadata;
 import org.metavm.util.NncUtils;
 
-@EntityType
+@Entity
 public class Parameter extends AttributedElement implements LocalKey, ITypeDef {
 
     @EntityField(asTitle = true)

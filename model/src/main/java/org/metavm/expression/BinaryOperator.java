@@ -1,6 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.object.instance.core.BooleanValue;
 import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.NumberValue;
@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 
 
-@EntityType
+@Entity
 public enum BinaryOperator {
 
     // Multiply and division

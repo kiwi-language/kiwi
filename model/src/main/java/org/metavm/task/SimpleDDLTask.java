@@ -1,13 +1,13 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.IEntityContext;
 
 import java.util.List;
 
-@EntityType
+@Entity
 public class SimpleDDLTask extends Task implements IDDLTask {
 
     private final Commit commit;

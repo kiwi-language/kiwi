@@ -1,11 +1,10 @@
 package org.metavm.autograph.mocks;
 
-import org.metavm.entity.Entity;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType(compiled = true)
-public class AstSimpleProduct extends Entity {
+@Entity(compiled = true)
+public class AstSimpleProduct extends org.metavm.entity.Entity {
 
     @EntityField(asTitle = true)
     public String title;

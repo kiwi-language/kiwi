@@ -2,16 +2,15 @@ package org.metavm.application;
 
 import org.metavm.application.rest.dto.AppInvitationDTO;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.Entity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
 import org.metavm.user.PlatformUser;
 import org.metavm.user.User;
 import org.metavm.util.BusinessException;
 
-@EntityType
-public class AppInvitation extends Entity {
+@Entity
+public class AppInvitation extends org.metavm.entity.Entity {
 
     public static final IndexDef<AppInvitation> IDX_APP = IndexDef.create(AppInvitation.class, "application");
 

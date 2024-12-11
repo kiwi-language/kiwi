@@ -1,13 +1,13 @@
 
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.IndexRef;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
-@EntityType
+@Entity
 public class IndexSelectFirstNode extends Node {
 
     private final IndexRef indexRef;

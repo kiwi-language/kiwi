@@ -5,7 +5,7 @@ import com.intellij.psi.*;
 import org.metavm.api.ChildList;
 import org.metavm.api.ValueList;
 import org.metavm.api.ValueStruct;
-import org.metavm.api.ValueType;
+import org.metavm.api.Value;
 import org.metavm.api.builtin.Password;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
@@ -491,7 +491,7 @@ public class TypeResolverImpl implements TypeResolver {
             return ClassKind.ENUM;
         if (psiClass.isInterface())
             return ClassKind.INTERFACE;
-        if (psiClass.hasAnnotation(ValueType.class.getName()) || psiClass.hasAnnotation(ValueStruct.class.getName()))
+        if (psiClass.hasAnnotation(Value.class.getName()) || psiClass.hasAnnotation(ValueStruct.class.getName()))
             return ClassKind.VALUE;
         return ClassKind.CLASS;
     }

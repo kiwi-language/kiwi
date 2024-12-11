@@ -1,7 +1,7 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.ClassType;
 import org.metavm.util.InternalException;
@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class NewObjectNode extends CallNode {
 
     public static final Logger logger = LoggerFactory.getLogger(NewObjectNode.class);

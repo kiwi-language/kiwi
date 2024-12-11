@@ -4,10 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.entity.natives.ListNative;
 import org.metavm.entity.natives.NativeBase;
 import org.metavm.expression.Var;
 import org.metavm.flow.Error;
@@ -28,7 +27,7 @@ import java.util.function.Supplier;
 
 import static org.metavm.util.NncUtils.*;
 
-@EntityType(searchable = true)
+@Entity(searchable = true)
 public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, StagedEntity, GlobalKey, LoadAware, LocalKey {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
@@ -487,7 +486,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     }
 
     public Method getMethod(long id) {
-        return methods.get(Entity::tryGetId, id);
+        return methods.get(org.metavm.entity.Entity::tryGetId, id);
     }
 
     public Method tryGetMethod(String name, List<Type> parameterTypes) {
@@ -762,7 +761,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     }
 
     public Field getField(Id id) {
-        var field = fields.get(Entity::tryGetId, id);
+        var field = fields.get(org.metavm.entity.Entity::tryGetId, id);
         if (field != null)
             return field;
         if (superKlass != null)
@@ -771,7 +770,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     }
 
     public Method getMethod(Id id) {
-        return Objects.requireNonNull(methods.get(Entity::tryGetId, id));
+        return Objects.requireNonNull(methods.get(org.metavm.entity.Entity::tryGetId, id));
     }
 
     public @Nullable Field findSelfField(Predicate<Field> predicate) {
@@ -1389,7 +1388,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         moveProperty(fields, field, index);
     }
 
-    private <T extends Entity & Property> void moveProperty(ChildArray<T> properties, T property, int index) {
+    private <T extends org.metavm.entity.Entity & Property> void moveProperty(ChildArray<T> properties, T property, int index) {
         if (index < 0 || index >= properties.size())
             throw new BusinessException(ErrorCode.INDEX_OUT_OF_BOUND);
         if (!properties.remove(property))

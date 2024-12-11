@@ -1,9 +1,9 @@
 package org.metavm.manufacturing.production;
 
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType
+@Entity
 public class Process {
     @EntityField(asTitle = true)
     private String name;

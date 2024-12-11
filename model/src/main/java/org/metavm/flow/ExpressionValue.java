@@ -1,14 +1,14 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
 import org.metavm.expression.VarType;
 import org.metavm.object.type.Type;
 
-@EntityType
+@Entity
 public class ExpressionValue extends Value {
 
     private final Expression expression;

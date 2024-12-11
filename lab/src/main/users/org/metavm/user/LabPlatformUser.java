@@ -1,7 +1,7 @@
 package org.metavm.user;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.lang.Lang;
 import org.metavm.api.lang.PasswordUtils;
 import org.metavm.api.lang.SessionUtils;
@@ -15,7 +15,7 @@ import org.metavm.utils.LabErrorCode;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType(searchable = true)
+@Entity(searchable = true)
 public class LabPlatformUser extends LabUser {
 
     @ChildEntity

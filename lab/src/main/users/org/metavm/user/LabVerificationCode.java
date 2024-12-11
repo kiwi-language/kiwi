@@ -1,8 +1,8 @@
 package org.metavm.user;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.Index;
-import org.metavm.api.ValueType;
+import org.metavm.api.Value;
 import org.metavm.api.lang.EmailUtils;
 import org.metavm.api.lang.Lang;
 import org.metavm.api.lang.RegexUtils;
@@ -11,7 +11,7 @@ import org.metavm.utils.LabErrorCode;
 
 import java.util.Date;
 
-@EntityType
+@Entity
 public class LabVerificationCode {
 
     public static final long DEFAULT_EXPIRE_IN_MILLIS = 15 * 60 * 1000L;
@@ -90,12 +90,12 @@ public class LabVerificationCode {
             throw new LabBusinessException(LabErrorCode.INCORRECT_VERIFICATION_CODE);
     }
 
-    @ValueType
+    @Value
     public record IndexReceiverCodeExpiredAt(String receiver, String code,
                                              Date expiredAt) {
     }
 
-    @ValueType
+    @Value
     public record IndexClientIpCreatedAt(String clientIP, Date createdAt) {
     }
 

@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.Reference;
@@ -16,7 +16,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class AllMatchExpression extends Expression {
 
     private final Expression array;

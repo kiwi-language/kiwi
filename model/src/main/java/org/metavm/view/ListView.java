@@ -2,9 +2,8 @@ package org.metavm.view;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ConstraintDef;
-import org.metavm.entity.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.type.Field;
@@ -16,8 +15,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 
-@EntityType
-public class ListView extends Entity {
+@Entity
+public class ListView extends org.metavm.entity.Entity {
 
     public static final IndexDef<ListView> IDX_TYPE_PRIORITY =
             new IndexDef<>(ListView.class, "type", "priority");
@@ -83,8 +82,8 @@ public class ListView extends Entity {
     public ListViewDTO toDTO() {
         return new ListViewDTO(
                 getStringId(),
-                NncUtils.map(visibleFields, Entity::getStringId),
-                NncUtils.map(searchableFields, Entity::getStringId)
+                NncUtils.map(visibleFields, org.metavm.entity.Entity::getStringId),
+                NncUtils.map(searchableFields, org.metavm.entity.Entity::getStringId)
         );
     }
 

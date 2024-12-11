@@ -1,6 +1,6 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
@@ -16,7 +16,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType
+@Entity
 public class FunctionRef extends FlowRef {
 
     public FunctionRef(Function rawFlow, List<? extends Type> typeArguments) {

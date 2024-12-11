@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.*;
 import org.metavm.expression.Var;
 import org.metavm.flow.Flow;
@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-@EntityType
+@Entity
 public class ClassType extends CompositeType implements ISubstitutor, GenericDeclarationRef {
 
     public static ClassType create(Klass klass, List<? extends Type> typeArguments) {

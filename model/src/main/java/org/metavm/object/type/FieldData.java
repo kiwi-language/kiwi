@@ -1,15 +1,14 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.Column;
 
 import javax.annotation.Nullable;
 
-@EntityType
-public class FieldData extends Entity {
+@Entity
+public class FieldData extends org.metavm.entity.Entity {
 
     public static final IndexDef<FieldData> IDX_DECLARING_TYPE = IndexDef.create(FieldData.class, "declaringType");
 

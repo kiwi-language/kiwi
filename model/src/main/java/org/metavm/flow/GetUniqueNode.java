@@ -1,12 +1,11 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.type.Index;
 import org.metavm.object.type.IndexRef;
 import org.metavm.object.type.UnionType;
 
-@EntityType
+@Entity
 public class GetUniqueNode extends Node {
 
     private final IndexRef indexRef;

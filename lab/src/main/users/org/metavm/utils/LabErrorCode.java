@@ -1,8 +1,8 @@
 package org.metavm.utils;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType
+@Entity
 public enum LabErrorCode {
 
     REENTERING_APP(608, "Please exit the current application before operating"),

@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.Nullable;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
@@ -14,7 +14,7 @@ import org.metavm.util.MvOutput;
 import java.util.Objects;
 import java.util.function.Function;
 
-@EntityType
+@Entity
 public class PrimitiveType extends Type {
 
     public static final PrimitiveType nullType = new PrimitiveType(PrimitiveKind.NULL);

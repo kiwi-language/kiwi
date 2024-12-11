@@ -1,6 +1,6 @@
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType(tag = 0)
+@Entity(tag = 0)
 public enum ProductState {
     AVAILABLE,
     UNAVAILABLE

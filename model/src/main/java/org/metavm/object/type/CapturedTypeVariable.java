@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.LoadAware;
 import org.metavm.flow.Flow;
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-@EntityType
+@Entity
 public class CapturedTypeVariable extends TypeDef implements LoadAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");

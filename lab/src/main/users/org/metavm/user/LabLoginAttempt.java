@@ -1,12 +1,12 @@
 package org.metavm.user;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.Index;
-import org.metavm.api.ValueType;
+import org.metavm.api.Value;
 
 import java.util.Date;
 
-@EntityType
+@Entity
 public record LabLoginAttempt(boolean successful, String loginName,
                               String clientIP, Date time) {
 
@@ -16,11 +16,11 @@ public record LabLoginAttempt(boolean successful, String loginName,
     public static final Index<ClientIpSuccTimeIndex, LabLoginAttempt> ipIndex =
             new Index<>(false, a -> new ClientIpSuccTimeIndex(a.clientIP, a.successful, a.time));
 
-    @ValueType
+    @Value
     public record LoginNameSuccTimeIndex(String loginName, boolean successful, Date time) {
     }
 
-    @ValueType
+    @Value
     public record ClientIpSuccTimeIndex(String clientIP, boolean successful, Date time) {
     }
 

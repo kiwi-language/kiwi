@@ -1,12 +1,12 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.event.rest.dto.ReceiveMessageEvent;
 import org.metavm.message.Message;
 import org.metavm.util.Hooks;
 
-@EntityType
+@Entity
 public class SendMessageTask extends Task {
 
     private final Message message;

@@ -1,6 +1,6 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.application.AppInvitation;
 import org.metavm.application.Application;
 import org.metavm.entity.EntityIndexKey;
@@ -9,7 +9,7 @@ import org.metavm.message.Message;
 
 import java.util.List;
 
-@EntityType
+@Entity
 public class ClearInvitationTask extends Task {
 
     private final String appId;

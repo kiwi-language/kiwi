@@ -1,14 +1,13 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.BuildKeyContext;
-import org.metavm.entity.Entity;
 import org.metavm.entity.LocalKey;
 import org.metavm.object.instance.core.Value;
 
-@EntityType
-public class StaticFieldTableEntry extends Entity implements LocalKey {
+@Entity
+public class StaticFieldTableEntry extends org.metavm.entity.Entity implements LocalKey {
     private final Field field;
     private Value value;
 

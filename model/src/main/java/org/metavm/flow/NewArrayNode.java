@@ -1,12 +1,12 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.ArrayType;
 import org.metavm.util.NncUtils;
 
-@EntityType
+@Entity
 public class NewArrayNode extends Node {
 
     public NewArrayNode(String name,

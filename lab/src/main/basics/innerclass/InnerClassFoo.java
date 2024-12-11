@@ -2,7 +2,7 @@ package innerclass;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.ChildList;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import java.util.Iterator;
 
@@ -52,7 +52,7 @@ public class InnerClassFoo<K,V> {
         throw new IllegalStateException();
     }
 
-    @EntityType(ephemeral = true)
+    @Entity(ephemeral = true)
     public class MyIterator implements Iterator<Entry<K,V>> {
 
         private final Iterator<Entry<K,V>> it;

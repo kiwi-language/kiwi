@@ -1045,10 +1045,10 @@ public class TranspileUtils {
     }
 
     public static Object getEntityAnnotationAttr(PsiClass psiClass, String attributeName, Object defaultValue) {
-        var value = getAnnotationAttribute(psiClass, EntityType.class, attributeName);
+        var value = getAnnotationAttribute(psiClass, Entity.class, attributeName);
         if (value != null)
             return value;
-        if ((value = getAnnotationAttribute(psiClass, ValueType.class, attributeName)) != null)
+        if ((value = getAnnotationAttribute(psiClass, Value.class, attributeName)) != null)
             return value;
         if ((value = getAnnotationAttribute(psiClass, EntityStruct.class, attributeName)) != null)
             return value;

@@ -1,7 +1,7 @@
 package org.metavm.user;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.application.Application;
 import org.metavm.application.ApplicationState;
 import org.metavm.common.ErrorCode;
@@ -12,7 +12,7 @@ import org.metavm.util.BusinessException;
 
 import java.util.List;
 
-@EntityType(searchable = true)
+@Entity(searchable = true)
 public class PlatformUser extends User {
 
     public static final IndexDef<PlatformUser> IDX_APP =

@@ -1,11 +1,11 @@
 package org.metavm.api.entity;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-@EntityType(systemAPI = true)
+@Entity(systemAPI = true)
 public interface HttpRequest {
 
     @Nonnull

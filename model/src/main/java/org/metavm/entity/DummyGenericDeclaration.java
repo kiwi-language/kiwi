@@ -1,13 +1,12 @@
 package org.metavm.entity;
 
-import org.jetbrains.annotations.Nullable;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.flow.Flow;
 import org.metavm.object.type.TypeVariable;
 
 import java.util.List;
 
-@EntityType
+@Entity
 public enum DummyGenericDeclaration implements GenericDeclaration {
 
     INSTANCE

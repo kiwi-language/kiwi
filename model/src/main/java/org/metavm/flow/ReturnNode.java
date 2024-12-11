@@ -2,11 +2,11 @@ package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.Type;
 
-@EntityType
+@Entity
 @Slf4j
 public class ReturnNode extends Node {
 

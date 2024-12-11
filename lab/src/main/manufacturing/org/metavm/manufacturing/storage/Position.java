@@ -1,9 +1,9 @@
 package org.metavm.manufacturing.storage;
 
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType
+@Entity
 public class Position {
     private String code;
     @EntityField(asTitle = true)

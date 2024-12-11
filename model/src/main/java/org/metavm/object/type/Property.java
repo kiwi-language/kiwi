@@ -1,15 +1,14 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.LocalKey;
 import org.metavm.object.instance.core.Id;
-import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
-@EntityType
+@Entity
 public interface Property extends ClassMember, LocalKey {
 
     @Nullable Id tryGetId();

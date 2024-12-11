@@ -1,15 +1,14 @@
 package org.metavm.mocks;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.ReadWriteArray;
 
 import java.util.List;
 
-@EntityType
-public class LivingBeing extends Entity {
+@Entity
+public class LivingBeing extends org.metavm.entity.Entity {
 
     public static final IndexDef<LivingBeing> IDX_AGE = IndexDef.create(
         LivingBeing.class, "age"

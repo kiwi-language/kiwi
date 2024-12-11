@@ -2,8 +2,7 @@ package org.metavm.mocks;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.ReadWriteArray;
@@ -12,8 +11,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
-@EntityType(searchable = true)
-public class Foo extends Entity {
+@Entity(searchable = true)
+public class Foo extends org.metavm.entity.Entity {
 
     public static final IndexDef<Foo> IDX_NAME = new IndexDef<>(Foo.class, false, "name");
 

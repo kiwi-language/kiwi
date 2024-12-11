@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.Attribute;
 import org.metavm.entity.Element;
 import org.metavm.entity.ReadWriteArray;
@@ -11,7 +11,7 @@ import org.metavm.flow.Method;
 import java.util.List;
 
 @Slf4j
-@EntityType(ephemeral = true)
+@Entity(ephemeral = true)
 public class DummyKlass extends Klass {
 
     public static final DummyKlass INSTANCE = new DummyKlass();

@@ -1,8 +1,7 @@
 package org.metavm.util;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 
-@EntityType
-public class DummyAny extends Entity {
+@Entity
+public class DummyAny extends org.metavm.entity.Entity {
 }

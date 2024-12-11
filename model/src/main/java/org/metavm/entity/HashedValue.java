@@ -1,10 +1,10 @@
 package org.metavm.entity;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.ValueObject;
 import org.metavm.util.EncodingUtils;
 
-@EntityType
+@Entity
 public record HashedValue(
         String salt,
         String hashedValue

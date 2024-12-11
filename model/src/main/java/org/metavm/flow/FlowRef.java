@@ -1,6 +1,6 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.Writable;
 import org.metavm.entity.CopyIgnore;
 import org.metavm.entity.GenericDeclarationRef;
@@ -15,7 +15,7 @@ import org.metavm.object.type.TypeMetadata;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
+@Entity
 public abstract class FlowRef extends CallableRef implements GenericDeclarationRef, Writable {
 
     private final Flow rawFlow;

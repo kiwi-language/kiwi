@@ -3,7 +3,7 @@ package org.metavm.object.type;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.flow.KlassInput;
@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-@EntityType
+@Entity
 public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAware {
 
     @EntityField(asTitle = true)

@@ -1,7 +1,7 @@
 package org.metavm.task;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.ddl.FieldAddition;
 import org.metavm.ddl.SystemDDL;
 import org.metavm.entity.IEntityContext;
@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class PreUpgradeTask extends ScanTask {
 
     @ChildEntity

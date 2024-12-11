@@ -1,11 +1,10 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 
-@EntityType
-public class ExecutorData extends Entity {
+@Entity
+public class ExecutorData extends org.metavm.entity.Entity {
 
     public static final IndexDef<ExecutorData> IDX_AVAIlABLE = IndexDef.create(ExecutorData.class, "available");
     public static final IndexDef<ExecutorData> IDX_IP = IndexDef.createUnique(ExecutorData.class, "ip");

@@ -1,10 +1,9 @@
 package org.metavm.entity.generic.mocks;
 
-import org.metavm.entity.Entity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType(compiled = true)
-public class GenericsBase<T> extends Entity implements GenericsInterface<T> {
+@Entity(compiled = true)
+public class GenericsBase<T> extends org.metavm.entity.Entity implements GenericsInterface<T> {
 
     T value;
 

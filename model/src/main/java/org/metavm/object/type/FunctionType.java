@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.ValueArray;
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-@EntityType
+@Entity
 public class FunctionType extends CompositeType {
 
     private Type returnType;

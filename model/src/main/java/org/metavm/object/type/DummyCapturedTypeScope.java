@@ -1,13 +1,13 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.flow.Flow;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 
-@EntityType
+@Entity
 public enum DummyCapturedTypeScope implements CapturedTypeScope {
 
     INSTANCE;

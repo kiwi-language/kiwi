@@ -1,12 +1,12 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 
-@EntityType
+@Entity
 public class CopyNode extends Node {
 
     protected CopyNode(String name, Node previous, Code code) {

@@ -1,13 +1,12 @@
 package org.metavm.user;
 
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.SerializeContext;
 import org.metavm.user.rest.dto.RoleDTO;
 
-@EntityType(searchable = true)
-public class Role extends Entity {
+@Entity(searchable = true)
+public class Role extends org.metavm.entity.Entity {
 
     @EntityField(asTitle = true)
     private String name;

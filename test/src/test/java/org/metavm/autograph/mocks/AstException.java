@@ -1,8 +1,8 @@
 package org.metavm.autograph.mocks;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType(compiled = true)
+@Entity(compiled = true)
 public class AstException extends Exception {
 
     public AstException() {

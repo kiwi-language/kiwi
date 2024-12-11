@@ -1,13 +1,13 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 
-@EntityType
+@Entity
 public class FunctionNode extends Node {
 
     private final FunctionType functionType;

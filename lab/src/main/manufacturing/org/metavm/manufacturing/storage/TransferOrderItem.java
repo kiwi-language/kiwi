@@ -1,6 +1,6 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.manufacturing.material.Batch;
 import org.metavm.manufacturing.material.Material;
 import org.metavm.manufacturing.material.Supplier;
@@ -8,7 +8,7 @@ import org.metavm.manufacturing.material.Unit;
 
 import javax.annotation.Nullable;
 
-@EntityType
+@Entity
 public class TransferOrderItem {
     private final TransferOrder transferOrder;
     private Material material;

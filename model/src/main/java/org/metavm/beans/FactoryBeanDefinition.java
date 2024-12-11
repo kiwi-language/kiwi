@@ -1,6 +1,6 @@
 package org.metavm.beans;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
@@ -11,7 +11,7 @@ import org.metavm.util.NncUtils;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class FactoryBeanDefinition extends BeanDefinition {
 
     private final BeanDefinition configurationBeanDef;

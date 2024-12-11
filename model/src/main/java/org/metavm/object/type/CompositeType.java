@@ -1,13 +1,13 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.util.NncUtils;
 
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-@EntityType
+@Entity
 public abstract class CompositeType extends Type {
 
     public CompositeType() {

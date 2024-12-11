@@ -1,11 +1,10 @@
 package org.metavm.mocks;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 
-@EntityType
-public class IndexFoo extends Entity {
+@Entity
+public class IndexFoo extends org.metavm.entity.Entity {
 
     public static final IndexDef<IndexFoo> IDX_STATE = IndexDef.create(IndexFoo.class, "state");
     public static final IndexDef<IndexFoo> IDX_CODE = IndexDef.create(IndexFoo.class, "code");

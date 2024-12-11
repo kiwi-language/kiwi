@@ -2,7 +2,7 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.Element;
 import org.metavm.entity.LocalKey;
@@ -10,7 +10,7 @@ import org.metavm.util.NamingUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType
+@Entity
 public abstract class Constraint extends Element implements  ClassMember, LocalKey, ITypeDef {
 
     private Klass declaringType;

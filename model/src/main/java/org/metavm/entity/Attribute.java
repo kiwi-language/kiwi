@@ -1,6 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.ValueObject;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@EntityType
+@Entity
 public record Attribute(
         String name,
         String value

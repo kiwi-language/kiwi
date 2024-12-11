@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.Element;
 import org.metavm.entity.IEntityContext;
@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
-@EntityType
+@Entity
 public abstract class Node extends Element implements LocalKey {
 
     @EntityField(asTitle = true)

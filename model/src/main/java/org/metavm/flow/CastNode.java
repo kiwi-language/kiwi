@@ -1,13 +1,13 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.Type;
 
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class CastNode extends Node {
 
     public CastNode(String name, @NotNull Type outputType,

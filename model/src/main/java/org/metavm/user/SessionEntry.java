@@ -1,11 +1,10 @@
 package org.metavm.user;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.object.instance.core.Value;
 
-@EntityType
-public class SessionEntry extends Entity  {
+@Entity
+public class SessionEntry extends org.metavm.entity.Entity {
     private final String key;
     private Value value;
 

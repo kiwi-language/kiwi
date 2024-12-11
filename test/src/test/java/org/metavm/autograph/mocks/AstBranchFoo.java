@@ -1,10 +1,9 @@
 package org.metavm.autograph.mocks;
 
-import org.metavm.entity.Entity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType(compiled = true)
-public class AstBranchFoo extends Entity {
+@Entity(compiled = true)
+public class AstBranchFoo extends org.metavm.entity.Entity {
 
     private AstProductState state = AstProductState.NORMAL;
     private int inventory = 0;

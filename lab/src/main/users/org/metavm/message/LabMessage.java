@@ -1,7 +1,7 @@
 package org.metavm.message;
 
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.Index;
 import org.metavm.user.LabUser;
 import org.metavm.utils.LabBusinessException;
@@ -9,7 +9,7 @@ import org.metavm.utils.LabErrorCode;
 
 import javax.annotation.Nullable;
 
-@EntityType(searchable = true)
+@Entity(searchable = true)
 public class LabMessage {
 
     public static final Index<Object, LabMessage> targetIndex = new Index<>(false, m -> m.target);

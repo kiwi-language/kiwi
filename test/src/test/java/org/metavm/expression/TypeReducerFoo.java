@@ -1,12 +1,11 @@
 package org.metavm.expression;
 
-import org.metavm.entity.Entity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import javax.annotation.Nullable;
 
-@EntityType
-public class TypeReducerFoo extends Entity {
+@Entity
+public class TypeReducerFoo extends org.metavm.entity.Entity {
 
     @Nullable
     public String code;

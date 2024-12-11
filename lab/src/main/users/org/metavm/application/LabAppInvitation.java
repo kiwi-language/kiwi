@@ -5,7 +5,7 @@ import org.metavm.user.LabPlatformUser;
 import org.metavm.utils.LabBusinessException;
 import org.metavm.utils.LabErrorCode;
 
-@EntityType
+@Entity
 public class LabAppInvitation {
 
     public static final Index<UserApplication, LabAppInvitation> appIndex

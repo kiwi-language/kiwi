@@ -1,7 +1,6 @@
 package org.metavm.beans;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Reference;
@@ -11,8 +10,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
-public abstract class BeanDefinition extends Entity {
+@Entity
+public abstract class BeanDefinition extends org.metavm.entity.Entity {
 
     private String name;
     private @Nullable Reference bean;

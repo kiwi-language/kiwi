@@ -2,10 +2,8 @@ package org.metavm.entity;
 
 import javassist.util.proxy.ProxyObject;
 import org.metavm.api.*;
-import org.metavm.flow.Flow;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.EnumConstantRT;
 import org.metavm.object.type.Klass;
 import org.metavm.util.LinkedList;
@@ -36,7 +34,7 @@ public class EntityUtils {
     );
 
     public static final Set<Class<?>> ENTITY_CLASSES = Set.of(
-            Klass.class, org.metavm.object.type.Field.class, Value.class,
+            Klass.class, org.metavm.object.type.Field.class, org.metavm.object.instance.core.Value.class,
             EnumConstantRT.class
     );
 
@@ -262,13 +260,13 @@ public class EntityUtils {
     }
 
     public static String getMetaTypeName(Class<?> javaType) {
-        var entityType = javaType.getAnnotation(EntityType.class);
-        var valueType = javaType.getAnnotation(ValueType.class);
+        var entityType = javaType.getAnnotation(org.metavm.api.Entity.class);
+        var valueType = javaType.getAnnotation(Value.class);
         var entityStruct = javaType.getAnnotation(EntityStruct.class);
         var valueStruct = javaType.getAnnotation(ValueStruct.class);
         return NncUtils.firstNonBlank(
-                NncUtils.get(entityType, EntityType::value),
-                NncUtils.get(valueType, ValueType::value),
+                NncUtils.get(entityType, org.metavm.api.Entity::value),
+                NncUtils.get(valueType, Value::value),
                 NncUtils.get(entityStruct, EntityStruct::value),
                 NncUtils.get(valueStruct, ValueStruct::value),
                 javaType.getSimpleName()
@@ -277,11 +275,11 @@ public class EntityUtils {
 
 
     private static boolean isCompiled(Class<?> klass) {
-        var entityType = klass.getAnnotation(EntityType.class);
+        var entityType = klass.getAnnotation(org.metavm.api.Entity.class);
         if (entityType != null && entityType.compiled()) {
             return true;
         }
-        var valueType = klass.getAnnotation(ValueType.class);
+        var valueType = klass.getAnnotation(Value.class);
         return valueType != null && valueType.compiled();
     }
 
@@ -379,7 +377,7 @@ public class EntityUtils {
         Reflections reflections =
                 new Reflections(new ConfigurationBuilder().forPackages("org.metavm"));
         Set<Class<? extends Entity>> entitySubTypes = reflections.getSubTypesOf(Entity.class);
-        Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(EntityType.class);
+        Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(org.metavm.api.Entity.class);
         var builtinClasses = NncUtils.filterAndMapUnique(List.of(StdKlass.values()), StdKlass::isAutoDefine, StdKlass::getJavaClass);
         return NncUtils.filterUnique(
                 NncUtils.mergeSets(entitySubTypes, entityTypes, builtinClasses),

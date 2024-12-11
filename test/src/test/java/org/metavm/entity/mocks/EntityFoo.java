@@ -1,10 +1,9 @@
 package org.metavm.entity.mocks;
 
-import org.metavm.entity.Entity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType
-public class EntityFoo extends Entity {
+@Entity
+public class EntityFoo extends org.metavm.entity.Entity {
 
     public String name;
 

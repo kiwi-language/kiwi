@@ -1,11 +1,10 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.Element;
-import org.metavm.entity.Entity;
 
-@EntityType
-public class Error extends Entity {
+@Entity
+public class Error extends org.metavm.entity.Entity {
 
     private final Element element;
 

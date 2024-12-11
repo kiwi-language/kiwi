@@ -2,7 +2,7 @@ package org.metavm.util;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.GlobalKey;
 import org.metavm.flow.KlassOutput;
@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-@EntityType
+@Entity
 public record Column(
         ColumnKind kind,
         @EntityField(asTitle = true) String name,

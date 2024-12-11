@@ -1,7 +1,7 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.type.ClassType;
@@ -9,7 +9,7 @@ import org.metavm.object.type.IndexRef;
 
 import java.util.List;
 
-@EntityType
+@Entity
 public class IndexSelectNode extends Node {
 
     private final IndexRef indexRef;

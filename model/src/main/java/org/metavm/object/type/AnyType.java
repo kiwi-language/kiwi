@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.Nullable;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
@@ -13,7 +13,7 @@ import org.metavm.util.WireTypes;
 
 import java.util.function.Function;
 
-@EntityType
+@Entity
 public class AnyType extends Type {
 
     public static final AnyType instance = new AnyType();

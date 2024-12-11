@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-@EntityType
+@Entity
 public class VariableType extends Type implements IVariableType {
 
     private final TypeVariable variable;

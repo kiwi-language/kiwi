@@ -1,10 +1,10 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.FieldRef;
 
-@EntityType
+@Entity
 public class SetFieldNode extends Node {
 
     private final FieldRef fieldRef;

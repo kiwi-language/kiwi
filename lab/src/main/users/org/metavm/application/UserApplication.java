@@ -1,7 +1,7 @@
 package org.metavm.application;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.lang.Lang;
 import org.metavm.message.LabMessage;
 import org.metavm.message.LabMessageKind;
@@ -14,7 +14,7 @@ import org.metavm.utils.UserUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType(searchable = true)
+@Entity(searchable = true)
 public class UserApplication extends LabApplication {
 
     public static final int MAX_NUM_ADMINS = 16;

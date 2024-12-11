@@ -1,12 +1,11 @@
 package org.metavm.autograph.mocks;
 
-import org.metavm.entity.Entity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import javax.annotation.Nullable;
 
-@EntityType(compiled = true)
-public class AstExceptionFoo extends Entity {
+@Entity(compiled = true)
+public class AstExceptionFoo extends org.metavm.entity.Entity {
 
     private int amount;
 

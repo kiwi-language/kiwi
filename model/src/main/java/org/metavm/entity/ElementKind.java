@@ -1,6 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.expression.Expression;
 import org.metavm.flow.Value;
 import org.metavm.flow.*;
@@ -8,7 +8,7 @@ import org.metavm.object.type.Field;
 import org.metavm.object.type.Type;
 import org.metavm.util.NncUtils;
 
-@EntityType
+@Entity
 public enum ElementKind {
 
     TYPE(1, Type.class),

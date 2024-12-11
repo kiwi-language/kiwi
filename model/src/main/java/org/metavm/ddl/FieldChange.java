@@ -1,9 +1,9 @@
 package org.metavm.ddl;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.ValueObject;
 
-@EntityType
+@Entity
 public record FieldChange(
         String klassId,
         String fieldId,

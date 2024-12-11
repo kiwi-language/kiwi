@@ -1,13 +1,13 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.object.type.ConstantPool;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Type;
 
 import java.util.List;
 
-@EntityType(ephemeral = true)
+@Entity(ephemeral = true)
 public class DummyCallable implements Callable {
 
     public static final DummyCallable INSTANCE = new DummyCallable();

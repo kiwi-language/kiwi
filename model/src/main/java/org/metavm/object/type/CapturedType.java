@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 // TODO make CapturedType the sub type of or the same type as VariableType
-@EntityType
+@Entity
 public class CapturedType extends Type {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");

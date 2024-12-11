@@ -1,6 +1,6 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.application.Application;
 import org.metavm.entity.EntityIndexKey;
 import org.metavm.entity.IEntityContext;
@@ -9,7 +9,7 @@ import org.metavm.user.PlatformUsers;
 
 import java.util.List;
 
-@EntityType
+@Entity
 public class ClearUsersTask extends Task {
 
     private final String appId;

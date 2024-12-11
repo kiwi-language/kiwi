@@ -1,7 +1,7 @@
 package valuetypes;
 
-import org.metavm.api.ValueType;
+import org.metavm.api.Value;
 
-@ValueType
+@Value
 public record Currency(double quantity, CurrencyKind kind) {
 }

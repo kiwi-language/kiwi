@@ -1,9 +1,8 @@
 package org.metavm.user;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.instance.core.Value;
@@ -13,8 +12,8 @@ import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.UUID;
 
-@EntityType
-public class Session extends Entity {
+@Entity
+public class Session extends org.metavm.entity.Entity {
 
     public static final IndexDef<Session> IDX_USER_STATE = IndexDef.create(Session.class, "user", "state");
     public static final IndexDef<Session> IDX_TOKEN = IndexDef.createUnique(Session.class, "token");

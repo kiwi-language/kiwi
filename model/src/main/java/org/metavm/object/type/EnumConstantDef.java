@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.natives.CallContext;
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class EnumConstantDef extends Element implements ITypeDef {
 
     public static final Logger logger = LoggerFactory.getLogger(EnumConstantDef.class);

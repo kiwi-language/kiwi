@@ -1,14 +1,13 @@
 package org.metavm.object.instance.log;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TaggedPhysicalId;
 
-@EntityType
+@Entity
 public interface Identifier {
 
-    static Identifier fromEntity(Entity entity) {
+    static Identifier fromEntity(org.metavm.entity.Entity entity) {
         return fromId(entity.getId());
     }
 

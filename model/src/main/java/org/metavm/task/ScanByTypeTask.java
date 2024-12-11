@@ -1,16 +1,15 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.util.NncUtils;
 
 import java.util.List;
 
-@EntityType
+@Entity
 public abstract class ScanByTypeTask extends ScanTask {
 
     protected final Type type;

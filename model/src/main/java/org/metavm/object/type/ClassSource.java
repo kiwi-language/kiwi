@@ -1,9 +1,9 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.util.NncUtils;
 
-@EntityType
+@Entity
 public enum ClassSource {
     BUILTIN(1),
     COMPILATION(2),

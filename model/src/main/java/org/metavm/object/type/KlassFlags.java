@@ -1,10 +1,9 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 
-@EntityType(since = 1)
-public class KlassFlags extends Entity {
+@Entity(since = 1)
+public class KlassFlags extends org.metavm.entity.Entity {
     private boolean flag1;
 
     public boolean isFlag1() {

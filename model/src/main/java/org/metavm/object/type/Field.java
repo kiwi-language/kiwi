@@ -2,7 +2,7 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class Field extends Element implements ChangeAware, Property, ITypeDef {
 
     @EntityField(asTitle = true)

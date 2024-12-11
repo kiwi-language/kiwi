@@ -1,8 +1,7 @@
 package org.metavm.object.instance;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.instance.log.InstanceLog;
@@ -12,8 +11,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-@EntityType
-public class ChangeLog extends Entity {
+@Entity
+public class ChangeLog extends org.metavm.entity.Entity {
 
     public static final Logger logger = LoggerFactory.getLogger(ChangeLog.class);
 

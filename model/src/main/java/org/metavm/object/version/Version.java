@@ -1,16 +1,15 @@
 package org.metavm.object.version;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.ReadWriteArray;
 
 import java.util.List;
 import java.util.Set;
 
-@EntityType
-public class Version extends Entity {
+@Entity
+public class Version extends org.metavm.entity.Entity {
 
     public static final IndexDef<Version> IDX_VERSION = IndexDef.createUnique(Version.class, "version");
 

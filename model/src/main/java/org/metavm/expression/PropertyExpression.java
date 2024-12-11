@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.object.instance.core.Value;
@@ -14,7 +14,7 @@ import java.util.Objects;
 
 import static org.metavm.util.NncUtils.requireNonNull;
 
-@EntityType
+@Entity
 public class PropertyExpression extends Expression {
 
     private final Expression instance;

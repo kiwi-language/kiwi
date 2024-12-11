@@ -1,9 +1,9 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.object.type.TypeCategory;
 
-@EntityType
+@Entity
 public enum TypeTag {
     CLASS(1),
     ARRAY(2),

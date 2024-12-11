@@ -1,6 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.core.BooleanValue;
 import org.metavm.object.instance.core.LongValue;
@@ -12,7 +12,7 @@ import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType
+@Entity
 public enum UnaryOperator {
 
     NOT(1, "!", 1, true, Boolean.class) {

@@ -1,10 +1,10 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.util.InternalException;
 
-@EntityType
+@Entity
 public class FunctionCallNode extends CallNode {
 
     public FunctionCallNode(String name, Node prev, Code code, FunctionRef functionRef) {

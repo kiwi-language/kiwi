@@ -1,13 +1,12 @@
 package org.metavm.user;
 
-import org.metavm.entity.Entity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 
 import java.util.Date;
 
-@EntityType
-public class VerificationCode extends Entity {
+@Entity
+public class VerificationCode extends org.metavm.entity.Entity {
 
     public static final IndexDef<VerificationCode> IDX =
             IndexDef.create(VerificationCode.class, "receiver", "code", "expiredAt");

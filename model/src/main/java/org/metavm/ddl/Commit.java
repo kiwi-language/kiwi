@@ -1,8 +1,7 @@
 package org.metavm.ddl;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.instance.core.Id;
@@ -13,8 +12,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-@EntityType
-public class Commit extends Entity implements RedirectStatus {
+@Entity
+public class Commit extends org.metavm.entity.Entity implements RedirectStatus {
 
     public static final IndexDef<Commit> IDX_RUNNING = IndexDef.create(Commit.class, "running");
 

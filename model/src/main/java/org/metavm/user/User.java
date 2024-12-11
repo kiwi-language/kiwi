@@ -2,8 +2,7 @@ package org.metavm.user;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.user.rest.dto.UserDTO;
@@ -13,8 +12,8 @@ import org.metavm.util.Password;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType(searchable = true)
-public class User extends Entity {
+@Entity(searchable = true)
+public class User extends org.metavm.entity.Entity {
 
     public static final IndexDef<User> IDX_PLATFORM_USER_ID = IndexDef.createUnique(User.class, "platformUserId");
 
@@ -85,7 +84,7 @@ public class User extends Entity {
                 getLoginName(),
                 getName(),
                 null,
-                NncUtils.map(getRoles(), Entity::getStringId)
+                NncUtils.map(getRoles(), org.metavm.entity.Entity::getStringId)
         );
     }
 

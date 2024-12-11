@@ -1,6 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.ValueArray;
 import org.metavm.object.instance.core.Value;
@@ -10,7 +10,7 @@ import org.metavm.util.NncUtils;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class FunctionExpression extends Expression {
     private final Func function;
     private final ValueArray<Expression> arguments;

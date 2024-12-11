@@ -2,7 +2,7 @@ package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.SerializeContext;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-@EntityType
+@Entity
 @Slf4j
 public class MethodRef extends FlowRef implements PropertyRef {
 

@@ -1,11 +1,10 @@
 package org.metavm.mocks;
 
-import org.metavm.entity.Entity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 
-@EntityType
-public class Qux extends Entity {
+@Entity
+public class Qux extends org.metavm.entity.Entity {
 
     public static final IndexDef<Qux> IDX_AMOUNT = new IndexDef<>(Qux.class,false, "amount");
 

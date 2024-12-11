@@ -1,11 +1,11 @@
 package org.metavm.manufacturing.material;
 
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import javax.annotation.Nullable;
 
-@EntityType
+@Entity
 public class Unit {
     private String code;
     @EntityField(asTitle = true)

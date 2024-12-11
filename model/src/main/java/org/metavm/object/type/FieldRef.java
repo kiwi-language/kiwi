@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.ValueElement;
 import org.metavm.object.instance.core.Id;
@@ -11,7 +11,7 @@ import org.metavm.util.WireTypes;
 
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class FieldRef extends ValueElement implements PropertyRef {
 
     public static FieldRef read(MvInput input) {

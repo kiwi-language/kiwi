@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.BooleanValue;
 import org.metavm.object.instance.core.Value;
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-@EntityType
+@Entity
 public class ConditionalExpression extends Expression {
 
     public static ConditionalExpression create(@NotNull Expression condition,

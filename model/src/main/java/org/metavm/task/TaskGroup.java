@@ -1,16 +1,15 @@
 package org.metavm.task;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ChildArray;
-import org.metavm.entity.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.util.Constants;
 
 import java.util.List;
 
-@EntityType
-public abstract class TaskGroup extends Entity {
+@Entity
+public abstract class TaskGroup extends org.metavm.entity.Entity {
 
     private long completedTaskCount;
     private boolean failed;

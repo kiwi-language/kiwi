@@ -1,6 +1,6 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.manufacturing.material.Batch;
 import org.metavm.manufacturing.material.Material;
 import org.metavm.manufacturing.material.QualityInspectionState;
@@ -10,7 +10,7 @@ import org.metavm.manufacturing.utils.Utils;
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityType
+@Entity
 public class InboundOrderItem {
     private final InboundOrder inboundOrder;
     private Material material;

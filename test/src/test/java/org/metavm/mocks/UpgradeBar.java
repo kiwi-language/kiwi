@@ -1,12 +1,11 @@
 package org.metavm.mocks;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 
 import java.util.Objects;
 
-@EntityType(since = 1)
-public class UpgradeBar extends Entity {
+@Entity(since = 1)
+public class UpgradeBar extends org.metavm.entity.Entity {
 
     private final String name;
 

@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.expression.PropertyExpression;
@@ -13,7 +13,7 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 
-@EntityType
+@Entity
 public class IndexField extends Element implements LocalKey, ITypeDef {
 
     public static IndexField createFieldItem(Index constraint, Field field) {

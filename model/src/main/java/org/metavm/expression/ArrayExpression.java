@@ -1,6 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.ValueArray;
 import org.metavm.object.instance.core.ArrayInstance;
@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class ArrayExpression extends Expression {
 
     public static ArrayExpression create(List<Expression> expressions) {

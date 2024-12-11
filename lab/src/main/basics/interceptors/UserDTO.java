@@ -1,8 +1,8 @@
 package interceptors;
 
-import org.metavm.api.ValueType;
+import org.metavm.api.Value;
 
-@ValueType
+@Value
 public record UserDTO(
         String name,
         String telephone

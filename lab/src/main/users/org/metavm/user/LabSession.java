@@ -1,14 +1,14 @@
 package org.metavm.user;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.Index;
-import org.metavm.api.ValueType;
+import org.metavm.api.Value;
 import org.metavm.api.lang.UUIDUtils;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 
-@EntityType
+@Entity
 public class LabSession {
 
     public static final Index<UserAndState, LabSession> userStateIndex
@@ -31,7 +31,7 @@ public class LabSession {
         this.autoCloseAt = autoCloseAt;
     }
 
-    @ValueType
+    @Value
     public record UserAndState(LabUser user, LabSessionState state) {
     }
 

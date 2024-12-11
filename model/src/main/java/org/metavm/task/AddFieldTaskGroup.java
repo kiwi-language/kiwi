@@ -1,6 +1,6 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -9,7 +9,7 @@ import org.metavm.object.type.MetadataState;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType
+@Entity
 public class AddFieldTaskGroup extends TaskGroup {
 
     private final Field field;

@@ -1,7 +1,7 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
@@ -9,7 +9,7 @@ import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 
-@EntityType
+@Entity
 public class LambdaNode extends Node {
 
     private final Lambda lambda;

@@ -1,13 +1,13 @@
 package org.metavm.manufacturing.utils;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.lang.Lang;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.function.Predicate;
 
-@EntityType
+@Entity
 public class Utils {
 
     public static void assertTrue(boolean condition, String message) {

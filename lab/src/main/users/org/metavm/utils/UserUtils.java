@@ -1,10 +1,10 @@
 package org.metavm.utils;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import java.util.function.Predicate;
 
-@EntityType
+@Entity
 public class UserUtils {
 
     public static <T> boolean nonMatch(Iterable<T> iterable, Predicate<T> predicate) {

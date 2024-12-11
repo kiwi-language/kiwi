@@ -5,13 +5,13 @@ import org.metavm.application.LabAppInvitationRequest;
 import org.metavm.application.LabApplication;
 import org.metavm.application.UserApplication;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.message.LabMessage;
 import org.metavm.user.*;
 
 import java.util.List;
 
-@EntityType
+@Entity
 public class UserLab {
 
     @EntityField(asTitle = true)

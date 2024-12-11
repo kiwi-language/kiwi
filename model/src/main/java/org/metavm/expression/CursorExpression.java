@@ -1,6 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class CursorExpression extends Expression{
 
     private final @Nullable String alias;

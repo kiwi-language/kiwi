@@ -1,6 +1,6 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.Attribute;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.ReadWriteArray;
@@ -12,7 +12,7 @@ import org.metavm.object.type.*;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType(ephemeral = true)
+@Entity(ephemeral = true)
 public class DummyMethod extends Method {
 
     public static final DummyMethod INSTANCE = new DummyMethod();

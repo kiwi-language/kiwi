@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-@EntityType(searchable = true)
+@Entity(searchable = true)
 public class LabUser {
 
     public static final long MAX_ATTEMPTS_IN_15_MINUTES = 3;
@@ -54,12 +54,12 @@ public class LabUser {
         this.roles.addAll(roles);
     }
 
-    @ValueType
+    @Value
     public record ApplicationAndPlatformUser(LabApplication application,
                                              LabPlatformUser platformUser) {
     }
 
-    @ValueType
+    @Value
     public record ApplicationAndLoginName(
             LabApplication application,
             String loginName) {

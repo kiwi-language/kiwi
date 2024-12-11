@@ -1,11 +1,10 @@
 package org.metavm.mocks;
 
-import org.metavm.entity.Entity;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType
-public class Bar extends Entity {
+@Entity
+public class Bar extends org.metavm.entity.Entity {
     @EntityField(asTitle = true)
     private final String code;
 

@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.ReadonlyArray;
 import org.metavm.entity.SerializeContext;
@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 
-@EntityType
+@Entity
 public class UnionType extends CompositeType {
 
     public static final UnionType nullableAnyType = new UnionType(Set.of(PrimitiveType.nullType, AnyType.instance));

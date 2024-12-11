@@ -1,14 +1,13 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
 
 import java.util.Objects;
 
-@EntityType
-public class KlassSourceCodeTagAssigner extends Entity {
+@Entity
+public class KlassSourceCodeTagAssigner extends org.metavm.entity.Entity {
 
     public static final IndexDef<KlassSourceCodeTagAssigner> IDX_ALL_FLAGS = IndexDef.create(KlassSourceCodeTagAssigner.class, "allFlags");
 

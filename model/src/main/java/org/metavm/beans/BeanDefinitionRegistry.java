@@ -1,7 +1,7 @@
 package org.metavm.beans;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Parameter;
@@ -18,8 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
-public class BeanDefinitionRegistry extends Entity {
+@Entity
+public class BeanDefinitionRegistry extends org.metavm.entity.Entity {
     public static final IndexDef<BeanDefinitionRegistry> IDX_ALL_FLAGS = IndexDef.create(BeanDefinitionRegistry.class, "allFlags");
 
     @SuppressWarnings("unused")

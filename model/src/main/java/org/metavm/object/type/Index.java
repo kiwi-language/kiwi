@@ -1,30 +1,24 @@
 package org.metavm.object.type;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.*;
-import org.metavm.expression.EvaluationContext;
-import org.metavm.expression.InstanceEvaluationContext;
-import org.metavm.flow.Flows;
 import org.metavm.flow.KlassInput;
 import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
-import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
 
-@EntityType
+@Entity
 public class Index extends Constraint implements LocalKey, ITypeDef {
 
     @ChildEntity
@@ -56,7 +50,7 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
 
     public IndexField getField(Id id) {
         return NncUtils.requireNonNull(
-                fields.get(Entity::tryGetId, id),
+                fields.get(org.metavm.entity.Entity::tryGetId, id),
                 "Can not find index item for id " + id
         );
     }

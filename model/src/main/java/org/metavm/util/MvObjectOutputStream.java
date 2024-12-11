@@ -1,7 +1,7 @@
 package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ClassInstance;
 
@@ -10,7 +10,7 @@ import java.io.ObjectOutputStream;
 import java.util.Objects;
 
 @Slf4j
-@EntityType(ephemeral = true, isNative = true)
+@Entity(ephemeral = true, isNative = true)
 public class MvObjectOutputStream extends ObjectOutputStream {
 
     public static MvObjectOutputStream create(MarkingInstanceOutput output, IEntityContext context) {

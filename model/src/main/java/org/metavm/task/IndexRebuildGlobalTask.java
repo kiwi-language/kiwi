@@ -1,10 +1,10 @@
 package org.metavm.task;
 
 import org.metavm.application.Application;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 
-@EntityType
+@Entity
 public class IndexRebuildGlobalTask extends GlobalTask {
 
     public IndexRebuildGlobalTask() {

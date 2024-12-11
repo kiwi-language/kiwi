@@ -1,15 +1,14 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.ScanResult;
-import org.metavm.util.ContextUtil;
 
 import java.util.List;
 
-@EntityType
+@Entity
 public abstract class ScanTask extends Task {
 
     public static final int DEFAULT_BATCH_SIZE = 256;

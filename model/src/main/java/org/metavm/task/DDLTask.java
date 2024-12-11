@@ -1,6 +1,6 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.IEntityContext;
@@ -10,7 +10,7 @@ import org.metavm.object.instance.core.WAL;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType
+@Entity
 public class DDLTask extends ScanTask implements IDDLTask {
 
     public static boolean DISABLE_DELAY = true;

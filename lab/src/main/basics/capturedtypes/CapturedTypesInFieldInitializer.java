@@ -1,10 +1,10 @@
 package capturedtypes;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import java.util.Comparator;
 
-@EntityType(ephemeral = true)
+@Entity(ephemeral = true)
 public class CapturedTypesInFieldInitializer<K> {
 
     private final Comparator<? super K> comparator = (k1,k2) -> k2.toString().compareTo(k1.toString());

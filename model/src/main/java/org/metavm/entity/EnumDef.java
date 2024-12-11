@@ -1,6 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.EnumConstantRT;
@@ -32,7 +32,7 @@ public class EnumDef<T extends Enum<?>> extends ModelDef<T> {
         super(enumType);
         this.enumType = enumType;
         this.parentDef = parentDef;
-        EntityType annotation = enumType.getAnnotation(EntityType.class);
+        Entity annotation = enumType.getAnnotation(Entity.class);
         name = annotation != null ? annotation.value() : enumType.getSimpleName();
         this.klass = type;
         this.defContext = defContext;

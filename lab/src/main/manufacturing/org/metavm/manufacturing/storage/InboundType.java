@@ -1,8 +1,8 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType
+@Entity
 public enum InboundType {
     BY_AMOUNT,
     BY_QR_CODE,

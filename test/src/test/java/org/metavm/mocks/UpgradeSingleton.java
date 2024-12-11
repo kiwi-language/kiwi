@@ -1,11 +1,10 @@
 package org.metavm.mocks;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 
-@EntityType(since = 1)
-public class UpgradeSingleton extends Entity {
+@Entity(since = 1)
+public class UpgradeSingleton extends org.metavm.entity.Entity {
 
     public static final IndexDef<UpgradeSingleton> IDX_ALL_FLAGS = IndexDef.createUnique(UpgradeSingleton.class, "allFlags");
 

@@ -1,8 +1,8 @@
 package search;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType(searchable = true)
+@Entity(searchable = true)
 public class SearchFoo {
 
     private String name;

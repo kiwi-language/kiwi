@@ -1,11 +1,11 @@
 package org.metavm.api.entity;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
-@EntityType(systemAPI = true)
+@Entity(systemAPI = true)
 public interface HttpResponse {
 
     void addCookie(String name, String value);

@@ -1,6 +1,6 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
@@ -10,7 +10,7 @@ import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
 
-@EntityType
+@Entity
 public class AddFieldTask extends ScanByClassTask {
 
     private final Field field;

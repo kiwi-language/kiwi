@@ -3,7 +3,7 @@ package org.metavm.object.type;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
@@ -17,9 +17,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@EntityType
+@Entity
 @Slf4j
-public class StaticFieldTable extends Entity implements LoadAware, GlobalKey {
+public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAware, GlobalKey {
 
     public static final Logger logger = LoggerFactory.getLogger(StaticFieldTable.class);
 

@@ -1,9 +1,8 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ContextFinishWare;
-import org.metavm.entity.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.LoadAware;
 import org.metavm.object.instance.log.InstanceLog;
@@ -16,8 +15,8 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-@EntityType
-public class WAL extends Entity implements LoadAware, ContextFinishWare {
+@Entity
+public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextFinishWare {
 
     private static Consumer<WAL> commitHook;
     private static BiConsumer<Long, List<InstanceLog>> postProcessHook;

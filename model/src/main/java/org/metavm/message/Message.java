@@ -1,8 +1,7 @@
 package org.metavm.message;
 
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 import org.metavm.message.rest.dto.MessageDTO;
 import org.metavm.object.instance.core.Value;
@@ -11,8 +10,8 @@ import org.metavm.util.Instances;
 
 import javax.annotation.Nullable;
 
-@EntityType
-public class Message extends Entity {
+@Entity
+public class Message extends org.metavm.entity.Entity {
 
     public static final IndexDef<Message> IDX_TARGET = IndexDef.create(Message.class, "target");
 

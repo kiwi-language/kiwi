@@ -1,8 +1,8 @@
 package org.metavm.manufacturing.material;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType
+@Entity
 public enum TimeUnit {
     YEAR,
     MONTH,

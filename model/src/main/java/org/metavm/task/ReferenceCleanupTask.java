@@ -1,11 +1,11 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.EntityUtils;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.Id;
 
-@EntityType
+@Entity
 public class ReferenceCleanupTask extends Task {
 
     public static final long BATCH_SIZE = 256;

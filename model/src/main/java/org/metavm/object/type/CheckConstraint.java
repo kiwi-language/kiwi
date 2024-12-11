@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ConstraintDef;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.expression.BinaryExpression;
@@ -13,7 +13,7 @@ import org.metavm.flow.Value;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.util.Instances;
 
-@EntityType
+@Entity
 public class CheckConstraint extends Constraint {
 
     private Value condition;

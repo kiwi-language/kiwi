@@ -1,12 +1,12 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.util.BusinessException;
 
-@EntityType
+@Entity
 public class ClearArrayNode extends Node {
 
     public ClearArrayNode(String name,

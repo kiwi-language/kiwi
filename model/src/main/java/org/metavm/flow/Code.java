@@ -2,7 +2,7 @@ package org.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.EncodingUtils;
@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.List;
 
-@EntityType
+@Entity
 public class Code extends Element implements LoadAware {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
@@ -63,11 +63,11 @@ public class Code extends Element implements LoadAware {
     }
 
     public Node getNode(long id) {
-        return nodes.get(Entity::tryGetId, id);
+        return nodes.get(org.metavm.entity.Entity::tryGetId, id);
     }
 
     public Node getNode(Id id) {
-        return nodes.get(Entity::tryGetId, id);
+        return nodes.get(org.metavm.entity.Entity::tryGetId, id);
     }
 
     public List<Node> getNodes() {
@@ -75,7 +75,7 @@ public class Code extends Element implements LoadAware {
     }
 
     public Node getNodeById(long id) {
-        return nodes.get(Entity::tryGetId, id);
+        return nodes.get(org.metavm.entity.Entity::tryGetId, id);
     }
 
     public Node getNodeByName(String name) {

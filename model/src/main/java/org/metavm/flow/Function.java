@@ -1,7 +1,7 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.GlobalKey;
@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType(searchable = true)
+@Entity(searchable = true)
 public class Function extends Flow implements GlobalKey {
 
     public static final IndexDef<Function> IDX_ALL_FLAG = IndexDef.create(Function.class, "allFlag");

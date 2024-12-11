@@ -1,10 +1,10 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.user.Session;
 
-@EntityType
+@Entity
 public class CloseAllSessionsTask extends Task {
 
     private final long appId;

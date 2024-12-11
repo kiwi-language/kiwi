@@ -1,8 +1,8 @@
 package org.metavm.user;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType
+@Entity
 public record LabRegisterRequest(
         String loginName,
         String name,

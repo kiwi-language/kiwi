@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.flow.MethodRef;
 import org.metavm.flow.ParameterRef;
@@ -11,7 +11,7 @@ import org.metavm.util.NncUtils;
 
 import java.util.List;
 
-@EntityType
+@Entity
 public class MethodExpression extends Expression {
 
     private final Expression self;

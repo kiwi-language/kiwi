@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-@EntityType
+@Entity
 public class UncertainType extends CompositeType {
 
     public static final UncertainType asterisk = new UncertainType(NeverType.instance, UnionType.nullableAnyType);

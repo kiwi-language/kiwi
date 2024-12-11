@@ -1,12 +1,12 @@
 package org.metavm.lab.shopping;
 
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType(compiled = true)
+@Entity(compiled = true)
 public class AstProduct {
 
     @EntityField(asTitle = true)

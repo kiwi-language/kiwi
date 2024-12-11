@@ -1,15 +1,14 @@
 package org.metavm.object.instance.log;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.api.ValueObject;
-import org.metavm.entity.Entity;
 import org.metavm.object.instance.ChangeType;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.persistence.VersionPO;
 import org.metavm.object.instance.persistence.VersionRT;
 
-@EntityType
-public class InstanceLog extends Entity implements ValueObject {
+@Entity
+public class InstanceLog extends org.metavm.entity.Entity implements ValueObject {
 
     public static InstanceLog insert(VersionRT version) {
         return new InstanceLog(version.appId(), version.id(), ChangeType.INSERT, version.version());

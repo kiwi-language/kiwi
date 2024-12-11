@@ -1,6 +1,6 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@EntityType
+@Entity
 public abstract class EntityScanTask<T> extends ScanTask {
 
     private final Class<T> entityType;

@@ -1,7 +1,6 @@
 package org.metavm.task;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.WAL;
@@ -11,8 +10,8 @@ import org.metavm.util.Constants;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@EntityType
-public abstract class Task extends Entity {
+@Entity
+public abstract class Task extends org.metavm.entity.Entity {
 
     public static final IndexDef<Task> IDX_STATE_LAST_RUN_AT = new IndexDef<>(
             Task.class,false, "state", "lastRunTimestamp"

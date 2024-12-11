@@ -1,12 +1,12 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.FieldRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@EntityType
+@Entity
 public class SetStaticNode extends Node {
 
     public static final Logger logger = LoggerFactory.getLogger(SetStaticNode.class);

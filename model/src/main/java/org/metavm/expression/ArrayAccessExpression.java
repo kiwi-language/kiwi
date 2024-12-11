@@ -1,7 +1,7 @@
 package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.Value;
@@ -11,7 +11,7 @@ import org.metavm.object.type.Type;
 import java.util.List;
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class ArrayAccessExpression extends Expression {
 
     private final Expression array;

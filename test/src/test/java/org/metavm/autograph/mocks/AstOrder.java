@@ -1,15 +1,14 @@
 package org.metavm.autograph.mocks;
 
 import org.metavm.api.ChildEntity;
-import org.metavm.entity.Entity;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType(compiled = true)
-public class AstOrder extends Entity {
+@Entity(compiled = true)
+public class AstOrder extends org.metavm.entity.Entity {
 
     @EntityField(asTitle = true)
     public final String code;

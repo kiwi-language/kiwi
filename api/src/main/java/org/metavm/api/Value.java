@@ -7,21 +7,11 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface EntityType {
+public @interface Value {
 
     String value() default "";
 
     boolean compiled() default false;
-
-    boolean anonymous() default false;
-
-    boolean ephemeral() default false;
-
-    boolean systemAPI() default false;
-
-    boolean isNative() default false;
-
-    boolean searchable() default false;
 
     int tag() default -1;
 

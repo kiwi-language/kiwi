@@ -1,9 +1,9 @@
 package org.metavm.application;
 
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType(searchable = true)
+@Entity(searchable = true)
 public class LabApplication {
 
     @EntityField(asTitle = true)

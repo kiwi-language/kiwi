@@ -1,8 +1,8 @@
 package org.metavm.mocks;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 
-@EntityType
+@Entity
 public class Animal extends LivingBeing {
 
     private long intelligence;

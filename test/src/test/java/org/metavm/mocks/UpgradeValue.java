@@ -1,13 +1,12 @@
 package org.metavm.mocks;
 
-import org.metavm.api.EntityType;
-import org.metavm.entity.Entity;
+import org.metavm.api.Entity;
 import org.metavm.entity.IndexDef;
 
 import javax.annotation.Nullable;
 
-@EntityType(since = 1)
-public class UpgradeValue extends Entity {
+@Entity(since = 1)
+public class UpgradeValue extends org.metavm.entity.Entity {
 
     public static final IndexDef<UpgradeValue> IDX_FOO = IndexDef.createUnique(UpgradeValue.class, "foo");
 

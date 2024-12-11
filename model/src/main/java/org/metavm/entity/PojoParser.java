@@ -3,7 +3,7 @@ package org.metavm.entity;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityFlow;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.expression.ExpressionParser;
 import org.metavm.expression.TypeParsingContext;
 import org.metavm.flow.ExpressionValue;
@@ -164,7 +164,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
     }
 
     protected boolean isNativeClass() {
-        var annotation = javaClass.getAnnotation(EntityType.class);
+        var annotation = javaClass.getAnnotation(Entity.class);
         return annotation != null && annotation.isNative();
     }
 
@@ -298,7 +298,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
             superClass = (ClassType) defContext.getType(javaClass.getGenericSuperclass());
         else
             superClass = null;
-        var entityType = javaClass.getAnnotation(EntityType.class);
+        var entityType = javaClass.getAnnotation(Entity.class);
         return KlassBuilder.newBuilder(Types.getTypeName(javaType), Types.getTypeCode(javaType))
                 .kind(ClassKind.fromTypeCategory(getTypeCategory()))
                 .source(ClassSource.BUILTIN)
@@ -380,7 +380,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
     }
 
     protected boolean isSystemAPI() {
-        var annotation = javaClass.getAnnotation(EntityType.class);
+        var annotation = javaClass.getAnnotation(Entity.class);
         return annotation != null && annotation.systemAPI();
     }
 

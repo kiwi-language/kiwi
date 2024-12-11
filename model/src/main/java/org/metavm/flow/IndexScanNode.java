@@ -1,12 +1,12 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.IndexRef;
 
-@EntityType
+@Entity
 public class IndexScanNode extends Node {
 
     private final IndexRef indexRef;

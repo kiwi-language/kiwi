@@ -3,14 +3,14 @@ package org.metavm.manufacturing.storage;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.ChildList;
 import org.metavm.api.EntityField;
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.manufacturing.material.Supplier;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityType
+@Entity
 public class InboundOrder {
 
     @EntityField(asTitle = true)

@@ -1,6 +1,6 @@
 package org.metavm.flow;
 
-import org.metavm.api.EntityType;
+import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.Reference;
 import org.metavm.entity.ValueElement;
@@ -8,7 +8,7 @@ import org.metavm.object.type.Type;
 
 import java.util.Objects;
 
-@EntityType
+@Entity
 public class ParameterRef  extends ValueElement implements Reference {
 
     private final CallableRef callableRef;
