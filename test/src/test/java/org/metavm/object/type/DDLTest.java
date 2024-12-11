@@ -119,8 +119,8 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(hatId, foundId2);
         var box = apiClient.getObject(boxId);
         Assert.assertEquals(1, box.get("count"));
-        var commitState = apiClient.getObject(apiClient.getObject(commitId).getString("state"));
-        Assert.assertEquals(CommitState.RELOCATING.name(), commitState.get("name"));
+        var commitState = apiClient.getObject(commitId).getString("state");
+        Assert.assertEquals(CommitState.RELOCATING.name(), commitState);
         TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, schedulerAndWorker);
         try (var context = newContext()) {
             var invInst = context.getInstanceContext().get(Id.parse(inventoryId));
@@ -285,12 +285,11 @@ public class DDLTest extends TestCase {
 
     public void testEntityToValueConversion() {
         assemble("value_ddl_before.masm");
-        var yuanId = typeManager.getEnumConstantId("Currency", "YUAN");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
                         "amount", 100,
-                        "currency", yuanId
+                        "currency", "YUAN"
                 )
         ));
         var priceId = apiClient.getObject(shoesId).getString("price");
@@ -393,12 +392,11 @@ public class DDLTest extends TestCase {
 
     public void testRollbackEntityToValueConversion() {
         assemble("value_ddl_before.masm");
-        var yuanId = typeManager.getEnumConstantId("Currency", "YUAN");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
                         "amount", 100,
-                        "currency", yuanId
+                        "currency", "YUAN"
                 )
         ));
         var commitId = assemble("value_ddl_after.masm", false);
@@ -427,12 +425,11 @@ public class DDLTest extends TestCase {
 
     public void testRollbackValueToEntityConversion() {
         assemble("value_ddl_after.masm");
-        var yuanId = typeManager.getEnumConstantId("Currency", "YUAN");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
                         "amount", 100,
-                        "currency", yuanId
+                        "currency", "YUAN"
                 )
         ));
         var commitId = assemble("value_ddl_before.masm", false);
@@ -486,10 +483,9 @@ public class DDLTest extends TestCase {
         var isDefaultProduct = TestUtils.doInTransaction(() -> apiClient.callMethod(shoesId, "isDefaultKind", List.of()));
         Assert.assertEquals(true, isDefaultProduct);
         var shoes = apiClient.getObject(shoesId);
-        var defaultKindId = typeManager.getEnumConstantId("ProductKind", "DEFAULT");
         var hotelKind = typeManager.getEnumConstantId("ProductKind", "HOTEL");
         var kindId = shoes.getString("kind");
-        Assert.assertEquals(defaultKindId, kindId);
+        Assert.assertEquals("DEFAULT", kindId);
         try {
             apiClient.getObject(kindId0);
             Assert.fail("Should have been removed");
@@ -548,12 +544,11 @@ public class DDLTest extends TestCase {
 
     public void testValueToChildConversion() {
         assemble("value_to_child_ddl_before.masm");
-        var yuanId = typeManager.getEnumConstantId("Currency", "YUAN");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "price", Map.of(
                         "amount", 100,
-                        "currency", yuanId
+                        "currency", "YUAN"
                 )
         ));
         assemble("value_to_child_ddl_after.masm");
@@ -628,10 +623,9 @@ public class DDLTest extends TestCase {
 
     public void testEnumToChildConversionAbortion() {
         assemble("enum_to_child_ddl.masm");
-        var defaultKindId = Objects.requireNonNull(typeManager.getEnumConstantId("ProductKind", "DEFAULT"));
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
-                "kind", defaultKindId
+                "kind", "DEFAULT"
         ));
         var commitId = assemble("child_to_enum_ddl_rollback.masm", false);
         TestUtils.doInTransactionWithoutResult(() -> {
@@ -642,8 +636,8 @@ public class DDLTest extends TestCase {
             }
         });
         TestUtils.waitForDDLAborted(schedulerAndWorker);
-        var kindId = apiClient.getObject(shoesId).getString("kind");
-        Assert.assertEquals(defaultKindId, kindId);
+        var kind = apiClient.getObject(shoesId).getString("kind");
+        Assert.assertEquals("DEFAULT", kind);
     }
 
     public void testValueToEnumConversion() {
@@ -656,11 +650,10 @@ public class DDLTest extends TestCase {
                 )
         ));
         assemble("value_to_enum_ddl_after.masm");
-        var defaultKindId = typeManager.getEnumConstantId("ProductKind", "DEFAULT");
         var shoes = apiClient.getObject(shoesId);
         var kind = shoes.get("kind");
         MatcherAssert.assertThat(kind, CoreMatchers.instanceOf(String.class));
-        Assert.assertEquals(defaultKindId, kind);
+        Assert.assertEquals("DEFAULT", kind);
         assemble("value_to_enum_ddl_rollback.masm");
         var shoes1 = apiClient.getObject(shoesId);
         var kind1 = shoes1.get("kind");
@@ -692,10 +685,9 @@ public class DDLTest extends TestCase {
 
     public void testAbortingEnumToValueConversion() {
         assemble("enum_to_value_ddl.masm");
-        var defaultKindId = Objects.requireNonNull(typeManager.getEnumConstantId("ProductKind", "DEFAULT"));
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
-                "kind", defaultKindId
+                "kind", "DEFAULT"
                 )
         );
         var commitId = assemble("value_to_enum_ddl_rollback.masm", false);
@@ -706,7 +698,7 @@ public class DDLTest extends TestCase {
         TestUtils.waitForDDLAborted(schedulerAndWorker);
         var kind = apiClient.getObject(shoesId).get("kind");
         MatcherAssert.assertThat(kind, CoreMatchers.instanceOf(String.class));
-        Assert.assertEquals(defaultKindId, kind);
+        Assert.assertEquals("DEFAULT", kind);
     }
 
     public void testChildFieldRemoval() {

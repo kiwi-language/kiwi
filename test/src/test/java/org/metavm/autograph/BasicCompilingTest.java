@@ -160,7 +160,6 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processValueTypes() {
-        var currencyKindYuanId = typeManager.getEnumConstantId("valuetypes.CurrencyKind", "YUAN");
         var productId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                 "valuetypes.Product",
                 Map.of(
@@ -168,21 +167,21 @@ public class BasicCompilingTest extends CompilerTestBase {
                         "price", Map.of(
                                 "defaultPrice", Map.of(
                                         "quantity", 100,
-                                        "kind", currencyKindYuanId
+                                        "kind", "YUAN"
                                 ),
                                 "channelPrices", List.of(
                                         Map.of(
                                                 "channel", "mobile",
                                                 "price", Map.of(
                                                         "quantity", 80,
-                                                        "kind", currencyKindYuanId
+                                                        "kind", "YUAN"
                                                 )
                                         ),
                                         Map.of(
                                                 "channel", "web",
                                                 "price", Map.of(
                                                         "quantity", 95,
-                                                        "kind", currencyKindYuanId
+                                                        "kind", "YUAN"
                                                 )
                                         )
                                 )
@@ -196,7 +195,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var defaultPrice = price.getObject("defaultPrice");
         Assert.assertNull(defaultPrice.id());
         Assert.assertEquals(100.0, defaultPrice.getDouble("quantity"), 0.0001);
-        Assert.assertEquals(currencyKindYuanId, defaultPrice.getString("kind"));
+        Assert.assertEquals("YUAN", defaultPrice.getString("kind"));
         // check channels
         var channelPrices = price.getArray("channelPrices");
         Assert.assertEquals(2, channelPrices.size());
@@ -206,14 +205,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals("mobile", mobileChannelPrice.getString("channel"));
         var mobilePrice = mobileChannelPrice.getObject("price");
         Assert.assertEquals(80.0, mobilePrice.getDouble("quantity"), 0.0001);
-        Assert.assertEquals(currencyKindYuanId, mobilePrice.getString("kind"));
+        Assert.assertEquals("YUAN", mobilePrice.getString("kind"));
         // check web channel
         var webChannelPrice = channelPrices.getObject(1);
         Assert.assertNull(webChannelPrice.id());
         Assert.assertEquals("web", webChannelPrice.getString("channel"));
         var webPrice = webChannelPrice.getObject("price");
         Assert.assertEquals(95.0, webPrice.getDouble("quantity"), 0.0001);
-        Assert.assertEquals(currencyKindYuanId, webPrice.getString("kind"));
+        Assert.assertEquals("YUAN", webPrice.getString("kind"));
     }
 
     private void processInterceptor() {
@@ -226,9 +225,8 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processEnums() {
-        var kindId = (String) callMethod("enums.ProductKind", "fromCode", List.of(0));
-        var kind = apiClient.getObject(kindId);
-        Assert.assertEquals("DEFAULT", kind.getString("name"));
+        var kind = (String) callMethod("enums.ProductKind", "fromCode", List.of(0));
+        Assert.assertEquals("DEFAULT", kind);
     }
 
     private void processRemovedField() {

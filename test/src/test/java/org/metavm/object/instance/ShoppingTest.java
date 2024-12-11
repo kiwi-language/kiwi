@@ -82,7 +82,7 @@ public class ShoppingTest extends TestCase {
         Assert.assertEquals(70.0, order.getDouble("price"), 0.0001);
         for (var couponId : couponsIds) {
             var coupon = getObject(couponId);
-            Assert.assertEquals(shoppingTypeIds.couponUsedStateId(), coupon.getString("state"));
+            Assert.assertEquals("USED", coupon.getString("state"));
         }
         var reloadedFirstSkuDTO = getObject(firstSku.id());
         var originalQuantity = firstSku.getInt("quantity");

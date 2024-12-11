@@ -20,12 +20,11 @@ public class ShoppingCompilingTest extends CompilerTestBase {
                             "inventory", 100
                     )
             );
-            var couponNormalStateId = typeManager.getEnumConstantId("org.metavm.lab.shopping.AstCouponState", "UNUSED");
             var couponId = saveInstance(
                     "org.metavm.lab.shopping.AstDirectCoupon",
                     Map.of(
                             "discount", 5,
-                            "state", couponNormalStateId,
+                            "state", "UNUSED",
                             "product", productId
                     )
             );

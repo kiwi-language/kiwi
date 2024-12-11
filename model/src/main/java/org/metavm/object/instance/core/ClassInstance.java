@@ -660,6 +660,10 @@ public class ClassInstance extends Instance {
         return klass.isList();
     }
 
+    public boolean isEnum() {
+        return klass.isEnum();
+    }
+
     public boolean isChildList() {
         return klass.isChildList();
     }

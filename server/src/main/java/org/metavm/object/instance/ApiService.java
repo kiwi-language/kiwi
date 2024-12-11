@@ -269,6 +269,8 @@ public class ApiService extends EntityContextFactoryAware {
             case Reference reference -> {
                 var resolved = reference.resolve();
                 if(resolved instanceof ClassInstance clsInst) {
+                    if (clsInst.isEnum())
+                        yield ((StringValue) clsInst.getField(StdField.enumName.get())).getValue();
                     if(clsInst.isList())
                         yield formatList(clsInst);
                     else if(asValue || reference.isValueReference())
@@ -286,7 +288,7 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private Map<String, Object> formatValueObject(ClassInstance instance) {
-        var map = new HashMap<String, Object>();
+        var map = new LinkedHashMap<String, Object>();
         var id = instance.getStringId();
         if (id != null)
             map.put(KEY_ID, id);
@@ -373,7 +375,8 @@ public class ApiService extends EntityContextFactoryAware {
         return switch (type) {
             case PrimitiveType primitiveType -> tryResolvePrimitive(rawValue, primitiveType);
             case ClassType classType -> switch (rawValue) {
-                case String s -> asValue ? ValueResolutionResult.failed : tryResolveReference(s, classType, context);
+                case String s -> asValue ? ValueResolutionResult.failed :
+                        (classType.isEnum() ? tryResolveEnumConstant(s, classType, context) : tryResolveReference(s, classType, context));
                 case List<?> list -> tryResolveList(list, classType, currentValue, context);
                 case Map<?, ?> map -> tryResolveObject(map, classType, context);
                 case null, default -> ValueResolutionResult.failed;
@@ -390,6 +393,12 @@ public class ApiService extends EntityContextFactoryAware {
             case AnyType ignored -> ValueResolutionResult.of(resolveAny(rawValue, context));
             default -> throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE_OF_TYPE, type.toExpression());
         };
+    }
+
+    private ValueResolutionResult tryResolveEnumConstant(String name, ClassType classType, IEntityContext context) {
+        var e = NncUtils.find(classType.getKlass().getEnumConstantDefs(), ecd -> Objects.equals(ecd.getName(), name));
+        return e != null ? ValueResolutionResult.of(StaticFieldTable.getInstance(classType, context).get(e.getField()))
+                : ValueResolutionResult.failed;
     }
 
     private ValueResolutionResult tryResolvePrimitive(Object rawValue, PrimitiveType type) {

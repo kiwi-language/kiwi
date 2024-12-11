@@ -45,13 +45,10 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
             try (var ignored = profiler.enter("submit")) {
                 signup();
                 login();
-                var roundHalfUpId = typeManager.getEnumConstantId("org.metavm.manufacturing.material.RoundingRule", "ROUND_HALF_UP");
                 var unitId = doInTransaction(() -> apiClient.newInstance(
                         "org.metavm.manufacturing.material.Unit",
-                        Arrays.asList("meter", "meter", roundHalfUpId, 2, null)
+                        Arrays.asList("meter", "meter", "ROUND_HALF_UP", 2, null)
                 ));
-                var normalId = typeManager.getEnumConstantId("org.metavm.manufacturing.material.MaterialKind", "NORMAL");
-                var yearId = typeManager.getEnumConstantId("org.metavm.manufacturing.material.TimeUnit", "YEAR");
                 var materialId = (String) doInTransaction(() -> apiClient.callMethod(
                         "materialService",
                         "save",
@@ -59,21 +56,20 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                                 Map.of(
                                         "code", "sheet metal",
                                         "name", "sheet metal",
-                                        "kind", normalId,
+                                        "kind", "NORMAL",
                                         "unit", unitId,
                                         "storageValidPeriod", 1,
-                                        "storageValidPeriodUnit", yearId
+                                        "storageValidPeriodUnit", "YEAR"
                                 )
                         )
                 ));
                 // get QualityInspectionState type
                 // get QualityInspectionState.QUALIFIED constant
-                var qualified = getObject(typeManager.getEnumConstantId(qualityInspectionStateKlass, "QUALIFIED"));
                 // invoke material.setFeedQualityInspectionStates with a list containing the QUALIFIED constant
                 callMethod(
                         materialId, "setFeedQualityInspectionStates",
                         List.of(
-                                List.of(qualified.id())
+                                List.of("QUALIFIED")
                         )
                 );
                 // reload the material object
@@ -81,7 +77,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 // assert that the feedQualityInspectionStates field of the material object contains the QUALIFIED constant
                 var feedQualityInspectionStates = material.getArray("feedQualityInspectionStates");
                 Assert.assertEquals(1, feedQualityInspectionStates.size());
-                Assert.assertEquals(qualified.id(), feedQualityInspectionStates.get(0));
+                Assert.assertEquals("QUALIFIED", feedQualityInspectionStates.get(0));
 
 
                 // reload the material view object
@@ -89,13 +85,13 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 // check the feedQualityInspectionStates field and assert that it didn't change
                 var reloadedFeedQualityInspectionStates = reloadedMaterial.getArray("feedQualityInspectionStates");
                 Assert.assertEquals(1, reloadedFeedQualityInspectionStates.size());
-                Assert.assertEquals(qualified.id(), reloadedFeedQualityInspectionStates.get(0));
+                Assert.assertEquals("QUALIFIED", reloadedFeedQualityInspectionStates.get(0));
 
                 // get Utils type
                 var storageObjects = createPosition();
                 var unit = getObject(unitId);
                 try (var ignored2 = profiler.enter("processInventory")) {
-                    processInventory(material, storageObjects.position, qualified, unit);
+                    processInventory(material, storageObjects.position, unit);
                 }
                 try (var ignored2 = profiler.enter("processInbound")) {
                     processInbound(storageObjects, material, unit);
@@ -171,19 +167,15 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
 
     private void processInventory(ClassInstanceWrap material,
                                   ClassInstanceWrap position,
-                                  ClassInstanceWrap qualifiedInspectionState,
                                   ClassInstanceWrap unit
     ) {
-        // get InventoryBizState.INITIAL constant
-        var initialBizStateId = typeManager.getEnumConstantId("org.metavm.manufacturing.storage.InventoryBizState", "INITIAL");
-        // create an inventory object
         var inventoryId = doInTransaction(() -> apiClient.newInstance(
                 inventoryKlass,
                 Arrays.asList(
                         material.id(),
                         position.id(),
-                        qualifiedInspectionState.id(),
-                        initialBizStateId,
+                        "QUALIFIED",
+                        "INITIAL",
                         null,
                         null,
                         null,
@@ -197,13 +189,15 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         ));
         DebugEnv.stringId = inventoryId;
         waitForAllTasksDone();
+        var qualifiedInspectionStateId = typeManager.getEnumConstantId(qualityInspectionStateKlass, "QUALIFIED");
+        var initialBizStateId = typeManager.getEnumConstantId("org.metavm.manufacturing.storage.InventoryBizState", "INITIAL");
         // query the inventory object by condition
         var queryResp = instanceManager.query(
                 new InstanceQueryDTO(
                         inventoryKlass,
                         null,
                         String.format("material = $$%s and position = $$%s and qualityInspectionState = $$%s and bizState = $$%s",
-                                material.id(), position.id(), qualifiedInspectionState.id(), initialBizStateId),
+                                material.id(), position.id(), qualifiedInspectionStateId, initialBizStateId),
                         List.of(),
                         1,
                         20,
@@ -216,8 +210,6 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         var queriedInventory = queryResp.page().data().get(0);
         Assert.assertEquals(inventoryId, queriedInventory);
 
-        var adjustmentId = typeManager.getEnumConstantId("org.metavm.manufacturing.storage.InventoryOp", "ADJUSTMENT");
-
         // decrease the inventory by 100 and asserts that the inventory is removed
         doInTransaction(() -> apiClient.callMethod(
                 inventoryKlass,
@@ -225,8 +217,8 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 Arrays.asList(
                         material.id(),
                         position.id(),
-                        qualifiedInspectionState.id(),
-                        initialBizStateId,
+                        "QUALIFIED",
+                        "INITIAL",
                         null,
                         null,
                         null,
@@ -237,7 +229,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                         null,
                         100L,
                         unit.id(),
-                        adjustmentId
+                        "ADJUSTMENT"
                 )
         ));
         try {
@@ -249,12 +241,11 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
     }
 
     private void processInbound(StorageObjects storageObjects, ClassInstanceWrap material, ClassInstanceWrap unit) {
-        var purchaseId = typeManager.getEnumConstantId("org.metavm.manufacturing.storage.InboundBizType", "PURCHASE");
         var inboundOrderId = doInTransaction(() -> apiClient.newInstance(
                 "org.metavm.manufacturing.storage.InboundOrder",
                 Arrays.asList(
                         "inboundOrder1",
-                        purchaseId,
+                        "PURCHASE",
                         storageObjects.warehouse.id(),
                         null
                 )
@@ -281,7 +272,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 List.of(
                         Map.ofEntries(
                                 Map.entry(ApiService.KEY_CLASS, qcByBoundInboundRequestType),
-                                Map.entry("bizType", purchaseId),
+                                Map.entry("bizType", "PURCHASE"),
                                 Map.entry("position", storageObjects.position.id()),
                                 Map.entry("material", material.id()),
                                 Map.entry("unit", unit.id()),
@@ -302,7 +293,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 List.of(
                         Map.ofEntries(
                                 Map.entry(ApiService.KEY_CLASS, qcBySpecInboundRequestType),
-                                Map.entry("bizType", purchaseId),
+                                Map.entry("bizType", "PURCHASE"),
                                 Map.entry("position", storageObjects.position.id()),
                                 Map.entry("material", material.id()),
                                 Map.entry("unit", unit.id()),
@@ -326,15 +317,12 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
 
 
     private void processTransfer(StorageObjects storageObjects, ClassInstanceWrap material, ClassInstanceWrap unit) {
-        // get TransferBizType.STORAGE constant
-        var storageId = typeManager.getEnumConstantId("org.metavm.manufacturing.storage.TransferBizType", "STORAGE");
-
         // get transfer order type
         var qcTransferOrder = "org.metavm.manufacturing.storage.TransferOrder";
         // create a transfer order
         var transferOrderId = doInTransaction(() -> apiClient.newInstance(
                 qcTransferOrder,
-                List.of("transferOrder1", storageId, storageObjects.warehouse.id(), storageObjects.warehouse.id())
+                List.of("transferOrder1", "STORAGE", storageObjects.warehouse.id(), storageObjects.warehouse.id())
         ));
         // create a transfer order item
         var qcTransferOrderItem = "org.metavm.manufacturing.storage.TransferOrderItem";
@@ -343,15 +331,13 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 Arrays.asList(transferOrderId, material.id(), 100, unit.id(), null, null)
         ));
         // create an inventory
-        var qualifiedInspectionStateId = typeManager.getEnumConstantId(qualityInspectionStateKlass, "QUALIFIED");
-        var initialBizStateId = typeManager.getEnumConstantId("org.metavm.manufacturing.storage.InventoryBizState", "INITIAL");
         var inventoryId = doInTransaction(() -> apiClient.newInstance(
                 inventoryKlass,
                 Arrays.asList(
                         material.id(),
                         storageObjects.position.id(),
-                        qualifiedInspectionStateId,
-                        initialBizStateId,
+                        "QUALIFIED",
+                        "INITIAL",
                         null,
                         null,
                         null,
@@ -457,10 +443,6 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
     }
 
     private void processBOM(ClassInstanceWrap material, ClassInstanceWrap unit, ClassInstanceWrap routing, ClassInstanceWrap routingProcess) {
-        var directFeedTypeId = typeManager.getEnumConstantId("org.metavm.manufacturing.production.FeedType", "DIRECT");
-        var onDemandPickMethodId = typeManager.getEnumConstantId("org.metavm.manufacturing.production.PickMethod", "ON_DEMAND");
-        var enabledGeneralStateId = typeManager.getEnumConstantId("org.metavm.manufacturing.GeneralState", "ENABLED");
-        var qualifiedInspectionStateId = typeManager.getEnumConstantId(qualityInspectionStateKlass, "QUALIFIED");
         var bomId = saveInstance(
                 "org.metavm.manufacturing.production.BOM",
                 Map.of(
@@ -468,7 +450,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                         "unit", unit.id(),
                         "routing", routing.id(),
                         "reportingProcess", routingProcess.id(),
-                        "state", enabledGeneralStateId,
+                        "state", "ENABLED",
                         "inbound", true,
                         "autoInbound", true,
                         "secondaryOutputs", List.of(),
@@ -480,19 +462,19 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                                         Map.entry("numerator", 1),
                                         Map.entry("denominator", 1),
                                         Map.entry("attritionRate", 0.0),
-                                        Map.entry("pickMethod", onDemandPickMethodId),
+                                        Map.entry("pickMethod", "ON_DEMAND"),
                                         Map.entry("routingSpecified", false),
                                         Map.entry("process", routingProcess.id()),
-                                        Map.entry("qualityInspectionState", qualifiedInspectionStateId),
-                                        Map.entry("feedType", directFeedTypeId),
+                                        Map.entry("qualityInspectionState", "QUALIFIED"),
+                                        Map.entry("feedType", "DIRECT"),
                                         Map.entry("items", List.of(
                                                 Map.of(
                                                         "sequence", 1,
                                                         "numerator", 1,
                                                         "denominator", 1,
                                                         "process", routingProcess.id(),
-                                                        "qualityInspectionState", qualifiedInspectionStateId,
-                                                        "feedType", directFeedTypeId
+                                                        "qualityInspectionState", "QUALIFIED",
+                                                        "feedType", "DIRECT"
                                                 )
                                         ))
                                 )
