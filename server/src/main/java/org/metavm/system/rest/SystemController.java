@@ -161,4 +161,9 @@ public class SystemController {
         return Result.success(Id.parse(id).tryGetTreeId());
     }
 
+    @GetMapping("/ping")
+    public String ping() {
+        return "Pang";
+    }
+
 }

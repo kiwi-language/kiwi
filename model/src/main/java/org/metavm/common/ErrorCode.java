@@ -134,7 +134,7 @@ public enum ErrorCode {
 
     // Constraint
     DUPLICATE_KEY(701, "Duplicate unique key '{}'"),
-    CONSTRAINT_CHECK_FAILED(702, "Failed to save record '{}': {}"),
+    CONSTRAINT_CHECK_FAILED(702, "Failed to save object '{}': {}"),
     CONSTRAINT_NOT_FOUND(703, "Constraint rule not found (ID: {})"),
     DUPLICATE_KEY2(704, "Duplicate key for index {}: {}"),
 

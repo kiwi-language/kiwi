@@ -8,6 +8,8 @@ import java.util.Random;
 
 public class Lang {
 
+    public static Object value;
+
     private static final Map<String, Object> context = new HashMap<>();
 
     public static void setContext(String key, Object value) {
@@ -49,6 +51,6 @@ public class Lang {
     }
 
     public static Object getRoot(Object object) {
-        return object;
+        return value;
     }
 }
