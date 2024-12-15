@@ -3,8 +3,8 @@ package org.metavm.object.type;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityField;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.NativeBase;
@@ -964,7 +964,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     }
 
     @Nullable
-    public Index findIndex(Predicate<Index> predicate) {
+    public Index findSelfIndex(Predicate<Index> predicate) {
         for (Constraint constraint : constraints) {
             if (constraint instanceof Index index && predicate.test(index))
                 return index;

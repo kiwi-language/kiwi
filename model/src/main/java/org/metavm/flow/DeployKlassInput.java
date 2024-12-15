@@ -71,7 +71,9 @@ public class DeployKlassInput extends KlassInput {
             field.initTag(declaringType.nextFieldTag());
             if(field.getSourceTag() == null)
                 field.setSourceTag(declaringType.nextFieldSourceCodeTag());
-            if(!field.isStatic() && !context.isNewEntity(declaringType))
+            if(field.isStatic())
+                batch.addNewStaticField(field);
+            else if (!context.isNewEntity(declaringType))
                 batch.addNewField(field);
         } else {
             if(!field.isStatic() && !field.getType().isAssignableFrom(oldType)) {
@@ -79,8 +81,12 @@ public class DeployKlassInput extends KlassInput {
                 field.setTag(field.getDeclaringType().nextFieldTag());
             }
             if(oldState != field.getState()) {
-                if(oldState == MetadataState.REMOVED)
-                    batch.addNewField(field);
+                if(oldState == MetadataState.REMOVED) {
+                    if (field.isStatic())
+                        batch.addNewStaticField(field);
+                    else
+                        batch.addNewField(field);
+                }
                 if(field.getState() == MetadataState.REMOVED && field.isChild())
                     batch.addRemovedChildField(field);
             }

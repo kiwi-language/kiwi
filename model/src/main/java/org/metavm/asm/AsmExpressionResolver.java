@@ -95,7 +95,7 @@ class AsmExpressionResolver {
     private Type resolveSelect(AssemblyParser.SelectContext ctx) {
         var klass = requireNonNull(findKlass(ctx.qualifiedName().getText()));
         var indexName = ctx.IDENTIFIER().getText();
-        var index = requireNonNull(klass.findIndex(i -> i.getName().equals(indexName)),
+        var index = requireNonNull(klass.findSelfIndex(i -> i.getName().equals(indexName)),
                 () -> "Cannot find index with name " + indexName + " class " + klass.getTypeDesc());
         NncUtils.map(ctx.expression(), this::resolve0);
         if (ctx.SELECT() != null) {

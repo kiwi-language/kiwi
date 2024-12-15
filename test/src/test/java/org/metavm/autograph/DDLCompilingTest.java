@@ -22,6 +22,7 @@ public class DDLCompilingTest extends CompilerTestBase {
           Id stateKlassId;
           Id derivedInstanceId;
           String fooId;
+          String productId;
         };
         submit(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
@@ -34,6 +35,12 @@ public class DDLCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(1, indexFooKlass.getConstraints().size());
             }
             ref.fooId = saveInstance("index.IndexFoo", Map.of("name", "foo", "seq", 1));
+            ref.productId = saveInstance("Product", Map.of("name", "Shoes",
+                    "price", Map.of(
+                            "amount", 100,
+                            "currency", "YUAN"
+                    )
+            ));
         });
 //        try {
 //            compile(DDL2_SOURCE_ROOT);
@@ -63,6 +70,9 @@ public class DDLCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(1, indexFooKlass.getConstraints().size());
             }
             Assert.assertEquals(ref.fooId, callMethod("index.IndexFoo", "findBySeq", List.of(1)));
+            Assert.assertEquals("AVAILABLE", getStatic("Product", "DEFAULT_STATUS"));
+            var product = getObject(ref.productId);
+            Assert.assertEquals("none", product.getString("tag"));
         });
         compile(DDL4_SOURCE_ROOT);
 //        compile(DDL3_SOURCE_ROOT);

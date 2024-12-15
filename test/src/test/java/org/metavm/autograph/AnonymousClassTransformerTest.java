@@ -12,22 +12,22 @@ public class AnonymousClassTransformerTest extends TestCase {
     public static final Pattern PTN = Pattern.compile("/src/main/.+/(.+)/");
 
     public void test() {
-        var source = "/Users/leen/workspace/object/lab/src/main/basics/anonymousclass/AnonymousClassFoo.java";
+        var source = "/Users/leen/workspace/object/lab/src/main/basics/anonymous_class/AnonymousClassFoo.java";
         process(source);
     }
 
     public void testLocalClass() {
-        String src = "/Users/leen/workspace/object/lab/src/main/basics/localclass/LocalClassFoo.java";
+        String src = "/Users/leen/workspace/object/lab/src/main/basics/local_class/LocalClassFoo.java";
         process(src);
     }
 
     public void testNestedLocalClass() {
-        String src = "/Users/leen/workspace/object/lab/src/main/basics/localclass/LocalClassNameConflictFoo.java";
+        String src = "/Users/leen/workspace/object/lab/src/main/basics/local_class/LocalClassNameConflictFoo.java";
         process(src);
     }
 
     public void testAnonymous2() {
-        var src = "/Users/leen/workspace/object/lab/src/main/basics/anonymousclass/SuperclassFieldFoo.java";
+        var src = "/Users/leen/workspace/object/lab/src/main/basics/anonymous_class/SuperclassFieldFoo.java";
         process(src);
     }
 

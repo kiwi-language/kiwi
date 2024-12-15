@@ -64,10 +64,6 @@ public class InnerClassTransformer extends VisitorBase {
             }
             Objects.requireNonNull(psiClass.getModifierList()).setModifierProperty(PsiModifier.STATIC, true);
             psiClass.putUserData(Keys.ADDED_STATIC_MODIFIER, true);
-            for (PsiField field : psiClass.getFields()) {
-                if(!TranspileUtils.isStatic(field))
-                    field.setInitializer(null);
-            }
         }
         klasses.pop();
     }

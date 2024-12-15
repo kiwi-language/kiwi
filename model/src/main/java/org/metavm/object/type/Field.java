@@ -1,13 +1,14 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityField;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.expression.Expression;
+import org.metavm.flow.Flows;
 import org.metavm.flow.KlassInput;
 import org.metavm.flow.KlassOutput;
+import org.metavm.flow.Method;
 import org.metavm.object.instance.core.*;
 import org.metavm.util.*;
 
@@ -28,8 +29,6 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
     private boolean lazy;
     private Column column;
     private boolean isChild;
-    @Nullable
-    private Expression initializer;
     private boolean readonly;
     private boolean isTransient;
     private MetadataState state;
@@ -40,6 +39,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
     private int since;
     private @Nullable Integer sourceTag;
     private transient int offset;
+    private @Nullable Method initializer;
 
     public Field(
             Long tmpId,
@@ -58,6 +58,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
             int tag,
             @Nullable Integer sourceTag,
             int since,
+            @Nullable Method initializer,
             MetadataState state
     ) {
         super(tmpId);
@@ -75,6 +76,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         this.readonly = readonly;
         this.isTransient = isTransient;
         this.since = since;
+        this.initializer = initializer;
         if (column != null) {
             NncUtils.requireTrue(declaringType.checkColumnAvailable(column));
             this.column = column;
@@ -163,15 +165,6 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
 
     public Value get(@NotNull ClassInstance instance) {
         return NncUtils.requireNonNull((instance)).getField(this);
-    }
-
-    @Nullable
-    public Expression getInitializer() {
-        return initializer;
-    }
-
-    public void setInitializer(@Nullable Expression initializer) {
-        this.initializer = initializer;
     }
 
     public Type getType() {
@@ -478,6 +471,10 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         output.writeInt(since);
         column.write(output);
         defaultValue.write(output);
+        if (initializer != null)
+            output.writeEntityId(initializer);
+        else
+            output.writeId(new NullId());
     }
 
     public void read(KlassInput input) {
@@ -494,9 +491,39 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         since = input.readInt();
         column = input.readColumn();
         defaultValue = (Value) input.readElement();
+        var initializerId = input.readId();
+        initializer = initializerId instanceof NullId ? null : input.getMethod(initializerId);
     }
 
     public int getTypeIndex() {
         return typeIndex;
     }
+
+    @Nullable
+    public Method getInitializer() {
+        return initializer;
+    }
+
+    public void setInitializer(@Nullable Method initializer) {
+        this.initializer = initializer;
+    }
+
+    public void initialize(@Nullable ClassInstance self,  IEntityContext context) {
+        if (initializer != null) {
+            if (isStatic()) {
+                var value = getType().fromStackValue(
+                        Flows.invoke(initializer.getRef(), null, List.of(), context)
+                );
+                StaticFieldTable.getInstance(getDeclaringType().getType(), context).set(this, value);
+            }
+            else {
+                Objects.requireNonNull(self);
+                var value = getType(self.getType().getTypeMetadata()).fromStackValue(
+                        Flows.invoke(initializer.getRef(), self, List.of(), context)
+                );
+                self.setField(this, value);
+            }
+        }
+    }
+
 }

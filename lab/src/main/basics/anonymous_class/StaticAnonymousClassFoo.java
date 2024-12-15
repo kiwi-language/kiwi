@@ -1,4 +1,4 @@
-package anonymousclass;
+package anonymous_class;
 
 import java.util.Iterator;
 

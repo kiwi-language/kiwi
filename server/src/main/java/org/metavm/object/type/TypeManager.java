@@ -141,7 +141,7 @@ public class TypeManager extends EntityContextFactoryAware {
                     initClass(newClass, context);
             }
             batch.getNewEnumConstantDefs().forEach(ecd -> createEnumConstant(ecd, context));
-            batch.getNewIndexes().forEach(idx -> idx.initialize(context));
+            batch.getNewStaticFields().forEach(idx -> idx.initialize(null, context));
             return batch;
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -639,7 +639,7 @@ public class Assembler {
         public Void visitIndexDeclaration(AssemblyParser.IndexDeclarationContext ctx) {
             var klass = ((AsmKlass) scope).getKlass();
             var name = ctx.IDENTIFIER().getText();
-            var index = klass.findIndex(idx -> idx.getName().equals(name));
+            var index = klass.findSelfIndex(idx -> idx.getName().equals(name));
             var mods = currentMods();
             if (index == null)
                 index = new Index(null, klass, name, null, mods.contains("unique"));

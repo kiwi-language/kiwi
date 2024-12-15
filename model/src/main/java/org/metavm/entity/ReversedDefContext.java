@@ -358,7 +358,7 @@ public class ReversedDefContext extends DefContext {
         var klass = pojoDef.getKlass();
         for (IndexConstraintDef indexDef : prototype.getIndexConstraintDefList()) {
             new IndexConstraintDef(
-                    Objects.requireNonNull(klass.findIndex(idx -> idx.idEquals(indexDef.getIndexConstraint().getId()))),
+                    Objects.requireNonNull(klass.findSelfIndex(idx -> idx.idEquals(indexDef.getIndexConstraint().getId()))),
                     indexDef.getIndexDefField(),
                     pojoDef
             );

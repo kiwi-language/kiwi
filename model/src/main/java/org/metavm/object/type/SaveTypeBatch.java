@@ -42,6 +42,7 @@ public class SaveTypeBatch implements TypeDefProvider {
     private final Set<Klass> newKlasses = new HashSet<>();
     private final Set<Index> newIndexes = new HashSet<>();
     private final Set<Klass> searchEnabledClasses = new HashSet<>();
+    private final Set<Field> newStaticFields = new HashSet<>();
 
     private SaveTypeBatch(IEntityContext context) {
         this.context = context;
@@ -49,6 +50,11 @@ public class SaveTypeBatch implements TypeDefProvider {
 
     public void addNewField(Field field) {
         newFields.add(field);
+    }
+
+    public void addNewStaticField(Field field) {
+        assert field.isStatic();
+        newStaticFields.add(field);
     }
 
     public void addNewIndex(Index index) {
@@ -187,7 +193,7 @@ public class SaveTypeBatch implements TypeDefProvider {
     private void checkForDDL() {
         for (Field field : newFields) {
             if (Instances.findFieldInitializer(field, fromEnumKlasses.contains(field.getDeclaringType())) == null
-                    && Instances.getDefaultValue(field, context) == null)
+                    && field.getInitializer() == null && Instances.getDefaultValue(field, context) == null)
                 throw new BusinessException(ErrorCode.MISSING_FIELD_INITIALIZER, field.getQualifiedName());
         }
         for (Field field : typeChangedFields) {
@@ -222,4 +228,9 @@ public class SaveTypeBatch implements TypeDefProvider {
     public Set<Index> getNewIndexes() {
         return Collections.unmodifiableSet(newIndexes);
     }
+
+    public Set<Field> getNewStaticFields() {
+        return Collections.unmodifiableSet(newStaticFields);
+    }
+
 }

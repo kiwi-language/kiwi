@@ -1,4 +1,4 @@
-package localclass;
+package local_class;
 
 import java.util.Iterator;
 import java.util.List;

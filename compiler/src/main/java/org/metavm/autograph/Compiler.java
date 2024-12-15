@@ -9,7 +9,6 @@ import org.metavm.autograph.env.LightVirtualFileBase;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.KlassOutput;
-import org.metavm.object.type.Constraint;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.ResolutionStage;
 import org.metavm.object.type.TypeDef;
@@ -53,8 +52,6 @@ public class Compiler {
                     file -> true,
                     file -> {
                         file.accept(new DefaultConstructorCreator());
-                        file.accept(new FieldInitializerSetter());
-                        file.accept(new FieldInitializerMover());
                         file.accept(new SyntheticClassNameTracker());
                         file.accept(new AnonymousClassTransformer());
                     }
@@ -64,6 +61,9 @@ public class Compiler {
                     file -> {
                         file.accept(new SuperCallInserter());
                         file.accept(new ObjectSuperCallRemover());
+                        file.accept(new FieldInitializerSetter());
+                        file.accept(new FieldInitializerMover());
+                        file.accept(new FieldInitializingTransformer());
                     }
             ),
             new CompileStage(

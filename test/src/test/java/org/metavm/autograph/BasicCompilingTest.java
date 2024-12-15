@@ -115,6 +115,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processIndex();
             processSearch();
             processCharReplace();
+            processAnonymousClassWithField();
         });
     }
 
@@ -455,7 +456,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processAnonymousClass() {
         var id = TestUtils.doInTransaction(() ->
-                apiClient.saveInstance("anonymousclass.AnonymousClassFoo<string, any>",
+                apiClient.saveInstance("anonymous_class.AnonymousClassFoo<string, any>",
                         Map.of(
                                 "entries", List.of(
                                         Map.of(
@@ -765,7 +766,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processStaticAnonymousClass() {
         Assert.assertFalse(
                 (boolean) TestUtils.doInTransaction(() ->
-                        apiClient.callMethod("anonymousclass.StaticAnonymousClassFoo", "test", List.of()))
+                        apiClient.callMethod("anonymous_class.StaticAnonymousClassFoo", "test", List.of()))
         );
     }
 
@@ -821,7 +822,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processLocalClass() {
-        var klassName = "localclass.LocalClassFoo";
+        var klassName = "local_class.LocalClassFoo";
         Assert.assertEquals(
                 "MetaVM is the future",
                 callMethod(klassName, "concatenate", List.of(List.of("MetaVM", "is", "the", "future")))
@@ -829,12 +830,12 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processLocalClassNameConflict() {
-        var className = "localclass.LocalClassNameConflictFoo";
+        var className = "local_class.LocalClassNameConflictFoo";
         graphql.Assert.assertNotNull(callMethod(className, "test", List.of()));
     }
 
     private void processAnonymousClassSuperclassField() {
-        var className = "anonymousclass.SuperclassFieldFoo";
+        var className = "anonymous_class.SuperclassFieldFoo";
         Assert.assertEquals(0, callMethod(className, "test", List.of()));
     }
 
@@ -1160,6 +1161,11 @@ public class BasicCompilingTest extends CompilerTestBase {
                 "MacBook_Pro",
                 callMethod(className, "replaceWhiteSpace", List.of("MacBook Pro"))
         );
+    }
+
+    private void processAnonymousClassWithField() {
+        var className = "anonymous_class.AnonymousClassWithField";
+        Assert.assertEquals("MetaVM", callMethod(className, "test", List.of("MetaVM")));
     }
 
 }

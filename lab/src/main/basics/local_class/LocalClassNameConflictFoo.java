@@ -1,4 +1,4 @@
-package localclass;
+package local_class;
 
 public class LocalClassNameConflictFoo {
 

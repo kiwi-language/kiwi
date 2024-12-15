@@ -93,7 +93,6 @@ public class AnonymousClassTransformer extends VisitorBase {
             if (argList != null)
                 sb.append("super").append(argList.getText()).append(';');
         }
-        sb.append("__init__();");
         sb.append('}');
         return TranspileUtils.createMethodFromText(sb.toString());
     }

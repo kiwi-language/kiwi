@@ -1,4 +1,4 @@
-package anonymousclass;
+package anonymous_class;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;

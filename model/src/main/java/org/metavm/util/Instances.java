@@ -736,7 +736,9 @@ public class Instances {
                 ));
             } else
                 throw new IllegalStateException("Invalid initializer method: " + initMethod.getSignatureString());
-        } else
+        } else if (field.getInitializer() != null)
+            return field.getType().fromStackValue(Flows.invoke(field.getInitializer().getRef(), instance, List.of(), context));
+        else
             return requireNonNull(getDefaultValue(field, context), "Can not find a default value for field " + field.getQualifiedName());
     }
 

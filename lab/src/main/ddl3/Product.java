@@ -2,6 +2,9 @@ import javax.annotation.Nullable;
 import org.metavm.api.EntityField;
 
 public class Product {
+
+    public static final ProductStatus DEFAULT_STATUS = ProductStatus.AVAILABLE;
+
 //    private String name;
     private Price price;
     private String brand;
@@ -9,7 +12,7 @@ public class Product {
     private @Nullable String description;
     @EntityField(tag = 0)
     private ProductStatus status = ProductStatus.AVAILABLE;;
-
+    private String tag = "none";
 
     public Product(String name, Price price, String brand) {
 //        this.name = name;
@@ -43,6 +46,14 @@ public class Product {
 
     private String __brand__() {
         return "unknown";
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 
 }

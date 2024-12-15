@@ -3,6 +3,7 @@ package org.metavm.autograph;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.util.Key;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiMethod;
 import org.metavm.object.type.*;
 
 import java.util.HashSet;
@@ -90,6 +91,8 @@ public class Keys {
     public static final Key<Integer> NAX_STACK = Keys.createKey("MaxStack");
 
     public static final Key<Integer> CASE_INDEX = Keys.createKey("CaseIndex");
+
+    public static final Key<PsiMethod> INITIALIZER = Keys.createKey("Initializer");
 
     public static Set<Key<?>> getKeys() {
         return new HashSet<>(KEYS);

@@ -1,8 +1,11 @@
 package org.metavm.object.type;
 
+import org.metavm.flow.Method;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.Column;
 import org.metavm.util.Instances;
+
+import javax.annotation.Nullable;
 
 public class FieldBuilder {
 
@@ -31,6 +34,7 @@ public class FieldBuilder {
     private int tag = -1;
     private Integer sourceTag;
     private int since;
+    private @Nullable Method initializer;
 
     private FieldBuilder(String name, Klass declaringType, Type type) {
         this.name = name;
@@ -128,6 +132,11 @@ public class FieldBuilder {
         return this;
     }
 
+    public FieldBuilder initializer(@Nullable Method initializer) {
+        this.initializer = initializer;
+        return this;
+    }
+
     public Field build() {
         Field field;
         if (existing == null) {
@@ -156,6 +165,7 @@ public class FieldBuilder {
                     tag,
                     sourceTag,
                     since,
+                    initializer,
                     state
             );
         } else {

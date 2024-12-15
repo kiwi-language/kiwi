@@ -94,41 +94,6 @@ public class Generator extends VisitorBase {
         builder.exitScope();
     }
 
-    @Override
-    public void visitField(PsiField psiField) {
-        if (TranspileUtils.isIndexType(psiField.getType())) {
-            var expr = (PsiNewExpression) Objects.requireNonNull(psiField.getInitializer());
-            var index = Objects.requireNonNull(expr.getUserData(Keys.INDEX));
-            var initializer = Objects.requireNonNull(index.getInitializer());
-            initializer.clearContent();
-            var builder = new MethodGenerator(initializer, typeResolver, this);
-            builder.enterScope(initializer.getCode());
-            var argList = expr.getArgumentList();
-            if(argList != null) {
-                for (var arg :  argList.getExpressions()){
-                    builder.getExpressionResolver().resolve(arg);
-                }
-            }
-            var paramTypes = new ArrayList<Type>();
-            var generics = expr.resolveMethodGenerics();
-            var method = (PsiMethod) requireNonNull(generics.getElement());
-            for (var psiParam : method.getParameterList().getParameters()) {
-                paramTypes.add(typeResolver.resolveNullable(psiParam.getType(), ResolutionStage.DECLARATION));
-            }
-            var constructor = StdKlass.index.get().getSelfMethod(
-                    m -> m.isConstructor() && m.getParameterTypes().equals(paramTypes)
-            );
-            var indexType = (ClassType) typeResolver.resolveDeclaration(expr.getType());
-            var methodRef = indexType.getMethod(constructor);
-            builder.createNew(methodRef, false, false);
-            var field = index.getDeclaringType().getStaticFieldByName(index.getName());
-            var valueType = (ClassType) indexType.getTypeArguments().get(1);
-            builder.createSetStatic(new FieldRef(valueType, field));
-            builder.createVoidReturn();
-            builder.exitScope();
-        }
-    }
-
     private void enterClass(ClassInfo classInfo) {
         classes.put(classInfo.psiClass.getQualifiedName(), classInfo.klass);
         classInfoStack.push(classInfo);
