@@ -116,6 +116,9 @@ public class BasicCompilingTest extends CompilerTestBase {
             processSearch();
             processCharReplace();
             processAnonymousClassWithField();
+            processCatchUnionExceptionType();
+            processGetStatic();
+            processBooleanCompare();
         });
     }
 
@@ -759,7 +762,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processPrimitiveStaticFields() {
         var v = (int) TestUtils.doInTransaction(() ->
-                apiClient.callMethod("statics.PrimitiveStaticFieldsFoo", "getMaxInt", List.of()));
+                apiClient.callMethod("static_.PrimitiveStaticFieldsFoo", "getMaxInt", List.of()));
         Assert.assertEquals(Integer.MAX_VALUE, v);
     }
 
@@ -1166,6 +1169,21 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processAnonymousClassWithField() {
         var className = "anonymous_class.AnonymousClassWithField";
         Assert.assertEquals("MetaVM", callMethod(className, "test", List.of("MetaVM")));
+    }
+
+    private void processCatchUnionExceptionType() {
+        var className = "exception.CatchUnionExceptionType";
+        Assert.assertEquals(-1, callMethod(className, "get", List.of(3)));
+    }
+
+    private void processGetStatic() {
+        var className = "static_.GetStaticFoo";
+        Assert.assertTrue((boolean) callMethod(className, "get", List.of()));
+    }
+
+    private void processBooleanCompare() {
+        var className = "primitives.BooleanCompareFoo";
+        Assert.assertTrue((boolean) callMethod(className, "equals", List.of(true)));
     }
 
 }

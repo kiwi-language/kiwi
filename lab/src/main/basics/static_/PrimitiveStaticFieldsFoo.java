@@ -1,4 +1,4 @@
-package statics;
+package static_;
 
 public class PrimitiveStaticFieldsFoo {
 

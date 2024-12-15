@@ -8,12 +8,10 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.entity.natives.ThrowableNative;
-import org.metavm.flow.FlowExecResult;
-import org.metavm.flow.Flows;
-import org.metavm.flow.MethodRef;
-import org.metavm.flow.ParameterRef;
+import org.metavm.flow.*;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
@@ -596,33 +594,39 @@ public class ApiService extends EntityContextFactoryAware {
     private void updateObject(ClassInstance instance, Object json, IEntityContext context) {
         //noinspection unchecked
         var map = (Map<String, Object>) json;
-        var klass = instance.getKlass();
+        var type = instance.getType();
         instance.setDirectlyModified(true);
         map.forEach((k, v) -> {
-            var field = klass.findFieldByName(k);
-            if (field != null) {
+            var fieldRef = type.findFieldByName(k);
+            if (fieldRef != null && fieldRef.isPublic()) {
+                var field = fieldRef.getRawField();
                 if (!field.isReadonly())
-                    instance.setField(field, resolveValue(v, field.getType(), false, instance.getField(field), context));
+                    instance.setField(field, resolveValue(v, fieldRef.getType(), false, instance.getField(field), context));
             } else {
-                var setter = klass.findSetterByPropertyName(k);
+                var setter = type.findSetterByPropertyName(k);
                 if (setter != null) {
-                    var getter = klass.findGetterByPropertyName(k);
-                    var existing = getter != null ? Flows.invokeGetter(getter.getRef(), instance, context) : null;
-                    Flows.invokeSetter(setter.getRef(), instance, resolveValue(v, setter.getParameterTypes().get(0), false, existing, context), context);
+                    var getter = type.findGetterByPropertyName(k);
+                    var existing = getter != null ? Flows.invokeGetter(getter, instance, context) : null;
+                    Flows.invokeSetter(setter, instance, resolveValue(v, setter.getParameterTypes().get(0), false, existing, context), context);
                 }
             }
         });
     }
 
     private ResolutionResult resolveConstructor(ClassType klass, Map<?, ?> map, IEntityContext context) {
+        ResolutionResult result = null;
         for (var method : klass.getMethods()) {
             if (method.isConstructor()) {
                 var args = tryResolveConstructor(method, map, context);
-                if (args != null)
-                    return new ResolutionResult(method, args);
+                if (args != null) {
+                    if (result == null || NncUtils.count(result.arguments, Value::isNotNull) < NncUtils.count(args, Value::isNotNull))
+                        result = new ResolutionResult(method, args);
+                }
             }
         }
-        throw new InternalException("Can not resolve method in klass " + klass.getName() + " for map " + map);
+        if (result == null)
+            throw new InternalException("Can not resolve method in klass " + klass.getName() + " for map " + map);
+        return result;
     }
 
     private List<Value> tryResolveConstructor(MethodRef method, Map<?, ?> map, IEntityContext context) {

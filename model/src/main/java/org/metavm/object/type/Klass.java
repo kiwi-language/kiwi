@@ -469,13 +469,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         return getMethodTable().getReadObjectMethod();
     }
 
-    public List<Method> getAllMethods() {
-        if (superKlass != null)
-            return NncUtils.union(superKlass.getAllMethods(), NncUtils.listOf(methods));
-        else
-            return NncUtils.listOf(getMethods());
-    }
-
     public Method getMethodByInternalName(String internalName) {
         return NncUtils.findRequired(methods, m -> m.getInternalName(null).equals(internalName),
                 () -> "Failed to find method with internal name '" + internalName + "' in class " + getTypeDesc());
@@ -1545,22 +1538,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     public void sortMethods(Comparator<Method> comparator) {
         methods.sort(comparator);
-    }
-
-    public Method findGetterByPropertyName(String propertyName) {
-        for (Method method : getAllMethods()) {
-            if (method.isGetter() && method.getPropertyName().equals(propertyName))
-                return method;
-        }
-        return null;
-    }
-
-    public Method findSetterByPropertyName(String propertyName) {
-        for (Method method : getAllMethods()) {
-            if (method.isSetter() && method.getPropertyName().equals(propertyName))
-                return method;
-        }
-        return null;
     }
 
     public int nextFieldTag() {

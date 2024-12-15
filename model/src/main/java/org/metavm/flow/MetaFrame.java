@@ -4,10 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.StdKlass;
-import org.metavm.entity.natives.CallContext;
-import org.metavm.entity.natives.ExceptionNative;
-import org.metavm.entity.natives.ListNative;
-import org.metavm.entity.natives.NullPointerExceptionNative;
+import org.metavm.entity.natives.*;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -333,8 +330,16 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.GET_ELEMENT -> {
                             var index = ((IntValue) stack[--top]).value;
                             var arrayInst = stack[--top].resolveArray();
-                            stack[top++] = arrayInst.get(index).toStackValue();
-                            pc++;
+                            if (index < arrayInst.size()) {
+                                stack[top++] = arrayInst.get(index).toStackValue();
+                                pc++;
+                            } else {
+                                var npe = ClassInstance.allocate(StdKlass.indexOutOfBoundsException.type());
+                                var nat = new IndexOutOfBoundsExceptionNative(npe);
+                                nat.IndexOutOfBoundsException(this);
+                                if ((pc = catchException(npe)) == -1)
+                                    return raise();
+                            }
                         }
                         case Bytecodes.FUNCTION_CALL -> {
                             //noinspection DuplicatedCode
@@ -835,7 +840,7 @@ public class MetaFrame implements Frame, CallContext {
                             var property = (PropertyRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                             if (property instanceof FieldRef field) {
                                 var staticFieldTable = StaticFieldTable.getInstance(field.getDeclaringType(), ContextUtil.getEntityContext());
-                                stack[top++] = staticFieldTable.get(field.getRawField());
+                                stack[top++] = staticFieldTable.get(field.getRawField()).toStackValue();
                             } else if (property instanceof MethodRef method) {
                                 stack[top++] = new FlowValue(method, null);
                             } else

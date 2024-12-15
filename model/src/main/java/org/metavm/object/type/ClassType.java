@@ -672,4 +672,12 @@ public class ClassType extends CompositeType implements ISubstitutor, GenericDec
         }
         return null;
     }
+
+    public MethodRef findSetterByPropertyName(String name) {
+        return findMethod(m -> m.isSetter() && m.getPropertyName().equals(name));
+    }
+
+    public MethodRef findGetterByPropertyName(String name) {
+        return findMethod(m -> m.isGetter() && m.getPropertyName().equals(name));
+    }
 }

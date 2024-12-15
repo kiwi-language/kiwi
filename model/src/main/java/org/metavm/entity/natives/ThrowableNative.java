@@ -50,7 +50,10 @@ public class ThrowableNative extends NativeBase {
 
     public static String getMessage(ClassInstance exception) {
         var n = new ThrowableNative(exception);
-        return ((StringValue) n.getMessage()).getValue();
+        if (n.getMessage() instanceof StringValue s)
+            return s.getValue();
+        else
+            return null;
     }
 
 }

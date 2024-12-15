@@ -93,4 +93,11 @@ public class FieldRef extends ValueElement implements PropertyRef {
         return rawField.isTransient();
     }
 
+    public boolean isReadonly() {
+        return rawField.isReadonly();
+    }
+
+    public boolean isPublic() {
+        return rawField.isPublic();
+    }
 }

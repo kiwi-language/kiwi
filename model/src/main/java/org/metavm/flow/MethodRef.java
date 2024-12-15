@@ -288,4 +288,16 @@ public class MethodRef extends FlowRef implements PropertyRef {
         return m;
     }
 
+    public boolean isSetter() {
+        return getRawFlow().isSetter();
+    }
+
+    public boolean isGetter() {
+        return getRawFlow().isGetter();
+    }
+
+    public String getPropertyName() {
+        return getRawFlow().getPropertyName();
+    }
+
 }

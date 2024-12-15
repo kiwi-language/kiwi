@@ -825,7 +825,7 @@ public class MethodGenerator {
         if (type instanceof PsiPrimitiveType) {
             if (TranspileUtils.isLongType(type))
                 createLongCompare();
-            else if (TranspileUtils.isIntegerType(type))
+            else if (TranspileUtils.isIntegerType(type) || TranspileUtils.isBooleanType(type))
                 createIntCompare();
             else if (TranspileUtils.isDoubleType(type))
                 createDoubleCompare();
@@ -840,7 +840,7 @@ public class MethodGenerator {
         if (type instanceof PsiPrimitiveType) {
             if (TranspileUtils.isLongType(type))
                 createLongCompare();
-            else if (TranspileUtils.isIntegerType(type))
+            else if (TranspileUtils.isIntegerType(type) || TranspileUtils.isBooleanType(type))
                 createIntCompare();
             else if (TranspileUtils.isDoubleType(type))
                 createDoubleCompare();
