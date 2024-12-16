@@ -253,7 +253,7 @@ public class TypeParserImpl implements TypeParser {
             return typeVar.getType();
         var klass = (Klass) getTypeDef(name);
         if (ctx.typeArguments() != null) {
-            return new ClassType(NncUtils.get(klass.getOwner(), GenericDeclaration::getRef),
+            return new KlassType(NncUtils.get(klass.getOwner(), GenericDeclaration::getRef),
                     klass, NncUtils.map(ctx.typeArguments().typeList().type(), this::parseType));
         } else
             return klass.getType();

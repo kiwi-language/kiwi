@@ -6,6 +6,7 @@ import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.type.ClassType;
+import org.metavm.object.type.KlassType;
 import org.metavm.util.NncUtils;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public class FactoryBeanDefinition extends BeanDefinition {
 
     public FactoryBeanDefinition(BeanDefinition configurationBeanDef, String name, Method method) {
         super(name);
-        if(!(method.getReturnType() instanceof ClassType))
+        if(!(method.getReturnType() instanceof KlassType))
             throw new IllegalArgumentException("Factory method " + method.getName() + " does not return a class type");
         this.configurationBeanDef = configurationBeanDef;
         this.method = method;

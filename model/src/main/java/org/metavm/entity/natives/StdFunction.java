@@ -207,7 +207,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
                     var getMethod = messageSupplier.getType().getMethodByNameAndParamTypes("get", List.of());
-                    var getResult = getMethod.execute(messageSupplier, List.of(), ctx);
+                    var getResult = getMethod.execute(messageSupplier.getReference(), List.of(), ctx);
                     if (getResult.exception() != null)
                         return FlowExecResult.ofException(getResult.exception());
                     var message = getResult.ret();

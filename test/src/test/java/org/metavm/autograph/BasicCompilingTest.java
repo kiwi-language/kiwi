@@ -391,7 +391,7 @@ public class BasicCompilingTest extends CompilerTestBase {
                     "asterisk.AsteriskTypeFoo"));
             var method = klass.getMethodByName("getInstance");
             var serializableKlass = StdKlass.serializable.get();
-            var expectedType = Types.getNullableType(ClassType.create(
+            var expectedType = Types.getNullableType(KlassType.create(
                     klass,
                     List.of(new UncertainType(Types.getNeverType(), serializableKlass.getType()))
             ));

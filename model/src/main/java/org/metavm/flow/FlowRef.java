@@ -80,7 +80,7 @@ public abstract class FlowRef extends CallableRef implements GenericDeclarationR
         return (FunctionType) getTypeMetadata().getType(rawFlow.getTypeIndex());
     }
 
-    public FlowExecResult execute(ClassInstance boundSelf, List<? extends Value> arguments, CallContext callContext) {
+    public FlowExecResult execute(Value boundSelf, List<? extends Value> arguments, CallContext callContext) {
 //        logger.debug("Executing flow {}", this);
         return rawFlow.execute(boundSelf, arguments, this, callContext);
     }

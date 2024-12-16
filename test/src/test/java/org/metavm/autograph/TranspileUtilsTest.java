@@ -15,10 +15,7 @@ import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.TypeVariable;
-import org.metavm.object.type.Types;
-import org.metavm.object.type.UncertainType;
+import org.metavm.object.type.*;
 import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
 import org.metavm.util.TestUtils;
@@ -77,7 +74,7 @@ public class TranspileUtilsTest extends TestCase {
         addMethod.setParameters(List.of(
                 new Parameter(null, "list",
                         Types.getNullableType(
-                                ClassType.create(StdKlass.list.get(), List.of(
+                                KlassType.create(StdKlass.list.get(), List.of(
                                         new UncertainType(typeVar.getType(), Types.getAnyType())))
                         ), addMethod
                 ),

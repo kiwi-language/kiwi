@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 @Entity
-public class PrimitiveType extends Type {
+public class PrimitiveType extends ClassType {
 
     public static final PrimitiveType nullType = new PrimitiveType(PrimitiveKind.NULL);
     public static final PrimitiveType doubleType = new PrimitiveType(PrimitiveKind.DOUBLE);
@@ -61,7 +61,7 @@ public class PrimitiveType extends Type {
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
-        return equals(that);
+        return equals0(that);
     }
 
     @Override
@@ -85,6 +85,11 @@ public class PrimitiveType extends Type {
 
     @Override
     public boolean isNull() {
+        return kind == PrimitiveKind.NULL;
+    }
+
+    @Override
+    public boolean isNullable() {
         return kind == PrimitiveKind.NULL;
     }
 
@@ -190,13 +195,13 @@ public class PrimitiveType extends Type {
     }
 
     @Override
-    public void write(MvOutput output) {
-        output.write(PrimitiveTypeKey.getTypeKeyCode(kind.code()));
+    public Klass getKlass() {
+        return kind.getKlass();
     }
 
     @Override
-    public int getPrecedence() {
-        return 0;
+    public void write(MvOutput output) {
+        output.write(PrimitiveTypeKey.getTypeKeyCode(kind.code()));
     }
 
     public @Nullable Value getDefaultValue() {
@@ -207,4 +212,5 @@ public class PrimitiveType extends Type {
     public Value fromStackValue(Value value) {
         return kind.fromStackValue(value);
     }
+
 }

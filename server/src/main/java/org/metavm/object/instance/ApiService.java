@@ -373,8 +373,18 @@ public class ApiService extends EntityContextFactoryAware {
         return switch (type) {
             case PrimitiveType primitiveType -> tryResolvePrimitive(rawValue, primitiveType);
             case ClassType classType -> switch (rawValue) {
-                case String s -> asValue ? ValueResolutionResult.failed :
-                        (classType.isEnum() ? tryResolveEnumConstant(s, classType, context) : tryResolveReference(s, classType, context));
+                case String s -> {
+                    if (asValue)
+                        yield ValueResolutionResult.failed;
+                    var r = tryResolveReference(s, classType, context);
+                    if (r.successful)
+                        yield r;
+                    if (classType.isEnum())
+                        yield tryResolveEnumConstant(s, classType, context);
+                    if (classType.isAssignableFrom(PrimitiveType.stringType))
+                        yield ValueResolutionResult.of(Instances.stringInstance(s));
+                    yield ValueResolutionResult.failed;
+                }
                 case List<?> list -> tryResolveList(list, classType, currentValue, context);
                 case Map<?, ?> map -> tryResolveObject(map, classType, context);
                 case null, default -> ValueResolutionResult.failed;
@@ -501,7 +511,7 @@ public class ApiService extends EntityContextFactoryAware {
                 var iterableType = type.findAncestorByKlass(StdKlass.iterable.get());
                 if (iterableType != null) {
                     var elementType = iterableType.getTypeArguments().get(0).getUpperBound2();
-                    concreteType = ClassType.create(StdKlass.arrayList.get(), List.of(elementType));
+                    concreteType = KlassType.create(StdKlass.arrayList.get(), List.of(elementType));
                     if (!type.isAssignableFrom(concreteType))
                         return ValueResolutionResult.failed;
                 } else
@@ -563,7 +573,7 @@ public class ApiService extends EntityContextFactoryAware {
         if (rawValue instanceof Boolean b)
             return Instances.booleanInstance(b);
         if (rawValue instanceof List<?> list) {
-            var listType = ClassType.create(StdKlass.arrayList.get(), List.of(Types.getAnyType()));
+            var listType = KlassType.create(StdKlass.arrayList.get(), List.of(Types.getAnyType()));
             return Instances.createList(listType,
                     NncUtils.map(list, e -> resolveAny(e, context))).getReference();
         }

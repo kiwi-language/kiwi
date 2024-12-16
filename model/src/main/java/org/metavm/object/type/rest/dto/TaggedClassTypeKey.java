@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ClassType;
+import org.metavm.object.type.KlassType;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.Constants;
 import org.metavm.util.MvOutput;
@@ -31,7 +32,7 @@ public record TaggedClassTypeKey(Id id, int tag) implements TypeKey, GenericDecl
 
     @Override
     public ClassType toType(TypeDefProvider typeDefProvider) {
-        return new ClassType(null, typeDefProvider.getKlass(id), List.of());
+        return new KlassType(null, typeDefProvider.getKlass(id), List.of());
     }
 
     @Override

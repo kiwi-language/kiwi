@@ -408,7 +408,7 @@ public class Generator extends VisitorBase {
             var itVar = builder().nextVariableIndex();
             builder().createStore(itVar);
             var elementType = iterableType.getFirstTypeArgument();
-            var itType = new ClassType(null, StdKlass.iterator.get(), List.of(elementType));
+            var itType = new KlassType(null, StdKlass.iterator.get(), List.of(elementType));
             var entry = builder().createNoop();
             builder().createLoad(itVar, itType);
             builder().createMethodCall(new MethodRef(itType, StdMethod.iteratorHasNext.get(), List.of()));

@@ -2,10 +2,7 @@ package org.metavm.entity.natives;
 
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.FieldRef;
-import org.metavm.object.type.Type;
+import org.metavm.object.type.*;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -60,7 +57,7 @@ public class MapNative extends NativeBase {
     }
 
     public Reference keySet(CallContext callContext) {
-        var keySetKlass = ClassType.create(StdKlass.hashSet.get(), List.of(instance.getType().getFirstTypeArgument()));
+        var keySetKlass = KlassType.create(StdKlass.hashSet.get(), List.of(instance.getType().getFirstTypeArgument()));
         ClassInstance keySet = ClassInstance.allocate(keySetKlass);
         var setNative = (HashSetNative) NativeMethods.getNativeObject(keySet);
         setNative.HashSet(callContext);

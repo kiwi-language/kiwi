@@ -26,7 +26,7 @@ public class KlassTest extends TestCase {
                 .build();
         var fooKlass = TestUtils.newKlassBuilder("Foo").searchable(true).build();
         var typeParam = new TypeVariable(null, "T", fooKlass);
-        fooKlass.setInterfaces(List.of(ClassType.create(supplierKlass, List.of(typeParam.getType()))));
+        fooKlass.setInterfaces(List.of(KlassType.create(supplierKlass, List.of(typeParam.getType()))));
         var nameField = FieldBuilder.newBuilder("name", fooKlass, Types.getStringType()).build();
         var valueField = FieldBuilder.newBuilder("value", fooKlass, typeParam.getType()).build();
 
@@ -59,7 +59,7 @@ public class KlassTest extends TestCase {
         }
         var factoryMethod = MethodBuilder.newBuilder(fooKlass, "create").isStatic(true).build();
         var factoryTypeParam = new TypeVariable(null, "T", factoryMethod);
-        var pKlass = ClassType.create(fooKlass, List.of(factoryTypeParam.getType()));
+        var pKlass = KlassType.create(fooKlass, List.of(factoryTypeParam.getType()));
         factoryMethod.setParameters(List.of(
                 new Parameter(null, "name", Types.getStringType(), factoryMethod),
                 new Parameter(null, "value", factoryTypeParam.getType(), factoryMethod)
@@ -72,7 +72,7 @@ public class KlassTest extends TestCase {
             Nodes.newObject(code, pKlass.getMethod(MethodRef::isConstructor), false, false);
             Nodes.ret(code);
         }
-        var longFooKlass = ClassType.create(fooKlass, List.of(Types.getLongType()));
+        var longFooKlass = KlassType.create(fooKlass, List.of(Types.getLongType()));
         var getComparatorMethod = MethodBuilder.newBuilder(fooKlass, "getComparator")
                 .isStatic(true)
                 .returnType(new FunctionType(List.of(longFooKlass, longFooKlass), Types.getLongType()))

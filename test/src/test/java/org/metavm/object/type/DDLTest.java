@@ -778,7 +778,7 @@ public class DDLTest extends TestCase {
                     var instCtx = context.getInstanceContext();
                     var invInst = instCtx.get(Id.parse(inventoryId));
                     var boxKlass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "Box"));
-                    var boxOfInvKlass = ClassType.create(boxKlass, List.of(invInst.getType()));
+                    var boxOfInvKlass = KlassType.create(boxKlass, List.of(invInst.getType()));
                     var boxInst = ClassInstanceBuilder.newBuilder(boxOfInvKlass)
                             .data(Map.of(
                                     boxOfInvKlass.getKlass().getFieldByName("item"), invInst.getReference(),

@@ -3,6 +3,7 @@ package org.metavm.object.instance.core;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.SerializeContext;
+import org.metavm.flow.ClosureContext;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.instance.rest.InstanceParam;
@@ -175,4 +176,7 @@ public abstract class Value {
         return this;
     }
 
+    public ClosureContext getClosureContext() {
+        return null;
+    }
 }

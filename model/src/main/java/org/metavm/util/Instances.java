@@ -515,7 +515,7 @@ public class Instances {
         if (listType.isList()) {
             var elementType = listType.getFirstTypeArgument();
             if (listType.getKlass() == StdKlass.list.get()) {
-                listType = ClassType.create(StdKlass.arrayList.get(), List.of(elementType));
+                listType = KlassType.create(StdKlass.arrayList.get(), List.of(elementType));
             }
             var list = ClassInstance.allocate(listType);
             var listNative = new ListNative(list);

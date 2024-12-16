@@ -91,7 +91,7 @@ public class SubstitutorV2 extends ElementVisitor<Element> {
 
     @Override
     public Element visitClassType(ClassType type) {
-        return ClassType.create(
+        return KlassType.create(
                 (GenericDeclarationRef) NncUtils.get(type.getOwner(), k -> k.accept(this)),
                 type.getKlass(),
                 NncUtils.map(type.getTypeArguments(), t -> (Type) t.accept(this))

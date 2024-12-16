@@ -464,7 +464,7 @@ public class Assembler {
             var klass = classInfo.getKlass();
             klass.setStruct(isStruct);
             if (typeCategory.isEnum())
-                classInfo.superType = new ClassType(null, getKlass(Enum.class.getName()), List.of(classInfo.getKlass().getType()));
+                classInfo.superType = new KlassType(null, getKlass(Enum.class.getName()), List.of(classInfo.getKlass().getType()));
             else if (superType != null)
                 classInfo.superType = (ClassType) parseType(superType, classInfo, getCompilationUnit());
             if (classInfo.superType != null)
@@ -742,7 +742,7 @@ public class Assembler {
         public Void visitEnumDeclaration(AssemblyParser.EnumDeclarationContext ctx) {
             var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
             var supers = addSupers(classInfo.rawName());
-            var pEnumType = new ClassType(null, getKlass(Enum.class.getName()), List.of(classInfo.getKlass().getType()));
+            var pEnumType = new KlassType(null, getKlass(Enum.class.getName()), List.of(classInfo.getKlass().getType()));
             supers.add(pEnumType);
             if (ctx.IMPLEMENTS() != null)
                 forEachClass(ctx.typeList(), supers::add);
@@ -1163,7 +1163,7 @@ public class Assembler {
                 classOrInterfaceType.typeArguments().typeType(),
                 typeType1 -> parseType(typeType1, scope, compilationUnit)
         ) : List.of();
-        return new ClassType(null, getKlass(name), typeArguments);
+        return new KlassType(null, getKlass(name), typeArguments);
     }
 
     public Klass getKlass(String name) {

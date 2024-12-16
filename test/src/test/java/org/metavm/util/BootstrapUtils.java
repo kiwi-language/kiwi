@@ -38,6 +38,7 @@ public class BootstrapUtils {
             ModelDefRegistry.setDefContext(defContext);
             StdFunction.initializeFromDefContext(defContext, false);
             StdFunction.setEmailSender(MockEmailSender.INSTANCE);
+            PrimitiveKind.initialize(defContext);
             StdKlass.initialize(defContext, false);
             StdMethod.initialize(defContext, false);
             StdField.initialize(defContext, false);

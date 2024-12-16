@@ -53,7 +53,7 @@ public class EntityIdProviderTest extends TestCase {
     }
 
     private java.lang.reflect.Type getJavaType(Type type) {
-        if(type instanceof ClassType) {
+        if(type instanceof KlassType) {
             return Foo.class;
         }
         else if(type instanceof ArrayType) {

@@ -77,7 +77,7 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
     }
 
     public boolean isNullable() {
-        return isAssignableFrom(Types.getNullType());
+        return false;
     }
 
     public boolean isBinaryNullable() {
@@ -315,9 +315,9 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
 
     public static Type readType(int code, MvInput input) {
         return switch (code) {
-            case WireTypes.CLASS_TYPE -> ClassType.read(input);
-            case WireTypes.TAGGED_CLASS_TYPE -> ClassType.readTagged(input);
-            case WireTypes.PARAMETERIZED_TYPE -> ClassType.readParameterized(input);
+            case WireTypes.CLASS_TYPE -> KlassType.read(input);
+            case WireTypes.TAGGED_CLASS_TYPE -> KlassType.readTagged(input);
+            case WireTypes.PARAMETERIZED_TYPE -> KlassType.readParameterized(input);
             case WireTypes.VARIABLE_TYPE -> VariableType.read(input);
             case WireTypes.CAPTURED_TYPE -> CapturedType.read(input);
             case WireTypes.LONG_TYPE -> PrimitiveType.longType;

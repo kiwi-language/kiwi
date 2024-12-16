@@ -48,7 +48,7 @@ public class DummyMethod extends Method {
     }
 
     @Override
-    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext) {
+    public FlowExecResult execute(@Nullable Value self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext) {
         throw new UnsupportedOperationException();
     }
 

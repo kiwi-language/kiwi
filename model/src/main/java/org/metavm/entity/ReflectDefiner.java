@@ -202,7 +202,7 @@ public class ReflectDefiner {
             case ParameterizedType pType -> {
                 var rawKlass = ((ClassType) resolveType(pType.getRawType())).getKlass();
                 if(rawKlass.isTemplate()) {
-                    yield new ClassType(
+                    yield new KlassType(
                             (ClassType) NncUtils.get(pType.getOwnerType(), this::resolveType),
                             rawKlass,
                             NncUtils.map(List.of(pType.getActualTypeArguments()), this::resolveType)

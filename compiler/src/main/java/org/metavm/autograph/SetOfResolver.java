@@ -9,6 +9,7 @@ import org.metavm.entity.StdMethod;
 import org.metavm.flow.MethodRef;
 import org.metavm.flow.Node;
 import org.metavm.object.type.ClassType;
+import org.metavm.object.type.KlassType;
 import org.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -48,7 +49,7 @@ public class SetOfResolver implements MethodCallResolver {
         var setType = (ClassType) expressionResolver.getTypeResolver().resolve(
                 methodGenerics.getSubstitutor().substitute(method.getReturnType()));
         var hashSetKlass = StdKlass.hashSet.get();
-        var hashSetType = new ClassType(null, hashSetKlass, List.of(setType.getFirstTypeArgument()));
+        var hashSetType = new KlassType(null, hashSetKlass, List.of(setType.getFirstTypeArgument()));
         var set = methodGenerator.createNew(
                 new MethodRef(hashSetType, hashSetKlass.getDefaultConstructor(), List.of()),
                 false,

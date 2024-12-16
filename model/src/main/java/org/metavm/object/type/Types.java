@@ -243,7 +243,7 @@ public class Types {
         else
             Nodes.ret(code);
         klass.emitCode();
-        return ClassType.create(klass, NncUtils.map(typeVars, TypeVariable::getType));
+        return KlassType.create(klass, NncUtils.map(typeVars, TypeVariable::getType));
     }
 
     public static MethodRef getSAM(ClassType functionalInterface) {

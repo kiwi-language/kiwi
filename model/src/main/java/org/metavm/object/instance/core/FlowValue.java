@@ -27,9 +27,9 @@ public class FlowValue extends FunctionValue {
     @Override
     public FlowExecResult execute(List<? extends Value> arguments, CallContext callContext) {
         if(boundSelf != null)
-            return flow.execute(boundSelf, arguments, callContext);
+            return flow.execute(boundSelf.getReference(), arguments, callContext);
         else
-            return flow.execute(arguments.get(0).resolveObject(), arguments.subList(1, arguments.size()), callContext);
+            return flow.execute(arguments.get(0), arguments.subList(1, arguments.size()), callContext);
     }
 
 //    public Frame createFrame(FlowStack stack, List<Instance> arguments) {

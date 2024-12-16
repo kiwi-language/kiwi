@@ -191,9 +191,9 @@ public class InstanceFactory {
                 ClassType klass;
                 if(StdKlass.list.get().isType(classType.getTemplateType())) {
                     if(listFieldValue.isElementAsChild())
-                        klass = ClassType.create(StdKlass.childList.get(), List.of(classType.getFirstTypeArgument()));
+                        klass = KlassType.create(StdKlass.childList.get(), List.of(classType.getFirstTypeArgument()));
                     else
-                        klass = ClassType.create(StdKlass.arrayList.get(), List.of(classType.getFirstTypeArgument()));
+                        klass = KlassType.create(StdKlass.arrayList.get(), List.of(classType.getFirstTypeArgument()));
                 }
                 else
                     klass = classType;

@@ -10,10 +10,12 @@ import org.metavm.expression.Expression;
 import org.metavm.expression.ExpressionTypeMap;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.FunctionValue;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +58,7 @@ public class Flows {
     }
 
     public static FlowExecResult execute(@NotNull FlowRef flow, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
-        return flow.execute(self, arguments, callContext);
+        return flow.execute(NncUtils.get(self, Instance::getReference), arguments, callContext);
     }
 
     public static @Nullable Value invoke(@NotNull FlowRef flow, ClassInstance self, List<? extends Value> arguments, IEntityContext context) {

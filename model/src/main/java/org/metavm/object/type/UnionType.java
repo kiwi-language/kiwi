@@ -210,4 +210,8 @@ public class UnionType extends CompositeType {
         return new UnionType(flattenedMembers);
     }
 
+    @Override
+    public boolean isNullable() {
+        return NncUtils.anyMatch(members, Type::isNullable);
+    }
 }

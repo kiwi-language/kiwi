@@ -77,7 +77,7 @@ public class TypeParserImplTest extends TestCase {
         Assert.assertEquals("value", func.getParameter(0).getName());
         Assert.assertEquals(new UnionType(Set.of(variableType, Types.getNullType())), func.getParameter(0).getType());
         Assert.assertEquals("messageSupplier", func.getParameter(1).getName());
-        Assert.assertEquals(ClassType.create(supplierKlass, List.of(Types.getStringType())), func.getParameter(1).getType());
+        Assert.assertEquals(KlassType.create(supplierKlass, List.of(Types.getStringType())), func.getParameter(1).getType());
     }
 
 
@@ -109,7 +109,7 @@ public class TypeParserImplTest extends TestCase {
                 .typeParameters(List.of(new TypeVariable(null, "E", DummyGenericDeclaration.INSTANCE)))
                 .build();
         TestUtils.initEntityIds(klass);
-        var pKlass = ClassType.create(klass, List.of(Types.getLongType()));
+        var pKlass = KlassType.create(klass, List.of(Types.getLongType()));
         var pM2 = pKlass.getMethod(m2);
         var ppM2 = pM2.getParameterized(List.of(Types.getStringType()));
         Assert.assertEquals(pKlass, ppM2.getDeclaringType());

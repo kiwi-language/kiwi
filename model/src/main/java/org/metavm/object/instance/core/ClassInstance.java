@@ -224,9 +224,9 @@ public class ClassInstance extends Instance {
         }
     }
 
-    public ClassType getType() {
+    public KlassType getType() {
         ensureLoaded();
-        return (ClassType) super.getType();
+        return (KlassType) super.getType();
     }
 
     @NoProxy

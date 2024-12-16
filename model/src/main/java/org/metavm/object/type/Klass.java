@@ -1050,9 +1050,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
                 owner = enclosingFlow.getRef();
             else
                 owner = null;
-            type = new ClassType(owner, this, List.of());
+            type = new KlassType(owner, this, List.of());
         }
         return type;
+    }
+
+    public void setType(ClassType type) {
+        this.type = type;
     }
 
     @Nullable

@@ -59,7 +59,7 @@ public class IndexNative extends NativeBase {
 
     private Value convertToList(List<Reference> result, CallContext callContext) {
         var type = (ClassType) instance.getType().getTypeArguments().get(1);
-        var listType = new ClassType(null, StdKlass.arrayList.get(), List.of(type));
+        var listType = new KlassType(null, StdKlass.arrayList.get(), List.of(type));
         var list = ClassInstance.allocate(listType);
         var listNative = new ListNative(list);
         listNative.List(callContext);

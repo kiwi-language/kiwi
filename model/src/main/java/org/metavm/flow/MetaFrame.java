@@ -146,9 +146,9 @@ public class MetaFrame implements Frame, CallContext {
                             for (int j = 0; j < numArgs; j++) {
                                 args.addFirst(stack[--top]);
                             }
-                            var self = method.isStatic() ? null : stack[--top].resolveObject();
+                            var self = method.isStatic() ? null : stack[--top];
                             if (method.isVirtual())
-                                method = requireNonNull(self).getType().getOverride(method);
+                                method = ((ClassType) requireNonNull(self).getType()).getOverride(method);
                             //noinspection DuplicatedCode
                             FlowExecResult result = method.execute(self, args, this);
                             if (result.exception() != null) {
@@ -203,7 +203,7 @@ public class MetaFrame implements Frame, CallContext {
                             if (!self.isEphemeral() && !unbound)
                                 addInstance(self);
                             //noinspection DuplicatedCode
-                            FlowExecResult result = method.execute(self, args, this);
+                            FlowExecResult result = method.execute(self.getReference(), args, this);
                             if (result.exception() != null) {
                                 pc = catchException(result.exception());
                                 if (pc == -1)
@@ -245,7 +245,7 @@ public class MetaFrame implements Frame, CallContext {
                                     .build();
                             parent.addChild(self);
                             //noinspection DuplicatedCode
-                            FlowExecResult result = method.execute(self, args, this);
+                            FlowExecResult result = method.execute(self.getReference(), args, this);
                             if (result.exception() != null) {
                                 pc = catchException(result.exception());
                                 if (pc == -1)
@@ -427,7 +427,7 @@ public class MetaFrame implements Frame, CallContext {
                         case Bytecodes.INDEX_SELECT -> {
                             var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                             var result = instanceRepository().indexSelect(loadIndexKey(index, stack[--top]));
-                            var type = new ClassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType()));
+                            var type = new KlassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType()));
                             var list = ClassInstance.allocate(type);
                             var listNative = new ListNative(list);
                             listNative.List(this);
@@ -1023,7 +1023,7 @@ public class MetaFrame implements Frame, CallContext {
                 && NncUtils.anyMatch(method.getDeclaringType().getTypeArguments(), Type::isCaptured)) {
             var declaringType = method.getDeclaringType();
             var actualTypeArgs = NncUtils.map(declaringType.getTypeArguments(), t -> t.accept(typeSubst));
-            var actualDeclaringType = new ClassType(declaringType.getOwner(), declaringType.getKlass(), actualTypeArgs);
+            var actualDeclaringType = new KlassType(declaringType.getOwner(), declaringType.getKlass(), actualTypeArgs);
             if(DebugEnv.debugging)
                 log.info("uncapture flow declaring type from {} to {}",
                         declaringType.getTypeDesc(),

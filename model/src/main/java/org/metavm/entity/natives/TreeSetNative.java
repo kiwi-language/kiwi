@@ -6,8 +6,8 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.ClassType;
 import org.metavm.object.type.FieldRef;
+import org.metavm.object.type.KlassType;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
@@ -56,7 +56,7 @@ public class TreeSetNative extends SetNative {
     }
 
     public Reference iterator(CallContext callContext) {
-        var iteratorImplType = ClassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getType().getFirstTypeArgument()));
+        var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getType().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);

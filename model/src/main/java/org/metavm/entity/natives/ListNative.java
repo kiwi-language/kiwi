@@ -6,10 +6,7 @@ import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.FieldRef;
-import org.metavm.object.type.Klass;
+import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
@@ -87,7 +84,7 @@ public class ListNative extends IterableNative {
     }
 
     public Reference iterator(CallContext callContext) {
-        var iteratorImplType = ClassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getType().getFirstTypeArgument()));
+        var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getType().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);
@@ -180,7 +177,7 @@ public class ListNative extends IterableNative {
         if(filter instanceof Reference r) {
             var method = r.resolveObject().getType().getMethods().get(0);
             return Instances.intInstance(array.removeIf(e -> method.execute(
-                    r.resolveObject(), List.of(e), callContext).booleanRet()));
+                    r, List.of(e), callContext).booleanRet()));
         }
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
@@ -225,7 +222,7 @@ public class ListNative extends IterableNative {
     public void forEach(Value action, CallContext callContext) {
         if(action instanceof Reference r) {
             var method = r.resolveObject().getType().getMethods().get(0);
-            array.forEach(e -> method.execute(r.resolveObject(), List.of(e), callContext));
+            array.forEach(e -> method.execute(r, List.of(e), callContext));
         }
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);

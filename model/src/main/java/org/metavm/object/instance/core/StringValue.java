@@ -8,7 +8,7 @@ import org.metavm.util.WireTypes;
 
 public class StringValue extends PrimitiveValue {
 
-    private final String value;
+    public final String value;
 
     public StringValue(String value) {
         this.value = value;

@@ -80,7 +80,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.state = state;
     }
 
-    public abstract FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext);
+    public abstract FlowExecResult execute(@Nullable Value self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext);
 
     public List<Type> getParameterTypes(TypeMetadata typeMetadata) {
         return NncUtils.map(parameters, p -> p.getType(typeMetadata));
@@ -349,7 +349,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         for (Parameter param : parameters) {
             var arg = argIt.next();
             var paramType = param.getType(typeMetadata);
-            if (!paramType.isInstance(paramType.fromStackValue(arg)))
+            if (!paramType.isInstance(paramType.getUnderlyingType().fromStackValue(arg)))
                 throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT2, arg, this, param.getName(), param.getType());
         }
     }

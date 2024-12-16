@@ -68,14 +68,14 @@ public abstract class InstanceNode<I extends Value> {
         if(type.isBinaryNullable()) {
             type = type.getUnderlyingType();
         }
+        if(type instanceof PrimitiveType primitiveType) {
+            return new PrimitiveNode(path, primitiveType);
+        }
         if(type instanceof ClassType classType) {
             return new ObjectNode(path, classType.getKlass());
         }
         if(type instanceof ArrayType arrayType) {
             return new ArrayNode(path, arrayType);
-        }
-        if(type instanceof PrimitiveType primitiveType) {
-            return new PrimitiveNode(path, primitiveType);
         }
         throw new InternalException("Can not create tree for type " + type);
     }

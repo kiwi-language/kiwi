@@ -169,10 +169,6 @@ public class MethodRef extends FlowRef implements PropertyRef {
     public boolean isOverrideOf(MethodRef methodRef) {
         var m1 = getRawFlow();
         var m2 = methodRef.getRawFlow();
-        if(m2.getName().equals("test") && m2.getDeclaringType().getName().equals("Predicate")
-                && toString().equals("null.test(capturedtypes.CtFoo|null)")) {
-            System.out.println("Caught");
-        }
         if(m1.isConstructor() || m2.isConstructor()
                 || m1.isStatic() || m2.isStatic()
                 || m1.isPrivate() || m2.isPrivate())
@@ -263,29 +259,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
     }
 
     public TypeMetadata getTypeMetadata0() {
-//        if(toString0().equals("Collection<E>.toArray")) {
-//            var typeArg = (VariableType) declaringType.getTypeArguments().get(0);
-//            log.debug("Generating type metadata for {}, constant pool size: {}", this, getRawFlow().getConstantPool().size());
-//            log.debug("Generic declaration: {}, method: {}, typee argumetns: {}",
-//                    typeArg.getVariable().getGenericDeclaration(), getRawFlow().getQualifiedSignature(),
-//                    typeArguments.toList());
-//        }
-//        if(toString().equals("java.util.Collection<java.util.AbstractCollection.E>.toArray()") && DebugEnv.methodRef != null) {
-//            System.out.println("Caught");
-//        }
-        var m = getRawFlow().getTypeMetadata(getAllTypeArguments());
-//        log.debug("Generating type metadata for " + this);
-//        if(toString().equals("java.util.Collection<java.util.AbstractCollection.E>.toArray()")) {
-//            if(DebugEnv.methodRef != null)
-//                log.debug("Equals to last method ref: {}", DebugEnv.methodRef.equals(this));
-//            else
-//                DebugEnv.methodRef = this;
-//            log.debug("Generated type metadata {} for {}@{}, size: {}",
-//                    System.identityHashCode(m),
-//                    this, System.identityHashCode(this),
-//                    m.size());
-//        }
-        return m;
+        return getRawFlow().getTypeMetadata(getAllTypeArguments());
     }
 
     public boolean isSetter() {

@@ -264,7 +264,7 @@ public class TypeResolverImpl implements TypeResolver {
                             );
                         }
                     }
-                    return new ClassType(owner, klass, typeArgs);
+                    return new KlassType(owner, klass, typeArgs);
                 } else {
                     return klass.getType();
                 }

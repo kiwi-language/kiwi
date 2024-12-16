@@ -6,6 +6,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.IndexRef;
+import org.metavm.object.type.KlassType;
 
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class IndexSelectNode extends Node {
     @Override
     @NotNull
     public ClassType getType() {
-        return new ClassType(null, StdKlass.arrayList.get(), List.of(indexRef.getDeclaringType()));
+        return new KlassType(null, StdKlass.arrayList.get(), List.of(indexRef.getDeclaringType()));
     }
 
     @Override

@@ -2,13 +2,14 @@ package org.metavm.util;
 
 import org.metavm.entity.*;
 import org.metavm.entity.natives.*;
+import org.metavm.object.type.PrimitiveKind;
 
 import java.util.List;
 
 public class SystemConfig {
 
     private static final List<Class<? extends Enum<? extends ValueHolderOwner<?>>>> valueHolderEnums = List.of(
-            StdKlass.class, StdMethod.class, StdFunction.class, StdField.class
+            StdKlass.class, StdMethod.class, StdFunction.class, StdField.class, PrimitiveKind.class
     );
 
     public static void setThreadLocalMode() {

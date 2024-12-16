@@ -3,6 +3,7 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.IEntityContext;
+import org.metavm.flow.ClosureContext;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.instance.rest.InstanceParam;
@@ -319,5 +320,11 @@ public class Reference extends Value {
 
     public int getFlags() {
         return flags;
+    }
+
+    @Override
+    public ClosureContext getClosureContext() {
+        var r = resolve();
+        return r instanceof ClassInstance obj ? obj.getClosureContext() : null;
     }
 }

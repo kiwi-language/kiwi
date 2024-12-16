@@ -286,7 +286,7 @@ public class ExpressionParser {
         else
             klass = requireNonNull(context.getTypeDefProvider().findKlassByName(name));
         if(ctx.typeArguments() != null)
-            return ClassType.create(klass, NncUtils.map(ctx.typeArguments().typeType(), this::parseTypeType));
+            return KlassType.create(klass, NncUtils.map(ctx.typeArguments().typeType(), this::parseTypeType));
         else
             return klass.getType();
     }

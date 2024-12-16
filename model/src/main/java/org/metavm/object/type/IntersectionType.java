@@ -153,4 +153,8 @@ public class IntersectionType extends CompositeType {
         return new IntersectionType(flattenedTypes);
     }
 
+    @Override
+    public boolean isNullable() {
+        return NncUtils.allMatch(types, Type::isNullable);
+    }
 }

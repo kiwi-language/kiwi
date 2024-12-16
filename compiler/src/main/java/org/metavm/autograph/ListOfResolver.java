@@ -9,6 +9,7 @@ import org.metavm.entity.StdMethod;
 import org.metavm.flow.MethodRef;
 import org.metavm.flow.Node;
 import org.metavm.object.type.ClassType;
+import org.metavm.object.type.KlassType;
 import org.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -47,7 +48,7 @@ public class ListOfResolver implements MethodCallResolver {
         var listType = (ClassType) expressionResolver.getTypeResolver().resolve(
                 methodGenerics.getSubstitutor().substitute(method.getReturnType()));
         var arrayListKlass = StdKlass.arrayList.get();
-        var arrayListType = new ClassType(null, arrayListKlass, List.of(listType.getFirstTypeArgument()));
+        var arrayListType = new KlassType(null, arrayListKlass, List.of(listType.getFirstTypeArgument()));
         var list = methodGenerator.createNew(
                 new MethodRef(arrayListType, arrayListKlass.getDefaultConstructor(), List.of()),
                 false,

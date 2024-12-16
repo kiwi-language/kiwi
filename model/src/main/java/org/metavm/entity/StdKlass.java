@@ -70,7 +70,8 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     outputStream(OutputStream.class, false, OutputStreamNative.class),
     objectOutputStream(ObjectOutputStream.class, false, ObjectOutputStreamNative.class),
     objectInputStream(ObjectInputStream.class, false, ObjectInputStreamNative.class),
-    index(Index.class, false, IndexNative.class)
+    index(Index.class, false, IndexNative.class),
+    charSequence(CharSequence.class)
     ;
 
     private final Class<?> javaClass;

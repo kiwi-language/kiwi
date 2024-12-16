@@ -194,7 +194,7 @@ public class Method extends Flow implements Property {
     }
 
     @Override
-    public FlowExecResult execute(@Nullable ClassInstance self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext) {
+    public FlowExecResult execute(@Nullable Value self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext) {
 //        logger.debug("Executing method: {}", getQualifiedSignature());
         try (var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName() + "." + getName())) {
             if (DebugEnv.debugging) {
@@ -210,8 +210,8 @@ public class Method extends Flow implements Property {
             checkArguments(arguments, flowRef.getTypeMetadata());
             FlowExecResult result;
             if (isNative()) {
-                if(javaMethod != null && self != null && self.getMappedEntity() != null)
-                    result = invokeNative(self, arguments, callContext);
+                if(javaMethod != null && self != null && self.resolveObject().getMappedEntity() != null)
+                    result = invokeNative(self.resolveObject(), arguments, callContext);
                 else
                     result = NativeMethods.invoke(this, self, arguments, callContext);
             }
@@ -227,7 +227,7 @@ public class Method extends Flow implements Property {
                     } else {
                         closureContext = self.getClosureContext();
                         argArray = new Value[arguments.size() + 1];
-                        argArray[0] = self.getReference();
+                        argArray[0] = self;
                         int i = 1;
                         for (Value argument : arguments) {
                             argArray[i++] = argument;

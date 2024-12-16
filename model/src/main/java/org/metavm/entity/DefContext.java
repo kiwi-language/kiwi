@@ -168,7 +168,7 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
             if (ReadonlyArray.class.isAssignableFrom(rawClass))
                 return new ArrayType(getType(typeArgs[0]), ArrayKind.fromEntityClass(rawClass));
             else
-                return new ClassType(
+                return new KlassType(
                         pType.getOwnerType() != null ? (ClassType) getDef(pType.getOwnerType()).getType() : null,
                         ((ClassType) getDef(rawClass).getType()).getKlass(), NncUtils.map(pType.getActualTypeArguments(), this::getType)
                 );
