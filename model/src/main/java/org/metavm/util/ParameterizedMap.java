@@ -24,8 +24,9 @@ public class ParameterizedMap {
     }
 
     public Object put(GenericDeclaration genericDeclaration, List<? extends Type> typeArguments, Object parameterized) {
-        return map.computeIfAbsent(genericDeclaration, k -> new WeakHashMap<>())
+        var existing = map.computeIfAbsent(genericDeclaration, k -> new WeakHashMap<>())
                 .put(typeArguments, new WeakReference<>(parameterized));
+        return existing != null ? existing.get() : null;
     }
 
     public void forEach(Object genericDeclaration, BiConsumer<List<? extends Type>, Object> action) {
