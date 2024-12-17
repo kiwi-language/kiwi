@@ -138,6 +138,8 @@ public class InstanceFactory {
         if (type.isBinaryNullable()) {
             type = type.getUnderlyingType();
         }
+        if (rawValue instanceof NullFieldValue)
+            return Instances.nullInstance();
         if (rawValue instanceof PrimitiveFieldValue primitiveFieldValue) {
 //            if (type.isPassword()) {
 //                return new PasswordInstance(
@@ -223,7 +225,6 @@ public class InstanceFactory {
             case PASSWORD -> Instances.passwordInstance((String) value);
             case STRING -> Instances.stringInstance((String) value);
             case TIME -> Instances.timeInstance(((Number) value).longValue());
-            case NULL -> Instances.nullInstance();
             case CHAR -> Instances.charInstance((Character) value);
             case SHORT -> Instances.shortInstance((Short) value);
             case BYTE -> Instances.byteInstance((Byte) value);

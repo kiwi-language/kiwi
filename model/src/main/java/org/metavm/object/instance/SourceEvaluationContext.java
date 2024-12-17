@@ -75,6 +75,7 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
     private Value createInstance(FieldValue value) {
         return switch (value) {
             case ReferenceFieldValue refValue -> createReferenceProxy(refValue.getId());
+            case NullFieldValue nullFieldValue -> Instances.nullInstance();
             case PrimitiveFieldValue primitiveValue -> createPrimitiveInstance(primitiveValue);
             case InstanceFieldValue instanceFieldValue
                     when instanceFieldValue.getInstance().param() instanceof ArrayInstanceParam ->
@@ -104,7 +105,6 @@ public record SourceEvaluationContext(Source source) implements EvaluationContex
         var kind = PrimitiveKind.fromCode(primitiveValue.getPrimitiveKind());
         return switch (kind) {
             case PASSWORD -> Instances.passwordInstance((String) primitiveValue.getValue());
-            case NULL -> Instances.nullInstance();
             case INT -> Instances.intInstance((Integer) primitiveValue.getValue());
             case BOOLEAN -> Instances.booleanInstance((Boolean) primitiveValue.getValue());
             case STRING -> Instances.stringInstance((String) primitiveValue.getValue());

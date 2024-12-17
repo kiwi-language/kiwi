@@ -8,9 +8,9 @@ import org.metavm.util.InternalException;
 
 public interface TypeParser {
 
-    static ClassType parseClassType(@NotNull String expression, TypeDefProvider typeDefProvider) {
+    static KlassType parseClassType(@NotNull String expression, TypeDefProvider typeDefProvider) {
         var type = parseType(expression, typeDefProvider);
-        if(type instanceof ClassType classType)
+        if(type instanceof KlassType classType)
             return classType;
         throw new RuntimeException(expression + " is not a class type");
     }

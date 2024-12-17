@@ -26,4 +26,5 @@ public interface TypeVisitor<R,S> {
 
     R visitAnyType(AnyType type, S s);
 
+    R visitNullType(NullType type, S s);
 }

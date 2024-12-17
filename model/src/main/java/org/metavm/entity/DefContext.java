@@ -83,7 +83,7 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
             };
             //noinspection rawtypes,unchecked
             return new ArrayMapper<>(javaClass, this);
-        } else if (type instanceof ClassType classType)
+        } else if (type instanceof KlassType classType)
             return tryGetDef(classType.getKlass());
         else
             throw new InternalException("Can not get entity mapper for type: " + type.getTypeDesc());
@@ -100,6 +100,8 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
     public abstract @Nullable ModelDef<?> getDefIfPresent(Type javaType);
 
     public Type getJavaType(org.metavm.object.type.Type type) {
+        if (type instanceof NullType)
+            return Null.class;
         var javaType = Types.getPrimitiveJavaType(type);
         if (javaType != null)
             return javaType;
@@ -107,7 +109,7 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
             return BiUnion.createNullableType(getJavaType(type.getUnderlyingType())); // TODO maybe we should not use BiUnion here
         if (type instanceof ArrayType arrayType)
             return ParameterizedTypeImpl.create(arrayType.getKind().getEntityClass(), getJavaType(arrayType.getElementType()));
-        else if (type instanceof ClassType classType)
+        else if (type instanceof KlassType classType)
             return getDef(classType.getKlass()).getEntityType();
         else
             throw new IllegalArgumentException("Can not get java type for type " + type);

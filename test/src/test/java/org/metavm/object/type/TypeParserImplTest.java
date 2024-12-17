@@ -55,7 +55,7 @@ public class TypeParserImplTest extends TestCase {
         var type = TypeParser.parseType("()->any|null", id -> {
             throw new UnsupportedOperationException();
         });
-        Assert.assertEquals(new FunctionType(List.of(), new UnionType(Set.of(PrimitiveType.nullType, AnyType.instance))), type);
+        Assert.assertEquals(new FunctionType(List.of(), new UnionType(Set.of(NullType.instance, AnyType.instance))), type);
     }
 
     public void testParseFunction() {

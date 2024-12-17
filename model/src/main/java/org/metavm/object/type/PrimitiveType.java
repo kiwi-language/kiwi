@@ -17,7 +17,6 @@ import java.util.function.Function;
 @Entity
 public class PrimitiveType extends ClassType {
 
-    public static final PrimitiveType nullType = new PrimitiveType(PrimitiveKind.NULL);
     public static final PrimitiveType doubleType = new PrimitiveType(PrimitiveKind.DOUBLE);
     public static final PrimitiveType longType = new PrimitiveType(PrimitiveKind.LONG);
     public static final PrimitiveType charType = new PrimitiveType(PrimitiveKind.CHAR);
@@ -34,7 +33,6 @@ public class PrimitiveType extends ClassType {
     private final PrimitiveKind kind;
 
     private PrimitiveType(PrimitiveKind kind) {
-        super();
         this.kind = kind;
         kind.setType(this);
     }
@@ -81,16 +79,6 @@ public class PrimitiveType extends ClassType {
 
     public boolean isPrimitive() {
         return true;
-    }
-
-    @Override
-    public boolean isNull() {
-        return kind == PrimitiveKind.NULL;
-    }
-
-    @Override
-    public boolean isNullable() {
-        return kind == PrimitiveKind.NULL;
     }
 
     @Override

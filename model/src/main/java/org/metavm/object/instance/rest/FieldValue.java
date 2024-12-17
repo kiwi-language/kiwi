@@ -16,6 +16,7 @@ import java.util.Set;
                 @JsonSubTypes.Type(value = ExpressionFieldValue.class, name = "5"),
                 @JsonSubTypes.Type(value = ListFieldValue.class, name = "7"),
                 @JsonSubTypes.Type(value = NeverFieldValue.class, name = "8"),
+                @JsonSubTypes.Type(value = NullFieldValue.class, name = "9"),
         }
 )
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind", visible = true, include = JsonTypeInfo.As.EXISTING_PROPERTY)

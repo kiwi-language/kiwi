@@ -25,7 +25,7 @@ public abstract class ValueVisitor<R> {
     }
 
     public R visitNullValue(NullValue value) {
-        return visitPrimitiveValue(value);
+        return visitValue(value);
     }
 
     public R visitLongValue(LongValue value) {

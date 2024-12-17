@@ -119,6 +119,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processCatchUnionExceptionType();
             processGetStatic();
             processBooleanCompare();
+            processPrimitiveCompare();
+            processCharSequence();
         });
     }
 
@@ -1184,6 +1186,19 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processBooleanCompare() {
         var className = "primitives.BooleanCompareFoo";
         Assert.assertTrue((boolean) callMethod(className, "equals", List.of(true)));
+    }
+
+    private void processPrimitiveCompare() {
+        var className = "primitives.PrimitiveCompareFoo";
+        Assert.assertEquals(1, callMethod(className, "compareString", List.of("b", "a")));
+        Assert.assertEquals(1, callMethod(className, "compareChar", List.of('b', 'a')));
+    }
+
+    private void processCharSequence() {
+        var className = "primitives.CharSequenceFoo";
+        Assert.assertEquals(6, callMethod(className, "length", List.of("MetaVM")));
+        Assert.assertEquals("VM", callMethod(className, "subSequence", List.of("MetaVM", 4, 6)));
+        Assert.assertEquals('M', callMethod(className, "charAt", List.of("MetaVM", 0)));
     }
 
 }

@@ -29,6 +29,7 @@ public class InstanceDTOBuilder {
                     yield buildForClassInstance(reference.resolveObject(), depth, isChild);
             }
             case PrimitiveValue primitiveValue -> buildForPrimitive(primitiveValue);
+            case NullValue nullValue -> nullValue.toFieldValueDTO();
             case null, default -> throw new InternalException("Unrecognized instance: " + instance);
         };
     }

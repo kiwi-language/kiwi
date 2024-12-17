@@ -202,7 +202,7 @@ public class TypeParserImpl implements TypeParser {
             throw new IllegalStateException("Failed to parse generic declaration ref: " + ctx.getText());
     }
 
-    private PrimitiveType parsePrimitiveType(org.metavm.object.type.antlr.TypeParser.PrimitiveTypeContext ctx) {
+    private Type parsePrimitiveType(org.metavm.object.type.antlr.TypeParser.PrimitiveTypeContext ctx) {
         if (ctx.BOOLEAN() != null)
             return PrimitiveType.booleanType;
         if (ctx.STRING() != null)
@@ -222,7 +222,7 @@ public class TypeParserImpl implements TypeParser {
         if (ctx.PASSWORD() != null)
             return PrimitiveType.passwordType;
         if (ctx.NULL() != null)
-            return PrimitiveType.nullType;
+            return NullType.instance;
         throw new IllegalArgumentException("Unknown primitive type: " + ctx.getText());
     }
 

@@ -34,7 +34,7 @@ public class InstanceQueryService {
                                          InstanceProvider instanceProvider) {
         var expression = buildCondition(query, typeDefProvider, instanceProvider);
         var type = query.klass().getType();
-        Set<String> typeExpressions = (type instanceof ClassType classType) ?
+        Set<String> typeExpressions = (type instanceof KlassType classType) ?
                 NncUtils.mapUnique(classType.getKlass().getDescendantTypes(), k -> k.getType().toExpression()) :
                 Set.of(type.toExpression());
         return new SearchQuery(

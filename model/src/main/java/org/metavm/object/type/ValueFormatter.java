@@ -28,7 +28,7 @@ public class ValueFormatter {
             actualType = context.get(instanceDTO.parseId()).getType();
         else
             actualType = TypeParser.parseType(instanceDTO.type(), context.getTypeDefProvider());
-        if (actualType instanceof ClassType classType) {
+        if (actualType instanceof KlassType classType) {
             if (classType.isList()) {
                 var param = (ListInstanceParam) instanceDTO.param();
                 ClassInstance list;
@@ -117,6 +117,8 @@ public class ValueFormatter {
         if (value == null) {
             return null;
         }
+        if (value instanceof NullValue)
+            return null;
         if (value instanceof PrimitiveValue primitiveValue) {
             if (primitiveValue.getType().isPassword()) {
                 return null;

@@ -22,7 +22,6 @@ public class SubstitutorV2Test extends TestCase {
     }
 
     public void test() {
-        var nullType = PrimitiveType.nullType;
         var voidType = PrimitiveType.voidType;
 
         var typeVar = new TypeVariable(null, "E", DummyGenericDeclaration.INSTANCE);

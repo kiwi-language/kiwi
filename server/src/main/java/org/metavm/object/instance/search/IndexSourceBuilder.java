@@ -1,10 +1,7 @@
 package org.metavm.object.instance.search;
 
 import org.metavm.object.instance.ColumnKind;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.PrimitiveValue;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.util.NncUtils;
@@ -53,7 +50,9 @@ public class IndexSourceBuilder {
     private static Object getEsValue(Value value) {
         if (value.isArray()) {
             return NncUtils.map(value.resolveArray().getElements(), IndexSourceBuilder::getEsValue);
-        } else if (value instanceof PrimitiveValue primitiveValue) {
+        } else if (value instanceof NullValue)
+            return null;
+        else if (value instanceof PrimitiveValue primitiveValue) {
             return primitiveValue.getValue();
         } else {
             return ((Reference) value).tryGetTreeId();

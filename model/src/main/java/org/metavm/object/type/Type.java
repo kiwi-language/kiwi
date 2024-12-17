@@ -327,7 +327,7 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
             case WireTypes.BYTE_TYPE -> PrimitiveType.byteType;
             case WireTypes.DOUBLE_TYPE -> PrimitiveType.doubleType;
             case WireTypes.FLOAT_TYPE -> PrimitiveType.floatType;
-            case WireTypes.NULL_TYPE -> PrimitiveType.nullType;
+            case WireTypes.NULL_TYPE -> NullType.instance;
             case WireTypes.VOID_TYPE -> PrimitiveType.voidType;
             case WireTypes.TIME_TYPE -> PrimitiveType.timeType;
             case WireTypes.PASSWORD_TYPE -> PrimitiveType.passwordType;

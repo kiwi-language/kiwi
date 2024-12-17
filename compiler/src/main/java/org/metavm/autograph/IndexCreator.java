@@ -7,10 +7,7 @@ import com.intellij.psi.PsiTypeParameter;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.Values;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Index;
-import org.metavm.object.type.IndexField;
-import org.metavm.object.type.Klass;
+import org.metavm.object.type.*;
 import org.metavm.util.CompilerException;
 import org.metavm.util.LinkedList;
 import org.metavm.util.NncUtils;
@@ -48,7 +45,7 @@ public class IndexCreator extends VisitorBase {
     @Override
     public void visitNewExpression(PsiNewExpression expression) {
         super.visitNewExpression(expression);
-        if (typeResolver.resolveDeclaration(requireNonNull(expression.getType())) instanceof ClassType classType
+        if (typeResolver.resolveDeclaration(requireNonNull(expression.getType())) instanceof KlassType classType
                 && classType.getKlass() == StdKlass.index.get()) {
             var valueKlass = ((ClassType) classType.getTypeArguments().get(1)).getKlass();
             var classInfo = currentClassInfo();
@@ -63,7 +60,7 @@ public class IndexCreator extends VisitorBase {
             var methodRef = (PsiMethodReferenceExpression) args[2];
             index.setMethod(requireNonNull(requireNonNull(methodRef.resolve()).getUserData(Keys.Method)));
             var keyType = classType.getTypeArguments().get(0);
-            if (keyType instanceof ClassType ct && ct.isValue()) {
+            if (keyType instanceof KlassType ct && ct.isValue()) {
                 var indexF = index;
                 ct.foreachField(keyField -> {
                     if (!keyField.isStatic() && !keyField.isTransient()) {

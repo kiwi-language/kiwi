@@ -8,10 +8,6 @@ import java.util.Set;
 
 public class PrimitiveFieldValue extends FieldValue {
 
-    public static final PrimitiveFieldValue NULL = new PrimitiveFieldValue(
-            "null", PrimitiveKind.NULL.code(), null
-    );
-
     public static final PrimitiveFieldValue TRUE = new PrimitiveFieldValue(
             "true", PrimitiveKind.BOOLEAN.code(), true
     );
@@ -58,10 +54,6 @@ public class PrimitiveFieldValue extends FieldValue {
 
     public static PrimitiveFieldValue createBoolean(boolean value) {
         return value ? TRUE : FALSE;
-    }
-
-    public static PrimitiveFieldValue createNull() {
-        return new PrimitiveFieldValue("null", PrimitiveKind.NULL.code(), null);
     }
 
     public Object getValue() {

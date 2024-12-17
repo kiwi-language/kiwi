@@ -371,7 +371,7 @@ public class TranspileUtils {
                 else
                     forEachCapturedTypePairs(psiWildcardType.getExtendsBound(), uncertainType.getUnderlyingType(), action);
             }
-            case ClassType classType -> {
+            case KlassType classType -> {
                 var psiClassType = (PsiClassType) psiType;
                 for (int i = 0; i < classType.getTypeArguments().size(); i++) {
                     forEachCapturedTypePairs(psiClassType.getParameters()[i], classType.getTypeArguments().get(i), action);

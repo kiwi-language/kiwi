@@ -1311,7 +1311,7 @@ public class MethodGenerator {
         var typePatternPresent = NncUtils.anyMatch(cases, e -> e instanceof PsiTypeTestPattern);
         if (keyType.isInt() && !typePatternPresent) {
             createLoad(keyVar, keyType);
-        } else if(keyType instanceof ClassType classType && classType.isEnum() && !typePatternPresent) {
+        } else if(keyType instanceof KlassType classType && classType.isEnum() && !typePatternPresent) {
             var nullMatched = NncUtils.anyMatch(cases,
                   e -> e instanceof PsiLiteralExpression l && l.getValue() == null);
             createLoad(keyVar, keyType);

@@ -22,7 +22,7 @@ import java.util.function.Function;
 @Entity
 public class UnionType extends CompositeType {
 
-    public static final UnionType nullableAnyType = new UnionType(Set.of(PrimitiveType.nullType, AnyType.instance));
+    public static final UnionType nullableAnyType = new UnionType(Set.of(NullType.instance, AnyType.instance));
 
     public static UnionType create(Type...types) {
         return new UnionType(Set.of(types));

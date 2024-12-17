@@ -282,11 +282,11 @@ public class Expressions {
     }
 
     public static String constantToExpression(FieldValue fieldValue) {
+        if (fieldValue instanceof NullFieldValue)
+            return "null";
         if (fieldValue instanceof PrimitiveFieldValue primitiveFieldValue) {
             Object value = primitiveFieldValue.getValue();
-            if(primitiveFieldValue.getPrimitiveKind() == PrimitiveKind.NULL.code())
-                return "null";
-            else if (value instanceof String str) {
+            if (value instanceof String str) {
                 return "'" + str + "'";
             } else if (primitiveFieldValue.getPrimitiveKind() == PrimitiveKind.TIME.code()) {
                 return String.format("TIME(%d)", (long) primitiveFieldValue.getValue());

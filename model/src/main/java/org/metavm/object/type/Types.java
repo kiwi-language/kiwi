@@ -27,7 +27,7 @@ public class Types {
 
     public static String getCanonicalName(Type type, Function<Type, java.lang.reflect.Type> getJavType) {
         return switch (type) {
-            case ClassType classType -> getCanonicalName(classType, getJavType);
+            case KlassType classType -> getCanonicalName(classType, getJavType);
             case VariableType variableType -> getCanonicalName(variableType, getJavType);
             case ArrayType arrayType -> getCanonicalName(arrayType, getJavType);
             default -> throw new IllegalStateException("Unexpected value: " + type);
@@ -42,8 +42,8 @@ public class Types {
         // TODO: to be more rigorous
         switch (formalType) {
             case CapturedType capturedType -> setCaptureType.accept(capturedType, actualType);
-            case ClassType classType -> {
-                if (classType.isParameterized() && actualType instanceof ClassType actualClassType) {
+            case KlassType classType -> {
+                if (classType.isParameterized() && actualType instanceof KlassType actualClassType) {
                     var formalTypeArguments = classType.getTypeArguments();
                     var alignedActualClassType = Objects.requireNonNull(actualClassType.findAncestorByKlass(classType.getTemplateType().getKlass()),
                             () -> "Cannot find ancestor with template " + classType.getTemplateType().getKlass()
@@ -126,7 +126,7 @@ public class Types {
     }
 
     public static Collection<Type> getComponentTypes(Type type) {
-        if (type instanceof ClassType classType) {
+        if (type instanceof KlassType classType) {
             if (classType.isParameterized())
                 return classType.getTypeArguments();
         } else if (type instanceof CompositeType compositeType)
@@ -403,7 +403,7 @@ public class Types {
     }
 
     public static boolean isNull(Type type) {
-        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.NULL;
+        return type.isNull();
     }
 
     public static String getMapTypeName(Type keyType, Type valueType) {
@@ -538,7 +538,6 @@ public class Types {
                 case INT -> Integer.class;
                 case STRING -> String.class;
                 case TIME -> Date.class;
-                case NULL -> Null.class;
                 case VOID -> Void.class;
                 case PASSWORD -> Password.class;
                 case DOUBLE -> Double.class;
@@ -625,7 +624,7 @@ public class Types {
     }
 
     public static UnionType getNullableAnyType() {
-        return new UnionType(Set.of(AnyType.instance, PrimitiveType.nullType));
+        return new UnionType(Set.of(AnyType.instance, NullType.instance));
     }
 
     public static Type getAnyType(boolean nullable) {
@@ -652,8 +651,8 @@ public class Types {
         return PrimitiveType.timeType;
     }
 
-    public static PrimitiveType getNullType() {
-        return PrimitiveType.nullType;
+    public static NullType getNullType() {
+        return NullType.instance;
     }
 
     public static PrimitiveType getVoidType() {

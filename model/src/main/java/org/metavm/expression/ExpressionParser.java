@@ -291,7 +291,7 @@ public class ExpressionParser {
             return klass.getType();
     }
 
-    private PrimitiveType parsePrimitiveType(MetaVMParser.PrimitiveTypeContext ctx) {
+    private Type parsePrimitiveType(MetaVMParser.PrimitiveTypeContext ctx) {
         if(ctx.BOOLEAN() != null)
             return PrimitiveType.booleanType;
         if(ctx.STRING() != null)
@@ -311,7 +311,7 @@ public class ExpressionParser {
         if(ctx.VOID() != null)
             return PrimitiveType.voidType;
         if(ctx.NULL_LITERAL() != null)
-            return PrimitiveType.nullType;
+            return NullType.instance;
         else
             throw new IllegalStateException("Unrecognized primitive type: " + ctx.getText());
 

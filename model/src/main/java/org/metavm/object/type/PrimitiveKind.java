@@ -107,13 +107,6 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
 
     },
     PASSWORD(6, "password", Password.class, PasswordValue.class, TypeCategory.PASSWORD),
-    NULL(7, "null", Null.class, NullValue.class, TypeCategory.NULL) {
-        @Override
-        public Value getDefaultValue() {
-            return Instances.nullInstance();
-        }
-
-    },
     VOID(8, "void", void.class, null, TypeCategory.VOID),
     CHAR(9, "char", char.class, CharValue.class, TypeCategory.CHAR) {
         @Override
@@ -200,7 +193,7 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
     private final TypeCategory typeCategory;
     private final String typeCode;
     private PrimitiveType type;
-    private ValueHolder<Klass> valueHolder = new HybridValueHolder<>();
+    private transient ValueHolder<Klass> valueHolder = new HybridValueHolder<>();
 
     PrimitiveKind(int code, String name, Class<?> javaClass, Class<? extends Value> instanceClass, TypeCategory typeCategory) {
         this.code = code;
@@ -290,9 +283,12 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
     }
 
     private static void initPrimitiveKlass(PrimitiveType primitiveType, DefContext defContext) {
-        var klass = primitiveType.getKlass();
+        var klass = primitiveType.getKind().getKlass();
+        klass.disableMethodTableBuild();
+        klass.setMethods(List.of());
+        klass.getConstantPool().clear();
         var interfaces = new ArrayList<ClassType>();
-        if (primitiveType != PrimitiveType.voidType && primitiveType != PrimitiveType.nullType
+        if (primitiveType != PrimitiveType.voidType
                 && primitiveType != PrimitiveType.passwordType && primitiveType != PrimitiveType.charType) {
             interfaces.add(KlassType.create(defContext.getKlass(Comparable.class), List.of(klass.getType())));
         }
@@ -311,7 +307,7 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
     }
 
     private static void definePrimitiveMethod(PrimitiveType primitiveType, MethodRef interfaceMethod) {
-        var method = MethodBuilder.newBuilder(primitiveType.getKlass(), interfaceMethod.getName())
+        var method = MethodBuilder.newBuilder(primitiveType.getKind().getKlass(), interfaceMethod.getName())
                 .parameters(
                         NncUtils.map(
                                 interfaceMethod.getParameters(),

@@ -30,4 +30,5 @@ public interface TypeKeyVisitor<R> {
 
     R visitTaggedClassTypeKey(TaggedClassTypeKey typeKey);
 
+    R visitNullTypeKey(NullTypeKey typeKey);
 }

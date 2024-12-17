@@ -9,6 +9,7 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ClassType;
+import org.metavm.object.type.KlassType;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -98,9 +99,9 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity {
                     throw new InternalException("Bean " + beanName + " is not of type " + parameter.getType());
                 continue;
             }
-            if (parameter.getType().getUnderlyingType() instanceof ClassType paramType) {
+            if (parameter.getType().getUnderlyingType() instanceof KlassType paramType) {
                 if (paramType.isList()) {
-                    if(paramType.getFirstTypeArgument() instanceof ClassType beanType)
+                    if(paramType.getFirstTypeArgument() instanceof KlassType beanType)
                         arguments.add(Instances.createList(paramType, NncUtils.map(getBeansOfType(beanType), Instance::getReference)).getReference());
                     else
                         throw new InternalException("Unsupported list element type " + paramType.getFirstTypeArgument() + " in bean factory method " + method.getName());
@@ -129,9 +130,9 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity {
             if (beanName != null)
                 return List.of(getBeanDefinition(beanName));
             var type = parameter.getType().getUnderlyingType();
-            if(type instanceof ClassType classType) {
+            if(type instanceof KlassType classType) {
                 if (classType.isList()) {
-                    if(classType.getFirstTypeArgument() instanceof ClassType elementType)
+                    if(classType.getFirstTypeArgument() instanceof KlassType elementType)
                         return getBeanDefinitionsByType(elementType);
                     else
                         return List.of();

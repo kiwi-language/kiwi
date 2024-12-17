@@ -263,6 +263,7 @@ public class ApiService extends EntityContextFactoryAware {
     private Object formatInstance(@Nullable Value instance, boolean asValue) {
         return switch (instance) {
             case null -> null;
+            case NullValue nullValue -> null;
             case PrimitiveValue primitiveValue -> primitiveValue.getValue();
             case Reference reference -> {
                 var resolved = reference.resolve();
@@ -371,8 +372,10 @@ public class ApiService extends EntityContextFactoryAware {
 
     private ValueResolutionResult tryResolveValue(Object rawValue, Type type, boolean asValue, @Nullable Value currentValue, IEntityContext context) {
         return switch (type) {
+            case NullType nullType ->
+                    rawValue == null ? ValueResolutionResult.of(Instances.nullInstance()) : ValueResolutionResult.failed;
             case PrimitiveType primitiveType -> tryResolvePrimitive(rawValue, primitiveType);
-            case ClassType classType -> switch (rawValue) {
+            case KlassType classType -> switch (rawValue) {
                 case String s -> {
                     if (asValue)
                         yield ValueResolutionResult.failed;
@@ -411,8 +414,6 @@ public class ApiService extends EntityContextFactoryAware {
 
     private ValueResolutionResult tryResolvePrimitive(Object rawValue, PrimitiveType type) {
         return switch (type.getKind()) {
-            case NULL ->
-                    rawValue == null ? ValueResolutionResult.of(Instances.nullInstance()) : ValueResolutionResult.failed;
             case LONG -> ValueUtils.isInteger(rawValue) ?
                     ValueResolutionResult.of(Instances.longInstance(((Number) rawValue).longValue())) :
                     ValueResolutionResult.failed;

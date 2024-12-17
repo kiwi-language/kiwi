@@ -60,4 +60,9 @@ public abstract class DefaultTypeVisitor<R, S> implements TypeVisitor<R, S> {
     public R visitAnyType(AnyType type, S s) {
         return visitType(type, s);
     }
+
+    @Override
+    public R visitNullType(NullType type, S s) {
+        return visitType(type, s);
+    }
 }

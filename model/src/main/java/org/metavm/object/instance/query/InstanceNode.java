@@ -1,10 +1,7 @@
 package org.metavm.object.instance.query;
 
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.PrimitiveType;
-import org.metavm.object.type.Type;
+import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
 
 import java.util.ArrayList;
@@ -71,7 +68,7 @@ public abstract class InstanceNode<I extends Value> {
         if(type instanceof PrimitiveType primitiveType) {
             return new PrimitiveNode(path, primitiveType);
         }
-        if(type instanceof ClassType classType) {
+        if(type instanceof KlassType classType) {
             return new ObjectNode(path, classType.getKlass());
         }
         if(type instanceof ArrayType arrayType) {

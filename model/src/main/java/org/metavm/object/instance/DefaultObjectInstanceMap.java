@@ -3,10 +3,7 @@ package org.metavm.object.instance;
 import org.metavm.entity.DefContext;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.Mapper;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.PrimitiveValue;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeTags;
 import org.metavm.util.Instances;
@@ -48,20 +45,25 @@ public class DefaultObjectInstanceMap implements ObjectInstanceMap {
     public <T> T getEntity(Class<T> klass, Value instance, Mapper<T, ?> mapper) {
         //noinspection unchecked
         klass = (Class<T>) ReflectionUtils.getWrapperClass(klass);
-        if (instance instanceof PrimitiveValue primitiveValue)
-            return klass.cast(Instances.deserializePrimitive(primitiveValue, klass));
-        else if(instance instanceof Reference r) {
-            var id = r.tryGetId();
-            if(id != null) {
-                if(TypeTags.isSystemTypeTag(id.getTypeTag(entityContext)))
-                    return entityContext.getEntity(klass, id);
-                else
-                    return klass.cast(instance);
-            } else
-                return entityContext.getEntity(klass, r.resolve());
+        switch (instance) {
+            case NullValue nullValue -> {
+                return null;
+            }
+            case PrimitiveValue primitiveValue -> {
+                return klass.cast(Instances.deserializePrimitive(primitiveValue, klass));
+            }
+            case Reference r -> {
+                var id = r.tryGetId();
+                if (id != null) {
+                    if (TypeTags.isSystemTypeTag(id.getTypeTag(entityContext)))
+                        return entityContext.getEntity(klass, id);
+                    else
+                        return klass.cast(instance);
+                } else
+                    return entityContext.getEntity(klass, r.resolve());
+            }
+            case null, default -> throw new InternalException("Invalid instance: " + instance);
         }
-        else
-            throw new InternalException("Invalid instance: " + instance);
     }
 
     @Override

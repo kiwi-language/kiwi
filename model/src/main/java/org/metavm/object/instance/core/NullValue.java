@@ -1,24 +1,23 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.object.instance.rest.PrimitiveFieldValue;
-import org.metavm.object.type.PrimitiveType;
+import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.rest.InstanceParam;
+import org.metavm.object.instance.rest.NullFieldValue;
+import org.metavm.object.type.NullType;
+import org.metavm.util.InstanceOutput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.Null;
 import org.metavm.util.WireTypes;
 
-public class NullValue extends PrimitiveValue {
+import javax.annotation.Nullable;
+
+public class NullValue extends Value {
 
     public NullValue() {
     }
 
     @Override
-    public Null getValue() {
-        return null;
-    }
-
-    @Override
-    public PrimitiveType getType() {
-        return PrimitiveType.nullType;
+    public NullType getType() {
+        return NullType.instance;
     }
 
     @Override
@@ -27,8 +26,23 @@ public class NullValue extends PrimitiveValue {
     }
 
     @Override
+    public Object toSearchConditionValue() {
+        return null;
+    }
+
+    @Override
+    protected InstanceParam getParam() {
+        return null;
+    }
+
+    @Override
     public String getTitle() {
         return "null";
+    }
+
+    @Override
+    public void writeInstance(InstanceOutput output) {
+
     }
 
     @Override
@@ -37,17 +51,64 @@ public class NullValue extends PrimitiveValue {
     }
 
     @Override
+    public <R> void acceptReferences(ValueVisitor<R> visitor) {
+
+    }
+
+    @Override
+    public <R> void acceptChildren(ValueVisitor<R> visitor) {
+
+    }
+
+    @Override
+    protected void writeTree(TreeWriter treeWriter) {
+
+    }
+
+    @Override
+    public boolean isMutable() {
+        return false;
+    }
+
+    @Override
+    public Object toJson(IEntityContext context) {
+        return null;
+    }
+
+    @Override
     public boolean isNull() {
         return true;
     }
 
     @Override
-    public PrimitiveFieldValue toFieldValueDTO() {
-        return PrimitiveFieldValue.NULL;
+    public boolean isReference() {
+        return false;
+    }
+
+    @Override
+    public NullFieldValue toFieldValueDTO() {
+        return NullFieldValue.instance;
     }
 
     @Override
     public boolean shouldSkipWrite() {
         return true;
     }
+
+    @Nullable
+    @Override
+    public Id tryGetId() {
+        return null;
+    }
+
+    @Override
+    public int hashCode() {
+        return NullValue.class.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof NullValue;
+    }
+
 }

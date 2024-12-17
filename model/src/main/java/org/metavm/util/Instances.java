@@ -43,7 +43,7 @@ public class Instances {
             Map.entry(String.class, PrimitiveType.stringType),
             Map.entry(Date.class, PrimitiveType.timeType),
             Map.entry(Password.class, PrimitiveType.passwordType),
-            Map.entry(Null.class, PrimitiveType.nullType),
+            Map.entry(Null.class, NullType.instance),
             Map.entry(Object.class, AnyType.instance)
     );
 
@@ -118,7 +118,7 @@ public class Instances {
         return new ClassInstance(null, fields, type);
     }
 
-    public static PrimitiveValue serializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
+    public static Value serializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
         return NncUtils.requireNonNull(trySerializePrimitive(value, getTypeFunc),
                 () -> String.format("Can not resolve primitive value '%s", value));
     }
@@ -129,7 +129,7 @@ public class Instances {
                 ValueUtils.isInteger(value) || ValueUtils.isFloatOrDouble(value);
     }
 
-    public static @Nullable PrimitiveValue trySerializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
+    public static @Nullable Value trySerializePrimitive(Object value, Function<Class<?>, Type> getTypeFunc) {
         if (value == null)
             return Instances.nullInstance();
         if (ValueUtils.isLong(value))
@@ -212,9 +212,6 @@ public class Instances {
     public static <T> T deserializePrimitive(PrimitiveValue instance, Class<T> javaClass) {
         javaClass = (Class<T>) ReflectionUtils.getWrapperClass(javaClass);
         switch (instance) {
-            case NullValue ignored -> {
-                return null;
-            }
             case IntValue intValue -> {
                 if (javaClass == short.class || javaClass == Short.class)
                     return (T) Short.valueOf(intValue.getValue().shortValue());
@@ -244,7 +241,7 @@ public class Instances {
         }
     }
 
-    public static PrimitiveValue primitiveInstance(Object value) {
+    public static Value primitiveInstance(Object value) {
         if (value == null) {
             return nullInstance();
         }
@@ -709,7 +706,7 @@ public class Instances {
             return Instances.nullInstance();
         else if (type instanceof PrimitiveType primitiveType)
             return primitiveType.getDefaultValue();
-        else if (field.getType() instanceof ClassType ct) {
+        else if (field.getType() instanceof KlassType ct) {
             var beanDefReg = BeanDefinitionRegistry.getInstance(context);
             var beans = beanDefReg.getBeansOfType(ct);
             if (!beans.isEmpty())

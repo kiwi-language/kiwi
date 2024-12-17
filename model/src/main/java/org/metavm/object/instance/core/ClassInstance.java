@@ -331,7 +331,7 @@ public class ClassInstance extends Instance {
     @Override
     @NoProxy
     public void setType(Type type) {
-        if (type instanceof ClassType classType) {
+        if (type instanceof KlassType classType) {
             klass = classType.getKlass();
             super.setType(type);
         } else

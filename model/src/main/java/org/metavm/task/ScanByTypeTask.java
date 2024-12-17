@@ -3,7 +3,7 @@ package org.metavm.task;
 import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ClassType;
+import org.metavm.object.type.KlassType;
 import org.metavm.object.type.Type;
 import org.metavm.util.NncUtils;
 
@@ -26,7 +26,7 @@ public abstract class ScanByTypeTask extends ScanTask {
     }
 
     private boolean filter(Instance instance) {
-        if(type instanceof ClassType classType && classType.isTemplate()) {
+        if(type instanceof KlassType classType && classType.isTemplate()) {
             if(instance instanceof ClassInstance classInstance)
                 return classInstance.getType().findAncestorByKlass(classType.getKlass()) != null;
             else

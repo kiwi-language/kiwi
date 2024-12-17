@@ -702,7 +702,7 @@ public class Assembler {
                 classInfo.visitedIndices.add(index);
                 var indexF = index;
                 var keyType = method.getReturnType();
-                if(keyType instanceof ClassType ct && ct.isValue()) {
+                if(keyType instanceof KlassType ct && ct.isValue()) {
                     ct.forEachField(field -> {
                         if (!field.isStatic() && !field.isTransient()) {
                             var indexField = NncUtils.find(indexF.getFields(), f -> Objects.equals(f.getName(), field.getName()));
@@ -1119,7 +1119,7 @@ public class Assembler {
         throw new InternalException("Unknown array kind: " + ctx.getText());
     }
 
-    private static PrimitiveType parsePrimitiveType(AssemblyParser.PrimitiveTypeContext primitiveType) {
+    private static Type parsePrimitiveType(AssemblyParser.PrimitiveTypeContext primitiveType) {
         if (primitiveType.INT() != null)
             return PrimitiveType.intType;
         else if (primitiveType.LONG() != null)
@@ -1141,7 +1141,7 @@ public class Assembler {
         else if (primitiveType.TIME() != null)
             return PrimitiveType.timeType;
         else if (primitiveType.NULL() != null)
-            return PrimitiveType.nullType;
+            return NullType.instance;
         else if (primitiveType.VOID() != null)
             return PrimitiveType.voidType;
         else

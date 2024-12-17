@@ -66,7 +66,7 @@ public interface TypeKey extends TypeOrTypeKey {
             if (primitiveType.BOOLEAN() != null)
                 return new PrimitiveTypeKey(PrimitiveKind.BOOLEAN.code());
             if (primitiveType.NULL() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.NULL.code());
+                return new NullTypeKey();
             if (primitiveType.VOID() != null)
                 return new PrimitiveTypeKey(PrimitiveKind.VOID.code());
             if (primitiveType.PASSWORD() != null)
@@ -147,7 +147,7 @@ public interface TypeKey extends TypeOrTypeKey {
             case WireTypes.FLOAT_TYPE -> new PrimitiveTypeKey(PrimitiveKind.FLOAT.code());
             case WireTypes.STRING_TYPE -> new PrimitiveTypeKey(PrimitiveKind.STRING.code());
             case WireTypes.VOID_TYPE -> new PrimitiveTypeKey(PrimitiveKind.VOID.code());
-            case WireTypes.NULL_TYPE -> new PrimitiveTypeKey(PrimitiveKind.NULL.code());
+            case WireTypes.NULL_TYPE -> new NullTypeKey();
             case WireTypes.TIME_TYPE -> new PrimitiveTypeKey(PrimitiveKind.TIME.code());
             case WireTypes.PASSWORD_TYPE -> new PrimitiveTypeKey(PrimitiveKind.PASSWORD.code());
             case WireTypes.CHILD_ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.CHILD.code(), read(input));

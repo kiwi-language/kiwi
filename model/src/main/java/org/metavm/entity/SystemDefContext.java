@@ -649,7 +649,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     // For debugging, DON'T REMOVE!!!
     public org.metavm.object.type.Type getTypeByTable(ReadonlyArray<?> table) {
         for (Object model : models()) {
-            if (model instanceof ClassType type) {
+            if (model instanceof KlassType type) {
                 var klass = type.getKlass();
                 if (klass.getDeclaredConstraints() == table
                         || klass.getDeclaredFields() == table
