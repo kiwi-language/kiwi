@@ -15,10 +15,9 @@ import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.util.*;
 
 @Slf4j
 public enum PrimitiveKind implements ValueHolderOwner<Klass> {
@@ -28,27 +27,27 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return Instances.longInstance(0L);
         }
 
-        public static Value compareTo(Value v1, Value v2, CallContext callContext) {
-            var s1 = (LongValue) v1;
-            var s2 = (LongValue) v2;
+        public static Value compareTo(Value self, Value that) {
+            var s1 = (LongValue) self;
+            var s2 = (LongValue) that;
             return Instances.intInstance(s1.compareTo(s2));
         }
 
-        public static Value intValue(Value self, CallContext callContext) {
+        public static Value intValue(Value self) {
             var v = ((LongValue) self).value;
             return Instances.intInstance((int) v);
         }
 
-        public static Value longValue(Value self, CallContext callContext) {
+        public static Value longValue(Value self) {
             return self;
         }
 
-        public static Value floatValue(Value self, CallContext callContext) {
+        public static Value floatValue(Value self) {
             var v = ((LongValue) self).value;
             return Instances.floatInstance((float) v);
         }
 
-        public static Value doubleValue(Value self, CallContext callContext) {
+        public static Value doubleValue(Value self) {
             var v = ((LongValue) self).value;
             return Instances.doubleInstance(v);
         }
@@ -60,59 +59,59 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return Instances.doubleInstance(0.0);
         }
 
-        public static Value compareTo(Value v1, Value v2, CallContext callContext) {
-            var s1 = (DoubleValue) v1;
-            var s2 = (DoubleValue) v2;
+        public static Value compareTo(Value self, Value that) {
+            var s1 = (DoubleValue) self;
+            var s2 = (DoubleValue) that;
             return Instances.intInstance(s1.compareTo(s2));
         }
 
-        public static Value intValue(Value self, CallContext callContext) {
+        public static Value intValue(Value self) {
             var v = ((DoubleValue) self).value;
             return Instances.intInstance((int) v);
         }
 
-        public static Value longValue(Value self, CallContext callContext) {
+        public static Value longValue(Value self) {
             var v = ((DoubleValue) self).value;
             return Instances.longInstance((long) v);
         }
 
-        public static Value floatValue(Value self, CallContext callContext) {
+        public static Value floatValue(Value self) {
             var v = ((DoubleValue) self).value;
             return Instances.floatInstance((float) v);
         }
 
-        public static Value doubleValue(Value self, CallContext callContext) {
+        public static Value doubleValue(Value self) {
             return self;
         }
 
     },
     STRING(3, "string", String.class, StringValue.class, TypeCategory.STRING) {
 
-        public static Value compareTo(Value v1, Value v2, CallContext callContext) {
-            var s1 = (StringValue) v1;
-            var s2 = (StringValue) v2;
+        public static Value compareTo(Value self, Value that) {
+            var s1 = (StringValue) self;
+            var s2 = (StringValue) that;
             return Instances.intInstance(s1.compareTo(s2));
         }
 
-        public static Value length(Value v, CallContext callContext) {
-            var s = (StringValue) v;
+        public static Value length(Value self) {
+            var s = (StringValue) self;
             return Instances.intInstance(s.value.length());
         }
 
-        public static Value charAt(Value v1, Value v2, CallContext callContext) {
-            var s = (StringValue) v1;
-            var idx = ((IntValue) v2).value;
+        public static Value charAt(Value self, Value index) {
+            var s = (StringValue) self;
+            var idx = ((IntValue) index).value;
             return Instances.intInstance(s.value.charAt(idx));
         }
 
-        public static Value subSequence(Value s, Value start, Value end, CallContext callContext) {
-            var s1 = ((StringValue) s).value;
+        public static Value subSequence(Value self, Value start, Value end) {
+            var s1 = ((StringValue) self).value;
             var i1 = ((IntValue) start).value;
             var i2 = ((IntValue) end).value;
             return Instances.stringInstance(s1.substring(i1, i2));
         }
 
-        public static Value toString(Value v, CallContext callContext) {
+        public static Value toString(Value v) {
             return v;
         }
 
@@ -129,18 +128,16 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return i == 0 ? BooleanValue.false_ : BooleanValue.true_;
         }
 
-        public static Value compareTo(Value v1, Value v2, CallContext callContext) {
-            var s1 = (BooleanValue) v1;
-            var s2 = (BooleanValue) v2;
-            return Instances.intInstance(s1.compareTo(s2));
+        @Override
+        public boolean isHeapOnly() {
+            return true;
         }
-
     },
     TIME(5, "time", Date.class, TimeValue.class, TypeCategory.TIME) {
 
-        public static Value compareTo(Value v1, Value v2, CallContext callContext) {
-            var s1 = (TimeValue) v1;
-            var s2 = (TimeValue) v2;
+        public static Value compareTo(Value self, Value that) {
+            var s1 = (TimeValue) self;
+            var s2 = (TimeValue) that;
             return Instances.intInstance(s1.compareTo(s2));
         }
 
@@ -165,27 +162,27 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return Instances.intInstance(0);
         }
 
-        public static Value compareTo(Value v1, Value v2, CallContext callContext) {
-            var s1 = (IntValue) v1;
-            var s2 = (IntValue) v2;
+        public static Value compareTo(Value self, Value that) {
+            var s1 = (IntValue) self;
+            var s2 = (IntValue) that;
             return Instances.intInstance(s1.compareTo(s2));
         }
 
-        public static Value intValue(Value self, CallContext callContext) {
+        public static Value intValue(Value self) {
             return self;
         }
 
-        public static Value longValue(Value self, CallContext callContext) {
+        public static Value longValue(Value self) {
             var v = ((IntValue) self).value;
             return Instances.longInstance(v);
         }
 
-        public static Value floatValue(Value self, CallContext callContext) {
+        public static Value floatValue(Value self) {
             var v = ((IntValue) self).value;
             return Instances.floatInstance((float) v);
         }
 
-        public static Value doubleValue(Value self, CallContext callContext) {
+        public static Value doubleValue(Value self) {
             var v = ((IntValue) self).value;
             return Instances.doubleInstance(v);
         }
@@ -197,27 +194,27 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return Instances.floatInstance(0);
         }
 
-        public static Value compareTo(Value v1, Value v2, CallContext callContext) {
-            var s1 = (FloatValue) v1;
-            var s2 = (FloatValue) v2;
+        public static Value compareTo(Value self, Value that) {
+            var s1 = (FloatValue) self;
+            var s2 = (FloatValue) that;
             return Instances.intInstance(s1.compareTo(s2));
         }
 
-        public static Value intValue(Value self, CallContext callContext) {
+        public static Value intValue(Value self) {
             var v = ((FloatValue) self).value;
             return Instances.intInstance((int) v);
         }
 
-        public static Value longValue(Value self, CallContext callContext) {
+        public static Value longValue(Value self) {
             var v = ((FloatValue) self).value;
             return Instances.longInstance((long) v);
         }
 
-        public static Value floatValue(Value self, CallContext callContext) {
+        public static Value floatValue(Value self) {
             return self;
         }
 
-        public static Value doubleValue(Value self, CallContext callContext) {
+        public static Value doubleValue(Value self) {
             var v = ((FloatValue) self).value;
             return Instances.doubleInstance(v);
         }
@@ -402,11 +399,18 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
     }
 
     private static void setPrimitiveNativeMethod(PrimitiveType primitiveType, Method method) {
-        var kind = primitiveType.getKind();
-        var paramClasses = new ArrayList<Class<?>>(NncUtils.multipleOf(Value.class, 1 + method.getParameters().size()));
-        paramClasses.add(CallContext.class);
-        var nativeMethod = ReflectionUtils.getMethod(kind.getClass(), method.getName(), paramClasses);
-        method.setNativeMethod(nativeMethod);
+        try {
+            var kind = primitiveType.getKind();
+            var paramTypes = new Class<?>[method.getParameters().size() + 1];
+            Arrays.fill(paramTypes, Value.class);
+            var methodType = MethodType.methodType(Value.class, paramTypes);
+            var lookup = MethodHandles.lookup();
+            var mh = lookup.findStatic(kind.getClass(), method.getName(), methodType);
+            method.setNativeMethodHandle(mh.asSpreader(Value[].class, paramTypes.length));
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean isHeapOnly() {

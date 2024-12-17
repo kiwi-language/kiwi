@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,14 +43,13 @@ public class NativeMethods {
             }
         } else {
             if (self instanceof PrimitiveValue primitiveValue) {
-                var nativeMethod = Objects.requireNonNull(method.getNativeMethod());
-                var args = new Object[arguments.size() + 2];
+                var mh = Objects.requireNonNull(method.getNativeMethodHandle());
+                var args = new Value[arguments.size() + 1];
                 args[0] = primitiveValue;
-                for (int i = 1; i <= arguments.size(); i++) {
+                for (int i = 1; i < args.length; i++) {
                     args[i] = arguments.get(i - 1);
                 }
-                args[arguments.size() + 1] = callContext;
-                var result = (Value) ReflectionUtils.invoke(null, nativeMethod, args);
+                var result = invokeNative(mh, args);
                 if (method.getReturnType().isVoid()) {
                     return new FlowExecResult(null, null);
                 } else {
@@ -71,6 +71,15 @@ public class NativeMethods {
                 }
             } else
                 throw new InternalException("Native invocation is not supported for non class instances");
+        }
+    }
+
+    private static Value invokeNative(MethodHandle methodHandle, Value[] values) {
+        try {
+            //noinspection ConfusingArgumentToVarargsMethod
+            return (Value) methodHandle.invokeExact(values);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
         }
     }
 

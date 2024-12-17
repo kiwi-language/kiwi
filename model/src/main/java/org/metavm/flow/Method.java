@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -42,6 +43,7 @@ public class Method extends Flow implements Property {
     private transient @Nullable java.lang.reflect.Method javaMethod;
     private transient String nativeName;
     private transient volatile java.lang.reflect.Method nativeMethod;
+    private transient volatile MethodHandle nativeMethodHandle;
 
     public Method(Long tmpId,
                   @NotNull Klass declaringType,
@@ -448,5 +450,13 @@ public class Method extends Flow implements Property {
 
     public void setNativeMethod(java.lang.reflect.Method nativeMethod) {
         this.nativeMethod = nativeMethod;
+    }
+
+    public MethodHandle getNativeMethodHandle() {
+        return nativeMethodHandle;
+    }
+
+    public void setNativeMethodHandle(MethodHandle nativeMethodHandle) {
+        this.nativeMethodHandle = nativeMethodHandle;
     }
 }
