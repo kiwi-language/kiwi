@@ -203,6 +203,7 @@ public class StandardDefBuilder {
         createStringBuilderKlass();
         parseKlass(InputStream.class);
         parseKlass(OutputStream.class);
+        parseKlass(Number.class);
 
         primTypeFactory.saveDefs(defContext);
     }

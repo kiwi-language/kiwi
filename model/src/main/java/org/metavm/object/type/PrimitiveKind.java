@@ -14,6 +14,7 @@ import org.metavm.object.instance.core.*;
 import org.metavm.util.*;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,6 +34,25 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return Instances.intInstance(s1.compareTo(s2));
         }
 
+        public static Value intValue(Value self, CallContext callContext) {
+            var v = ((LongValue) self).value;
+            return Instances.intInstance((int) v);
+        }
+
+        public static Value longValue(Value self, CallContext callContext) {
+            return self;
+        }
+
+        public static Value floatValue(Value self, CallContext callContext) {
+            var v = ((LongValue) self).value;
+            return Instances.floatInstance((float) v);
+        }
+
+        public static Value doubleValue(Value self, CallContext callContext) {
+            var v = ((LongValue) self).value;
+            return Instances.doubleInstance(v);
+        }
+
     },
     DOUBLE(2, "double", double.class, DoubleValue.class, TypeCategory.DOUBLE) {
         @Override
@@ -44,6 +64,25 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             var s1 = (DoubleValue) v1;
             var s2 = (DoubleValue) v2;
             return Instances.intInstance(s1.compareTo(s2));
+        }
+
+        public static Value intValue(Value self, CallContext callContext) {
+            var v = ((DoubleValue) self).value;
+            return Instances.intInstance((int) v);
+        }
+
+        public static Value longValue(Value self, CallContext callContext) {
+            var v = ((DoubleValue) self).value;
+            return Instances.longInstance((long) v);
+        }
+
+        public static Value floatValue(Value self, CallContext callContext) {
+            var v = ((DoubleValue) self).value;
+            return Instances.floatInstance((float) v);
+        }
+
+        public static Value doubleValue(Value self, CallContext callContext) {
+            return self;
         }
 
     },
@@ -115,12 +154,10 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return new CharValue((char) i);
         }
 
-        public static Value compareTo(Value v1, Value v2, CallContext callContext) {
-            var s1 = (CharValue) v1;
-            var s2 = (CharValue) v2;
-            return Instances.intInstance(s1.compareTo(s2));
+        @Override
+        public boolean isHeapOnly() {
+            return true;
         }
-
     },
     INT(10, "int", int.class, IntValue.class, TypeCategory.INT) {
         @Override
@@ -132,6 +169,25 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             var s1 = (IntValue) v1;
             var s2 = (IntValue) v2;
             return Instances.intInstance(s1.compareTo(s2));
+        }
+
+        public static Value intValue(Value self, CallContext callContext) {
+            return self;
+        }
+
+        public static Value longValue(Value self, CallContext callContext) {
+            var v = ((IntValue) self).value;
+            return Instances.longInstance(v);
+        }
+
+        public static Value floatValue(Value self, CallContext callContext) {
+            var v = ((IntValue) self).value;
+            return Instances.floatInstance((float) v);
+        }
+
+        public static Value doubleValue(Value self, CallContext callContext) {
+            var v = ((IntValue) self).value;
+            return Instances.doubleInstance(v);
         }
 
     },
@@ -147,6 +203,25 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return Instances.intInstance(s1.compareTo(s2));
         }
 
+        public static Value intValue(Value self, CallContext callContext) {
+            var v = ((FloatValue) self).value;
+            return Instances.intInstance((int) v);
+        }
+
+        public static Value longValue(Value self, CallContext callContext) {
+            var v = ((FloatValue) self).value;
+            return Instances.longInstance((long) v);
+        }
+
+        public static Value floatValue(Value self, CallContext callContext) {
+            return self;
+        }
+
+        public static Value doubleValue(Value self, CallContext callContext) {
+            var v = ((FloatValue) self).value;
+            return Instances.doubleInstance(v);
+        }
+
     },
     SHORT(12, "short", short.class, ShortValue.class, TypeCategory.SHORT) {
         @Override
@@ -159,12 +234,11 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return new ShortValue((short) ((IntValue) value).value);
         }
 
-        public static Value compareTo(Value v1, Value v2, CallContext callContext) {
-            var s1 = (ShortValue) v1;
-            var s2 = (ShortValue) v2;
-            return Instances.intInstance(s1.compareTo(s2));
-        }
 
+        @Override
+        public boolean isHeapOnly() {
+            return true;
+        }
     },
     BYTE(13, "byte", byte.class, ByteValue.class, TypeCategory.BYTE) {
         @Override
@@ -177,12 +251,10 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return new ByteValue((byte) ((IntValue) value).value);
         }
 
-        public static Value compareTo(Value v1, Value v2, CallContext callContext) {
-            var s1 = (ByteValue) v1;
-            var s2 = (ByteValue) v2;
-            return Instances.intInstance(s1.compareTo(s2));
+        @Override
+        public boolean isHeapOnly() {
+            return true;
         }
-
     };
 
 
@@ -278,7 +350,8 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
 
     public static void initialize(DefContext defContext) {
         for (PrimitiveKind kind : PrimitiveKind.values()) {
-            initPrimitiveKlass(kind.getType(), defContext);
+            if (kind != VOID)
+                initPrimitiveKlass(kind.getType(), defContext);
         }
     }
 
@@ -287,19 +360,27 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
         klass.disableMethodTableBuild();
         klass.setMethods(List.of());
         klass.getConstantPool().clear();
-        var interfaces = new ArrayList<ClassType>();
-        if (primitiveType != PrimitiveType.voidType
-                && primitiveType != PrimitiveType.passwordType && primitiveType != PrimitiveType.charType) {
-            interfaces.add(KlassType.create(defContext.getKlass(Comparable.class), List.of(klass.getType())));
+        if (primitiveType == PrimitiveType.longType || primitiveType == PrimitiveType.doubleType
+                || primitiveType == PrimitiveType.intType || primitiveType == PrimitiveType.floatType
+                || primitiveType == PrimitiveType.shortType || primitiveType == PrimitiveType.byteType) {
+            var numberKlass = defContext.getKlass(Number.class);
+            klass.setSuperType(numberKlass.getType());
+            definePrimitiveMethods(primitiveType, numberKlass.getType());
         }
+        var interfaces = new ArrayList<ClassType>();
+        if (primitiveType != PrimitiveType.passwordType)
+            interfaces.add(KlassType.create(defContext.getKlass(Comparable.class), List.of(klass.getType())));
         if (primitiveType == PrimitiveType.stringType)
             interfaces.add(defContext.getKlass(CharSequence.class).getType());
+        interfaces.add(defContext.getKlass(Serializable.class).getType());
         klass.setInterfaces(interfaces);
         interfaces.forEach(it -> definePrimitiveMethods(primitiveType, it));
         klass.resetHierarchy();
     }
 
     private static void definePrimitiveMethods(PrimitiveType primitiveType, ClassType interfaceType) {
+        if (primitiveType.getKind().isHeapOnly())
+            return;
         interfaceType.foreachMethod(m -> {
             if(m.isAbstract())
                 definePrimitiveMethod(primitiveType, m);
@@ -328,5 +409,8 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
         method.setNativeMethod(nativeMethod);
     }
 
+    public boolean isHeapOnly() {
+        return false;
+    }
 
 }

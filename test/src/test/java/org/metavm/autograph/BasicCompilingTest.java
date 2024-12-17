@@ -121,6 +121,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processBooleanCompare();
             processPrimitiveCompare();
             processCharSequence();
+            processNumber();
+            processSerializable();
         });
     }
 
@@ -1199,6 +1201,16 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(6, callMethod(className, "length", List.of("MetaVM")));
         Assert.assertEquals("VM", callMethod(className, "subSequence", List.of("MetaVM", 4, 6)));
         Assert.assertEquals('M', callMethod(className, "charAt", List.of("MetaVM", 0)));
+    }
+
+    private void processNumber() {
+        var className = "primitives.NumberFoo";
+        Assert.assertEquals(2.5, (double) callMethod(className, "add", List.of(1, 1.5)), 0.001);
+    }
+
+    private void processSerializable() {
+        var className = "primitives.SerializableFoo";
+        Assert.assertEquals("1", callMethod(className, "toString", List.of(1)));
     }
 
 }

@@ -388,6 +388,30 @@ public class ApiService extends EntityContextFactoryAware {
                         yield ValueResolutionResult.of(Instances.stringInstance(s));
                     yield ValueResolutionResult.failed;
                 }
+                case Long l->  classType.isAssignableFrom(Types.getLongType()) ?
+                        ValueResolutionResult.of(Instances.longInstance(l)) :
+                        ValueResolutionResult.failed;
+                case Double d->  classType.isAssignableFrom(Types.getDoubleType()) ?
+                        ValueResolutionResult.of(Instances.doubleInstance(d)) :
+                        ValueResolutionResult.failed;
+                case Integer i->  classType.isAssignableFrom(Types.getIntType()) ?
+                        ValueResolutionResult.of(Instances.intInstance(i)) :
+                        ValueResolutionResult.failed;
+                case Float f->  classType.isAssignableFrom(Types.getFloatType()) ?
+                        ValueResolutionResult.of(Instances.floatInstance(f)) :
+                        ValueResolutionResult.failed;
+                case Short s->  classType.isAssignableFrom(Types.getShortType()) ?
+                        ValueResolutionResult.of(Instances.shortInstance(s)) :
+                        ValueResolutionResult.failed;
+                case Byte b->  classType.isAssignableFrom(Types.getByteType()) ?
+                        ValueResolutionResult.of(Instances.byteInstance(b)) :
+                        ValueResolutionResult.failed;
+                case Character c->  classType.isAssignableFrom(Types.getCharType()) ?
+                        ValueResolutionResult.of(Instances.charInstance(c)) :
+                        ValueResolutionResult.failed;
+                case Boolean z->  classType.isAssignableFrom(Types.getBooleanType()) ?
+                        ValueResolutionResult.of(Instances.booleanInstance(z)) :
+                        ValueResolutionResult.failed;
                 case List<?> list -> tryResolveList(list, classType, currentValue, context);
                 case Map<?, ?> map -> tryResolveObject(map, classType, context);
                 case null, default -> ValueResolutionResult.failed;
