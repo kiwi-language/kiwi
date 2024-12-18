@@ -123,6 +123,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processCharSequence();
             processNumber();
             processSerializable();
+            processSwitchPatternGuard();
         });
     }
 
@@ -1211,6 +1212,14 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processSerializable() {
         var className = "primitives.SerializableFoo";
         Assert.assertEquals("1", callMethod(className, "toString", List.of(1)));
+    }
+
+    public void processSwitchPatternGuard() {
+        var className = "switch_.PatternGuardFoo";
+        Assert.assertEquals(0, callMethod(className, "test", List.of(0)));
+        Assert.assertEquals(1, callMethod(className, "test", List.of(1)));
+        Assert.assertEquals(-1, callMethod(className, "test", List.of(-1)));
+        Assert.assertEquals(-1, callMethod(className, "test", List.of("MetaVM")));
     }
 
 }

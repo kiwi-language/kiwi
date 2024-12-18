@@ -1232,22 +1232,32 @@ public class MethodGenerator {
         return new LookupSwitchNode(nextName("lookupswitch"), code().getLastNode(), code(), matches);
     }
 
-    public JumpNode processCase(PsiCaseLabelElement c, int keyVar, Type keyType) {
-        JumpNode ifNode;
-        if (c instanceof PsiTypeTestPattern typeTestPattern) {
-            var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
-            var patternVar = requireNonNull(typeTestPattern.getPatternVariable());
-            createLoad(keyVar, keyType);
-            createInstanceOf(typeResolver.resolveDeclaration(checkType));
-            ifNode = createIfEq(null);
-            createLoad(keyVar, keyType);
-            createStore(getVariableIndex(patternVar));
+    public List<JumpNode> processCase(PsiCaseLabelElement c, int keyVar, Type keyType) {
+        List<JumpNode> ifNodes;
+        if (c instanceof PsiTypeTestPattern typeTestPattern)
+            ifNodes = List.of(processTypeTesPattern(typeTestPattern, keyVar, keyType));
+        else if (c instanceof PsiPatternGuard patternGuard) {
+            ifNodes = new ArrayList<>();
+            ifNodes.add(processTypeTesPattern((PsiTypeTestPattern) patternGuard.getPattern(), keyVar, keyType));
+            expressionResolver.resolve(patternGuard.getGuardingExpression());
+            ifNodes.add(createIfEq(null));
         } else {
             createLoad(keyVar, keyType);
             expressionResolver.resolve((PsiExpression) c);
             createRefCompareEq();
-            ifNode = createIfEq(null);
+            ifNodes = List.of(createIfEq(null));
         }
+        return ifNodes;
+    }
+
+    private JumpNode processTypeTesPattern(PsiTypeTestPattern typeTestPattern, int keyVar, Type keyType) {
+        var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
+        var patternVar = requireNonNull(typeTestPattern.getPatternVariable());
+        createLoad(keyVar, keyType);
+        createInstanceOf(typeResolver.resolveDeclaration(checkType));
+        var ifNode = createIfEq(null);
+        createLoad(keyVar, keyType);
+        createStore(getVariableIndex(patternVar));
         return ifNode;
     }
 
@@ -1332,10 +1342,11 @@ public class MethodGenerator {
             var gotoNodes = new ArrayList<GotoNode>();
             int i = 0;
             for (var c : cases) {
-                var ifNode = processCase(c, keyVar, keyType);
+                var ifNodes = processCase(c, keyVar, keyType);
                 createLoadConstant(Instances.intInstance(i++));
                 gotoNodes.add(createGoto(null));
-                ifNode.setTarget(createLabel());
+                var l = createLabel();
+                ifNodes.forEach(n -> n.setTarget(l));
             }
             createLoadConstant(Instances.intInstance(-1));
             var l = createLabel();
