@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.sql.Ref;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -308,7 +309,7 @@ public class Instances {
     }
 
     public static NullValue nullInstance() {
-        return new NullValue();
+        return NullValue.instance;
     }
 
     public static BooleanValue trueInstance() {
@@ -1112,4 +1113,14 @@ public class Instances {
     public static ByteValue byteInstance(byte v) {
         return new ByteValue(v);
     }
+
+    public static Reference list(Type elementType, Iterable<Value> values) {
+        var type = KlassType.create(StdKlass.arrayList.get(), List.of(elementType));
+        var list = ClassInstance.allocate(type);
+        var nat = new ListNative(list);
+        nat.List();
+        values.forEach(nat::add);
+        return list.getReference();
+    }
+
 }

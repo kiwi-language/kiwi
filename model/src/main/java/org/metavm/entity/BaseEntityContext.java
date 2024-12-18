@@ -550,6 +550,17 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
         updateInstance(object, getInstance(object));
     }
 
+    @Override
+    public void updateEntity(Object object) {
+        getInstance(object).forEachDescendant(i -> {
+            var e = i.getMappedEntity();
+            if (e != null) {
+                var mapper = getDefContext().getMapper(i.getType());
+                mapper.updateEntityHelper(e, i, getObjectInstanceMap());
+            }
+        });
+    }
+
     private void updateInstance(Object object, Instance instance) {
 //        try(var ignored = getProfiler().enter("updateInstance")) {
         if (isModelInitialized(object) && !instance.isRemoved() && !instance.isDirectlyModified()) {

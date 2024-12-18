@@ -83,7 +83,7 @@ public class ListNative extends IterableNative {
         return List(c, callContext);
     }
 
-    public Reference iterator(CallContext callContext) {
+    public Value iterator(CallContext callContext) {
         var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getType().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
@@ -121,8 +121,9 @@ public class ListNative extends IterableNative {
         return Instances.intInstance(array.contains(value));
     }
 
-    public void clear(CallContext callContext) {
+    public Value clear(CallContext callContext) {
         clear();
+        return Instances.nullInstance();
     }
 
     public void clear() {
@@ -149,7 +150,7 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public static Reference of(Klass klass, Value values, CallContext callContext) {
+    public static Value of(Klass klass, Value values, CallContext callContext) {
         if(values instanceof Reference r) {
             var list = ClassInstance.allocate(klass.getType());
             var listNative = (ListNative) NativeMethods.getNativeObject(list);
@@ -165,12 +166,13 @@ public class ListNative extends IterableNative {
         return Instances.intInstance(array.isEmpty());
     }
 
-    public IntValue size(CallContext callContext) {
+    public Value size(CallContext callContext) {
         return Instances.intInstance(array.size());
     }
 
-    public void sort(CallContext callContext) {
+    public Value sort(CallContext callContext) {
         array.sort((e1, e2) -> Instances.compare(e1, e2, callContext));
+        return Instances.nullInstance();
     }
 
     public Value removeIf(Value filter, CallContext callContext) {
@@ -183,7 +185,7 @@ public class ListNative extends IterableNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public IntValue hashCode(CallContext callContext) {
+    public Value hashCode(CallContext callContext) {
         int h = 0;
         for (Value value : array) {
             h = 31 * h + Instances.hashCode(value, callContext);
@@ -214,15 +216,16 @@ public class ListNative extends IterableNative {
         return array;
     }
 
-    public Reference toArray(CallContext callContext) {
+    public Value toArray(CallContext callContext) {
         return array.copy().getReference();
     }
 
     @Override
-    public void forEach(Value action, CallContext callContext) {
+    public Value forEach(Value action, CallContext callContext) {
         if(action instanceof Reference r) {
             var method = r.resolveObject().getType().getMethods().get(0);
             array.forEach(e -> method.execute(r, List.of(e), callContext));
+            return Instances.nullInstance();
         }
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
@@ -236,7 +239,7 @@ public class ListNative extends IterableNative {
         array.reverse();
     }
 
-    public void sort(Value comparator, CallContext callContext) {
+    public Value sort(Value comparator, CallContext callContext) {
         if(comparator.isNull())
             sort(callContext);
         else {
@@ -244,6 +247,7 @@ public class ListNative extends IterableNative {
             var compareMethod = l.getType().getMethod(StdMethod.comparatorCompare.get());
             array.sort((e1, e2) -> Instances.toInt(Flows.invokeVirtual(compareMethod, l, List.of(e1, e2), callContext)));
         }
+        return Instances.nullInstance();
     }
 
 }

@@ -1,7 +1,6 @@
 package org.metavm.entity.natives;
 
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 
 public class RuntimeExceptionNative extends ExceptionNative {
@@ -10,15 +9,15 @@ public class RuntimeExceptionNative extends ExceptionNative {
         super(instance);
     }
 
-    public Reference RuntimeException(CallContext callContext) {
+    public Value RuntimeException(CallContext callContext) {
         return Exception(callContext);
     }
 
-    public Reference RuntimeException(Value causeOrMessage, CallContext callContext) {
+    public Value RuntimeException(Value causeOrMessage, CallContext callContext) {
         return Exception(causeOrMessage, callContext);
     }
 
-    public Reference RuntimeException(Value message, Value cause, CallContext callContext) {
+    public Value RuntimeException(Value message, Value cause, CallContext callContext) {
         return Exception(message, cause, callContext);
     }
 

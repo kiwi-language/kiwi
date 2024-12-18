@@ -12,7 +12,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@Entity(isNative = true)
+@Entity(systemAPI = true)
 public class HttpRequestImpl extends org.metavm.entity.Entity implements HttpRequest, ValueObject {
 
     private final String method;

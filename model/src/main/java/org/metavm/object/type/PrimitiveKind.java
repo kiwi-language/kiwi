@@ -2,7 +2,6 @@ package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.DefContext;
-import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.HybridValueHolder;
 import org.metavm.entity.natives.ValueHolder;
 import org.metavm.entity.natives.ValueHolderOwner;
@@ -406,7 +405,7 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             var methodType = MethodType.methodType(Value.class, paramTypes);
             var lookup = MethodHandles.lookup();
             var mh = lookup.findStatic(kind.getClass(), method.getName(), methodType);
-            method.setNativeMethodHandle(mh.asSpreader(Value[].class, paramTypes.length));
+            method.setNativeHandle(mh.asSpreader(Value[].class, paramTypes.length));
         }
         catch (Exception e) {
             throw new RuntimeException(e);

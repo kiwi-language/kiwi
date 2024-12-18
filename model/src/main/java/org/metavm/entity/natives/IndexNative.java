@@ -24,7 +24,7 @@ public class IndexNative extends NativeBase {
         this.instance = instance;
     }
 
-    public Reference Index(Value name, Value unique, Value keyComputer, CallContext callContext) {
+    public Value Index(Value name, Value unique, Value keyComputer, CallContext callContext) {
         instance.initField(StdField.indexMapName.get(), name);
         return instance.getReference();
     }

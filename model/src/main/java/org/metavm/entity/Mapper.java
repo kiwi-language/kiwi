@@ -46,6 +46,10 @@ public interface Mapper<T, I extends Instance> {
         initEntity(getEntityClass().cast(model), getInstanceClass().cast(instance), objectInstanceMap);
     }
 
+    default void updateEntityHelper(Object model, Instance instance, ObjectInstanceMap objectInstanceMap) {
+        updateEntity(getEntityClass().cast(model), getInstanceClass().cast(instance), objectInstanceMap);
+    }
+
     void initEntity(T model, I instance, ObjectInstanceMap objectInstanceMap);
 
     void updateEntity(T model, I instance, ObjectInstanceMap objectInstanceMap);

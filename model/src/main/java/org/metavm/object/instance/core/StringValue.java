@@ -65,4 +65,8 @@ public class StringValue extends PrimitiveValue {
         return visitor.visitStringValue(this);
     }
 
+    @Override
+    public String stringValue() {
+        return value;
+    }
 }

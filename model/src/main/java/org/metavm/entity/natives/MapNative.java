@@ -2,7 +2,10 @@ package org.metavm.entity.natives;
 
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.*;
+import org.metavm.object.type.ArrayType;
+import org.metavm.object.type.FieldRef;
+import org.metavm.object.type.KlassType;
+import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.NncUtils;
@@ -56,7 +59,7 @@ public class MapNative extends NativeBase {
         return instance.getReference();
     }
 
-    public Reference keySet(CallContext callContext) {
+    public Value keySet(CallContext callContext) {
         var keySetKlass = KlassType.create(StdKlass.hashSet.get(), List.of(instance.getType().getFirstTypeArgument()));
         ClassInstance keySet = ClassInstance.allocate(keySetKlass);
         var setNative = (HashSetNative) NativeMethods.getNativeObject(keySet);
@@ -100,9 +103,13 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public IntValue containsKey(Value key, CallContext callContext) {
+    public Value containsKey(Value key, CallContext callContext) {
+        return Instances.intInstance(containsKey0(key, callContext));
+    }
+
+    public boolean containsKey0(Value key, CallContext callContext) {
         checkKey(key, callContext);
-        return Instances.intInstance(map.containsKey(new HashKeyWrap(key, callContext)));
+        return map.containsKey(new HashKeyWrap(key, callContext));
     }
 
     public Value remove(Value key, CallContext callContext) {
@@ -125,7 +132,7 @@ public class MapNative extends NativeBase {
         }
     }
 
-    public IntValue size(CallContext callContext) {
+    public Value size(CallContext callContext) {
         return Instances.intInstance(size());
     }
 
@@ -133,13 +140,14 @@ public class MapNative extends NativeBase {
         return keyArray.size();
     }
 
-    public void clear(CallContext callContext) {
+    public Value clear(CallContext callContext) {
         map.clear();
         keyArray.clear();
         valueArray.clear();
+        return Instances.nullInstance();
     }
 
-    public IntValue hashCode(CallContext callContext) {
+    public Value hashCode(CallContext callContext) {
         int h = 0;
         int i = 0;
         for (Value key : keyArray) {
@@ -157,7 +165,7 @@ public class MapNative extends NativeBase {
                 if(keyArray.size() == thatNat.size()) {
                     int i = 0;
                     for (Value key : keyArray) {
-                        if(thatNat.containsKey(key, callContext).value == 0)
+                        if(!thatNat.containsKey0(key, callContext))
                             return Instances.zero();
                         if(!Instances.equals(valueArray.get(i++), thatNat.get(key, callContext), callContext))
                             return Instances.zero();

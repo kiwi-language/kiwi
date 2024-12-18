@@ -10,7 +10,6 @@ import org.metavm.mocks.Foo;
 import org.metavm.object.instance.core.ClassInstance;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -36,7 +35,7 @@ public class MvObjectIOTest extends TestCase {
                 var foo = context.bind(new Foo("foo", new Bar("bar001")));
                 context.initIds();
                 var output = new MarkingInstanceOutput();
-                var objOut = context.bind( MvObjectOutputStream.create(output, context));
+                var objOut = context.bind( MvObjectOutputStream.create(output));
                 var objOutInst = (ClassInstance) context.getInstance(objOut);
                 Flows.invoke(StdMethod.objectOutputStreamWriteObject.get().getRef(),
                         objOutInst,
@@ -49,7 +48,7 @@ public class MvObjectIOTest extends TestCase {
         });
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var input = context.getInstanceContext().createInstanceInput(new ByteArrayInputStream(ref.bytes));
-            var objInput = context.bind(new MvObjectInputStream(input, context));
+            var objInput = context.bind(new MvObjectInputStream(input));
             var objInputInst = (ClassInstance) context.getInstance(objInput);
             var readObjectMethod = StdMethod.objectInputStreamReadObject.get();
             var r = Objects.requireNonNull(Flows.invoke(readObjectMethod.getRef(), objInputInst, List.of(), context));

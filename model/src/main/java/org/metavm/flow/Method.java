@@ -8,7 +8,6 @@ import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.NativeMethods;
 import org.metavm.entity.natives.RuntimeExceptionNative;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
@@ -40,10 +39,8 @@ public class Method extends Flow implements Property {
 
     private boolean hidden;
 
-    private transient @Nullable java.lang.reflect.Method javaMethod;
     private transient String nativeName;
-    private transient volatile java.lang.reflect.Method nativeMethod;
-    private transient volatile MethodHandle nativeMethodHandle;
+    private transient volatile MethodHandle nativeHandle;
 
     public Method(Long tmpId,
                   @NotNull Klass declaringType,
@@ -165,10 +162,6 @@ public class Method extends Flow implements Property {
         return staticTypeIndex;
     }
 
-    public void setStaticType(@Nullable FunctionType staticType) {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     protected String toString0() {
         return getQualifiedSignature();
@@ -211,12 +204,8 @@ public class Method extends Flow implements Property {
                 Objects.requireNonNull(self);
             checkArguments(arguments, flowRef.getTypeMetadata());
             FlowExecResult result;
-            if (isNative()) {
-                if(javaMethod != null && self != null && self.resolveObject().getMappedEntity() != null)
-                    result = invokeNative(self.resolveObject(), arguments, callContext);
-                else
-                    result = NativeMethods.invoke(this, self, arguments, callContext);
-            }
+            if (isNative())
+                result = NativeMethods.invoke(this, self, arguments, callContext);
             else {
                 if (!isCodePresent())
                     throw new InternalException("fail to invoke method: " + getQualifiedName() + ". root scope not present");
@@ -261,30 +250,6 @@ public class Method extends Flow implements Property {
                 }
             }
             return result;
-        }
-    }
-
-    private @NotNull FlowExecResult invokeNative(Instance self, List<? extends Value> arguments, CallContext callContext) {
-        assert javaMethod != null;
-        var map = ContextUtil.getEntityContext().getObjectInstanceMap();
-        var nativeSelf = Objects.requireNonNull(self.getMappedEntity());
-        var nativeArgs = NncUtils.biMap(List.of(javaMethod.getParameterTypes()), arguments, map::getEntity);
-        try {
-            var r = ReflectionUtils.invoke(nativeSelf, javaMethod, nativeArgs.toArray());
-            if (javaMethod.getReturnType() == void.class)
-                return FlowExecResult.of(null);
-            else
-                return FlowExecResult.of(map.getInstance(r));
-        }
-        catch (Throwable e) {
-//            logger.debug("Failed to invoke native method {}", ReflectionUtils.getMethodQualifiedName(javaMethod), e);
-            var exception = ClassInstance.allocate(StdKlass.runtimeException.type());
-            var nat = new RuntimeExceptionNative(exception);
-            if(e.getMessage() != null)
-                nat.RuntimeException(Instances.stringInstance(e.getMessage()), callContext);
-            else
-                nat.RuntimeException(callContext);
-            return FlowExecResult.ofException(exception);
         }
     }
 
@@ -339,16 +304,6 @@ public class Method extends Flow implements Property {
             return false;
         var name = getName();
         return SETTER_PTN.matcher(name).matches() && getParameters().size() == 1;
-    }
-
-    @Nullable
-    public java.lang.reflect.Method getJavaMethod() {
-        return javaMethod;
-    }
-
-    public void setJavaMethod(@Nullable java.lang.reflect.Method javaMethod) {
-        NncUtils.requireTrue(isNative());
-        this.javaMethod = javaMethod;
     }
 
     @Override
@@ -444,19 +399,12 @@ public class Method extends Flow implements Property {
         return nativeName;
     }
 
-    public java.lang.reflect.Method getNativeMethod() {
-        return nativeMethod;
+    public MethodHandle getNativeHandle() {
+        return nativeHandle;
     }
 
-    public void setNativeMethod(java.lang.reflect.Method nativeMethod) {
-        this.nativeMethod = nativeMethod;
+    public void setNativeHandle(MethodHandle nativeHandle) {
+        this.nativeHandle = nativeHandle;
     }
 
-    public MethodHandle getNativeMethodHandle() {
-        return nativeMethodHandle;
-    }
-
-    public void setNativeMethodHandle(MethodHandle nativeMethodHandle) {
-        this.nativeMethodHandle = nativeMethodHandle;
-    }
 }

@@ -50,7 +50,7 @@ public class HashSetNative extends SetNative {
         return instance.getReference();
     }
 
-    public Reference iterator(CallContext callContext) {
+    public Value iterator(CallContext callContext) {
         var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getType().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
@@ -101,10 +101,11 @@ public class HashSetNative extends SetNative {
     }
 
     @Override
-    public void forEach(Value action, CallContext callContext) {
-        if(action instanceof FunctionValue functionValue)
+    public Value forEach(Value action, CallContext callContext) {
+        if(action instanceof FunctionValue functionValue) {
             array.forEach(e -> functionValue.execute(List.of(e), callContext));
-        else
+            return Instances.nullInstance();
+        } else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 

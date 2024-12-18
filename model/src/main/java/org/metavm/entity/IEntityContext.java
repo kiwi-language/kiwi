@@ -227,6 +227,8 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     void update(Object object);
 
+    void updateEntity(Object object);
+
     <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... refValues);
 
     boolean remove(Object model);

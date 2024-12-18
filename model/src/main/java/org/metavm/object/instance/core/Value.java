@@ -179,4 +179,9 @@ public abstract class Value {
     public ClosureContext getClosureContext() {
         return null;
     }
+
+    public String stringValue() {
+        throw new UnsupportedOperationException();
+    }
+
 }

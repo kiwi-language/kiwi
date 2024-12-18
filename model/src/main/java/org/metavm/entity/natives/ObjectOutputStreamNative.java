@@ -6,6 +6,7 @@ import org.metavm.flow.Method;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Types;
+import org.metavm.util.Instances;
 
 import java.util.List;
 
@@ -22,8 +23,9 @@ public class ObjectOutputStreamNative extends NativeBase {
         );
     }
 
-    public void writeObject(Value object, CallContext callContext) {
+    public Value writeObject(Value object, CallContext callContext) {
         Flows.invoke(writeObjectOverride.getRef(), instance, List.of(object), callContext);
+        return Instances.nullInstance();
     }
 
 }

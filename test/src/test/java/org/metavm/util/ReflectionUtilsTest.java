@@ -9,6 +9,7 @@ import org.metavm.object.type.Constraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -20,9 +21,12 @@ public class ReflectionUtilsTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(ReflectionUtilsTest.class);
 
+    public boolean value;
+
     @Override
     protected void setUp() throws Exception {
         MockStandardTypesInitializer.init();
+        value = false;
     }
 
     public void testEraseType() {
@@ -59,6 +63,23 @@ public class ReflectionUtilsTest extends TestCase {
         assertEquals(expectedBarType, actualBarType);
     }
 
+    public void testUnreflect() throws Throwable {
+        var method = ReflectionUtils.getDeclaredMethod(ReflectionUtilsTest.class, "setValue", List.of());
+        var mh = ReflectionUtils.unreflect(MethodHandles.lookup(), method);
+        Assert.assertNull(mh.invokeExact(new Object[] {this}));
+        Assert.assertTrue(value);
+    }
+
+    public void testGetMethodHandle() throws Throwable {
+        var mh = ReflectionUtils.getMethodHandle(MethodHandles.lookup(), ReflectionUtilsTest.class, "setValue",
+                void.class, List.of(), false);
+        mh.invokeExact(new Object[] {this});
+        Assert.assertTrue(value);
+    }
+
+    private void setValue() {
+        value = true;
+    }
 
     interface GenericInterface<V> {
 

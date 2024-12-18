@@ -26,15 +26,11 @@ public class InterfaceParser<T> extends PojoParser<T, InterfaceDef<T>> {
     }
 
     @Override
-    public void generateDeclaration() {
-        super.generateDeclaration();
-        if (isSystemAPI()) {
-            for (Method javaMethod : javaClass.getMethods()) {
-                if(Modifier.isStatic(javaMethod.getModifiers()) || javaMethod.isDefault())
-                    continue;
-                createMethod(javaMethod, false);
-            }
+    protected void declareApiMethods() {
+        for (Method javaMethod : javaClass.getMethods()) {
+            if(Modifier.isStatic(javaMethod.getModifiers()) || javaMethod.isDefault())
+                continue;
+            createMethod(javaMethod, false);
         }
     }
-
 }

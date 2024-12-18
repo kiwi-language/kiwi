@@ -12,6 +12,8 @@ import javax.annotation.Nullable;
 
 public class NullValue extends Value {
 
+    public static final NullValue instance = new NullValue();
+
     public NullValue() {
     }
 

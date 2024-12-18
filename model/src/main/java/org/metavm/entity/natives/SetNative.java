@@ -31,7 +31,7 @@ public abstract class SetNative extends IterableNative {
         return Instances.zero();
     }
 
-    public IntValue hashCode(CallContext callContext) {
+    public Value hashCode(CallContext callContext) {
         int h = 0;
         for (Value value : this) {
             h = h + Instances.hashCode(value, callContext);

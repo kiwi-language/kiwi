@@ -1,17 +1,30 @@
 package org.metavm.entity;
 
 import org.metavm.api.Index;
+import org.metavm.api.entity.HttpCookie;
+import org.metavm.api.entity.HttpHeader;
 import org.metavm.entity.natives.HybridValueHolder;
 import org.metavm.entity.natives.ValueHolder;
 import org.metavm.entity.natives.ValueHolderOwner;
+import org.metavm.http.HttpRequestImpl;
+import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.type.Field;
 
 public enum StdField implements ValueHolderOwner<Field> {
 
     enumName(Enum.class, "name"),
     enumOrdinal(Enum.class, "ordinal"),
-    indexMapName(Index.class, "name")
-
+    indexMapName(Index.class, "name"),
+    httpRequestImplMethod(HttpRequestImpl.class, "method"),
+    httpRequestImplRequestURI(HttpRequestImpl.class, "requestURI"),
+    httpRequestImplCookies(HttpRequestImpl.class, "cookies"),
+    httpRequestImplHeaders(HttpRequestImpl.class, "headers"),
+    httpResponseImplCookies(HttpResponseImpl.class, "cookies"),
+    httpResponseImplHeaders(HttpResponseImpl.class, "headers"),
+    httpCookieName(HttpCookie.class, "name"),
+    httpCookieValue(HttpCookie.class, "value"),
+    httpHeaderName(HttpHeader.class, "name"),
+    httpHeaderValue(HttpHeader.class, "value"),
     ;
 
     private final Class<?> javaClass;

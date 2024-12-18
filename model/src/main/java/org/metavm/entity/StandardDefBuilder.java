@@ -2,6 +2,7 @@ package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.ChildList;
+import org.metavm.api.Index;
 import org.metavm.api.ValueList;
 import org.metavm.api.entity.MvObject;
 import org.metavm.entity.natives.StandardStaticMethods;
@@ -204,7 +205,8 @@ public class StandardDefBuilder {
         parseKlass(InputStream.class);
         parseKlass(OutputStream.class);
         parseKlass(Number.class);
-
+        var indexKlass = parseKlass(Index.class);
+        FieldBuilder.newBuilder("name", indexKlass, Types.getStringType()).build();
         primTypeFactory.saveDefs(defContext);
     }
 

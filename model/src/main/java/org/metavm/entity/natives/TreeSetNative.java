@@ -55,7 +55,7 @@ public class TreeSetNative extends SetNative {
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public Reference iterator(CallContext callContext) {
+    public Value iterator(CallContext callContext) {
         var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getType().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
@@ -99,15 +99,17 @@ public class TreeSetNative extends SetNative {
         return set.contains(new ComparableKeyWrap(value, callContext));
     }
 
-    public void clear(CallContext callContext) {
+    public Value clear(CallContext callContext) {
         set.clear();
+        return Instances.nullInstance();
     }
 
     @Override
-    public void forEach(Value action, CallContext callContext) {
-        if(action instanceof FunctionValue functionValue)
+    public Value forEach(Value action, CallContext callContext) {
+        if(action instanceof FunctionValue functionValue) {
             array.forEach(e -> functionValue.execute(List.of(e), callContext));
-        else
+            return Instances.nullInstance();
+        } else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 

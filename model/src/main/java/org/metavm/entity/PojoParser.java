@@ -1,9 +1,9 @@
 package org.metavm.entity;
 
 import org.metavm.api.ChildEntity;
+import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
 import org.metavm.api.EntityFlow;
-import org.metavm.api.Entity;
 import org.metavm.expression.ExpressionParser;
 import org.metavm.expression.TypeParsingContext;
 import org.metavm.flow.ExpressionValue;
@@ -13,16 +13,16 @@ import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.*;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
+import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.*;
 import java.util.List;
 
 import static org.metavm.object.type.ResolutionStage.*;
@@ -129,20 +129,8 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 parseField(f, def);
         });
         getIndexDefFields().forEach(f -> parseUniqueConstraint(f, def));
-        if(isNativeClass()) {
-            for (Constructor<?> javaMethod : javaClass.getDeclaredConstructors()) {
-                if((Modifier.isPublic(javaMethod.getModifiers()) || Modifier.isProtected(javaMethod.getModifiers()))
-                        && javaMethod.isAnnotationPresent(EntityFlow.class)) {
-                    createConstructor(javaMethod, true);
-                }
-            }
-            for (Method javaMethod : javaClass.getDeclaredMethods()) {
-                if((Modifier.isPublic(javaMethod.getModifiers()) || Modifier.isProtected(javaMethod.getModifiers()))
-                        && !Modifier.isStatic(javaMethod.getModifiers())) {
-                    createMethod(javaMethod, true);
-                }
-            }
-        }
+        if (isSystemAPI())
+            declareApiMethods();
 //        saveBuiltinMapping(false);
         klass.setStage(DECLARATION);
         NncUtils.biForEach(
@@ -150,6 +138,21 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 klass.getTypeParameters(),
                 (javaTypeVar, typeVar) -> typeVar.setBounds(NncUtils.map(javaTypeVar.getBounds(), defContext::getType))
         );
+    }
+
+    protected void declareApiMethods() {
+        for (Constructor<?> javaMethod : javaClass.getDeclaredConstructors()) {
+            if ((Modifier.isPublic(javaMethod.getModifiers()) || Modifier.isProtected(javaMethod.getModifiers()))
+                    && javaMethod.isAnnotationPresent(EntityFlow.class)) {
+                createConstructor(javaMethod, true);
+            }
+        }
+        for (Method javaMethod : javaClass.getDeclaredMethods()) {
+            if ((Modifier.isPublic(javaMethod.getModifiers()) || Modifier.isProtected(javaMethod.getModifiers()))
+                    && !Modifier.isStatic(javaMethod.getModifiers()) && !javaMethod.isSynthetic()) {
+                createMethod(javaMethod, true);
+            }
+        }
     }
 
     @Override
@@ -161,11 +164,6 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
 //        saveBuiltinMapping(true);
         klass.emitCode();
         klass.setStage(DEFINITION);
-    }
-
-    protected boolean isNativeClass() {
-        var annotation = javaClass.getAnnotation(Entity.class);
-        return annotation != null && annotation.isNative();
     }
 
     protected abstract D createDef(PojoDef<? super T> superDef);
@@ -276,7 +274,7 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
     }
 
     private Access parseAccess(int modifiers) {
-        if (isSystemAPI() || isNativeClass()) {
+        if (isSystemAPI()) {
             if (Modifier.isPublic(modifiers))
                 return Access.PUBLIC;
             if (Modifier.isProtected(modifiers))
@@ -369,8 +367,6 @@ public abstract class PojoParser<T, D extends PojoDef<T>> extends DefParser<T, D
                 .isNative(isNative)
                 .parameters(NncUtils.map(javaMethod.getParameters(), this::createParameter))
                 .build();
-        if(isNative)
-            method.setJavaMethod(javaMethod);
         NncUtils.biForEach(
                 List.of(javaMethod.getTypeParameters()),
                 method.getTypeParameters(),

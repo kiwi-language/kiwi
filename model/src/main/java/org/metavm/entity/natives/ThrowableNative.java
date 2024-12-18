@@ -1,6 +1,9 @@
 package org.metavm.entity.natives;
 
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.NullValue;
+import org.metavm.object.instance.core.StringValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Field;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -17,24 +20,24 @@ public class ThrowableNative extends NativeBase {
         causeField = instance.getKlass().getFieldByName("cause");
     }
 
-    public Reference Throwable(CallContext callContext) {
+    public Value Throwable(CallContext callContext) {
         return Throwable(Instances.nullInstance(), Instances.nullInstance(), callContext);
     }
 
-    public Reference Throwable(Value causeOrMessage, CallContext callContext) {
+    public Value Throwable(Value causeOrMessage, CallContext callContext) {
         if(causeOrMessage instanceof NullValue nullInstance) {
             return Throwable(nullInstance, nullInstance, callContext);
         }
         else if(causeOrMessage instanceof StringValue message) {
             return Throwable(message, Instances.nullInstance(), callContext);
         }
-        else if(causeOrMessage instanceof Reference cause) {
+        else if(causeOrMessage instanceof Value cause) {
             return Throwable(Instances.nullInstance(), cause, callContext);
         }
         throw new InternalException("Invalid argument: " + causeOrMessage);
     }
 
-    public Reference Throwable(Value message, Value cause, CallContext callContext) {
+    public Value Throwable(Value message, Value cause, CallContext callContext) {
         instance.initField(messageField, message);
         instance.initField(causeField, cause);
         return instance.getReference();

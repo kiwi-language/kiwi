@@ -10,7 +10,7 @@ import org.metavm.entity.ReadWriteArray;
 import javax.annotation.Nonnull;
 import java.util.List;
 
-@Entity(ephemeral = true, isNative = true)
+@Entity(ephemeral = true, systemAPI = true)
 public class HttpResponseImpl extends org.metavm.entity.Entity implements HttpResponse {
 
     @ChildEntity

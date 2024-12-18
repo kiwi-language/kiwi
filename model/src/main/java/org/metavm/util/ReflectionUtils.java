@@ -6,6 +6,9 @@ import org.jetbrains.annotations.Nullable;
 import sun.misc.Unsafe;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -388,6 +391,44 @@ public class ReflectionUtils {
             return Modifier.isStatic(method.getModifiers()) ? method : null;
         } catch (NoSuchMethodException e) {
             return null;
+        }
+    }
+
+    public static MethodHandle unreflect(MethodHandles.Lookup lookup, Method method) {
+        try {
+            var mh = lookup.unreflect(method);
+            var paramCnt = method.getParameterCount();
+            mh = mh.asSpreader(
+                    Object[].class,
+                    Modifier.isStatic(method.getModifiers()) ? paramCnt : paramCnt + 1
+            );
+            if (method.getReturnType() != Object.class) {
+                var adaptType = MethodType.methodType(Object.class, mh.type().parameterArray());
+                if (method.getReturnType() == void.class) {
+                    var adapter = MethodHandles.dropArguments(
+                            MethodHandles.constant(Object.class, null),
+                    0, Object[].class);
+                    mh = MethodHandles.foldArguments(adapter, mh);
+                } else
+                    mh = mh.asType(adaptType);
+            }
+            return mh;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to unreflect method " + method, e);
+        }
+    }
+
+    public static MethodHandle getMethodHandle(MethodHandles.Lookup lookup,
+                                               Class<?> klass,
+                                               String name,
+                                               Class<?> returnClass, List<Class<?>> parameterClasses,
+                                               boolean static_) {
+        try {
+            var mt = MethodType.methodType(returnClass, parameterClasses.toArray(Class[]::new));
+            var mh = static_ ? lookup.findStatic(klass, name, mt) : lookup.findVirtual(klass, name, mt);
+            return mh.asSpreader(Object[].class, static_ ? parameterClasses.size() : parameterClasses.size() + 1);
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 

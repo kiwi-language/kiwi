@@ -35,22 +35,19 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
     }
 
     @Override
-    public void generateDeclaration() {
-        super.generateDeclaration();
-        if (isSystemAPI()) {
-            MethodBuilder.newBuilder(get().getKlass(), javaClass.getSimpleName())
-                    .isConstructor(true)
-                    .parameters(NncUtils.map(
-                            javaClass.getRecordComponents(),
-                            c -> new NameAndType(c.getName(), defContext.getType(c.getGenericType()))
-                    ))
-                    .returnType(get().getType())
+    protected void declareApiMethods() {
+        MethodBuilder.newBuilder(get().getKlass(), javaClass.getSimpleName())
+                .isConstructor(true)
+                .parameters(NncUtils.map(
+                        javaClass.getRecordComponents(),
+                        c -> new NameAndType(c.getName(), defContext.getType(c.getGenericType()))
+                ))
+                .returnType(get().getType())
+                .build();
+        for (RecordComponent recordComponent : javaClass.getRecordComponents()) {
+            MethodBuilder.newBuilder(get().getKlass(), recordComponent.getName())
+                    .returnType(defContext.getType(recordComponent.getGenericType()))
                     .build();
-            for (RecordComponent recordComponent : javaClass.getRecordComponents()) {
-                MethodBuilder.newBuilder(get().getKlass(), recordComponent.getName())
-                        .returnType(defContext.getType(recordComponent.getGenericType()))
-                        .build();
-            }
         }
     }
 

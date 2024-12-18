@@ -4,18 +4,15 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Function;
 
-@Entity(systemAPI = true, isNative = true)
 public class Index<K, V> {
 
     private static Object value;
     private final String name;
 
-    @EntityFlow
     public Index(boolean unique, Function<V, K> keyComputer) {
         this("<unknown>", unique, keyComputer);
     }
 
-    @EntityFlow
     public Index(String name, boolean unique, Function<V, K> keyComputer) {
         this.name = name;
     }

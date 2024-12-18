@@ -1,7 +1,6 @@
 package org.metavm.entity.natives;
 
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 
 public class IllegalArgumentExceptionNative extends RuntimeExceptionNative {
@@ -10,15 +9,15 @@ public class IllegalArgumentExceptionNative extends RuntimeExceptionNative {
         super(instance);
     }
 
-    public Reference IllegalArgumentException(CallContext callContext) {
+    public Value IllegalArgumentException(CallContext callContext) {
         return RuntimeException(callContext);
     }
 
-    public Reference IllegalArgumentException(Value causeOrMessage, CallContext callContext) {
+    public Value IllegalArgumentException(Value causeOrMessage, CallContext callContext) {
         return RuntimeException(causeOrMessage, callContext);
     }
 
-    public Reference IllegalArgumentException(Value message, Value cause, CallContext callContext) {
+    public Value IllegalArgumentException(Value message, Value cause, CallContext callContext) {
         return RuntimeException(message, cause, callContext);
     }
 

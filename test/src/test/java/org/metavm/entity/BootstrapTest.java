@@ -78,7 +78,6 @@ public class BootstrapTest extends TestCase {
                 var method = klass.findMethodByName(javaMethod.getName());
                 Assert.assertNotNull("Method " + javaMethod.getName() + " does not exist", method);
                 Assert.assertTrue(method.isNative());
-                Assert.assertEquals(javaMethod, method.getJavaMethod());
             }
         }
     }

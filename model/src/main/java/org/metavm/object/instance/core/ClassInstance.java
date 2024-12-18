@@ -278,7 +278,7 @@ public class ClassInstance extends Instance {
         markingOutput.setCurrent(this);
         markingOutput.setCurrentKlassSlot(subTable);
         var ctx = ContextUtil.getEntityContext();
-        var s = ctx.bind(MvObjectOutputStream.create(markingOutput, ctx));
+        var s = ctx.bind(MvObjectOutputStream.create(markingOutput));
         var si = ctx.getInstance(s);
         Flows.invoke(
                 writeObjectMethod,
@@ -409,7 +409,7 @@ public class ClassInstance extends Instance {
             MarkingInstanceOutput.Block.read(input);
         }
         var ctx = ContextUtil.getEntityContext();
-        var s = MvObjectInputStream.create(input, ctx);
+        var s = MvObjectInputStream.create(input);
         ctx.bind(s);
         var si = ctx.getInstance(s);
         Flows.invoke(

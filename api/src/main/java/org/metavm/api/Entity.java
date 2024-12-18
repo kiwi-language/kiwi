@@ -19,8 +19,6 @@ public @interface Entity {
 
     boolean systemAPI() default false;
 
-    boolean isNative() default false;
-
     boolean searchable() default false;
 
     int tag() default -1;

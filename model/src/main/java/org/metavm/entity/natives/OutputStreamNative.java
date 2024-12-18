@@ -7,6 +7,7 @@ import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.LongValue;
 import org.metavm.object.instance.core.Value;
+import org.metavm.util.Instances;
 
 import java.util.List;
 
@@ -19,16 +20,18 @@ public class OutputStreamNative extends NativeBase {
         this.instance = instance;
     }
 
-    public void write(Value b, Value off, Value len, CallContext callContext) {
+    public Value write(Value b, Value off, Value len, CallContext callContext) {
         write0(b.resolveArray(),
                 ((LongValue) off).getValue().intValue(),
                 ((LongValue) len).getValue().intValue(),
                 callContext);
+        return Instances.nullInstance();
     }
 
-    public void write(Value b, CallContext callContext) {
+    public Value write(Value b, CallContext callContext) {
         var buf = b.resolveArray();
         write0(buf, 0, buf.length(), callContext);
+        return Instances.nullInstance();
     }
 
     private void write0(ArrayInstance buf, int o, int l, CallContext callContext) {

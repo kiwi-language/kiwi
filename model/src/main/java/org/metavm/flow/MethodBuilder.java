@@ -153,7 +153,6 @@ public class MethodBuilder {
             existing.setName(name);
             existing.setReturnType(returnType);
             existing.setTypeParameters(typeParameters);
-            existing.setStaticType(staticType);
             existing.setParameters(NncUtils.map(parameters, p -> new Parameter(null, p.name(), p.type(), method)));
             if (state != null)
                 existing.setState(state);

@@ -78,11 +78,11 @@ public class StringBuilderNative extends NativeBase {
         return Instances.intInstance(array.isEmpty());
     }
 
-    public IntValue length(CallContext callContext) {
+    public Value length(CallContext callContext) {
         return Instances.intInstance(array.length());
     }
 
-    public StringValue toString(CallContext callContext) {
+    public Value toString(CallContext callContext) {
         var sb = new StringBuilder();
         array.forEach(v -> sb.append(Instances.toString(v, callContext)));
         return Instances.stringInstance(sb.toString());

@@ -3,6 +3,7 @@ package org.metavm.entity;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.*;
 import org.metavm.api.entity.HttpCookie;
+import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.entity.natives.*;
@@ -13,6 +14,8 @@ import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.util.DummyAny;
 import org.metavm.util.IteratorImpl;
+import org.metavm.util.MvObjectInputStream;
+import org.metavm.util.MvObjectOutputStream;
 
 import javax.annotation.Nullable;
 import java.io.ObjectInputStream;
@@ -46,9 +49,10 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     interceptor(Interceptor.class),
     httpRequest(HttpRequest.class),
     httpResponse(HttpResponse.class),
-    httpRequestImpl(HttpRequestImpl.class),
-    httpResponseImpl(HttpResponseImpl.class),
+    httpRequestImpl(HttpRequestImpl.class, false, HttpRequestImplNative.class),
+    httpResponseImpl(HttpResponseImpl.class, false, HttpResponseImplNative.class),
     httpCookie(HttpCookie.class),
+    httpHeader(HttpHeader.class),
     throwable(Throwable.class),
     exception(Exception.class, false, ExceptionNative.class),
     nullPointerException(NullPointerException.class, false, NullPointerExceptionNative.class),
@@ -72,7 +76,9 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     objectInputStream(ObjectInputStream.class, false, ObjectInputStreamNative.class),
     index(Index.class, false, IndexNative.class),
     charSequence(CharSequence.class),
-    number(Number.class)
+    number(Number.class),
+    mvObjectOutputStream(MvObjectOutputStream.class, false, MvObjectOutputStreamNative.class),
+    mvObjectInputStream(MvObjectInputStream .class, false, MvObjectInputStreamNative.class),
     ;
 
     private final Class<?> javaClass;

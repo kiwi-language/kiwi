@@ -78,6 +78,7 @@ public class ApiService extends EntityContextFactoryAware {
                     result = execute(r.method, null, r.arguments, request, response, context);
                 }
             }
+            context.updateEntity(response);
             context.finish();
             return formatInstance(result, false);
         }
@@ -197,6 +198,7 @@ public class ApiService extends EntityContextFactoryAware {
                 } else
                     return null;
             }, request, response, type, context);
+            context.updateEntity(response);
             if (inst != null) {
                 context.finish();
                 return inst.getStringId();
