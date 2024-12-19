@@ -11,6 +11,4 @@ public @interface EnumConstant {
 
     String value() default "";
 
-    int ordinal();
-
 }

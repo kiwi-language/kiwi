@@ -1,10 +1,7 @@
 package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.DummyGenericDeclaration;
-import org.metavm.entity.Element;
-import org.metavm.entity.EntityRepository;
-import org.metavm.entity.GenericDeclaration;
+import org.metavm.entity.*;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.*;
@@ -207,26 +204,6 @@ public class KlassInput extends MvInput {
             repository.bind(indexField);
         }
         return indexField;
-    }
-
-    public EnumConstantDef readEnumConstantDef() {
-        var ecd = getEnumConstantDef(readId());
-        ecd.setKlass((Klass) currentElement());
-        enterElement(ecd);
-        ecd.read(this);
-        exitElement();
-        return ecd;
-    }
-
-    @Override
-    public EnumConstantDef getEnumConstantDef(Id id) {
-        var ecd = repository.getEntity(EnumConstantDef.class, id);
-        if (ecd == null) {
-            ecd = new EnumConstantDef(KLASS, UNNAMED, 0, DummyMethod.INSTANCE);
-            ecd.setTmpId(id.tmpId());
-            repository.bind(ecd);
-        }
-        return ecd;
     }
 
     public Column readColumn() {

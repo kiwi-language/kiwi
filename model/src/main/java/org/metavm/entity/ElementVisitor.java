@@ -2,7 +2,6 @@ package org.metavm.entity;
 
 import org.metavm.expression.*;
 import org.metavm.flow.*;
-import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
 
 public abstract class ElementVisitor<R> {
@@ -333,10 +332,6 @@ public abstract class ElementVisitor<R> {
 
     public R visitLambdaRef(LambdaRef lambdaRef) {
         return visitElement(lambdaRef);
-    }
-
-    public R visitEnumConstantDef(EnumConstantDef enumConstantDef) {
-        return visitElement(enumConstantDef);
     }
 
     public R visitTargetNode(TargetNode targetNode) {

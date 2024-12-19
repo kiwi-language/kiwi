@@ -55,7 +55,7 @@ public class TypeManagerTest extends TestCase {
             var productKlass = context.getKlass(typeIds.productTypeId());
             Assert.assertEquals(2, productKlass.getFields().size());
             var couponStateKlass = context.getKlass(typeIds.couponStateTypeId());
-            Assert.assertEquals(2, couponStateKlass.getEnumConstantDefs().size());
+            Assert.assertEquals(2, couponStateKlass.getEnumConstants().size());
         }
     }
 

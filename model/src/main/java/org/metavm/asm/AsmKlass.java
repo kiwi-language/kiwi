@@ -22,7 +22,6 @@ final class AsmKlass implements AsmScope, AsmGenericDeclaration {
     final Set<Method> visitedMethods = new HashSet<>();
     final Set<Field> visitedFields = new HashSet<>();
     final Set<Index> visitedIndices = new HashSet<>();
-    private final Set<EnumConstantDef> visitEnumConstantDefs = new HashSet<>();
 
     AsmKlass(
             @Nullable AsmScope parent,

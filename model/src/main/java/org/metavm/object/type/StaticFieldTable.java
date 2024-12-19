@@ -90,15 +90,15 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
 
     public boolean isEnumConstant(Reference reference) {
         assert klass.isEnum();
-        for (EnumConstantDef ecd : klass.getEnumConstantDefs()) {
-            if(reference.equals(get(ecd.getField())))
+        for (var ec : klass.getEnumConstants()) {
+            if(reference.equals(get(ec)))
                 return true;
         }
         return false;
     }
 
     public List<ClassInstance> getEnumConstants() {
-        return NncUtils.map(klass.getEnumConstantDefs(), ecd -> get(ecd.getField()).resolveObject());
+        return NncUtils.map(klass.getEnumConstants(), ec -> get(ec).resolveObject());
     }
 
     public void remove(Field field) {
@@ -107,8 +107,8 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
 
     public EnumConstantRT getEnumConstant(Id id) {
         assert klass.isEnum();
-        for (EnumConstantDef ecd : klass.getEnumConstantDefs()) {
-            var ref = (Reference) get(ecd.getField());
+        for (var ec : klass.getEnumConstants()) {
+            var ref = (Reference) get(ec);
             if(id.equals(ref.tryGetId()))
                 return createEnumConstant(ref.resolveObject());
         }
@@ -116,8 +116,8 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     }
 
     public ClassInstance getEnumConstantByName(String name) {
-        var ecd = NncUtils.findRequired(klass.getEnumConstantDefs(), e -> e.getName().equals(name));
-        return get(ecd.getField()).resolveObject();
+        var ec = NncUtils.findRequired(klass.getEnumConstants(), e -> e.getName().equals(name));
+        return get(ec).resolveObject();
     }
 
     private EnumConstantRT createEnumConstant(ClassInstance instance) {

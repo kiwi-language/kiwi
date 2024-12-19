@@ -285,11 +285,6 @@ public class InstanceInput extends MvInput {
         return (IndexField) typeDefProvider.getTypeDef(id);
     }
 
-    @Override
-    public EnumConstantDef getEnumConstantDef(Id id) {
-        return (EnumConstantDef) typeDefProvider.getTypeDef(id);
-    }
-
     public void setParent(@Nullable Instance parent) {
         this.parent = parent;
     }

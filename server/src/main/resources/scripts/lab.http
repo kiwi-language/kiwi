@@ -1160,3 +1160,21 @@ Content-Type: application/json
 {
   "price": 100
 }
+
+###
+POST http://localhost:8080/api/shopping/product-status/from-code
+X-App-ID: 1000000025
+Content-Type: application/json
+
+{
+  "code": 1
+}
+
+###
+POST http://localhost:8080/api/shopping/product-status/get-display-name
+X-App-ID: 1000000025
+Content-Type: application/json
+
+{
+  "code": 1
+}

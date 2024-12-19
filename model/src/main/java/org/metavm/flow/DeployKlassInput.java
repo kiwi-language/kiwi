@@ -5,6 +5,9 @@ import org.metavm.object.type.*;
 import org.metavm.util.Constants;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -20,6 +23,10 @@ public class DeployKlassInput extends KlassInput {
     @Override
     public Klass readKlass() {
         var klass = getKlass(readId());
+        var context = batch.getContext();
+        List<Field> prevEnumConstants = klass.isEnum() && !context.isNewEntity(klass) ?
+                new ArrayList<>(klass.getEnumConstants()) :
+                List.of();
         setKlassParent(klass);
         var oldKind = klass.getKind();
         var oldSuperType = klass.getSuperType();
@@ -27,7 +34,6 @@ public class DeployKlassInput extends KlassInput {
         enterElement(klass);
         klass.read(this);
         exitElement();
-        var context = batch.getContext();
         batch.addKlass(klass);
         var newKind = klass.getKind();
         if(context.isNewEntity(klass)) {
@@ -50,6 +56,13 @@ public class DeployKlassInput extends KlassInput {
                 batch.addChangingSuperKlass(klass);
             if (klass.isSearchable() && !oldSearchable)
                 batch.addSearchEnabledKlass(klass);
+            if (klass.isEnum()) {
+                var enumConstantSet = new HashSet<>(klass.getEnumConstants());
+                for (var prevEnumConstant : prevEnumConstants) {
+                    if (!enumConstantSet.contains(prevEnumConstant))
+                        batch.addRemovedEnumConstant(prevEnumConstant);
+                }
+            }
         }
         context.update(klass);
         return klass;
@@ -60,9 +73,11 @@ public class DeployKlassInput extends KlassInput {
         var field = getField(readId());
         var declaringType = (Klass) currentElement();
         field.setDeclaringType(declaringType);
-        var oldType = field.getType();
-        var oldState = field.getState();
-        var oldChild = field.isChild();
+        var prevType = field.getType();
+        var prevState = field.getState();
+        var prevIsChild = field.isChild();
+        var prevName = field.getName();
+        var prevOrdinal = field.getOrdinal();
         enterElement(field);
         field.read(this);
         exitElement();
@@ -75,13 +90,15 @@ public class DeployKlassInput extends KlassInput {
                 batch.addNewStaticField(field);
             else if (!context.isNewEntity(declaringType))
                 batch.addNewField(field);
+            if (field.isEnumConstant())
+                batch.addNewEnumConstant(field);
         } else {
-            if(!field.isStatic() && !field.getType().isAssignableFrom(oldType)) {
+            if(!field.isStatic() && !field.getType().isAssignableFrom(prevType)) {
                 batch.addTypeChangedField(field);
                 field.setTag(field.getDeclaringType().nextFieldTag());
             }
-            if(oldState != field.getState()) {
-                if(oldState == MetadataState.REMOVED) {
+            if(prevState != field.getState()) {
+                if(prevState == MetadataState.REMOVED) {
                     if (field.isStatic())
                         batch.addNewStaticField(field);
                     else
@@ -90,31 +107,16 @@ public class DeployKlassInput extends KlassInput {
                 if(field.getState() == MetadataState.REMOVED && field.isChild())
                     batch.addRemovedChildField(field);
             }
-            if(oldChild != field.isChild()) {
+            if(prevIsChild != field.isChild()) {
                 if(field.isChild())
                     batch.addToChildField(field);
                 else
                     batch.addToNonChildField(field);
             }
+            if (field.isEnumConstant() && (!prevName.equals(field.getName()) || prevOrdinal != field.getOrdinal()))
+                batch.addModifiedEnumConstant(field);
         }
         return field;
-    }
-
-    @Override
-    public EnumConstantDef readEnumConstantDef() {
-        var ecd = getEnumConstantDef(readId());
-        ecd.setKlass((Klass) currentElement());
-        var oldName = ecd.getName();
-        var oldOrdinal = ecd.getOrdinal();
-        enterElement(ecd);
-        ecd.read(this);
-        exitElement();
-        var context = batch.getContext();
-        if(context.isNewEntity(ecd))
-            batch.addNewEnumConstantDef(ecd);
-        else if(!ecd.getName().equals(oldName) || ecd.getOrdinal() != oldOrdinal)
-            batch.addChangedEnumConstantDef(ecd);
-        return ecd;
     }
 
     @Override

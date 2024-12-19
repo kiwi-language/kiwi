@@ -188,6 +188,9 @@ public class TypeManager extends EntityContextFactoryAware {
                         var field = klass.findFieldByName(fieldName);
                         if(field != null)
                             return field.getSourceTag();
+                        var staticField = klass.findStaticFieldByName(fieldName);
+                        if (staticField != null)
+                            return staticField.getSourceTag();
                     }
                 }
             }

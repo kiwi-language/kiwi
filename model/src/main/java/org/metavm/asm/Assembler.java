@@ -10,7 +10,6 @@ import org.metavm.asm.antlr.AssemblyParserBaseVisitor;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.flow.*;
-import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.util.LinkedList;
@@ -528,28 +527,28 @@ public class Assembler {
             var klass = classInfo.getKlass();
             var name = ctx.IDENTIFIER().getText();
             var field = klass.findStaticField(f -> f.getName().equals(name));
+            var ordinal = classInfo.nextEnumConstantOrdinal();
             if (field == null) {
                 field = FieldBuilder.newBuilder(name, klass, klass.getType())
                         .tmpId(NncUtils.randomNonNegative())
                         .isStatic(true)
+                        .isEnumConstant(true)
+                        .ordinal(ordinal)
+                        .initializer(MethodBuilder.newBuilder(klass, "__init_" + name + "__")
+                                .isStatic(true)
+                                .returnType(klass.getType())
+                                .build()
+                        )
                         .build();
-                var initializer = MethodBuilder.newBuilder(klass, "__init_" + name + "__")
-                        .isStatic(true)
-                        .returnType(klass.getType())
-                        .build();
-                field.setInitializer(initializer);
             }
-            else
+            else {
                 field.resetTypeIndex();
+                field.setOrdinal(ordinal);
+            }
             classInfo.visitedFields.add(field);
-            var enumConstantDef = klass.findEnumConstantDef(ec -> ec.getName().equals(name));
-            if(enumConstantDef == null) {
-                enumConstantDef = new EnumConstantDef(klass, name, classInfo.nextEnumConstantOrdinal(), null);
-            } else
-                enumConstantDef.setOrdinal(classInfo.nextEnumConstantOrdinal());
             classInfo.visitedMethods.add(field.getInitializer());
             setAttribute(ctx, AsmAttributeKey.field, field);
-            setAttribute(ctx, AsmAttributeKey.enumConstantDef, enumConstantDef);
+            setAttribute(ctx, AsmAttributeKey.enumConstant, field);
             return super.visitEnumConstant(ctx);
         }
 
@@ -909,15 +908,15 @@ public class Assembler {
             var classInfo = (AsmKlass) scope;
             var klass = classInfo.getKlass();
             var name = ctx.IDENTIFIER().getText();
-            var enumConstantDef = Objects.requireNonNull(klass.findEnumConstantDef(ec -> ec.getName().equals(name)));
+            var enumConstant = Objects.requireNonNull(klass.findStaticFieldByName(name));
             List<AssemblyParser.ExpressionContext> argCtx =
                     ctx.arguments() != null ? ctx.arguments().expressionList().expression() : List.of();
-            var initializer = Objects.requireNonNull(enumConstantDef.getField().getInitializer());
+            var initializer = Objects.requireNonNull(enumConstant.getInitializer());
             initializer.clearContent();
             enterScope(new AsmMethod(classInfo, initializer));
             var code = initializer.getCode();
             Nodes.loadConstant(Instances.stringInstance(name), code);
-            Nodes.loadConstant(Instances.intInstance(enumConstantDef.getOrdinal()), code);
+            Nodes.loadConstant(Instances.intInstance(enumConstant.getOrdinal()), code);
             var types = NncUtils.merge(
                     List.of(Types.getStringType(), Types.getIntType()),
                     NncUtils.map(argCtx, this::parseExpression)
@@ -1204,7 +1203,7 @@ public class Assembler {
 
         public static final AsmAttributeKey<AsmCompilationUnit> compilationUnit = new AsmAttributeKey<>("compilationUnit", AsmCompilationUnit.class);
 
-        public static final AsmAttributeKey<EnumConstantDef> enumConstantDef = new AsmAttributeKey<>("enumConstantDef", EnumConstantDef.class);
+        public static final AsmAttributeKey<Field> enumConstant = new AsmAttributeKey<>("enumConstant", Field.class);
 
         T cast(Object value) {
             return klass.cast(value);

@@ -104,6 +104,12 @@ public class Declarator extends VisitorBase {
             fieldIndices.put(psiClass.getFields()[i].getName(), i);
         }
         klass.sortFields(Comparator.comparingInt(f -> fieldIndices.getOrDefault(f.getName(), Integer.MAX_VALUE)));
+        if (klass.isEnum()) {
+            int ordinal = 0;
+            for (Field ec : klass.getEnumConstants()) {
+                ec.setOrdinal(ordinal++);
+            }
+        }
         var methodIndices = new HashMap<Method, Integer>();
         for (int i = 0; i < psiClass.getMethods().length; i++) {
             var method = psiClass.getMethods()[i].getUserData(Keys.Method);
@@ -112,9 +118,6 @@ public class Declarator extends VisitorBase {
         }
         klass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, -1)));
         NncUtils.exclude(klass.getMethods(), classInfo.visitedMethods::contains).forEach(klass::removeMethod);
-        NncUtils.exclude(klass.getEnumConstantDefs(), classInfo.visitedEnumConstantDefs::contains)
-                .forEach(klass::removeEnumConstantDef);
-        klass.sortEnumConstantDefs();
         for (PsiField psiField : psiClass.getFields()) {
             var initializer = psiField.getUserData(Keys.INITIALIZER);
             if (initializer != null) {
@@ -266,20 +269,7 @@ public class Declarator extends VisitorBase {
         else
             field.setState(MetadataState.READY);
         psiField.putUserData(Keys.FIELD, field);
-        if (TranspileUtils.isEnumConstant(psiField)) {
-            var ordinal = TranspileUtils.getOrdinal(psiField);
-            var ecd = klass.findEnumConstantDef(e -> e.getName().equals(psiField.getName()));
-            if(ecd == null) {
-                var name = psiField.getName();
-                var initializer = MethodBuilder.newBuilder(klass, "$" + name)
-                        .isStatic(true)
-                        .returnType(klass.getType())
-                        .build();
-                ecd = new EnumConstantDef(klass, name, ordinal, initializer);
-            } else
-                ecd.setOrdinal(ordinal);
-            classInfo.visitedEnumConstantDefs.add(ecd);
-        }
+        field.setEnumConstant(TranspileUtils.isEnumConstant(psiField));
     }
 
     private ClassInfo currentClass() {
@@ -305,7 +295,6 @@ public class Declarator extends VisitorBase {
         private final Klass klass;
         private final Set<Field> visitedFields = new HashSet<>();
         private final Set<Method> visitedMethods = new HashSet<>();
-        private final Set<EnumConstantDef> visitedEnumConstantDefs = new HashSet<>();
 
         private ClassInfo(Klass klass) {
             this.klass = klass;

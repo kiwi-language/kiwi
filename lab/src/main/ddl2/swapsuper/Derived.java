@@ -1,6 +1,6 @@
 package swapsuper;
 
-public class Derived extends Base2 {
+public class Derived extends Base1 {
     private final int value3;
 
     public Derived(int value1, int value2, int value3) {

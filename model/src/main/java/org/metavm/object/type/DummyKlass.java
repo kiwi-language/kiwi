@@ -56,10 +56,6 @@ public class DummyKlass extends Klass {
     }
 
     @Override
-    public void addEnumConstantDef(EnumConstantDef enumConstantDef) {
-    }
-
-    @Override
     public void addError(Element element, ErrorLevel level, String message) {
     }
 

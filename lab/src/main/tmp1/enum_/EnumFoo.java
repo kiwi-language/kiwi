@@ -1,7 +1,10 @@
 package enum_;
 
+import org.metavm.api.EntityField;
+
 public enum EnumFoo {
 
+    @EntityField(tag = 0)
     option1(1) {
         @Override
         public String getDesc() {

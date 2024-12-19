@@ -14,7 +14,6 @@ import org.metavm.flow.Method;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

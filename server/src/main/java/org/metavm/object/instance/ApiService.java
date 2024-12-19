@@ -435,8 +435,8 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private ValueResolutionResult tryResolveEnumConstant(String name, ClassType classType, IEntityContext context) {
-        var e = NncUtils.find(classType.getKlass().getEnumConstantDefs(), ecd -> Objects.equals(ecd.getName(), name));
-        return e != null ? ValueResolutionResult.of(StaticFieldTable.getInstance(classType, context).get(e.getField()))
+        var ec = NncUtils.find(classType.getKlass().getEnumConstants(), f -> Objects.equals(f.getName(), name));
+        return ec != null ? ValueResolutionResult.of(StaticFieldTable.getInstance(classType, context).get(ec))
                 : ValueResolutionResult.failed;
     }
 

@@ -72,8 +72,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     private final ChildArray<Field> staticFields = addChild(new ChildArray<>(Field.class), "staticFields");
     @ChildEntity
     private final ChildArray<Constraint> constraints = addChild(new ChildArray<>(Constraint.class), "constraints");
-    @ChildEntity
-    private final ChildArray<EnumConstantDef> enumConstantDefs = addChild(new ChildArray<>(EnumConstantDef.class), "enumConstantDefs");
     // Don't remove, for search
     @SuppressWarnings("unused")
     private boolean isAbstract;
@@ -393,6 +391,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     public void sortFields(Comparator<Field> comparator) {
         this.fields.sort(comparator);
+        this.staticFields.sort(comparator);
     }
 
     public ClassTypeState getState() {
@@ -1556,27 +1555,15 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         this.nativeClass = nativeClass;
     }
 
-    public List<EnumConstantDef> getEnumConstantDefs() {
-        return enumConstantDefs.toList();
-    }
-
-    public @Nullable EnumConstantDef findEnumConstantDef(Predicate<EnumConstantDef> predicate) {
-        return NncUtils.find(enumConstantDefs, predicate);
-    }
-
-    public void addEnumConstantDef(EnumConstantDef enumConstantDef) {
-        this.enumConstantDefs.addChild(enumConstantDef);
-        enumConstantDef.setKlass(this);
-    }
-
-    public void setEnumConstantDefs(List<EnumConstantDef> enumConstantDefs) {
-        this.enumConstantDefs.resetChildren(enumConstantDefs);
-        enumConstantDefs.forEach(ecd -> ecd.setKlass(this));
+    public List<Field> getEnumConstants() {
+        return NncUtils.filter(staticFields, Field::isEnumConstant);
     }
 
     public void clearEnumConstantDefs() {
-        enumConstantDefs.forEach(ecd -> removeField(ecd.getField()));
-        enumConstantDefs.clear();
+        staticFields.forEach(f -> {
+            f.setEnumConstant(false);
+            f.setOrdinal(-1);
+        });
     }
 
     public int nextFieldSourceCodeTag() {
@@ -1710,8 +1697,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         constraints.forEach(c -> c.write(output));
         output.writeInt(klasses.size());
         klasses.forEach(c -> c.write(output));
-        output.writeInt(enumConstantDefs.size());
-        enumConstantDefs.forEach(ed -> ed.write(output));
         writeAttributes(output);
     }
 
@@ -1776,11 +1761,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
             klasses.add(input.readKlass());
         }
         setKlasses(klasses);
-        int enumConstantCount = input.readInt();
-        enumConstantDefs.clear();
-        for (int i = 0; i < enumConstantCount; i++) {
-            enumConstantDefs.addChild(input.readEnumConstantDef());
-        }
         readAttributes(input);
     }
 
@@ -1889,12 +1869,5 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         methodTableBuildDisabled = true;
     }
 
-    public void removeEnumConstantDef(EnumConstantDef enumConstantDef) {
-        enumConstantDefs.remove(enumConstantDef);;
-    }
-
-    public void sortEnumConstantDefs() {
-        enumConstantDefs.sort(Comparator.comparingInt(EnumConstantDef::getOrdinal));
-    }
 }
 

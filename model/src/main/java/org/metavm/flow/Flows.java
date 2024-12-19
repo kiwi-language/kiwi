@@ -140,9 +140,9 @@ public class Flows {
         Nodes.newArray(arrayType, code);
         var arrayVar = code.nextVariableIndex();
         Nodes.store(arrayVar, code);
-        for (var ecd : klass.getEnumConstantDefs()) {
+        for (var ec : klass.getEnumConstants()) {
             Nodes.load(arrayVar, arrayType, code);
-            Nodes.getStatic(ecd.getField(), code);
+            Nodes.getStatic(ec, code);
             Nodes.addElement(code);
         }
         Nodes.load(arrayVar, arrayType, code);

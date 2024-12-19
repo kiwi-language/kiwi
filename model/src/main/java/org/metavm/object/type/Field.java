@@ -40,6 +40,8 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
     private @Nullable Integer sourceTag;
     private transient int offset;
     private @Nullable Method initializer;
+    private boolean isEnumConstant;
+    private int ordinal;
 
     public Field(
             Long tmpId,
@@ -54,6 +56,8 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
             boolean isChild,
             boolean isStatic,
             boolean lazy,
+            boolean isEnumConstant,
+            int ordinal,
             @Nullable Column column,
             int tag,
             @Nullable Integer sourceTag,
@@ -77,6 +81,8 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         this.isTransient = isTransient;
         this.since = since;
         this.initializer = initializer;
+        this.isEnumConstant = isEnumConstant;
+        this.ordinal = ordinal;
         if (column != null) {
             NncUtils.requireTrue(declaringType.checkColumnAvailable(column));
             this.column = column;
@@ -435,6 +441,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
     public static final int FLAG_READONLY = 4;
     public static final int FLAG_TRANSIENT = 8;
     public static final int FLAG_LAZY = 16;
+    private static final int FLAG_ENUM_CONSTANT = 32;
 
     public int getFlags() {
         int flags = 0;
@@ -448,6 +455,8 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
             flags |= FLAG_TRANSIENT;
         if(lazy)
             flags |= FLAG_LAZY;
+        if (isEnumConstant)
+            flags |= FLAG_ENUM_CONSTANT;
         return flags;
     }
 
@@ -457,6 +466,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         setTransient((flags & FLAG_TRANSIENT) != 0);
 //        setReadonly((flags & FLAG_READONLY) != 0);
         setLazy((flags & FLAG_LAZY) != 0);
+        setEnumConstant((flags & FLAG_ENUM_CONSTANT) != 0);
     }
 
     public void write(KlassOutput output) {
@@ -471,6 +481,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         output.writeInt(since);
         column.write(output);
         defaultValue.write(output);
+        output.writeInt(ordinal);
         if (initializer != null)
             output.writeEntityId(initializer);
         else
@@ -491,6 +502,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         since = input.readInt();
         column = input.readColumn();
         defaultValue = (Value) input.readElement();
+        ordinal = input.readInt();
         var initializerId = input.readId();
         initializer = initializerId instanceof NullId ? null : input.getMethod(initializerId);
     }
@@ -526,4 +538,31 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         }
     }
 
+    public boolean isEnumConstant() {
+        return isEnumConstant;
+    }
+
+    public void setEnumConstant(boolean enumConstant) {
+        isEnumConstant = enumConstant;
+    }
+
+    public int getOrdinal() {
+        return ordinal;
+    }
+
+    public void setOrdinal(int ordinal) {
+        this.ordinal = ordinal;
+    }
+
+    public Value getStatic(IEntityContext context) {
+        assert _static;
+        return  StaticFieldTable.getInstance(declaringType.getType(), context).get(this);
+    }
+
+    public void updateEnumConstant(IEntityContext context) {
+        assert isEnumConstant;
+        var value = getStatic(context).resolveObject();
+        value.setField(StdField.enumName.get(), Instances.stringInstance(name));
+        value.setField(StdField.enumOrdinal.get(), Instances.intInstance(ordinal));
+    }
 }

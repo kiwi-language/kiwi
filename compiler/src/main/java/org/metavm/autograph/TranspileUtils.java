@@ -630,10 +630,6 @@ public class TranspileUtils {
         return type.getCanonicalText().equals("java.lang.String");
     }
 
-    public static int getOrdinal(PsiField psiField) {
-        return (int) getAnnotationAttribute(psiField, EnumConstant.class, "ordinal");
-    }
-
     private static class UpwardsClassVisitor extends JavaElementVisitor {
 
         @Override

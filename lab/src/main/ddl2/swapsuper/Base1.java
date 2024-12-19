@@ -1,9 +1,10 @@
 package swapsuper;
 
-public class Base1 {
+public class Base1 extends Base2 {
     private final int value1;
 
-    public Base1(int value1) {
+    public Base1(int value1, int value2) {
+        super(value2);
         this.value1 = value1;
     }
 

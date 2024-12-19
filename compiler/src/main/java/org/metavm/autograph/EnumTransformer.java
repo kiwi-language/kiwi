@@ -6,8 +6,6 @@ import org.metavm.util.NncUtils;
 
 import java.util.*;
 
-import static org.metavm.autograph.TranspileUtils.createAnnotationFromText;
-
 @Slf4j
 public class EnumTransformer extends VisitorBase {
 
@@ -21,7 +19,7 @@ public class EnumTransformer extends VisitorBase {
                             aClass.getModifierList().hasExplicitModifier(PsiModifier.STATIC) ? "" : " static")
                     + (isAbstract ? " abstract" : "")
                     ;
-            var text = mods + " class " + aClass.getName() + " extends java.lang.Enum<" + aClass.getName() + "> {}";
+            var text = "@org.metavm.api.Enum " + mods + " class " + aClass.getName() + " extends java.lang.Enum<" + aClass.getName() + "> {}";
             var newClass = TranspileUtils.createClassFromText(text);
             int ordinal = 0;
             var enumConstantNames = new LinkedHashSet<String>();
@@ -30,7 +28,11 @@ public class EnumTransformer extends VisitorBase {
                     enumConstantNames.add(field.getName());
                     var argList = enumConstant.getArgumentList() != null ?
                             NncUtils.join(enumConstant.getArgumentList().getExpressions(), PsiElement::getText) : "";
-                    var fieldText = "public static final "
+                    var modText = Objects.requireNonNull(field.getModifierList()).getText();
+                    var fieldText =
+                            (modText.isEmpty() ? "" : modText + " ")
+                            + "@org.metavm.api.EnumConstant "
+                            + "public static final "
                             + aClass.getName() + " "
                             + enumConstant.getName() + " = new " + aClass.getName()
                             + "(\"" + enumConstant.getName() + "\", " + ordinal++
@@ -80,19 +82,11 @@ public class EnumTransformer extends VisitorBase {
             for (PsiClass innerClass : aClass.getInnerClasses()) {
                 newClass.addBefore(innerClass.copy(), null);
             }
-            Objects.requireNonNull(newClass.getModifierList()).addAfter(
-                    createAnnotationFromText("@org.metavm.api.Enum"), null
-            );
             newClass = (PsiClass) replace(aClass, newClass);
             var enumConstants = new ArrayList<PsiField>();
             newClass.putUserData(Keys.ENUM_CONSTANTS, enumConstants);
-            ordinal = 0;
             for (PsiField field : newClass.getFields()) {
                 if (enumConstantNames.contains(field.getName())) {
-                    Objects.requireNonNull(field.getModifierList()).addAfter(
-                            createAnnotationFromText("@org.metavm.api.EnumConstant(ordinal=" + ordinal++  + ")"),
-                            null
-                    );
                     enumConstants.add(field);
                     var initializer = (PsiNewExpression) Objects.requireNonNull(field.getInitializer());
                     if (initializer.getAnonymousClass() != null)

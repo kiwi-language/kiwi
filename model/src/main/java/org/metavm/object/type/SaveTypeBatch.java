@@ -37,13 +37,14 @@ public class SaveTypeBatch implements TypeDefProvider {
     private final Set<Klass> toEnumKlasses = new HashSet<>();
     private final Set<Klass> fromEnumKlasses = new HashSet<>();
     private final Set<Method> runMethods = new HashSet<>();
-    private final Set<EnumConstantDef> newEnumConstantDefs = new HashSet<>();
-    private final Set<EnumConstantDef> changedEnumConstantDefs = new HashSet<>();
+    private final Set<Field> newEnumConstants = new HashSet<>();
+    private final Set<Field> modifiedEnumConstants = new HashSet<>();
     private final Set<Klass> klasses = new HashSet<>();
     private final Set<Klass> newKlasses = new HashSet<>();
     private final Set<Index> newIndexes = new HashSet<>();
     private final Set<Klass> searchEnabledClasses = new HashSet<>();
     private final Set<Field> newStaticFields = new HashSet<>();
+    private final Set<Field> removedEnumConstants = new HashSet<>();
 
     private SaveTypeBatch(IEntityContext context) {
         this.context = context;
@@ -98,12 +99,12 @@ public class SaveTypeBatch implements TypeDefProvider {
         fromEnumKlasses.add(klass);
     }
 
-    public void addNewEnumConstantDef(EnumConstantDef newEnumConstantDef) {
-        newEnumConstantDefs.add(newEnumConstantDef);
+    public void addNewEnumConstant(Field newEnumConstant) {
+        newEnumConstants.add(newEnumConstant);
     }
 
-    public void addChangedEnumConstantDef(EnumConstantDef changedEnumConstantDef) {
-        changedEnumConstantDefs.add(changedEnumConstantDef);
+    public void addModifiedEnumConstant(Field changedEnumConstant) {
+        modifiedEnumConstants.add(changedEnumConstant);
     }
 
     public void addRunMethod(Method method) {
@@ -114,12 +115,12 @@ public class SaveTypeBatch implements TypeDefProvider {
         searchEnabledClasses.add(klass);
     }
 
-    public Set<EnumConstantDef> getNewEnumConstantDefs() {
-        return newEnumConstantDefs;
+    public Set<Field> getNewEnumConstants() {
+        return newEnumConstants;
     }
 
-    public Set<EnumConstantDef> getChangedEnumConstantDefs() {
-        return changedEnumConstantDefs;
+    public Set<Field> getModifiedEnumConstants() {
+        return modifiedEnumConstants;
     }
 
     public IEntityContext getContext() {
@@ -191,7 +192,7 @@ public class SaveTypeBatch implements TypeDefProvider {
                 NncUtils.map(runMethods, Entity::getStringId),
                 NncUtils.filterAndMap(newIndexes, i -> !context.isNewEntity(i.getDeclaringType()), Entity::getStringId),
                 NncUtils.map(searchEnabledClasses, Entity::getStringId),
-                NncUtils.map(changedEnumConstantDefs, Entity::getStringId),
+                NncUtils.map(modifiedEnumConstants, Entity::getStringId),
                 fieldChanges
         );
     }
@@ -218,12 +219,14 @@ public class SaveTypeBatch implements TypeDefProvider {
     }
 
     public void applyDDLToEnumConstants() {
+        var instCtx = context.getInstanceContext();
+        removedEnumConstants.forEach(ec -> instCtx.remove(ec.getStatic(context).resolveObject()));
         var enumConstants = new ArrayList<ClassInstance>();
         for (Klass klass : klasses) {
             if (klass.isEnum()) {
-                for (EnumConstantDef ecd : klass.getEnumConstantDefs()) {
-                    ecd.update(context);
-                    enumConstants.add(ecd.getValue(context));
+                for (var ec : klass.getEnumConstants()) {
+                    ec.updateEnumConstant(context);
+                    enumConstants.add(ec.getStatic(context).resolveObject());
                 }
             }
         }
@@ -269,4 +272,7 @@ public class SaveTypeBatch implements TypeDefProvider {
         return Collections.unmodifiableSet(newStaticFields);
     }
 
+    public void addRemovedEnumConstant(Field enumConstant) {
+        removedEnumConstants.add(enumConstant);
+    }
 }

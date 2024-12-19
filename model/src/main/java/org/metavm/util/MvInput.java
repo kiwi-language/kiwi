@@ -166,5 +166,4 @@ public abstract class MvInput implements Closeable {
 
     public abstract IndexField getIndexField(Id id);
 
-    public abstract EnumConstantDef getEnumConstantDef(Id id);
 }

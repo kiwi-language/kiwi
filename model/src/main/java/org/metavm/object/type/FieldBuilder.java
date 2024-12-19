@@ -31,7 +31,9 @@ public class FieldBuilder {
     private boolean readonly;
     private boolean isTransient;
     private boolean asTitle;
+    private boolean isEnumConstant;
     private int tag = -1;
+    private int ordinal = -1;
     private Integer sourceTag;
     private int since;
     private @Nullable Method initializer;
@@ -137,6 +139,16 @@ public class FieldBuilder {
         return this;
     }
 
+    public FieldBuilder isEnumConstant(boolean isEnumConstant) {
+        this.isEnumConstant = isEnumConstant;
+        return this;
+    }
+
+    public FieldBuilder ordinal(int ordinal) {
+        this.ordinal = ordinal;
+        return this;
+    }
+
     public Field build() {
         Field field;
         if (existing == null) {
@@ -161,6 +173,8 @@ public class FieldBuilder {
                     isChild,
                     isStatic,
                     lazy,
+                    isEnumConstant,
+                    ordinal,
                     column,
                     tag,
                     sourceTag,

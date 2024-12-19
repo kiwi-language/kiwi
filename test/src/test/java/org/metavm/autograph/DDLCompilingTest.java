@@ -2,9 +2,7 @@ package org.metavm.autograph;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
-import org.metavm.entity.StdField;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.StaticFieldTable;
 import org.metavm.util.Instances;
@@ -18,8 +16,6 @@ public class DDLCompilingTest extends CompilerTestBase {
 
     public static final String DDL_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/ddl";
     public static final String DDL2_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/ddl2";
-    public static final String DDL3_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/ddl3";
-    public static final String DDL4_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/ddl4";
 
     public void test() {
         compile(DDL_SOURCE_ROOT);
@@ -43,17 +39,12 @@ public class DDLCompilingTest extends CompilerTestBase {
             ref.fooId = saveInstance("index.IndexFoo", Map.of("name", "foo", "seq", 1));
             ref.productId = saveInstance("Product", Map.of("name", "Shoes",
                     "price", Map.of(
-                            "amount", 100,
-                            "currency", "YUAN"
+                            "amount", 20,
+                            "currency", "DOLLAR"
                     )
             ));
         });
-//        try {
-//            compile(DDL2_SOURCE_ROOT);
-//            Assert.fail("Should have failed");
-//        }
-//        catch (Exception ignored) {}
-        compile(DDL3_SOURCE_ROOT);
+        compile(DDL2_SOURCE_ROOT);
         submit(() -> {
             try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                 var productKlass = context.getKlassByQualifiedName("Product");
@@ -78,9 +69,9 @@ public class DDLCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(2, callMethod(ref.derivedInstanceId.toString(), "getValue2", List.of()));
                 var indexFooKlass = context.getKlassByQualifiedName("index.IndexFoo");
                 Assert.assertEquals(1, indexFooKlass.getConstraints().size());
-                Assert.assertEquals(4, currencyKlass.getEnumConstantDefs().size());
+                Assert.assertEquals(4, currencyKlass.getEnumConstants().size());
                 int ordinal = 0;
-                for (EnumConstantDef enumConstantDef : currencyKlass.getEnumConstantDefs()) {
+                for (var enumConstantDef : currencyKlass.getEnumConstants()) {
                     Assert.assertEquals(ordinal++, enumConstantDef.getOrdinal());
                 }
             }
@@ -89,27 +80,8 @@ public class DDLCompilingTest extends CompilerTestBase {
             Assert.assertEquals("EURO", getStatic("Currency", "EURO"));
             var product = getObject(ref.productId);
             Assert.assertEquals("none", product.getString("tag"));
+            Assert.assertEquals("USD", product.getObject("price").getString("currency"));
         });
-        compile(DDL4_SOURCE_ROOT);
-//        compile(DDL3_SOURCE_ROOT);
-//        submit(() -> {
-////            DebugEnv.debugLogger_ON = true;
-//            var fooType = getClassTypeByCode("Foo");
-//            var fooConstructorId = TestUtils.getMethodIdByCode(fooType, "Foo");
-//            var foo = TestUtils.doInTransaction(() ->
-//                flowExecutionService.execute(new FlowExecutionRequest(
-//                        fooConstructorId,
-//                        null,
-//                        List.of()
-//                ))
-//            );
-//            var fooTestMethodId = TestUtils.getMethodIdByCode(fooType, "test");
-//            TestUtils.doInTransaction(() -> flowExecutionService.execute(new FlowExecutionRequest(
-//                    fooTestMethodId,
-//                    foo.id(),
-//                    List.of()
-//            )));
-//        });
     }
 
 }

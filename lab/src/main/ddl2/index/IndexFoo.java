@@ -1,10 +1,11 @@
 package index;
 
 import org.metavm.api.Index;
+import javax.annotation.Nullable;
 
 public class IndexFoo {
 
-    public static final Index<String, IndexFoo> nameIndex = new Index<>(true, IndexFoo::getName);
+    public static final Index<Integer, IndexFoo> seqIndex = new Index<>(true, IndexFoo::getSeq);
 
     private String name;
     private int seq;
@@ -29,4 +30,9 @@ public class IndexFoo {
     public void setSeq(int seq) {
         this.seq = seq;
     }
+
+    public static @Nullable IndexFoo findBySeq(int seq) {
+        return seqIndex.getFirst(seq);
+    }
+
 }
