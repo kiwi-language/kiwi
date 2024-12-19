@@ -820,4 +820,7 @@ public abstract class Instance implements Message {
         this.directlyModified = directlyModified;
     }
 
+    public boolean isEnum() {
+        return false;
+    }
 }

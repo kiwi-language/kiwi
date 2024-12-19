@@ -1,13 +1,19 @@
 package org.metavm.autograph;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
+import org.metavm.entity.StdField;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.MetadataState;
+import org.metavm.object.type.StaticFieldTable;
+import org.metavm.util.Instances;
 import org.metavm.util.TestConstants;
 
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class DDLCompilingTest extends CompilerTestBase {
 
     public static final String DDL_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/ddl";
@@ -58,6 +64,10 @@ public class DDLCompilingTest extends CompilerTestBase {
                 var productStatusKlass = context.getKlassByQualifiedName("ProductStatus");
                 Assert.assertEquals(ref.stateKlassId, productStatusKlass.getId());
                 var currencyKlass = context.getKlassByQualifiedName("Currency");
+                var yuan = StaticFieldTable.getInstance(currencyKlass.getType(), context).getEnumConstantByName("YUAN");
+                Assert.assertEquals(
+                        Instances.doubleInstance(0.14), yuan.getField("rate")
+                );
                 var rateMethod = currencyKlass.getMethodByName("__rate__");
                 Assert.assertTrue(rateMethod.isPublic());
                 var yuanId = typeManager.getEnumConstantId("Currency", "YUAN");
@@ -68,9 +78,15 @@ public class DDLCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(2, callMethod(ref.derivedInstanceId.toString(), "getValue2", List.of()));
                 var indexFooKlass = context.getKlassByQualifiedName("index.IndexFoo");
                 Assert.assertEquals(1, indexFooKlass.getConstraints().size());
+                Assert.assertEquals(4, currencyKlass.getEnumConstantDefs().size());
+                int ordinal = 0;
+                for (EnumConstantDef enumConstantDef : currencyKlass.getEnumConstantDefs()) {
+                    Assert.assertEquals(ordinal++, enumConstantDef.getOrdinal());
+                }
             }
             Assert.assertEquals(ref.fooId, callMethod("index.IndexFoo", "findBySeq", List.of(1)));
             Assert.assertEquals("AVAILABLE", getStatic("Product", "DEFAULT_STATUS"));
+            Assert.assertEquals("EURO", getStatic("Currency", "EURO"));
             var product = getObject(ref.productId);
             Assert.assertEquals("none", product.getString("tag"));
         });

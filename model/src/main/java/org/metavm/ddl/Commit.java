@@ -73,6 +73,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus {
                   List<String> runMethodIds,
                   List<String> newIndexIds,
                   List<String> searchEnabledKlassIds,
+                  List<String> changedEnumConstantIds,
                   List<FieldChange> fieldChanges) {
         this.wal = wal;
         this.newFieldIds.addAll(newFieldIds);
@@ -88,6 +89,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus {
         this.runMethodIds.addAll(runMethodIds);
         this.newIndexIds.addAll(newIndexIds);
         this.searchEnabledKlassIds.addAll(searchEnabledKlassIds);
+        this.changedEnumConstantIds.addAll(changedEnumConstantIds);
         this.fieldChanges.addAll(fieldChanges);
     }
 

@@ -14,12 +14,12 @@ import org.metavm.flow.Method;
 import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.type.EnumConstantDef;
 import org.metavm.object.type.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.sql.Ref;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -526,8 +526,7 @@ public class Instances {
             throw new IllegalArgumentException(listType + " is not a List type");
     }
 
-    public static void applyDDL(Iterable<Instance> instances, Commit commit, IEntityContext context) {
-        var instCtx = context.getInstanceContext();
+    public static void applyDDL(Iterable<? extends Instance> instances, Commit commit, IEntityContext context) {
         var newFields = NncUtils.map(commit.getNewFieldIds(), context::getField);
         var convertingFields = NncUtils.map(commit.getConvertingFieldIds(), context::getField);
         var toChildFields = NncUtils.map(commit.getToChildFieldIds(), context::getField);
@@ -540,102 +539,124 @@ public class Instances {
         var newIndexes = NncUtils.map(commit.getNewIndexIds(), id -> context.getEntity(Index.class, id));
         var searchEnabledKlasses = NncUtils.map(commit.getSearchEnabledKlassIds(), context::getKlass);
         for (Instance instance : instances) {
-            if (instance instanceof ClassInstance clsInst) {
-                for (Field field : newFields) {
-                    var k = clsInst.getType().findAncestorByKlass(field.getDeclaringType());
-                    if (k != null) {
-                        initializeField(clsInst, field, context);
-                    }
+            if (!instance.isEnum()) {
+                applyDDL(instance, newFields, convertingFields, toChildFields, changingSuperKlasses, toValueKlasses,
+                        valueToEntityKlasses, toEnumKlasses, removingChildFields, runMethods, newIndexes, searchEnabledKlasses,
+                        commit, context);
+            }
+        }
+    }
+
+    public static void applyDDL(Instance instance,
+                                Collection<Field> newFields,
+                                Collection<Field> convertingFields,
+                                Collection<Field> toChildFields,
+                                Collection<Klass> changingSuperKlasses,
+                                Collection<Klass> toValueKlasses,
+                                Collection<Klass> valueToEntityKlasses,
+                                Collection<Klass> toEnumKlasses,
+                                Collection<Field> removingChildFields,
+                                Collection<Method> runMethods,
+                                Collection<Index> newIndexes,
+                                Collection<Klass> searchEnabledKlasses,
+                                @Nullable RedirectStatus redirectStatus,
+                                IEntityContext context) {
+        var instCtx = context.getInstanceContext();
+        if (instance instanceof ClassInstance clsInst) {
+            for (Field field : newFields) {
+                var k = clsInst.getType().findAncestorByKlass(field.getDeclaringType());
+                if (k != null) {
+                    initializeField(clsInst, field, context);
                 }
-                for (Field field : convertingFields) {
-                    var k = clsInst.getType().findAncestorByKlass(field.getDeclaringType());
-                    if (k != null) {
-                        convertField(clsInst, field, context);
-                    }
+            }
+            for (Field field : convertingFields) {
+                var k = clsInst.getType().findAncestorByKlass(field.getDeclaringType());
+                if (k != null) {
+                    convertField(clsInst, field, context);
                 }
-                for (Field field : toChildFields) {
-                    var k = clsInst.getType().findAncestorByKlass(field.getDeclaringType());
-                    if (k != null) {
-                        var value = clsInst.getField(field);
-                        if (value instanceof Reference r)
-                            r.resolve().setParent(clsInst, field);
-                    }
+            }
+            for (Field field : toChildFields) {
+                var k = clsInst.getType().findAncestorByKlass(field.getDeclaringType());
+                if (k != null) {
+                    var value = clsInst.getField(field);
+                    if (value instanceof Reference r)
+                        r.resolve().setParent(clsInst, field);
                 }
-                for (Klass klass : changingSuperKlasses) {
-                    var k = clsInst.getType().findAncestorByKlass(klass);
-                    if (k != null)
-                        initializeSuper(clsInst, klass, context);
-                }
-                for (Klass klass : toValueKlasses) {
-                    handleEntityToValueConversion(clsInst, klass);
-                }
-                for (Field removingChildField : removingChildFields) {
-                    var k = clsInst.getType().findAncestorByKlass(removingChildField.getDeclaringType());
-                    if (k == null)
-                        continue;
-                    var f = k.getField(removingChildField).getRawField();
-                    var childRef = clsInst.getField(f);
-                    if (childRef.isNull())
-                        continue;
-                    var child = childRef.resolveDurable();
-                    var ref = new Object() {
-                        boolean referenced;
-                    };
-                    var r = child.getReference();
-                    child.getRoot().forEachDescendant(i -> {
-                        i.forEachReference((ii, isChild) -> {
-                            if (!isChild && ii.equals(r))
-                                ref.referenced = true;
-                        });
-                    });
-                    if (!ref.referenced) {
-                        var referring = instCtx.getByReferenceTargetId(child.getId(), 0, 1);
-                        if (!referring.isEmpty())
+            }
+            for (Klass klass : changingSuperKlasses) {
+                var k = clsInst.getType().findAncestorByKlass(klass);
+                if (k != null)
+                    initializeSuper(clsInst, klass, context);
+            }
+            for (Klass klass : toValueKlasses) {
+                handleEntityToValueConversion(clsInst, klass);
+            }
+            for (Field removingChildField : removingChildFields) {
+                var k = clsInst.getType().findAncestorByKlass(removingChildField.getDeclaringType());
+                if (k == null)
+                    continue;
+                var f = k.getField(removingChildField).getRawField();
+                var childRef = clsInst.getField(f);
+                if (childRef.isNull())
+                    continue;
+                var child = childRef.resolveDurable();
+                var ref = new Object() {
+                    boolean referenced;
+                };
+                var r = child.getReference();
+                child.getRoot().forEachDescendant(i -> {
+                    i.forEachReference((ii, isChild) -> {
+                        if (!isChild && ii.equals(r))
                             ref.referenced = true;
-                    }
-                    if (ref.referenced)
-                        throw new InternalException(
-                                "Unable to delete child field " +
-                                        f.getQualifiedName()
-                                        + " because the child object " + child + " is still referenced by other objects"
-                        );
-                    child.setRemoving(true);
-                }
-                for (Method runMethod : runMethods) {
-                    var k = clsInst.getType().findAncestorByKlass(runMethod.getDeclaringType());
-                    if (k != null) {
-                        var pm = clsInst.getType().getMethod(runMethod);
-                        Flows.invoke(pm, clsInst, List.of(), context);
-                    }
-                }
-                for (var index : newIndexes) {
-                    var k = clsInst.getType().findAncestorByKlass(index.getDeclaringType());
-                    if (k != null) {
-                        context.getInstanceContext().forceReindex(clsInst);
-                    }
-                }
-                for (Klass klass : searchEnabledKlasses) {
-                    var k = clsInst.getType().findAncestorByKlass(klass);
-                    if (k != null) {
-                        context.getInstanceContext().forceSearchReindex(clsInst);
-                    }
-                }
-            }
-            for (Klass klass : valueToEntityKlasses) {
-                instance.forEachReference(r -> {
-                    if (r.isResolved()) {
-                        var resolved = r.resolve();
-                        if (resolved instanceof ClassInstance clsInst) {
-                            var k = clsInst.getType().findAncestorByKlass(klass);
-                            if (k != null)
-                                r.setEager();
-                        }
-                    }
+                    });
                 });
+                if (!ref.referenced) {
+                    var referring = instCtx.getByReferenceTargetId(child.getId(), 0, 1);
+                    if (!referring.isEmpty())
+                        ref.referenced = true;
+                }
+                if (ref.referenced)
+                    throw new InternalException(
+                            "Unable to delete child field " +
+                                    f.getQualifiedName()
+                                    + " because the child object " + child + " is still referenced by other objects"
+                    );
+                child.setRemoving(true);
             }
-            for (Klass klass : toEnumKlasses) {
-                handleEnumConversion(instance, klass, commit, context);
+            for (Method runMethod : runMethods) {
+                var k = clsInst.getType().findAncestorByKlass(runMethod.getDeclaringType());
+                if (k != null) {
+                    var pm = clsInst.getType().getMethod(runMethod);
+                    Flows.invoke(pm, clsInst, List.of(), context);
+                }
             }
+            for (var index : newIndexes) {
+                var k = clsInst.getType().findAncestorByKlass(index.getDeclaringType());
+                if (k != null) {
+                    context.getInstanceContext().forceReindex(clsInst);
+                }
+            }
+            for (Klass klass : searchEnabledKlasses) {
+                var k = clsInst.getType().findAncestorByKlass(klass);
+                if (k != null) {
+                    context.getInstanceContext().forceSearchReindex(clsInst);
+                }
+            }
+        }
+        for (Klass klass : valueToEntityKlasses) {
+            instance.forEachReference(r -> {
+                if (r.isResolved()) {
+                    var resolved = r.resolve();
+                    if (resolved instanceof ClassInstance clsInst) {
+                        var k = clsInst.getType().findAncestorByKlass(klass);
+                        if (k != null)
+                            r.setEager();
+                    }
+                }
+            });
+        }
+        for (Klass klass : toEnumKlasses) {
+            handleEnumConversion(instance, klass, redirectStatus, context);
         }
     }
 
@@ -649,7 +670,7 @@ public class Instances {
         });
     }
 
-    private static void handleEnumConversion(Instance instance, Klass enumClass, Commit commit, IEntityContext context) {
+    private static void handleEnumConversion(Instance instance, Klass enumClass, @Nullable RedirectStatus redirectStatus, IEntityContext context) {
         instance.transformReference((r, isChild, type) -> {
             if (type.isAssignableFrom(enumClass.getType())) {
                 var referent = r.resolve();
@@ -659,7 +680,7 @@ public class Instances {
                     object.setField(StdField.enumName.get(), Instances.stringInstance(""));
                     object.setField(StdField.enumOrdinal.get(), Instances.intInstance(-1));
                     var ec = mapEnumConstant(r1, enumClass, context);
-                    return new RedirectingReference(referent, ec, commit);
+                    return redirectStatus != null ? new RedirectingReference(referent, ec, redirectStatus) : ec;
                 }
             }
             return r;

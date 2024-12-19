@@ -8,6 +8,7 @@ import org.metavm.ddl.FieldChangeKind;
 import org.metavm.entity.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.flow.Method;
+import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.util.BusinessException;
@@ -117,6 +118,10 @@ public class SaveTypeBatch implements TypeDefProvider {
         return newEnumConstantDefs;
     }
 
+    public Set<EnumConstantDef> getChangedEnumConstantDefs() {
+        return changedEnumConstantDefs;
+    }
+
     public IEntityContext getContext() {
         return context;
     }
@@ -186,6 +191,7 @@ public class SaveTypeBatch implements TypeDefProvider {
                 NncUtils.map(runMethods, Entity::getStringId),
                 NncUtils.filterAndMap(newIndexes, i -> !context.isNewEntity(i.getDeclaringType()), Entity::getStringId),
                 NncUtils.map(searchEnabledClasses, Entity::getStringId),
+                NncUtils.map(changedEnumConstantDefs, Entity::getStringId),
                 fieldChanges
         );
     }
@@ -208,6 +214,36 @@ public class SaveTypeBatch implements TypeDefProvider {
                         throw new BusinessException(ErrorCode.MISSING_SUPER_INITIALIZER, klass.getName());
                 }
             }
+        }
+    }
+
+    public void applyDDLToEnumConstants() {
+        var enumConstants = new ArrayList<ClassInstance>();
+        for (Klass klass : klasses) {
+            if (klass.isEnum()) {
+                for (EnumConstantDef ecd : klass.getEnumConstantDefs()) {
+                    ecd.update(context);
+                    enumConstants.add(ecd.getValue(context));
+                }
+            }
+        }
+        for (ClassInstance enumConstant : enumConstants) {
+            Instances.applyDDL(
+                    enumConstant,
+                    newFields,
+                    typeChangedFields,
+                    toChildFields,
+                    changingSuperKlasses,
+                    entityToValueKlasses,
+                    valueToEntityKlasses,
+                    toEnumKlasses,
+                    removedChildFields,
+                    runMethods,
+                    newIndexes,
+                    searchEnabledClasses,
+                    null,
+                    context
+            );
         }
     }
 

@@ -114,6 +114,7 @@ public class Declarator extends VisitorBase {
         NncUtils.exclude(klass.getMethods(), classInfo.visitedMethods::contains).forEach(klass::removeMethod);
         NncUtils.exclude(klass.getEnumConstantDefs(), classInfo.visitedEnumConstantDefs::contains)
                 .forEach(klass::removeEnumConstantDef);
+        klass.sortEnumConstantDefs();
         for (PsiField psiField : psiClass.getFields()) {
             var initializer = psiField.getUserData(Keys.INITIALIZER);
             if (initializer != null) {
