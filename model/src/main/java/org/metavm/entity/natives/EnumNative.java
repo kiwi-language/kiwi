@@ -12,6 +12,12 @@ public class EnumNative extends NativeBase {
         this.instance = instance;
     }
 
+    public Value Enum(Value name, Value ordinal, CallContext callContext) {
+        instance.setField(StdField.enumName.get(), name);
+        instance.setField(StdField.enumOrdinal.get(), ordinal);
+        return instance.getReference();
+    }
+
     public Value name(CallContext callContext) {
         return instance.getField(StdField.enumName.get());
     }

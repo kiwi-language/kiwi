@@ -124,6 +124,8 @@ public class BasicCompilingTest extends CompilerTestBase {
             processNumber();
             processSerializable();
             processSwitchPatternGuard();
+            processAnonymousClassWithArgs();
+            processEnumConstantImpl();
         });
     }
 
@@ -1220,6 +1222,16 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(1, callMethod(className, "test", List.of(1)));
         Assert.assertEquals(-1, callMethod(className, "test", List.of(-1)));
         Assert.assertEquals(-1, callMethod(className, "test", List.of("MetaVM")));
+    }
+
+    private void processEnumConstantImpl() {
+        var className = "enums.EnumConstantImplFoo";
+        Assert.assertEquals("Option 1", callMethod(className, "getOptionDesc", List.of("op1")));
+    }
+
+    private void processAnonymousClassWithArgs() {
+        var className = "anonymous_class.AnonymousClassWithArgs";
+        Assert.assertEquals(1, callMethod(className, "test", List.of(1)));
     }
 
 }

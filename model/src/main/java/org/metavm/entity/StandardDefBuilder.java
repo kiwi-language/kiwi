@@ -227,6 +227,14 @@ public class StandardDefBuilder {
     }
 
     private void createEnumMethods(Klass enumKlass) {
+        MethodBuilder.newBuilder(enumKlass, enumKlass.getName())
+                .parameters(
+                        new NameAndType("name", Types.getNullableStringType()),
+                        new NameAndType("ordinal", Types.getIntType())
+                )
+                .isConstructor(true)
+                .isNative(true)
+                .build();
         MethodBuilder.newBuilder(enumKlass, "name")
                 .isNative(true)
                 .returnType(Types.getStringType())

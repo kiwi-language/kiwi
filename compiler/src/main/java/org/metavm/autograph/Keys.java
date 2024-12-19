@@ -3,6 +3,7 @@ package org.metavm.autograph;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.util.Key;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import org.metavm.object.type.*;
 
@@ -70,8 +71,6 @@ public class Keys {
 
     public static final Key<Index> INDEX = createKey("Index");
 
-    public static final Key<EnumConstantDef> ENUM_CONSTANT_DEF = createKey("EnumConstantDef");
-
     public static final Key<Boolean> ADDED_STATIC_MODIFIER = createKey("AddedStaticModifier");
 
     public static final Key<Boolean> DISCARDED = Key.create("Discarded");
@@ -93,6 +92,14 @@ public class Keys {
     public static final Key<Integer> CASE_INDEX = Keys.createKey("CaseIndex");
 
     public static final Key<PsiMethod> INITIALIZER = Keys.createKey("Initializer");
+
+    public static final Key<List<PsiField>> ENUM_CONSTANTS = Keys.createKey("EnumConstants");
+
+    public static final Key<Integer> ENUM_CONSTANT_COUNT = Keys.createKey("EnumConstantCount");
+
+    public static final Key<String> ANONYMOUS_CLASS_NAME = Keys.createKey("AnonymousClassName");
+
+    public static final Key<Integer> ORDINAL = Keys.createKey("Ordinal");
 
     public static Set<Key<?>> getKeys() {
         return new HashSet<>(KEYS);

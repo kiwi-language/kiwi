@@ -6,6 +6,8 @@ import com.intellij.psi.PsiThisExpression;
 import com.intellij.psi.PsiType;
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.EnumAnnotatedFoo;
+import org.metavm.api.Enum;
 import org.metavm.autograph.mocks.PTypeFoo;
 import org.metavm.autograph.mocks.RecordFoo;
 import org.metavm.autograph.mocks.SignatureFoo;
@@ -87,11 +89,8 @@ public class TranspileUtilsTest extends TestCase {
     public void testGetInternalNameWithImplicitTypes() {
         var klass = Objects.requireNonNull(TranspileUtils.createClassType(SignatureFoo.class).resolve());
         var testMethod = NncUtils.findRequired(klass.getMethods(), method -> method.getName().equals("test"));
-        var internalName = TranspileUtils.getInternalName(testMethod, List.of(
-                TranspileUtils.createType(String.class),
-                TranspileUtils.createPrimitiveType(int.class)
-        ));
-        Assert.assertEquals("org.metavm.autograph.mocks.SignatureFoo.test(String,Int,Any|Null)", internalName);
+        var internalName = TranspileUtils.getInternalName(testMethod);
+        Assert.assertEquals("org.metavm.autograph.mocks.SignatureFoo.test(Any|Null)", internalName);
     }
 
     public void testIsStruct() {
@@ -132,6 +131,10 @@ public class TranspileUtilsTest extends TestCase {
         Assert.assertEquals(expectedSignature, signature);
     }
 
+    public void testIsAnnotationPresent() {
+        var k = TranspileTestTools.getPsiClass(EnumAnnotatedFoo.class);
+        Assert.assertTrue(TranspileUtils.isAnnotationPresent(k, Enum.class));
+    }
 
     private static class Visitor extends JavaRecursiveElementVisitor {
 

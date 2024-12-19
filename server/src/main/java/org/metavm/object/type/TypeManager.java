@@ -140,7 +140,6 @@ public class TypeManager extends EntityContextFactoryAware {
                 if (!newClass.isInterface())
                     initClass(newClass, context);
             }
-            batch.getNewEnumConstantDefs().forEach(ecd -> createEnumConstant(ecd, context));
             batch.getNewStaticFields().forEach(idx -> idx.initialize(null, context));
             return batch;
         } catch (IOException e) {
@@ -166,12 +165,6 @@ public class TypeManager extends EntityContextFactoryAware {
             else
                 throw new BusinessException(ErrorCode.NOT_AN_ENUM_CLASS, klass.getName());
         }
-    }
-
-    private void createEnumConstant(EnumConstantDef enumConstantDef, IEntityContext context) {
-        var sft = StaticFieldTable.getInstance(enumConstantDef.getKlass().getType(), context);
-        var value = enumConstantDef.createEnumConstant(context.getInstanceContext());
-        sft.set(enumConstantDef.getField(), value.getReference());
     }
 
     @Autowired

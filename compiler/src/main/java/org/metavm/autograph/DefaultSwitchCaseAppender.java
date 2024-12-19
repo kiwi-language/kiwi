@@ -69,7 +69,7 @@ public class DefaultSwitchCaseAppender extends SkipDiscardedVisitor {
                 for (var caseElement : caseElements.getElements()) {
                     if (caseElement instanceof PsiReferenceExpression refExpr) {
                         var target = refExpr.resolve();
-                        if (target instanceof PsiEnumConstant ec) {
+                        if (target instanceof PsiField ec && TranspileUtils.isEnumConstant(ec)) {
                             enumConstants.remove(ec);
                         }
                     } else if (caseElement instanceof PsiLiteralExpression literalExpression) {

@@ -1889,5 +1889,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         methodTableBuildDisabled = true;
     }
 
+    public void removeEnumConstantDef(EnumConstantDef enumConstantDef) {
+        enumConstantDefs.remove(enumConstantDef);;
+    }
 }
 

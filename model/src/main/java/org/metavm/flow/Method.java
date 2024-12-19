@@ -190,7 +190,8 @@ public class Method extends Flow implements Property {
 
     @Override
     public FlowExecResult execute(@Nullable Value self, List<? extends Value> arguments, FlowRef flowRef, CallContext callContext) {
-//        logger.debug("Executing method: {}", getQualifiedSignature());
+//        logger.debug("Executing method: {}, self: {}, arguments: {}",
+//                getQualifiedSignature(), self, arguments);
         try (var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName() + "." + getName())) {
             if (DebugEnv.debugging) {
                 logger.debug("Method.execute: {}", this);

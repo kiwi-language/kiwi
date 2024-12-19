@@ -41,8 +41,12 @@ public class Compiler {
             new CompileStage(
                     file -> true,
                     file -> {
+                        file.accept(new EnhancedSwitchTransformer());
+                        file.accept(new OrdinalRecorder());
+                        file.accept(new EnumSwitchTransformer());
                         file.accept(new NewIndexTransformer());
                         file.accept(new RecordToClass());
+                        file.accept(new EnumTransformer());
                         file.accept(new BodyNormalizer());
                         file.accept(new RawTypeTransformer());
                         file.accept(new ArrayInitializerTransformer());
@@ -80,7 +84,6 @@ public class Compiler {
                         resolveQnAndActivity(file);
                         file.accept(new VarargsTransformer());
                         resolveQnAndActivity(file);
-                        file.accept(new EnhancedSwitchTransformer());
                         file.accept(new NullSwitchCaseAppender());
                         file.accept(new DefaultSwitchCaseAppender());
                         resolveQnAndActivity(file);

@@ -16,6 +16,11 @@ public class AnonymousClassTransformerTest extends TestCase {
         process(source);
     }
 
+    public void testAnonymousTakingArgs() {
+        var src = "/Users/leen/workspace/object/lab/src/main/basics/anonymous_class/AnonymousClassWithArgs.java";
+        process(src);
+    }
+
     public void testLocalClass() {
         String src = "/Users/leen/workspace/object/lab/src/main/basics/local_class/LocalClassFoo.java";
         process(src);

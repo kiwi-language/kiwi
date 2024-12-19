@@ -1321,23 +1321,6 @@ public class MethodGenerator {
         var typePatternPresent = NncUtils.anyMatch(cases, e -> e instanceof PsiTypeTestPattern);
         if (keyType.isInt() && !typePatternPresent) {
             createLoad(keyVar, keyType);
-        } else if(keyType instanceof KlassType classType && classType.isEnum() && !typePatternPresent) {
-            var nullMatched = NncUtils.anyMatch(cases,
-                  e -> e instanceof PsiLiteralExpression l && l.getValue() == null);
-            createLoad(keyVar, keyType);
-            if (nullMatched) {
-                createLoadConstant(Instances.nullInstance());
-                createRefCompareEq();
-                var ifNode = createIfEq(null);
-                createLoadConstant(Instances.intInstance(-1));
-                var g = createGoto(null);
-                ifNode.setTarget(createLoad(keyVar, keyType));
-                createMethodCall(classType.getMethod(StdMethod.enumOrdinal.get()));
-                g.setTarget(createLabel());
-            } else {
-                createNonNull();
-                createMethodCall(classType.getMethod(StdMethod.enumOrdinal.get()));
-            }
         } else {
             var gotoNodes = new ArrayList<GotoNode>();
             int i = 0;
@@ -1355,8 +1338,9 @@ public class MethodGenerator {
     }
 
     private int getSwitchMatch(PsiCaseLabelElement c, Type keyType) {
-        if (c instanceof PsiReferenceExpression refExr && refExr.resolve() instanceof PsiEnumConstant ec)
-            return Objects.requireNonNull(ec.getUserData(Keys.ENUM_CONSTANT_DEF)).getOrdinal();
+        if (c instanceof PsiReferenceExpression refExr && refExr.resolve() instanceof PsiField field
+                && TranspileUtils.isEnumConstant(field))
+            return TranspileUtils.getOrdinal(field);
         else if (c instanceof PsiExpression expr && TranspileUtils.isIntType(Objects.requireNonNull(expr.getType())))
             return (int) TranspileUtils.getConstant((PsiExpression) c);
         else if (keyType.isEnum() && c instanceof PsiLiteralExpression l && l.getValue() == null)

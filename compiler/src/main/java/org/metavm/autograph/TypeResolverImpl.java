@@ -487,7 +487,7 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private ClassKind getClassKind(PsiClass psiClass) {
-        if (psiClass.isEnum())
+        if (TranspileUtils.isEnum(psiClass))
             return ClassKind.ENUM;
         if (psiClass.isInterface())
             return ClassKind.INTERFACE;

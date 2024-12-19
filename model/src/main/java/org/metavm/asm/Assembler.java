@@ -533,20 +533,21 @@ public class Assembler {
                         .tmpId(NncUtils.randomNonNegative())
                         .isStatic(true)
                         .build();
+                var initializer = MethodBuilder.newBuilder(klass, "__init_" + name + "__")
+                        .isStatic(true)
+                        .returnType(klass.getType())
+                        .build();
+                field.setInitializer(initializer);
             }
             else
                 field.resetTypeIndex();
             classInfo.visitedFields.add(field);
             var enumConstantDef = klass.findEnumConstantDef(ec -> ec.getName().equals(name));
             if(enumConstantDef == null) {
-                var initializer = MethodBuilder.newBuilder(klass, "$" + name)
-                        .isStatic(true)
-                        .returnType(klass.getType())
-                        .build();
-                enumConstantDef = new EnumConstantDef(klass, name, classInfo.nextEnumConstantOrdinal(), initializer);
+                enumConstantDef = new EnumConstantDef(klass, name, classInfo.nextEnumConstantOrdinal(), null);
             } else
                 enumConstantDef.setOrdinal(classInfo.nextEnumConstantOrdinal());
-            classInfo.visitedMethods.add(enumConstantDef.getInitializer());
+            classInfo.visitedMethods.add(field.getInitializer());
             setAttribute(ctx, AsmAttributeKey.field, field);
             setAttribute(ctx, AsmAttributeKey.enumConstantDef, enumConstantDef);
             return super.visitEnumConstant(ctx);
@@ -911,7 +912,7 @@ public class Assembler {
             var enumConstantDef = Objects.requireNonNull(klass.findEnumConstantDef(ec -> ec.getName().equals(name)));
             List<AssemblyParser.ExpressionContext> argCtx =
                     ctx.arguments() != null ? ctx.arguments().expressionList().expression() : List.of();
-            var initializer = enumConstantDef.getInitializer();
+            var initializer = Objects.requireNonNull(enumConstantDef.getField().getInitializer());
             initializer.clearContent();
             enterScope(new AsmMethod(classInfo, initializer));
             var code = initializer.getCode();

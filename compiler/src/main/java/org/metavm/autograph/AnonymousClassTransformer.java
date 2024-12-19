@@ -12,7 +12,7 @@ import static java.util.Objects.requireNonNull;
 public class AnonymousClassTransformer extends VisitorBase {
 
     private final Map<PsiClass, String> map = new HashMap<>();
-    private final LinkedList<ExecutableInfo> executables = new LinkedList<>();
+    private final LinkedList<Scope> scopes = new LinkedList<>();
     private int nextId = 1;
 
     @Override
@@ -55,7 +55,9 @@ public class AnonymousClassTransformer extends VisitorBase {
             if (TranspileUtils.isStatic(field))
                 sb.append("static ");
         }
-        var name = "$" + nextId++;
+        var name = klass.getUserData(Keys.ANONYMOUS_CLASS_NAME);
+        if (name == null)
+            name = "$" + nextId++;
         sb.append("class ").append(name).append(' ');
         var baseClassType = klass.getBaseClassType();
         var baseKlass = requireNonNull(baseClassType.resolve());
@@ -82,56 +84,74 @@ public class AnonymousClassTransformer extends VisitorBase {
             block.addBefore(TranspileUtils.createStatementFromText(k.getText()), stmt);
         }
         map.put(klass, name);
-        currentExecutable().anonymousClasses.add(klass);
+        currentScope().anonymousClasses.add(klass);
     }
 
     private PsiMethod createConstructor(String name, PsiAnonymousClass klass) {
-        var sb = new StringBuilder(name).append("(){");
+        var sb = new StringBuilder(name).append("(");
+        var args = Objects.requireNonNull(klass.getArgumentList()).getExpressions();
+        for (int i = 0; i < args.length; i++) {
+            var arg = args[i];
+            if (i > 0)
+                sb.append(',');
+            sb.append(Objects.requireNonNull(arg.getType()).getCanonicalText()).append(" arg").append(i);
+        }
+        sb.append("){");
         var superClass = requireNonNull(klass.getSuperClass());
         if(!TranspileUtils.isObjectClass(superClass)) {
-            var argList = klass.getArgumentList();
-            if (argList != null)
-                sb.append("super").append(argList.getText()).append(';');
+            sb.append("super(");
+            for (int i = 0; i < args.length; i++) {
+                if (i > 0)
+                    sb.append(',');
+                sb.append("arg").append(i);
+            }
+            sb.append(");");
         }
         sb.append('}');
         return TranspileUtils.createMethodFromText(sb.toString());
     }
 
     @Override
+    public void visitClass(PsiClass aClass) {
+        enterScope();
+        super.visitClass(aClass);
+        exitScope();
+    }
+
+    @Override
     public void visitMethod(PsiMethod method) {
-        enterExecutable();
+        enterScope();
         super.visitMethod(method);
-        exitExecutable();
+        exitScope();
     }
 
     @Override
     public void visitLambdaExpression(PsiLambdaExpression expression) {
-        enterExecutable();
+        enterScope();
         super.visitLambdaExpression(expression);
-        exitExecutable();
+        exitScope();
     }
 
     @Override
     public void visitClassInitializer(PsiClassInitializer initializer) {
-        enterExecutable();
+        enterScope();
         super.visitClassInitializer(initializer);
-        exitExecutable();
+        exitScope();
     }
 
-    private void enterExecutable() {
-        executables.push(new ExecutableInfo());
+    private void enterScope() {
+        scopes.push(new Scope());
     }
 
-    private void exitExecutable() {
-        var info = requireNonNull(executables.pop());
-        info.anonymousClasses.forEach(PsiElement::delete);
+    private void exitScope() {
+        requireNonNull(scopes.pop()).anonymousClasses.forEach(PsiElement::delete);
     }
 
-    private ExecutableInfo currentExecutable() {
-        return requireNonNull(executables.peek());
+    private Scope currentScope() {
+        return requireNonNull(scopes.peek());
     }
 
-    private static class ExecutableInfo {
+    private static class Scope {
         private final List<PsiClass> anonymousClasses = new ArrayList<>();
     }
 

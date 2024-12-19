@@ -1,7 +1,6 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
-import org.metavm.entity.StdField;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
 import org.metavm.flow.*;
@@ -50,48 +49,9 @@ public class Generator extends VisitorBase {
         klass.setQualifiedName(psiClass.getQualifiedName());
         enterClass(new ClassInfo(klass, psiClass));
         super.visitClass(psiClass);
-        if(klass.isEnum())
-            Flows.generateValuesMethodBody(klass);
         exitClass();
         klass.setStage(ResolutionStage.DEFINITION);
         klass.emitCode();
-    }
-
-    @Override
-    public void visitEnumConstant(PsiEnumConstant enumConstant) {
-        var ecd = Objects.requireNonNull(enumConstant.getUserData(Keys.ENUM_CONSTANT_DEF));
-        var initializer = ecd.getInitializer();
-        initializer.clearContent();
-        initializer.setReturnType(initializer.getDeclaringType().getType());
-        var builder = new MethodGenerator(initializer, typeResolver, this);
-        builder.enterScope(initializer.getCode());
-        builder.createLoadConstant(Instances.stringInstance(ecd.getName()));
-        builder.createLoadConstant(Instances.intInstance(ecd.getOrdinal()));
-        var argList = enumConstant.getArgumentList();
-        if(argList != null) {
-            for (var arg :  argList.getExpressions()){
-                builder.getExpressionResolver().resolve(arg);
-            }
-        }
-        var paramTypes = new ArrayList<Type>();
-        paramTypes.add(Types.getStringType());
-        paramTypes.add(Types.getIntType());
-        var generics = enumConstant.resolveMethodGenerics();
-        var method = (PsiMethod) requireNonNull(generics.getElement());
-        for (var psiParam : method.getParameterList().getParameters()) {
-            paramTypes.add(typeResolver.resolveNullable(psiParam.getType(), ResolutionStage.DECLARATION));
-        }
-        var constructor = ecd.getKlass().getSelfMethod(
-                m -> m.isConstructor() && m.getParameterTypes().equals(paramTypes)
-        );
-        var typeArgs = NncUtils.map(
-                method.getTypeParameters(),
-                tp -> typeResolver.resolveDeclaration(generics.getSubstitutor().substitute(tp))
-        );
-        var methodRef = new MethodRef(ecd.getKlass().getType(), constructor, typeArgs);
-        builder.createNew(methodRef, false, false);
-        builder.createReturn();
-        builder.exitScope();
     }
 
     private void enterClass(ClassInfo classInfo) {
@@ -169,18 +129,6 @@ public class Generator extends VisitorBase {
             processParameters(psiMethod.getParameterList(), method);
         } else {
             processParameters(psiMethod.getParameterList(), method);
-            if (psiMethod.isConstructor()) {
-                if (currentClass().isEnum()) {
-                    var klass = currentClass();
-                    var enumType = requireNonNull(klass.getSuperType());
-                    builder.getThis();
-                    builder.createLoad(1, Types.getStringType());
-                    builder.createSetField(new FieldRef(enumType, StdField.enumName.get()));
-                    builder.getThis();
-                    builder.createLoad(2, Types.getIntType());
-                    builder.createSetField(new FieldRef(enumType, StdField.enumOrdinal.get()));
-                }
-            }
         }
         requireNonNull(psiMethod.getBody(), "body is missing from method " +
                 TranspileUtils.getMethodQualifiedName(psiMethod)).accept(this);
@@ -229,7 +177,7 @@ public class Generator extends VisitorBase {
     }
 
     private void processParameters(PsiParameterList parameterList, Method method) {
-        var i = method.isStatic() ? 0 : (method.isConstructor() && method.getDeclaringType().isEnum() ? 3 : 1);
+        var i = method.isStatic() ? 0 : 1;
         for (PsiParameter parameter : parameterList.getParameters()) {
             parameter.putUserData(Keys.VARIABLE_INDEX, i++);
         }

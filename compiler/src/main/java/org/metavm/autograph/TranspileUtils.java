@@ -10,6 +10,7 @@ import com.intellij.psi.impl.light.LightRecordCanonicalConstructor;
 import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.Enum;
 import org.metavm.api.Index;
 import org.metavm.api.*;
 import org.metavm.entity.natives.StandardStaticMethods;
@@ -629,6 +630,10 @@ public class TranspileUtils {
         return type.getCanonicalText().equals("java.lang.String");
     }
 
+    public static int getOrdinal(PsiField psiField) {
+        return (int) getAnnotationAttribute(psiField, EnumConstant.class, "ordinal");
+    }
+
     private static class UpwardsClassVisitor extends JavaElementVisitor {
 
         @Override
@@ -940,7 +945,7 @@ public class TranspileUtils {
     }
 
     public static boolean isAnnotatedWithNullable(PsiModifierListOwner element) {
-        return hasAnnotation(element, Nullable.class) || hasAnnotation(element, org.jetbrains.annotations.Nullable.class);
+        return isAnnotationPresent(element, Nullable.class) || isAnnotationPresent(element, org.jetbrains.annotations.Nullable.class);
     }
 
     public static PsiClassType createTemplateType(PsiClass klass) {
@@ -1147,7 +1152,7 @@ public class TranspileUtils {
         return annotation;
     }
 
-    public static boolean hasAnnotation(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
+    public static boolean isAnnotationPresent(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
         return getAnnotation(element, annotationClass) != null;
     }
 
@@ -1174,7 +1179,7 @@ public class TranspileUtils {
         return fields;
     }
 
-    public static boolean hasAnnotation(PsiAnnotationOwner element, Class<? extends Annotation> annotationClass) {
+    public static boolean isAnnotationPresent(PsiAnnotationOwner element, Class<? extends Annotation> annotationClass) {
         return getAnnotation(element, annotationClass) != null;
     }
 
@@ -1250,17 +1255,8 @@ public class TranspileUtils {
     );
 
     public static String getInternalName(PsiMethod method) {
-        return getInternalName(method, List.of());
-    }
-
-    public static String getInternalName(PsiMethod method, List<PsiType> implicitParameterTypes) {
-        var paramTypeNames = new ArrayList<>(
-                NncUtils.map(implicitParameterTypes, t -> getInternalName(t, false, method))
-        );
-        paramTypeNames.addAll(
-                NncUtils.map(method.getParameterList().getParameters(),
-                        p -> getInternalName(p.getType(), true, method))
-        );
+        var paramTypeNames = new ArrayList<>(NncUtils.map(method.getParameterList().getParameters(),
+                p -> getInternalName(p.getType(), true, method)));
         return getInternalName(createType(method.getContainingClass()), null) + "." +
                 method.getName() + "(" + NncUtils.join(paramTypeNames, ",") + ")";
     }
@@ -1321,8 +1317,8 @@ public class TranspileUtils {
         return stmts.length > 0 && stmts[0] instanceof PsiSwitchLabelStatement;
     }
 
-    public static List<PsiEnumConstant> getEnumConstants(PsiClass psiClass) {
-        return NncUtils.filterByType(List.of(psiClass.getFields()), PsiEnumConstant.class);
+    public static List<PsiField> getEnumConstants(PsiClass psiClass) {
+        return NncUtils.filter(List.of(psiClass.getFields()), TranspileUtils::isEnumConstant);
     }
 
     public static PsiClass resolvePsiClass(PsiClassType classType) {
@@ -1336,7 +1332,11 @@ public class TranspileUtils {
     }
 
     public static boolean isEnum(PsiType psiType) {
-        return psiType instanceof PsiClassType psiClassType && Objects.requireNonNull(psiClassType.resolve()).isEnum();
+        return psiType instanceof PsiClassType psiClassType && isEnum(requireNonNull(psiClassType.resolve()));
+    }
+
+    public static boolean isEnum(PsiClass psiClass) {
+        return psiClass.isEnum() || isAnnotationPresent(psiClass, Enum.class);
     }
 
     public static SubstitutorPipeline getSubstitutorPipeline(PsiClassType type, PsiClass ancestor) {
@@ -1583,9 +1583,9 @@ public class TranspileUtils {
     }
 
     public static String getQualifiedName(PsiClass klass) {
-        var enclosingCallable = getEnclosingCallable(klass);
-        if(enclosingCallable instanceof PsiMethod method)
-            return getQualifiedName(method) + "." + klass.getName();
+        var containingClass = klass.getContainingClass();
+        if (containingClass != null && !(containingClass instanceof PsiAnonymousClass))
+            return getQualifiedName(containingClass) + "." + klass.getName();
         else
             return Objects.requireNonNullElseGet(klass.getQualifiedName(), klass::getName);
     }
@@ -1679,6 +1679,14 @@ public class TranspileUtils {
         }
         else
             return false;
+    }
+
+    public static boolean isEnumConstant(PsiField field) {
+        return field instanceof PsiEnumConstant || isAnnotationPresent(field, EnumConstant.class);
+    }
+
+    public static PsiAnnotation createAnnotationFromText(String text) {
+        return elementFactory.createAnnotationFromText(text, null);
     }
 
 }

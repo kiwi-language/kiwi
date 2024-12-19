@@ -3,17 +3,11 @@ package org.metavm.object.type;
 import org.metavm.api.Entity;
 import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.natives.CallContext;
-import org.metavm.flow.Flows;
 import org.metavm.flow.KlassInput;
 import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Method;
-import org.metavm.object.instance.core.ClassInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Objects;
 
 @Entity
 public class EnumConstantDef extends Element implements ITypeDef {
@@ -23,24 +17,18 @@ public class EnumConstantDef extends Element implements ITypeDef {
     private Klass klass;
     private String name;
     private int ordinal;
-    private Method initializer;
 
     public EnumConstantDef(Klass klass, String name, int ordinal, Method initializer) {
 //        assert klass.isEnum();
         this.klass = klass;
         this.name = name;
         this.ordinal = ordinal;
-        this.initializer = initializer;
         klass.addEnumConstantDef(this);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitEnumConstantDef(this);
-    }
-
-    public ClassInstance createEnumConstant(CallContext callContext) {
-        return Objects.requireNonNull(Flows.invoke(initializer.getRef(), null, List.of(), callContext)).resolveObject();
     }
 
     public Klass getKlass() {
@@ -71,21 +59,15 @@ public class EnumConstantDef extends Element implements ITypeDef {
         this.ordinal = ordinal;
     }
 
-    public Method getInitializer() {
-        return initializer;
-    }
-
     public void write(KlassOutput output) {
         output.writeEntityId(this);
         output.writeUTF(name);
         output.writeInt(ordinal);
-        output.writeEntityId(initializer);
     }
 
     public void read(KlassInput input) {
         name = input.readUTF();
         ordinal = input.readInt();
-        initializer = input.getMethod(input.readId());
     }
 
 }

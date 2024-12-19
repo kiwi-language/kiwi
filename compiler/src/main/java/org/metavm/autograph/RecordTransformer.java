@@ -27,46 +27,14 @@ public class RecordTransformer extends VisitorBase {
                 }
                 fieldTextBuf.append("private final ").append(recordComponent.getType().getCanonicalText()).append(" ").append(recordComponent.getName()).append(";");
                 klass.addBefore(TranspileUtils.createFieldFromText(fieldTextBuf.toString()), null);
-//                klass.addBefore(
-//                        TranspileUtil.createGetter(recordComponent.getName(), recordComponent.getType()),
-//                        null);
             }
             for (PsiMethod method : psiClass.getMethods()) {
-                klass.addBefore(
-                        TranspileUtils.createMethodFromText(method.getText()), null);
-            }
+                klass.addBefore(method.copy(), null);}
             for (PsiClass innerClass : psiClass.getInnerClasses()) {
-                klass.addBefore(innerClass, null);
+                klass.addBefore(innerClass.copy(), null);
             }
-//            if(getCanonicalConstructor(psiClass) == null) {
-//                var buf = new StringBuilder("public ").append(psiClass.getName()).append("(");
-//                for (int i = 0; i < psiClass.getRecordComponents().length; i++) {
-//                    if (i > 0) buf.append(", ");
-//                    buf.append(psiClass.getRecordComponents()[i].getType().getCanonicalText()).append(" ").append(psiClass.getRecordComponents()[i].getName());
-//                }
-//                buf.append(") {");
-//                for (int i = 0; i < psiClass.getRecordComponents().length; i++) {
-//                    buf.append("this.").append(psiClass.getRecordComponents()[i].getName()).append(" = ").append(psiClass.getRecordComponents()[i].getName()).append(";");
-//                }
-//                buf.append("}");
-//                klass.addBefore(TranspileUtil.createMethodFromText(buf.toString()), null);
-//            }
             replace(psiClass, klass);
         }
-    }
-
-    private PsiMethod getCanonicalConstructor(PsiClass psiClass) {
-        for (PsiMethod method : psiClass.getMethods()) {
-            if (method.isConstructor() && method.getParameterList().getParametersCount() == psiClass.getRecordComponents().length &&
-                    method.getBody() != null) {
-                var statements = method.getBody().getStatements();
-                if (statements.length == 1 &&
-                        statements[0] instanceof PsiCallExpression &&
-                        statements[0].getText().trim().startsWith("this"))
-                    return method;
-            }
-        }
-        return null;
     }
 
 }

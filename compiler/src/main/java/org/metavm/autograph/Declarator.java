@@ -8,7 +8,6 @@ import org.metavm.api.Resource;
 import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
 import org.metavm.entity.IEntityContext;
-import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
@@ -67,7 +66,7 @@ public class Declarator extends VisitorBase {
                 !Objects.equals(psiClass.getSuperClass().getQualifiedName(), Object.class.getName())) {
             klass.setSuperType(((ClassType) typeResolver.resolveTypeOnly(TranspileUtils.getSuperClassType(psiClass))));
         }
-        else if(!klass.isEnum())
+        else
             klass.setSuperType(null);
         klass.setInterfaces(
                 NncUtils.map(
@@ -92,8 +91,6 @@ public class Declarator extends VisitorBase {
         classStack.push(classInfo);
         super.visitClass(psiClass);
         classStack.pop();
-        if(klass.isEnum())
-            classInfo.visitedMethods.add(Flows.saveValuesMethod(klass));
         var removedFields = NncUtils.exclude(klass.getFields(), classInfo.visitedFields::contains);
         removedFields.forEach(f -> {
             f.setInitializer(null);
@@ -115,6 +112,8 @@ public class Declarator extends VisitorBase {
         }
         klass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, -1)));
         NncUtils.exclude(klass.getMethods(), classInfo.visitedMethods::contains).forEach(klass::removeMethod);
+        NncUtils.exclude(klass.getEnumConstantDefs(), classInfo.visitedEnumConstantDefs::contains)
+                .forEach(klass::removeEnumConstantDef);
         for (PsiField psiField : psiClass.getFields()) {
             var initializer = psiField.getUserData(Keys.INITIALIZER);
             if (initializer != null) {
@@ -134,9 +133,7 @@ public class Declarator extends VisitorBase {
         if (CompilerConfig.isMethodBlacklisted(method))
             return;
         var klass = currentClass().klass;
-        List<PsiType> implicitTypeArgs = method.isConstructor() && klass.isEnum() ?
-                List.of(TranspileUtils.createType(String.class), TranspileUtils.createPrimitiveType(int.class)) : List.of();
-        var internalName = TranspileUtils.getInternalName(method, implicitTypeArgs);
+        var internalName = TranspileUtils.getInternalName(method);
         var flow = NncUtils.find(klass.getMethods(), f -> f.getInternalName(null).equals(internalName));
         if (flow != null)
             method.putUserData(Keys.Method, flow);
@@ -163,10 +160,7 @@ public class Declarator extends VisitorBase {
                 method.getTypeParameters(),
                 t -> typeResolver.resolveTypeVariable(t).getVariable()
         ));
-        List<Parameter> parameters = new ArrayList<>();
-        if (method.isConstructor() && klass.isEnum())
-            parameters.addAll(getEnumConstructorParams(flow));
-        parameters.addAll(processParameters(method.getParameterList(), flow));
+        var parameters = processParameters(method.getParameterList(), flow);
         flow.update(parameters, getReturnType(method));
 
         flow.clearAttributes();
@@ -228,7 +222,8 @@ public class Declarator extends VisitorBase {
     @Override
     public void visitField(PsiField psiField) {
         var type = resolveNullableType(psiField.getType());
-        var klass = currentClass().klass;
+        var classInfo = currentClass();
+        var klass = classInfo.klass;
         var isStatic = TranspileUtils.isStatic(psiField);
         var fieldTag = (int) TranspileUtils.getFieldAnnotationAttribute(psiField, "tag", -1);
         Field field;
@@ -270,37 +265,20 @@ public class Declarator extends VisitorBase {
         else
             field.setState(MetadataState.READY);
         psiField.putUserData(Keys.FIELD, field);
-    }
-
-    @Override
-    public void visitEnumConstant(PsiEnumConstant enumConstant) {
-        var classInfo = currentClass();
-        var klass = classInfo.klass;
-        var field = klass.findSelfStaticFieldByName(enumConstant.getName());
-        if (field == null) {
-            field = FieldBuilder
-                    .newBuilder(enumConstant.getName(), klass, klass.getType())
-                    .isChild(true)
-                    .isStatic(true)
-                    .build();
-        } else {
-            field.setName(getEnumConstantName(enumConstant));
-            field.resetTypeIndex();
+        if (TranspileUtils.isEnumConstant(psiField)) {
+            var ordinal = TranspileUtils.getOrdinal(psiField);
+            var ecd = klass.findEnumConstantDef(e -> e.getName().equals(psiField.getName()));
+            if(ecd == null) {
+                var name = psiField.getName();
+                var initializer = MethodBuilder.newBuilder(klass, "$" + name)
+                        .isStatic(true)
+                        .returnType(klass.getType())
+                        .build();
+                ecd = new EnumConstantDef(klass, name, ordinal, initializer);
+            } else
+                ecd.setOrdinal(ordinal);
+            classInfo.visitedEnumConstantDefs.add(ecd);
         }
-        classInfo.visitedFields.add(field);
-        var ecd = klass.findEnumConstantDef(e -> e.getName().equals(enumConstant.getName()));
-        if(ecd == null) {
-            var name = enumConstant.getName();
-            var initializer = MethodBuilder.newBuilder(klass, "$" + name)
-                    .isStatic(true)
-                    .returnType(klass.getType())
-                    .build();
-            ecd = new EnumConstantDef(klass, name, classInfo.nextEnumConstantOrdinal(), initializer);
-        } else
-            ecd.setOrdinal(classInfo.nextEnumConstantOrdinal());
-        classInfo.visitedMethods.add(ecd.getInitializer());
-        enumConstant.putUserData(Keys.FIELD, field);
-        enumConstant.putUserData(Keys.ENUM_CONSTANT_DEF, ecd);
     }
 
     private ClassInfo currentClass() {
@@ -324,17 +302,14 @@ public class Declarator extends VisitorBase {
 
     private static class ClassInfo {
         private final Klass klass;
-        private int nextEnumConstantOrdinal;
         private final Set<Field> visitedFields = new HashSet<>();
         private final Set<Method> visitedMethods = new HashSet<>();
+        private final Set<EnumConstantDef> visitedEnumConstantDefs = new HashSet<>();
 
         private ClassInfo(Klass klass) {
             this.klass = klass;
         }
 
-        private int nextEnumConstantOrdinal() {
-            return nextEnumConstantOrdinal++;
-        }
     }
 
 }

@@ -253,7 +253,7 @@ public class EntityUtils {
         return anno != null && !anno.value().isEmpty() ? anno.value() : method.getName();
     }
 
-    public static String getMetaEnumConstantName(Enum<?> enumConstant) {
+    public static String getMetaEnumConstantName(java.lang.Enum<?> enumConstant) {
         var field = getField(enumConstant.getDeclaringClass(), enumConstant.name());
         var anno = field.getAnnotation(EnumConstant.class);
         return anno != null && !anno.value().isEmpty() ? anno.value() : enumConstant.name();
@@ -458,7 +458,7 @@ public class EntityUtils {
     }
 
     private static boolean isEnum(Class<?> klass) {
-        return Enum.class.isAssignableFrom(klass);
+        return java.lang.Enum.class.isAssignableFrom(klass);
     }
 
     public static Id tryGetId(Object entity) {
