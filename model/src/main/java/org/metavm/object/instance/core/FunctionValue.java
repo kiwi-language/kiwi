@@ -2,10 +2,13 @@ package org.metavm.object.instance.core;
 
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.natives.CallContext;
+import org.metavm.flow.ClosureContext;
+import org.metavm.flow.Code;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.FunctionType;
+import org.metavm.object.type.TypeMetadata;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -74,4 +77,15 @@ public abstract class FunctionValue extends Value {
     public boolean isMutable() {
         return false;
     }
+
+    public abstract Code getCode();
+
+    public @Nullable Value getSelf() {
+        return null;
+    }
+
+    public abstract TypeMetadata getTypeMetadata();
+
+    public abstract ClosureContext getClosureContext(Value[] stack, int base);
+
 }

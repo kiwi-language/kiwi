@@ -5,6 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
+import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.NativeMethods;
 import org.metavm.entity.natives.RuntimeExceptionNative;
 import org.metavm.object.instance.core.ClassInstance;
@@ -225,11 +226,12 @@ public class Method extends Flow implements Property {
                             argArray[i++] = argument;
                         }
                     }
-                    result = new MetaFrame(callContext.instanceRepository()).execute(
+                    result = VmStack.execute(
                             getCode(),
                             argArray,
                             flowRef.getTypeMetadata(),
-                            closureContext
+                            closureContext,
+                            new DefaultCallContext(callContext.instanceRepository())
                     );
                 } catch (Exception e) {
                     logger.info("Fail to execute method {}", getQualifiedName());

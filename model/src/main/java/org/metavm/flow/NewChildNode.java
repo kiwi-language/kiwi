@@ -1,32 +1,33 @@
 package org.metavm.flow;
 
 import org.metavm.entity.ElementVisitor;
+import org.metavm.object.type.ClassType;
 
 public class NewChildNode extends NewObjectNode {
 
-    public NewChildNode(String name, MethodRef methodRef, Node prev, Code code) {
-        super(name, methodRef, prev, code, false, false);
+    public NewChildNode(String name, ClassType type, Node prev, Code code) {
+        super(name, type, prev, code, false, false);
     }
 
     @Override
     public int getStackChange() {
-        return super.getStackChange() - 1;
+        return 0;
     }
 
     @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.NEW_CHILD);
-        writeCallCode(output);
+        output.writeConstant(getType());
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("newChild " + getFlowRef());
+        writer.write("newchild " + getType());
     }
 
     @Override
     public int getLength() {
-        return 5 + (capturedVariableIndexes.size() << 2);
+        return 3;
     }
 
     @Override

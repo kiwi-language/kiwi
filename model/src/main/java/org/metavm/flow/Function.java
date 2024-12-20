@@ -7,8 +7,8 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.GlobalKey;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.natives.CallContext;
+import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.FunctionImpl;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.Type;
@@ -64,11 +64,12 @@ public class Function extends Flow implements GlobalKey {
             ).run((FunctionRef) flowRef, arguments, callContext);
         }
         else
-            return new MetaFrame(callContext.instanceRepository()).execute(
+            return VmStack.execute(
                     getCode(),
                     arguments.toArray(Value[]::new),
                     flowRef.getTypeMetadata(),
-                    null
+                    null,
+                    new DefaultCallContext(callContext.instanceRepository())
             );
     }
 

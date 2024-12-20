@@ -722,14 +722,18 @@ public class ExpressionResolver {
             return resolver.resolve(expression, this, methodGenerator);
         if (expression.getType() instanceof PsiClassType psiClassType) {
             var type = (ClassType) typeResolver.resolve(psiClassType);
+            var qualifier = expression.getQualifier();
+            if (qualifier == null)
+                methodGenerator.createNew(type, false, false);
+            else {
+                resolve(qualifier, context);
+                methodGenerator.createNewChild(type);
+            }
             NncUtils.map(
                     requireNonNull(expression.getArgumentList()).getExpressions(),
                     expr -> resolve(expr, context)
             );
             var methodGenerics = expression.resolveMethodGenerics();
-            var qualifier = expression.getQualifier();
-            if(qualifier != null)
-                resolve(qualifier, context);
             var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
             var paramTypes = NncUtils.map(method.getParameterList().getParameters(),
                     p -> typeResolver.resolveNullable(p.getType(), ResolutionStage.DECLARATION));
@@ -740,9 +744,7 @@ public class ExpressionResolver {
                     tp -> typeResolver.resolveDeclaration(methodGenerics.getSubstitutor().substitute(tp))
             );
             var methodRef = new MethodRef(type, flow, typeArgs);
-            var node = qualifier == null ?
-                    methodGenerator.createNew(methodRef, false, false) :
-                    methodGenerator.createNewChild(methodRef);
+            var node = methodGenerator.createMethodCall(methodRef);
             setCapturedVariables(node);
             return node;
         } else {

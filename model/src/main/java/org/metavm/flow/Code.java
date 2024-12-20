@@ -142,6 +142,10 @@ public class Code extends Element implements LoadAware {
         return maxLocals;
     }
 
+    public int getFrameSize() {
+        return maxLocals + maxStack;
+    }
+
     public void setMaxLocals(int maxLocals) {
         this.maxLocals = maxLocals;
     }

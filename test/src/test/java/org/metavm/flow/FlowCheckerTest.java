@@ -30,8 +30,7 @@ public class FlowCheckerTest extends TestCase {
         Nodes.loadConstant(Instances.nullInstance(), code);
         Nodes.refCompareNe(code);
         var ifNode = Nodes.ifNe( null, code);
-        Nodes.loadConstant(Instances.stringInstance("Value required"), code);
-        Nodes.raiseWithMessage(code);
+        Nodes.raiseWithMessage("Value required", code);
         ifNode.setTarget(Nodes.argument(method, 0));
         Nodes.nonNull(code);
         Nodes.ret(code);
@@ -54,8 +53,8 @@ public class FlowCheckerTest extends TestCase {
         var ifNode = Nodes.ifNe(null, code);
         Nodes.argument(method, 0);
         Nodes.ret(code);
-        ifNode.setTarget(Nodes.loadConstant(Instances.stringInstance("Value required"), code));
-        Nodes.raiseWithMessage(code);
+        ifNode.setTarget(Nodes.label(code));
+        Nodes.raiseWithMessage("Value required", code);
         klass.accept(new FlowChecker());
         Assert.assertEquals(0, klass.getErrors().size());
     }

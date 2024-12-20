@@ -143,7 +143,7 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitNewObjectNode(NewObjectNode node) {
-        return visitCallNode(node);
+        return visitNode(node);
     }
 
     public R visitSetFieldNode(SetFieldNode node) {

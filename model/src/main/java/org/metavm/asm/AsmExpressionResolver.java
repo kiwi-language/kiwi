@@ -263,6 +263,7 @@ class AsmExpressionResolver {
         }
         else {
             var type = (ClassType) parseClassType(creator.classOrInterfaceType());
+            Nodes.newObject(code, type, ctx.UNEW() != null, ctx.ENEW() != null);
             List<AssemblyParser.ExpressionContext> arguments =
                     NncUtils.getOrElse(
                             creator.arguments().expressionList(),
@@ -275,7 +276,7 @@ class AsmExpressionResolver {
             var constructor = type.resolveMethod(
                     type.getKlass().getName(), argTypes, typeArgs, false
             );
-            Nodes.newObject(code, constructor, ctx.UNEW() != null, ctx.ENEW() != null);
+            Nodes.methodCall(constructor, code);
             return type;
         }
     }

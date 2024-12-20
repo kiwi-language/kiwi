@@ -274,4 +274,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
         return getRawFlow().getPropertyName();
     }
 
+    public boolean isNative() {
+        return getRawFlow().isNative();
+    }
 }

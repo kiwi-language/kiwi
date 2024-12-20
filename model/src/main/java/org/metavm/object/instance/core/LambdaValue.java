@@ -2,11 +2,10 @@ package org.metavm.object.instance.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.flow.ClosureContext;
-import org.metavm.flow.FlowExecResult;
-import org.metavm.flow.LambdaRef;
-import org.metavm.flow.MetaFrame;
+import org.metavm.entity.natives.DefaultCallContext;
+import org.metavm.flow.*;
 import org.metavm.object.type.FunctionType;
+import org.metavm.object.type.TypeMetadata;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.InternalException;
 import org.metavm.util.MvOutput;
@@ -22,10 +21,6 @@ public class LambdaValue extends FunctionValue {
     public LambdaValue(LambdaRef lambdaRef, ClosureContext closureContext) {
         this.lambdaRef = lambdaRef;
         this.closureContext = closureContext;
-    }
-
-    private MetaFrame createFrame(InstanceRepository instanceRepository) {
-        return new MetaFrame(instanceRepository);
     }
 
     @Override
@@ -46,11 +41,12 @@ public class LambdaValue extends FunctionValue {
     @Override
     public FlowExecResult execute(List<? extends Value> arguments, CallContext callContext) {
         try {
-            return createFrame(callContext.instanceRepository()).execute(
+            return VmStack.execute(
                     lambdaRef.getRawLambda().getCode(),
                     arguments.toArray(Value[]::new),
                     lambdaRef.getTypeMetadata(),
-                    closureContext
+                    closureContext,
+                    new DefaultCallContext(callContext.instanceRepository())
             );
         } catch (Exception e) {
             log.info("Fail to execute lambda");
@@ -62,6 +58,21 @@ public class LambdaValue extends FunctionValue {
     @Override
     public FunctionType getType() {
         return lambdaRef.getFunctionType();
+    }
+
+    @Override
+    public Code getCode() {
+        return lambdaRef.getRawLambda().getCode();
+    }
+
+    @Override
+    public TypeMetadata getTypeMetadata() {
+        return lambdaRef.getTypeMetadata();
+    }
+
+    @Override
+    public ClosureContext getClosureContext(Value[] stack, int base) {
+        return closureContext;
     }
 
 }

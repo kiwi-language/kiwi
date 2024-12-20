@@ -13,10 +13,12 @@ import java.util.function.Supplier;
 @Slf4j
 public class Nodes {
 
-    public static RaiseNode raiseWithMessage(Code code) {
-        var klass = StdKlass.runtimeException.type();
-        var constructor = klass.resolveMethod(klass.getName(), List.of(Types.getNullableStringType()), List.of(), false);
-        Nodes.newObject(code, constructor, true, true);
+    public static RaiseNode raiseWithMessage(String message, Code code) {
+        var type = StdKlass.runtimeException.type();
+        Nodes.newObject(code, type, true, true);
+        loadConstant(Instances.stringInstance(message), code);
+        var constructor = type.resolveMethod(type.getName(), List.of(Types.getNullableStringType()), List.of(), false);
+        methodCall(constructor, code);
         return raise(code);
     }
 
@@ -38,9 +40,9 @@ public class Nodes {
                 code.getLastNode(), code);
     }
 
-    public static NewObjectNode newObject(Code code, MethodRef constructor, boolean ephemeral, boolean unbound) {
+    public static NewObjectNode newObject(Code code, ClassType type, boolean ephemeral, boolean unbound) {
         return new NewObjectNode(code.nextNodeName("newObject"),
-                constructor, code.getLastNode(), code, ephemeral, unbound);
+                type, code.getLastNode(), code, ephemeral, unbound);
     }
 
     public static VoidReturnNode voidRet(Code code) {

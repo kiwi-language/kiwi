@@ -284,8 +284,8 @@ public class MethodGenerator {
         ));
     }
 
-    NewObjectNode createNew(MethodRef methodRef, boolean ephemeral, boolean unbound) {
-        return onNodeCreated(new NewObjectNode(nextName(methodRef.getRawFlow().getName()), methodRef,
+    NewObjectNode createNew(ClassType type, boolean ephemeral, boolean unbound) {
+        return onNodeCreated(new NewObjectNode(nextName("new"), type,
                 code().getLastNode(), code(), ephemeral, unbound));
     }
 
@@ -1135,8 +1135,8 @@ public class MethodGenerator {
         return new LoadParentNode(nextName("loadparent"), code().getLastNode(), code(), index);
     }
 
-    public NewChildNode createNewChild(MethodRef methodRef) {
-        return new NewChildNode(nextName("newchild"), methodRef, code().getLastNode(), code());
+    public NewChildNode createNewChild(ClassType type) {
+        return new NewChildNode(nextName("newchild"), type, code().getLastNode(), code());
     }
 
     public void enterBlock(PsiElement element) {

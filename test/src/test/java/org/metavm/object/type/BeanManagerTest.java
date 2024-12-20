@@ -68,13 +68,14 @@ public class BeanManagerTest extends TestCase {
                     .returnType(barServiceKlass.getType())
                     .build();
             {
-                Nodes.argument(factoryMethod, 0);
                 Nodes.newObject(
                         factoryMethod.getCode(),
-                        constructor.getRef(),
+                        barServiceKlass.getType(),
                         false,
                         false
                 );
+                Nodes.argument(factoryMethod, 0);
+                Nodes.methodCall(constructor.getRef(), factoryMethod.getCode());
                 Nodes.ret(factoryMethod.getCode());
             }
             var registry = BeanDefinitionRegistry.getInstance(context);

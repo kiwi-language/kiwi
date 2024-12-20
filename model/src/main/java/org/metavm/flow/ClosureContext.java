@@ -10,7 +10,7 @@ public class ClosureContext {
     private final @Nullable ClosureContext parent;
     private final Value[] slots;
 
-    public ClosureContext(ClosureContext parent, Value[] slots) {
+    public ClosureContext(@Nullable ClosureContext parent, Value[] slots) {
         this.parent = parent;
         this.slots = slots;
     }

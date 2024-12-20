@@ -915,6 +915,7 @@ public class Assembler {
             initializer.clearContent();
             enterScope(new AsmMethod(classInfo, initializer));
             var code = initializer.getCode();
+            Nodes.newObject(code, klass.getType(), false, false);
             Nodes.loadConstant(Instances.stringInstance(name), code);
             Nodes.loadConstant(Instances.intInstance(enumConstant.getOrdinal()), code);
             var types = NncUtils.merge(
@@ -922,7 +923,7 @@ public class Assembler {
                     NncUtils.map(argCtx, this::parseExpression)
             );
             var constructor = klass.getType().resolveMethod(klass.getName(), types, List.of(), false);
-            Nodes.newObject(code, constructor, false, false);
+            Nodes.methodCall(constructor, code);
             Nodes.ret(code);
             exitScope();
             return super.visitEnumConstant(ctx);

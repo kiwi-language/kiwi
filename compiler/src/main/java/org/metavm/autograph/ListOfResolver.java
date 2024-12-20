@@ -49,10 +49,9 @@ public class ListOfResolver implements MethodCallResolver {
                 methodGenerics.getSubstitutor().substitute(method.getReturnType()));
         var arrayListKlass = StdKlass.arrayList.get();
         var arrayListType = new KlassType(null, arrayListKlass, List.of(listType.getFirstTypeArgument()));
-        var list = methodGenerator.createNew(
-                new MethodRef(arrayListType, arrayListKlass.getDefaultConstructor(), List.of()),
-                false,
-                true);
+        methodGenerator.createNew(arrayListType, false, true);
+        var constructor = new MethodRef(arrayListType, arrayListKlass.getDefaultConstructor(), List.of());
+        var list = methodGenerator.createMethodCall(constructor);
         var expressions = methodCallExpression.getArgumentList().getExpressions();
         for (PsiExpression psiExpression : expressions) {
             methodGenerator.createDup();

@@ -4,14 +4,13 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.ClassType;
-import org.metavm.util.InternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
 @Entity
-public class NewObjectNode extends CallNode {
+public class NewObjectNode extends Node {
 
     public static final Logger logger = LoggerFactory.getLogger(NewObjectNode.class);
 
@@ -19,25 +18,12 @@ public class NewObjectNode extends CallNode {
 
     private boolean unbound;
 
-    public NewObjectNode(String name, MethodRef methodRef,
+    public NewObjectNode(String name, ClassType type,
                          Node prev, Code code,
                          boolean ephemeral, boolean unbound) {
-        super(name, prev, code, methodRef);
+        super(name, type, prev, code);
         this.ephemeral = ephemeral;
         this.unbound = unbound;
-    }
-
-    @Override
-    public MethodRef getFlowRef() {
-        return (MethodRef) super.getFlowRef();
-    }
-
-    @Override
-    public void setFlowRef(FlowRef flowRef) {
-        if (flowRef instanceof MethodRef)
-            super.setFlowRef(flowRef);
-        else
-            throw new InternalException("Invalid subflow for NewObjectNode: " + flowRef);
     }
 
     @Override
@@ -47,8 +33,13 @@ public class NewObjectNode extends CallNode {
     }
 
     @Override
+    public boolean hasOutput() {
+        return true;
+    }
+
+    @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("new " + getFlowRef());
+        writer.write("new " + getType().getTypeDesc());
         if (ephemeral)
             writer.write(" ephemeral");
         if (unbound)
@@ -56,16 +47,21 @@ public class NewObjectNode extends CallNode {
     }
 
     @Override
+    public int getStackChange() {
+        return 1;
+    }
+
+    @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.NEW);
-        writeCallCode(output);
+        output.writeConstant(getType());
         output.writeBoolean(ephemeral);
         output.writeBoolean(unbound);
     }
 
     @Override
     public int getLength() {
-        return super.getLength() + 2;
+        return 5;
     }
 
     public boolean isEphemeral() {

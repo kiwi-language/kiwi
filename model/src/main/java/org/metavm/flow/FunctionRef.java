@@ -114,4 +114,8 @@ public class FunctionRef extends FlowRef {
     protected String toString0() {
         return getTypeDesc();
     }
+
+    public boolean isNative() {
+        return getRawFlow().isNative();
+    }
 }

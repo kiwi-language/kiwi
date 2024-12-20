@@ -2,10 +2,9 @@ package org.metavm.object.instance.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.flow.FlowExecResult;
-import org.metavm.flow.FlowRef;
-import org.metavm.flow.Flows;
+import org.metavm.flow.*;
 import org.metavm.object.type.FunctionType;
+import org.metavm.object.type.TypeMetadata;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.MvOutput;
 
@@ -66,5 +65,29 @@ public class FlowValue extends FunctionValue {
     @Override
     public FunctionType getType() {
         return !Flows.isInstanceMethod(flow.getRawFlow()) || boundSelf != null ? flow.getType() : Flows.getStaticType(flow);
+    }
+
+    @Override
+    public Code getCode() {
+        return flow.getRawFlow().getCode();
+    }
+
+    @Nullable
+    @Override
+    public Value getSelf() {
+        return boundSelf != null ? boundSelf.getReference() : null;
+    }
+
+    @Override
+    public TypeMetadata getTypeMetadata() {
+        return flow.getTypeMetadata();
+    }
+
+    @Override
+    public ClosureContext getClosureContext(Value[] stack, int base) {
+        return boundSelf != null ? boundSelf.getClosureContext() :
+                (flow instanceof MethodRef m && !m.isStatic() ?
+                        stack[base].getClosureContext() : null
+                );
     }
 }
