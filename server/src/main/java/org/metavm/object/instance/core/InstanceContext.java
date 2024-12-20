@@ -585,7 +585,7 @@ public class InstanceContext extends BufferingInstanceContext {
         var batch = new ArrayList<Instance>();
         for (Long treeId : treeIds) {
             var ids = loadingBuffer.getIdsInTree(treeId);
-            if(!ids.isEmpty()) {
+            if(ids != null && !ids.isEmpty()) {
                 var root = get(ids.get(0));
                 root.accept(new StructuralInstanceVisitor() {
                     @Override
