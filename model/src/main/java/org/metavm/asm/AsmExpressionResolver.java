@@ -551,10 +551,10 @@ class AsmExpressionResolver {
         var type1 = resolve0(first);
         Nodes.store(i, code);
         var g = Nodes.goto_(code);
-        ifNot.setTarget(Nodes.noop(code));
+        ifNot.setTarget(Nodes.label(code));
         var type2 = resolve0(second);
         Nodes.store(i, code);
-        g.setTarget(Nodes.noop(code));
+        g.setTarget(Nodes.label(code));
         var type = Types.getCompatibleType(type1, type2);
         Nodes.load(i, type, code);
         return type;

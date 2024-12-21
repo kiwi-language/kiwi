@@ -39,7 +39,7 @@ public class MethodGenerator {
         return method.getDeclaringType().getType();
     }
 
-    IfNeNode createIfNe(@Nullable Node target) {
+    IfNeNode createIfNe(@Nullable LabelNode target) {
         return onNodeCreated(new IfNeNode(
                 nextName("if"),
                 code().getLastNode(),
@@ -48,7 +48,7 @@ public class MethodGenerator {
         ));
     }
 
-    IfEqNode createIfEq(@Nullable Node target) {
+    IfEqNode createIfEq(@Nullable LabelNode target) {
         return onNodeCreated(new IfEqNode(
                 nextName("ifnot"),
                 code().getLastNode(),
@@ -57,7 +57,7 @@ public class MethodGenerator {
         ));
     }
 
-    GotoNode createGoto(Node target) {
+    GotoNode createGoto(LabelNode target) {
         return onNodeCreated(new GotoNode(
                  nextName("goto"),
                 code().getLastNode(),
@@ -93,10 +93,6 @@ public class MethodGenerator {
                         code()
                 )
         );
-    }
-
-    TargetNode createTarget() {
-        return onNodeCreated(new TargetNode(nextName("target"), code().getLastNode(), code()));
     }
 
     NewArrayNode createNewArray(ArrayType type) {
@@ -1231,7 +1227,7 @@ public class MethodGenerator {
         return createIntToChar();
     }
 
-    public Node createLabel() {
+    public LabelNode createLabel() {
         return new LabelNode(nextName("label"), code().getLastNode(), code());
     }
 
@@ -1279,7 +1275,7 @@ public class MethodGenerator {
         return ifNode;
     }
 
-    Node createSwitch(PsiSwitchBlock switchBlock) {
+    LabelNode createSwitch(PsiSwitchBlock switchBlock) {
         var keyVar = nextVariableIndex();
         var keyExpr = Objects.requireNonNull(switchBlock.getExpression());
         var statements = requireNonNull(switchBlock.getBody()).getStatements();
@@ -1403,7 +1399,7 @@ public class MethodGenerator {
             yields.add(gotoNode);
         }
 
-        void connectYields(Node exit) {
+        void connectYields(LabelNode exit) {
             yields.forEach(g -> g.setTarget(exit));
         }
 

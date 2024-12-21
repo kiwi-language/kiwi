@@ -4,14 +4,14 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
 
 public class GotoNode extends JumpNode {
 
     public GotoNode(@NotNull String name, @Nullable Node previous, @NotNull Code code,
-                    @Nullable Node target) {
+                    @Nullable LabelNode target) {
         super(name, null, previous, code);
-        setTarget(Objects.requireNonNullElse(target, this));
+        if (target != null)
+            setTarget(target);
     }
 
     public GotoNode(@NotNull String name, @Nullable Node previous, @NotNull Code code) {
@@ -44,10 +44,8 @@ public class GotoNode extends JumpNode {
         return 3;
     }
 
-    public void setTarget(@NotNull Node target) {
+    public void setTarget(@NotNull LabelNode target) {
         super.setTarget(target);
-        if (target instanceof TargetNode labelNode)
-            labelNode.addSource(this);
     }
 
     @Override

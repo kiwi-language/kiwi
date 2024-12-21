@@ -75,7 +75,6 @@ public enum ErrorCode {
     BRANCH_INDEX_DUPLICATE(417, "Branch index cannot be duplicated"),
     NUM_PRESELECTED_BRANCH_NOT_EQUAL_TO_ONE(417, "Branch node must have exactly one default branch"),
     BRANCH_OUTPUT_VALUE_MUST_AGREE_WITH_BRANCHES(418, "Branch node output field must set output value for each branch"),
-    MISSING_MERGE_NODE_FIELD_VALUE(418, "Merge node has unset fields"),
     NOT_AN_ARRAY_VALUE(419, "Invalid array value, data type is not an array"),
     INCORRECT_ELEMENT_TYPE(419, "Array type '{}' does not match element type '{}'"),
     INCORRECT_INDEX_VALUE(419, "Index must be an integer"),

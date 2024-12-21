@@ -334,10 +334,6 @@ public abstract class ElementVisitor<R> {
         return visitElement(lambdaRef);
     }
 
-    public R visitTargetNode(TargetNode targetNode) {
-        return visitNode(targetNode);
-    }
-
     public R visitTypeLiteralExpression(TypeLiteralExpression typeLiteralExpression) {
         return visitExpression(typeLiteralExpression);
     }

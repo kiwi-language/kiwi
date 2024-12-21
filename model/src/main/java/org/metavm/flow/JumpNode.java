@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 
 public abstract class JumpNode extends Node {
 
-    private Node target = this;
+    private LabelNode target;
 
     protected JumpNode(@NotNull String name, @Nullable Type outputType, @Nullable Node previous, @NotNull Code code) {
         super(name, outputType, previous, code);
@@ -17,7 +17,7 @@ public abstract class JumpNode extends Node {
         return target;
     }
 
-    public void setTarget(Node target) {
+    public void setTarget(LabelNode target) {
         this.target = target;
     }
 }

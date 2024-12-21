@@ -6,7 +6,7 @@ import com.intellij.psi.PsiStatement;
 import com.intellij.psi.PsiSwitchBlock;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.flow.GotoNode;
-import org.metavm.flow.Node;
+import org.metavm.flow.LabelNode;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -76,14 +76,14 @@ public class Section {
         return !breaks.isEmpty();
     }
 
-    public void connect(Node continueTarget, Node breakTarget) {
+    public void connect(LabelNode continueTarget, LabelNode breakTarget) {
         for (GotoNode c : continues) {
             c.setTarget(continueTarget);
         }
         connectBreaks(breakTarget);
     }
 
-    public void connectBreaks(Node exit) {
+    public void connectBreaks(LabelNode exit) {
         breaks.forEach(b -> b.setTarget(exit));
     }
 

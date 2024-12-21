@@ -1004,8 +1004,7 @@ public class ExpressionResolver {
                             () -> ref.gotoNode = methodGenerator.createIncompleteGoto(),
                             context),
                     () -> {
-                        var mergeNode = methodGenerator.createTarget();
-                        ref.gotoNode.setTarget(mergeNode);
+                        ref.gotoNode.setTarget(methodGenerator.createLabel());
                         elseAction.run();
                     }, context);
         }
@@ -1021,12 +1020,12 @@ public class ExpressionResolver {
             return constructIf(items[index], negated, thenAction, elseAction, context);
         else {
             var ref = new Object() {
-                Node target;
+                LabelNode target;
             };
             return constructIf(items[index],
                     negated,
                     () -> {
-                        ref.target = methodGenerator.createTarget();
+                        ref.target = methodGenerator.createLabel();
                         thenAction.run();
                     },
                     () -> constructOrPolyadicIf(
@@ -1047,11 +1046,11 @@ public class ExpressionResolver {
                 : methodGenerator.createIfEq(null);
         thenAction.run();
         var g = methodGenerator.createGoto(null);
-        ifNode.setTarget(methodGenerator.createNoop());
+        ifNode.setTarget(methodGenerator.createLabel());
         elseAction.run();
-        var join = methodGenerator.createNoop();
-        g.setTarget(join);
-        return join;
+        var exit = methodGenerator.createLabel();
+        g.setTarget(exit);
+        return exit;
     }
 
     public Node resolveBoolExpr(PsiExpression expression, ResolutionContext context) {

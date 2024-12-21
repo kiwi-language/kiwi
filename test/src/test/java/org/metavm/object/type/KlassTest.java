@@ -95,9 +95,11 @@ public class KlassTest extends TestCase {
             var if2 = Nodes.ifNe(null, code);
             Nodes.loadConstant(Instances.longOne(), code);
             Nodes.ret(code);
-            if2.setTarget(Nodes.loadConstant(Instances.longInstance(-1), code));
+            if2.setTarget(Nodes.label(code));
+            Nodes.loadConstant(Instances.longInstance(-1), code);
             Nodes.ret(code);
-            if1.setTarget(Nodes.loadConstant(Instances.longZero(), code));
+            if1.setTarget(Nodes.label(code));
+            Nodes.loadConstant(Instances.longZero(), code);
             Nodes.ret(code);
         }
         {

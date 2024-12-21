@@ -13,7 +13,7 @@ public class IfEqNode extends JumpNode {
     private transient ExpressionTypeMap nextExpressionTypes;
 
     public IfEqNode(@NotNull String name, @Nullable Node previous, @NotNull Code code,
-                    Node target) {
+                    LabelNode target) {
         super(name, null, previous, code);
         if(target != null)
             setTarget(target);

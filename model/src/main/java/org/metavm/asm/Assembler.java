@@ -969,20 +969,19 @@ public class Assembler {
                     var ifNode = Nodes.ifEq(null, code);
                     parseBlockNodes(statement.block(0), code);
                     var g = Nodes.goto_(code);
-                    ifNode.setTarget(Nodes.noop(code));
+                    ifNode.setTarget(Nodes.label(code));
                     if (statement.ELSE() != null)
                         parseBlockNodes(statement.block(1), code);
-                    g.setTarget(Nodes.noop(code));
+                    g.setTarget(Nodes.label(code));
                 }
                 else if (statement.WHILE() != null) {
-                    var entry = Nodes.noop(code);
+                    var entry = Nodes.label(code);
                     parseExpression(statement.parExpression().expression());
                     var ifNode = Nodes.ifEq(null, code);
                     parseBlockNodes(statement.block(0), code);
                     var g = Nodes.goto_(code);
                     g.setTarget(entry);
-                    var exit = Nodes.noop(code);
-                    ifNode.setTarget(exit);
+                    ifNode.setTarget(Nodes.label(code));
                 }
                 else if(statement.localVariableDeclaration() != null) {
                     var callable = (AsmCallable) this.scope;

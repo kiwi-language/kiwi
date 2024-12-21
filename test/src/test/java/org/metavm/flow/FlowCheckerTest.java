@@ -31,7 +31,8 @@ public class FlowCheckerTest extends TestCase {
         Nodes.refCompareNe(code);
         var ifNode = Nodes.ifNe( null, code);
         Nodes.raiseWithMessage("Value required", code);
-        ifNode.setTarget(Nodes.argument(method, 0));
+        ifNode.setTarget(Nodes.label(code));
+        Nodes.argument(method, 0);
         Nodes.nonNull(code);
         Nodes.ret(code);
         klass.accept(new FlowAnalyzer());

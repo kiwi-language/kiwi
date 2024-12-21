@@ -44,9 +44,10 @@ public class FlowManagerTest extends TestCase {
                 Nodes.loadConstant(Instances.zero(), code);
                 Nodes.store(i, code);
                 var g = Nodes.goto_(code);
-                if_.setTarget(Nodes.loadConstant(Instances.one(), code));
+                if_.setTarget(Nodes.label(code));
+                Nodes.loadConstant(Instances.one(), code);
                 Nodes.store(i, code);
-                g.setTarget(Nodes.noop(code));
+                g.setTarget(Nodes.label(code));
                 Nodes.load(i, Types.getBooleanType(), code);
                 Nodes.ret(code);
                 context.bind(klass);

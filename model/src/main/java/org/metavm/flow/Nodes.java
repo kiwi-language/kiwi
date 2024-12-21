@@ -73,7 +73,7 @@ public class Nodes {
         var i = code.nextVariableIndex();
         loadConstant(Instances.intInstance(0), code);
         Nodes.store(i, code);
-        var entry = noop(code.nextNodeName("noop"), code);
+        var entry = label(code);
         Supplier<Node> indexSupplier = () -> Nodes.load(i, Types.getIntType(), code);
         indexSupplier.get();
         arraySupplier.get();
@@ -91,7 +91,7 @@ public class Nodes {
         longAdd(code);
         Nodes.store(i, code);
         goto_(entry, code);
-        ifNode.setTarget(noop(code));
+        ifNode.setTarget(label(code));
     }
 
     public static FunctionCallNode functionCall(Code code, Function function) {
@@ -116,7 +116,7 @@ public class Nodes {
         return new CastNode(code.nextNodeName("cast"), outputType, code.getLastNode(), code);
     }
 
-    public static IfNeNode ifNe(@Nullable Node target, Code code) {
+    public static IfNeNode ifNe(@Nullable LabelNode target, Code code) {
         return new IfNeNode(
                 code.nextNodeName("ifne"),
                 code.getLastNode(),
@@ -125,7 +125,7 @@ public class Nodes {
         );
     }
 
-    public static IfEqNode ifEq(@Nullable Node target, Code code) {
+    public static IfEqNode ifEq(@Nullable LabelNode target, Code code) {
         return new IfEqNode(
                 code.nextNodeName("ifeq"),
                 code.getLastNode(),
@@ -142,7 +142,7 @@ public class Nodes {
         return new GotoNode(name, code.getLastNode(), code);
     }
 
-    public static GotoNode goto_(Node target, Code code) {
+    public static GotoNode goto_(LabelNode target, Code code) {
         return new GotoNode(code.nextNodeName("goto"), code.getLastNode(), code, target);
     }
 
@@ -187,11 +187,7 @@ public class Nodes {
     }
 
     public static NoopNode noop(Code code) {
-        return noop(code.nextNodeName("noop"), code);
-    }
-
-    public static NoopNode noop(String name, Code code) {
-        return new NoopNode(name, code.getLastNode(), code);
+        return new NoopNode(code.nextNodeName("noop"), code.getLastNode(), code);
     }
 
     public static Node add(Type type, Code code) {
@@ -982,7 +978,7 @@ public class Nodes {
         return intToChar(code);
     }
 
-    public static Node label(Code code) {
+    public static LabelNode label(Code code) {
         return new LabelNode(code.nextNodeName("label"), code.getLastNode(), code);
     }
 
