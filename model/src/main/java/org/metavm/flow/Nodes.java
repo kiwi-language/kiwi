@@ -762,12 +762,12 @@ public class Nodes {
         );
     }
 
-    public static Node getStatic(Property property, Code code) {
-        return new GetStaticNode(
-                code.nextNodeName("getStatic"),
+    public static Node getStaticField(Field field, Code code) {
+        return new GetStaticFieldNode(
+                code.nextNodeName("getstaticfield"),
                 code.getLastNode(),
                 code,
-                property.getRef()
+                field.getRef()
         );
     }
 

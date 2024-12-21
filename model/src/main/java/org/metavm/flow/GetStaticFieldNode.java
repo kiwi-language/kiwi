@@ -2,27 +2,27 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.type.PropertyRef;
+import org.metavm.object.type.FieldRef;
 import org.metavm.object.type.Type;
 
 import javax.annotation.Nullable;
 
-public class GetStaticNode extends Node {
+public class GetStaticFieldNode extends Node {
 
-    private final PropertyRef propertyRef;
+    private final FieldRef fieldRef;
 
-    public GetStaticNode(String name,
-                         @Nullable Node previous,
-                         @NotNull Code code,
-                         PropertyRef propertyRef) {
+    public GetStaticFieldNode(String name,
+                              @Nullable Node previous,
+                              @NotNull Code code,
+                              FieldRef fieldRef) {
         super(name, null, previous, code);
-        this.propertyRef = propertyRef;
+        this.fieldRef = fieldRef;
     }
 
     @NotNull
     @Override
     public Type getType() {
-        return propertyRef.getType();
+        return fieldRef.getType();
     }
 
     @Override
@@ -32,12 +32,12 @@ public class GetStaticNode extends Node {
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitGetStaticNode(this);
+        return visitor.visitGetStaticFieldNode(this);
     }
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("getstatic " + propertyRef);
+        writer.write("getstaticfield " + fieldRef);
     }
 
     @Override
@@ -47,8 +47,8 @@ public class GetStaticNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.GET_STATIC);
-        output.writeConstant(propertyRef);
+        output.write(Bytecodes.GET_STATIC_FIELD);
+        output.writeConstant(fieldRef);
     }
 
     @Override

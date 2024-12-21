@@ -58,7 +58,8 @@ public class Bytecodes {
     public static final int GT = 67;
     public static final int LT = 68;
     public static final int LE = 69;
-    public static final int GET_STATIC = 71;
+    public static final int GET_STATIC_FIELD = 70;
+    public static final int GET_STATIC_METHOD = 71;
     public static final int INSTANCE_OF = 72;
     public static final int ARRAY_LENGTH = 73;
     public static final int IF_EQ = 74;

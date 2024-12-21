@@ -841,15 +841,15 @@ public class VmStack {
                                 stack[top++] = i.getFunction(methodRef);
                                 pc += 3;
                             }
-                            case Bytecodes.GET_STATIC -> {
-                                var property = (PropertyRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                                if (property instanceof FieldRef field) {
-                                    var staticFieldTable = StaticFieldTable.getInstance(field.getDeclaringType(), ContextUtil.getEntityContext());
-                                    stack[top++] = staticFieldTable.get(field.getRawField()).toStackValue();
-                                } else if (property instanceof MethodRef method) {
-                                    stack[top++] = new FlowValue(method, null);
-                                } else
-                                    throw new IllegalStateException("Unknown property type: " + property);
+                            case Bytecodes.GET_STATIC_FIELD -> {
+                                var fieldRef = (FieldRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                                var staticFieldTable = StaticFieldTable.getInstance(fieldRef.getDeclaringType(), ContextUtil.getEntityContext());
+                                stack[top++] = staticFieldTable.get(fieldRef.getRawField()).toStackValue();
+                                pc += 3;
+                            }
+                            case Bytecodes.GET_STATIC_METHOD -> {
+                                var methodRef = (MethodRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                                stack[top++] = new FlowValue(methodRef, null);
                                 pc += 3;
                             }
                             case Bytecodes.INSTANCE_OF -> {

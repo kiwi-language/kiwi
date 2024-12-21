@@ -1014,12 +1014,22 @@ public class MethodGenerator {
         );
     }
 
-    GetStaticNode createGetStatic(PropertyRef propertyRef) {
-        return onNodeCreated(new GetStaticNode(
-                        nextName("static"),
+    GetStaticFieldNode createGetStaticField(FieldRef fieldRef) {
+        return onNodeCreated(new GetStaticFieldNode(
+                        nextName("getstaticfield"),
                         code().getLastNode(),
                         code(),
-                        propertyRef
+                        fieldRef
+                )
+        );
+    }
+
+    GetStaticMethodNode createGetStaticMethod(MethodRef methodRef) {
+        return onNodeCreated(new GetStaticMethodNode(
+                        nextName("getstaticmethod"),
+                        code().getLastNode(),
+                        code(),
+                        methodRef
                 )
         );
     }

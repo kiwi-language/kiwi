@@ -438,7 +438,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitGetStaticNode(GetStaticNode node) {
+    public R visitGetStaticFieldNode(GetStaticFieldNode node) {
         return visitNode(node);
     }
 
@@ -747,6 +747,10 @@ public abstract class ElementVisitor<R> {
     }
 
     public R visitGetMethod(GetMethodNode node) {
+        return visitNode(node);
+    }
+
+    public R visitGetStaticMethodNode(GetStaticMethodNode node) {
         return visitNode(node);
     }
 }

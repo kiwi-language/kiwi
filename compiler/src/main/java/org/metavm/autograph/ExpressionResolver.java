@@ -370,7 +370,7 @@ public class ExpressionResolver {
                         }
                         var type = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass)));
                         var field = Objects.requireNonNull(type.getKlass().findSelfStaticFieldByName(psiField.getName()));
-                        return methodGenerator.createGetStatic(new FieldRef(type, field));
+                        return methodGenerator.createGetStaticField(new FieldRef(type, field));
                     } else {
                         var qualifierExpr = psiReferenceExpression.getQualifierExpression();
                         resolveQualifier(qualifierExpr, context);
@@ -391,13 +391,13 @@ public class ExpressionResolver {
                 if (psiMethod.hasModifierProperty(PsiModifier.STATIC)) {
                     var classType = (ClassType) typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass));
                     var method = classType.getKlass().getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
-                    methodGenerator.createGetStatic(new MethodRef(classType, method, List.of()));
+                    methodGenerator.createGetStaticMethod(new MethodRef(classType, method, List.of()));
                 } else {
                     if (psiReferenceExpression.getQualifierExpression() instanceof PsiReferenceExpression refExpr &&
                             refExpr.resolve() instanceof PsiClass) {
                         var classType = (ClassType) typeResolver.resolve(TranspileUtils.createType(psiClass));
                         var method = classType.getKlass().getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
-                        methodGenerator.createGetStatic(new MethodRef(classType, method, List.of()));
+                        methodGenerator.createGetStaticMethod(new MethodRef(classType, method, List.of()));
                     } else {
                         var qualifierExpr = Objects.requireNonNull(psiReferenceExpression.getQualifierExpression());
                         var classType = (ClassType) typeResolver.resolve(qualifierExpr.getType());
@@ -864,7 +864,7 @@ public class ExpressionResolver {
                     if (TranspileUtils.isStatic(psiField)) {
                         var classType = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.createType(psiField.getContainingClass())));
                         var field = classType.getKlass().getSelfStaticFieldByName(psiField.getName());
-                        assignment = methodGenerator.createGetStatic(new FieldRef(classType, field));
+                        assignment = methodGenerator.createGetStaticField(new FieldRef(classType, field));
                         assignment = action1.apply(assignment);
                         methodGenerator.createDup();
                         action2.run();

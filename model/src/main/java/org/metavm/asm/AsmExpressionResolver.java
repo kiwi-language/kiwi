@@ -524,7 +524,7 @@ class AsmExpressionResolver {
 
     private Type resolveGetStatic(Klass klass, String name) {
         var field = klass.getStaticFieldByName(name);
-        Nodes.getStatic(field, code);
+        Nodes.getStaticField(field, code);
         return field.getType();
     }
 
