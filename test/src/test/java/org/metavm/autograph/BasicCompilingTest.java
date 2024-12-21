@@ -126,6 +126,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processSwitchPatternGuard();
             processAnonymousClassWithArgs();
             processEnumConstantImpl();
+            processTrySectionBreak();
         });
     }
 
@@ -1232,6 +1233,18 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processAnonymousClassWithArgs() {
         var className = "anonymous_class.AnonymousClassWithArgs";
         Assert.assertEquals(1, callMethod(className, "test", List.of(1)));
+    }
+
+    private void processTrySectionBreak() {
+        var klassName = "trycatch.TrySectionBreakFoo";
+        Assert.assertEquals(Integer.MAX_VALUE, callMethod(klassName, "testReturn", List.of(1, 0)));
+        Assert.assertEquals(1, getStatic(klassName, "divCount"));
+        Assert.assertEquals(-1, callMethod(klassName, "testYield", List.of(0)));
+        Assert.assertEquals(1, (int) getStatic(klassName, "defaultCount"));
+        Assert.assertEquals(-1, callMethod(klassName, "testBreak", List.of(0)));
+        Assert.assertEquals(1, (int) getStatic(klassName, "breakCount"));
+        Assert.assertEquals(40, callMethod(klassName, "testContinue", List.of(10)));
+        Assert.assertEquals(10, (int) getStatic(klassName, "loopCount"));
     }
 
 }

@@ -56,6 +56,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     throwable(Throwable.class),
     exception(Exception.class, false, ExceptionNative.class),
     nullPointerException(NullPointerException.class, false, NullPointerExceptionNative.class),
+    arithmeticException(ArithmeticException.class, false, ArithmeticExceptionNative.class),
     runtimeException(RuntimeException.class, false, RuntimeExceptionNative.class),
     illegalArgumentException(IllegalArgumentException.class, false, IllegalArgumentExceptionNative.class),
     illegalStateException(IllegalStateException.class, false, IllegalStateExceptionNative.class),

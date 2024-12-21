@@ -1659,26 +1659,23 @@ public class NncUtils {
         return get(get(t, mapping1), mapping2);
     }
 
-    public static <T> void invokeIfNotNull(@Nullable T t, Consumer<T> action) {
-        if (t != null) {
+    public static <T> void ifNotNull(@Nullable T t, Consumer<? super T> action) {
+        if (t != null)
             action.accept(t);
-        }
     }
 
-    public static <T> void invokeIf(T t, Predicate<T> test, Consumer<T> action) {
-        if (test.test(t)) {
+    public static <T> void ifTrue(T t, Predicate<? super T> test, Consumer<? super T> action) {
+        if (test.test(t))
             action.accept(t);
-        }
     }
 
-    public static <T> void invokeIfNot(T t, Predicate<T> test, Consumer<T> action) {
-        if (!test.test(t)) {
+    public static <T> void ifFalse(T t, Predicate<? super T> test, Consumer<? super T> action) {
+        if (!test.test(t))
             action.accept(t);
-        }
     }
 
     public static <T, R> void getAndInvoke(T t, Function<T, R> mapper, Consumer<R> action) {
-        invokeIfNotNull(get(t, mapper), action);
+        ifNotNull(get(t, mapper), action);
     }
 
     public static <T> T requireNonNull(@Nullable T value) {

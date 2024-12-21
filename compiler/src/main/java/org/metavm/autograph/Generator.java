@@ -16,6 +16,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
+import static org.metavm.util.NncUtils.ifNotNull;
 
 public class Generator extends VisitorBase {
 
@@ -65,52 +66,51 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitTryStatement(PsiTryStatement statement) {
-        builder().createTryEnter();
+        var exits = new ArrayList<GotoNode>();
+        var tryEnter = builder().createTryEnter();
+        builder().enterTrySection(statement.getFinallyBlock());
         requireNonNull(statement.getTryBlock()).accept(this);
-        var tryExit = builder().createTryExit();
-        var exceptionVar = tryExit.getVariableIndex();
-        var caught = builder().nextVariableIndex();
-        if (statement.getCatchSections().length > 0) {
-            JumpNode lastIfNode = null;
-            var gotoNodes = new ArrayList<GotoNode>();
-            for (PsiCatchSection catchSection : statement.getCatchSections()) {
-                var catchBlock = NncUtils.requireNonNull(catchSection.getCatchBlock());
-                var sectionEntry = builder().createLoad(exceptionVar, StdKlass.exception.type());
-                if(lastIfNode != null)
-                    lastIfNode.setTarget(sectionEntry);
-                Values.node(builder().createInstanceOf(resolveType(catchSection.getCatchType())));
-                lastIfNode = builder().createIfEq(null);
-                var param = requireNonNull(catchSection.getParameter());
-                builder().createLoadConstant(Instances.one());
-                builder().createStore(caught);
-                builder().createLoad(exceptionVar, StdKlass.exception.type());
-                builder().createTypeCast(typeResolver.resolveDeclaration(param.getType()));
-                builder().createStore(builder().getVariableIndex(param));
+        builder().exitTrySection();
+        if (builder().isSequential()) {
+            builder().createTryExit();
+            ifNotNull(statement.getFinallyBlock(), b -> b.accept(this));
+            exits.add(builder().createGoto(null));
+        }
+        tryEnter.setHandler(builder().createLabel());
+        var catchTries = new ArrayList<TryEnterNode>();
+        for (PsiCatchSection catchSection : statement.getCatchSections()) {
+            builder().createDup();
+            builder().createInstanceOf(resolveType(catchSection.getCatchType()));
+            var ifNode = builder().createIfEq(null);
+            builder().createStore(builder().getVariableIndex(requireNonNull(catchSection.getParameter())));
+            var catchBlock = requireNonNull(catchSection.getCatchBlock());
+            if (statement.getFinallyBlock() != null) {
+                catchTries.add(builder().createTryEnter());
+                builder().enterTrySection(statement.getFinallyBlock());
                 catchBlock.accept(this);
-                gotoNodes.add(builder().createGoto(null));
+                builder().exitTrySection();
+                if (builder().isSequential()) {
+                    builder().createTryExit();
+                    statement.getFinallyBlock().accept(this);
+                    exits.add(builder().createGoto(null));
+                }
+            } else {
+                catchBlock.accept(this);
+                if (builder().isSequential())
+                    exits.add(builder().createGoto(null));
             }
-            requireNonNull(lastIfNode).setTarget(builder().createLoadConstant(Instances.zero()));
-            builder().createStore(caught);
-            var joinNode = builder().createNoop();
-            gotoNodes.forEach(g -> g.setTarget(joinNode));
-        } else {
-            builder().createLoadConstant(Instances.zero());
-            builder().createStore(caught);
+            ifNode.setTarget(builder().createLabel());
         }
-        if (statement.getFinallyBlock() != null) {
-            statement.getFinallyBlock().accept(this);
+        if (!catchTries.isEmpty()) {
+            var l = builder().createLabel();
+            catchTries.forEach(t -> t.setHandler(l));
         }
-        builder().createLoad(exceptionVar, StdKlass.exception.type());
-        builder().createLoadConstant(Instances.nullInstance());
-        builder().createRefCompareEq();
-        var if1 = builder().createIfNe(null);
-        builder().createLoad(caught, Types.getBooleanType());
-        var if2 = builder().createIfNe(null);
-        builder().createLoad(exceptionVar, StdKlass.exception.type());
+        var exceptVar = builder().nextVariableIndex();
+        builder().createStore(exceptVar);
+        ifNotNull(statement.getFinallyBlock(), b -> b.accept(this));
+        builder().createLoad(exceptVar, StdKlass.throwable.type());
         builder().createRaise();
-        var exit = builder().createNoop();
-        if1.setTarget(exit);
-        if2.setTarget(exit);
+        builder().connectBranches(exits);
     }
 
     @Override
@@ -145,30 +145,6 @@ public class Generator extends VisitorBase {
 //        if(method.getName().equals("findByName")) {
 //            logger.debug("{}", method.getText());
 //        }
-    }
-
-    private boolean isEntityType(Klass classType) {
-        return classType == StdKlass.entity.get();
-    }
-
-    private boolean isRecordType(Klass classType) {
-        return classType == StdKlass.record.get();
-    }
-
-    private static boolean isSuperCallPresent(PsiMethod method) {
-        var statements = requireNonNull(method.getBody(),
-                () -> "Failed to get body of method " + TranspileUtils.getMethodQualifiedName(method))
-                .getStatements();
-        boolean requireSuperCall = false;
-        if (statements.length > 0) {
-            if (statements[0] instanceof PsiExpressionStatement exprStmt &&
-                    exprStmt.getExpression() instanceof PsiMethodCallExpression methodCallExpr) {
-                if (Objects.equals(methodCallExpr.getMethodExpression().getReferenceName(), "super")) {
-                    requireSuperCall = true;
-                }
-            }
-        }
-        return requireSuperCall;
     }
 
     @Override
@@ -209,7 +185,7 @@ public class Generator extends VisitorBase {
                         statement.getElseBranch().accept(this);
                 }
         );
-        var block = builder().exitBlock();
+        var block = builder().exitSection();
         if(block.hasBreaks())
             block.connectBreaks(builder().createNoop());
     }
@@ -249,7 +225,7 @@ public class Generator extends VisitorBase {
         builder().enterBlock(statement);
         if (statement.getBody() != null)
             statement.getBody().accept(this);
-        var block = builder().exitBlock();
+        var block = builder().exitSection();
         var continuePoint = builder().createNoop();
         var update = statement.getUpdate();
         if(update != null)
@@ -283,7 +259,7 @@ public class Generator extends VisitorBase {
         builder().enterBlock(statement);
         if (statement.getBody() != null)
             statement.getBody().accept(this);
-        var block = builder().exitBlock();
+        var block = builder().exitSection();
         builder().createGoto(entry);
         var exit = builder().createNoop();
         ifNode.setTarget(exit);
@@ -296,7 +272,7 @@ public class Generator extends VisitorBase {
         builder().enterBlock(statement);
         if (statement.getBody() != null)
             statement.getBody().accept(this);
-        var block = builder().exitBlock();
+        var block = builder().exitSection();
         var condition = statement.getCondition();
         resolveExpression(condition);
         builder().createIfNe(entry);
@@ -336,7 +312,7 @@ public class Generator extends VisitorBase {
             builder().enterBlock(statement);
             if (statement.getBody() != null)
                 statement.getBody().accept(this);
-            var block = builder().exitBlock();
+            var block = builder().exitSection();
             var continuePoint = builder().createNoop();
             builder().createLoad(indexVar, Types.getIntType());
             builder().createLoadConstant(Instances.intOne());
@@ -375,7 +351,7 @@ public class Generator extends VisitorBase {
             builder().enterBlock(statement);
             if (statement.getBody() != null)
                 statement.getBody().accept(this);
-            var block = builder().exitBlock();
+            var block = builder().exitSection();
             builder().createGoto(entry);
             var exit = builder().createNoop();
             ifNode.setTarget(exit);
@@ -397,14 +373,18 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitReturnStatement(PsiReturnStatement statement) {
+        var trySection = builder().currentTrySection();
         if (Flows.isConstructor(builder().getMethod())) {
+            NncUtils.ifNotNull(trySection, tb -> tb.handleReturn(builder()));
             builder().getThis();
             builder().createReturn();
         } else {
             if (statement.getReturnValue() != null) {
                 resolveExpression(statement.getReturnValue());
+                NncUtils.ifNotNull(trySection, tb -> tb.handleReturn(builder()));
                 builder().createReturn();
             } else {
+                NncUtils.ifNotNull(trySection, tb -> tb.handleExit(builder()));
                 builder().createVoidReturn();
             }
         }
@@ -419,7 +399,17 @@ public class Generator extends VisitorBase {
     @Override
     public void visitYieldStatement(PsiYieldStatement statement) {
         resolveExpression(statement.getExpression());
-        builder().createYield();
+        var section = builder().currentSection();
+        while (section != null) {
+            if (section instanceof TrySection trySection)
+                trySection.handleExit(builder());
+            else if (section instanceof MethodGenerator.SwitchExpressionSection switchExpressionSection) {
+                switchExpressionSection.addYield(builder().createGoto(null));
+                return;
+            }
+            section = section.getParent();
+        }
+        throw new IllegalStateException("Not inside a switch section");
     }
 
     @Override
@@ -433,7 +423,7 @@ public class Generator extends VisitorBase {
     public void visitBlockStatement(PsiBlockStatement statement) {
         builder().enterBlock(statement);
         super.visitBlockStatement(statement);
-        var block = builder().exitBlock();
+        var block = builder().exitSection();
         if(block.hasBreaks())
             block.connectBreaks(builder().createNoop());
     }
@@ -441,20 +431,33 @@ public class Generator extends VisitorBase {
     @Override
     public void visitBreakStatement(PsiBreakStatement statement) {
         var label = NncUtils.get(statement.getLabelIdentifier(), PsiElement::getText);
-        var block = builder().currentBlock();
-        try {
-            block.addBreak(builder().createGoto(null), label);
+        var section = builder().currentSection();
+        while (section != null) {
+            if (section instanceof TrySection trySection)
+                trySection.handleExit(builder());
+            else if (section.isBreakTarget(label)) {
+                section.addBreak(builder().createGoto(null), label);
+                return;
+            }
+            section = section.getParent();
         }
-        catch (Exception e) {
-            block.printBlocks();
-            throw e;
-        }
+        throw new IllegalStateException("Cannot find the target block for break statement: " + statement.getText());
     }
 
     @Override
     public void visitContinueStatement(PsiContinueStatement statement) {
         var label = NncUtils.get(statement.getLabelIdentifier(), PsiElement::getText);
-        builder().currentBlock().addContinue(builder().createGoto(null), label);
+        var section = builder().currentSection();
+        while (section != null) {
+            if (section instanceof TrySection trySection)
+                trySection.handleExit(builder());
+            else if (section.isContinueTarget(label)) {
+                section.addContinue(builder().createGoto(null), label);
+                return;
+            }
+            section = section.getParent();
+        }
+        throw new IllegalStateException("Cannot find the target block for continue statement: " + statement.getText());
     }
 
     private Node resolveExpression(PsiExpression expression) {

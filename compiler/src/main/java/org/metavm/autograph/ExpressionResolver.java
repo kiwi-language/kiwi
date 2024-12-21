@@ -1101,7 +1101,7 @@ public class ExpressionResolver {
     }
 
     private Node resolveSwitchExpression(PsiSwitchExpression expression, ResolutionContext context) {
-        methodGenerator.enterSwitchExpression();
+        methodGenerator.enterSwitchExpression(expression);
         var exit = methodGenerator.createSwitch(expression);
         methodGenerator.exitSwitchExpression().connectYields(exit);
         return exit;

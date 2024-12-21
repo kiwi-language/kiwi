@@ -2,7 +2,6 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.StdMethod;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
@@ -23,8 +22,7 @@ public class MethodGenerator {
     private final TypeResolver typeResolver;
     private final ExpressionResolver expressionResolver;
     private final Set<String> generatedNames = new HashSet<>();
-    private final LinkedList<SwitchExpression> switchExpressions = new LinkedList<>();
-    private final LinkedList<BlockInfo> blocks = new LinkedList<>();
+    private @Nullable Section currentSection;
 
     public MethodGenerator(Method method, TypeResolver typeResolver, VisitorBase visitor) {
         this.method = method;
@@ -83,8 +81,7 @@ public class MethodGenerator {
     TryExitNode createTryExit() {
         return onNodeCreated(new TryExitNode(nextName("tryexit"),
                 code().getLastNode(),
-                code(),
-                nextVariableIndex()
+                code()
         ));
     }
 
@@ -124,22 +121,31 @@ public class MethodGenerator {
         );
     }
 
-    void enterSwitchExpression() {
-        switchExpressions.push(new SwitchExpression());
+    void enterSwitchExpression(PsiSwitchExpression expression) {
+        currentSection = new SwitchExpressionSection(expression, currentSection);
     }
 
-    SwitchExpression exitSwitchExpression() {
-        return switchExpressions.pop();
+    Section exitSection() {
+        var c = Objects.requireNonNull(currentSection);
+        currentSection = c.getParent();
+        return c;
     }
 
-    SwitchExpression currentSwitchExpression() {
-        return requireNonNull(switchExpressions.peek());
+    SwitchExpressionSection exitSwitchExpression() {
+        return (SwitchExpressionSection) exitSection();
     }
 
-    void createYield() {
-        var switchExpr = currentSwitchExpression();
-//        createStore(switchExpr.yieldVariable);
-        switchExpr.addYield(createGoto(null));
+    private <T> T currentSection(Class<T> klass, boolean required) {
+        var s = currentSection;
+        while (s != null) {
+            if (klass.isInstance(s))
+                return klass.cast(s);
+            s = s.getParent();
+        }
+        if (required)
+            throw new IllegalStateException("Not inside a switch section");
+        else
+            return null;
     }
 
     private ScopeInfo currentScope() {
@@ -291,6 +297,15 @@ public class MethodGenerator {
 
     ExpressionResolver getExpressionResolver() {
         return expressionResolver;
+    }
+
+    public VisitorBase getVisitor() {
+        return expressionResolver.getVisitor();
+    }
+
+    public boolean isSequential() {
+        var lastNode = code().getLastNode();
+        return  lastNode == null || lastNode.isSequential();
     }
 
     TypeResolver getTypeResolver() {
@@ -1140,15 +1155,11 @@ public class MethodGenerator {
     }
 
     public void enterBlock(PsiElement element) {
-        blocks.push(new BlockInfo(blocks.peek(), element));
+        currentSection = new Section(currentSection, element);
     }
 
-    public BlockInfo exitBlock() {
-        return requireNonNull(blocks.pop());
-    }
-
-    public BlockInfo currentBlock() {
-        return requireNonNull(blocks.peek());
+    public Section currentSection() {
+        return requireNonNull(currentSection);
     }
 
     public Node createFloatToInt() {
@@ -1222,6 +1233,13 @@ public class MethodGenerator {
 
     public Node createLabel() {
         return new LabelNode(nextName("label"), code().getLastNode(), code());
+    }
+
+    public void connectBranches(Collection<? extends JumpNode> branches) {
+        if (!branches.isEmpty()) {
+            var l = createLabel();
+            branches.forEach(b -> b.setTarget(l));
+        }
     }
 
     public TableSwitchNode createTableSwitch(int low, int high) {
@@ -1313,7 +1331,7 @@ public class MethodGenerator {
                 targets[j] = switchNode.getDefaultTarget();
         }
         switchNode.setTargets(List.of(targets));
-        exitBlock().connectBreaks(exit);
+        exitSection().connectBreaks(exit);
         return exit;
     }
 
@@ -1358,12 +1376,28 @@ public class MethodGenerator {
         return matches.size() < high - low + 1 >> 1 ? matches : NncUtils.range(low, high + 1);
     }
 
+    public void enterTrySection(PsiCodeBlock finallyBlock) {
+        currentSection = new TrySection(finallyBlock, currentSection);
+    }
+
+    public void exitTrySection() {
+        exitSection();
+    }
+
+    public @Nullable TrySection currentTrySection() {
+        return currentSection(TrySection.class, false);
+    }
+
     private record ScopeInfo(Code code) {
     }
 
-    static class SwitchExpression {
+    static class SwitchExpressionSection extends Section {
 
         private final List<GotoNode> yields = new ArrayList<>();
+
+        SwitchExpressionSection(PsiSwitchBlock switchBlock, @Nullable Section parent) {
+            super(parent, switchBlock);
+        }
 
         void addYield(GotoNode gotoNode) {
             yields.add(gotoNode);

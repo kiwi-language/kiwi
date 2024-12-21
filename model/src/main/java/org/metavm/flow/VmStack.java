@@ -42,7 +42,7 @@ public class VmStack {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
-    private final TryExit[] tryExits = new TryExit[1024];
+    private final ExceptionHandler[] exceptionHandlers = new ExceptionHandler[1024];
     private final Value[] stack = new Value[1024 * 1024];
     private final Frame[] frames = new Frame[1024];
 
@@ -72,7 +72,7 @@ public class VmStack {
             var frames = this.frames;
             int base = 0;
             int top = code.getMaxLocals();
-            int teTop = 0;
+            int handlerTop = 0;
             int pc = 0;
             var bytes = code.getCode();
             var fp = 0;
@@ -235,20 +235,13 @@ public class VmStack {
                                 pc += 3;
                             }
                             case Bytecodes.TRY_ENTER -> {
-                                var exitPc = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                tryExits[teTop++] = new TryExit(fp, exitPc);
+                                var handler = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
+                                exceptionHandlers[handlerTop++] = new ExceptionHandler(fp, handler);
                                 pc += 3;
                             }
                             case Bytecodes.TRY_EXIT -> {
-                                var tryExit = tryExits[--teTop];
-                                assert tryExit.pc == pc;
-                                if (exception != null) {
-                                    stack[top++] = exception.getReference();
-                                    exception = null;
-                                } else
-                                    stack[top++] = new NullValue();
-                                stack[base + ((bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff)] = stack[--top];
-                                pc += 3;
+                                handlerTop--;
+                                pc++;
                             }
                             case Bytecodes.FUNC -> {
                                 var functionType = (FunctionType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
@@ -423,11 +416,6 @@ public class VmStack {
                             case Bytecodes.TARGET, Bytecodes.NOOP -> pc++;
                             case Bytecodes.NON_NULL -> {
                                 var inst = stack[top - 1];
-                                if (inst == null) {
-                                    for (int i = base; i < top; i++) {
-                                        log.debug("stack[{}] = {}", i, stack[i]);
-                                    }
-                                }
                                 if (inst.isNull()) {
                                     exception = ClassInstance.allocate(StdKlass.nullPointerException.type());
                                     var nat = new NullPointerExceptionNative(exception);
@@ -475,16 +463,30 @@ public class VmStack {
                                 pc++;
                             }
                             case Bytecodes.INT_DIV -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(v1.value / v2.value);
-                                pc++;
+                                var v2 = ((IntValue) stack[--top]).value;
+                                var v1 = ((IntValue) stack[--top]).value;
+                                if (v2 == 0) {
+                                    exception = ClassInstance.allocate(StdKlass.arithmeticException.type());
+                                    var nat = new ArithmeticExceptionNative(exception);
+                                    nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
+                                    break except;
+                                } else {
+                                    stack[top++] = new IntValue(v1 / v2);
+                                    pc++;
+                                }
                             }
                             case Bytecodes.INT_REM -> {
-                                var v2 = (IntValue) stack[--top];
-                                var v1 = (IntValue) stack[--top];
-                                stack[top++] = new IntValue(v1.value % v2.value);
-                                pc++;
+                                var v2 = ((IntValue) stack[--top]).value;
+                                var v1 = ((IntValue) stack[--top]).value;
+                                if (v2 == 0) {
+                                    exception = ClassInstance.allocate(StdKlass.arithmeticException.type());
+                                    var nat = new ArithmeticExceptionNative(exception);
+                                    nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
+                                    break except;
+                                } else {
+                                    stack[top++] = new IntValue(v1 % v2);
+                                    pc++;
+                                }
                             }
                             case Bytecodes.LONG_ADD -> {
                                 var v2 = (LongValue) stack[--top];
@@ -505,16 +507,30 @@ public class VmStack {
                                 pc++;
                             }
                             case Bytecodes.LONG_DIV -> {
-                                var v2 = (LongValue) stack[--top];
-                                var v1 = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(v1.value / v2.value);
-                                pc++;
+                                var v2 = ((LongValue) stack[--top]).value;
+                                var v1 = ((LongValue) stack[--top]).value;
+                                if (v2 == 0) {
+                                    exception = ClassInstance.allocate(StdKlass.arithmeticException.type());
+                                    var nat = new ArithmeticExceptionNative(exception);
+                                    nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
+                                    break except;
+                                } else {
+                                    stack[top++] = new LongValue(v1 / v2);
+                                    pc++;
+                                }
                             }
                             case Bytecodes.LONG_REM -> {
-                                var v2 = (LongValue) stack[--top];
-                                var v1 = (LongValue) stack[--top];
-                                stack[top++] = new LongValue(v1.value % v2.value);
-                                pc++;
+                                var v2 = ((LongValue) stack[--top]).value;
+                                var v1 = ((LongValue) stack[--top]).value;
+                                if (v2 == 0) {
+                                    exception = ClassInstance.allocate(StdKlass.arithmeticException.type());
+                                    var nat = new ArithmeticExceptionNative(exception);
+                                    nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
+                                    break except;
+                                } else {
+                                    stack[top++] = new LongValue(v1 % v2);
+                                    pc++;
+                                }
                             }
                             case Bytecodes.DOUBLE_ADD -> {
                                 var v2 = (DoubleValue) stack[--top];
@@ -979,33 +995,26 @@ public class VmStack {
                     }
 
                     assert exception != null;
-                    if(teTop > 0) {
-                        var exit = tryExits[teTop - 1];
-                        if (exit.fp == fp)
-                            pc = exit.pc;
+                    if(handlerTop > 0) {
+                        var h = exceptionHandlers[--handlerTop];
+                        if (h.fp == fp)
+                            pc = h.pc;
                         else {
-                            for (int i = exit.fp + 1; i < fp; i++) {
-                                var f = frames[i];
-                                Arrays.fill(stack, f.base, f.base + f.code.getFrameSize(), null);
-                            }
-                            Arrays.fill(stack, base, base + code.getFrameSize(), null);
-                            var f = frames[exit.fp];
-                            fp = exit.fp;
+                            var f = frames[h.fp];
+                            Arrays.fill(stack, f.base + f.code.getFrameSize(), base + code.getFrameSize(), null);
+                            fp = h.fp;
                             base = f.base;
                             top = f.top;
                             code = f.code;
                             bytes = code.getCode();
-                            pc = exit.pc;
+                            pc = h.pc;
                             constants = f.constants;
                             closureContext = f.closureContext;
                         }
+                        stack[top++] = exception.getReference();
                     }
                     else {
-                        for (int i = 0; i < fp; i++) {
-                            var f = frames[i];
-                            Arrays.fill(stack, f.base, f.base + f.code.getFrameSize(), null);
-                        }
-                        Arrays.fill(stack, base, base + code.getFrameSize(), null);
+                        Arrays.fill(stack, 0, base + code.getFrameSize(), null);
                         return FlowExecResult.ofException(exception);
                     }
 
@@ -1076,6 +1085,6 @@ public class VmStack {
         ClosureContext closureContext) {
     }
 
-    private record TryExit(int fp, int pc) {}
+    private record ExceptionHandler(int fp, int pc) {}
 
 }

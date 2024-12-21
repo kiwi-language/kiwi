@@ -2,14 +2,11 @@ package org.metavm.flow;
 
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.LoadAware;
-
-import java.util.Objects;
 
 @Entity
-public class TryEnterNode extends Node implements LoadAware {
+public class TryEnterNode extends Node {
 
-    private transient TryExitNode exit;
+    private Node handler;
 
     public TryEnterNode(String name, Node previous, Code code) {
         super(name, null, previous, code);
@@ -22,7 +19,7 @@ public class TryEnterNode extends Node implements LoadAware {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("try-enter");
+        writer.write("tryenter");
     }
 
     @Override
@@ -33,7 +30,7 @@ public class TryEnterNode extends Node implements LoadAware {
     @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.TRY_ENTER);
-        output.writeShort(exit.getOffset());
+        output.writeShort(handler.getOffset());
     }
 
     @Override
@@ -46,30 +43,8 @@ public class TryEnterNode extends Node implements LoadAware {
         return visitor.visitTryEnterNode(this);
     }
 
-    public TryExitNode getExit() {
-        if(exit != null)
-            return exit;
-        int numEntries = 0;
-        for(var n = getSuccessor(); n != null; n = n.getSuccessor()) {
-            if(n instanceof TryEnterNode)
-                numEntries++;
-            else if(n instanceof TryExitNode e) {
-                if(numEntries == 0) {
-                    exit = e;
-                    break;
-                }
-                numEntries--;
-            }
-        }
-        return Objects.requireNonNull(exit, () -> "Cannot find exit for TryEnterNode " + getName());
+    public void setHandler(Node handler) {
+        this.handler = handler;
     }
 
-    @Override
-    public void onLoad() {
-        getExit();
-    }
-
-    void setExit(TryExitNode exit) {
-        this.exit = exit;
-    }
 }

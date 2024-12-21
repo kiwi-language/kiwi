@@ -165,17 +165,11 @@ public class Code extends Element implements LoadAware {
     }
 
     public void emitCode() {
-        var tryEnters = new LinkedList<TryEnterNode>();
         int offset = 0;
         for (Node node : nodes) {
             node.setOffset(offset);
             offset += node.getLength();
-            if(node instanceof TryEnterNode tryEnter)
-                tryEnters.push(tryEnter);
-            else if(node instanceof TryExitNode tryExit)
-                tryEnters.pop().setExit(tryExit);
         }
-        assert tryEnters.isEmpty();
         var output = new CodeOutput(getFlow().getConstantPool());
         nodes.forEach(node -> node.writeCode(output));
         code = output.toByteArray();

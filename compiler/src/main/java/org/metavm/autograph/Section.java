@@ -3,6 +3,7 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiLoopStatement;
 import com.intellij.psi.PsiStatement;
+import com.intellij.psi.PsiSwitchBlock;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.flow.GotoNode;
 import org.metavm.flow.Node;
@@ -13,24 +14,26 @@ import java.util.Collections;
 import java.util.List;
 
 @Slf4j
-public class BlockInfo {
+public class Section {
 
-    private final @Nullable BlockInfo parent;
+    private final @Nullable Section parent;
     private final @Nullable String label;
-    private final PsiElement element;
+    private final @Nullable PsiElement element;
     private final List<GotoNode> breaks = new ArrayList<>();
     private final List<GotoNode> continues = new ArrayList<>();
     private final boolean isLoop;
+    private final boolean isSwitch;
 
-    public BlockInfo(@Nullable BlockInfo parent, PsiElement element) {
+    public Section(@Nullable Section parent, @Nullable PsiElement element) {
         this.parent = parent;
         this.element = element;
         this.label = element instanceof PsiStatement stmt ? TranspileUtils.getLabel(stmt) : null;
         isLoop = element instanceof PsiLoopStatement;
+        isSwitch = element instanceof PsiSwitchBlock;
     }
 
     @Nullable
-    public BlockInfo getParent() {
+    public Section getParent() {
         return parent;
     }
 
@@ -57,6 +60,10 @@ public class BlockInfo {
             throw new IllegalStateException("Can not find target loop for \"continue " + target + "\"");
     }
 
+    boolean isBreakTarget(@Nullable String label) {
+        return label != null ? label.equals(this.label) : isLoop || isSwitch;
+    }
+
     public List<GotoNode> getBreaks() {
         return Collections.unmodifiableList(breaks);
     }
@@ -76,16 +83,17 @@ public class BlockInfo {
         connectBreaks(breakTarget);
     }
 
-    public void connectBreaks(Node target) {
-        for (GotoNode b : breaks) {
-            b.setTarget(target);
-        }
+    public void connectBreaks(Node exit) {
+        breaks.forEach(b -> b.setTarget(exit));
     }
 
     public void printBlocks() {
-        log.debug("{} {}", element.getClass().getSimpleName(), label);
+        log.debug("{} {}", element != null ? element.getClass().getSimpleName() : null, label);
         if(parent != null)
             parent.printBlocks();
     }
 
+    public boolean isContinueTarget(String label) {
+        return label != null ? label.equals(this.label) : isLoop;
+    }
 }

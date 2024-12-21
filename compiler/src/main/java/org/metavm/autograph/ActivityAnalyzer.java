@@ -13,7 +13,7 @@ import java.util.Objects;
 import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.Keys.*;
 import static org.metavm.autograph.TranspileUtils.createTemplateType;
-import static org.metavm.util.NncUtils.invokeIfNotNull;
+import static org.metavm.util.NncUtils.ifNotNull;
 
 public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
@@ -208,13 +208,13 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     @Override
     public void visitForStatement(PsiForStatement statement) {
         enterScope();
-        invokeIfNotNull(statement.getInitialization(), init -> init.accept(this));
-        invokeIfNotNull(statement.getCondition(), cond -> cond.accept(this));
-        invokeIfNotNull(statement.getUpdate(), upd -> upd.accept(this));
+        ifNotNull(statement.getInitialization(), init -> init.accept(this));
+        ifNotNull(statement.getCondition(), cond -> cond.accept(this));
+        ifNotNull(statement.getUpdate(), upd -> upd.accept(this));
         exitAndRecordScope(statement, ITERATE_SCOPE);
 
         enterScope();
-        invokeIfNotNull(statement.getBody(), body -> body.accept(this));
+        ifNotNull(statement.getBody(), body -> body.accept(this));
         exitAndRecordScope(statement, BODY_SCOPE);
     }
 

@@ -32,7 +32,7 @@ public class IntDivNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.INT_MUL);
+        output.write(Bytecodes.INT_DIV);
     }
 
     @Override

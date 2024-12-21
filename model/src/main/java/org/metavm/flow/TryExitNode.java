@@ -6,11 +6,8 @@ import org.metavm.entity.ElementVisitor;
 @Entity
 public class TryExitNode extends Node {
 
-    private final int variableIndex;
-
-    public TryExitNode(String name, Node previous, Code code, int variableIndex) {
+    public TryExitNode(String name, Node previous, Code code) {
         super(name, null, previous, code);
-        this.variableIndex = variableIndex;
     }
 
     @Override
@@ -20,7 +17,7 @@ public class TryExitNode extends Node {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("try-exit variable = " + variableIndex);
+        writer.write("tryexit");
     }
 
     @Override
@@ -31,12 +28,11 @@ public class TryExitNode extends Node {
     @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.TRY_EXIT);
-        output.writeShort(variableIndex);
     }
 
     @Override
     public int getLength() {
-        return 3;
+        return 1;
     }
 
     @Override
@@ -44,7 +40,4 @@ public class TryExitNode extends Node {
         return visitor.visitTryExitNode(this);
     }
 
-    public int getVariableIndex() {
-        return variableIndex;
-    }
 }

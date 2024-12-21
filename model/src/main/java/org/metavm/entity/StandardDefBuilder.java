@@ -169,6 +169,7 @@ public class StandardDefBuilder {
         createExceptionKlass(IllegalArgumentException.class, runtimeExceptionKlass);
         createExceptionKlass(IllegalStateException.class, runtimeExceptionKlass);
         createExceptionKlass(NullPointerException.class, runtimeExceptionKlass);
+        createExceptionKlass(ArithmeticException.class, runtimeExceptionKlass);
         createExceptionKlass(UnsupportedOperationException.class, runtimeExceptionKlass);
         createExceptionKlass(ConcurrentModificationException.class, runtimeExceptionKlass);
         createExceptionKlass(ClassCastException.class, runtimeExceptionKlass);
