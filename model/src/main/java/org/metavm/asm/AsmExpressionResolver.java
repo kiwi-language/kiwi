@@ -537,7 +537,7 @@ class AsmExpressionResolver {
             assert type instanceof KlassType;
             var klass = ((ClassType) type);
             var field = klass.getFieldByName(name);
-            Nodes.getProperty(field, code);
+            Nodes.getField(field, code);
             return field.getType();
         }
     }

@@ -7,6 +7,8 @@ import java.lang.reflect.Modifier;
 
 public class Bytecodes {
 
+    public static final int GET_FIELD = 1;
+    public static final int GET_METHOD = 2;
     public static final int ADD_OBJECT = 3;
     public static final int SET_FIELD = 4;
     public static final int DELETE_OBJECT = 5;
@@ -56,7 +58,6 @@ public class Bytecodes {
     public static final int GT = 67;
     public static final int LT = 68;
     public static final int LE = 69;
-    public static final int GET_PROPERTY = 70;
     public static final int GET_STATIC = 71;
     public static final int INSTANCE_OF = 72;
     public static final int ARRAY_LENGTH = 73;

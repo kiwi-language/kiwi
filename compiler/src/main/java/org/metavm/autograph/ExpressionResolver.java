@@ -380,7 +380,7 @@ public class ExpressionResolver {
                                 generics.getSubstitutor().substitute(createTemplateType(psiClass))
                         );
                         var field = type.getKlass().getSelfFieldByName(psiField.getName());
-                        return methodGenerator.createGetProperty(new FieldRef(type, field));
+                        return methodGenerator.createGetField(new FieldRef(type, field));
                     }
                 }
             }
@@ -403,7 +403,7 @@ public class ExpressionResolver {
                         var classType = (ClassType) typeResolver.resolve(qualifierExpr.getType());
                         var method = classType.getKlass().getMethodByInternalName(TranspileUtils.getInternalName(psiMethod));
                         resolveQualifier(qualifierExpr, context);
-                        methodGenerator.createGetProperty(new MethodRef(classType, method, List.of()));
+                        methodGenerator.createGetMethod(new MethodRef(classType, method, List.of()));
                     }
                 }
                 return createSAMConversion(type);
@@ -882,7 +882,7 @@ public class ExpressionResolver {
                                 )
                         );
                         var field = type.getKlass().getSelfFieldByName(psiField.getName());
-                        assignment = methodGenerator.createGetProperty(new FieldRef(type, field));
+                        assignment = methodGenerator.createGetField(new FieldRef(type, field));
                         assignment = action1.apply(assignment);
                         methodGenerator.createDupX1();
                         action2.run();

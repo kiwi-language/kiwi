@@ -748,21 +748,17 @@ public class Nodes {
         return Nodes.load(0, type, code);
     }
 
-    public static Node thisProperty(PropertyRef propertyRef, Code code) {
+    public static Node thisField(FieldRef fieldRef, Code code) {
         this_(code);
-        return getProperty(propertyRef, code);
+        return getField(fieldRef, code);
     }
 
-    public static Node getProperty(PropertyRef propertyRef, Code code) {
-        return getProperty(code.nextNodeName("property"), propertyRef, code);
-    }
-
-    public static Node getProperty(String name, PropertyRef propertyRef, Code code) {
-        return new GetPropertyNode(
-                name,
+    public static Node getField(FieldRef fieldRef, Code code) {
+        return new GetFieldNode(
+                code.nextNodeName("getfield"),
                 code.getLastNode(),
                 code,
-                propertyRef
+                fieldRef
         );
     }
 

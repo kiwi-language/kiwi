@@ -232,7 +232,7 @@ public class Types {
                 .returnType(sam.getReturnType())
                 .build();
         var code = flow.getCode();
-        Nodes.thisProperty(funcField.getRef(), code);
+        Nodes.thisField(funcField.getRef(), code);
         int numParams = flow.getParameters().size();
         for (int i = 0; i < numParams; i++) {
             Nodes.argument(flow, i);

@@ -994,12 +994,22 @@ public class MethodGenerator {
         );
     }
 
-    GetPropertyNode createGetProperty(PropertyRef propertyRef) {
-        return onNodeCreated(new GetPropertyNode(
-                        nextName("property"),
+    GetFieldNode createGetField(FieldRef fieldRef) {
+        return onNodeCreated(new GetFieldNode(
+                        nextName("getfield"),
                         code().getLastNode(),
                         code(),
-                        propertyRef
+                        fieldRef
+                )
+        );
+    }
+
+    GetMethodNode createGetMethod(MethodRef methodRef) {
+        return onNodeCreated(new GetMethodNode(
+                        nextName("getmethod"),
+                        code().getLastNode(),
+                        code(),
+                        methodRef
                 )
         );
     }

@@ -75,7 +75,7 @@ public class RecordParser<T extends Record> extends PojoParser<T, RecordDef<T>> 
                 var accessor = klass.getMethodByName(field.getName());
                 var code = accessor.getCode();
                 code.setStrictEphemeral(true);
-                Nodes.thisProperty(field.getRef(), code);
+                Nodes.thisField(field.getRef(), code);
                 Nodes.ret(code);
             }
         }

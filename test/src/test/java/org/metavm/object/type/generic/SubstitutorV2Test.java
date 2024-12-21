@@ -37,7 +37,7 @@ public class SubstitutorV2Test extends TestCase {
                     .returnType(typeVar.getType())
                     .build();
             var code = getValueFlow.getCode();
-            Nodes.thisProperty(valueField.getRef(), code);
+            Nodes.thisField(valueField.getRef(), code);
             Nodes.ret(code);
         }
 

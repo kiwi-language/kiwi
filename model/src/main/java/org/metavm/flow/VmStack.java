@@ -829,10 +829,16 @@ public class VmStack {
                                 stack[top++] = !v1.equals(v2) ? one : zero;
                                 pc++;
                             }
-                            case Bytecodes.GET_PROPERTY -> {
+                            case Bytecodes.GET_FIELD -> {
                                 var i = stack[--top].resolveObject();
-                                var p = (PropertyRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                                stack[top++] = i.getProperty(p).toStackValue();
+                                var p = (FieldRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                                stack[top++] = i.getField(p.getRawField()).toStackValue();
+                                pc += 3;
+                            }
+                            case Bytecodes.GET_METHOD -> {
+                                var i = stack[--top].resolveObject();
+                                var methodRef = (MethodRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
+                                stack[top++] = i.getFunction(methodRef);
                                 pc += 3;
                             }
                             case Bytecodes.GET_STATIC -> {

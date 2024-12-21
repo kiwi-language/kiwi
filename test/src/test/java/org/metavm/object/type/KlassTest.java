@@ -54,7 +54,7 @@ public class KlassTest extends TestCase {
         {
             var code = getMethod.getCode();
             Nodes.this_(code);
-            Nodes.getProperty(valueField.getRef(), code);
+            Nodes.getField(valueField.getRef(), code);
             Nodes.ret(code);
         }
         var factoryMethod = MethodBuilder.newBuilder(fooKlass, "create").isStatic(true).build();
