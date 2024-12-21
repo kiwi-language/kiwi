@@ -52,7 +52,7 @@ public class NativeFunctionCallResolver implements MethodCallResolver {
             if(paramIt.next().getType().isNotNull())
                 methodGenerator.createNonNull();
         }
-        var node = methodGenerator.createFunctionCall(new FunctionRef(function, typeArgs));
+        var node = methodGenerator.createInvokeFunction(new FunctionRef(function, typeArgs));
         expressionResolver.setCapturedVariables(node);
         return node;
     }

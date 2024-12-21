@@ -636,12 +636,12 @@ public class ExpressionResolver {
         for (var psiArg : psiArgs) {
              resolve(psiArg, context);
         }
-        var node = methodGenerator.createMethodCall(new MethodRef(type, method, typeArgs));
+        var node = methodGenerator.createInvokeMethod(new MethodRef(type, method, typeArgs));
         setCapturedVariables(node);
         return node;
     }
 
-    void setCapturedVariables(CallNode node) {
+    void setCapturedVariables(InvokeNode node) {
         var flow = node.getFlowRef();
         var capturedTypeSet = new HashSet<CapturedType>();
         if (flow instanceof MethodRef methodRef) {
@@ -671,7 +671,7 @@ public class ExpressionResolver {
 
     private Node createSAMConversion(ClassType samInterface) {
         var funcRef = new FunctionRef(StdFunction.functionToInstance.get(), List.of(samInterface));
-        return methodGenerator.createFunctionCall(funcRef);
+        return methodGenerator.createInvokeFunction(funcRef);
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -744,7 +744,7 @@ public class ExpressionResolver {
                     tp -> typeResolver.resolveDeclaration(methodGenerics.getSubstitutor().substitute(tp))
             );
             var methodRef = new MethodRef(type, flow, typeArgs);
-            var node = methodGenerator.createMethodCall(methodRef);
+            var node = methodGenerator.createInvokeMethod(methodRef);
             setCapturedVariables(node);
             return node;
         } else {

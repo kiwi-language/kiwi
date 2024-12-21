@@ -75,7 +75,7 @@ public class BeanManagerTest extends TestCase {
                         false
                 );
                 Nodes.argument(factoryMethod, 0);
-                Nodes.methodCall(constructor.getRef(), factoryMethod.getCode());
+                Nodes.invokeMethod(constructor.getRef(), factoryMethod.getCode());
                 Nodes.ret(factoryMethod.getCode());
             }
             var registry = BeanDefinitionRegistry.getInstance(context);

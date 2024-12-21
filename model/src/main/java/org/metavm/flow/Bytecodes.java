@@ -14,8 +14,10 @@ public class Bytecodes {
     public static final int DELETE_OBJECT = 5;
     public static final int RETURN = 9;
     public static final int RAISE = 10;
-    public static final int METHOD_CALL = 12;
-    public static final int GET_UNIQUE = 13;
+    public static final int INVOKE_VIRTUAL = 11;
+    public static final int INVOKE_SPECIAL = 12;
+    public static final int INVOKE_STATIC = 13;
+    public static final int GET_UNIQUE = 14;
     public static final int NEW = 15;
     public static final int SET_STATIC = 17;
     public static final int NEW_ARRAY = 21;
@@ -26,7 +28,7 @@ public class Bytecodes {
     public static final int ADD_ELEMENT = 27;
     public static final int DELETE_ELEMENT = 28;
     public static final int GET_ELEMENT = 29;
-    public static final int FUNCTION_CALL = 30;
+    public static final int INVOKE_FUNCTION = 30;
     public static final int CAST = 31;
     public static final int CLEAR_ARRAY = 32;
     public static final int COPY = 33;

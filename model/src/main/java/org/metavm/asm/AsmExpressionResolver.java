@@ -276,7 +276,7 @@ class AsmExpressionResolver {
             var constructor = type.resolveMethod(
                     type.getKlass().getName(), argTypes, typeArgs, false
             );
-            Nodes.methodCall(constructor, code);
+            Nodes.invokeMethod(constructor, code);
             return type;
         }
     }
@@ -498,7 +498,7 @@ class AsmExpressionResolver {
         List<Type> argTypes = methodCall.expressionList() != null ?
                 NncUtils.map(methodCall.expressionList().expression(), this::resolve0) : List.of();
         var method = type.resolveMethod(methodName, argTypes, typeArgs, false);
-        Nodes.methodCall(method, code);
+        Nodes.invokeMethod(method, code);
         return method.getReturnType();
     }
 
@@ -508,7 +508,7 @@ class AsmExpressionResolver {
         List<Type> argTypes = expressionList != null ?
                 NncUtils.map(expressionList.expression(), this::resolve0) : List.of();
         var method = type.resolveMethod(methodName, argTypes, List.of(), false);
-        Nodes.methodCall(method, code);
+        Nodes.invokeMethod(method, code);
         return null;
     }
 
@@ -518,7 +518,7 @@ class AsmExpressionResolver {
         List<Type> argTypes = expressionList != null ?
                 NncUtils.map(expressionList.expression(), this::resolve0) : List.of();
         var method = type.resolveMethod(methodName, argTypes, List.of(), false);
-        Nodes.methodCall(method, code);
+        Nodes.invokeMethod(method, code);
         return null;
     }
 
@@ -607,7 +607,7 @@ class AsmExpressionResolver {
             var func = StdFunction.valueOf(name).get();
             if(exprListCtx != null)
                 NncUtils.map(exprListCtx.expression(), this::resolve0);
-            Nodes.functionCall(code, func);
+            Nodes.invokeFunction(code, func);
             return func.getReturnType();
         }
     }

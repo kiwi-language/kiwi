@@ -70,7 +70,7 @@ public class KlassTest extends TestCase {
             Nodes.argument(factoryMethod, 0);
             Nodes.argument(factoryMethod, 1);
             Nodes.newObject(code, pKlass, false, false);
-            Nodes.methodCall(pKlass.getMethod(MethodRef::isConstructor), code);
+            Nodes.invokeMethod(pKlass.getMethod(MethodRef::isConstructor), code);
             Nodes.ret(code);
         }
         var longFooKlass = KlassType.create(fooKlass, List.of(Types.getLongType()));
@@ -129,7 +129,7 @@ public class KlassTest extends TestCase {
             var code = nameIndexMethod.getCode();
             Nodes.argument(nameIndexMethod, 0);
             Nodes.newObject(code, nameIndexKlass.getType(), true, true);
-            Nodes.methodCall(nameIndexConstructor.getRef(), code);
+            Nodes.invokeMethod(nameIndexConstructor.getRef(), code);
             Nodes.ret(code);
         }
         var index = new org.metavm.object.type.Index(fooKlass, "nameIndex", "", true,

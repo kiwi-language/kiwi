@@ -137,7 +137,7 @@ public class VmStack {
                                 exception = stack[--top].resolveObject();
                                 break except;
                             }
-                            case Bytecodes.METHOD_CALL -> {
+                            case Bytecodes.INVOKE_VIRTUAL -> {
                                 var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                                 var method = (MethodRef) constants[flowIndex];
                                 int numCapturedVars = (bytes[pc + 3] & 0xff) << 8 | bytes[pc + 4] & 0xff;
@@ -155,22 +155,16 @@ public class VmStack {
                                     }
                                     method = (MethodRef) tryUncaptureFlow(method, capturedVarIndexes, capturedVarTypes, stack, base);
                                 }
-                                Value self;
-                                if (method.isStatic())
-                                    self = null;
-                                else {
-                                    self = stack[top - method.getParameterCount() - 1];
-                                    if (method.isVirtual())
-                                        method = ((ClassType) requireNonNull(self).getType()).getOverride(method);
-                                }
+                                var self = stack[top - method.getParameterCount() - 1];
+                                if (method.isVirtual())
+                                    method = ((ClassType) requireNonNull(self).getType()).getOverride(method);
                                 if (method.isNative()) {
                                     var paramCount = method.getParameterCount();
                                     var args = new Value[paramCount];
                                     for (int i = paramCount - 1; i >= 0; i--) {
                                         args[i] = stack[--top];
                                     }
-                                    if (!method.isStatic())
-                                        top--;
+                                    top--;
                                     var r = NativeMethods.invoke(method.getRawFlow(), self, List.of(args), callContext);
                                     if (r.exception() != null) {
                                         exception = r.exception();
@@ -179,13 +173,99 @@ public class VmStack {
                                         stack[top++] = r.ret();
                                 } else {
                                     int prevBase = base;
-                                    base = top - (method.isStatic() ? method.getParameterCount() : method.getParameterCount() + 1);
+                                    base = top - method.getParameterCount() - 1;
                                     top = base + method.getRawFlow().getCode().getMaxLocals();
                                     frames[fp++] = new Frame(pc, prevBase, base, code, constants, closureContext);
                                     code = method.getRawFlow().getCode();
                                     bytes = code.getCode();
                                     constants = method.getTypeMetadata().getValues();
-                                    closureContext = method.isStatic() ? null : stack[base].resolveObject().getClosureContext();
+                                    closureContext = stack[base].resolveObject().getClosureContext();
+                                    pc = 0;
+                                }
+                            }
+                            case Bytecodes.INVOKE_SPECIAL -> {
+                                var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
+                                var method = (MethodRef) constants[flowIndex];
+                                int numCapturedVars = (bytes[pc + 3] & 0xff) << 8 | bytes[pc + 4] & 0xff;
+                                pc += 5;
+                                if (numCapturedVars > 0) {
+                                    var capturedVarIndexes = new int[numCapturedVars];
+                                    var capturedVarTypes = new Type[numCapturedVars];
+                                    for (int i = 0; i < numCapturedVars; i++) {
+                                        capturedVarIndexes[i] = (bytes[pc] & 0xff) << 8 | bytes[pc + 1] & 0xff;
+                                        pc += 2;
+                                    }
+                                    for (int i = 0; i < numCapturedVars; i++) {
+                                        capturedVarTypes[i] = (Type) constants[(bytes[pc] & 0xff) << 8 | bytes[pc + 1] & 0xff];
+                                        pc += 2;
+                                    }
+                                    method = (MethodRef) tryUncaptureFlow(method, capturedVarIndexes, capturedVarTypes, stack, base);
+                                }
+                                var self = stack[top - method.getParameterCount() - 1];
+                                if (method.isNative()) {
+                                    var paramCount = method.getParameterCount();
+                                    var args = new Value[paramCount];
+                                    for (int i = paramCount - 1; i >= 0; i--) {
+                                        args[i] = stack[--top];
+                                    }
+                                    top--;
+                                    var r = NativeMethods.invoke(method.getRawFlow(), self, List.of(args), callContext);
+                                    if (r.exception() != null) {
+                                        exception = r.exception();
+                                        break except;
+                                    } else if (!method.getReturnType().isVoid())
+                                        stack[top++] = r.ret();
+                                } else {
+                                    int prevBase = base;
+                                    base = top - method.getParameterCount() - 1;
+                                    top = base + method.getRawFlow().getCode().getMaxLocals();
+                                    frames[fp++] = new Frame(pc, prevBase, base, code, constants, closureContext);
+                                    code = method.getRawFlow().getCode();
+                                    bytes = code.getCode();
+                                    constants = method.getTypeMetadata().getValues();
+                                    closureContext = stack[base].resolveObject().getClosureContext();
+                                    pc = 0;
+                                }
+                            }
+                            case Bytecodes.INVOKE_STATIC -> {
+                                var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
+                                var method = (MethodRef) constants[flowIndex];
+                                int numCapturedVars = (bytes[pc + 3] & 0xff) << 8 | bytes[pc + 4] & 0xff;
+                                pc += 5;
+                                if (numCapturedVars > 0) {
+                                    var capturedVarIndexes = new int[numCapturedVars];
+                                    var capturedVarTypes = new Type[numCapturedVars];
+                                    for (int i = 0; i < numCapturedVars; i++) {
+                                        capturedVarIndexes[i] = (bytes[pc] & 0xff) << 8 | bytes[pc + 1] & 0xff;
+                                        pc += 2;
+                                    }
+                                    for (int i = 0; i < numCapturedVars; i++) {
+                                        capturedVarTypes[i] = (Type) constants[(bytes[pc] & 0xff) << 8 | bytes[pc + 1] & 0xff];
+                                        pc += 2;
+                                    }
+                                    method = (MethodRef) tryUncaptureFlow(method, capturedVarIndexes, capturedVarTypes, stack, base);
+                                }
+                                if (method.isNative()) {
+                                    var paramCount = method.getParameterCount();
+                                    var args = new Value[paramCount];
+                                    for (int i = paramCount - 1; i >= 0; i--) {
+                                        args[i] = stack[--top];
+                                    }
+                                    var r = NativeMethods.invoke(method.getRawFlow(), null, List.of(args), callContext);
+                                    if (r.exception() != null) {
+                                        exception = r.exception();
+                                        break except;
+                                    } else if (!method.getReturnType().isVoid())
+                                        stack[top++] = r.ret();
+                                } else {
+                                    int prevBase = base;
+                                    base = top - method.getParameterCount();
+                                    top = base + method.getRawFlow().getCode().getMaxLocals();
+                                    frames[fp++] = new Frame(pc, prevBase, base, code, constants, closureContext);
+                                    code = method.getRawFlow().getCode();
+                                    bytes = code.getCode();
+                                    constants = method.getTypeMetadata().getValues();
+                                    closureContext = null;
                                     pc = 0;
                                 }
                             }
@@ -303,7 +383,7 @@ public class VmStack {
                                     break except;
                                 }
                             }
-                            case Bytecodes.FUNCTION_CALL -> {
+                            case Bytecodes.INVOKE_FUNCTION -> {
                                 //noinspection DuplicatedCode
                                 var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                                 var func = (FunctionRef) constants[flowIndex];

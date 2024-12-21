@@ -51,16 +51,12 @@ public class ListOfResolver implements MethodCallResolver {
         var arrayListType = new KlassType(null, arrayListKlass, List.of(listType.getFirstTypeArgument()));
         methodGenerator.createNew(arrayListType, false, true);
         var constructor = new MethodRef(arrayListType, arrayListKlass.getDefaultConstructor(), List.of());
-        var list = methodGenerator.createMethodCall(constructor);
+        var list = methodGenerator.createInvokeMethod(constructor);
         var expressions = methodCallExpression.getArgumentList().getExpressions();
         for (PsiExpression psiExpression : expressions) {
             methodGenerator.createDup();
             expressionResolver.resolve(psiExpression);
-            methodGenerator.createMethodCall(
-                    new MethodRef(arrayListType, StdMethod.arrayListAdd.get(), List.of()),
-                    List.of(),
-                    List.of()
-            );
+            methodGenerator.createInvokeMethod(new MethodRef(arrayListType, StdMethod.arrayListAdd.get(), List.of()));
             methodGenerator.createPop();
         }
         return list;

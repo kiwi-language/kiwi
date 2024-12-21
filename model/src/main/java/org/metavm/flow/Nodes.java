@@ -18,7 +18,7 @@ public class Nodes {
         Nodes.newObject(code, type, true, true);
         loadConstant(Instances.stringInstance(message), code);
         var constructor = type.resolveMethod(type.getName(), List.of(Types.getNullableStringType()), List.of(), false);
-        methodCall(constructor, code);
+        invokeMethod(constructor, code);
         return raise(code);
     }
 
@@ -94,18 +94,29 @@ public class Nodes {
         ifNode.setTarget(label(code));
     }
 
-    public static FunctionCallNode functionCall(Code code, Function function) {
-        return new FunctionCallNode(code.nextNodeName("functionCall"), code.getLastNode(), code, function.getRef());
+    public static InvokeFunctionNode invokeFunction(Code code, Function function) {
+        return new InvokeFunctionNode(code.nextNodeName("functionCall"), code.getLastNode(), code, function.getRef());
     }
 
-    public static MethodCallNode methodCall(MethodRef method, Code code) {
-        return methodCall(code.nextNodeName("methodCall"),
-                method,
-                code);
+    public static InvokeNode invokeMethod(MethodRef method, Code code) {
+        if (method.isStatic())
+            return invokeStatic(method, code);
+        else if (method.isPrivate() || method.isConstructor())
+            return invokeSpecial(method, code);
+        else
+            return invokeVirtual(method, code);
     }
 
-    public static MethodCallNode methodCall(String name, MethodRef method, Code code) {
-        return new MethodCallNode(name, code.getLastNode(), code, method);
+    public static InvokeStaticNode invokeStatic(MethodRef method, Code code) {
+        return new InvokeStaticNode(code.nextNodeName("invokestatic"), code.getLastNode(), code, method);
+    }
+
+    public static InvokeSpecialNode invokeSpecial(MethodRef method, Code code) {
+        return new InvokeSpecialNode(code.nextNodeName("invokespecial"), code.getLastNode(), code, method);
+    }
+
+    public static InvokeVirtualNode invokeVirtual(MethodRef method, Code code) {
+        return new InvokeVirtualNode(code.nextNodeName("invokevirtual"), code.getLastNode(), code, method);
     }
 
     public static FunctionNode function(Code code, FunctionType functionType) {

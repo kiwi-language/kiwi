@@ -52,11 +52,11 @@ public class SetOfResolver implements MethodCallResolver {
         var hashSetType = new KlassType(null, hashSetKlass, List.of(setType.getFirstTypeArgument()));
         methodGenerator.createNew(hashSetType, false, true);
         var constructor = new MethodRef(hashSetType, hashSetKlass.getDefaultConstructor(), List.of());
-        var set = methodGenerator.createMethodCall(constructor);
+        var set = methodGenerator.createInvokeMethod(constructor);
         for (PsiExpression expression : methodCallExpression.getArgumentList().getExpressions()) {
             methodGenerator.createDup();
             expressionResolver.resolve(expression);
-            methodGenerator.createMethodCall(new MethodRef(hashSetType, StdMethod.hashSetAdd.get(), List.of()));
+            methodGenerator.createInvokeMethod(new MethodRef(hashSetType, StdMethod.hashSetAdd.get(), List.of()));
             methodGenerator.createPop();
         }
         return set;

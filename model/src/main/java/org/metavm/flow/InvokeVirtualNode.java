@@ -4,12 +4,12 @@ import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 
 @Entity
-public class MethodCallNode extends CallNode {
+public class InvokeVirtualNode extends InvokeNode {
 
-    public MethodCallNode(String name,
-                          Node prev,
-                          Code code,
-                          MethodRef methodRef) {
+    public InvokeVirtualNode(String name,
+                             Node prev,
+                             Code code,
+                             MethodRef methodRef) {
         super(name, prev, code, methodRef);
     }
 
@@ -20,12 +20,12 @@ public class MethodCallNode extends CallNode {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.METHOD_CALL);
+        output.write(Bytecodes.INVOKE_VIRTUAL);
         writeCallCode(output);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitSubFlowNode(this);
+        return visitor.visitInvokeVirtualNode(this);
     }
 }

@@ -254,27 +254,37 @@ public class MethodGenerator {
         ));
     }
 
-    MethodCallNode createMethodCall(MethodRef methodRef) {
-        return createMethodCall(methodRef, List.of(), List.of());
+    InvokeNode createInvokeMethod(MethodRef methodRef) {
+        if (methodRef.isStatic())
+            return createInvokeStatic(methodRef);
+        else if (methodRef.isPrivate() || methodRef.isConstructor())
+            return createInvokeSpecial(methodRef);
+        else
+            return createInvokeVirtual(methodRef);
     }
 
-    MethodCallNode createMethodCall(MethodRef methodRef,
-                                    List<Type> capturedExpressionTypes,
-                                    List<Integer> capturedVariables) {
-        var node = new MethodCallNode(nextName(methodRef.getRawFlow().getName()),
-                code().getLastNode(), code(), methodRef);
-        node.setCapturedVariableIndexes(capturedVariables);
-        node.setCapturedVariableTypes(capturedExpressionTypes);
-        return onNodeCreated(node);
+    InvokeVirtualNode createInvokeVirtual(MethodRef methodRef) {
+        return onNodeCreated(new InvokeVirtualNode(nextName("invokevirtual"),
+                code().getLastNode(), code(), methodRef));
+    }
+
+    InvokeSpecialNode createInvokeSpecial(MethodRef methodRef) {
+        return onNodeCreated(new InvokeSpecialNode(nextName("invokespecial"),
+                code().getLastNode(), code(), methodRef));
+    }
+
+    InvokeStaticNode createInvokeStatic(MethodRef methodRef) {
+        return onNodeCreated(new InvokeStaticNode(nextName("invokestatic"),
+                code().getLastNode(), code(), methodRef));
     }
 
     Node createTypeCast(Type targetType) {
         targetType = Types.getNullableType(targetType);
-        return createFunctionCall(new FunctionRef(StdFunction.typeCast.get(), List.of(targetType)));
+        return createInvokeFunction(new FunctionRef(StdFunction.typeCast.get(), List.of(targetType)));
     }
 
-    FunctionCallNode createFunctionCall(FunctionRef functionRef) {
-        return onNodeCreated(new FunctionCallNode(
+    InvokeFunctionNode createInvokeFunction(FunctionRef functionRef) {
+        return onNodeCreated(new InvokeFunctionNode(
                 nextName(functionRef.getRawFlow().getName()),
                 code().getLastNode(), code(),
                 functionRef));

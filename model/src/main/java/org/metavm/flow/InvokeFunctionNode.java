@@ -5,20 +5,20 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.util.InternalException;
 
 @Entity
-public class FunctionCallNode extends CallNode {
+public class InvokeFunctionNode extends InvokeNode {
 
-    public FunctionCallNode(String name, Node prev, Code code, FunctionRef functionRef) {
+    public InvokeFunctionNode(String name, Node prev, Code code, FunctionRef functionRef) {
         super(name,  prev, code, functionRef);
     }
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitFunctionCallNode(this);
+        return visitor.visitInvokeFunction(this);
     }
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.FUNCTION_CALL);
+        output.write(Bytecodes.INVOKE_FUNCTION);
         writeCallCode(output);
     }
 

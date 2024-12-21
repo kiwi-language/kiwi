@@ -3,7 +3,7 @@ package org.metavm.util;
 import org.metavm.entity.SystemDefContext;
 import org.metavm.flow.Function;
 import org.metavm.flow.Method;
-import org.metavm.flow.MethodCallNode;
+import org.metavm.flow.InvokeVirtualNode;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -56,7 +56,7 @@ public class DebugEnv {
 
     public static final Logger logger = LoggerFactory.getLogger("Debug");
 
-    public static volatile MethodCallNode target;
+    public static volatile InvokeVirtualNode target;
 
     public static volatile boolean flag2;
 

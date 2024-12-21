@@ -923,7 +923,7 @@ public class Assembler {
                     NncUtils.map(argCtx, this::parseExpression)
             );
             var constructor = klass.getType().resolveMethod(klass.getName(), types, List.of(), false);
-            Nodes.methodCall(constructor, code);
+            Nodes.invokeMethod(constructor, code);
             Nodes.ret(code);
             exitScope();
             return super.visitEnumConstant(ctx);

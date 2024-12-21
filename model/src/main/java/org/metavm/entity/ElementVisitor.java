@@ -134,12 +134,12 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitCallNode(CallNode node) {
+    public R visitInvokeNode(InvokeNode node) {
         return visitNode(node);
     }
 
-    public R visitSubFlowNode(MethodCallNode node) {
-        return visitCallNode(node);
+    public R visitInvokeVirtualNode(InvokeVirtualNode node) {
+        return visitInvokeNode(node);
     }
 
     public R visitNewObjectNode(NewObjectNode node) {
@@ -294,8 +294,8 @@ public abstract class ElementVisitor<R> {
         return visitFlow(method);
     }
 
-    public R visitFunctionCallNode(FunctionCallNode functionCallNode) {
-        return visitCallNode(functionCallNode);
+    public R visitInvokeFunction(InvokeFunctionNode invokeFunctionNode) {
+        return visitInvokeNode(invokeFunctionNode);
     }
 
     public R visitCastNode(CastNode castNode) {
@@ -752,5 +752,13 @@ public abstract class ElementVisitor<R> {
 
     public R visitGetStaticMethodNode(GetStaticMethodNode node) {
         return visitNode(node);
+    }
+
+    public R visitInvokeSpecialNode(InvokeSpecialNode node) {
+        return visitInvokeNode(node);
+    }
+
+    public R visitInvokeStaticNode(InvokeStaticNode node) {
+        return visitInvokeNode(node);
     }
 }

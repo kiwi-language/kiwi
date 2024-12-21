@@ -327,7 +327,7 @@ public class Generator extends VisitorBase {
         } else {
             var iterableType = Types.resolveAncestorType((ClassType) iteratedType, StdKlass.iterable.get());
             builder().createLoad(iteratedVar, iteratedType);
-            builder().createMethodCall(new MethodRef(iterableType, StdMethod.iterableIterator.get(), List.of()));
+            builder().createInvokeMethod(new MethodRef(iterableType, StdMethod.iterableIterator.get(), List.of()));
             builder().createNonNull();
             var itVar = builder().nextVariableIndex();
             builder().createStore(itVar);
@@ -335,7 +335,7 @@ public class Generator extends VisitorBase {
             var itType = new KlassType(null, StdKlass.iterator.get(), List.of(elementType));
             var entry = builder().createLabel();
             builder().createLoad(itVar, itType);
-            builder().createMethodCall(new MethodRef(itType, StdMethod.iteratorHasNext.get(), List.of()));
+            builder().createInvokeMethod(new MethodRef(itType, StdMethod.iteratorHasNext.get(), List.of()));
             var ifNode = builder().createIfEq(null);
             var condition = getExtraLoopTest(statement);
             IfEqNode ifNode1;
@@ -346,7 +346,7 @@ public class Generator extends VisitorBase {
             else
                 ifNode1 = null;
             builder().createLoad(itVar, itType);
-            builder().createMethodCall(new MethodRef(itType, StdMethod.iteratorNext.get(), List.of()));
+            builder().createInvokeMethod(new MethodRef(itType, StdMethod.iteratorNext.get(), List.of()));
             builder().createStore(builder().getVariableIndex(statement.getIterationParameter()));
             builder().enterBlock(statement);
             if (statement.getBody() != null)

@@ -277,4 +277,8 @@ public class MethodRef extends FlowRef implements PropertyRef {
     public boolean isNative() {
         return getRawFlow().isNative();
     }
+
+    public boolean isPrivate() {
+        return getRawFlow().isPrivate();
+    }
 }
