@@ -36,6 +36,7 @@ public class ClassInstance extends Instance {
     private transient Map<MethodRef, FlowValue> functions;
     private @Nullable ClosureContext closureContext;
     private final List<ClassInstance> children = new ArrayList<>();
+    public InstanceField[] fields;
 
     public static ClassInstance create(Map<Field, Value> data, ClassType type) {
         return ClassInstanceBuilder.newBuilder(type).data(data).build();
@@ -725,7 +726,7 @@ public class ClassInstance extends Instance {
     @Override
     public Instance copy() {
         var copy = ClassInstanceBuilder.newBuilder(getType()).initFieldTable(false).build();
-        copy.fieldTable.initializeFieldsArray();
+        copy.initializeFieldsArray();
         for (FieldSubTable subTable : fieldTable.subTables) {
             var st = copy.fieldTable.addSubTable(subTable.type);
             for (var field : subTable.fields) {
@@ -758,23 +759,22 @@ public class ClassInstance extends Instance {
         setUnknown(classTag, fieldTag, value);
     }
 
+    private void initializeFieldsArray() {
+        fields = new InstanceField[klass.getNumFields()];
+    }
+
     private static class FieldTable implements Iterable<IInstanceField> {
 
         private final ClassInstance owner;
         private final List<FieldSubTable> subTables = new ArrayList<>();
         private final List<UnknownFieldSubTable> unknownSubTables = new ArrayList<>();
-        private InstanceField[] fields;
 
         private FieldTable(ClassInstance owner) {
             this.owner = owner;
         }
 
-        void initializeFieldsArray() {
-            fields = new InstanceField[owner.klass.getNumFields()];
-        }
-
         void initialize() {
-            initializeFieldsArray();
+            owner.initializeFieldsArray();
             owner.getType().foreachSuperClassTopDown(t -> {
                 var st = addSubTable(t);
                 st.initialize(owner, t);
@@ -800,7 +800,7 @@ public class ClassInstance extends Instance {
         }
 
         void onFieldAdded(InstanceField field) {
-            fields[field.getField().getOffset()] = field;
+            owner.fields[field.getField().getOffset()] = field;
         }
 
         void tryClearUnknownField(long classTag, int tag) {
@@ -826,18 +826,18 @@ public class ClassInstance extends Instance {
         }
 
         InstanceField get(Field field) {
-            return fields[field.getOffset()];
+            return owner.fields[field.getOffset()];
         }
 
         void forEachField(BiConsumer<Field, Value> action) {
-            for (InstanceField field : fields) {
+            for (InstanceField field : owner.fields) {
                 if(!field.getField().isMetadataRemoved())
                     action.accept(field.getField(), field.getValue());
             }
         }
 
         void clear() {
-            for (InstanceField field : fields) {
+            for (InstanceField field : owner.fields) {
                 field.clear();
             }
         }

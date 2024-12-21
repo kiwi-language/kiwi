@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.*;
 import org.metavm.object.instance.IndexKeyRT;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
@@ -110,7 +111,17 @@ public class VmStack {
                                 var field = (FieldRef) constants[fieldIndex];
                                 var value = stack[--top];
                                 var instance = stack[--top].resolveObject();
-                                instance.setField(field.getRawField(), field.getType().fromStackValue(value));
+                                instance.fields[field.rawField.offset].value = field.getType().fromStackValue(value);
+                                pc += 3;
+                            }
+                            case Bytecodes.SET_CHILD_FIELD -> {
+                                int fieldIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
+                                var field = (FieldRef) constants[fieldIndex];
+                                var value = stack[--top];
+                                var instance = stack[--top].resolveObject();
+                                instance.fields[field.rawField.offset].value = value;
+                                if (value instanceof Reference ref)
+                                    ref.resolve().setParent(instance, field.rawField);
                                 pc += 3;
                             }
                             case Bytecodes.DELETE_OBJECT -> {
@@ -912,7 +923,7 @@ public class VmStack {
                             case Bytecodes.GET_FIELD -> {
                                 var i = stack[--top].resolveObject();
                                 var p = (FieldRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                                stack[top++] = i.getField(p.getRawField()).toStackValue();
+                                stack[top++] = i.fields[p.rawField.offset].value.toStackValue();
                                 pc += 3;
                             }
                             case Bytecodes.GET_METHOD -> {

@@ -11,7 +11,8 @@ public class Bytecodes {
     public static final int GET_METHOD = 2;
     public static final int ADD_OBJECT = 3;
     public static final int SET_FIELD = 4;
-    public static final int DELETE_OBJECT = 5;
+    public static final int SET_CHILD_FIELD = 5;
+    public static final int DELETE_OBJECT = 8;
     public static final int RETURN = 9;
     public static final int RAISE = 10;
     public static final int INVOKE_VIRTUAL = 11;

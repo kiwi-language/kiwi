@@ -169,14 +169,23 @@ public class Nodes {
         return new ClearArrayNode(code.nextNodeName("arrayclear"), code.getLastNode(), code);
     }
 
-    public static SetFieldNode setField(FieldRef fieldRef, Code code) {
-        return new SetFieldNode(
-                code.nextNodeName("setField"),
-                code.getLastNode(),
-                code,
-                fieldRef
-        );
-
+    public static Node setField(FieldRef fieldRef, Code code) {
+        if (fieldRef.isChild()) {
+            return new SetChildFieldNode(
+                    code.nextNodeName("setchildfield"),
+                    code.getLastNode(),
+                    code,
+                    fieldRef
+            );
+        }
+        else {
+            return new SetFieldNode(
+                    code.nextNodeName("setfield"),
+                    code.getLastNode(),
+                    code,
+                    fieldRef
+            );
+        }
     }
 
     public static SetStaticNode setStatic(Field field, Code code) {

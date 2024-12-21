@@ -38,7 +38,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
     private int tag;
     private int since;
     private @Nullable Integer sourceTag;
-    private transient int offset;
+    public transient int offset;
     private @Nullable Method initializer;
     private boolean isEnumConstant;
     private int ordinal;

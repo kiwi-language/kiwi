@@ -23,7 +23,7 @@ public class InstanceField implements IInstanceField {
     private final ClassInstance owner;
     private final Field field;
     private final Type type;
-    private @Nullable Value value;
+    public @Nullable Value value;
 
     InstanceField(ClassInstance owner, Field field, Type type) {
         this.owner = owner;

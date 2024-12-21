@@ -761,4 +761,8 @@ public abstract class ElementVisitor<R> {
     public R visitInvokeStaticNode(InvokeStaticNode node) {
         return visitInvokeNode(node);
     }
+
+    public R visitSetChildField(SetChildFieldNode node) {
+        return visitNode(node);
+    }
 }

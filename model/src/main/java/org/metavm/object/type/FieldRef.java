@@ -21,7 +21,7 @@ public class FieldRef extends ValueElement implements PropertyRef {
     }
 
     private final ClassType declaringType;
-    private final Field rawField;
+    public final Field rawField;
 
     public FieldRef(ClassType declaringType, Field rawField) {
         this.declaringType = declaringType;
@@ -99,5 +99,9 @@ public class FieldRef extends ValueElement implements PropertyRef {
 
     public boolean isPublic() {
         return rawField.isPublic();
+    }
+
+    public boolean isChild() {
+        return rawField.isChild();
     }
 }

@@ -5,11 +5,11 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.FieldRef;
 
 @Entity
-public class SetFieldNode extends Node {
+public class SetChildFieldNode extends Node {
 
     private final FieldRef fieldRef;
 
-    public SetFieldNode(String name, Node prev, Code code, FieldRef fieldRef) {
+    public SetChildFieldNode(String name, Node prev, Code code, FieldRef fieldRef) {
         super(name, null, prev, code);
         this.fieldRef = fieldRef;
     }
@@ -21,7 +21,7 @@ public class SetFieldNode extends Node {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("setfield " + fieldRef.getRawField().getName());
+        writer.write("setchildfield " + fieldRef.getRawField().getName());
     }
 
     @Override
@@ -31,7 +31,7 @@ public class SetFieldNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.SET_FIELD);
+        output.write(Bytecodes.SET_CHILD_FIELD);
         output.writeConstant(fieldRef);
     }
 
@@ -42,6 +42,6 @@ public class SetFieldNode extends Node {
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitSetFieldNode(this);
+        return visitor.visitSetChildField(this);
     }
 }
