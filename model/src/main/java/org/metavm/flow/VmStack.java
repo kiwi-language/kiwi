@@ -50,8 +50,6 @@ public class VmStack {
     private VmStack() {
     }
 
-    public static final int MAX_STEPS = 10000000;
-
     @SuppressWarnings({"DuplicatedCode", "UseCompareMethod", "DataFlowIssue", "ExtractMethodRecommender"})
     private @NotNull FlowExecResult execute0(Code code,
                                            Value[] arguments,
@@ -77,9 +75,9 @@ public class VmStack {
             int pc = 0;
             var bytes = code.getCode();
             var fp = 0;
-            ClassInstance exception = null;
+            ClassInstance exception;
 
-            for (int s = 0; s < MAX_STEPS; s++) {
+            for (;;) {
                 var b = bytes[pc] & 0xff;
                 try {
 //                    if(DebugEnv.flag)
@@ -1120,7 +1118,6 @@ public class VmStack {
                             + " in flow " + code.getFlow().getQualifiedName(), e);
                 }
             }
-            throw new FlowExecutionException(String.format("Flow execution steps exceed the limit: %d", MAX_STEPS));
         } finally {
 //            if(DebugEnv.flag)
 //                log.debug("Exiting flow {}", scope.getFlow().getQualifiedName());
