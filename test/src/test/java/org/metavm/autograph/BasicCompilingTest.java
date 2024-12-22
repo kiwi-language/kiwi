@@ -127,6 +127,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processAnonymousClassWithArgs();
             processEnumConstantImpl();
             processTrySectionBreak();
+            processVariableInitializerTypeWidening();
         });
     }
 
@@ -1245,6 +1246,11 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(1, (int) getStatic(klassName, "breakCount"));
         Assert.assertEquals(40, callMethod(klassName, "testContinue", List.of(10)));
         Assert.assertEquals(10, (int) getStatic(klassName, "loopCount"));
+    }
+
+    private void processVariableInitializerTypeWidening() {
+        var className = "primitives.VariableInitializerTypeWidening";
+        Assert.assertEquals(1L, callMethod(className, "sub", List.of(1L)));
     }
 
 }

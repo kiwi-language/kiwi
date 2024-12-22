@@ -7,10 +7,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
+import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.TranspileUtils.createExpressionFromText;
 
 @Slf4j
-public class PrimitiveConversionTransformer extends VisitorBase {
+public class ExplicitTypeWideningTransformer extends VisitorBase {
 
     public static final Set<IElementType> operators = Set.of(
             JavaTokenType.PLUS,
@@ -56,7 +57,7 @@ public class PrimitiveConversionTransformer extends VisitorBase {
     @Override
     public void visitPolyadicExpression(PsiPolyadicExpression expression) {
         super.visitPolyadicExpression(expression);
-        var type = expression.getType();
+        var type = requireNonNull(expression.getType());
         var op = expression.getOperationTokenType();
         if(operators.contains(op)) {
             for (PsiExpression operand : expression.getOperands()) {
@@ -76,7 +77,7 @@ public class PrimitiveConversionTransformer extends VisitorBase {
         var op = expression.getOperationSign().getTokenType();
         if (compareOperators.contains(op)) {
             var first = expression.getLOperand();
-            var second = expression.getROperand();
+            var second = requireNonNull(expression.getROperand());
             if (first.getType() instanceof PsiPrimitiveType t1
                     && second.getType() instanceof PsiPrimitiveType t2) {
                 int i1 = numericPrimitiveKinds.indexOf(t1.getKind());
@@ -104,8 +105,8 @@ public class PrimitiveConversionTransformer extends VisitorBase {
     }
 
     private void processCall(PsiCall call) {
-        var args = Objects.requireNonNull(call.getArgumentList()).getExpressions();
-        var params = Objects.requireNonNull(call.resolveMethod()).getParameterList().getParameters();
+        var args = requireNonNull(call.getArgumentList()).getExpressions();
+        var params = requireNonNull(call.resolveMethod()).getParameterList().getParameters();
         for (int i = 0; i < args.length; i++) {
             processExpression(args[i], params[i].getType());
         }
@@ -114,7 +115,7 @@ public class PrimitiveConversionTransformer extends VisitorBase {
     @Override
     public void visitArrayInitializerExpression(PsiArrayInitializerExpression expression) {
         super.visitArrayInitializerExpression(expression);
-        var elementType = ((PsiArrayType) Objects.requireNonNull(expression.getType())).getComponentType();
+        var elementType = ((PsiArrayType) requireNonNull(expression.getType())).getComponentType();
         if(elementType instanceof PsiPrimitiveType) {
             for (PsiExpression initializer : expression.getInitializers()) {
                 processExpression(initializer, elementType);
@@ -123,10 +124,18 @@ public class PrimitiveConversionTransformer extends VisitorBase {
     }
 
     @Override
+    public void visitVariable(PsiVariable variable) {
+        super.visitVariable(variable);
+        if (variable.getInitializer() != null) {
+            processExpression(variable.getInitializer(), variable.getType());
+        }
+    }
+
+    @Override
     public void visitAssignmentExpression(PsiAssignmentExpression expression) {
         super.visitAssignmentExpression(expression);
         var op = expression.getOperationSign().getTokenType();
-        var assignment = Objects.requireNonNull(expression.getRExpression());
+        var assignment = requireNonNull(expression.getRExpression());
         if (shiftOperators.contains(op))
             processExpression(assignment, TranspileUtils.intType);
         else
@@ -154,7 +163,7 @@ public class PrimitiveConversionTransformer extends VisitorBase {
     public void visitYieldStatement(PsiYieldStatement statement) {
         super.visitYieldStatement(statement);
         var switchExpr = TranspileUtils.getParent(statement, PsiSwitchExpression.class);
-        processExpression(statement.getExpression(), switchExpr.getType());
+        processExpression(requireNonNull(statement.getExpression()), switchExpr.getType());
     }
 
     @Override
@@ -175,18 +184,10 @@ public class PrimitiveConversionTransformer extends VisitorBase {
     }
 
     private void processExpression(PsiExpression expression, PsiType assignedType) {
-        if (TranspileUtils.isLongType(assignedType)) {
-            if(!TranspileUtils.isLongType(expression.getType()))
-                replace(expression, createExpressionFromText("(long) (" + expression.getText() + ")"));
-        } else if(TranspileUtils.isIntType(assignedType)) {
-            if (!TranspileUtils.isIntType(expression.getType()))
-                replace(expression, createExpressionFromText("(int) (" + expression.getText() + ")"));
-        } else if(TranspileUtils.isDoubleType(assignedType)) {
-            if(!TranspileUtils.isDoubleType(expression.getType()))
-                replace(expression, createExpressionFromText("(double) (" + expression.getText() + ")"));
-        } else if(TranspileUtils.isFloatType(assignedType)) {
-            if(!TranspileUtils.isFloatType(expression.getType()))
-                replace(expression, createExpressionFromText("(float) (" + expression.getText() + ")"));
+        if (expression.getType() instanceof PsiPrimitiveType lType
+                && assignedType instanceof PsiPrimitiveType rType && !lType.equals(rType)) {
+                replace(expression, createExpressionFromText(String.format("(%s) (%s)",
+                        rType.getName(), expression.getText())));
         }
     }
 

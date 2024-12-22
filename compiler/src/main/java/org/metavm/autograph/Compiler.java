@@ -89,7 +89,7 @@ public class Compiler {
                         resolveQnAndActivity(file);
                         file.accept(new StringConcatTransformer());
                         file.accept(new UnboxingTransformer());
-                        file.accept(new PrimitiveConversionTransformer());
+                        file.accept(new ExplicitTypeWideningTransformer());
                     }
             )
     );

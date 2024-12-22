@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
-public class PrimitiveConversionTransformerTest extends TestCase {
+public class ExplicitTypeWideningTransformerTest extends TestCase {
 
     public static final List<String> SOURCES = List.of(
             "/Users/leen/workspace/object/lab/src/main/tmp1/conversion/ConversionFoo.java",
@@ -32,7 +32,7 @@ public class PrimitiveConversionTransformerTest extends TestCase {
 
     private void transform(PsiJavaFile file) {
         TranspileTestTools.executeCommand(() -> {
-            file.accept(new PrimitiveConversionTransformer());
+            file.accept(new ExplicitTypeWideningTransformer());
         });
     }
 
