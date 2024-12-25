@@ -4,6 +4,7 @@ import org.metavm.api.ChildEntity;
 import org.metavm.entity.*;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Value;
+import org.metavm.util.MvOutput;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -54,8 +55,8 @@ public class ConstantPool extends Element implements LoadAware, TypeMetadata {
     private CpEntry addEntry(Object value) {
         int i = entries.size();
         var entry = switch (value) {
-            case Value v -> new ValueCpEntry(i, v);
             case Element element -> new ElementCpEntry(i, element);
+            case Value v -> new ValueCpEntry(i, v);
             default -> throw new IllegalStateException("Unexpected value: " + value);
         };
         addEntry(entry);
@@ -93,7 +94,7 @@ public class ConstantPool extends Element implements LoadAware, TypeMetadata {
         }
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.writeInt(entries.size());
         for (CpEntry entry : entries) {
             entry.write(output);
@@ -104,7 +105,7 @@ public class ConstantPool extends Element implements LoadAware, TypeMetadata {
         clear();
         int entryCount = input.readInt();
         for (int i = 0; i < entryCount; i++) {
-            var value = input.readElement();
+            var value = input.readValue();
             addValue(value);
         }
     }

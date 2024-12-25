@@ -21,6 +21,9 @@ public class Bytecodes {
     public static final int GET_UNIQUE = 14;
     public static final int NEW = 15;
     public static final int SET_STATIC = 17;
+    public static final int GENERIC_INVOKE_VIRTUAL = 18;
+    public static final int GENERIC_INVOKE_SPECIAL = 19;
+    public static final int GENERIC_INVOKE_STATIC = 20;
     public static final int NEW_ARRAY = 21;
     public static final int TRY_ENTER = 23;
     public static final int TRY_EXIT = 24;
@@ -73,7 +76,7 @@ public class Bytecodes {
     public static final int LOAD_CONSTANT = 79;
     public static final int NEW_ARRAY_WITH_DIMS = 80;
     public static final int VOID_RETURN = 81;
-    public static final int LOAD_TYPE = 82;
+    public static final int LOAD_KLASS = 82;
     public static final int DUP = 83;
     public static final int POP = 84;
     public static final int DUP_X1 = 85;
@@ -127,7 +130,41 @@ public class Bytecodes {
     public static final int INT_TO_CHAR = 133;
     public static final int TABLE_SWITCH = 134;
     public static final int LOOKUP_SWITCH = 135;
-
+    public static final int LT_TYPE_ARGUMENT = 136;
+    public static final int LT_ELEMENT = 137;
+    public static final int LT_KLASS = 138;
+    public static final int LT_INNER_KLASS = 139;
+    public static final int LT_ARRAY = 140;
+    public static final int LT_BYTE = 141;
+    public static final int LT_SHORT = 142;
+    public static final int LT_CHAR = 143;
+    public static final int LT_INT = 144;
+    public static final int LT_LONG = 145;
+    public static final int LT_FLOAT = 146;
+    public static final int LT_DOUBLE = 147;
+    public static final int LT_BOOLEAN = 148;
+    public static final int LT_STRING = 149;
+    public static final int LT_ANY = 150;
+    public static final int LT_UNDERLYING = 151;
+    public static final int LT_PARAMETER_TYPE = 152;
+    public static final int LT_RETURN = 153;
+    public static final int LT_VOID = 154;
+    public static final int LT_NULL = 155;
+    public static final int LT_NULLABLE = 156;
+    public static final int LT_UNION = 157;
+    public static final int LT_INTERSECTION = 158;
+    public static final int LT_UNCERTAIN = 159;
+    public static final int LT_NEVER = 160;
+    public static final int LT_LOCAL_KLASS = 161;
+    public static final int LT_FUNCTION_TYPE = 162;
+    public static final int GENERIC_INVOKE_FUNCTION = 163;
+    public static final int TYPEOF = 164;
+    public static final int LT_PASSWORD = 165;
+    public static final int LT_TIME = 166;
+    public static final int LT_OWNER = 167;
+    public static final int LT_DECLARING_TYPE = 168;
+    public static final int LT_CURRENT_FLOW = 169;
+    public static final int LT_ANCESTOR = 170;
 
     private static final String[] names = new String[256];
 

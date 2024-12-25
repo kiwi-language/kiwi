@@ -33,7 +33,7 @@ public class LoadTypeNode extends Node {
 
     @Override
     public void writeCode(CodeOutput output) {
-        output.write(Bytecodes.LOAD_TYPE);
+        output.write(Bytecodes.LOAD_KLASS);
         output.writeConstant(type);
     }
 

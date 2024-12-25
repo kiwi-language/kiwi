@@ -44,6 +44,7 @@ public class SystemDefContextTest extends TestCase {
         defContext = new SystemDefContext(
                 new StdIdProvider(new EmptyStdIdStore()), instanceContext, new MemColumnStore(), new MemTypeTagStore(), new IdentityContext());
         bridge.setEntityContext(defContext);
+        StdKlass.initialize(defContext, false);
         objectInstanceMap = defContext.getObjectInstanceMap();
     }
 

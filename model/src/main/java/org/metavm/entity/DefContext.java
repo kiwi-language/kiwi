@@ -160,7 +160,7 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
         var type = Types.getPrimitiveType(javaType);
         if (type != null)
             return type;
-        if (javaType instanceof Class<?> k && Value.class.isAssignableFrom(k))
+        if (javaType instanceof Class<?> k && Value.class == k)
             return AnyType.instance;
         if (BiUnion.isNullable(javaType))
             return Types.getNullableType(getType(BiUnion.getUnderlyingType(javaType)));
@@ -236,7 +236,7 @@ public abstract class DefContext extends BaseEntityContext implements IEntityCon
             var pType = (ParameterizedType) javaType;
             var arrayClass = getArrayClass(arrayType.getKind());
             var elementType = pType.getActualTypeArguments()[0];
-            if (elementType instanceof Class<?> klass && Value.class.isAssignableFrom(klass))
+            if (elementType instanceof Class<?> klass && Value.class == klass)
                 //noinspection rawtypes,unchecked
                 return new InstanceArrayMapper(arrayClass, pType, Value.class, arrayType);
             else

@@ -1,4 +1,4 @@
-package capturedtypes;
+package wildcard_capture;
 
 import java.util.Objects;
 import java.util.function.Predicate;

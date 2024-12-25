@@ -3,6 +3,7 @@ package org.metavm.object.type;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
@@ -103,7 +104,7 @@ public class ArrayType extends CompositeType {
     }
 
     public static ArrayType read(MvInput input, ArrayKind kind) {
-        return new ArrayType(Type.readType(input), kind);
+        return new ArrayType(input.readType(), kind);
     }
 
     public ArrayKind getKind() {
@@ -155,6 +156,11 @@ public class ArrayType extends CompositeType {
     @Override
     public int getPrecedence() {
         return 1;
+    }
+
+    @Override
+    public Type getType() {
+        return StdKlass.arrayType.type();
     }
 
     @Override

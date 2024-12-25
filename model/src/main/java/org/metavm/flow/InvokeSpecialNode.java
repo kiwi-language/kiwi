@@ -19,6 +19,11 @@ public class InvokeSpecialNode extends InvokeNode {
     }
 
     @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("invokespecial " + getFlowRef());
+    }
+
+    @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.INVOKE_SPECIAL);
         writeCallCode(output);

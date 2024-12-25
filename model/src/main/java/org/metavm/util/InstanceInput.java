@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.TreeTags;
 import org.metavm.flow.Lambda;
 import org.metavm.flow.Method;
@@ -22,9 +23,10 @@ import java.io.InputStream;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+@Slf4j
 public class InstanceInput extends MvInput {
 
-    public static final Logger logger = LoggerFactory.getLogger(InstanceInput.class);
+    public static final Logger debugLog = LoggerFactory.getLogger("Debug");
 
     public static final Function<Id, Instance> UNSUPPORTED_RESOLVER = id -> {
         throw new UnsupportedOperationException();
@@ -120,47 +122,20 @@ public class InstanceInput extends MvInput {
         return new ForwardingPointer(readId(), readId());
     }
 
-    public Value readValue() {
-        var wireType = read();
-        return switch (wireType) {
-            case WireTypes.NULL -> new NullValue();
-            case WireTypes.DOUBLE -> new DoubleValue(readDouble());
-            case WireTypes.FLOAT -> new FloatValue(readFloat());
-            case WireTypes.STRING -> new StringValue(readUTF());
-            case WireTypes.LONG -> new LongValue(readLong());
-            case WireTypes.INT -> new IntValue(readInt());
-            case WireTypes.CHAR -> new CharValue(readChar());
-            case WireTypes.SHORT -> new ShortValue((short) readShort());
-            case WireTypes.BYTE -> new ByteValue((byte) read());
-            case WireTypes.BOOLEAN -> new BooleanValue(readBoolean());
-            case WireTypes.TIME -> new TimeValue(readLong());
-            case WireTypes.PASSWORD -> new PasswordValue(readUTF());
-            case WireTypes.FLAGGED_REFERENCE -> readFlaggedReference();
-            case WireTypes.REFERENCE -> readReference();
-            case WireTypes.REDIRECTING_REFERENCE -> readRedirectingReference();
-            case WireTypes.REDIRECTING_INSTANCE -> readRedirectingInstance();
-            case WireTypes.INSTANCE -> readInstance();
-            case WireTypes.RELOCATING_INSTANCE -> readRelocatingInstance();
-            case WireTypes.VALUE_INSTANCE -> readValueInstance();
-            case WireTypes.REMOVING_INSTANCE ->  readRemovingInstance();
-            default -> throw new IllegalStateException("Invalid wire type: " + wireType);
-        };
-    }
-
-    private Value readRemovingInstance() {
+    public Value readRemovingInstance() {
         var ref = readInstance();
         ref.resolve().setRemoving(true);
         return ref;
     }
 
-    private Value readRedirectingInstance() {
+    public Value readRedirectingInstance() {
         var redirectionRef = (Reference) readValue();
         var redirectionStatus = redirectStatusProvider.getRedirectStatus(readId());
         var record = (Reference) readValue();
         return new RedirectingReference(record.resolve(), redirectionRef, redirectionStatus);
     }
 
-    private Reference readReference() {
+    public Reference readReference() {
 //        var inst = resolveInstance(readId());
 //        if(parentField != null && parentField.isChild())
 //            inst.setParentInternal(parent, parentField, false);
@@ -191,16 +166,16 @@ public class InstanceInput extends MvInput {
 
     private final StreamVisitor skipper = new StreamVisitor(this);
 
-    private Reference readInstance() {
+    public Reference readInstance() {
         return readInstance(-1L, -1L, false, treeId, readLong());
     }
 
-    private Value readRelocatingInstance() {
+    public Value readRelocatingInstance() {
         return readInstance(readLong(), readLong(), readBoolean(), treeId, readLong());
     }
 
     private Reference readInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
-        var type = Type.readType(this);
+        var type = this.readType();
         var id = PhysicalId.of(treeId, nodeId, type);
         var instance = type instanceof ArrayType arrayType ?
                 new ArrayInstance(id, arrayType, false, null) :
@@ -220,8 +195,8 @@ public class InstanceInput extends MvInput {
         return ref;
     }
 
-    private Value readValueInstance() {
-        var type = Type.readType(this);
+    public Value readValueInstance() {
+        var type = this.readType();
         var instance = type instanceof ArrayType arrayType ?
                 new ArrayInstance(arrayType) : ClassInstance.allocateEmpty((ClassType) type);
         instance.readRecord(this);

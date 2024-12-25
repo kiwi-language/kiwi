@@ -640,7 +640,7 @@ public class ApiService extends EntityContextFactoryAware {
             if (fieldRef != null && fieldRef.isPublic()) {
                 var field = fieldRef.getRawField();
                 if (!field.isReadonly())
-                    instance.setField(field, resolveValue(v, fieldRef.getType(), false, instance.getField(field), context));
+                    instance.setField(field, resolveValue(v, fieldRef.getPropertyType(), false, instance.getField(field), context));
             } else {
                 var setter = type.findSetterByPropertyName(k);
                 if (setter != null) {

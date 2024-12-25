@@ -282,6 +282,10 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         return parameters.size();
     }
 
+    public int getTypeInputCount() {
+        return typeParameters.size();
+    }
+
     public @Nullable Parameter findParameter(Predicate<Parameter> predicate) {
         return NncUtils.find(parameters, predicate);
     }
@@ -504,7 +508,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     @Override
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.writeEntityId(this);
         output.writeUTF(name);
         output.writeInt(getFlags());

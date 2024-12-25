@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.*;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 
@@ -46,6 +47,46 @@ public class KlassInput extends MvInput {
     }
 
     @Override
+    public Value readRemovingInstance() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Value readValueInstance() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Value readRelocatingInstance() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Value readInstance() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Value readRedirectingInstance() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Value readRedirectingReference() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Value readReference() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Value readFlaggedReference() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Klass getKlass(Id id) {
         var klass = repository.getEntity(Klass.class, id);
         if(klass == null)
@@ -68,10 +109,6 @@ public class KlassInput extends MvInput {
         if(method == null)
             method = repository.bind(MethodBuilder.newBuilder(KLASS, UNNAMED).tmpId(id.tmpId()).build());
         return method;
-    }
-
-    public Type readType() {
-        return Type.readType(this);
     }
 
     public Field readField() {
@@ -132,7 +169,7 @@ public class KlassInput extends MvInput {
         var capturedTypeVar = repository.getEntity(CapturedTypeVariable.class, id);
         if(capturedTypeVar == null)
             capturedTypeVar = repository.bind(new CapturedTypeVariable(id.tmpId(), UncertainType.asterisk,
-                    DummyCapturedTypeScope.INSTANCE));
+                    DummyTypeVariable.instance, DummyCapturedTypeScope.INSTANCE));
         return capturedTypeVar;
     }
 
@@ -208,32 +245,6 @@ public class KlassInput extends MvInput {
 
     public Column readColumn() {
         return new Column(ColumnKind.fromTagSuffix(read()), readUTF(), readInt());
-    }
-
-    public Object readElement() {
-        var tag = read();
-        if(tag >= WireTypes.CLASS_TYPE && tag < 50)
-            return Type.readType(tag, this);
-        return switch (tag) {
-            case WireTypes.NULL -> Instances.nullInstance();
-            case WireTypes.LONG -> Instances.longInstance(readLong());
-            case WireTypes.INT -> Instances.intInstance(readInt());
-            case WireTypes.DOUBLE -> Instances.doubleInstance(readDouble());
-            case WireTypes.FLOAT -> Instances.floatInstance(readFloat());
-            case WireTypes.STRING -> Instances.stringInstance(readUTF());
-            case WireTypes.CHAR -> Instances.charInstance(readChar());
-            case WireTypes.SHORT -> Instances.shortInstance((short) readShort());
-            case WireTypes.BYTE -> Instances.byteInstance((byte) read());
-            case WireTypes.BOOLEAN -> Instances.booleanInstance(readBoolean());
-            case WireTypes.TIME -> Instances.timeInstance(readLong());
-            case WireTypes.PASSWORD -> Instances.passwordInstance(readUTF());
-            case WireTypes.FIELD_REF -> FieldRef.read(this);
-            case WireTypes.METHOD_REF -> MethodRef.read(this);
-            case WireTypes.FUNCTION_REF -> FunctionRef.read(this);
-            case WireTypes.INDEX_REF -> IndexRef.read(this);
-            case WireTypes.LAMBDA_REF -> LambdaRef.read(this);
-            default -> throw new IllegalStateException("Invalid value tag: " + tag);
-        };
     }
 
     protected void enterElement(Element element) {

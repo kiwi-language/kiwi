@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.entity.ValueArray;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
@@ -85,6 +86,11 @@ public class FunctionType extends CompositeType {
     }
 
     @Override
+    public Type getType() {
+        return StdKlass.functionType.type();
+    }
+
+    @Override
     public boolean isEphemeral() {
         return false;
     }
@@ -132,8 +138,8 @@ public class FunctionType extends CompositeType {
         var numParamTypes = input.readInt();
         var paramTypes = new ArrayList<Type>(numParamTypes);
         for (int i = 0; i < numParamTypes; i++)
-            paramTypes.add(Type.readType(input));
-        return new FunctionType(paramTypes, Type.readType(input));
+            paramTypes.add(input.readType());
+        return new FunctionType(paramTypes, input.readType());
     }
 
     @Override

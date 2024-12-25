@@ -66,9 +66,9 @@ public class IndexCreator extends VisitorBase {
                     if (!keyField.isStatic() && !keyField.isTransient()) {
                         var indexField = NncUtils.find(indexF.getFields(), f -> Objects.equals(f.getName(), keyField.getName()));
                         if (indexField == null)
-                            new IndexField(indexF, keyField.getName(), keyField.getType(), Values.nullValue());
+                            new IndexField(indexF, keyField.getName(), keyField.getPropertyType(), Values.nullValue());
                         else
-                            indexField.setType(keyField.getType());
+                            indexField.setType(keyField.getPropertyType());
                     }
                 });
             } else {

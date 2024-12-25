@@ -765,4 +765,157 @@ public abstract class ElementVisitor<R> {
     public R visitSetChildField(SetChildFieldNode node) {
         return visitNode(node);
     }
+
+    public R visitLoadTypeArgumentNode(LoadTypeArgumentNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadElementTypeNode(LoadElementTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadKlassTypeNode(LoadKlassTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadInnerKlassType(LoadInnerKlassTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadArrayTypeNode(LoadArrayTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadIntTypeNode(LoadIntTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadAnyTypeNode(LoadAnyTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadBooleanTypeNode(LoadBooleanTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitCharTypeNode(LoadCharTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadByteTypeNode(LoadByteTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadDoubleTypeNode(LoadDoubleTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadFloatTypeNode(LoadFloatTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadLongTypeNode(LoadLongTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadShortTypeNode(LoadShortTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadUnderlyingTypeNode(LoadUnderlyingTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadParameterTypeNode(LoadParameterTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitReturnTypeNode(LoadReturnTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadStringTypeNode(LoadStringTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadVoidTypeNode(LoadVoidTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadNullTypeNode(LoadNullTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadNullableTypeNode(LoadNullableTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadUnionTypeNode(LoadUnionTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadUncertainTypeNode(LoadUncertainTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadIntersectionTypeNode(LoadIntersectionTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadNeverTypeNode(LoadNeverTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadLocalKlassTypeNode(LoadLocalKlassTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadFunctionTypeNode(LoadFunctionTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitGenericInvokeVirtualNode(GenericInvokeVirtualNode node) {
+        return visitNode(node);
+    }
+
+    public R visitGenericInvokeSpecialNode(GenericInvokeSpecialNode node) {
+        return visitNode(node);
+    }
+
+    public R visitGenericInvokeStaticNode(GenericInvokeStaticNode node) {
+        return visitNode(node);
+    }
+
+    public R visitGenericInvokeFunctionNode(GenericInvokeFunctionNode node) {
+        return visitNode(node);
+    }
+
+    public R visitTypeOfNode(TypeOfNode node) {
+        return visitNode(node);
+    }
+
+    public R visitTimeTypeNode(LoadTimeTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadPasswordTypeNode(LoadPasswordTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadOwnerTypeNode(LoadOwnerTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadDeclaringTypeNode(LoadDeclaringTypeNode node) {
+        return visitNode(node);
+    }
+
+    public R visitCurrentFlowNode(LoadCurrentFlowNode node) {
+        return visitNode(node);
+    }
+
+    public R visitLoadAncestorTypeNode(LoadAncestorTypeNode node) {
+        return visitNode(node);
+    }
+
 }

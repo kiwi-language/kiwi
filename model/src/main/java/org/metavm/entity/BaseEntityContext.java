@@ -102,7 +102,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     public void onInstanceIdInit(Instance instance) {
         Object model = instance.getMappedEntity();
         if (model != null && model2instance.containsKey(model)) {
-            entityMap.put(instance.getId(), model);
+            putEntity(instance.getId(), model);
             if (model instanceof IdInitializing idInitializing) {
                 NncUtils.requireNull(idInitializing.tryGetPhysicalId(), () -> "ID is already set for entity "
                         + idInitializing.getClass().getName() + "-" + idInitializing);
@@ -221,11 +221,11 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
     }
         if (entity != null) {
             addMapping(entity, instance);
-            mapper.initEntityHelper(entity, instance, objectInstanceMap);
+            mapper.initEntityHelper(entity, instance, getObjectInstanceMap());
             if(entity instanceof ProxyObject)
                 EntityUtils.setProxyState(entity, EntityMethodHandler.State.INITIALIZED);
         } else {
-            entity = mapper.getEntityClass().cast(mapper.createEntityHelper(instance, objectInstanceMap));
+            entity = mapper.getEntityClass().cast(mapper.createEntityHelper(instance, getObjectInstanceMap()));
             addMapping(entity, instance);
         }
 //        if (entity instanceof LoadAware loadAware)
@@ -401,7 +401,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
                     // Instance load will trigger entity initialization, see onInstanceInitialized
                     m -> instanceContext.get(id)
             );
-            entityMap.put(id, proxy);
+            putEntity(id, proxy);
             entities.add(proxy);
             return proxy;
         } else
@@ -565,7 +565,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 //        try(var ignored = getProfiler().enter("updateInstance")) {
         if (isModelInitialized(object) && !instance.isRemoved() && !instance.isDirectlyModified()) {
             var mapper = getDefContext().getMapper(instance.getType());
-            mapper.updateInstanceHelper(object, instance, objectInstanceMap);
+            mapper.updateInstanceHelper(object, instance, getObjectInstanceMap());
             updateMemIndex(object);
         }
 //        }
@@ -817,7 +817,7 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
 //            updateMemIndex(object);
 //            return instance;
 //        } else {
-            var instance = mapper.createInstanceHelper(object, objectInstanceMap, null);
+            var instance = mapper.createInstanceHelper(object, getObjectInstanceMap(), null);
 //            addBinding(object, instance);
             updateMemIndex(object);
             return instance;
@@ -843,14 +843,18 @@ public abstract class BaseEntityContext implements CompositeTypeFactory, IEntity
             if(id != null) {
                 if (id instanceof TmpId)
                     instance.initId(id);
-                entityMap.put(id, entity);
+                putEntity(id, entity);
             }
         } else if(instance.tryGetId() instanceof PhysicalId id)
-            entityMap.put(id, model);
+            putEntity(id, model);
         if (!manualInstanceWriting()) {
             if (!instanceContext.containsInstance(instance))
                 instanceContext.bind(instance);
         }
+    }
+
+    private void putEntity(Id id, Object entity) {
+        entityMap.put(id, entity);
     }
 
     protected void updateMemIndex(Object object) {

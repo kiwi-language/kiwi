@@ -8,10 +8,10 @@ import org.metavm.expression.InstanceEvaluationContext;
 import org.metavm.expression.PropertyExpression;
 import org.metavm.expression.UnaryExpression;
 import org.metavm.flow.KlassInput;
-import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Value;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.util.Instances;
+import org.metavm.util.MvOutput;
 
 @Entity
 public class CheckConstraint extends Constraint {
@@ -76,7 +76,7 @@ public class CheckConstraint extends Constraint {
     }
 
     @Override
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         throw new UnsupportedOperationException();
     }
 }

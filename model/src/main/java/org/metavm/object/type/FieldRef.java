@@ -1,8 +1,10 @@
 package org.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.ValueElement;
+import org.metavm.entity.StdKlass;
+import org.metavm.object.instance.core.ElementValue;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.MvInput;
@@ -12,10 +14,10 @@ import org.metavm.util.WireTypes;
 import java.util.Objects;
 
 @Entity
-public class FieldRef extends ValueElement implements PropertyRef {
+public class FieldRef extends ElementValue implements PropertyRef {
 
     public static FieldRef read(MvInput input) {
-        var classType = (ClassType) Type.readType(input);
+        var classType = (ClassType) input.readType();
         var field = input.getField(input.readId());
         return new FieldRef(classType, field);
     }
@@ -23,7 +25,7 @@ public class FieldRef extends ValueElement implements PropertyRef {
     private final ClassType declaringType;
     public final Field rawField;
 
-    public FieldRef(ClassType declaringType, Field rawField) {
+    public FieldRef(ClassType declaringType, @NotNull Field rawField) {
         this.declaringType = declaringType;
         this.rawField = rawField;
     }
@@ -58,13 +60,18 @@ public class FieldRef extends ValueElement implements PropertyRef {
         return declaringType.getTypeDesc() + "." + rawField.getName();
     }
 
+    @Override
+    public Type getType() {
+        return StdKlass.fieldRef.type();
+    }
+
     public void write(MvOutput output) {
         output.write(WireTypes.FIELD_REF);
         declaringType.write(output);
         output.writeEntityId(rawField);
     }
 
-    public Type getType() {
+    public Type getPropertyType() {
         return declaringType.getTypeMetadata().getType(rawField.getTypeIndex());
     }
 

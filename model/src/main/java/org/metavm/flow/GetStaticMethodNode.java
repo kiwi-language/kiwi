@@ -21,7 +21,7 @@ public class GetStaticMethodNode extends Node {
     @NotNull
     @Override
     public Type getType() {
-        return methodRef.getType();
+        return methodRef.getPropertyType();
     }
 
     @Override

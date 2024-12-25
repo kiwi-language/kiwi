@@ -64,7 +64,7 @@ public class FlowValue extends FunctionValue {
 
     @Override
     public FunctionType getType() {
-        return !Flows.isInstanceMethod(flow.getRawFlow()) || boundSelf != null ? flow.getType() : Flows.getStaticType(flow);
+        return !Flows.isInstanceMethod(flow.getRawFlow()) || boundSelf != null ? flow.getPropertyType() : Flows.getStaticType(flow);
     }
 
     @Override

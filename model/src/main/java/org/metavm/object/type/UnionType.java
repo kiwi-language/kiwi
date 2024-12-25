@@ -1,10 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.api.Entity;
-import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.ReadonlyArray;
-import org.metavm.entity.SerializeContext;
-import org.metavm.entity.ValueArray;
+import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
@@ -38,10 +35,11 @@ public class UnionType extends CompositeType {
             throw new IllegalArgumentException("members can not be empty");
         // maintain a relatively deterministic order so that the ModelIdentities of the members are not changed between reboots
         // the order is not fully deterministic but it's sufficient for bootstrap because only binary-nullable union types are involved.
-        var sortedMembers = members.stream()
-                .sorted(Comparator.comparingInt(Type::getTypeKeyCode))
-                .toList();
-        this.members = new ValueArray<>(Type.class, sortedMembers);
+        this.members = new ValueArray<>(Type.class, members);
+    }
+
+    private UnionType(List<Type> members) {
+        this.members = new ValueArray<>(Type.class, members);
     }
 
     public Set<Type> getMembers() {
@@ -139,6 +137,11 @@ public class UnionType extends CompositeType {
     }
 
     @Override
+    public Type getType() {
+        return StdKlass.unionType.type();
+    }
+
+    @Override
     public boolean isEphemeral() {
         return false;
     }
@@ -182,9 +185,9 @@ public class UnionType extends CompositeType {
 
     public static UnionType read(MvInput input) {
         var numMembers = input.readInt();
-        var members = new HashSet<Type>(numMembers);
+        var members = new ArrayList<Type>(numMembers);
         for (int i = 0; i < numMembers; i++)
-            members.add(Type.readType(input));
+            members.add(input.readType());
         return new UnionType(members);
     }
 

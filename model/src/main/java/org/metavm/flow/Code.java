@@ -3,14 +3,17 @@ package org.metavm.flow;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
-import org.metavm.entity.*;
+import org.metavm.entity.ChildArray;
+import org.metavm.entity.Element;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.LoadAware;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.EncodingUtils;
+import org.metavm.util.MvOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.LinkedList;
 import java.util.List;
 
 @Entity
@@ -204,7 +207,7 @@ public class Code extends Element implements LoadAware {
         this.code = code;
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.writeInt(maxLocals);
         output.writeInt(maxStack);
         output.writeInt(code.length);

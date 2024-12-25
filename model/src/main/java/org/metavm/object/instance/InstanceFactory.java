@@ -86,7 +86,7 @@ public class InstanceFactory {
                 if (fieldMap.containsKey(tag)) {
                     var fieldValue = resolveValue(
                             fieldMap.get(tag).value(),
-                            field.getType(),
+                            field.getPropertyType(),
                             InstanceParentRef.ofObject(object.getReference(), field.getRawField()),
                             context
                     );

@@ -6,7 +6,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.LoadAware;
 import org.metavm.flow.Flow;
 import org.metavm.flow.KlassInput;
-import org.metavm.flow.KlassOutput;
+import org.metavm.util.MvOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,13 +20,16 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
     private CapturedTypeScope scope;
 
     private UncertainType uncertainType;
+    private TypeVariable typeVariable;
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
     public CapturedTypeVariable(Long tmpId, @NotNull UncertainType uncertainType,
+                        @NotNull TypeVariable typeVariable,
                         @NotNull CapturedTypeScope scope) {
         setTmpId(tmpId);
         this.scope = scope;
+        this.typeVariable = typeVariable;
         this.uncertainType = uncertainType;
         scope.addCapturedTypeVariable(this);
     }
@@ -54,6 +57,10 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
 
     public CapturedTypeScope getScope() {
         return scope;
+    }
+
+    public TypeVariable getTypeVariable() {
+        return typeVariable;
     }
 
     public String getInternalName(@Nullable Flow current) {
@@ -85,14 +92,16 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
         stage = ResolutionStage.INIT;
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.writeEntityId(this);
         uncertainType.write(output);
+        output.writeEntityId(typeVariable);
         writeAttributes(output);
     }
 
     public void read(KlassInput input) {
         uncertainType = (UncertainType) input.readType();
+        typeVariable = input.getTypeVariable(input.readId());
         readAttributes(input);
     }
 

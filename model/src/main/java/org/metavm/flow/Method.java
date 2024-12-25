@@ -227,9 +227,8 @@ public class Method extends Flow implements Property {
                         }
                     }
                     result = VmStack.execute(
-                            getCode(),
+                            flowRef,
                             argArray,
-                            flowRef.getTypeMetadata(),
                             closureContext,
                             new DefaultCallContext(callContext.instanceRepository())
                     );
@@ -319,6 +318,11 @@ public class Method extends Flow implements Property {
         return _static || isConstructor ? getParameters().size() : 1 + getParameters().size();
     }
 
+    @Override
+    public int getTypeInputCount() {
+        return 1 + super.getTypeInputCount();
+    }
+
     public void setDeclaringType(@NotNull Klass klass) {
         setDeclaringType(klass, true);
     }
@@ -360,7 +364,7 @@ public class Method extends Flow implements Property {
         hidden = (flags & FLAG_HIDDEN) != 0;
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         super.write(output);
         output.write(access.code());
         output.writeShort(staticTypeIndex);

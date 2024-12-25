@@ -1,16 +1,13 @@
 package org.metavm.object.type;
 
 import org.metavm.api.Entity;
+import org.metavm.entity.IEntityContext;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.ValueElement;
 import org.metavm.entity.Writable;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.TypeId;
-import org.metavm.object.instance.core.TypeTag;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.*;
 
@@ -22,7 +19,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Entity
-public abstract class Type extends ValueElement implements TypeOrTypeKey, Writable {
+public abstract class Type extends ElementValue implements TypeOrTypeKey, Writable {
 
     public abstract String getName();
 
@@ -309,44 +306,6 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
         return TypeTags.DEFAULT;
     }
 
-    public static Type readType(MvInput input) {
-        return readType(input.read(), input);
-    }
-
-    public static Type readType(int code, MvInput input) {
-        return switch (code) {
-            case WireTypes.CLASS_TYPE -> KlassType.read(input);
-            case WireTypes.TAGGED_CLASS_TYPE -> KlassType.readTagged(input);
-            case WireTypes.PARAMETERIZED_TYPE -> KlassType.readParameterized(input);
-            case WireTypes.VARIABLE_TYPE -> VariableType.read(input);
-            case WireTypes.CAPTURED_TYPE -> CapturedType.read(input);
-            case WireTypes.LONG_TYPE -> PrimitiveType.longType;
-            case WireTypes.INT_TYPE -> PrimitiveType.intType;
-            case WireTypes.CHAR_TYPE -> PrimitiveType.charType;
-            case WireTypes.SHORT_TYPE -> PrimitiveType.shortType;
-            case WireTypes.BYTE_TYPE -> PrimitiveType.byteType;
-            case WireTypes.DOUBLE_TYPE -> PrimitiveType.doubleType;
-            case WireTypes.FLOAT_TYPE -> PrimitiveType.floatType;
-            case WireTypes.NULL_TYPE -> NullType.instance;
-            case WireTypes.VOID_TYPE -> PrimitiveType.voidType;
-            case WireTypes.TIME_TYPE -> PrimitiveType.timeType;
-            case WireTypes.PASSWORD_TYPE -> PrimitiveType.passwordType;
-            case WireTypes.STRING_TYPE -> PrimitiveType.stringType;
-            case WireTypes.BOOLEAN_TYPE -> PrimitiveType.booleanType;
-            case WireTypes.FUNCTION_TYPE -> FunctionType.read(input);
-            case WireTypes.UNCERTAIN_TYPE -> UncertainType.read(input);
-            case WireTypes.UNION_TYPE -> UnionType.read(input);
-            case WireTypes.INTERSECTION_TYPE -> IntersectionType.read(input);
-            case WireTypes.READ_ONLY_ARRAY_TYPE -> ArrayType.read(input, ArrayKind.READ_ONLY);
-            case WireTypes.READ_WRITE_ARRAY_TYPE -> ArrayType.read(input, ArrayKind.READ_WRITE);
-            case WireTypes.CHILD_ARRAY_TYPE -> ArrayType.read(input, ArrayKind.CHILD);
-            case WireTypes.VALUE_ARRAY_TYPE -> ArrayType.read(input, ArrayKind.VALUE);
-            case WireTypes.NEVER_TYPE -> NeverType.instance;
-            case WireTypes.ANY_TYPE -> AnyType.instance;
-            default -> throw new InternalException("Invalid type key code: " + code);
-        };
-    }
-
     public abstract int getPrecedence();
 
     public boolean isFloat() {
@@ -355,6 +314,31 @@ public abstract class Type extends ValueElement implements TypeOrTypeKey, Writab
 
     public Value fromStackValue(Value value) {
         return value;
+    }
+
+    @Override
+    public String getTitle() {
+        return getTypeDesc();
+    }
+
+    @Override
+    public <R> R accept(ValueVisitor<R> visitor) {
+        return visitor.visitType(this);
+    }
+
+    @Override
+    public void writeTree(TreeWriter treeWriter) {
+        treeWriter.write(getTypeDesc());
+    }
+
+    @Override
+    public void writeInstance(InstanceOutput output) {
+        write(output);
+    }
+
+    @Override
+    public Object toJson(IEntityContext context) {
+        return getTypeDesc();
     }
 
 }

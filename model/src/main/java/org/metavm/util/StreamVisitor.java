@@ -2,8 +2,7 @@ package org.metavm.util;
 
 import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeOrTypeKey;
+import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +44,188 @@ public class StreamVisitor {
             case WireTypes.RELOCATING_INSTANCE -> visitRelocatingInstance();
             case WireTypes.VALUE_INSTANCE -> visitValueInstance();
             case WireTypes.REMOVING_INSTANCE -> visitRemovingInstance();
+            case WireTypes.CLASS_TYPE -> visitClassType();
+            case WireTypes.TAGGED_CLASS_TYPE -> visitTaggedClassType();
+            case WireTypes.PARAMETERIZED_TYPE -> visitParameterizedType();
+            case WireTypes.VARIABLE_TYPE -> visitVariableType();
+            case WireTypes.CAPTURED_TYPE -> visitCapturedType();
+            case WireTypes.LONG_TYPE -> visitLongType();
+            case WireTypes.INT_TYPE -> visitIntType();
+            case WireTypes.CHAR_TYPE -> visitCharType();
+            case WireTypes.SHORT_TYPE -> visitShortType();
+            case WireTypes.BYTE_TYPE -> visitByteType();
+            case WireTypes.DOUBLE_TYPE -> visitDoubleType();
+            case WireTypes.FLOAT_TYPE -> visitFloatType();
+            case WireTypes.NULL_TYPE -> visitNullType();
+            case WireTypes.VOID_TYPE -> visitVoidType();
+            case WireTypes.TIME_TYPE -> visitTimeType();
+            case WireTypes.PASSWORD_TYPE -> visitPasswordType();
+            case WireTypes.STRING_TYPE -> visitStringType();
+            case WireTypes.BOOLEAN_TYPE -> visitBooleanType();
+            case WireTypes.FUNCTION_TYPE -> visitFunctionType();
+            case WireTypes.UNCERTAIN_TYPE -> visitUncertainType();
+            case WireTypes.UNION_TYPE -> visitUnionType();
+            case WireTypes.INTERSECTION_TYPE -> visitIntersectionType();
+            case WireTypes.READ_ONLY_ARRAY_TYPE -> visitReadOnlyArrayType();
+            case WireTypes.READ_WRITE_ARRAY_TYPE -> visitReadWriteArrayType();
+            case WireTypes.CHILD_ARRAY_TYPE -> visitChildArrayType();
+            case WireTypes.VALUE_ARRAY_TYPE -> visitValueArrayType();
+            case WireTypes.NEVER_TYPE -> visitNeverType();
+            case WireTypes.ANY_TYPE -> visitAnyType();
+            case WireTypes.FIELD_REF -> visitFieldRef();
+            case WireTypes.METHOD_REF -> visitMethodRef();
+            case WireTypes.FUNCTION_REF -> visitFunctionRef();
+            case WireTypes.INDEX_REF -> visitIndexRef();
+            case WireTypes.LAMBDA_REF -> visitLambdaRef();
             default -> throw new InternalException("Invalid wire type: " + wireType);
         }
+    }
+
+    public void visitFieldRef() {
+        visitValue();
+        readId();
+    }
+
+    public void visitMethodRef() {
+        visitValue();;
+        readId();
+        var typeArgCnt = readInt();
+        for (int i = 0; i < typeArgCnt; i++) {
+            visitValue();
+        }
+    }
+
+    public void visitFunctionRef() {
+        readId();
+        var typeArgCnt = readInt();
+        for (int i = 0; i < typeArgCnt; i++) {
+            visitValue();
+        }
+    }
+
+    public void visitIndexRef() {
+        visitValue();
+        readId();
+    }
+
+    public void visitLambdaRef() {
+        visitValue();
+        readId();
+    }
+
+    public void visitClassType() {
+        readId();
+    }
+
+    public void visitTaggedClassType() {
+        readId();
+        readLong();
+    }
+
+    public void visitParameterizedType() {
+        visitValue();
+        readId();
+        int typeArgCnt = readInt();
+        for (int i = 0; i < typeArgCnt; i++) {
+            visitValue();
+        }
+    }
+
+    public void visitVariableType() {
+        readId();
+    }
+
+    public void visitCapturedType() {
+        readId();
+    }
+
+    public void visitLongType() {
+    }
+
+    public void visitIntType() {
+    }
+
+    public void visitCharType() {
+    }
+
+    public void visitShortType() {
+    }
+
+    public void visitByteType() {
+    }
+
+    public void visitDoubleType() {
+    }
+
+    public void visitFloatType() {
+    }
+
+    public void visitNullType() {
+    }
+
+    public void visitVoidType() {
+    }
+
+    public void visitTimeType() {
+    }
+
+    public void visitPasswordType() {
+    }
+
+    public void visitStringType() {
+    }
+
+    public void visitBooleanType() {
+    }
+
+    public void visitFunctionType() {
+        int paramCnt = readInt();
+        for (int i = 0; i < paramCnt; i++) {
+            visitValue();
+        }
+        visitValue();
+    }
+
+    public void visitUncertainType() {
+        visitValue();
+        visitValue();
+    }
+
+    public void visitUnionType() {
+        int memberCnt = readInt();
+        for (int i = 0; i < memberCnt; i++) {
+            visitValue();
+        }
+    }
+
+    public void visitIntersectionType() {
+        int memberCnt = readInt();
+        for (int i = 0; i < memberCnt; i++) {
+            visitValue();
+        }
+    }
+
+    public void visitReadOnlyArrayType() {
+        visitValue();
+    }
+
+    public void visitReadWriteArrayType() {
+        visitValue();
+    }
+
+    public void visitChildArrayType() {
+        visitValue();
+    }
+
+    public void visitValueArrayType() {
+        visitValue();
+    }
+
+    public void visitNeverType() {
+
+    }
+
+    public void visitAnyType() {
     }
 
     protected void visitShort() {
@@ -178,7 +357,7 @@ public class StreamVisitor {
     }
 
     public Type readType() {
-        return Type.readType(input);
+        return input.readType();
     }
 
     public int read() {

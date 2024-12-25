@@ -10,7 +10,7 @@ import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
 
-public class NullValue extends Value {
+public class NullValue implements Value {
 
     public static final NullValue instance = new NullValue();
 
@@ -33,7 +33,7 @@ public class NullValue extends Value {
     }
 
     @Override
-    protected InstanceParam getParam() {
+    public InstanceParam getParam() {
         return null;
     }
 
@@ -63,7 +63,7 @@ public class NullValue extends Value {
     }
 
     @Override
-    protected void writeTree(TreeWriter treeWriter) {
+    public void writeTree(TreeWriter treeWriter) {
 
     }
 

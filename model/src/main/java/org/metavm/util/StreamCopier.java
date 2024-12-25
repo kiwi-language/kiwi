@@ -274,6 +274,224 @@ public class StreamCopier extends StreamVisitor {
         output.writeLong(readLong());
     }
 
+    @Override
+    public void visitClassType() {
+        output.write(WireTypes.CLASS_TYPE);
+        output.writeId(readId());
+    }
+
+    @Override
+    public void visitTaggedClassType() {
+        output.write(WireTypes.TAGGED_CLASS_TYPE);
+        output.writeId(readId());
+        output.writeLong(readLong());
+    }
+
+    @Override
+    public void visitParameterizedType() {
+        output.write(WireTypes.PARAMETERIZED_TYPE);
+        visitValue();
+        output.writeId(readId());
+        int typeArgCnt = readInt();
+        output.writeInt(typeArgCnt);
+        for (int i = 0; i < typeArgCnt; i++) {
+            visitValue();
+        }
+    }
+
+    @Override
+	public void visitVariableType() {
+        output.write(WireTypes.VARIABLE_TYPE);
+        output.writeId(readId());
+    }
+
+    @Override
+	public void visitCapturedType() {
+        output.write(WireTypes.CAPTURED_TYPE);
+        output.writeId(readId());
+    }
+
+    @Override
+	public void visitLongType() {
+        output.write(WireTypes.LONG_TYPE);
+    }
+
+    @Override
+	public void visitIntType() {
+        output.write(WireTypes.INT_TYPE);
+    }
+
+    @Override
+	public void visitCharType() {
+        output.write(WireTypes.CHAR_TYPE);
+    }
+
+    @Override
+	public void visitShortType() {
+        output.write(WireTypes.SHORT_TYPE);
+    }
+
+    @Override
+	public void visitByteType() {
+        output.write(WireTypes.BYTE_TYPE);
+    }
+
+    @Override
+	public void visitDoubleType() {
+        output.write(WireTypes.DOUBLE_TYPE);
+    }
+
+    @Override
+	public void visitFloatType() {
+        output.write(WireTypes.FLOAT_TYPE);
+    }
+
+    @Override
+	public void visitNullType() {
+        output.write(WireTypes.NULL_TYPE);
+    }
+
+    @Override
+	public void visitVoidType() {
+        output.write(WireTypes.VOID_TYPE);
+    }
+
+    @Override
+	public void visitTimeType() {
+        output.write(WireTypes.TIME_TYPE);
+    }
+
+    @Override
+	public void visitPasswordType() {
+        output.write(WireTypes.PASSWORD_TYPE);
+    }
+
+    @Override
+	public void visitStringType() {
+        output.write(WireTypes.STRING_TYPE);
+    }
+
+    @Override
+	public void visitBooleanType() {
+        output.write(WireTypes.BOOLEAN_TYPE);
+    }
+
+    @Override
+	public void visitFunctionType() {
+        output.write(WireTypes.FUNCTION_TYPE);
+        int paramCnt = readInt();
+        output.writeInt(paramCnt);
+        for (int i = 0; i < paramCnt; i++) {
+            visitValue();
+        }
+        visitValue();
+    }
+
+    @Override
+	public void visitUncertainType() {
+        output.write(WireTypes.UNCERTAIN_TYPE);
+        visitValue();
+        visitValue();
+    }
+
+    @Override
+	public void visitUnionType() {
+        output.write(WireTypes.UNION_TYPE);
+        int memberCnt = readInt();
+        output.writeInt(memberCnt);
+        for (int i = 0; i < memberCnt; i++) {
+            visitValue();
+        }
+    }
+
+    @Override
+	public void visitIntersectionType() {
+        output.write(WireTypes.INTERSECTION_TYPE);
+        int memberCnt = readInt();
+        output.writeInt(memberCnt);
+        for (int i = 0; i < memberCnt; i++) {
+            visitValue();
+        }
+    }
+
+    @Override
+	public void visitReadOnlyArrayType() {
+        output.write(WireTypes.READ_ONLY_ARRAY_TYPE);
+        visitValue();
+    }
+
+    @Override
+	public void visitReadWriteArrayType() {
+        output.write(WireTypes.READ_WRITE_ARRAY_TYPE);
+        visitValue();
+    }
+
+    @Override
+	public void visitChildArrayType() {
+        output.write(WireTypes.CHILD_ARRAY_TYPE);
+        visitValue();
+    }
+
+    @Override
+	public void visitValueArrayType() {
+        output.write(WireTypes.VALUE_ARRAY_TYPE);
+        visitValue();
+    }
+
+    @Override
+	public void visitNeverType() {
+        output.write(WireTypes.NEVER_TYPE);
+    }
+
+    @Override
+	public void visitAnyType() {
+        output.write(WireTypes.ANY_TYPE);
+    }
+
+    @Override
+    public void visitFieldRef() {
+        write(WireTypes.FIELD_REF);
+        visitValue();
+        output.writeId(readId());
+    }
+
+    @Override
+    public void visitMethodRef() {
+        write(WireTypes.METHOD_REF);
+        visitValue();
+        output.writeId(readId());
+        var typeArgCnt = readInt();
+        output.writeInt(typeArgCnt);
+        for (int i = 0; i < typeArgCnt; i++) {
+            visitValue();
+        }
+    }
+
+    @Override
+    public void visitFunctionRef() {
+        write(WireTypes.FUNCTION_REF);
+        output.writeId(readId());
+        var typeArgCnt = readInt();
+        output.writeInt(typeArgCnt);
+        for (int i = 0; i < typeArgCnt; i++) {
+            visitValue();
+        }
+    }
+
+    @Override
+    public void visitIndexRef() {
+        write(WireTypes.INDEX_REF);
+        visitValue();
+        output.writeId(readId());
+    }
+
+    @Override
+    public void visitLambdaRef() {
+        write(WireTypes.LAMBDA_REF);
+        visitValue();
+        output.writeId(readId());
+    }
+
     public void writeLong(long l) {
         output.writeLong(l);
     }

@@ -1,4 +1,4 @@
-package capturedtypes;
+package wildcard_capture;
 
 import java.util.List;
 import java.util.Objects;

@@ -1,28 +1,22 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.*;
 import org.metavm.entity.Reference;
-import org.metavm.entity.ValueElement;
-import org.metavm.entity.Writable;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.InstanceEvaluationContext;
 import org.metavm.flow.Flows;
-import org.metavm.flow.KlassInput;
-import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.ElementValue;
 import org.metavm.object.instance.core.Value;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
-import org.metavm.util.WireTypes;
+import org.metavm.util.*;
 
 import java.util.*;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
-public class IndexRef extends ValueElement implements Reference, Writable {
+public class IndexRef extends ElementValue implements Reference, Writable {
 
     private final ClassType declaringType;
     private final Index rawIndex;
@@ -47,14 +41,19 @@ public class IndexRef extends ValueElement implements Reference, Writable {
         return Objects.hash(declaringType, rawIndex);
     }
 
+    @Override
+    public Type getType() {
+        return StdKlass.indexRef.type();
+    }
+
     public void write(MvOutput output) {
         output.write(WireTypes.INDEX_REF);
         declaringType.write(output);
         output.writeEntityId(rawIndex);
     }
 
-    public static IndexRef read(KlassInput input) {
-        var classType = (ClassType) Type.readType(input);
+    public static IndexRef read(MvInput input) {
+        var classType = (ClassType) input.readType();
         var rawIndex = input.getIndex(input.readId());
         return new IndexRef(classType, rawIndex);
     }

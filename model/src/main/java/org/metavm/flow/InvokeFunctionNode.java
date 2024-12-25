@@ -2,7 +2,6 @@ package org.metavm.flow;
 
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.util.InternalException;
 
 @Entity
 public class InvokeFunctionNode extends InvokeNode {
@@ -17,6 +16,11 @@ public class InvokeFunctionNode extends InvokeNode {
     }
 
     @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("invokefunction " + getFlowRef());
+    }
+
+    @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.INVOKE_FUNCTION);
         writeCallCode(output);
@@ -27,11 +31,4 @@ public class InvokeFunctionNode extends InvokeNode {
         return (FunctionRef) super.getFlowRef();
     }
 
-    @Override
-    public void setFlowRef(FlowRef flowRef) {
-        if(flowRef instanceof FunctionRef)
-            super.setFlowRef(flowRef);
-        else
-            throw new InternalException("Invalid sub flow for function call node: " + flowRef);
-    }
 }

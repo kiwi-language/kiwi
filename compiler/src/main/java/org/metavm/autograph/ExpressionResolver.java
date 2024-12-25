@@ -1,6 +1,5 @@
 package org.metavm.autograph;
 
-import com.google.common.collect.Streams;
 import com.intellij.psi.*;
 import com.intellij.psi.tree.IElementType;
 import org.metavm.entity.natives.StdFunction;
@@ -17,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.TranspileUtils.createTemplateType;
@@ -89,6 +89,10 @@ public class ExpressionResolver {
         return resolved;
     }
 
+    public Node getResolvedNode(PsiExpression expression) {
+        return expression2node.get(expression);
+    }
+
     private Node resolveNormal(PsiExpression psiExpression, ResolutionContext context) {
         return switch (psiExpression) {
             case PsiBinaryExpression binaryExpression -> resolveBinary(binaryExpression, context);
@@ -120,7 +124,7 @@ public class ExpressionResolver {
 
     private Node resolveClassObjectAccess(PsiClassObjectAccessExpression classObjectAccessExpression, ResolutionContext ignored) {
         var type = typeResolver.resolveTypeOnly(classObjectAccessExpression.getOperand().getType());
-        return methodGenerator.createLoadType(type);
+        return methodGenerator.createLoadKlass(type);
     }
 
     private Node resolveTypeCast(PsiTypeCastExpression typeCastExpression, ResolutionContext context) {
@@ -554,7 +558,7 @@ public class ExpressionResolver {
         var declaringType = qualifier != null && qualifier.getType() instanceof PsiClassType classType ?
                 classType : null;
         var signature = TranspileUtils.getSignature(method, declaringType);
-        return Streams.concat(
+        return Stream.concat(
                         TranspileUtils.getNativeFunctionCallResolvers().stream(),
                         methodCallResolvers.stream()
                 )
@@ -636,42 +640,11 @@ public class ExpressionResolver {
         for (var psiArg : psiArgs) {
              resolve(psiArg, context);
         }
-        var node = methodGenerator.createInvokeMethod(new MethodRef(type, method, typeArgs));
-        setCapturedVariables(node);
-        return node;
-    }
-
-    void setCapturedVariables(InvokeNode node) {
-        var flow = node.getFlowRef();
-        var capturedTypeSet = new HashSet<CapturedType>();
-        if (flow instanceof MethodRef methodRef) {
-            var declaringType = methodRef.getDeclaringType();
-            if(declaringType.isParameterized())
-                declaringType.getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
-        }
-        if(flow.isParameterized())
-            flow.getTypeArguments().forEach(t -> t.getCapturedTypes(capturedTypeSet));
-        var capturedTypes = new ArrayList<>(capturedTypeSet);
-        var psiCapturedTypes = NncUtils.map(capturedTypes, typeResolver::getPsiCapturedType);
-        var capturedPsiExpressions = NncUtils.mapAndFilterByType(psiCapturedTypes, PsiCapturedWildcardType::getContext, PsiExpression.class);
-        var anchors = NncUtils.map(capturedPsiExpressions,
-                e -> Objects.requireNonNull(expression2node.get(e),
-                        () -> "Captured expression '" + e.getText() + "' has not yet been resolved"));
-        var captureVariableTypes = NncUtils.map(
-                capturedPsiExpressions, e -> typeResolver.resolveDeclaration(e.getType()));
-        var capturedVariableIndexes = new ArrayList<Integer>();
-        for (Node anchor : anchors) {
-            var v = methodGenerator.nextVariableIndex();
-            capturedVariableIndexes.add(v);
-            methodGenerator.recordValue(anchor, v);
-        }
-        node.setCapturedVariableIndexes(capturedVariableIndexes);
-        node.setCapturedVariableTypes(captureVariableTypes);
+        return methodGenerator.createInvokeMethod(type, method, typeArgs);
     }
 
     private Node createSAMConversion(ClassType samInterface) {
-        var funcRef = new FunctionRef(StdFunction.functionToInstance.get(), List.of(samInterface));
-        return methodGenerator.createInvokeFunction(funcRef);
+        return methodGenerator.createInvokeFunction(StdFunction.functionToInstance.get(), List.of(samInterface));
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -743,10 +716,7 @@ public class ExpressionResolver {
                     method.getTypeParameters(),
                     tp -> typeResolver.resolveDeclaration(methodGenerics.getSubstitutor().substitute(tp))
             );
-            var methodRef = new MethodRef(type, flow, typeArgs);
-            var node = methodGenerator.createInvokeMethod(methodRef);
-            setCapturedVariables(node);
-            return node;
+            return methodGenerator.createInvokeMethod(type, flow, typeArgs);
         } else {
             // TODO support new array instance
             throw new InternalException("Unsupported NewExpression: " + expression);

@@ -7,11 +7,11 @@ import org.metavm.expression.Expression;
 import org.metavm.expression.PropertyExpression;
 import org.metavm.expression.ThisExpression;
 import org.metavm.flow.KlassInput;
-import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Values;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
+import org.metavm.util.MvOutput;
 
 @Entity
 public class IndexField extends Element implements LocalKey, ITypeDef {
@@ -101,7 +101,7 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
         return name;
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.writeEntityId(this);
         output.writeUTF(name);
         output.writeShort(typeIndex);

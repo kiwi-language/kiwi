@@ -2,7 +2,7 @@ package org.metavm.entity;
 
 import org.metavm.api.ChildEntity;
 import org.metavm.flow.KlassInput;
-import org.metavm.flow.KlassOutput;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -68,7 +68,7 @@ public abstract class AttributedElement extends Element {
         return map;
     }
 
-    public void writeAttributes(KlassOutput output) {
+    public void writeAttributes(MvOutput output) {
         output.writeInt(attributes.size());
         for (Attribute attribute : attributes) {
             attribute.write(output);

@@ -7,6 +7,7 @@ import org.metavm.entity.*;
 import org.metavm.object.type.ITypeDef;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeMetadata;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
 
 @Entity
@@ -83,7 +84,7 @@ public class Parameter extends AttributedElement implements LocalKey, ITypeDef {
         return name + ":" + callable.getConstantPool().getType(typeIndex).getName();
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.writeEntityId(this);
         output.writeUTF(name);
         output.writeShort(typeIndex);

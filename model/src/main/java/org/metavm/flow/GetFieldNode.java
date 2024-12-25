@@ -26,7 +26,7 @@ public class GetFieldNode extends Node {
 
     @NotNull
     public Type getType() {
-        return fieldRef.getType();
+        return fieldRef.getPropertyType();
     }
 
     @Override

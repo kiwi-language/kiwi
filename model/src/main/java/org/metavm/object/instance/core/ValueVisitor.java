@@ -1,5 +1,7 @@
 package org.metavm.object.instance.core;
 
+import org.metavm.object.type.Type;
+
 public abstract class ValueVisitor<R> {
 
     public R visit(Value value) {
@@ -91,4 +93,13 @@ public abstract class ValueVisitor<R> {
     public R visitByteValue(ByteValue value) {
         return visitNumberValue(value);
     }
+
+    public R visitElement(ElementValue element) {
+        return visitValue(element);
+    }
+
+    public R visitType(Type type) {
+        return visitValue(type);
+    }
+
 }

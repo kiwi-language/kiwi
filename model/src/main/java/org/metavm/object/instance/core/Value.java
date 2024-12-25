@@ -16,82 +16,79 @@ import org.metavm.util.NncUtils;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public abstract class Value {
-
-    public Value() {
-    }
+public interface Value {
 
     @NoProxy
-    public abstract Type getType();
+    Type getType();
 
     @NoProxy
-    public boolean isValue() {
+    default boolean isValue() {
         return false;
     }
 
     @NoProxy
-    public boolean isNull() {
+    default boolean isNull() {
         return false;
     }
 
     @NoProxy
-    public boolean isNotNull() {
+    default boolean isNotNull() {
         return !isNull();
     }
 
     @NoProxy
-    public boolean isPassword() {
+    default boolean isPassword() {
         return getType().isPassword();
     }
 
-    public StringValue toStringInstance() {
+    default StringValue toStringInstance() {
         return Instances.stringInstance(getTitle());
     }
 
     @NoProxy
-    public boolean isArray() {
+    default boolean isArray() {
         return false;
     }
 
-    public boolean isObject() {
-        return false;
-    }
-
-    @NoProxy
-    public boolean isPrimitive() {
+    default boolean isObject() {
         return false;
     }
 
     @NoProxy
-    public boolean isNotPrimitive() {
+    default boolean isPrimitive() {
+        return false;
+    }
+
+    @NoProxy
+    default boolean isNotPrimitive() {
         return !isPrimitive();
     }
 
-    public abstract boolean isReference();
+    boolean isReference();
 
-    public String toStringValue() {
+    default String toStringValue() {
         throw new UnsupportedOperationException();
     }
 
-    public boolean isEphemeral() {
+    default boolean isEphemeral() {
         return false;
     }
 
-    public boolean shouldSkipWrite() {
+    default boolean shouldSkipWrite() {
         return false;
     }
 
-    public abstract @Nullable Id tryGetId();
+    @Nullable Id tryGetId();
 
-    public Id getId() {
+    default Id getId() {
         return Objects.requireNonNull(tryGetId());
     }
 
-    public @Nullable String getStringId() {
+    default @Nullable String getStringId() {
         return NncUtils.get(tryGetId(), Id::toString);
     }
 
-    public @Nullable String getStringIdForDTO() {
+    default @Nullable String getStringIdForDTO() {
 //        var id = tryGetId();
 //        if(id instanceof PhysicalId physicalId)
 //            return new TypedPhysicalId(physicalId.isArray(), physicalId.getTreeId(), physicalId.getNodeId(), getType().toTypeKey()).toString();
@@ -100,34 +97,22 @@ public abstract class Value {
         return getStringId();
     }
 
-    public abstract FieldValue toFieldValueDTO();
+    FieldValue toFieldValueDTO();
 
-    public abstract String getTitle();
+    String getTitle();
 
 
-    @Override
-    @NoProxy
-    public int hashCode() {
-        return super.hashCode();
-    }
+    void writeInstance(InstanceOutput output) ;
 
-    @Override
-    @NoProxy
-    public boolean equals(Object obj) {
-        return super.equals(obj);
-    }
+    void write(MvOutput output);
 
-    public abstract void writeInstance(InstanceOutput output) ;
+    Object toSearchConditionValue();
 
-    public abstract void write(MvOutput output);
-
-    public abstract Object toSearchConditionValue();
-
-    public InstanceDTO toDTO() {
+    default InstanceDTO toDTO() {
         return toDTO(getParam());
     }
 
-    protected InstanceDTO toDTO(InstanceParam param) {
+    default InstanceDTO toDTO(InstanceParam param) {
         try (var serContext = SerializeContext.enter()) {
             return new InstanceDTO(
                     getStringIdForDTO(),
@@ -139,48 +124,48 @@ public abstract class Value {
         }
     }
 
-    protected abstract InstanceParam getParam();
+    InstanceParam getParam();
 
     @NoProxy
-    public abstract <R> R accept(ValueVisitor<R> visitor);
+    <R> R accept(ValueVisitor<R> visitor);
 
-    public abstract <R> void acceptReferences(ValueVisitor<R> visitor);
+    <R> void acceptReferences(ValueVisitor<R> visitor);
 
-    public abstract <R> void acceptChildren(ValueVisitor<R> visitor);
+    <R> void acceptChildren(ValueVisitor<R> visitor);
 
-    public String getText() {
+    default String getText() {
         var treeWriter = new TreeWriter();
         writeTree(treeWriter);
         return treeWriter.toString();
     }
 
-    protected abstract void writeTree(TreeWriter treeWriter);
+    void writeTree(TreeWriter treeWriter);
 
-    public abstract  boolean isMutable();
+    boolean isMutable();
 
-    public abstract Object toJson(IEntityContext context);
+    Object toJson(IEntityContext context);
 
-    public ClassInstance resolveObject() {
+    default ClassInstance resolveObject() {
         return (ClassInstance) resolveDurable();
     }
 
-    public ArrayInstance resolveArray() {
+    default ArrayInstance resolveArray() {
         return (ArrayInstance) resolveDurable();
     }
 
-    public Instance resolveDurable(){
+    default Instance resolveDurable(){
         return ((Reference) this).resolve();
     }
 
-    public Value toStackValue() {
+    default Value toStackValue() {
         return this;
     }
 
-    public ClosureContext getClosureContext() {
+    default ClosureContext getClosureContext() {
         return null;
     }
 
-    public String stringValue() {
+    default String stringValue() {
         throw new UnsupportedOperationException();
     }
 

@@ -181,10 +181,10 @@ public class Compiler {
                     });
                 }
             }
-            var generatedTypes = typeResolver.getGeneratedTypeDefs();
+            var klasses = typeResolver.getGeneratedKlasses();
             long elapsed = System.currentTimeMillis() - start;
-            logger.info("Compilation done in {} ms. {} types generated", elapsed, generatedTypes.size());
-            deploy(generatedTypes, typeResolver);
+            logger.info("Compilation done in {} ms. {} types generated", elapsed, klasses.size());
+            deploy(klasses, typeResolver);
             logger.info("Deploy done");
             return true;
         } finally {
@@ -285,19 +285,18 @@ public class Compiler {
         }
     }
 
-    private void deploy(Collection<TypeDef> generatedTypeDefs, TypeResolver typeResolver) {
+    private void deploy(Collection<Klass> klasses, TypeResolver typeResolver) {
         try (var serContext = SerializeContext.enter();
              var ignored = ContextUtil.getProfiler().enter("deploy")) {
             NncUtils.clearDirectory(targetDir);
             serContext.includingCode(true)
                     .includeNodeOutputType(false)
                     .includingValueType(false);
-            for (var typeDef : generatedTypeDefs) {
-                if (typeDef instanceof Klass klass)
-                    typeResolver.ensureCodeGenerated(klass);
+            for (var klass : klasses) {
+                typeResolver.ensureCodeGenerated(klass);
             }
-            for (var typeDef : generatedTypeDefs) {
-                if(typeDef instanceof Klass klass && !klass.isInner() && !klass.isLocal())
+            for (var klass : klasses) {
+                if(!klass.isInner() && !klass.isLocal())
                     writeClassFile(klass, serContext);
             }
             logger.info("Compile successful");

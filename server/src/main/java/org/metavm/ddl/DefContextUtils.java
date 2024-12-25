@@ -9,14 +9,19 @@ import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.ReversedDefContext;
 import org.metavm.object.instance.CachingInstanceStore;
 import org.metavm.object.instance.core.EntityInstanceContextBridge;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.InstanceContext;
 import org.metavm.object.instance.core.WAL;
+import org.metavm.object.type.ITypeDef;
+import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
+import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 public class DefContextUtils {
@@ -46,13 +51,27 @@ public class DefContextUtils {
     private static ReversedDefContext create0(WAL wal, List<String> extraKlassIds, EntityContextFactory entityContextFactory) {
         var sysDefContext = ModelDefRegistry.getDefContext();
         var bridge = new EntityInstanceContextBridge();
+        var typeDefProvider = new TypeDefProvider() {
+
+            ReversedDefContext reversedDefContext;
+            final Set<Long> extraTreeIds = NncUtils.mapUnique(extraKlassIds, id -> Id.parse(id).getTreeId());
+
+            @Override
+            public ITypeDef getTypeDef(Id id) {
+                if (extraTreeIds.contains(id.getTreeId())) {
+                    return reversedDefContext.getTypeDef(id);
+                } else
+                    return sysDefContext.getTypeDef(id);
+            }
+        };
         var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
                 Constants.ROOT_APP_ID, false, null,
                 new DefaultIdInitializer((i, j) -> {throw new UnsupportedOperationException();}),
                 bridge, wal, null, null, false,
-                builder -> builder.timeout(0L).typeDefProvider(sysDefContext)
+                builder -> builder.timeout(0L).typeDefProvider(typeDefProvider)
         );
         var dc = new ReversedDefContext(standardInstanceContext, sysDefContext);
+        typeDefProvider.reversedDefContext = dc;
         bridge.setEntityContext(dc);
         dc.initializeFrom(sysDefContext, extraKlassIds);
         return dc;

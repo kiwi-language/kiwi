@@ -19,6 +19,11 @@ public class InvokeStaticNode extends InvokeNode {
     }
 
     @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("invokestatic " + getFlowRef());
+    }
+
+    @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.INVOKE_STATIC);
         writeCallCode(output);

@@ -2,13 +2,13 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ChildEntity;
-import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityField;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.flow.KlassInput;
-import org.metavm.flow.KlassOutput;
 import org.metavm.util.InternalException;
+import org.metavm.util.MvOutput;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -151,7 +151,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
         return "TypeVariable-" + getTypeDesc();
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.writeEntityId(this);
         output.writeUTF(name);
         output.writeInt(bounds.size());

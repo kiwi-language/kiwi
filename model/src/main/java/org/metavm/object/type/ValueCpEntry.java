@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
-import org.metavm.flow.KlassOutput;
 import org.metavm.object.instance.core.Value;
+import org.metavm.util.MvOutput;
 
 public class ValueCpEntry extends CpEntry {
 
@@ -18,7 +18,7 @@ public class ValueCpEntry extends CpEntry {
     }
 
     @Override
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         value.write(output);
     }
 }

@@ -4,12 +4,12 @@ import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.entity.*;
 import org.metavm.flow.KlassInput;
-import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.InternalException;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
@@ -154,7 +154,7 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     }
 
     @Override
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.writeEntityId(this);
         output.writeUTF(getName());
         output.writeInt(fields.size());

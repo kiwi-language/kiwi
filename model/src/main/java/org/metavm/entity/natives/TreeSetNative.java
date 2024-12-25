@@ -35,7 +35,7 @@ public class TreeSetNative extends SetNative {
     }
 
     public Value TreeSet(CallContext callContext) {
-        array = new ArrayInstance((ArrayType) arrayField.getType());
+        array = new ArrayInstance((ArrayType) arrayField.getPropertyType());
         instance.initField(arrayField.getRawField(), array.getReference());
         return instance.getReference();
     }
@@ -44,7 +44,7 @@ public class TreeSetNative extends SetNative {
         if(c instanceof Reference collection) {
             var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
             var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
-            array = new ArrayInstance((ArrayType) arrayField.getType(),
+            array = new ArrayInstance((ArrayType) arrayField.getPropertyType(),
                     new InstanceParentRef(instance.getReference(), arrayField.getRawField()));
             instance.initField(arrayField.getRawField(), array.getReference());
             array.addAll(thatArray);

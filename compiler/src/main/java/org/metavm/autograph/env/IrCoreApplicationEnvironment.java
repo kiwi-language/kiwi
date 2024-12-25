@@ -1,6 +1,5 @@
 package org.metavm.autograph.env;
 
-import com.intellij.formatting.service.FormattingService;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.TransactionGuard;
 import com.intellij.openapi.application.TransactionGuardImpl;
@@ -20,8 +19,8 @@ import com.intellij.psi.impl.source.tree.TreeGenerator;
 import com.intellij.psi.util.JavaClassSupers;
 import com.intellij.util.containers.CollectionFactory;
 import org.jetbrains.annotations.NotNull;
-import sun.misc.Unsafe;
 import org.metavm.util.ReflectionUtils;
+import sun.misc.Unsafe;
 
 public class IrCoreApplicationEnvironment extends JavaCoreApplicationEnvironment  {
 
@@ -41,7 +40,7 @@ public class IrCoreApplicationEnvironment extends JavaCoreApplicationEnvironment
         registerApplicationExtensionPoint(JavaModuleSystem.EP_NAME, JavaModuleSystem.class);
         registerApplicationExtensionPoint(ClassTypePointerFactory.EP_NAME, ClassTypePointerFactory.class);
         registerApplicationExtensionPoint(TreeCopyHandler.EP_NAME, TreeCopyHandler.class);
-        registerApplicationExtensionPoint(FormattingService.EP_NAME, FormattingService.class);
+//        registerApplicationExtensionPoint(FormattingService.EP_NAME, FormattingService.class);
         registerApplicationExtensionPoint(DocumentWriteAccessGuard.EP_NAME, DocumentWriteAccessGuard.class);
         registerApplicationExtensionPoint(TreeGenerator.EP_NAME, TreeGenerator.class);
         registerApplicationExtensionPoint(ClsCustomNavigationPolicy.EP_NAME, ClsCustomNavigationPolicy.class);

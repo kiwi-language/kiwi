@@ -5,9 +5,9 @@ import org.metavm.entity.Attribute;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.ReadWriteArray;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
+import org.metavm.util.MvOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -85,7 +85,7 @@ public class DummyMethod extends Method {
     }
 
     @Override
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         throw new UnsupportedOperationException();
     }
 

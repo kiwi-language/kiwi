@@ -33,7 +33,7 @@ public class HashSetNative extends SetNative {
     }
 
     public Value HashSet(CallContext callContext) {
-        array = new ArrayInstance((ArrayType) arrayField.getType());
+        array = new ArrayInstance((ArrayType) arrayField.getPropertyType());
         instance.initField(arrayField.getRawField(), array.getReference());
         return instance.getReference();
     }
@@ -42,7 +42,7 @@ public class HashSetNative extends SetNative {
         var collection = (Reference) c;
         var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
         var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
-        array = new ArrayInstance((ArrayType) arrayField.getType(),
+        array = new ArrayInstance((ArrayType) arrayField.getPropertyType(),
                 new InstanceParentRef(instance.getReference(), arrayField.getRawField()));
         instance.initField(arrayField.getRawField(), array.getReference());
         array.addAll(thatArray);

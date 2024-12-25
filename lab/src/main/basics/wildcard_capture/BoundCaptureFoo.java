@@ -1,4 +1,4 @@
-package capturedtypes;
+package wildcard_capture;
 
 import org.jetbrains.annotations.NotNull;
 

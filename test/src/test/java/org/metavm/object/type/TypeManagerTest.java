@@ -60,7 +60,7 @@ public class TypeManagerTest extends TestCase {
     }
 
     public void testSynchronizeSearch() {
-        var fooKlassId = TestUtils.doInTransaction(() -> {
+        TestUtils.doInTransaction(() -> {
             try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                 var fooKlass = TestUtils.newKlassBuilder("SynchronizeFoo").build();
                 context.bind(fooKlass);
@@ -69,7 +69,6 @@ public class TypeManagerTest extends TestCase {
                 return fooKlass.getId();
             }
         });
-        DebugEnv.id = fooKlassId;
 //        TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, entityContextFactory);
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {

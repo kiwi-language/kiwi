@@ -128,12 +128,14 @@ public class BasicCompilingTest extends CompilerTestBase {
             processEnumConstantImpl();
             processTrySectionBreak();
             processVariableInitializerTypeWidening();
+            processInnerClassTypeCapture();
+            processLocalClassTypeCapture();
         });
     }
 
     private void processCapturedType() {
         var labId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
-                "capturedtypes.CtLab",
+                "wildcard_capture.CtLab",
                         Map.of(
                                 "foos", List.of(
                                         Map.of("name", "foo001"),
@@ -155,7 +157,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         // Process captured types from type variable bounds
         Assert.assertEquals(foo002.id(), foundFooId);
         var result = TestUtils.doInTransaction(() ->
-                apiClient.callMethod("capturedtypes.BoundCaptureFoo", "test", List.of())
+                apiClient.callMethod("wildcard_capture.BoundCaptureFoo", "test", List.of())
         );
         Assert.assertEquals(-1 ,result);
     }
@@ -728,7 +730,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processCaptureTypeCast() {
         var r = (boolean) TestUtils.doInTransaction(() ->
-                apiClient.callMethod("capturedtypes.CaptureTypeCastFoo", "listEquals",
+                apiClient.callMethod("wildcard_capture.CaptureTypeCastFoo", "listEquals",
                         List.of(List.of(1,true,"MetaVM"), List.of(1,true,"MetaVM")))
         );
         Assert.assertTrue(r);
@@ -750,7 +752,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processCapturedFunctionCall() {
         TestUtils.doInTransaction(() ->
-                apiClient.callMethod("capturedtypes.CapturedFunctionCall", "test", List.of())
+                apiClient.callMethod("wildcard_capture.CapturedFunctionCall", "test", List.of())
         );
     }
 
@@ -971,7 +973,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processCapturedTypesInFieldInitializer() {
-        var klassName = "capturedtypes.CapturedTypesInFieldInitializer";
+        var klassName = "wildcard_capture.CapturedTypesInFieldInitializer";
         Assert.assertEquals(
                 -1,
                 callMethod(klassName, "test", List.of("a", "b"))
@@ -1251,6 +1253,16 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processVariableInitializerTypeWidening() {
         var className = "primitives.VariableInitializerTypeWidening";
         Assert.assertEquals(1L, callMethod(className, "sub", List.of(1L)));
+    }
+
+    private void processInnerClassTypeCapture() {
+        var className = "wildcard_capture.InnerClassTypeCapture";
+        Assert.assertEquals("MetaVM", callMethod(className, "test", List.of("MetaVM")));
+    }
+
+    private void processLocalClassTypeCapture() {
+        var className = "wildcard_capture.LocalClassTypeCapture";
+        Assert.assertEquals("MetaVM", callMethod(className, "test", List.of("MetaVM")));
     }
 
 }

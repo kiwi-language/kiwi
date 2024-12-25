@@ -36,8 +36,8 @@ public class MapNative extends NativeBase {
         var type = instance.getType();
         keyArrayField = Objects.requireNonNull(type.findFieldByName("keyArray"));
         valueArrayField = Objects.requireNonNull(type.findFieldByName("valueArray"));
-        keyType = ((ArrayType) keyArrayField.getType()).getElementType();
-        valueType = ((ArrayType) valueArrayField.getType()).getElementType();
+        keyType = ((ArrayType) keyArrayField.getPropertyType()).getElementType();
+        valueType = ((ArrayType) valueArrayField.getPropertyType()).getElementType();
         if (instance.isFieldInitialized(keyArrayField.getRawField())) {
             keyArray = instance.getField(keyArrayField.getRawField()).resolveArray();
             valueArray = instance.getField(valueArrayField.getRawField()).resolveArray();
@@ -52,8 +52,8 @@ public class MapNative extends NativeBase {
     }
 
     public Value HashMap(CallContext callContext) {
-        keyArray = new ArrayInstance((ArrayType) keyArrayField.getType());
-        valueArray = new ArrayInstance((ArrayType) valueArrayField.getType());
+        keyArray = new ArrayInstance((ArrayType) keyArrayField.getPropertyType());
+        valueArray = new ArrayInstance((ArrayType) valueArrayField.getPropertyType());
         instance.initField(keyArrayField.getRawField(), keyArray.getReference());
         instance.initField(valueArrayField.getRawField(), valueArray.getReference());
         return instance.getReference();

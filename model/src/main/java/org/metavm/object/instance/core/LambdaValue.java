@@ -42,9 +42,8 @@ public class LambdaValue extends FunctionValue {
     public FlowExecResult execute(List<? extends Value> arguments, CallContext callContext) {
         try {
             return VmStack.execute(
-                    lambdaRef.getRawLambda().getCode(),
+                    lambdaRef,
                     arguments.toArray(Value[]::new),
-                    lambdaRef.getTypeMetadata(),
                     closureContext,
                     new DefaultCallContext(callContext.instanceRepository())
             );
@@ -63,6 +62,11 @@ public class LambdaValue extends FunctionValue {
     @Override
     public Code getCode() {
         return lambdaRef.getRawLambda().getCode();
+    }
+
+    @Override
+    public FlowRef getFlow() {
+        return lambdaRef.getFlow();
     }
 
     @Override

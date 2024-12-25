@@ -1,17 +1,22 @@
 package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.api.*;
+import org.metavm.api.ChildList;
+import org.metavm.api.Index;
+import org.metavm.api.Interceptor;
+import org.metavm.api.ValueList;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.entity.natives.*;
+import org.metavm.flow.FlowRef;
+import org.metavm.flow.FunctionRef;
+import org.metavm.flow.LambdaRef;
+import org.metavm.flow.MethodRef;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.Type;
+import org.metavm.object.type.*;
 import org.metavm.util.DummyAny;
 import org.metavm.util.IteratorImpl;
 import org.metavm.util.MvObjectInputStream;
@@ -62,6 +67,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     illegalStateException(IllegalStateException.class, false, IllegalStateExceptionNative.class),
     indexOutOfBoundsException(IndexOutOfBoundsException.class, false, IndexOutOfBoundsExceptionNative.class),
     arrayIndexOutOfBoundsException(ArrayIndexOutOfBoundsException.class, false, ArrayIndexOutOfBoundsExceptionNative.class),
+    classCastException(ClassCastException.class, false, ClassCastExceptionNative.class),
     consumer(Consumer.class),
     predicate(Predicate.class),
     supplier(Supplier.class, true, null),
@@ -69,6 +75,26 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     comparator(Comparator.class),
     serializable(Serializable.class),
     type(Type.class),
+    primitiveType(PrimitiveType.class),
+    classType(ClassType.class),
+    anyType(AnyType.class),
+    neverType(NeverType.class),
+    nullType(NullType.class),
+    capturedType(CapturedType.class),
+    variableType(VariableType.class),
+    arrayType(ArrayType.class),
+    klassType(KlassType.class),
+    functionType(FunctionType.class),
+    unionType(UnionType.class),
+    intersectionType(IntersectionType.class),
+    uncertainType(UncertainType.class),
+    genericDeclarationRef(GenericDeclarationRef.class),
+    fieldRef(FieldRef.class),
+    flowRef(FlowRef.class),
+    methodRef(MethodRef.class),
+    functionRef(FunctionRef.class),
+    lambdaRef(LambdaRef.class),
+    indexRef(IndexRef.class),
     klass(Klass.class),
     any(DummyAny.class),
     stringBuilder(StringBuilder.class, false, StringBuilderNative.class),

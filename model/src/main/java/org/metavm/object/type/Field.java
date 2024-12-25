@@ -469,7 +469,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         setEnumConstant((flags & FLAG_ENUM_CONSTANT) != 0);
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.writeEntityId(this);
         output.writeUTF(name);
         output.write(access.code());
@@ -501,7 +501,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
             sourceTag = null;
         since = input.readInt();
         column = input.readColumn();
-        defaultValue = (Value) input.readElement();
+        defaultValue = input.readValue();
         ordinal = input.readInt();
         var initializerId = input.readId();
         initializer = initializerId instanceof NullId ? null : input.getMethod(initializerId);

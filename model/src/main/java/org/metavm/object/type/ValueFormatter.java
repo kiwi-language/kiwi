@@ -64,7 +64,7 @@ public class ValueFormatter {
                 classType.foreachField(field -> {
                     FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getRawField().getStringId()), InstanceFieldDTO::value);
                     Value fieldValue = rawValue != null ?
-                            parseOne(rawValue, field.getType(), InstanceParentRef.ofObject(instance.getReference(), field.getRawField()), context)
+                            parseOne(rawValue, field.getPropertyType(), InstanceParentRef.ofObject(instance.getReference(), field.getRawField()), context)
                             : Instances.nullInstance();
                     fieldValueMap.put(field.getRawField(), fieldValue);
                 });

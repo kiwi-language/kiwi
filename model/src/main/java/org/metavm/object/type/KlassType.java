@@ -1,10 +1,12 @@
 package org.metavm.object.type;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.ClassTypeKey;
 import org.metavm.object.type.rest.dto.ParameterizedTypeKey;
@@ -22,6 +24,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Entity
+@Slf4j
 public class KlassType extends ClassType {
 
     public static ClassType create(Klass klass, List<? extends Type> typeArguments) {
@@ -39,20 +42,26 @@ public class KlassType extends ClassType {
 
     public static final Logger logger = LoggerFactory.getLogger(KlassType.class);
 
-    private final @Nullable GenericDeclarationRef owner;
-    private final Klass klass;
+    public final @Nullable GenericDeclarationRef owner;
+    public final Klass klass;
     private final @Nullable ValueArray<Type> typeArguments;
     @CopyIgnore
     private transient TypeSubstitutor substitutor;
     @CopyIgnore
     private transient TypeMetadata typeMetadata;
+    private transient int typeTag;
 
     public KlassType(@Nullable GenericDeclarationRef owner, @NotNull Klass klass, List<? extends Type> typeArguments) {
-        assert klass.getEnclosingFlow() == null && klass.getDeclaringKlass() == null || owner != null :
-            "owner is missing for local or inner class type " + klass.getName();
+//        assert klass.getEnclosingFlow() == null && klass.getDeclaringKlass() == null || owner != null :
+//            "owner is missing for local or inner class type " + klass.getName();
+        this(owner, klass, typeArguments, typeArguments.isEmpty() && klass.getTag() < 1000000 ? (int) klass.getTag() : 0);
+    }
+
+    public KlassType(@Nullable GenericDeclarationRef owner, @NotNull Klass klass, List<? extends Type> typeArguments, int typeTag) {
         this.owner = owner;
         this.klass = klass;
         this.typeArguments = typeArguments.isEmpty() ? null : new ValueArray<>(Type.class, typeArguments);
+        this.typeTag = typeTag;
     }
 
     @Override
@@ -81,7 +90,8 @@ public class KlassType extends ClassType {
 
     @Override
     public boolean isCaptured() {
-        return typeArguments != null && NncUtils.anyMatch(typeArguments, Type::isCaptured);
+        return owner instanceof KlassType ownerKt && ownerKt.isCaptured() ||
+                typeArguments != null && NncUtils.anyMatch(typeArguments, Type::isCaptured);
     }
 
     @Override
@@ -112,6 +122,11 @@ public class KlassType extends ClassType {
     @Override
     public int getTypeKeyCode() {
         return typeArguments == null ? (getTypeTag() == 0 ? WireTypes.CLASS_TYPE : WireTypes.TAGGED_CLASS_TYPE) : WireTypes.PARAMETERIZED_TYPE;
+    }
+
+    @Override
+    public Type getType() {
+        return StdKlass.klassType.type();
     }
 
     @Override
@@ -155,7 +170,7 @@ public class KlassType extends ClassType {
     }
 
     public int getTypeTag() {
-        return typeArguments == null && klass.getTag() < 1000000 ? (int) getKlass().getTag() : 0;
+        return typeTag;
     }
 
     public TypeMetadata getTypeMetadata() {
@@ -188,23 +203,22 @@ public class KlassType extends ClassType {
     }
 
     public static ClassType read(MvInput input) {
-        return new KlassType(null, input.getKlass(input.readId()), List.of());
+        return new KlassType(null, input.getKlass(input.readId()), List.of(), 0);
     }
 
     public static ClassType readTagged(MvInput input) {
-        var type = new KlassType(null, input.getKlass(input.readId()), List.of());
-        input.readLong();
-        return type;
+        return new KlassType(null, input.getKlass(input.readId()), List.of(),  (int) input.readLong());
     }
 
     public static ClassType readParameterized(MvInput input) {
-        var owner = (GenericDeclarationRef) input.readGenericDeclarationRef();
+        var ownerValue = input.readValue();
+        var owner = ownerValue instanceof NullValue ? null : (GenericDeclarationRef) ownerValue;
         var klass = input.getKlass(input.readId());
         int numTypeArgs = input.readInt();
         var typeArgs = new ArrayList<Type>(numTypeArgs);
         for (int i = 0; i < numTypeArgs; i++)
-            typeArgs.add(Type.readType(input));
-        return new KlassType(owner, klass, typeArgs);
+            typeArgs.add(input.readType());
+        return new KlassType(owner, klass, typeArgs, 0);
     }
 
     @Override

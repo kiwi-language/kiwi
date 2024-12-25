@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.TypeKey;
@@ -116,6 +117,11 @@ public class VariableType extends Type implements IVariableType {
     @Override
     public TypeCategory getCategory() {
         return TypeCategory.VARIABLE;
+    }
+
+    @Override
+    public Type getType() {
+        return StdKlass.variableType.type();
     }
 
     @Override

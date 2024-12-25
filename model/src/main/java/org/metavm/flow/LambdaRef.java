@@ -1,21 +1,25 @@
 package org.metavm.flow;
 
 import org.metavm.api.Entity;
+import org.metavm.entity.StdKlass;
 import org.metavm.entity.Writable;
 import org.metavm.entity.ElementVisitor;
+import org.metavm.object.instance.core.ElementValue;
 import org.metavm.object.type.FunctionType;
+import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeMetadata;
+import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 import java.util.Objects;
 
 @Entity
-public class LambdaRef extends CallableRef implements Writable {
+public class LambdaRef extends ElementValue implements Writable, CallableRef {
 
-    public static LambdaRef read(KlassInput input) {
+    public static LambdaRef read(MvInput input) {
         return new LambdaRef(
-                (FlowRef) input.readElement(),
+                (FlowRef) input.readValue(),
                 input.getLambda(input.readId()));
     }
 
@@ -47,6 +51,21 @@ public class LambdaRef extends CallableRef implements Writable {
     @Override
     public TypeMetadata getTypeMetadata() {
         return flowRef.getTypeMetadata();
+    }
+
+    @Override
+    public Code getCode() {
+        return rawLambda.getCode();
+    }
+
+    @Override
+    public FlowRef getFlow() {
+        return flowRef;
+    }
+
+    @Override
+    public Type getType() {
+        return StdKlass.lambdaRef.type();
     }
 
     public void write(MvOutput output) {

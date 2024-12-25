@@ -65,9 +65,8 @@ public class Function extends Flow implements GlobalKey {
         }
         else
             return VmStack.execute(
-                    getCode(),
+                    flowRef,
                     arguments.toArray(Value[]::new),
-                    flowRef.getTypeMetadata(),
                     null,
                     new DefaultCallContext(callContext.instanceRepository())
             );

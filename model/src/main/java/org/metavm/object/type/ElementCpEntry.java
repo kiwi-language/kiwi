@@ -2,7 +2,7 @@ package org.metavm.object.type;
 
 import org.metavm.entity.Element;
 import org.metavm.entity.Writable;
-import org.metavm.flow.KlassOutput;
+import org.metavm.util.MvOutput;
 
 public class ElementCpEntry extends CpEntry {
 
@@ -19,7 +19,7 @@ public class ElementCpEntry extends CpEntry {
     }
 
     @Override
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         ((Writable) element).write(output);
     }
 }

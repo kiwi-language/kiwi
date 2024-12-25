@@ -23,6 +23,12 @@
         <dependency>
             <groupId>org.metavm</groupId>
             <artifactId>metavm-model</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -38,15 +44,19 @@
         </dependency>
 
         <dependency>
-            <groupId>com.jetbrains.intellij.platform</groupId>
-            <artifactId>code-style</artifactId>
-            <version>${intellij.version}</version>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.jetbrains.intellij.platform</groupId>
-            <artifactId>code-style-impl</artifactId>
-            <version>${intellij.version}</version>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
         </dependency>
 
 <!--        <dependency>-->

@@ -62,13 +62,11 @@ public class TypeResolverImpl implements TypeResolver {
 
     private final CodeGenerator codeGenerator;
 
-    private final Set<TypeDef> generatedTypeDefs = new HashSet<>();
-
-    private final MyTypeFactory typeFactory = new MyTypeFactory();
+    private final Set<Klass> generatedKlasses = new HashSet<>();
 
     private final Map<Klass, PsiClass> psiClassMap = new HashMap<>();
 
-    private final Map<PsiCapturedWildcardType, CapturedType> capturedTypeMap = new IdentityHashMap<>();
+    private final Map<PsiCapturedWildcardType, CapturedType> capturedTypeMap = new HashMap<>();
 
     private final Map<CapturedType, PsiCapturedWildcardType> capturedTypeReverseMap = new HashMap<>();
 
@@ -193,9 +191,9 @@ public class TypeResolverImpl implements TypeResolver {
         var capturedTypeVar = new CapturedTypeVariable(
                 null,
                 resolveWildcardType(psiCapturedType.getWildcard(), stage),
+                resolveTypeVariable(psiCapturedType.getTypeParameter()).getVariable(),
                 method
         );
-        generatedTypeDefs.add(capturedTypeVar);
         var capturedType = capturedTypeVar.getType();
         capturedTypeMap.put(psiCapturedType, capturedType);
         capturedTypeReverseMap.put(capturedType, psiCapturedType);
@@ -287,8 +285,8 @@ public class TypeResolverImpl implements TypeResolver {
             return typeArgument;
     }
 
-    public Set<TypeDef> getGeneratedTypeDefs() {
-        return generatedTypeDefs;
+    public Set<Klass> getGeneratedKlasses() {
+        return generatedKlasses;
     }
 
     public Flow resolveFlow(PsiMethod method) {
@@ -385,7 +383,6 @@ public class TypeResolverImpl implements TypeResolver {
             typeVariable = new TypeVariable(null, Objects.requireNonNull(typeParameter.getName()),
                     genericDeclaration != null ? genericDeclaration : DummyGenericDeclaration.INSTANCE);
         typeParameter.putUserData(Keys.TYPE_VARIABLE, typeVariable);
-        generatedTypeDefs.add(typeVariable);
         typeVariable.setBounds(NncUtils.map(
                 typeParameter.getExtendsListTypes(),
                 this::resolveTypeOnly
@@ -395,15 +392,15 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     @Override
-    public void addGeneratedTypeDef(TypeDef typeDef) {
-        generatedTypeDefs.add(typeDef);
+    public void addGeneratedKlass(Klass klass) {
+        generatedKlasses.add(klass);
     }
 
     @Nullable
     private TypeVariable tryResolveBuiltinTypeVar(PsiTypeParameter typeParameter) {
         if (typeParameter.getOwner() instanceof PsiClass psiClass) {
-            var className = Objects.requireNonNull(psiClass.getQualifiedName());
-            if(className.startsWith(JAVA_PKG_PREFIX) || className.startsWith(API_PKG_PREFIX)) {
+            var className = psiClass.getQualifiedName();
+            if(className != null && (className.startsWith(JAVA_PKG_PREFIX) || className.startsWith(API_PKG_PREFIX))) {
                 var javaClass = TranspileUtils.getJavaClass(psiClass);
                 var klass = ModelDefRegistry.getDefContext().tryGetKlass(javaClass);
                 if(klass != null) {
@@ -472,7 +469,7 @@ public class TypeResolverImpl implements TypeResolver {
             }
             psiClass.putUserData(Keys.MV_CLASS, klass);
             psiClassMap.put(klass, psiClass);
-            generatedTypeDefs.add(klass);
+            addGeneratedKlass(klass);
             for (PsiTypeParameter typeParameter : psiClass.getTypeParameters()) {
                 resolveTypeVariable(typeParameter).getVariable().setGenericDeclaration(klass);
             }
@@ -546,16 +543,6 @@ public class TypeResolverImpl implements TypeResolver {
             }
         }
 //        metaClass.setStage(stage);
-    }
-
-    private class MyTypeFactory extends TypeFactory {
-
-        private final Set<Type> types = new HashSet<>();
-
-        public Set<Type> getGeneratedTypes() {
-            return Collections.unmodifiableSet(types);
-        }
-
     }
 
 }

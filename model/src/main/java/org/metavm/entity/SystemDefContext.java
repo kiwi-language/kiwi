@@ -248,7 +248,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
         Class<?> javaClass = ReflectionUtils.getRawClass(javaType);
         if (ReadonlyArray.class.isAssignableFrom(javaClass)) {
             throw new InternalException("Can not create parser for an array type: " + javaType.getTypeName());
-        } else if (Value.class.isAssignableFrom(javaClass)) {
+        } else if (Value.class == javaClass) {
             throw new InternalException("Instance def should be predefined by StandardDefBuilder");
         } else {
             NncUtils.requireTrue(javaType == javaClass,
@@ -261,7 +261,11 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
                         this, this::getEntityId);
                 case CLASS -> new EntityParser<>(javaClass, javaType, this, columnStore);
                 case VALUE -> {
-                    if (Record.class.isAssignableFrom(javaClass)) {
+                    if (Value.class.isAssignableFrom(javaClass)) {
+                        yield new ElementValueParser<>(
+                                javaClass.asSubclass(Value.class), javaType, this, columnStore
+                        );
+                    } else if (Record.class.isAssignableFrom(javaClass)) {
                         yield new RecordParser<>(
                                 javaClass.asSubclass(Record.class), javaType, this, columnStore
                         );
@@ -510,7 +514,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
                 mapper.updateInstanceHelper(model, instance, defObjectInstanceMap);
             }
             catch (Throwable e) {
-                throw new RuntimeException("Fail to generate instance entity: " + model, e);
+                throw new RuntimeException("Fail to generate instance for entity: " + model, e);
             }
         }
     }
@@ -566,7 +570,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     }
 
     private void ensureAllDefsDefined() {
-        parsers.values().forEach(p -> ensureStage(p.get().getType(), DEFINITION));
+        new ArrayList<>(parsers.values()).forEach(p -> ensureStage(p.get().getType(), DEFINITION));
     }
 
     @Override

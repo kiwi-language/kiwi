@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
@@ -146,6 +147,11 @@ public class PrimitiveType extends ClassType {
     @Override
     public boolean isTime() {
         return kind == PrimitiveKind.TIME;
+    }
+
+    @Override
+    public Type getType() {
+        return StdKlass.primitiveType.type();
     }
 
     @Override

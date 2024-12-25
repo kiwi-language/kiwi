@@ -30,7 +30,7 @@ Relocation process
 6 Update existing references to point to the new location.
 7 Remove the forwarding pointer.
  */
-public class Reference extends Value {
+public class Reference implements Value {
 
     public static final int FLAG_FORWARDED = 1;
     public static final int FLAG_EAGER = 2;
@@ -141,7 +141,7 @@ public class Reference extends Value {
     }
 
     @Override
-    protected InstanceParam getParam() {
+    public InstanceParam getParam() {
         return resolve().getParam();
     }
 
@@ -160,7 +160,7 @@ public class Reference extends Value {
     }
 
     @Override
-    protected void writeTree(TreeWriter treeWriter) {
+    public void writeTree(TreeWriter treeWriter) {
         treeWriter.write(resolve().toString());
     }
 

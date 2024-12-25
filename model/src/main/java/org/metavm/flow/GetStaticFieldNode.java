@@ -22,7 +22,7 @@ public class GetStaticFieldNode extends Node {
     @NotNull
     @Override
     public Type getType() {
-        return fieldRef.getType();
+        return fieldRef.getPropertyType();
     }
 
     @Override

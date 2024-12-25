@@ -199,7 +199,7 @@ public class LongValue extends NumberValue {
     }
 
     @Override
-    protected void writeTree(TreeWriter treeWriter) {
+    public void writeTree(TreeWriter treeWriter) {
         treeWriter.write(value + "L");
     }
 

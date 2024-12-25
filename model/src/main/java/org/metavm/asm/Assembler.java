@@ -707,9 +707,9 @@ public class Assembler {
                         if (!field.isStatic() && !field.isTransient()) {
                             var indexField = NncUtils.find(indexF.getFields(), f -> Objects.equals(f.getName(), field.getName()));
                             if (indexField == null)
-                                new IndexField(indexF, field.getName(), field.getType(), Values.nullValue());
+                                new IndexField(indexF, field.getName(), field.getPropertyType(), Values.nullValue());
                             else
-                                indexField.setType(field.getType());
+                                indexField.setType(field.getPropertyType());
                         }
                     });
                 } else {

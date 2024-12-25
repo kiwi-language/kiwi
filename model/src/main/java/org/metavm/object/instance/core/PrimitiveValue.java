@@ -10,7 +10,7 @@ import org.metavm.util.InstanceOutput;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public abstract class PrimitiveValue extends Value implements Comparable<PrimitiveValue> {
+public abstract class PrimitiveValue implements Value, Comparable<PrimitiveValue> {
 
     public PrimitiveValue() {
         super();
@@ -29,7 +29,7 @@ public abstract class PrimitiveValue extends Value implements Comparable<Primiti
     }
 
     @Override
-    protected PrimitiveInstanceParam getParam() {
+    public PrimitiveInstanceParam getParam() {
         return new PrimitiveInstanceParam(
                 getType().getKind().code(),
                 getValue()
@@ -105,7 +105,7 @@ public abstract class PrimitiveValue extends Value implements Comparable<Primiti
     }
 
     @Override
-    protected void writeTree(TreeWriter treeWriter) {
+    public void writeTree(TreeWriter treeWriter) {
         treeWriter.write(Objects.toString(getValue()));
     }
 

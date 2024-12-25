@@ -23,12 +23,13 @@ public class MethodGenerator {
     private final ExpressionResolver expressionResolver;
     private final Set<String> generatedNames = new HashSet<>();
     private @Nullable Section currentSection;
+    private final CaptureProcessor captureProcessor;
 
     public MethodGenerator(Method method, TypeResolver typeResolver, VisitorBase visitor) {
         this.method = method;
         this.typeResolver = typeResolver;
-        expressionResolver = new ExpressionResolver(this, typeResolver,
-                visitor);
+        expressionResolver = new ExpressionResolver(this, typeResolver, visitor);
+        captureProcessor =  new CaptureProcessor(this);
     }
 
     Method getMethod() {
@@ -263,6 +264,18 @@ public class MethodGenerator {
         ));
     }
 
+    public Node createInvokeMethod(ClassType declaringType, Method method, List<Type> typeArguments) {
+        var ctVars = captureProcessor.extractCapturedTypes(NncUtils.prepend(declaringType, typeArguments));
+        var methodRef = new MethodRef(declaringType, method, typeArguments);
+        if (ctVars.isEmpty())
+            return createInvokeMethod(methodRef);
+        else {
+            captureProcessor.constructType(declaringType, this, ctVars);
+            typeArguments.forEach(t -> captureProcessor.constructType(t, this, ctVars));
+            return createGenericInvokeMethod(methodRef);
+        }
+    }
+
     InvokeNode createInvokeMethod(MethodRef methodRef) {
         if (methodRef.isStatic())
             return createInvokeStatic(methodRef);
@@ -270,6 +283,15 @@ public class MethodGenerator {
             return createInvokeSpecial(methodRef);
         else
             return createInvokeVirtual(methodRef);
+    }
+
+    GenericInvokeNode createGenericInvokeMethod(MethodRef methodRef) {
+        if (methodRef.isStatic())
+            return createGenericInvokeStatic(methodRef);
+        else if (methodRef.isPrivate() || methodRef.isConstructor())
+            return createGenericInvokeSpecial(methodRef);
+        else
+            return createGenericInvokeVirtual(methodRef);
     }
 
     InvokeVirtualNode createInvokeVirtual(MethodRef methodRef) {
@@ -287,14 +309,47 @@ public class MethodGenerator {
                 code().getLastNode(), code(), methodRef));
     }
 
+    GenericInvokeVirtualNode createGenericInvokeVirtual(MethodRef methodRef) {
+        return onNodeCreated(new GenericInvokeVirtualNode(nextName("ginvokevirtual"),
+                code().getLastNode(), code(), methodRef));
+    }
+
+    GenericInvokeSpecialNode createGenericInvokeSpecial(MethodRef methodRef) {
+        return onNodeCreated(new GenericInvokeSpecialNode(nextName("ginvokespecial"),
+                code().getLastNode(), code(), methodRef));
+    }
+
+    GenericInvokeStaticNode createGenericInvokeStatic(MethodRef methodRef) {
+        return onNodeCreated(new GenericInvokeStaticNode(nextName("ginvokestatic"),
+                code().getLastNode(), code(), methodRef));
+    }
+
     Node createTypeCast(Type targetType) {
         targetType = Types.getNullableType(targetType);
-        return createInvokeFunction(new FunctionRef(StdFunction.typeCast.get(), List.of(targetType)));
+        return createInvokeFunction(StdFunction.typeCast.get(), List.of(targetType));
+    }
+
+    public Node createInvokeFunction(Function function, List<Type> typeArguments) {
+        var ctVars = captureProcessor.extractCapturedTypes(typeArguments);
+        var functionRef = new FunctionRef(function, typeArguments);
+        if (ctVars.isEmpty())
+            return createInvokeFunction(functionRef);
+        else {
+            typeArguments.forEach(t -> captureProcessor.constructType(t, this, ctVars));
+            return createGenericInvokeFunction(functionRef);
+        }
     }
 
     InvokeFunctionNode createInvokeFunction(FunctionRef functionRef) {
         return onNodeCreated(new InvokeFunctionNode(
-                nextName(functionRef.getRawFlow().getName()),
+                nextName("invokefunction"),
+                code().getLastNode(), code(),
+                functionRef));
+    }
+
+    GenericInvokeFunctionNode createGenericInvokeFunction(FunctionRef functionRef) {
+        return onNodeCreated(new GenericInvokeFunctionNode(
+                nextName("ginvokefunction"),
                 code().getLastNode(), code(),
                 functionRef));
     }
@@ -1128,7 +1183,7 @@ public class MethodGenerator {
         ));
     }
 
-    public Node createLoadType(Type type) {
+    public Node createLoadKlass(Type type) {
         return onNodeCreated(new LoadTypeNode(nextName("loadtype"),
                 code().getLastNode(), code(), type
         ));
@@ -1283,6 +1338,173 @@ public class MethodGenerator {
 
     public LookupSwitchNode createLookupSwitch(List<Integer> matches) {
         return new LookupSwitchNode(nextName("lookupswitch"), code().getLastNode(), code(), matches);
+    }
+
+    public LoadElementTypeNode createLoadElementType() {
+        return new LoadElementTypeNode(nextName("lt_element"), code().getLastNode(), code());
+    }
+
+    public LoadUnderlyingTypeNode createLoadUnderlyingType() {
+        return new LoadUnderlyingTypeNode(nextName("lt_underlying"), code().getLastNode(), code());
+    }
+
+    public LoadOwnerTypeNode createLoadOwnerType() {
+        return new LoadOwnerTypeNode(nextName("lt_owner"), code().getLastNode(), code());
+    }
+
+    public LoadDeclaringTypeNode createLoadDeclaringType() {
+        return new LoadDeclaringTypeNode(nextName("lt_declaringtype"), code().getLastNode(), code());
+    }
+
+    public LoadTypeArgumentNode createLoadTypeArgument(int index) {
+        return new LoadTypeArgumentNode(nextName("lt_typearg"), code().getLastNode(), code(), index);
+    }
+
+    public LoadParameterTypeNode createLoadParameterType(int index) {
+        return new LoadParameterTypeNode(nextName("lt_underlying"), code().getLastNode(), code(), index);
+    }
+
+    public LoadCurrentFlowNode createLoadCurrentFlow() {
+        return new LoadCurrentFlowNode(nextName("lt_currentflow"), code().getLastNode(), code());
+    }
+
+    public LoadAncestorTypeNode createLoadAncestorType(ClassType type) {
+        return new LoadAncestorTypeNode(nextName("lt_ancestor"), code().getLastNode(), code(), type);
+    }
+
+    public Node createLoadType(Type type) {
+        return switch (type) {
+            case PrimitiveType primitiveType -> createLoadPrimitiveType(primitiveType);
+            case AnyType ignored -> createLoadAnyType();
+            case NullType ignored -> createLoadNullType();
+            case NeverType ignored -> createLoadNeverType();
+            default -> createLoadConstant(type);
+        };
+    }
+
+    public Node createLoadPrimitiveType(PrimitiveType primitiveType) {
+        return switch (primitiveType.getKind()) {
+            case BYTE -> createLoadByteType();
+            case SHORT -> createLoadShortType();
+            case VOID -> createLoadVoidType();
+            case CHAR -> createLoadCharType();
+            case INT -> createLoadIntType();
+            case LONG -> createLoadLongType();
+            case FLOAT -> createLoadFloatType();
+            case DOUBLE -> createLoadDoubleType();
+            case BOOLEAN -> createLoadBooleanType();
+            case STRING -> createLoadStringType();
+            case PASSWORD -> createLoadPasswordType();
+            case TIME -> createLoadTimeType();
+        };
+    }
+
+    public LoadReturnTypeNode createLoadReturnType() {
+        return new LoadReturnTypeNode(nextName("lt_returntype"), code().getLastNode(), code());
+    }
+
+    public LoadByteTypeNode createLoadByteType() {
+        return new LoadByteTypeNode(nextName("lt_byte"), code().getLastNode(), code());
+    }
+
+    public LoadShortTypeNode createLoadShortType() {
+        return new LoadShortTypeNode(nextName("lt_short"), code().getLastNode(), code());
+    }
+
+    public LoadCharTypeNode createLoadCharType() {
+        return new LoadCharTypeNode(nextName("lt_char"), code().getLastNode(), code());
+    }
+
+    public LoadIntTypeNode createLoadIntType() {
+        return new LoadIntTypeNode(nextName("lt_int"), code().getLastNode(), code());
+    }
+
+    public LoadLongTypeNode createLoadLongType() {
+        return new LoadLongTypeNode(nextName("lt_long"), code().getLastNode(), code());
+    }
+
+    public LoadFloatTypeNode createLoadFloatType() {
+        return new LoadFloatTypeNode(nextName("lt_float"), code().getLastNode(), code());
+    }
+
+    public LoadDoubleTypeNode createLoadDoubleType() {
+        return new LoadDoubleTypeNode(nextName("lt_double"), code().getLastNode(), code());
+    }
+
+    public LoadBooleanTypeNode createLoadBooleanType() {
+        return new LoadBooleanTypeNode(nextName("lt_boolean"), code().getLastNode(), code());
+    }
+
+    public LoadStringTypeNode createLoadStringType() {
+        return new LoadStringTypeNode(nextName("lt_string"), code().getLastNode(), code());
+    }
+
+    public LoadVoidTypeNode createLoadVoidType() {
+        return new LoadVoidTypeNode(nextName("lt_void"), code().getLastNode(), code());
+    }
+
+    public LoadPasswordTypeNode createLoadPasswordType() {
+        return new LoadPasswordTypeNode(nextName("lt_passwd"), code().getLastNode(), code());
+    }
+
+    public LoadTimeTypeNode createLoadTimeType() {
+        return new LoadTimeTypeNode(nextName("lt_time"), code().getLastNode(), code());
+    }
+
+    public LoadAnyTypeNode createLoadAnyType() {
+        return new LoadAnyTypeNode(nextName("lt_any"), code().getLastNode(), code());
+    }
+
+    public LoadNullTypeNode createLoadNullType() {
+        return new LoadNullTypeNode(nextName("lt_null"), code().getLastNode(), code());
+    }
+
+    public LoadNeverTypeNode createLoadNeverType() {
+        return new LoadNeverTypeNode(nextName("lt_never"), code().getLastNode(), code());
+    }
+
+    public LoadKlassTypeNode createLoadKlassType(KlassType type) {
+        return new LoadKlassTypeNode(nextName("lt_kt"), code().getLastNode(), code(), type);
+    }
+
+    public LoadInnerKlassTypeNode createLoadInnerKlassType(KlassType type) {
+        return new LoadInnerKlassTypeNode(nextName("lt_innerkt"), code().getLastNode(), code(), type);
+    }
+
+    public LoadLocalKlassTypeNode createLoadLocalKlassType(KlassType type) {
+        return new LoadLocalKlassTypeNode(nextName("lt_localkt"), code().getLastNode(), code(), type);
+    }
+
+    public LoadArrayTypeNode createLoadArrayType() {
+        return new LoadArrayTypeNode(nextName("lt_array"), code().getLastNode(), code());
+    }
+
+    public LoadNullableTypeNode createLoadNullableType() {
+        return new LoadNullableTypeNode(nextName("lt_nullable"), code().getLastNode(), code());
+    }
+
+    public Node createLoadUnionType(int memberCount) {
+        return onNodeCreated(new LoadUnionTypeNode(nextName("lt_union"),
+                code().getLastNode(), code(), memberCount
+        ));
+    }
+
+    public Node createLoadIntersectionType(int memberCount) {
+        return onNodeCreated(new LoadIntersectionTypeNode(nextName("lt_intersect"),
+                code().getLastNode(), code(), memberCount
+        ));
+    }
+
+    public Node createLoadUncertainType() {
+        return onNodeCreated(new LoadUncertainTypeNode(nextName("lt_uncertaint"), code().getLastNode(), code()));
+    }
+
+    public Node createLoadFunctionType(int parameterCount) {
+        return onNodeCreated(new LoadFunctionTypeNode(nextName("lt_functype"), code().getLastNode(), code(), parameterCount));
+    }
+
+    public TypeOfNode createTypeOf() {
+        return onNodeCreated(new TypeOfNode(nextName("typeof"), code().getLastNode(), code()));
     }
 
     public List<JumpNode> processCase(PsiCaseLabelElement c, int keyVar, Type keyType) {

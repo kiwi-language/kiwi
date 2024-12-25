@@ -3,6 +3,7 @@ package org.metavm.object.type;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.UncertainTypeKey;
@@ -98,6 +99,11 @@ public class UncertainType extends CompositeType {
     }
 
     @Override
+    public Type getType() {
+        return StdKlass.uncertainType.type();
+    }
+
+    @Override
     public boolean isEphemeral() {
         return false;
     }
@@ -135,7 +141,7 @@ public class UncertainType extends CompositeType {
     }
 
     public static UncertainType read(MvInput input) {
-        return new UncertainType(Type.readType(input), Type.readType(input));
+        return new UncertainType(input.readType(), input.readType());
     }
 
     @Override

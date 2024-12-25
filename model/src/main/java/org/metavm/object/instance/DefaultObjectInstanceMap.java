@@ -1,5 +1,6 @@
 package org.metavm.object.instance;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.DefContext;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.Mapper;
@@ -12,6 +13,7 @@ import org.metavm.util.ReflectionUtils;
 
 import java.util.function.BiConsumer;
 
+@Slf4j
 public class DefaultObjectInstanceMap implements ObjectInstanceMap {
 
     private final IEntityContext entityContext;
@@ -49,6 +51,9 @@ public class DefaultObjectInstanceMap implements ObjectInstanceMap {
             case NullValue nullValue -> {
                 return null;
             }
+            case ElementValue elementValue -> {
+                return klass.cast(elementValue);
+            }
             case PrimitiveValue primitiveValue -> {
                 return klass.cast(Instances.deserializePrimitive(primitiveValue, klass));
             }
@@ -62,7 +67,7 @@ public class DefaultObjectInstanceMap implements ObjectInstanceMap {
                 } else
                     return entityContext.getEntity(klass, r.resolve());
             }
-            case null, default -> throw new InternalException("Invalid instance: " + instance);
+            case null, default -> throw new InternalException("Invalid instance: " + instance.getClass().getName());
         }
     }
 

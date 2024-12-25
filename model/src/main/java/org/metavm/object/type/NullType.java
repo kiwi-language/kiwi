@@ -3,6 +3,7 @@ package org.metavm.object.type;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.NullTypeKey;
@@ -91,6 +92,11 @@ public class NullType extends Type {
     @Override
     public boolean isNullable() {
         return true;
+    }
+
+    @Override
+    public Type getType() {
+        return StdKlass.nullType.type();
     }
 
     @Override

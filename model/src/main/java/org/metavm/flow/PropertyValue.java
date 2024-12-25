@@ -21,7 +21,7 @@ public class PropertyValue extends Value {
 
     @Override
     public Type getType() {
-        return Objects.requireNonNull(propertyRef.getType());
+        return Objects.requireNonNull(propertyRef.getPropertyType());
     }
 
     @Override

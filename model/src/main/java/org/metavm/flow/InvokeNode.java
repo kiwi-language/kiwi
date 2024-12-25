@@ -1,25 +1,17 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
-import org.metavm.entity.ReadWriteArray;
 import org.metavm.object.type.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 @Entity
 public abstract class InvokeNode extends Node {
 
     public static final Logger logger = LoggerFactory.getLogger(InvokeNode.class);
 
-    private FlowRef flowRef;
-    @ChildEntity
-    protected final ReadWriteArray<Type> capturedVariableTypes = addChild(new ReadWriteArray<>(Type.class), "capturedVariableTypes");
-    @ChildEntity
-    protected final ReadWriteArray<Integer> capturedVariableIndexes = addChild(new ReadWriteArray<>(Integer.class), "capturedVariableIndexes");
+    private final FlowRef flowRef;
 
     public InvokeNode(String name, Node prev, Code code, @NotNull FlowRef flowRef) {
         super(name, null, prev, code);
@@ -28,22 +20,6 @@ public abstract class InvokeNode extends Node {
 
     public FlowRef getFlowRef() {
         return flowRef;
-    }
-
-    public void setFlowRef(FlowRef flowRef) {
-        this.flowRef = flowRef;
-    }
-
-    public void setCapturedVariableTypes(List<Type> capturedVariableTypes) {
-        this.capturedVariableTypes.reset(capturedVariableTypes);
-    }
-
-    public void setCapturedVariableIndexes(List<Integer> capturedVariableIndexes) {
-        this.capturedVariableIndexes.reset(capturedVariableIndexes);
-    }
-
-    public int getCapturedVariableCount() {
-        return capturedVariableIndexes.size();
     }
 
     @Override
@@ -58,11 +34,6 @@ public abstract class InvokeNode extends Node {
     }
 
     @Override
-    public void writeContent(CodeWriter writer) {
-        writer.write("invoke " + flowRef);
-    }
-
-    @Override
     public int getStackChange() {
         var flow = flowRef.getRawFlow();
         if(flow.getReturnType().isVoid())
@@ -73,17 +44,10 @@ public abstract class InvokeNode extends Node {
 
     public void writeCallCode(CodeOutput output) {
         output.writeConstant(flowRef);
-        output.writeShort(capturedVariableTypes.size());
-        for (var capturedVariableIndex : capturedVariableIndexes) {
-            output.writeShort(capturedVariableIndex.shortValue());
-        }
-        for (Type capturedVariableType : capturedVariableTypes) {
-            output.writeConstant(capturedVariableType);
-        }
     }
 
     @Override
     public int getLength() {
-        return 5 + (capturedVariableIndexes.size() << 2);
+        return 3;
     }
 }

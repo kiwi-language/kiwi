@@ -23,7 +23,7 @@ public class InstanceArrayMapper<E extends Value, C extends ReadWriteArray<E>> i
                     && rawClass == javaClass
                     && parameterizedType.getActualTypeArguments().length == 1) {
                 java.lang.reflect.Type elementType = parameterizedType.getActualTypeArguments()[0];
-                if(Value.class.isAssignableFrom(elementClass)
+                if(Value.class == elementClass
                         && elementType == elementClass
                         && (type instanceof ArrayType arrayType)
                         && (arrayType.getElementType() instanceof AnyType)) {

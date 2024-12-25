@@ -25,7 +25,7 @@ public class GetMethodNode extends Node {
 
     @NotNull
     public Type getType() {
-        return methodRef.getType();
+        return methodRef.getPropertyType();
     }
 
     @Override

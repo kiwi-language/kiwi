@@ -32,7 +32,7 @@ public class PropertyExpression extends Expression {
 
     @Override
     public Type getType() {
-        return propertyRef.getType();
+        return propertyRef.getPropertyType();
     }
 
     @Override

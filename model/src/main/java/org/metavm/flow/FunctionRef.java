@@ -4,6 +4,7 @@ import org.metavm.api.Entity;
 import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.rest.FunctionRefKey;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ITypeDef;
@@ -85,6 +86,11 @@ public class FunctionRef extends FlowRef {
     }
 
     @Override
+    public Type getType() {
+        return StdKlass.functionRef.type();
+    }
+
+    @Override
     public void write(MvOutput output) {
         output.write(WireTypes.FUNCTION_REF);
         output.writeEntityId(getRawFlow());
@@ -99,7 +105,7 @@ public class FunctionRef extends FlowRef {
         var typeArgsCount = input.readInt();
         var typeArgs = new ArrayList<Type>(typeArgsCount);
         for (int i = 0; i < typeArgsCount; i++) {
-            typeArgs.add(Type.readType(input));
+            typeArgs.add(input.readType());
         }
         return new FunctionRef(rawFunc, typeArgs);
     }

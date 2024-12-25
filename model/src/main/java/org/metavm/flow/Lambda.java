@@ -6,6 +6,7 @@ import org.metavm.entity.ChildArray;
 import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.type.*;
+import org.metavm.util.MvOutput;
 import org.metavm.util.NncUtils;
 
 import java.util.ArrayList;
@@ -121,7 +122,7 @@ public class Lambda extends Element implements Callable, ITypeDef {
         getCode().writeCode(writer);
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.writeEntityId(this);
         int paramCount = parameters.size();
         output.writeInt(paramCount);

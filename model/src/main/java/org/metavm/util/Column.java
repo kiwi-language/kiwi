@@ -79,7 +79,7 @@ public record Column(
         return name;
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.write(kind.tagSuffix());
         output.writeUTF(name);
         output.writeInt(tag);

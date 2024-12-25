@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 import static org.metavm.util.NncUtils.*;
 
 @Entity(searchable = true)
-public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, StagedEntity, GlobalKey, LoadAware, LocalKey {
+public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, StagedEntity, GlobalKey, LoadAware, LocalKey, Writable {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
@@ -1671,7 +1671,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         templateFlag = (flags & FLAG_TEMPLATE) != 0;
     }
 
-    public void write(KlassOutput output) {
+    public void write(MvOutput output) {
         output.writeEntityId(this);
         constantPool.write(output);
         output.write(kind.code());

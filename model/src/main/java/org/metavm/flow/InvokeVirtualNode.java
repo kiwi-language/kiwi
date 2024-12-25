@@ -19,6 +19,11 @@ public class InvokeVirtualNode extends InvokeNode {
     }
 
     @Override
+    public void writeContent(CodeWriter writer) {
+        writer.write("invokevirtual " + getFlowRef());
+    }
+
+    @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.INVOKE_VIRTUAL);
         writeCallCode(output);

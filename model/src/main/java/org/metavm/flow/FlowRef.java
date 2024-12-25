@@ -7,6 +7,7 @@ import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.ValueArray;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.ElementValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Type;
@@ -16,9 +17,9 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-public abstract class FlowRef extends CallableRef implements GenericDeclarationRef, Writable {
+public abstract class FlowRef extends ElementValue implements GenericDeclarationRef, Writable, CallableRef {
 
-    private final Flow rawFlow;
+    public final Flow rawFlow;
     protected final ValueArray<Type> typeArguments;
     @CopyIgnore
     private transient TypeMetadata typeMetadata;
@@ -76,7 +77,7 @@ public abstract class FlowRef extends CallableRef implements GenericDeclarationR
         return false;
     }
 
-    public FunctionType getType() {
+    public FunctionType getPropertyType() {
         return (FunctionType) getTypeMetadata().getType(rawFlow.getTypeIndex());
     }
 
@@ -104,4 +105,13 @@ public abstract class FlowRef extends CallableRef implements GenericDeclarationR
         return getRawFlow().getParameters().size();
     }
 
+    @Override
+    public Code getCode() {
+        return rawFlow.getCode();
+    }
+
+    @Override
+    public FlowRef getFlow() {
+        return this;
+    }
 }

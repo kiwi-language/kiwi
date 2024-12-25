@@ -1,4 +1,4 @@
-package capturedtypes;
+package wildcard_capture;
 
 public class CtFoo {
 

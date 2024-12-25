@@ -6,6 +6,7 @@ import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.rest.MethodRefKey;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.*;
@@ -89,14 +90,19 @@ public class MethodRef extends FlowRef implements PropertyRef {
     }
 
     public static MethodRef read(MvInput input) {
-       var classType = (ClassType) Type.readType(input);
+       var classType = (ClassType) input.readType();
        var rawMethod = input.getMethod(input.readId());
        var typeArgsCount = input.readInt();
        var typeArgs = new ArrayList<Type>(typeArgsCount);
        for (int i = 0; i < typeArgsCount; i++) {
-           typeArgs.add(Type.readType(input));
+           typeArgs.add(input.readType());
        }
        return new MethodRef(classType, rawMethod, typeArgs);
+    }
+
+    @Override
+    public Type getType() {
+        return StdKlass.methodRef.type();
     }
 
     @Override

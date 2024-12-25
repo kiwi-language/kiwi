@@ -87,8 +87,13 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var value = args.get(0);
                 if (type.isInstance(value))
                     return FlowExecResult.of(value);
-                else
-                    throw new BusinessException(ErrorCode.TYPE_CAST_ERROR, value.getType(), type);
+                else {
+                    var exception = ClassInstance.allocate(StdKlass.classCastException.type());
+                    var nat = new ClassCastExceptionNative(exception);
+                    var msg = value.getType().getTypeDesc() + " cannot be cast to " + type.getTypeDesc();
+                    nat.ClassCastException(Instances.stringInstance(msg), callContext);
+                    return FlowExecResult.ofException(exception);
+                }
             }),
     print(
             "void print(any|null content)",

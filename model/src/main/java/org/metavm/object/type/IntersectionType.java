@@ -3,6 +3,7 @@ package org.metavm.object.type;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.entity.ValueArray;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
@@ -28,6 +29,10 @@ public class IntersectionType extends CompositeType {
         super();
         if(types.isEmpty())
             throw new IllegalArgumentException("types can not be empty");
+        this.types = new ValueArray<>(Type.class, types);
+    }
+
+    private IntersectionType(List<Type> types) {
         this.types = new ValueArray<>(Type.class, types);
     }
 
@@ -69,6 +74,11 @@ public class IntersectionType extends CompositeType {
     @Override
     public TypeCategory getCategory() {
         return TypeCategory.INTERSECTION;
+    }
+
+    @Override
+    public Type getType() {
+        return StdKlass.intersectionType.type();
     }
 
     @Override
@@ -120,9 +130,9 @@ public class IntersectionType extends CompositeType {
 
     public static IntersectionType read(MvInput input) {
         var numTypes = input.readInt();
-        var types = new HashSet<Type>(numTypes);
+        var types = new ArrayList<Type>(numTypes);
         for (int i = 0; i < numTypes; i++)
-            types.add(Type.readType(input));
+            types.add(input.readType());
         return new IntersectionType(types);
     }
 

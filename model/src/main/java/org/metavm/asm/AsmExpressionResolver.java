@@ -220,7 +220,7 @@ class AsmExpressionResolver {
             if(fieldValue != null)
                 resolve0(fieldValue);
             else {
-                var value = Objects.requireNonNull(Instances.getDefaultValue(field.getType()),
+                var value = Objects.requireNonNull(Instances.getDefaultValue(field.getPropertyType()),
                         () -> "Value for field '" + field.getName() + "' is missing in the allocate expression");
                 Nodes.loadConstant(value, code);
             }
@@ -469,7 +469,7 @@ class AsmExpressionResolver {
                 Nodes.dupX1(code);
                 var field = qualifierType.getFieldByName(fieldName);
                 Nodes.setField(field, code);
-                return field.getType();
+                return field.getPropertyType();
             }
         }
         else if (assigned.LBRACK() != null) {
@@ -538,7 +538,7 @@ class AsmExpressionResolver {
             var klass = ((ClassType) type);
             var field = klass.getFieldByName(name);
             Nodes.getField(field, code);
-            return field.getType();
+            return field.getPropertyType();
         }
     }
 

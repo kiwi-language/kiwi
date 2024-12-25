@@ -1,23 +1,26 @@
 package org.metavm.entity;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.ColumnKind;
+import org.metavm.object.instance.ObjectInstanceMap;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
-import org.metavm.util.Column;
-import org.metavm.util.ReflectionUtils;
-import org.metavm.util.SystemConfig;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.*;
 import java.util.function.Consumer;
 
+@Slf4j
 public class ReversedDefContext extends DefContext {
 
     private static final Logger logger = LoggerFactory.getLogger(ReversedDefContext.class);
@@ -266,8 +269,16 @@ public class ReversedDefContext extends DefContext {
             case EnumDef<?> enumDef -> createEnumDef(enumDef);
             case TypeVariableDef typeVariableDef -> createTypeVariableDef(typeVariableDef);
             case DirectDef<?> directDef -> createDirectDef(directDef);
+            case ElementValueDef<?> elementValueDef -> createElementValueDef(elementValueDef);
             default -> throw new IllegalStateException("Unrecognized ModelDef: " + prototype);
         };
+    }
+
+    private <T extends Value> ElementValueDef<T> createElementValueDef(ElementValueDef<T> prototype) {
+        var klass = getKlass(prototype.getKlass().getId());
+        var def = new ElementValueDef<>(prototype.getJavaClass(), prototype.getJavaType(), getSuperDef(prototype), klass, this);
+        initPojoDef(def, prototype);
+        return def;
     }
 
     private TypeVariableDef createTypeVariableDef(TypeVariableDef prototype) {
@@ -376,4 +387,52 @@ public class ReversedDefContext extends DefContext {
         super.close();
         SystemConfig.clearLocal();
     }
+
+    @Override
+    public ObjectInstanceMap getObjectInstanceMap() {
+        return new WrappingObjectInstanceMap(super.getObjectInstanceMap());
+    }
+
+    private class WrappingObjectInstanceMap implements ObjectInstanceMap {
+
+        private final ObjectInstanceMap wrapped;
+
+        WrappingObjectInstanceMap(ObjectInstanceMap wrapped) {
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public Value getInstance(Object object) {
+            return wrapped.getInstance(object);
+        }
+
+        @Override
+        public <T> T getEntity(Class<T> klass, Value instance, @Nullable Mapper<T, ?> mapper) {
+            if (instance instanceof ElementValue elementValue) {
+                var bout = new ByteArrayOutputStream();
+                var out = new InstanceOutput(bout);
+                elementValue.write(out);
+                var bin = new ByteArrayInputStream(bout.toByteArray());
+                var in = new InstanceInput(bin, InstanceInput.UNSUPPORTED_RESOLVER,
+                        InstanceInput.UNSUPPORTED_ADD_VALUE,
+                        ReversedDefContext.this,
+                        null
+                );
+                return klass.cast(in.readValue());
+            }
+            else
+                return wrapped.getEntity(klass, instance, mapper);
+        }
+
+        @Override
+        public org.metavm.object.type.Type getType(Type javaType) {
+            return wrapped.getType(javaType);
+        }
+
+        @Override
+        public void addMapping(Object entity, Instance instance) {
+            wrapped.addMapping(entity, instance);
+        }
+    }
+
 }

@@ -5,7 +5,7 @@ import org.metavm.entity.Reference;
 
 public interface PropertyRef extends Reference, Writable {
 
-    Type getType();
+    Type getPropertyType();
 
     Property getProperty();
 

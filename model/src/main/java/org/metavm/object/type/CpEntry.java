@@ -2,7 +2,7 @@ package org.metavm.object.type;
 
 import org.metavm.api.ValueObject;
 import org.metavm.entity.Entity;
-import org.metavm.flow.KlassOutput;
+import org.metavm.util.MvOutput;
 
 public abstract class CpEntry extends Entity implements ValueObject {
 
@@ -18,6 +18,6 @@ public abstract class CpEntry extends Entity implements ValueObject {
 
     public abstract Object getValue();
 
-    public abstract void write(KlassOutput output);
+    public abstract void write(MvOutput output);
 
 }

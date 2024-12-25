@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.NeverTypeKey;
@@ -35,6 +36,11 @@ public class NeverType extends Type {
     @Override
     public TypeCategory getCategory() {
         return TypeCategory.NEVER;
+    }
+
+    @Override
+    public Type getType() {
+        return StdKlass.neverType.type();
     }
 
     @Override

@@ -2,6 +2,7 @@ package org.metavm.object.instance.core;
 
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.natives.CallContext;
+import org.metavm.flow.CallableRef;
 import org.metavm.flow.ClosureContext;
 import org.metavm.flow.Code;
 import org.metavm.flow.FlowExecResult;
@@ -13,7 +14,7 @@ import org.metavm.object.type.TypeMetadata;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public abstract class FunctionValue extends Value {
+public abstract class FunctionValue implements Value, CallableRef {
 
     public FunctionValue() {
     }
@@ -54,7 +55,7 @@ public abstract class FunctionValue extends Value {
     }
 
     @Override
-    protected InstanceParam getParam() {
+    public InstanceParam getParam() {
         return null;
     }
 
@@ -64,7 +65,7 @@ public abstract class FunctionValue extends Value {
     }
 
     @Override
-    protected void writeTree(TreeWriter treeWriter) {
+    public void writeTree(TreeWriter treeWriter) {
         treeWriter.writeLine("function");
     }
 

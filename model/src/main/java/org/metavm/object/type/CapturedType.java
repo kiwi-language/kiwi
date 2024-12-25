@@ -3,6 +3,7 @@ package org.metavm.object.type;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.rest.dto.CapturedTypeKey;
@@ -84,6 +85,11 @@ public class CapturedType extends Type {
     }
 
     @Override
+    public Type getType() {
+        return StdKlass.capturedType.type();
+    }
+
+    @Override
     public boolean isEphemeral() {
         return false;
     }
@@ -148,5 +154,9 @@ public class CapturedType extends Type {
     @Override
     public boolean isUncertain() {
         return true;
+    }
+
+    public CapturedTypeVariable getVariable() {
+        return variable;
     }
 }
