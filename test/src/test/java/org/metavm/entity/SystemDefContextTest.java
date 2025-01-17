@@ -1,60 +1,61 @@
 //package org.metavm.entity;
 //
 //import junit.framework.TestCase;
+//import lombok.extern.slf4j.Slf4j;
 //import org.junit.Assert;
 //import org.metavm.api.ValueObject;
-//import org.metavm.flow.Node;
-//import org.metavm.object.instance.cache.LocalCache;
-//import org.metavm.object.instance.core.EntityInstanceContextBridge;
+//import org.metavm.flow.Flow;
 //import org.metavm.object.instance.core.Instance;
-//import org.metavm.object.type.Klass;
-//import org.metavm.object.type.MemColumnStore;
-//import org.metavm.object.type.MemTypeTagStore;
-//import org.metavm.object.type.Type;
-//import org.metavm.util.Constants;
-//import org.metavm.util.MockIdProvider;
+//import org.metavm.object.type.*;
 //import org.metavm.util.ModelAndPath;
-//import org.metavm.util.TypeReference;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
 //
 //import java.util.List;
-//import java.util.Map;
 //import java.util.Objects;
 //import java.util.Set;
 //
+//@Slf4j
 //public class SystemDefContextTest extends TestCase {
 //
-//    private static final Logger logger = LoggerFactory.getLogger(SystemDefContextTest.class);
-//
 //    private SystemDefContext defContext;
-//    private MockIdProvider idProvider;
 //
-//    @Override
-//    protected void setUp() {
-//        idProvider = new MockIdProvider();
-//        var bridge = new EntityInstanceContextBridge();
-//        var instanceContext = InstanceContextBuilder.newBuilder(Constants.ROOT_APP_ID,
-//                        new MemInstanceStore(new LocalCache()), new DefaultIdInitializer(idProvider), bridge, bridge, bridge)
-//                .readonly(false)
-//                .build();
+//    public void test() {
+//        var allocatorStore = new MemAllocatorStore();
+//        var allocators = new StdAllocators(allocatorStore);
 //        defContext = new SystemDefContext(
-//                new StdIdProvider(new EmptyStdIdStore()), new MemColumnStore(), new MemTypeTagStore(), new IdentityContext(), new DefaultIdInitializer(idProvider));
-//        bridge.setEntityContext(defContext);
-//        StdKlass.initialize(defContext, false);
-//    }
+//                allocators, new MemColumnStore(), new MemTypeTagStore(), new IdentityContext());
+//        for (Class<?> entityClass : EntityUtils.getModelClasses()) defContext.getDef(entityClass);
+//        defContext.finish();
+//        defContext.getIdentityMap().forEach((object, javaConstruct) -> {
+//            if (object.isDurable()) {
+//                if (object.isRoot())
+//                    allocators.putId(javaConstruct, object.getId(), object.getNextNodeId());
+//                else
+//                    allocators.putId(javaConstruct, object.getId());
+//            }
+//        });
+//        allocators.save();
 //
-//    public void testGenerateInstances() {
-//
+//        var allocators1 = new StdAllocators(allocatorStore);
+//        defContext = new SystemDefContext(
+//                allocators1, new MemColumnStore(), new MemTypeTagStore(), new IdentityContext());
+//        for (Class<?> entityClass : EntityUtils.getModelClasses()) defContext.getDef(entityClass);
+//        for (Entity entity : defContext.entities()) {
+//            Assert.assertNotNull(entity.tryGetId());
+//        }
 //    }
 //
 //    public void testInheritance() {
-//        defContext.postProcess();
-//        KlassDef<Node> superDef = defContext.getDef(Node.class);
+//        defContext = new SystemDefContext(
+//                new StdAllocators(new MemAllocatorStore()), new MemColumnStore(), new MemTypeTagStore(), new IdentityContext());
+//        StdKlass.initialize(defContext, false);
+//        var superDef = defContext.getDef(Flow.class);
 //        Assert.assertEquals(Objects.requireNonNull(superDef.getKlass().getSuperType()).getSuperType(), StdKlass.entity.get().getType());
 //    }
 //
 //    public void testGetIdentityMap() {
+//        defContext = new SystemDefContext(
+//                new StdAllocators(new MemAllocatorStore()), new MemColumnStore(), new MemTypeTagStore(), new IdentityContext());
+//        StdKlass.initialize(defContext, false);
 //        KlassDef<Type> def = defContext.getDef(Type.class);
 ////        PojoDef<Type> def = defContext.getPojoDef(Type.class);
 //        Klass type = def.getKlass();

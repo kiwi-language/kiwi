@@ -28,11 +28,11 @@ public class ArrayNative {
     }
 
     public Value remove(Value instance) {
-        return Instances.intInstance(array.removeElement(instance));
+        return Instances.intInstance(array.remove(instance));
     }
 
     public Value removeAt(Value index) {
-        return array.removeElement(getIndex(index));
+        return array.remove(getIndex(index));
     }
 
     private int getIndex(Value instance) {

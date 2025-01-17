@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -30,12 +30,12 @@ public class DDLRollbackTaskGroup extends TaskGroup {
     }
 
     @Override
-    public List<Task> createTasks(IEntityContext context) {
+    public List<Task> createTasks(IInstanceContext context) {
         return List.of(new DDLRollbackTask());
     }
 
     @Override
-    protected void onCompletion(IEntityContext context, IEntityContext taskContext) {
+    protected void onCompletion(IInstanceContext context, IInstanceContext taskContext) {
 
     }
 

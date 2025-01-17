@@ -2,7 +2,7 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.flow.ClosureContext;
@@ -530,7 +530,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
 //    @Override
     public void writeTree(TreeWriter treeWriter) {
-                treeWriter.writeLine(getInstanceType().getName() + " " + getTitle());
+                treeWriter.writeLine(getInstanceType().getName() + " " + getTitle() + " " + tryGetId());
         treeWriter.indent();
         forEachField((f, v) -> {
             treeWriter.writeLine(f.getName() + ":");
@@ -581,7 +581,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     }
 
 //    @Override
-    public Object toJson(IEntityContext context) {
+    public Object toJson(IInstanceContext context) {
         if (isList()) {
             var listNative = new ListNative(this);
             var array = listNative.toArray();

@@ -3,6 +3,7 @@ package org.metavm.entity.natives;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
+import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.type.Klass;
@@ -33,13 +34,13 @@ public class MapNativeTest extends TestCase {
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var map = ClassInstance.allocate(KlassType.create(StdKlass.hashMap.get(),
                     List.of(
-                            context.getDefContext().getType(Klass.class),
+                            ModelDefRegistry.getType(Klass.class),
                             Types.getStringType()
                     )
             ));
             var nat = new MapNative(map);
             nat.HashMap(context);
-            var inst = context.getDefContext().getKlass(Klass.class);
+            var inst = ModelDefRegistry.getDefContext().getKlass(Klass.class);
             var value = Instances.stringInstance("value");
             nat.put(inst.getReference(), value, context);
             var value1 = nat.get(inst.getReference(), context);

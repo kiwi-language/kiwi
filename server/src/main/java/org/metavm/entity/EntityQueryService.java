@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.common.Page;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.search.*;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Utils;
@@ -17,7 +18,7 @@ public class EntityQueryService {
         this.instanceSearchService = instanceSearchService;
     }
 
-    public <T extends Entity> Page<T> query(EntityQuery<T> query, IEntityContext context) {
+    public <T extends Entity> Page<T> query(EntityQuery<T> query, IInstanceContext context) {
         var searchQuery = buildSearchQuery(query);
         var idPage = instanceSearchService.search(searchQuery);
         return new Page<>(
@@ -26,7 +27,7 @@ public class EntityQueryService {
         );
     }
 
-    public <T extends Entity> long count(EntityQuery<T> query, IEntityContext ignored) {
+    public <T extends Entity> long count(EntityQuery<T> query, IInstanceContext ignored) {
         return instanceSearchService.count(buildSearchQuery(query));
     }
 

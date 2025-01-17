@@ -1,7 +1,7 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.PsiClass;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.ContextUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,9 +10,9 @@ public class CodeGenerator {
 
     public static final Logger logger = LoggerFactory.getLogger(CodeGenerator.class);
 
-    private final IEntityContext context;
+    private final IInstanceContext context;
 
-    public CodeGenerator(IEntityContext context) {
+    public CodeGenerator(IInstanceContext context) {
         this.context = context;
     }
 

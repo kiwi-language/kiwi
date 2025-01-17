@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.object.instance.IInstanceStore;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 
@@ -14,39 +15,39 @@ public class EntityContextFactoryAware {
         this.entityContextFactory = entityContextFactory;
     }
 
-    public IEntityContext newContext() {
+    public IInstanceContext newContext() {
         return entityContextFactory.newContext();
     }
 
-    public IEntityContext newContext(long appId, Consumer<InstanceContextBuilder> customizer) {
+    public IInstanceContext newContext(long appId, Consumer<InstanceContextBuilder> customizer) {
         return entityContextFactory.newContext(appId, customizer);
     }
 
-    public IEntityContext newContext(long appId, IEntityContext parent, Consumer<InstanceContextBuilder> customizer) {
+    public IInstanceContext newContext(long appId, IInstanceContext parent, Consumer<InstanceContextBuilder> customizer) {
         return entityContextFactory.newContext(appId, parent, customizer);
     }
 
-    public IEntityContext newContext(Consumer<InstanceContextBuilder> customizer) {
+    public IInstanceContext newContext(Consumer<InstanceContextBuilder> customizer) {
         return entityContextFactory.newContext(ContextUtil.getAppId(), customizer);
     }
 
-    public IEntityContext newContext(long appId) {
+    public IInstanceContext newContext(long appId) {
         return entityContextFactory.newContext(appId);
     }
 
-    public IEntityContext newContextWithStore(long appId, IInstanceStore instanceStore) {
+    public IInstanceContext newContextWithStore(long appId, IInstanceStore instanceStore) {
         return entityContextFactory.newContextWithStore(appId, instanceStore);
     }
 
-    public IEntityContext newContextWithStore(IInstanceStore instanceStore) {
+    public IInstanceContext newContextWithStore(IInstanceStore instanceStore) {
         return entityContextFactory.newContextWithStore(ContextUtil.getAppId(), instanceStore);
     }
 
-    public IEntityContext newPlatformContext() {
+    public IInstanceContext newPlatformContext() {
         return newContext(Constants.PLATFORM_APP_ID);
     }
 
-    public IEntityContext newContext(long appId, IdInitializer idProvider) {
+    public IInstanceContext newContext(long appId, IdInitializer idProvider) {
         return entityContextFactory.newContext(appId, idProvider);
     }
 

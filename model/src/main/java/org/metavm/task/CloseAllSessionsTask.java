@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -40,7 +40,7 @@ public class CloseAllSessionsTask extends Task {
     }
 
     @Override
-    protected boolean run0(IEntityContext platformContext, IEntityContext taskContext) {
+    protected boolean run0(IInstanceContext platformContext, IInstanceContext taskContext) {
         try (var context = platformContext.createSame(appId)) {
             var objects = context.scan(cursor, BATCH_SIZE).instances();
             if(objects.isEmpty())

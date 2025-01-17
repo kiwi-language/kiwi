@@ -7,7 +7,7 @@ import org.metavm.api.Generated;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.WAL;
@@ -48,22 +48,22 @@ public class DDLTask extends ScanTask implements IDDLTask {
     }
 
     @Override
-    protected void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
+    protected void process(List<Instance> batch, IInstanceContext context, IInstanceContext taskContext) {
         commitState.process(batch, getCommit(), context);
     }
 
     @Override
-    protected void onStart(IEntityContext context, IEntityContext taskContext) {
+    protected void onStart(IInstanceContext context, IInstanceContext taskContext) {
         commitState.onStart(context, getCommit());
     }
 
     @Override
-    protected void onScanOver(IEntityContext context, IEntityContext taskContext) {
+    protected void onScanOver(IInstanceContext context, IInstanceContext taskContext) {
         commitState.transition(getCommit(), taskContext);
     }
 
     @Override
-    protected void onFailure(IEntityContext context, IEntityContext taskContext) {
+    protected void onFailure(IInstanceContext context, IInstanceContext taskContext) {
         var commit = getCommit();
         if (commit.getState() != CommitState.ABORTING) {
             commit.setState(CommitState.ABORTING);

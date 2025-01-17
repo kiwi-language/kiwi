@@ -2,6 +2,7 @@ package org.metavm.object.version;
 
 import org.metavm.entity.*;
 import org.metavm.flow.Function;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeDef;
 import org.metavm.util.Instances;
@@ -18,7 +19,7 @@ public class VersionManager extends EntityContextFactoryAware {
         super(entityContextFactory);
     }
 
-    public InternalMetaPatch pullInternal(long baseVersion, IEntityContext context) {
+    public InternalMetaPatch pullInternal(long baseVersion, IInstanceContext context) {
         List<Version> versions = context.query(Version.IDX_VERSION.newQueryBuilder()
                 .from(new EntityIndexKey(List.of(Instances.longInstance(baseVersion + 1))))
                 .limit(100)
@@ -44,18 +45,8 @@ public class VersionManager extends EntityContextFactoryAware {
         );
     }
 
-    public List<Klass> getAllKlasses(IEntityContext context) {
-        var defContext = context.getDefContext();
-        //                Utils.exclude(defContext.getAllBufferedEntities(TypeDef.class), Entity::isEphemeral)
-        //                Utils.exclude(defContext.getAllBufferedEntities(TypeDef.class), Entity::isEphemeral)
+    public List<Klass> getAllKlasses(IInstanceContext context) {
         return new ArrayList<>(context.selectByKey(Klass.IDX_ALL_FLAG, Instances.trueInstance()));
-    }
-
-    private List<Function> getAllFunctions(IEntityContext context) {
-        var defContext = context.getDefContext();
-        var functions = new ArrayList<>(defContext.getAllBufferedEntities(Function.class));
-        functions.addAll(context.selectByKey(Function.IDX_ALL_FLAG, Instances.trueInstance()));
-        return functions;
     }
 
 

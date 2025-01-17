@@ -6,6 +6,7 @@ import org.metavm.common.Page;
 import org.metavm.mocks.Foo;
 import org.metavm.mocks.Qux;
 import org.metavm.object.instance.InstanceQueryService;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.type.Klass;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -54,7 +55,7 @@ public class EntityQueryServiceTest extends TestCase {
         return entity;
     }
 
-    private IEntityContext newContext() {
+    private IInstanceContext newContext() {
         return entityContextFactory.newContext(TestConstants.APP_ID);
     }
 

@@ -133,7 +133,7 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     }
 
     public void writeCode(CodeWriter writer) {
-        writer.writeNewLine(
+        writer.writeln(
                 "Lambda "
                         + " (" + Utils.join(parameters, Parameter::getText, ", ")
                         + ")"

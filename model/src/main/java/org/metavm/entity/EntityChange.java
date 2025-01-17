@@ -1,12 +1,15 @@
 package org.metavm.entity;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.util.ChangeList;
+import org.metavm.util.DebugEnv;
 
 import java.util.*;
 import java.util.function.Consumer;
 
+@Slf4j
 public class EntityChange<T> implements Comparable<EntityChange<?>> {
 
     public static  <T> EntityChange<T> create(Class<T> entityType, Collection<T> inserts, Collection<T> updates, Collection<T> deletes) {

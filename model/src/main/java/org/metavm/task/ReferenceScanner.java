@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -39,7 +39,7 @@ public abstract class ReferenceScanner extends Task {
     }
 
     @Override
-    protected boolean run0(IEntityContext context, IEntityContext taskContext) {
+    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
         var id = this.targetId;
         var referring = context.getByReferenceTargetId(id, next, BATCH_SIZE);
         if (!referring.isEmpty()) {
@@ -55,7 +55,7 @@ public abstract class ReferenceScanner extends Task {
 
     protected abstract void process(List<Instance> batch);
 
-    protected void onTaskDone(IEntityContext context, Id id) {
+    protected void onTaskDone(IInstanceContext context, Id id) {
     }
 
     public Id getTargetId() {

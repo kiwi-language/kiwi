@@ -3,6 +3,7 @@ package org.metavm.task;
 //import org.metavm.ddl.DefContextUtils;
 
 import org.metavm.entity.*;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,7 +137,7 @@ public class Worker extends EntityContextFactoryAware {
                                 metaContextCache.get(shadowTask.getAppId(), appTask.getMetaWAL() != null ? appTask.getMetaWAL().getId() : null) :
                                             ModelDefRegistry.getDefContext()
                             );
-                    IEntityContext oldContext = ContextUtil.getEntityContext();
+                    IInstanceContext oldContext = ContextUtil.getEntityContext();
                     try (var walContext = entityContextFactory.newContext(shadowTask.getAppId(), parentContext,
                             builder -> builder.readWAL(appTask.getWAL())
                                     .relocationEnabled(appTask.isRelocationEnabled())
@@ -174,7 +175,7 @@ public class Worker extends EntityContextFactoryAware {
         });
     }
 
-    private boolean runTask0(Task appTask, IEntityContext executionContext, IEntityContext taskContext) {
+    private boolean runTask0(Task appTask, IInstanceContext executionContext, IInstanceContext taskContext) {
         appTask.run(executionContext, taskContext);
         return appTask.isTerminated();
     }

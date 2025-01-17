@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.mocks.FooState;
 import org.metavm.mocks.IndexFoo;
@@ -54,7 +54,7 @@ public class InstanceManagerTest extends TestCase {
         FlowSavingContext.clearConfig();
     }
 
-    private IEntityContext newContext() {
+    private IInstanceContext newContext() {
         return entityContextFactory.newContext(TestConstants.APP_ID);
     }
 

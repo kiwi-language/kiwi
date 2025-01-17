@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
-import org.metavm.api.Interceptor;
 import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
@@ -1502,7 +1501,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     }
 
     @Override
-    public List<Instance> beforeRemove(IEntityContext context) {
+    public List<Instance> beforeRemove(IInstanceContext context) {
         var superKlass = getSuperKlass();
         if (superKlass != null)
             superKlass.removeExtension(this);
@@ -1537,7 +1536,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     }
 
     @Override
-    public void onChange(IEntityContext context) {
+    public void onChange(IInstanceContext context) {
         if(!methodTableBuildDisabled)
             rebuildMethodTable();
         if (!isInterface()) {
@@ -2110,5 +2109,31 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     protected void buildSource(Map<String, Value> source) {
         super.buildSource(source);
     }
+
+    public String getText() {
+        var writer = new CodeWriter();
+        writeCode(writer);
+        return writer.toString();
+    }
+
+    public void writeCode(CodeWriter writer) {
+        writer.writeln(kind.name().toLowerCase() + " " + name + " {");
+        writer.indent();
+        for (Field field : fields) {
+            field.writeCode(writer);
+        }
+        for (Field staticField : staticFields) {
+            staticField.writeCode(writer);
+        }
+        for (Index index : indices) {
+            index.writeCode(writer);
+        }
+        for (Method method : methods) {
+            method.writeCode(writer);
+        }
+        writer.unindent();
+        writer.writeln("}");
+    }
+
 }
 

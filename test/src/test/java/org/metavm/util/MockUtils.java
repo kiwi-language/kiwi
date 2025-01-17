@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.asm.AssemblerFactory;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.StdKlass;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
 public class MockUtils {
 
     public static ShoppingTypes createShoppingTypes() {
@@ -285,34 +287,38 @@ public class MockUtils {
     }
 
     public static FooTypes createFooTypes(boolean initIds) {
-        var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
-        var fooNameField = FieldBuilder.newBuilder("name", fooType, Types.getStringType())
+        var fooKlass = TestUtils.newKlassBuilder("Foo", "Foo").build();
+        var fooNameField = FieldBuilder.newBuilder("name", fooKlass, Types.getStringType())
                 .asTitle().build();
-        var fooCodeField = FieldBuilder.newBuilder("code", fooType, Types.getNullableStringType())
+        var fooCodeField = FieldBuilder.newBuilder("code", fooKlass, Types.getNullableStringType())
                 .build();
-        var barType = TestUtils.newKlassBuilder("Bar", "Bar").build();
-        var barCodeField = FieldBuilder.newBuilder("code", barType, Types.getStringType())
+        var barKlass = TestUtils.newKlassBuilder("Bar", "Bar").build();
+        var barCodeField = FieldBuilder.newBuilder("code", barKlass, Types.getStringType())
                 .asTitle().build();
-        var barChildArrayType = new ArrayType(barType.getType(), ArrayKind.CHILD);
-        var barArrayType = new ArrayType(barType.getType(), ArrayKind.READ_WRITE);
+        var barChildArrayType = new ArrayType(barKlass.getType(), ArrayKind.CHILD);
+        var barArrayType = new ArrayType(barKlass.getType(), ArrayKind.READ_WRITE);
 //        var nullableBarType = new UnionType(null, Set.of(barType, getNullType()));
-        var fooBarsField = FieldBuilder.newBuilder("bars", fooType, barChildArrayType)
+        var fooBarsField = FieldBuilder.newBuilder("bars", fooKlass, barChildArrayType)
                 .isChild(true).build();
-        var bazType = TestUtils.newKlassBuilder("Baz", "Baz").build();
-        var bazArrayType = new ArrayType(bazType.getType(), ArrayKind.READ_WRITE);
-        var bazBarsField = FieldBuilder.newBuilder("bars", bazType, barArrayType).build();
-        var fooBazListField = FieldBuilder.newBuilder("bazList", fooType, bazArrayType).build();
-        var quxType = TestUtils.newKlassBuilder("Qux", "Qux").build();
-        var quxAmountField = FieldBuilder.newBuilder("amount", quxType, Types.getLongType()).build();
-        var nullableQuxType = new UnionType(Set.of(quxType.getType(), Types.getNullType()));
-        var fooQuxField = FieldBuilder.newBuilder("qux", fooType, nullableQuxType).build();
+        var bazKlass = TestUtils.newKlassBuilder("Baz", "Baz").build();
+        var bazArrayType = new ArrayType(bazKlass.getType(), ArrayKind.READ_WRITE);
+        var bazBarsField = FieldBuilder.newBuilder("bars", bazKlass, barArrayType).build();
+        var fooBazListField = FieldBuilder.newBuilder("bazList", fooKlass, bazArrayType).build();
+        var quxKlass = TestUtils.newKlassBuilder("Qux", "Qux").build();
+        var quxAmountField = FieldBuilder.newBuilder("amount", quxKlass, Types.getLongType()).build();
+        var nullableQuxType = new UnionType(Set.of(quxKlass.getType(), Types.getNullType()));
+        var fooQuxField = FieldBuilder.newBuilder("qux", fooKlass, nullableQuxType).build();
         if (initIds) {
-            TestUtils.initEntityIds(fooType);
-            TestUtils.initEntityIds(bazType);
-            TestUtils.initEntityIds(quxType);
-            TestUtils.initEntityIds(bazType);
+            TestUtils.initEntityIds(fooKlass);
+            TestUtils.initEntityIds(bazKlass);
+            TestUtils.initEntityIds(quxKlass);
+            TestUtils.initEntityIds(bazKlass);
         }
-        return new FooTypes(fooType, barType, quxType, bazType, barArrayType, barChildArrayType, bazArrayType, fooNameField,
+//        log.debug("{}", fooKlass.getText());
+//        log.debug("{}", barKlass.getText());
+//        log.debug("{}", quxKlass.getText());
+//        log.debug("{}", bazKlass.getText());
+        return new FooTypes(fooKlass, barKlass, quxKlass, bazKlass, barArrayType, barChildArrayType, bazArrayType, fooNameField,
                 fooCodeField, fooBarsField, fooQuxField, fooBazListField, barCodeField, bazBarsField, quxAmountField);
     }
 

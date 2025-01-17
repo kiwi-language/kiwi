@@ -3,7 +3,7 @@ package org.metavm.task;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.TreeNotFoundException;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Instance;
@@ -57,7 +57,7 @@ public class ReferenceRedirector extends ReferenceScanner {
     }
 
     @Override
-    protected void onTaskDone(IEntityContext context, Id id) {
+    protected void onTaskDone(IInstanceContext context, Id id) {
         try {
             var target = context.get(id);
             context.removeForwardingPointer((MvInstance) target, true);

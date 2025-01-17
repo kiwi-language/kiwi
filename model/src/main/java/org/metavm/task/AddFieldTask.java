@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -40,7 +40,7 @@ public class AddFieldTask extends ScanByClassTask {
     }
 
     @Override
-    protected void processClassInstance(ClassInstance instance, IEntityContext context) {
+    protected void processClassInstance(ClassInstance instance, IInstanceContext context) {
         Value fieldValue;
         var field = getField();
         if(field.isChild() && field.getType() instanceof ArrayType arrayType)

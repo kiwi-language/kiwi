@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -34,7 +34,7 @@ public class IndexRebuildTask extends ScanTask {
     }
 
     @Override
-    protected void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
+    protected void process(List<Instance> batch, IInstanceContext context, IInstanceContext taskContext) {
         batch.forEach(Instance::incVersion);
     }
 

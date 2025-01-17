@@ -10,13 +10,12 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.flow.CodeWriter;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.*;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -186,7 +185,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     }
 
     @Override
-    public List<Instance> beforeRemove(IEntityContext context) {
+    public List<Instance> beforeRemove(IInstanceContext context) {
         List<Instance> cascades = new ArrayList<>(super.beforeRemove(context));
         List<Index> fieldIndices = declaringType.getFieldIndices(this);
         for (Index fieldIndex : fieldIndices) {
@@ -336,7 +335,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     }
 
     @Override
-    public void onChange(IEntityContext context) {
+    public void onChange(IInstanceContext context) {
 //        if (_static) {
 //            var staticValueField = ModelDefRegistry.getField(Field.class, "staticValue");
 //            var value = instance.getField(staticValueField);
@@ -544,7 +543,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         this.initializerReference = Utils.safeCall(initializer, Instance::getReference);
     }
 
-    public void initialize(@Nullable ClassInstance self,  IEntityContext context) {
+    public void initialize(@Nullable ClassInstance self,  IInstanceContext context) {
         if (initializerReference != null) {
             var initializer = (Method) initializerReference.get();
             if (isStatic()) {
@@ -579,12 +578,12 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         this.ordinal = ordinal;
     }
 
-    public Value getStatic(IEntityContext context) {
+    public Value getStatic(IInstanceContext context) {
         assert _static;
         return  StaticFieldTable.getInstance(declaringType.getType(), context).get(this);
     }
 
-    public void updateEnumConstant(IEntityContext context) {
+    public void updateEnumConstant(IInstanceContext context) {
         assert isEnumConstant;
         var value = getStatic(context).resolveObject();
         value.setField(StdField.enumName.get(), Instances.stringInstance(name));
@@ -710,5 +709,16 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
 
     @Override
     protected void buildSource(Map<String, Value> source) {
+    }
+
+    public void writeCode(CodeWriter writer) {
+        var modifiers = new ArrayList<String>();
+        if (isMetadataRemoved()) modifiers.add("<removed>");
+        if (access != Access.PACKAGE) modifiers.add(access.name().toLowerCase());
+        if (isStatic()) modifiers.add("static");
+        if (isReadonly()) modifiers.add("readonly");
+        if (isChild) modifiers.add("child");
+        if (isTransient) modifiers.add("transient");
+        writer.writeln(String.join(" ", modifiers) + " " + name);
     }
 }

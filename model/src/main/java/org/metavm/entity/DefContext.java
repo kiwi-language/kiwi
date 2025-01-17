@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
@@ -11,6 +12,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -18,7 +20,7 @@ import static org.metavm.object.type.ResolutionStage.DEFINITION;
 import static org.metavm.object.type.ResolutionStage.INIT;
 
 @Slf4j
-public abstract class DefContext implements IEntityContext, TypeRegistry {
+public abstract class DefContext implements IInstanceContext, TypeRegistry {
 
     public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
             Map.entry(Byte.class, Integer.class),
@@ -103,5 +105,27 @@ public abstract class DefContext implements IEntityContext, TypeRegistry {
     }
 
     public abstract Collection<Entity> entities();
+
+
+    @Override
+    public void setParameterizedMap(ParameterizedMap map) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ParameterizedMap getParameterizedMap() {
+        throw new UnsupportedOperationException();
+    }
+
+
+    @Override
+    public <T extends Entity> List<T> query(EntityIndexQuery<T> query) {
+        return List.of();
+    }
+
+    @Override
+    public long count(EntityIndexQuery<?> query) {
+        return 0;
+    }
 
 }

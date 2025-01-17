@@ -301,8 +301,6 @@ public abstract class MvInstance extends BaseInstance {
         return getInstanceType().getTypeDesc() + "-" + getTitle();
     }
 
-
-
     public Object toSearchConditionValue() {
         return state.id.getTreeId();
     }
@@ -479,6 +477,7 @@ public abstract class MvInstance extends BaseInstance {
         return getInstanceType().getName() + "-" + getTitle();
     }
 
+    @Override
     public String getText() {
         var treeWriter = new TreeWriter();
         writeTree(treeWriter);

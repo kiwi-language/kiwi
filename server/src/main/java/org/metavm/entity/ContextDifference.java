@@ -62,35 +62,58 @@ public class ContextDifference {
     private void diffTree(@Nullable Tree t1, @Nullable Tree t2) {
         if (t1 == null && t2 == null)
             return;
-        if (t1 == null)
+        if (t1 == null) {
+            if (DebugEnv.traceDifference)
+                logger.trace("Tree {} is created", t2.id());
             treeChanges.addInsert(buildInstancePO(t2));
-        else if (t2 == null)
+        } else if (t2 == null) {
+            if (DebugEnv.traceDifference)
+                logger.trace("Tree {} is deleted", t1.id());
             treeChanges.addDelete(buildInstancePO(t1));
-        else if (!Arrays.equals(t1.data(), t2.data()))
+        } else if (!Arrays.equals(t1.data(), t2.data())) {
+            if (DebugEnv.traceDifference)
+                logger.trace("Tree {} is modified", t1.id());
             treeChanges.addUpdate(buildInstancePO(t2));
+        }
+        else {
+            if (DebugEnv.traceDifference)
+                logger.trace("Tree {} is unchanged", t1.id());
+        }
     }
 
     public void diffEntity(@Nullable Tree t1, @Nullable Tree t2) {
         if (t1 == null && t2 == null)
             return;
         if (t1 == null) {
-            getInstanceIds(t2).forEach(id ->
-                    entityChange.addInsert(new VersionRT(appId, id.getId(), t2.version(), id.entityTag())));
+            getInstanceIds(t2).forEach(s -> {
+                if (DebugEnv.traceDifference)
+                    logger.trace("Entity {} created", s.getId());
+                entityChange.addInsert(new VersionRT(appId, s.getId(), t2.version(), s.entityTag()));
+            });
         } else if (t2 == null) {
-            getInstanceIds(t1).forEach(id -> {
-                entityChange.addDelete(new VersionRT(appId, id.getId(), t1.version() + 1, id.entityTag()));
+            getInstanceIds(t1).forEach(s -> {
+                if (DebugEnv.traceDifference)
+                    logger.trace("Entity {} deleted", s.getId());
+                entityChange.addDelete(new VersionRT(appId, s.getId(), t1.version() + 1, s.entityTag()));
             });
 
         } else if (!Arrays.equals(t1.data(), t2.data())) {
             Utils.forEachPair(getSubTrees(t1), getSubTrees(t2), (s1, s2) -> {
                 if (s1 == null && s2 == null)
                     return;
-                if (s1 == null)
+                if (s1 == null) {
+                    if (DebugEnv.traceDifference)
+                        logger.trace("Entity {} created", s2.getId());
                     entityChange.addInsert(new VersionRT(appId, s2.getId(), t2.version(), s2.entityTag()));
-                else if (s2 == null)
+                } else if (s2 == null) {
+                    if (DebugEnv.traceDifference)
+                        logger.trace("Entity {} deleted", s1.getId());
                     entityChange.addDelete(new VersionRT(appId, s1.getId(), t2.version(), s1.entityTag()));
-                else if (!s1.equals(s2))
+                } else if (!s1.equals(s2)) {
+                    if (DebugEnv.traceDifference)
+                        logger.trace("Entity {} updated", s1.getId());
                     entityChange.addUpdate(new VersionRT(appId, s2.getId(), t2.version(), s2.entityTag()));
+                }
             });
         }
     }

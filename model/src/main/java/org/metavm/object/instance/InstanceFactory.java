@@ -1,6 +1,6 @@
 package org.metavm.object.instance;
 
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.object.instance.core.*;
@@ -124,7 +124,7 @@ public class InstanceFactory {
         return instance.getReference();
     }
 
-    public static Value resolveValue(FieldValue rawValue, Type type, IEntityContext context) {
+    public static Value resolveValue(FieldValue rawValue, Type type, IInstanceContext context) {
         return resolveValue(rawValue, type, null,
                 Objects.requireNonNull(context));
     }

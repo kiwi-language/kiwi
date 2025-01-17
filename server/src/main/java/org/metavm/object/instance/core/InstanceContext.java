@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import com.sun.security.auth.NTNumericCredential;
 import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.*;
@@ -12,8 +13,6 @@ import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.instance.persistence.VersionRT;
-import org.metavm.object.type.ActiveCommitProvider;
-import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.LinkedList;
 import org.metavm.util.*;
@@ -44,7 +43,6 @@ public class InstanceContext extends BufferingInstanceContext {
     private final boolean skipPostprocessing;
     private final boolean relocationEnabled;
     private final List<Instance> relocated = new ArrayList<>();
-    private final ActiveCommitProvider activeCommitProvider;
 
     public InstanceContext(long appId,
                            IInstanceStore instanceStore,
@@ -52,9 +50,6 @@ public class InstanceContext extends BufferingInstanceContext {
                            Executor executor,
                            List<ContextPlugin> plugins,
                            IInstanceContext parent,
-                           TypeDefProvider typeDefProvider,
-                           RedirectStatusProvider redirectStatusProvider,
-                           ActiveCommitProvider activeCommitProvider,
                            boolean childrenLazyLoading,
                            Cache cache,
                            @Nullable EventQueue eventQueue,
@@ -64,17 +59,16 @@ public class InstanceContext extends BufferingInstanceContext {
                            long timeout
     ) {
         super(appId,
-                List.of(/*new CacheTreeSource(cache),*/new StoreTreeSource(instanceStore)),
+                List.of(new StoreTreeSource(instanceStore)),
                 new StoreVersionSource(instanceStore),
                 new StoreIndexSource(instanceStore), idInitializer,
-                parent, typeDefProvider, redirectStatusProvider, readonly, timeout);
+                parent, readonly, timeout);
         headContext = new SubContext(appId);
         this.plugins = plugins;
         this.executor = executor;
         this.childrenLazyLoading = childrenLazyLoading;
         this.eventQueue = eventQueue;
         this.instanceStore = instanceStore;
-        this.activeCommitProvider = activeCommitProvider;
 //        entityContext = new EntityContext(
 //                this,
 //                NncUtils.get(parent, IInstanceContext::getEntityContext),
@@ -103,7 +97,7 @@ public class InstanceContext extends BufferingInstanceContext {
             throw new IllegalStateException("Already finished");
         if (DebugEnv.debugging)
             debugLogger.info("InstanceContext.finish");
-        var commit = activeCommitProvider.getActiveCommit();
+        var commit = getActiveCommit();
         headContext.freeze();
         if(commit != null)
             tryCancelCommit(commit);
@@ -126,6 +120,11 @@ public class InstanceContext extends BufferingInstanceContext {
         }
         finished = true;
     }
+
+    public Commit getActiveCommit() {
+        return selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
+    }
+
 
     private void tryCancelCommit(Commit commit) {
         if(commit != null) {
@@ -408,8 +407,15 @@ public class InstanceContext extends BufferingInstanceContext {
             );
             if (ref != null) {
                 unfrozen(() -> {
-                    throw BusinessException.strongReferencesPreventRemoval(getRoot(ref.getSourceTreeId()).getReference(),
-                            internalGet(ref.getTargetInstanceId()).getReference());
+                    var referring = getRoot(ref.getSourceTreeId());
+                    var referred = internalGet(ref.getTargetInstanceId());
+                    throw new RemovalFailureException(
+                            "Cannot remove instance " + referred + " (tree ID: " + ref.getTargetInstanceId().getTreeId() + ")"
+                                    + " because it is referenced by instance " + referring
+                                    + " (tree ID: " + ref.getSourceTreeId() +")"
+                    );
+//                    throw BusinessException.strongReferencesPreventRemoval(getRoot(ref.getSourceTreeId()).getReference(),
+//                            internalGet(ref.getTargetInstanceId()).getReference());
                 });
             }
         }
@@ -550,9 +556,6 @@ public class InstanceContext extends BufferingInstanceContext {
                 executor,
                 plugins,
                 getParent(),
-                typeDefProvider,
-                getRedirectStatusProvider(),
-                activeCommitProvider,
                 childrenLazyLoading,
                 cache,
                 eventQueue,

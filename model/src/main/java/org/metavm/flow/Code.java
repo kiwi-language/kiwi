@@ -140,11 +140,11 @@ public class Code extends org.metavm.entity.Entity implements Element, LocalKey 
     }
 
     public void writeCode(CodeWriter writer) {
-        writer.write(" {");
+        writer.writeln(" {");
         writer.indent();
         nodes.forEach(node -> node.write(writer));
         writer.unindent();
-        writer.writeNewLine("}");
+        writer.writeln("}");
     }
 
     public String nextNodeName(String prefix) {

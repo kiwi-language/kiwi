@@ -11,6 +11,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Method;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -70,7 +71,7 @@ public class TypeResolverImpl implements TypeResolver {
 
     private final Map<CapturedType, PsiCapturedWildcardType> capturedTypeReverseMap = new HashMap<>();
 
-    private final IEntityContext context;
+    private final IInstanceContext context;
 
     private static final Map<PsiClassType, Supplier<Klass>> STANDARD_CLASSES;
 
@@ -97,7 +98,7 @@ public class TypeResolverImpl implements TypeResolver {
             Collection.class
     );
 
-    public TypeResolverImpl(IEntityContext context) {
+    public TypeResolverImpl(IInstanceContext context) {
         this.context = context;
         codeGenerator = new CodeGenerator(context);
     }
@@ -252,7 +253,7 @@ public class TypeResolverImpl implements TypeResolver {
                 return StdKlass.klass.type();
             else if (qualName != null && (ReflectionUtils.isPrimitiveBoxClassName(qualName)
                     || PRIM_CLASS_NAMES.contains(qualName)))
-                return context.getType(TranspileUtils.getJavaClass(psiClass));
+                return ModelDefRegistry.getType(TranspileUtils.getJavaClass(psiClass));
             else {
                 var klass = tryResolveBuiltinClass(classType.rawType());
                 if (klass == null)

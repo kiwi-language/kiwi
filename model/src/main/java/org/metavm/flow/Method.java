@@ -13,8 +13,7 @@ import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.NativeMethods;
 import org.metavm.entity.natives.RuntimeExceptionNative;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
@@ -162,7 +161,7 @@ public class Method extends Flow implements Property {
     }
 
     @Override
-    public List<Instance> beforeRemove(IEntityContext context) {
+    public List<Instance> beforeRemove(IInstanceContext context) {
         declaringType.rebuildMethodTable();
         declaringType.removeErrors(this);
         return super.beforeRemove(context);

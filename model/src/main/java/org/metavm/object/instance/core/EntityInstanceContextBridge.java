@@ -4,7 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.DefContext;
 import org.metavm.entity.DefContextProvider;
-import org.metavm.entity.IEntityContext;
+import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.TypeRegistry;
 import org.metavm.object.type.*;
 import org.metavm.object.version.Version;
@@ -15,9 +15,9 @@ import org.metavm.util.Utils;
 public class EntityInstanceContextBridge implements
         TypeDefProvider, IndexProvider, VersionRepository, TypeRegistry, RedirectStatusProvider, ActiveCommitProvider, DefContextProvider {
 
-    private IEntityContext entityContext;
+    private IInstanceContext entityContext;
 
-    public void setEntityContext(IEntityContext entityContext) {
+    public void setEntityContext(IInstanceContext entityContext) {
         this.entityContext = entityContext;
     }
 
@@ -51,7 +51,7 @@ public class EntityInstanceContextBridge implements
 
     @Override
     public Type getType(Class<?> javaClass) {
-        return entityContext.getDefContext().getType(javaClass);
+        return ModelDefRegistry.getType(javaClass);
     }
 
     @javax.annotation.Nullable
@@ -61,7 +61,7 @@ public class EntityInstanceContextBridge implements
     }
 
     public DefContext getDefContext() {
-        return entityContext.getDefContext();
+        return ModelDefRegistry.getDefContext();
     }
 
 }

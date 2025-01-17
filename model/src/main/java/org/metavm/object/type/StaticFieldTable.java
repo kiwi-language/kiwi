@@ -38,7 +38,7 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public static StaticFieldTable getInstance(ClassType type, IEntityContext context) {
+    public static StaticFieldTable getInstance(ClassType type, IInstanceContext context) {
         var klass = type.getKlass();
         var sft = context.selectFirstByKey(IDX_KLASS, klass.getReference());
         if(sft == null) {

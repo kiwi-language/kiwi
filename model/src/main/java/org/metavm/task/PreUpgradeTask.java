@@ -6,7 +6,7 @@ import org.metavm.api.Generated;
 import org.metavm.ddl.FieldAddition;
 import org.metavm.ddl.SystemDDL;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.RemovalAware;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
@@ -57,7 +57,7 @@ public class PreUpgradeTask extends ScanTask  implements RemovalAware {
     }
 
     @Override
-    protected void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
+    protected void process(List<Instance> batch, IInstanceContext context, IInstanceContext taskContext) {
         for (Instance instance : batch) {
             if(instance instanceof ClassInstance clsInst) {
                 var ddl = context.getEntity(SystemDDL.class, ddlId);
@@ -84,7 +84,7 @@ public class PreUpgradeTask extends ScanTask  implements RemovalAware {
     }
 
     @Override
-    protected void onScanOver(IEntityContext context, IEntityContext taskContext) {
+    protected void onScanOver(IInstanceContext context, IInstanceContext taskContext) {
         var newKlassIds = getExtraStdKlassIds();
         for (var klassId : newKlassIds) {
             var klass = context.getKlass(klassId);
@@ -99,7 +99,7 @@ public class PreUpgradeTask extends ScanTask  implements RemovalAware {
         }
     }
 
-    private Klass tryGetInitializerKlass(Klass klass, IEntityContext context) {
+    private Klass tryGetInitializerKlass(Klass klass, IInstanceContext context) {
         return context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
                 Instances.stringInstance(klass.getQualifiedName() + "Initializer"));
     }
@@ -127,7 +127,7 @@ public class PreUpgradeTask extends ScanTask  implements RemovalAware {
     }
 
     @Override
-    public List<Instance> beforeRemove(IEntityContext context) {
+    public List<Instance> beforeRemove(IInstanceContext context) {
         return List.of(walReference.get());
     }
 

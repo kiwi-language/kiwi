@@ -1,7 +1,7 @@
 package org.metavm.object.instance.log;
 
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.message.Message;
 import org.metavm.task.SendMessageTask;
 import org.springframework.stereotype.Component;
@@ -18,7 +18,7 @@ public class MessageHandler implements LogHandler<Message> {
     }
 
     @Override
-    public void process(List<Message> created, @Nullable String clientId, IEntityContext context, EntityContextFactory entityContextFactory) {
+    public void process(List<Message> created, @Nullable String clientId, IInstanceContext context, EntityContextFactory entityContextFactory) {
         for (Message message : created) {
             context.bind(new SendMessageTask(message));
         }

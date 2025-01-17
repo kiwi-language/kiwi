@@ -6,7 +6,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.ContextFinishWare;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.LoadAware;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -89,7 +89,7 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
     }
 
     @Override
-    public void onContextFinish(IEntityContext context) {
+    public void onContextFinish(IInstanceContext context) {
         buildData();
     }
 

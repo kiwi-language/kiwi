@@ -5,7 +5,7 @@ import org.metavm.api.Generated;
 import org.metavm.application.Application;
 import org.metavm.api.Entity;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -35,7 +35,7 @@ public abstract class GlobalTask extends EntityScanTask<Application> {
     }
 
     @Override
-    protected void processModels(IEntityContext context, List<Application> applications) {
+    protected void processModels(IInstanceContext context, List<Application> applications) {
         for (Application application : applications) {
             var appContext = context.createSame(application.getTreeId());
             processApplication(appContext, application);
@@ -43,7 +43,7 @@ public abstract class GlobalTask extends EntityScanTask<Application> {
         }
     }
 
-    protected abstract void processApplication(IEntityContext context, Application application);
+    protected abstract void processApplication(IInstanceContext context, Application application);
 
     @Override
     public void forEachReference(Consumer<Reference> action) {

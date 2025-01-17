@@ -6,7 +6,7 @@ import org.metavm.api.ChildList;
 import org.metavm.autograph.env.IrCoreApplicationEnvironment;
 import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.KlassOutput;
 import org.metavm.object.type.Klass;
@@ -343,7 +343,7 @@ public class Compiler {
         return (PsiJavaFile) PsiManager.getInstance(project).findFile(file);
     }
 
-    private IEntityContext newContext() {
+    private IInstanceContext newContext() {
         return contextFactory.newEntityContext(typeClient.getAppId());
     }
 

@@ -31,33 +31,31 @@ public class UnionType extends CompositeType {
         return new UnionType(Set.of(types));
     }
 
-    private final List<Type> members;
+    private final Type[] members;
 
     public UnionType(Set<Type> members) {
         super();
         if(members.isEmpty())
             throw new IllegalArgumentException("members can not be empty");
-        this.members = new ArrayList<>(members);
+        this.members = members.toArray(Type[]::new);
     }
 
-    private UnionType(List<Type> members) {
+    private UnionType(Type[] members) {
         this.members = members;
     }
 
     public Set<Type> getMembers() {
-        return new HashSet<>(members);
+        return new HashSet<>(List.of(members));
     }
 
     @Override
     public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
-        return new UnionTypeKey(Utils.mapToSet(members, type -> type.toTypeKey(getTypeDefId)));
+        return new UnionTypeKey(Utils.mapToSet(List.of(members), type -> type.toTypeKey(getTypeDefId)));
     }
 
     @Override
     public Type getConcreteType() {
-        if (isNullable()) {
-            return Utils.findRequired(members, t -> !t.isNull()).getConcreteType();
-        }
+        if (isNullable()) return Utils.findRequired(members, t -> !t.isNull()).getConcreteType();
         return this;
     }
 
@@ -74,7 +72,7 @@ public class UnionType extends CompositeType {
         if (obj instanceof UnionType that) {
             var m1 = members;
             var m2 = that.members;
-            if (m1.size() == m2.size()) {
+            if (m1.length == m2.length) {
                 out: for (Type t1 : m1) {
                     for (Type t2 : m2) {
                         if (t1.equals(t2)) continue out;
@@ -99,26 +97,26 @@ public class UnionType extends CompositeType {
 
     @Override
     public String toString() {
-        List<String> memberNames = Utils.mapAndSort(members, Type::getName, String::compareTo);
+        List<String> memberNames = Utils.mapAndSort(List.of(members), Type::getName, String::compareTo);
         return "UnionType " + String.join("|", memberNames);
     }
 
     @Override
     public String getInternalName(@Nullable Flow current) {
-        var names = Utils.mapAndSort(members, type -> type.getInternalName(current), String::compareTo);
+        var names = Utils.mapAndSort(List.of(members), type -> type.getInternalName(current), String::compareTo);
         return Utils.join(names, "|");
     }
 
     @Override
     public boolean isBinaryNullable() {
-        return members.size() == 2 && (members.get(0).isNull() || members.get(1).isNull());
+        return members.length == 2 && (members[0].isNull() || members[1].isNull());
     }
 
     @Override
     public Type getUnderlyingType() {
-        if (members.size() != 2)
+        if (members.length != 2)
             return this;
-        Type t1 = members.getFirst(), t2 = members.getLast();
+        Type t1 = members[0], t2 = members[1];
         if (t1.isNull())
             return t2;
         else if (t2.isNull())
@@ -137,12 +135,12 @@ public class UnionType extends CompositeType {
 
     @Override
     public List<? extends Type> getSuperTypes() {
-        return List.of(Types.getLeastUpperBound(members));
+        return List.of(Types.getLeastUpperBound(List.of(members)));
     }
 
     @Override
     public String getTypeDesc() {
-        return Utils.join(members, Type::getTypeDesc, "|");
+        return Utils.join(List.of(members), Type::getTypeDesc, "|");
     }
 
     @Override
@@ -157,24 +155,22 @@ public class UnionType extends CompositeType {
 
     @Override
     public List<Type> getComponentTypes() {
-        return members;
+        return List.of(members);
     }
 
     @Override
     public String getName() {
-        return Utils.join(members, Type::getName, "|");
+        return Utils.join(List.of(members), Type::getName, "|");
     }
 
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
-        var shuffledMembers = new ArrayList<>(members);
-        Collections.shuffle(shuffledMembers);
-        return (shuffledMembers.stream().map(type -> {
+        return (Arrays.stream(members).map(type -> {
             var memberExpr = type.toExpression(serializeContext, getTypeDefExpr);
             if(type.getPrecedence() >= getPrecedence())
                 memberExpr = "("+ memberExpr + ")";
             return memberExpr;
-        }).collect(Collectors.joining("|")));
+        }).sorted().collect(Collectors.joining("|")));
     }
 
     @Override
@@ -185,11 +181,11 @@ public class UnionType extends CompositeType {
     @Override
     public void write(MvOutput output) {
         output.write(WireTypes.UNION_TYPE);
-        output.writeList(members, t -> t.write(output));
+        output.writeArray(members, t -> t.write(output));
     }
 
     public static UnionType read(MvInput input) {
-        return new UnionType(input.readList(input::readType));
+        return new UnionType(input.readArray(input::readType, Type[]::new));
     }
 
     @Override
@@ -238,6 +234,6 @@ public class UnionType extends CompositeType {
 
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-        members.forEach(arg -> arg.forEachReference(action));
+        for (var members_ : members) members_.forEachReference(action);
     }
 }

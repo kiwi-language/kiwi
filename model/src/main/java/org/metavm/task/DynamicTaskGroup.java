@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Generated;
 import org.metavm.entity.Entity;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -30,13 +30,13 @@ public abstract class DynamicTaskGroup extends TaskGroup {
     }
 
     @Override
-    public void onBind(IEntityContext context) {
+    public void onBind(IInstanceContext context) {
         super.onBind(context);
         activeTaskCount = getTasks().size();
     }
 
     @Override
-    public void onTaskCompletion(Task task, IEntityContext context, IEntityContext taskContext) {
+    public void onTaskCompletion(Task task, IInstanceContext context, IInstanceContext taskContext) {
         activeTaskCount--;
         if(getTasks().contains(task))
             super.onTaskCompletion(task, context, taskContext);

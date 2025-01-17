@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.metavm.common.MockEmailService;
 import org.metavm.entity.EntityQueryService;
 import org.metavm.event.MockEventQueue;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.user.rest.dto.RoleDTO;
 import org.metavm.user.rest.dto.UserDTO;
 import org.metavm.util.BootstrapUtils;
@@ -39,7 +40,7 @@ public class PlatformUserManagerTest extends TestCase {
     }
 
     public void testSave() {
-        var roleId = doInTransaction(() -> roleManager.save(new RoleDTO(null, "admin")));
+        var roleId = doInTransaction(() -> roleManager.save(new RoleDTO(TmpId.randomString(), "admin")));
         UserDTO user = new UserDTO(
                 null, "leen", "Twodogs Li", "123456",
                 List.of(roleId)

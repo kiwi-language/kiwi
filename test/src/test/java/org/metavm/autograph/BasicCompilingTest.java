@@ -3,6 +3,7 @@ package org.metavm.autograph;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
+import org.metavm.object.instance.core.RemovalFailureException;
 import org.metavm.object.type.*;
 import org.metavm.task.SynchronizeSearchTask;
 import org.metavm.util.*;
@@ -812,9 +813,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             deleteObject(id2);
             Assert.fail();
         }
-        catch (BusinessException e) {
-            Assert.assertSame(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, e.getErrorCode());
-        }
+        catch (RemovalFailureException ignored) {}
     }
 
     private void processUnaryAndPrefix() {

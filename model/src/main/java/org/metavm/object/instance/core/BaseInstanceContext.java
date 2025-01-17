@@ -2,12 +2,11 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.ContextAttributeKey;
-import org.metavm.entity.InstanceIndexQuery;
-import org.metavm.entity.LockMode;
+import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.*;
@@ -18,12 +17,13 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class BaseInstanceContext implements IInstanceContext, Closeable, Iterable<Instance>, CallContext {
+public abstract class BaseInstanceContext implements IInstanceContext, Closeable, Iterable<Instance>, CallContext, TypeDefProvider, RedirectStatusProvider {
 
     public static final Logger logger = LoggerFactory.getLogger(BaseInstanceContext.class);
 
@@ -43,8 +43,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private boolean closed;
     private final boolean readonly;
     private final String clientId = ContextUtil.getClientId();
-    private final TypeDefProvider typeDefProvider;
-    private final RedirectStatusProvider redirectStatusProvider;
     private final IndexSource indexSource;
     private int seq;
     private final long startAt = System.currentTimeMillis();
@@ -53,22 +51,21 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final Set<ClassInstance> reindexSet = new HashSet<>();
     private final Set<ClassInstance> searchReindexSet = new HashSet<>();
 
+    private ParameterizedMap parameterizedMap;
+    private final transient WeakReference<IInstanceContext> enclosingEntityContext;
+
     public BaseInstanceContext(long appId,
                                IInstanceContext parent,
                                boolean readonly,
                                IndexSource indexSource,
-                               TypeDefProvider typeDefProvider,
-                               RedirectStatusProvider redirectStatusProvider,
                                long timeout) {
         this.appId = appId;
         this.readonly = readonly;
         this.parent = parent;
         this.indexSource = indexSource;
-//        this.typeProvider = typeProvider;
-        this.typeDefProvider = typeDefProvider;
-        this.redirectStatusProvider = redirectStatusProvider;
         memIndex = new InstanceMemoryIndex();
-        this.timeout = timeout;
+        enclosingEntityContext = new WeakReference<>(ContextUtil.getEntityContext());       this.timeout = timeout;
+        ContextUtil.setContext(this);
     }
 
 
@@ -217,6 +214,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 throw new InternalException(
                         String.format("Can not get instance '%s' because it's already removed", found));
             return found;
+        } else if (id.isTemporary()) {
+            return null;
         } else {
             buffer(id);
             initializeInstance(id);
@@ -299,12 +298,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public TypeDefProvider getTypeDefProvider() {
-        return typeDefProvider;
+        return this;
     }
 
     @Override
     public RedirectStatusProvider getRedirectStatusProvider() {
-        return redirectStatusProvider;
+        return this;
     }
 
     @Override
@@ -328,9 +327,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             throw new IllegalStateException("Context closed");
         if (readonly)
             throw new IllegalStateException("Can not finish a readonly context");
-        for (ContextListener listener : listeners) {
-            listener.beforeFinish();
-        }
+        beforeFinish();
         try (var ignored = getProfiler().enter("finish")) {
             finishInternal();
         }
@@ -339,12 +336,38 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             if (elapsed > timeout)
                 throw new SessionTimeoutException("Timeout: " + timeout + ". Elapsed: " + elapsed);
         }
+        if (DebugEnv.dumpContextAfterFinish) {
+            for (Instance instance : this) {
+//                if (instance.isRoot())
+                    logger.debug("{} {}", instance.tryGetTreeId(), instance.getText());
+            }
+        }
+        if (DebugEnv.dumpClassAfterContextFinish) {
+            var klasses = new HashSet<Klass>();
+            for (Instance instance : this) {
+                if (instance instanceof MvClassInstance o) klasses.add(o.getInstanceKlass());
+            }
+            for (Klass klass : klasses) {
+                logger.debug("{}", klass.getText());
+            }
+        }
+    }
+
+    private void beforeFinish() {
+        for (var o : this) {
+            if (o instanceof ContextFinishWare c)
+                c.onContextFinish(this);
+        }
+        for (ContextListener listener : listeners) {
+            listener.beforeFinish();
+        }
     }
 
     @Override
     public void close() {
         if (closed)
             throw new IllegalStateException("Context already closed");
+        ContextUtil.setContext(enclosingEntityContext.get());
         closed = true;
     }
 
@@ -380,6 +403,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     protected void onContextInitializeId() {
         try (var ignored = getProfiler().enter("BaseInstanceContext.onContextInitializeId")) {
+            forEach(instance -> {
+                if (instance instanceof Entity entity && instance.isNew() && instance.setAfterContextInitIdsNotified())
+                    entity.afterContextInitIds();
+            });
             for (ContextListener listener : listeners) {
                 listener.afterContextIntIds();
             }
@@ -388,6 +415,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     protected boolean onChange(Instance instance) {
         boolean anyChange = false;
+        if (instance instanceof ChangeAware changeAware && changeAware.isChangeAware()) {
+            changeAware.onChange(this);
+            anyChange = true;
+        }
         for (ContextListener listener : listeners) {
             if (listener.onChange(instance))
                 anyChange = true;
@@ -397,6 +428,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     protected boolean onRemove(Instance instance) {
         boolean anyChange = false;
+        if (instance instanceof PostRemovalAware removalAware) {
+            removalAware.postRemove(this);
+            anyChange = true;
+        }
         for (var listener : listeners) {
             if (listener.onRemove(instance))
                 anyChange = true;
@@ -477,7 +512,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                         }
                     }
                 }
-                case ArrayInstance arrayParent -> arrayParent.removeChild(instance.getReference());
+                case ArrayInstance arrayParent -> arrayParent.remove(instance.getReference());
                 default -> throw new IllegalStateException("Unexpected value: " + instance);
             }
         }
@@ -500,6 +535,9 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if(!removalSet.add(instance))
             return;
         var cascade = new ArrayList<Instance>();
+        if (instance instanceof RemovalAware removalAware)
+            cascade.addAll(removalAware.beforeRemove(this));
+
         for (ContextListener listener : listeners) {
             cascade.addAll(listener.beforeRemove(instance, removalSet::contains));
         }
@@ -523,8 +561,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public void batchBind(Collection<Instance> instances) {
         instances.forEach(this::checkForBind);
         for (var inst : instances) {
-            if (inst.tryGetTreeId() == null)
-                add(inst);
+            if (inst.tryGetTreeId() == null) add(inst);
+            if (inst instanceof Entity entity) updateMemoryIndex(entity);
         }
     }
 
@@ -553,14 +591,14 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected void clearMarks() {
-        this.forEach(i -> i.clearMarked());
+        this.forEach(Instance::clearMarked);
     }
 
     protected List<Instance> computeNonPersistedOrphans() {
         clearMarks();
         for (var instance : this) {
             if (instance.isRoot() && !instance.isRemoved())
-                instance.forEachDescendant(d -> d.setMarked());
+                instance.forEachDescendant(Instance::setMarked);
         }
         var orphans = new ArrayList<Instance>();
         for (var instance : this) {
@@ -572,7 +610,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public InstanceInput createInstanceInput(InputStream stream) {
-        return new InstanceInput(stream, this::internalGet, this::add, redirectStatusProvider);
+        return new InstanceInput(stream, this::internalGet, this::add, this);
     }
 
     private void add(Instance instance) {
@@ -606,6 +644,21 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected void onInstanceInitialized(Instance instance) {
         for (var listener : listeners) {
             listener.onInstanceInitialized(instance);
+        }
+        if(instance instanceof Entity) {
+            var loadAware = new ArrayList<LoadAware>();
+            instance.accept(new StructuralInstanceVisitor() {
+
+                @Override
+                public Void visitInstance(Instance instance) {
+                    super.visitInstance(instance);
+                    if (instance instanceof LoadAware l)
+                        loadAware.add(l);
+                    return null;
+                }
+            });
+            loadAware.forEach(LoadAware::onLoadPrepare);
+            loadAware.forEach(LoadAware::onLoad);
         }
     }
 
@@ -757,4 +810,79 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             throw new InternalException("Instance " + instance + " is not contained in the context");
     }
 
+    @Override
+    public <T> List<T> getAllBufferedEntities(Class<T> entityClass) {
+        return Utils.filterByType(this, entityClass);
+    }
+
+    @Override
+    public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef,
+                                                  Value... values) {
+        try (var ignored = getProfiler().enter("selectByKey")) {
+            IndexKeyRT indexKey = createIndexKey(indexDef, values);
+            var instances = selectByKey(indexKey);
+            return createEntityList(indexDef.getType(), instances);
+        }
+    }
+
+    @Nullable
+    @Override
+    public <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Value... values) {
+        var instance = selectFirstByKey(createIndexKey(indexDef, values));
+        return instance == null ? null : createEntityList(indexDef.getType(), List.of(instance)).getFirst();
+    }
+
+    private IndexKeyRT createIndexKey(IndexDef<?> indexDef, Value... values) {
+        var constraint = indexDef.getIndex();
+        Objects.requireNonNull(constraint);
+        return constraint.createIndexKey(List.of(values));
+    }
+
+    private <T> List<T> createEntityList(Class<T> javaType, List<? extends Reference> references) {
+        var list = new ArrayList<T>();
+        references.forEach(ref -> list.add(javaType.cast(ref.get())));
+        return list;
+    }
+
+
+    @Override
+    public <T extends Entity> List<T> query(EntityIndexQuery<T> query) {
+        Class<T> javaClass = query.indexDef().getType();
+        var instances = query(convertToInstanceIndexQuery(query));
+        return createEntityList(javaClass, instances);
+    }
+
+    @Override
+    public long count(EntityIndexQuery<?> query) {
+        return count(convertToInstanceIndexQuery(query));
+    }
+
+    private InstanceIndexQuery convertToInstanceIndexQuery(EntityIndexQuery<?> query) {
+        var index = query.indexDef().getIndex();
+        return new InstanceIndexQuery(
+                index,
+                query.from() != null ? new InstanceIndexKey(index, query.from().values()) : null,
+                query.to() != null ? new InstanceIndexKey(index, query.to().values()) : null,
+                query.desc(),
+                query.limit()
+        );
+    }
+
+    @Override
+    public boolean containsUniqueKey(IndexDef<?> indexDef, Value... values) {
+        for (var value : values) {
+            if(value instanceof Reference ref && !containsId(ref.getId()))
+                return false ;
+        }
+        return containsUniqueKey(createIndexKey(indexDef, values));
+    }
+    @Override
+    public ParameterizedMap getParameterizedMap() {
+        return parameterizedMap;
+    }
+
+    @Override
+    public void setParameterizedMap(ParameterizedMap parameterizedMap) {
+        this.parameterizedMap = parameterizedMap;
+    }
 }

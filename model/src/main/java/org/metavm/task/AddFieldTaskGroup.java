@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.*;
@@ -37,7 +37,7 @@ public class AddFieldTaskGroup extends TaskGroup {
         visitor.visitValue();
     }
 
-    public List<Task> createTasks(IEntityContext context) {
+    public List<Task> createTasks(IInstanceContext context) {
         var field = getField();
         var klass = field.getDeclaringType();
         List<Task> tasks = new ArrayList<>();
@@ -53,7 +53,7 @@ public class AddFieldTaskGroup extends TaskGroup {
     }
 
     @Override
-    public void onCompletion(IEntityContext context, IEntityContext taskContext) {
+    public void onCompletion(IInstanceContext context, IInstanceContext taskContext) {
         getField().setState(MetadataState.READY);
     }
 

@@ -7,7 +7,7 @@ import org.metavm.beans.ComponentBeanDefinition;
 import org.metavm.beans.FactoryBeanDefinition;
 import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -16,7 +16,7 @@ import java.util.*;
 @Slf4j
 public class BeanManager {
 
-    public void createBeans(Collection<Klass> klasses, BeanDefinitionRegistry registry, IEntityContext context) {
+    public void createBeans(Collection<Klass> klasses, BeanDefinitionRegistry registry, IInstanceContext context) {
         var defs = new ArrayList<BeanDefinition>();
         for (Klass k : klasses)
             createBeanDefinitions(k, defs, registry, context);
@@ -24,7 +24,7 @@ public class BeanManager {
         initializeBeanDefinitions(defs, registry, context);
     }
 
-    private void createBeanDefinitions(Klass klass, List<BeanDefinition> beanDefinitions, BeanDefinitionRegistry registry, IEntityContext context) {
+    private void createBeanDefinitions(Klass klass, List<BeanDefinition> beanDefinitions, BeanDefinitionRegistry registry, IInstanceContext context) {
         BeanDefinition beanDef;
         var beakKind = klass.getAttribute(AttributeNames.BEAN_KIND);
         if (beakKind != null) {
@@ -44,7 +44,7 @@ public class BeanManager {
         }
     }
 
-    private void initializeBeanDefinitions(List<BeanDefinition> definitions, BeanDefinitionRegistry registry, IEntityContext context) {
+    private void initializeBeanDefinitions(List<BeanDefinition> definitions, BeanDefinitionRegistry registry, IInstanceContext context) {
         var sorted = sortByTopology(definitions, registry);
         for (BeanDefinition beanDef : sorted) {
             beanDef.initialize(registry, context);

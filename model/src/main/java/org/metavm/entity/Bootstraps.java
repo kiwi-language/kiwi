@@ -26,10 +26,7 @@ public class Bootstraps {
             ThreadConfigs.sharedParameterizedElements(true);
             ContextUtil.setAppId(ROOT_APP_ID);
             var identityContext = new IdentityContext();
-            var idInitializer = new BootIdInitializer(new BootIdProvider(stdAllocators), identityContext);
-            var defContext = new SystemDefContext(
-                    new StdIdProvider(stdAllocators),
-                    columnStore, typeTagStore, identityContext, idInitializer);
+            var defContext = new SystemDefContext(stdAllocators, columnStore, typeTagStore, identityContext);
             defContext.setFieldBlacklist(fieldBlacklist);
             ModelDefRegistry.setDefContext(defContext);
             var entityClasses = EntityUtils.getModelClasses();

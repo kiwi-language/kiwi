@@ -5,7 +5,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
@@ -58,9 +58,9 @@ public abstract class Task extends org.metavm.entity.Entity {
         visitor.visitLong();
     }
 
-    protected abstract boolean run0(IEntityContext context, IEntityContext taskContext);
+    protected abstract boolean run0(IInstanceContext context, IInstanceContext taskContext);
 
-    public void run(IEntityContext executionContext, IEntityContext taskContext) {
+    public void run(IInstanceContext executionContext, IInstanceContext taskContext) {
         try {
             runCount++;
             if (run0(executionContext, taskContext)) {
@@ -140,7 +140,7 @@ public abstract class Task extends org.metavm.entity.Entity {
         return lastRunTimestamp;
     }
 
-    protected void onFailure(IEntityContext context, IEntityContext taskContext) {
+    protected void onFailure(IInstanceContext context, IInstanceContext taskContext) {
     }
 
     public long getStartAt() {

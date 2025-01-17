@@ -5,7 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.application.Application;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -38,7 +38,7 @@ public class RemoveAppTaskGroup extends TaskGroup {
     }
 
     @Override
-    public List<Task> createTasks(IEntityContext context) {
+    public List<Task> createTasks(IInstanceContext context) {
         var app = context.getEntity(Application.class, appId);
         return List.of(
                 new ClearUsersTask(String.format("Clear users for '%s'", app.getName()), appId),
@@ -47,7 +47,7 @@ public class RemoveAppTaskGroup extends TaskGroup {
     }
 
     @Override
-    protected void onCompletion(IEntityContext context, IEntityContext taskContext) {
+    protected void onCompletion(IInstanceContext context, IInstanceContext taskContext) {
         context.remove(context.getEntity(Application.class, appId));
     }
 

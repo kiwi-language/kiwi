@@ -2,6 +2,7 @@ package org.metavm.entity;
 
 import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.InstanceFactory;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.rest.InstanceQueryFieldDTO;
 import org.metavm.object.type.Field;
@@ -30,7 +31,7 @@ public record InstanceQueryField(
         return new InstanceQueryField(field, null, min, max);
     }
 
-    public static InstanceQueryField create(InstanceQueryFieldDTO queryFieldDTO, IEntityContext context) {
+    public static InstanceQueryField create(InstanceQueryFieldDTO queryFieldDTO, IInstanceContext context) {
         var field = context.getField(queryFieldDTO.fieldId());
         return new InstanceQueryField(
                 field,

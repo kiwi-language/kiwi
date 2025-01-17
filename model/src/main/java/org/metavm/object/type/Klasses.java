@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.Instances;
 
 import java.util.ArrayList;
@@ -10,7 +10,7 @@ import java.util.Set;
 
 public class Klasses {
 
-    public static void loadKlasses(IEntityContext context) {
+    public static void loadKlasses(IInstanceContext context) {
         var klasses = context.selectByKey(Klass.IDX_ALL_FLAG, Instances.trueInstance());
         var sortedKlasses = new ArrayList<Klass>();
         var visited = new HashSet<Klass>();

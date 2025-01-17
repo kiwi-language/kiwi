@@ -20,15 +20,12 @@ public class CompilerInstanceContext extends BufferingInstanceContext {
                                    IdInitializer idService,
                                    IndexSource indexSource,
                                    IInstanceContext parent,
-                                   TypeDefProvider typeDefProvider,
-                                   RedirectStatusProvider redirectStatusProvider,
                                    boolean readonly) {
         super(appId,
                 treeSources, versionSource,
                 indexSource, idService,
                 parent,
-                typeDefProvider,
-                redirectStatusProvider, readonly, 0);
+                readonly, 0);
     }
 
     @Override

@@ -1,10 +1,7 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.IdInitializer;
-import org.metavm.entity.LoadingBuffer;
-import org.metavm.entity.Tree;
-import org.metavm.entity.VersionSource;
+import org.metavm.entity.*;
 import org.metavm.object.instance.IndexSource;
 import org.metavm.object.instance.TreeNotFoundException;
 import org.metavm.object.instance.TreeSource;
@@ -29,11 +26,9 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
                                     IndexSource indexSource,
                                     IdInitializer idInitializer,
                                     @Nullable IInstanceContext parent,
-                                    TypeDefProvider typeDefProvider,
-                                    RedirectStatusProvider redirectStatusProvider,
                                     boolean readonly,
                                     long timeout) {
-        super(appId, parent, readonly, indexSource, typeDefProvider, redirectStatusProvider, timeout);
+        super(appId, parent, readonly, indexSource, timeout);
         this.idInitializer = idInitializer;
         this.loadingBuffer = new LoadingBuffer(this, treeSources);
     }

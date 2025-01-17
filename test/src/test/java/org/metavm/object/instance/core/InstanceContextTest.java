@@ -1,9 +1,9 @@
 package org.metavm.object.instance.core;
 
 import junit.framework.TestCase;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.entity.*;
-import org.metavm.entity.mocks.MockEntityRepository;
 import org.metavm.event.EventQueue;
 import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.IInstanceStore;
@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+@Slf4j
 public class InstanceContextTest extends TestCase {
 
     private DefContext entityRepository;
@@ -47,9 +48,6 @@ public class InstanceContextTest extends TestCase {
                 new DefaultIdInitializer(idProvider),
                 executor,
                 List.of(),
-                entityRepository,
-                entityRepository,
-                entityRepository,
                 entityRepository,
                 false,
                 cache,
@@ -103,8 +101,8 @@ public class InstanceContextTest extends TestCase {
             context.bind(foo);
             context.bind(baz);
             context.finish();
-            fooId = foo.tryGetId();
-            bazId = baz.tryGetId();
+            fooId = foo.getId();
+            bazId = baz.getId();
         }
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
@@ -118,8 +116,8 @@ public class InstanceContextTest extends TestCase {
                     @Override
                     public boolean onChange(Instance instance) {
                         if (instance == foo) {
-                            bars.removeElement(bar001);
-                            baz.getField(fooTypes.bazBarsField()).resolveArray().removeElement(bar001);
+                            bars.remove(bar001);
+                            baz.getField(fooTypes.bazBarsField()).resolveArray().remove(bar001);
                             onChangeCalled[0] = true;
                             return true;
                         } else

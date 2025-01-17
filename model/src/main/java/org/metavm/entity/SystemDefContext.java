@@ -6,7 +6,6 @@ import org.metavm.api.ValueObject;
 import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.event.EventQueue;
 import org.metavm.flow.Function;
-import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
@@ -24,7 +23,7 @@ import java.util.function.Consumer;
 import static org.metavm.object.type.ResolutionStage.*;
 
 @Slf4j
-public class SystemDefContext extends DefContext implements DefMap, IEntityContext, TypeRegistry {
+public class SystemDefContext extends DefContext implements DefMap, IInstanceContext, TypeRegistry {
 
     public static final Set<Class<? extends GlobalKey>> BINDING_ALLOWED_CLASSES = Set.of();
 
@@ -45,19 +44,18 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     private final IdInitializer idInitializer;
     private final Profiler profiler = new Profiler();
 
-    public SystemDefContext(StdIdProvider getId, ColumnStore columnStore, TypeTagStore typeTagStore, IdInitializer idInitializer) {
-        this(getId, columnStore, typeTagStore, new IdentityContext(), idInitializer);
+    public SystemDefContext(StdAllocators stdAllocators, ColumnStore columnStore, TypeTagStore typeTagStore) {
+        this(stdAllocators, columnStore, typeTagStore, new IdentityContext());
     }
 
-    public SystemDefContext(StdIdProvider stdIdProvider, ColumnStore columnStore, TypeTagStore typeTagStore, IdentityContext identityContext,
-                            IdInitializer idInitializer) {
-        this.stdIdProvider = stdIdProvider;
+    public SystemDefContext(StdAllocators allocators, ColumnStore columnStore, TypeTagStore typeTagStore, IdentityContext identityContext) {
+        this.stdIdProvider = new StdIdProvider(allocators);
         this.identityContext = identityContext;
         this.typeTagStore = typeTagStore;
         standardDefBuilder = new StandardDefBuilder(this);
         standardDefBuilder.initRootTypes();
         this.columnStore = columnStore;
-        this.idInitializer = idInitializer;
+        this.idInitializer = new BootIdInitializer(new BootIdProvider(allocators), identityContext);
     }
 
     @Override
@@ -273,6 +271,8 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
                     idInitializing.initId(id);
                 }
             }
+            else if (DebugEnv.flag)
+                System.out.println("Caught");
         }
     }
 
@@ -290,11 +290,6 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
 
     public Map<Entity, ModelIdentity> getIdentityMap() {
         return identityContext.getIdentityMap();
-    }
-
-    @Override
-    public DefContext getDefContext() {
-        return this;
     }
 
     private void ensureAllDefsDefined() {
@@ -391,7 +386,7 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     }
 
     @Override
-    public IEntityContext createSame(long appId) {
+    public IInstanceContext createSame(long appId) {
         throw new UnsupportedOperationException();
     }
 
@@ -444,16 +439,6 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     @Override
     public boolean containsIdSelf(Id id) {
         return containsId(id);
-    }
-
-    @Override
-    public <T> T getBufferedEntity(Class<T> entityType, Id id) {
-        return entityType.cast(getBuffered(id));
-    }
-
-    @Override
-    public <T> T getRemoved(Class<T> entityClass, Id id) {
-        return null;
     }
 
     @Nullable
@@ -633,16 +618,6 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
     }
 
     @Override
-    public <T extends Entity> List<T> query(EntityIndexQuery<T> query) {
-        return List.of();
-    }
-
-    @Override
-    public long count(EntityIndexQuery<?> query) {
-        return 0;
-    }
-
-    @Override
     public void initIds() {
     }
 
@@ -783,16 +758,6 @@ public class SystemDefContext extends DefContext implements DefMap, IEntityConte
 
     @Override
     public void removeForwardingPointer(MvInstance instance, boolean clearingOldId) {
-
-    }
-
-    @Override
-    public ParameterizedMap getParameterizedMap() {
-        return null;
-    }
-
-    @Override
-    public void setParameterizedMap(ParameterizedMap parameterizedMap) {
 
     }
 

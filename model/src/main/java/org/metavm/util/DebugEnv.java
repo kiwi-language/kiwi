@@ -73,6 +73,7 @@ public class DebugEnv {
 
     public static volatile Id inventoryId;
     public static List<Type> types;
+    public static boolean traceInstanceRemoval;
 
     public static void enterPathItem(String pathItem) {
         path.addLast(pathItem);
@@ -87,6 +88,12 @@ public class DebugEnv {
     public static volatile boolean saveClassFile = true;
 
     public static volatile MethodRef methodRef;
+
+    public static volatile boolean dumpContextAfterFinish = false;
+
+    public static volatile boolean dumpClassAfterContextFinish = false;
+
+    public static volatile boolean traceDifference = false;
 
     public static void exitPathItem() {
         path.removeLast();

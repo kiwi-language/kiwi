@@ -5,7 +5,7 @@ import org.metavm.api.Generated;
 import org.metavm.application.Application;
 import org.metavm.entity.Entity;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.WAL;
@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 @NativeEntity(54)
 public class GlobalPreUpgradeTask extends GlobalTask {
 
-    public static TriConsumer<PreUpgradeRequest, WAL, IEntityContext> preUpgradeAction;
+    public static TriConsumer<PreUpgradeRequest, WAL, IInstanceContext> preUpgradeAction;
     @SuppressWarnings("unused")
     private static Klass __klass__;
     private String requestJSON;
@@ -48,7 +48,7 @@ public class GlobalPreUpgradeTask extends GlobalTask {
     }
 
     @Override
-    protected void processApplication(IEntityContext context, Application application) {
+    protected void processApplication(IInstanceContext context, Application application) {
         preUpgradeAction.accept(getRequest(), getDefWal(), context);
     }
 

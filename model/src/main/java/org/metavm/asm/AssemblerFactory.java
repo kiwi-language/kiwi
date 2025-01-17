@@ -1,6 +1,6 @@
 package org.metavm.asm;
 
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeDef;
@@ -11,7 +11,7 @@ import java.util.List;
 
 public class AssemblerFactory {
 
-    public static Assembler createWithStandardTypes(IEntityContext context) {
+    public static Assembler createWithStandardTypes(IInstanceContext context) {
         return new Assembler(code -> context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(code)));
     }
 

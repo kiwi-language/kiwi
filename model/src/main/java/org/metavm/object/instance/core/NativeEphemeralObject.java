@@ -90,4 +90,9 @@ public interface NativeEphemeralObject extends NativeObject {
     default Map<String, Value> buildSource() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    default String getText() {
+        return toString();
+    }
 }

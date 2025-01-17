@@ -2,7 +2,7 @@ package org.metavm.task;
 
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
@@ -46,7 +46,7 @@ public class TaskManager extends EntityContextFactoryAware {
 
     @Transactional
     public void addGlobalTask(Task task) {
-        try (IEntityContext context = newPlatformContext()) {
+        try (IInstanceContext context = newPlatformContext()) {
             context.bind(task);
             context.finish();
         }
@@ -54,7 +54,7 @@ public class TaskManager extends EntityContextFactoryAware {
 
     @Transactional
     public void runTask(String taskClassName) {
-        try (IEntityContext context = newContext()) {
+        try (IInstanceContext context = newContext()) {
             Class<? extends Task> taskClass = ReflectionUtils.classForName(taskClassName).asSubclass(Task.class);
         }
     }

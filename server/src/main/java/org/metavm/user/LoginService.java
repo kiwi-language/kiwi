@@ -8,7 +8,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.EntityIndexKey;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.user.rest.dto.LoginInfo;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.*;
@@ -31,7 +31,7 @@ public class LoginService extends EntityContextFactoryAware {
 
     @Transactional
     public LoginResult login(LoginRequest request, String clientIP) {
-        try (IEntityContext context = newContext(request.appId())) {
+        try (IInstanceContext context = newContext(request.appId())) {
             var failedCountByIP = context.count(LoginAttempt.IDX_CLIENT_IP_SUCC_TIME.newQueryBuilder()
                     .from(new EntityIndexKey(List.of(
                             Instances.stringInstance(clientIP),
@@ -81,7 +81,7 @@ public class LoginService extends EntityContextFactoryAware {
         }
     }
 
-    public Token directLogin(long appId, User user, IEntityContext context) {
+    public Token directLogin(long appId, User user, IInstanceContext context) {
         var session = new Session(user, new Date(System.currentTimeMillis() + TOKEN_TTL));
         context.bind(session);
         return new Token(appId, session.getToken());

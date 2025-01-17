@@ -6,12 +6,9 @@ import org.metavm.ddl.Commit;
 import org.metavm.ddl.FieldChange;
 import org.metavm.ddl.FieldChangeKind;
 import org.metavm.entity.Entity;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.flow.Method;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.MvClassInstance;
-import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.core.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
 import org.metavm.util.Utils;
@@ -21,11 +18,11 @@ import java.util.*;
 @Slf4j
 public class SaveTypeBatch implements TypeDefProvider {
 
-    public static SaveTypeBatch create(IEntityContext context) {
+    public static SaveTypeBatch create(IInstanceContext context) {
         return new SaveTypeBatch(context);
     }
 
-    private final IEntityContext context;
+    private final IInstanceContext context;
     // Order matters! Don't use HashMap
     private final Set<Field> newFields = new HashSet<>();
     private final Set<Field> typeChangedFields = new HashSet<>();
@@ -47,7 +44,7 @@ public class SaveTypeBatch implements TypeDefProvider {
     private final Set<Field> newStaticFields = new HashSet<>();
     private final Set<Field> removedEnumConstants = new HashSet<>();
 
-    private SaveTypeBatch(IEntityContext context) {
+    private SaveTypeBatch(IInstanceContext context) {
         this.context = context;
     }
 
@@ -124,7 +121,7 @@ public class SaveTypeBatch implements TypeDefProvider {
         return modifiedEnumConstants;
     }
 
-    public IEntityContext getContext() {
+    public IInstanceContext getContext() {
         return context;
     }
 
@@ -220,8 +217,7 @@ public class SaveTypeBatch implements TypeDefProvider {
     }
 
     public void applyDDLToEnumConstants() {
-        var instCtx = context;
-        removedEnumConstants.forEach(ec -> instCtx.remove(ec.getStatic(context).resolveObject()));
+        removedEnumConstants.forEach(ec -> context.remove(ec.getStatic(context).resolveObject()));
         var enumConstants = new ArrayList<ClassInstance>();
         for (Klass klass : klasses) {
             if (klass.isEnum()) {

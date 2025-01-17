@@ -126,7 +126,7 @@
 //        }
 //    }
 //
-//    private void preUpgrade(PreUpgradeRequest request, WAL defWAL, IEntityContext outerContext) {
+//    private void preUpgrade(PreUpgradeRequest request, WAL defWAL, IInstanceContext outerContext) {
 //        FlowSavingContext.initConfig();
 //        FlowSavingContext.skipPreprocessing(true);
 //        var writeWAL = outerContext.bind(new WAL(outerContext.getAppId()));
@@ -172,7 +172,7 @@
 //        return new ByteArrayInputStream(bytes);
 //    }
 //
-//    private Klass tryGetInitializerKlass(Klass klass, IEntityContext context) {
+//    private Klass tryGetInitializerKlass(Klass klass, IInstanceContext context) {
 //        return context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
 //                Instances.stringInstance(klass.getQualifiedName() + "Initializer"));
 //    }

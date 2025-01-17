@@ -3,7 +3,7 @@ package org.metavm.task;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.mocks.Bar;
 import org.metavm.mocks.Foo;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
@@ -65,7 +65,7 @@ public class IndexRebuildJobTest extends TestCase {
 
     }
 
-    private IEntityContext newContext() {
+    private IInstanceContext newContext() {
         return entityContextFactory.newContext(TestConstants.APP_ID);
     }
 

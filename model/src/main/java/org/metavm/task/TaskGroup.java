@@ -5,7 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.api.NativeApi;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -43,19 +43,19 @@ public abstract class TaskGroup extends org.metavm.entity.Entity {
         visitor.visitList(visitor::visitEntity);
     }
 
-    public void onTaskCompletion(Task task, IEntityContext context, IEntityContext taskContext) {
+    public void onTaskCompletion(Task task, IInstanceContext context, IInstanceContext taskContext) {
         completedTaskCount++;
         if(isCompleted()) {
             onCompletion(context, taskContext);
         }
     }
 
-    public void onTaskFailure(Task task, IEntityContext context, IEntityContext taskContext) {
+    public void onTaskFailure(Task task, IInstanceContext context, IInstanceContext taskContext) {
         failed = true;
     }
 
     @Override
-    public void onBind(IEntityContext context) {
+    public void onBind(IInstanceContext context) {
         tasks.addAll(createTasks(context));
         for (var task : tasks) {
             task.setGroup(this);
@@ -77,9 +77,9 @@ public abstract class TaskGroup extends org.metavm.entity.Entity {
         return isCompleted() || isFailed();
     }
 
-    public abstract List<Task> createTasks(IEntityContext context);
+    public abstract List<Task> createTasks(IInstanceContext context);
 
-    protected abstract void onCompletion(IEntityContext context, IEntityContext taskContext);
+    protected abstract void onCompletion(IInstanceContext context, IInstanceContext taskContext);
 
     public List<Task> getTasks() {
         return Collections.unmodifiableList(tasks);

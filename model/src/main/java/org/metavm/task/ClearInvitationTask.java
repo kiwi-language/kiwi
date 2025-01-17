@@ -6,7 +6,7 @@ import org.metavm.api.Generated;
 import org.metavm.application.AppInvitation;
 import org.metavm.entity.EntityIndexKey;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.message.Message;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
@@ -41,7 +41,7 @@ public class ClearInvitationTask extends Task {
     }
 
     @Override
-    protected boolean run0(IEntityContext context, IEntityContext taskContext) {
+    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
         var invitations = context.query(AppInvitation.IDX_APP.newQueryBuilder()
                 .eq(new EntityIndexKey(List.of(context.createReference(appId))))
                 .limit(BATCH_SIZE)

@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -30,14 +30,14 @@ public class GlobalKlassTagAssigner extends org.metavm.entity.Entity {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public static GlobalKlassTagAssigner initialize(IEntityContext context) {
+    public static GlobalKlassTagAssigner initialize(IInstanceContext context) {
         var existing = context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance());
         if (existing != null)
             throw new IllegalStateException("GlobalKlassTagAssigner already exists");
         return context.bind(new GlobalKlassTagAssigner());
     }
 
-    public static GlobalKlassTagAssigner getInstance(IEntityContext context) {
+    public static GlobalKlassTagAssigner getInstance(IInstanceContext context) {
         return Objects.requireNonNull(
                 context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()),
                 "GlobalKlassTagAssigner instance not found"

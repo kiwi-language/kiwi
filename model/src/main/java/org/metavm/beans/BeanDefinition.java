@@ -4,8 +4,9 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -60,7 +61,7 @@ public abstract class BeanDefinition extends org.metavm.entity.Entity {
 
     public abstract ClassType getBeanType();
 
-    public void initialize(BeanDefinitionRegistry registry, IEntityContext context) {
+    public void initialize(BeanDefinitionRegistry registry, IInstanceContext context) {
         if (bean == null)
             bean = createBean(registry, context).getReference();
         else
@@ -71,10 +72,10 @@ public abstract class BeanDefinition extends org.metavm.entity.Entity {
         return bean != null;
     }
 
-    protected abstract ClassInstance createBean(BeanDefinitionRegistry registry, IEntityContext context);
+    protected abstract ClassInstance createBean(BeanDefinitionRegistry registry, IInstanceContext context);
 
     @Override
-    public List<Instance> beforeRemove(IEntityContext context) {
+    public List<Instance> beforeRemove(IInstanceContext context) {
         return bean != null ? List.of(bean.get()) : List.of();
     }
 

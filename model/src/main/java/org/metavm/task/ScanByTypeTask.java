@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -58,13 +58,13 @@ public abstract class ScanByTypeTask extends ScanTask {
     }
 
     @Override
-    protected final void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
+    protected final void process(List<Instance> batch, IInstanceContext context, IInstanceContext taskContext) {
         for (var instance : batch) {
             processInstance(instance.getReference(), context);
         }
     }
 
-    protected abstract void processInstance(Value instance, IEntityContext context);
+    protected abstract void processInstance(Value instance, IInstanceContext context);
 
     @Override
     public void forEachReference(Consumer<Reference> action) {

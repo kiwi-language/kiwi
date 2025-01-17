@@ -452,7 +452,7 @@ public class VmStack {
                             case Bytecodes.DELETE_ELEMENT -> {
                                 var arrayInst = stack[--top].resolveArray();
                                 var elementInst = stack[--top];
-                                arrayInst.removeElement(elementInst);
+                                arrayInst.remove(elementInst);
                                 pc++;
                             }
                             case Bytecodes.GET_ELEMENT -> {

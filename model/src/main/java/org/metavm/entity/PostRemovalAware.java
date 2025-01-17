@@ -1,7 +1,9 @@
 package org.metavm.entity;
 
+import org.metavm.object.instance.core.IInstanceContext;
+
 public interface PostRemovalAware {
 
-    void postRemove(IEntityContext context);
+    void postRemove(IInstanceContext context);
 
 }

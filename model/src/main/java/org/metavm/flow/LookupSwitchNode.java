@@ -49,12 +49,12 @@ public class LookupSwitchNode extends SwitchNode {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("lookupswitch");
+        writer.writeln("lookupswitch");
         writer.indent();
-        writer.writeNewLine("default: " + defaultTarget.getName());
+        writer.writeln("default: " + defaultTarget.getName());
         var matchIt = matches.iterator();
         for (Node target : targets) {
-            writer.writeNewLine(matchIt.next() + ": " + target.getName());
+            writer.writeln(matchIt.next() + ": " + target.getName());
         }
         writer.unindent();
     }

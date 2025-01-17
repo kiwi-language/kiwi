@@ -3,7 +3,7 @@ package org.metavm.task;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.MemInstanceStore;
 import org.metavm.entity.MetaContextCache;
 import org.metavm.mocks.TestTask;
@@ -79,11 +79,11 @@ public class SchedulerTest extends TestCase {
         Assert.assertNull(instanceStore.get(TestConstants.APP_ID, ref.task.getId().getTreeId()));
     }
 
-    private IEntityContext newPlatformContext() {
+    private IInstanceContext newPlatformContext() {
         return entityContextFactory.newContext(Constants.PLATFORM_APP_ID);
     }
 
-    private IEntityContext newContext() {
+    private IInstanceContext newContext() {
         return entityContextFactory.newContext(APP_ID);
     }
 

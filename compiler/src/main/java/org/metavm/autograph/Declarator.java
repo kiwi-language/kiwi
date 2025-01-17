@@ -7,13 +7,12 @@ import org.metavm.api.Configuration;
 import org.metavm.api.Resource;
 import org.metavm.entity.AttributeNames;
 import org.metavm.entity.BeanKinds;
-import org.metavm.entity.IEntityContext;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.type.*;
 import org.metavm.util.CompilerConfig;
-import org.metavm.util.DebugEnv;
 import org.metavm.util.NamingUtils;
 import org.metavm.util.Utils;
 import org.slf4j.Logger;
@@ -33,13 +32,13 @@ public class Declarator extends VisitorBase {
 
     private final TypeResolver typeResolver;
 
-    private final IEntityContext context;
+    private final IInstanceContext context;
 
     private final LinkedList<ClassInfo> classStack = new LinkedList<>();
 
     private @Nullable Index currentIndex;
 
-    public Declarator(PsiClass psiClass, TypeResolver typeResolver, IEntityContext context) {
+    public Declarator(PsiClass psiClass, TypeResolver typeResolver, IInstanceContext context) {
         this.psiClass = psiClass;
         this.typeResolver = typeResolver;
         this.context = context;

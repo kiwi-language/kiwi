@@ -33,15 +33,12 @@ public class CompilerInstanceContextFactory {
         return newEntityContext(appId);
     }
 
-    public IEntityContext newEntityContext(long appId) {
-        var bridge = new EntityInstanceContextBridge();
-        var context = newBridgedInstanceContext(appId, bridge, new DefaultIdInitializer(idService));
-        var entityContext = new CompilerEntityContext(context, defContext);
-        bridge.setEntityContext(entityContext);
-        return entityContext;
+    public IInstanceContext newEntityContext(long appId) {
+        return newBridgedInstanceContext(appId, new DefaultIdInitializer(idService));
+
     }
 
-    public IInstanceContext newBridgedInstanceContext(long appId, EntityInstanceContextBridge bridge, IdInitializer idProvider) {
+    public IInstanceContext newBridgedInstanceContext(long appId, IdInitializer idProvider) {
         return new CompilerInstanceContext(
                 appId,
                 List.of(diskTreeSource, serverTreeSource),
@@ -49,8 +46,6 @@ public class CompilerInstanceContextFactory {
                 idProvider,
                 localIndexSource,
                 stdContext,
-                bridge,
-                bridge,
                 false
         );
     }

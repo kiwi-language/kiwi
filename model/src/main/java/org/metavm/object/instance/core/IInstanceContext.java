@@ -1,15 +1,18 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.entity.ContextAttributeKey;
-import org.metavm.entity.InstanceIndexQuery;
-import org.metavm.entity.InstanceSink;
-import org.metavm.entity.LockMode;
+import org.metavm.ddl.Commit;
+import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.event.EventQueue;
+import org.metavm.flow.Code;
+import org.metavm.flow.Flow;
+import org.metavm.flow.Function;
+import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
-import org.metavm.object.type.RedirectStatusProvider;
-import org.metavm.object.type.TypeDefProvider;
+import org.metavm.object.type.*;
 import org.metavm.util.InstanceInput;
+import org.metavm.util.Instances;
+import org.metavm.util.ParameterizedMap;
 import org.metavm.util.Utils;
 import org.metavm.util.profile.Profiler;
 
@@ -18,10 +21,11 @@ import java.io.Closeable;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository, CallContext, Iterable<Instance> {
+public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepository, CallContext, Iterable<Instance>, TypeDefProvider, RedirectStatusProvider, EntityRepository {
 
     IInstanceContext createSame(long appId);
 
@@ -170,4 +174,102 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     long getAppId(Instance instance);
 
+    <T> List<T> getAllBufferedEntities(Class<T> entityClass);
+
+    default <T> T getEntity(Class<T> clazz, String id) {
+        return clazz.cast(get(Id.parse(id)));
+    }
+
+    default <T> T getEntity(Class<T> clazz, Id id) {
+        return clazz.cast(get(id));
+    }
+
+    default Flow getFlow(Id id) {
+        return getEntity(Flow.class, id);
+    }
+
+    default Flow getFlow(String id) {
+        return getEntity(Flow.class, id);
+    }
+
+    default Code getCode(Id id) {
+        return getEntity(Code.class, id);
+    }
+
+    default Code getCode(String id) {
+        return getEntity(Code.class, id);
+    }
+
+    default Method getMethod(Id id) {
+        return getEntity(Method.class, id);
+    }
+
+    default Method getMethod(String id) {
+        return getEntity(Method.class, id);
+    }
+
+    default Function getFunction(Id id) {
+        return getEntity(Function.class, id);
+    }
+
+    default Function getFunction(String id) {
+        return getEntity(Function.class, id);
+    }
+
+
+    default ITypeDef getTypeDef(String id) {
+        return getEntity(ITypeDef.class, id);
+    }
+
+    @Override
+    default ITypeDef getTypeDef(Id id) {
+        return getEntity(ITypeDef.class, id);
+    }
+
+    @Override
+    default RedirectStatus getRedirectStatus(Id id) {
+        return getEntity(RedirectStatus.class, id);
+    }
+
+
+
+    <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef,
+                                           Value... values);
+
+    @Nullable
+    <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Value... values);
+
+    default Field getField(String id) {
+        return getEntity(Field.class, id);
+    }
+
+    default Field getField(Id id) {
+        return getEntity(Field.class, id);
+    }
+
+    default void loadKlasses() {
+        Klasses.loadKlasses(this);
+    }
+
+    void setParameterizedMap(ParameterizedMap map);
+
+    <T extends Entity> List<T> query(EntityIndexQuery<T> query);
+
+    long count(EntityIndexQuery<?> query);
+
+    boolean containsUniqueKey(IndexDef<?> indexDef, Value... values);
+
+    ParameterizedMap getParameterizedMap();
+
+    default @Nullable Klass findKlassByQualifiedName(String qualifiedName) {
+        return selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(qualifiedName));
+    }
+
+    default Klass getKlassByQualifiedName(String qualifiedName) {
+        return Objects.requireNonNull(findKlassByQualifiedName(qualifiedName));
+    }
+
+    default Commit getCommit(String id) {
+        return getEntity(Commit.class, id);
+    }
 }

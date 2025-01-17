@@ -1,12 +1,14 @@
 package org.metavm.object.instance.persistence;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.EncodingUtils;
 
 import java.util.Arrays;
 import java.util.Objects;
 
+@Slf4j
 public class ReferencePO {
     private long appId;
     private long sourceTreeId;

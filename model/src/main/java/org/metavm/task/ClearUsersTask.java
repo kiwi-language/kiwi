@@ -6,7 +6,7 @@ import org.metavm.api.Generated;
 import org.metavm.application.Application;
 import org.metavm.entity.EntityIndexKey;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -42,7 +42,7 @@ public class ClearUsersTask extends Task {
     }
 
     @Override
-    protected boolean run0(IEntityContext context, IEntityContext taskContext) {
+    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
         var app = context.getEntity(Application.class, appId);
         var users = context.query(
                 PlatformUser.IDX_APP.newQueryBuilder()

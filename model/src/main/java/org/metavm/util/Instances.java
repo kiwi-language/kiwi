@@ -479,7 +479,7 @@ public class Instances {
             throw new IllegalArgumentException(listType + " is not a List type");
     }
 
-    public static void applyDDL(Iterable<? extends Instance> instances, Commit commit, IEntityContext context) {
+    public static void applyDDL(Iterable<? extends Instance> instances, Commit commit, IInstanceContext context) {
         var newFields = Utils.map(commit.getNewFieldIds(), context::getField);
         var convertingFields = Utils.map(commit.getConvertingFieldIds(), context::getField);
         var toChildFields = Utils.map(commit.getToChildFieldIds(), context::getField);
@@ -513,7 +513,7 @@ public class Instances {
                                 Collection<Index> newIndexes,
                                 Collection<Klass> searchEnabledKlasses,
                                 @Nullable RedirectStatus redirectStatus,
-                                IEntityContext context) {
+                                IInstanceContext context) {
         var instCtx = context;
         if (instance instanceof ClassInstance clsInst) {
             for (Field field : newFields) {
@@ -623,7 +623,7 @@ public class Instances {
         });
     }
 
-    private static void handleEnumConversion(MvInstance instance, Klass enumClass, @Nullable RedirectStatus redirectStatus, IEntityContext context) {
+    private static void handleEnumConversion(MvInstance instance, Klass enumClass, @Nullable RedirectStatus redirectStatus, IInstanceContext context) {
         instance.transformReference((r, isChild, type) -> {
             if (type.isAssignableFrom(enumClass.getType())) {
                 var referent = r.get();
@@ -640,7 +640,7 @@ public class Instances {
         });
     }
 
-    private static Reference mapEnumConstant(Reference instance, Klass enumClass, IEntityContext context) {
+    private static Reference mapEnumConstant(Reference instance, Klass enumClass, IInstanceContext context) {
         var mapper = getEnumConstantMapper(enumClass);
         return (Reference) requireNonNull(Flows.invoke(mapper.getRef(), null, List.of(instance), context));
     }
@@ -661,7 +661,7 @@ public class Instances {
         }
     }
 
-    public static void initializeField(ClassInstance instance, Field field, IEntityContext context) {
+    public static void initializeField(ClassInstance instance, Field field, IInstanceContext context) {
         var initialValue = computeFieldInitialValue(instance, field, context);
         instance.setFieldForce(field, initialValue);
     }
@@ -675,7 +675,7 @@ public class Instances {
         return klass.findMethodByNameAndParamTypes(initMethodName, List.of(Types.getStringType(), Types.getIntType()));
     }
 
-    public static @Nullable Value getDefaultValue(Field field, IEntityContext context) {
+    public static @Nullable Value getDefaultValue(Field field, IInstanceContext context) {
         var type = field.getType();
         if (type.isNullable())
             return Instances.nullInstance();
@@ -690,7 +690,7 @@ public class Instances {
         return null;
     }
 
-    public static Value computeFieldInitialValue(ClassInstance instance, Field field, IEntityContext context) {
+    public static Value computeFieldInitialValue(ClassInstance instance, Field field, IInstanceContext context) {
         var initMethod = findFieldInitializer(field, true);
         if (initMethod != null) {
             if (initMethod.getParameters().isEmpty())
@@ -713,7 +713,7 @@ public class Instances {
             return requireNonNull(getDefaultValue(field, context), "Can not find a default value for field " + field.getQualifiedName());
     }
 
-    public static void convertField(ClassInstance instance, Field field, IEntityContext context) {
+    public static void convertField(ClassInstance instance, Field field, IInstanceContext context) {
         var convertedValue = computeConvertedFieldValue(instance, field, context);
         instance.setField(field, convertedValue);
     }
@@ -734,7 +734,7 @@ public class Instances {
         return field.getType().fromStackValue(Flows.invoke(converter.getRef(), instance, List.of(originalValue), context));
     }
 
-    private static void initializeSuper(ClassInstance instance, Klass klass, IEntityContext context) {
+    private static void initializeSuper(ClassInstance instance, Klass klass, IInstanceContext context) {
         computeSuper(instance, klass, context);
     }
 
@@ -749,7 +749,7 @@ public class Instances {
         );
     }
 
-    private static void computeSuper(ClassInstance instance, Klass klass, IEntityContext context) {
+    private static void computeSuper(ClassInstance instance, Klass klass, IInstanceContext context) {
         var superInitializer = findSuperInitializer(klass);
         if (superInitializer != null) {
             var initializer = requireNonNull(superInitializer);
@@ -768,7 +768,7 @@ public class Instances {
         }
     }
 
-    public static void rollbackDDL(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+    public static void rollbackDDL(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
         for (FieldChange fieldChange : commit.getFieldChanges()) {
             var klass = context.getKlass(fieldChange.klassId());
             for (Instance instance : instances) {

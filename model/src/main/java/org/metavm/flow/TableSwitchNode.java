@@ -48,14 +48,14 @@ public class TableSwitchNode extends SwitchNode {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("tableswitch");
+        writer.writeln("tableswitch");
         writer.indent();
-        writer.writeNewLine("low: " + low);
-        writer.writeNewLine("high: " + high);
-        writer.writeNewLine("default: " + defaultTarget.getName());
+        writer.writeln("low: " + low);
+        writer.writeln("high: " + high);
+        writer.writeln("default: " + defaultTarget.getName());
         int i = 0;
         for (Node target : targets) {
-            writer.writeNewLine(i++ + ": " + target.getName());
+            writer.writeln(i++ + ": " + target.getName());
         }
         writer.unindent();
     }

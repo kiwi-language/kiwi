@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
@@ -54,14 +54,14 @@ public abstract class EntityScanTask<T> extends ScanTask {
     }
 
     @Override
-    protected void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
+    protected void process(List<Instance> batch, IInstanceContext context, IInstanceContext taskContext) {
         List<T> models = Utils.map(
                 batch, instance -> context.getEntity(entityType, instance.getId())
         );
         processModels(context, models);
     }
 
-    protected abstract void processModels(IEntityContext context, List<T> models);
+    protected abstract void processModels(IInstanceContext context, List<T> models);
 
     private void onRead() {
         //noinspection unchecked

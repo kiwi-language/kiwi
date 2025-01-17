@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -42,7 +42,7 @@ public abstract class ScanTask extends Task {
     }
 
     @Override
-    protected boolean run0(IEntityContext context, IEntityContext taskContext) {
+    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
         if(cursor == 0)
             onStart(context, taskContext);
         var r = scan(context, cursor, BATCH_SIZE);
@@ -57,10 +57,10 @@ public abstract class ScanTask extends Task {
         }
     }
 
-    protected void onStart(IEntityContext context, IEntityContext taskContext) {
+    protected void onStart(IInstanceContext context, IInstanceContext taskContext) {
     }
 
-    protected void onScanOver(IEntityContext context, IEntityContext taskContext) {}
+    protected void onScanOver(IInstanceContext context, IInstanceContext taskContext) {}
 
     protected ScanResult scan(IInstanceContext context,
                               long cursor,
@@ -68,7 +68,7 @@ public abstract class ScanTask extends Task {
         return context.scan(cursor, limit);
     }
 
-    protected abstract void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext);
+    protected abstract void process(List<Instance> batch, IInstanceContext context, IInstanceContext taskContext);
 
     @Override
     public void forEachReference(Consumer<Reference> action) {

@@ -1,6 +1,6 @@
 package org.metavm.util;
 
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.FieldValue;
@@ -175,7 +175,7 @@ public class BytesUtils {
             return false;
         }
 
-        public Object toJson(IEntityContext context) {
+        public Object toJson(IInstanceContext context) {
             throw new UnsupportedOperationException();
         }
     }

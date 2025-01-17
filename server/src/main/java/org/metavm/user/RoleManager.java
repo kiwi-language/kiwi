@@ -2,6 +2,7 @@ package org.metavm.user;
 
 import org.metavm.common.Page;
 import org.metavm.entity.*;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.user.rest.dto.RoleDTO;
 import org.metavm.util.Instances;
 import org.metavm.util.Utils;
@@ -51,7 +52,7 @@ public class RoleManager extends EntityContextFactoryAware {
         }
     }
 
-    public Role save(RoleDTO roleDTO, IEntityContext context) {
+    public Role save(RoleDTO roleDTO, IInstanceContext context) {
         var role = context.getEntity(Role.class, roleDTO.id());
         if (role != null) {
             role.update(roleDTO);

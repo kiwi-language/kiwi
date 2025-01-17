@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -32,11 +32,11 @@ public class SchedulerRegistry extends org.metavm.entity.Entity {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public static SchedulerRegistry getInstance(IEntityContext context) {
+    public static SchedulerRegistry getInstance(IInstanceContext context) {
         return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAG, Instances.trueInstance()), "SchedulerRegistry not initialized");
     }
 
-    public static void initialize(IEntityContext context) {
+    public static void initialize(IInstanceContext context) {
         var existing = context.selectFirstByKey(SchedulerRegistry.IDX_ALL_FLAG, Instances.trueInstance());
         if (existing != null)
             throw new IllegalStateException("SchedulerRegistry already exists");

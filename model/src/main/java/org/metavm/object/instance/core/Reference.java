@@ -55,12 +55,7 @@ public class Reference implements Value {
 
     public Instance get() {
         if (target == null) {
-            try {
-                target = resolver.get();
-            }
-            catch (Exception e) {
-                throw new RuntimeException("Failed to resolve reference with ID " + id, e);
-            }
+            target = resolver.get();
         }
         return target;
     }
@@ -110,7 +105,7 @@ public class Reference implements Value {
 
     @Override
     public String getTitle() {
-        return "Reference-" + id;
+        return "Reference-" + tryGetId();
     }
 
     @Override

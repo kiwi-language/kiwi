@@ -42,13 +42,8 @@ public class InstanceContextFactory {
                 || TransactionSynchronizationManager.isCurrentTransactionReadOnly();
     }
 
-    public InstanceContextBuilder newBuilder(long appId,
-                                             TypeDefProvider typeDefProvider,
-                                             RedirectStatusProvider redirectStatusProvider,
-                                             ActiveCommitProvider activeCommitProvider) {
-        return InstanceContextBuilder.newBuilder(appId, instanceStore,
-                        new DefaultIdInitializer(idService),
-                        typeDefProvider, redirectStatusProvider, activeCommitProvider)
+    public InstanceContextBuilder newBuilder(long appId) {
+        return InstanceContextBuilder.newBuilder(appId, instanceStore, new DefaultIdInitializer(idService))
                 .executor(executor)
                 .eventQueue(eventQueue)
                 .cache(cache)

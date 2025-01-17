@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.Instances;
 
@@ -8,9 +8,9 @@ import javax.annotation.Nullable;
 
 public class ContextTypeDefRepository implements TypeDefRepository {
 
-    private final IEntityContext context;
+    private final IInstanceContext context;
 
-    public ContextTypeDefRepository(IEntityContext context) {
+    public ContextTypeDefRepository(IInstanceContext context) {
         this.context = context;
     }
 

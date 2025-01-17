@@ -7,6 +7,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.LocalKey;
+import org.metavm.flow.CodeWriter;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.*;
@@ -250,5 +251,9 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     @Override
     protected void buildSource(Map<String, Value> source) {
         super.buildSource(source);
+    }
+
+    public void writeCode(CodeWriter writer) {
+        writer.writeln((unique ? "unique index " : "index ") + getName());
     }
 }

@@ -4,20 +4,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
-import org.metavm.entity.*;
+import org.metavm.entity.AttributeNames;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.entity.IndexDef;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Parameter;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.KlassType;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -43,11 +41,11 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
 
     private List<BeanDefinition> beanDefinitions = new ArrayList<>();
 
-    public static BeanDefinitionRegistry getInstance(IEntityContext context) {
+    public static BeanDefinitionRegistry getInstance(IInstanceContext context) {
         return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()), "BeanDefinitionRegistry not found");
     }
 
-    public static void initialize(IEntityContext context) {
+    public static void initialize(IInstanceContext context) {
         var existing = context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance());
         if(existing != null)
             throw new IllegalStateException("BeanDefinitionRegistry already exists");

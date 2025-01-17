@@ -5,7 +5,7 @@ import org.metavm.api.Generated;
 import org.metavm.application.Application;
 import org.metavm.api.Entity;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -34,7 +34,7 @@ public class IndexRebuildGlobalTask extends GlobalTask {
     }
 
     @Override
-    protected void processApplication(IEntityContext context, Application application) {
+    protected void processApplication(IInstanceContext context, Application application) {
         context.bind(new IndexRebuildTask());
     }
 

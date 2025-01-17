@@ -179,8 +179,7 @@ public class DDLTest extends TestCase {
                     context.finish();
                     Assert.fail("The inventory object is referenced and the removal should have failed");
                 }
-                catch (BusinessException e) {
-                    Assert.assertEquals(ErrorCode.STRONG_REFS_PREVENT_REMOVAL2, e.getErrorCode());
+                catch (RemovalFailureException ignored) {
                 }
             }
         });
@@ -906,7 +905,7 @@ public class DDLTest extends TestCase {
         return apiClient.search(className, fields, page, pageSize);
     }
 
-    private void doInContext(Consumer<IEntityContext> action) {
+    private void doInContext(Consumer<IInstanceContext> action) {
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 action.accept(context);
@@ -915,7 +914,7 @@ public class DDLTest extends TestCase {
         });
     }
 
-    private IEntityContext newContext() {
+    private IInstanceContext newContext() {
         return entityContextFactory.newContext(TestConstants.APP_ID, metaContextCache.get(TestConstants.APP_ID));
     }
 

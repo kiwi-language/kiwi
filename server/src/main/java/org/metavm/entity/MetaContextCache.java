@@ -5,6 +5,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.ddl.Commit;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.util.ContextUtil;
@@ -26,12 +27,12 @@ public class MetaContextCache extends EntityContextFactoryAware {
 
     public static final int MAX_SIZE = 16;
 
-    private final LoadingCache<CacheKey, IEntityContext> cache = CacheBuilder.newBuilder()
+    private final LoadingCache<CacheKey, IInstanceContext> cache = CacheBuilder.newBuilder()
             .maximumSize(MAX_SIZE)
             .build(new CacheLoader<>() {
 
                 @Override
-                public @NotNull IEntityContext load(@NotNull CacheKey key) {
+                public @NotNull IInstanceContext load(@NotNull CacheKey key) {
                     return createMetaContext(key);
                 }
             });
@@ -43,11 +44,11 @@ public class MetaContextCache extends EntityContextFactoryAware {
         Commit.META_CONTEXT_INVALIDATE_HOOK = this::invalidate;
     }
 
-    public IEntityContext get(long appId) {
+    public IInstanceContext get(long appId) {
         return get(appId, null);
     }
 
-    public IEntityContext get(long appId, @Nullable Id walId) {
+    public IInstanceContext get(long appId, @Nullable Id walId) {
         try {
             var context = cache.get(new CacheKey(appId, walId));
             ParameterizedStore.setMap(context.getParameterizedMap());
@@ -61,9 +62,9 @@ public class MetaContextCache extends EntityContextFactoryAware {
         cache.invalidate(new CacheKey(appId, walId));
     }
 
-    private IEntityContext createMetaContext(CacheKey key) {
+    private IInstanceContext createMetaContext(CacheKey key) {
         try(var ignored = ContextUtil.getProfiler().enter("createMetaContext")) {
-            IEntityContext context;
+            IInstanceContext context;
             if (key.walId != null) {
                 try (var outerContext = newContext(key.appId)) {
                     var wal = outerContext.getEntity(WAL.class, key.walId);

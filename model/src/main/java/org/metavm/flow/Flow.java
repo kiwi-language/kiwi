@@ -385,7 +385,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     public void writeCode(CodeWriter writer) {
-        writer.writeNewLine(
+        writer.writeln(
                 "Flow "
                         + name
                         + " (" + Utils.join(parameters, Parameter::getText, ", ")

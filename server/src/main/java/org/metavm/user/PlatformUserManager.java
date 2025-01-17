@@ -1,5 +1,6 @@
 package org.metavm.user;
 
+import org.metavm.object.instance.core.IInstanceContext;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -87,7 +88,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
         }
     }
 
-    public PlatformUser save(UserDTO userDTO, IEntityContext platformContext) {
+    public PlatformUser save(UserDTO userDTO, IInstanceContext platformContext) {
         PlatformUser user;
         if (userDTO.id() == null) {
             user = new PlatformUser(
@@ -157,7 +158,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
         }
     }
 
-    public void joinApplication(PlatformUser platformUser, Application app, IEntityContext platformContext) {
+    public void joinApplication(PlatformUser platformUser, Application app, IInstanceContext platformContext) {
         platformUser.joinApplication(app);
         if (app.getTreeId() != platformContext.getAppId()) {
             if (app.isIdNull())
@@ -190,7 +191,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
         }
     }
 
-    private String generateLoginName(String prefix, IEntityContext context) {
+    private String generateLoginName(String prefix, IInstanceContext context) {
         String loginName = prefix;
         int num = 1;
         boolean exists;
@@ -225,7 +226,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
         }
     }
 
-    public Page<PlatformUser> query(PlatformUserQuery query, IEntityContext context) {
+    public Page<PlatformUser> query(PlatformUserQuery query, IInstanceContext context) {
         var app = Utils.safeCall(query.appId(), appId -> context.getEntity(Application.class, appId));
         return entityQueryService.query(
                 EntityQueryBuilder.newBuilder(PlatformUser.class)

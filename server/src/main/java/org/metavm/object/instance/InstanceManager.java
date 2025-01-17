@@ -284,7 +284,7 @@ public class InstanceManager extends EntityContextFactoryAware {
     }
 
     @Override
-    public IEntityContext newContext() {
+    public IInstanceContext newContext() {
         var appId = ContextUtil.getAppId();
         return entityContextFactory.newContext(appId, metaContextCache.get(appId));
     }

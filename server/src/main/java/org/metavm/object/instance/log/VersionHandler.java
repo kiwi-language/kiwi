@@ -1,7 +1,7 @@
 //package org.metavm.object.instance.log;
 //
 //import org.metavm.entity.EntityContextFactory;
-//import org.metavm.entity.IEntityContext;
+//import org.metavm.object.instance.core.IInstanceContext;
 //import org.metavm.event.EventQueue;
 //import org.metavm.event.rest.dto.FunctionChangeEvent;
 //import org.metavm.event.rest.dto.TypeChangeEvent;
@@ -29,7 +29,7 @@
 //    }
 //
 //    @Override
-//    public void process(List<Version> created, @Nullable String clientId, IEntityContext context, EntityContextFactory entityContextFactory) {
+//    public void process(List<Version> created, @Nullable String clientId, IInstanceContext context, EntityContextFactory entityContextFactory) {
 //        if (!created.isEmpty()) {
 //            long maxVersion = 0L;
 //            Set<String> typeIds = new HashSet<>();

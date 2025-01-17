@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Nodes;
 import org.metavm.mocks.Bar;
@@ -236,7 +236,7 @@ public class WALTest extends TestCase {
         });
     }
 
-    private IEntityContext newContext() {
+    private IInstanceContext newContext() {
         return entityContextFactory.newContext(APP_ID);
     }
 

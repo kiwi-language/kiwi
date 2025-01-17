@@ -7,6 +7,7 @@ import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.PersistenceUtils;
 import org.metavm.object.instance.persistence.VersionRT;
+import org.metavm.object.type.Index;
 import org.metavm.object.type.IndexProvider;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ChangeList;
@@ -31,11 +32,9 @@ public class IndexConstraintPlugin implements ContextPlugin {
 
     private final IInstanceStore instanceStore;
 
-    private final IndexProvider indexProvider;
 
-    public IndexConstraintPlugin(IInstanceStore instanceStore, IndexProvider indexProvider) {
+    public IndexConstraintPlugin(IInstanceStore instanceStore) {
         this.instanceStore = instanceStore;
-        this.indexProvider = indexProvider;
     }
 
     @Override
@@ -58,7 +57,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
                         if (!currentUniqueKeys.add(entry.getKey()))
                             throw new BusinessException(
                                     ErrorCode.DUPLICATE_KEY2,
-                                    indexProvider.getIndex(Id.fromBytes(entry.getIndexId())).getName(),
+                                    context.getEntity(Index.class, Id.fromBytes(entry.getIndexId())).getName(),
                                     Utils.join(entry.getKey().getColumnValues(context::internalGet), Value::getText)
                             );
                     });
@@ -81,7 +80,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
                     var id = entry.getId();
                     if (!oldIdSet.contains(id)) {
                         var currentEntry = Utils.findRequired(currentEntries, e -> e.getKey().equals(entry.getKey()));
-                        var index = indexProvider.getIndex(Id.fromBytes(entry.getIndexId()));
+                        var index = context.getEntity(Index.class, Id.fromBytes(entry.getIndexId()));
                         throw BusinessException.constraintCheckFailed(instanceMap.get(currentEntry.getId()), index);
                     }
                 }));

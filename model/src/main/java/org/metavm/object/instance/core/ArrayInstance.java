@@ -2,7 +2,6 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.IEntityContext;
 import org.metavm.entity.NoProxy;
 import org.metavm.object.instance.ArrayListener;
 import org.metavm.object.instance.rest.ArrayInstanceParam;
@@ -69,7 +68,7 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
     private void clearInternal() {
         for (Value instance : new ArrayList<>(elements)) {
-            removeElement(instance);
+            remove(instance);
         }
     }
 
@@ -169,11 +168,7 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
         this.elements.set(index, instance);
     }
 
-    void removeChild(Value element) {
-        removeInternally(element);
-    }
-
-    public Value removeElement(int index) {
+    public Value remove(int index) {
         checkIndex(index);
         var removed = elements.remove(index);
         onRemove(removed);
@@ -212,11 +207,11 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
     public void setElements(List<Value> elements) {
         for (Value element : new ArrayList<>(this.elements))
-            removeElement(element);
+            remove(element);
         this.addAll(elements);
     }
 
-    public boolean removeElement(Object element) {
+    public boolean remove(Object element) {
         return removeInternally(element);
     }
 
@@ -271,8 +266,7 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
     @Override
     public String getTitle() {
-        List<Value> first = elements.subList(0, Math.min(3, elements.size()));
-        return Utils.join(first, Value::getTitle, ",") + (elements.size() > 3 ? "..." : "");
+        return getStringId();
     }
 
     @Override
@@ -388,12 +382,12 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
     @SuppressWarnings("unused")
     public Value __remove__(Value instance) {
-        return Instances.intInstance(removeElement(instance));
+        return Instances.intInstance(remove(instance));
     }
 
     @SuppressWarnings("unused")
     public Value __removeAt__(Value index) {
-        return removeElement(getIndex(index));
+        return remove(getIndex(index));
     }
 
     private int getIndex(Value instance) {
@@ -443,7 +437,7 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
 //    @Override
     public void writeTree(TreeWriter treeWriter) {
-        treeWriter.writeLine(getInstanceType().getName());
+        treeWriter.writeLine(getInstanceType().getName() + " " + tryGetId());
         treeWriter.indent();
         if(isChildArray()) {
             for (Value element : elements) {
@@ -469,7 +463,7 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
         return visitor.visitArrayInstance(this);
     }
 
-    public List<Object> toJson(IEntityContext context) {
+    public List<Object> toJson(IInstanceContext context) {
         var list = new ArrayList<>();
         forEach(e -> list.add(e.toJson()));
         return list;

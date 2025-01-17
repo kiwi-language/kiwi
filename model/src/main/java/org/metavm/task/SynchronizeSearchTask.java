@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Generated;
 import org.metavm.entity.Entity;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -52,7 +52,7 @@ public class SynchronizeSearchTask extends Task {
     }
 
     @Override
-    protected boolean run0(IEntityContext context, IEntityContext taskContext) {
+    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
         List<ClassInstance> changed = Utils.filterByType(context.batchGet(changedIds), ClassInstance.class);
         try (var ignored = context.getProfiler().enter("bulk")) {
             Hooks.SEARCH_BULK.accept(context.getAppId(), changed, removedIds);

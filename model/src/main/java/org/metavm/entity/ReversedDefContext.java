@@ -88,7 +88,7 @@
 //    }
 //
 //    @Override
-//    public IEntityContext createSame(long appId) {
+//    public IInstanceContext createSame(long appId) {
 //        return new ReversedDefContext(defContext);
 //    }
 //
@@ -255,7 +255,7 @@
 //
 //    @Nullable
 //    @Override
-//    public IEntityContext getParent() {
+//    public IInstanceContext getParent() {
 //        return null;
 //    }
 //

@@ -6,7 +6,7 @@ import org.metavm.application.rest.dto.AppInvitationDTO;
 import org.metavm.common.ErrorCode;
 import org.metavm.api.Entity;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -34,7 +34,7 @@ public class AppInvitation extends org.metavm.entity.Entity {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public static AppInvitation create(AppInvitationDTO invitationDTO, IEntityContext platformCtx) {
+    public static AppInvitation create(AppInvitationDTO invitationDTO, IInstanceContext platformCtx) {
         var app = platformCtx.getEntity(Application.class, invitationDTO.appId());
         var user = platformCtx.getEntity(PlatformUser.class, invitationDTO.userId());
         return new AppInvitation(app, user, invitationDTO.isAdmin());

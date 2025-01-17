@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -35,7 +35,7 @@ public abstract class ScanByClassTask extends ScanByTypeTask {
     }
 
     @Override
-    protected final void processInstance(Value instance, IEntityContext context) {
+    protected final void processInstance(Value instance, IInstanceContext context) {
         if (instance.isObject()) {
             processClassInstance(instance.resolveObject(), context);
         } else {
@@ -43,7 +43,7 @@ public abstract class ScanByClassTask extends ScanByTypeTask {
         }
     }
 
-    protected abstract void processClassInstance(ClassInstance instance, IEntityContext context);
+    protected abstract void processClassInstance(ClassInstance instance, IInstanceContext context);
 
     @Override
     public void forEachReference(Consumer<Reference> action) {

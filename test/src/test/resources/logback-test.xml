@@ -20,7 +20,7 @@
         <appender-ref ref="FILE" />
     </logger>
 
-    <root level="debug">
+    <root level="trace">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

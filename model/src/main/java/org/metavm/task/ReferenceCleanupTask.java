@@ -5,7 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.EntityUtils;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -46,7 +46,7 @@ public class ReferenceCleanupTask extends Task {
     }
 
     @Override
-    public boolean run0(IEntityContext context, IEntityContext taskContext) {
+    public boolean run0(IInstanceContext context, IInstanceContext taskContext) {
         var instanceContext = context;
         var instances = instanceContext.getByReferenceTargetId(targetId, nextTreeId, BATCH_SIZE);
         for (var instance : instances) {

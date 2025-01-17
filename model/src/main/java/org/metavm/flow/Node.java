@@ -175,8 +175,9 @@ public abstract class Node implements LocalKey, Element, NativeEphemeralObject {
 
     public void write(CodeWriter writer) {
         try {
-            writer.writeNewLine(name + ": ");
+            writer.write(name + ": ");
             writeContent(writer);
+            writer.writeln();
         }
         catch (Exception e) {
             throw new RuntimeException("Failed to write content of node " + name, e);

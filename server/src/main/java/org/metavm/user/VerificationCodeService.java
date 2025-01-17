@@ -11,7 +11,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.entity.EntityIndexKey;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.BusinessException;
 import org.metavm.util.EmailUtils;
 
@@ -59,7 +59,7 @@ public class VerificationCodeService extends EntityContextFactoryAware {
         });
     }
 
-    public void checkVerificationCode(String receiver, String code, IEntityContext platformCtx) {
+    public void checkVerificationCode(String receiver, String code, IInstanceContext platformCtx) {
         var valid = !platformCtx.query(
                 VerificationCode.IDX.newQueryBuilder()
                         .from(new EntityIndexKey(List.of(

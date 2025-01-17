@@ -3,7 +3,7 @@ package org.metavm.object.version;
 import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 
 import java.util.Set;
 
@@ -34,7 +34,7 @@ public class Versions {
         return version;
     }
 
-    public static long getLatestVersion(IEntityContext context) {
+    public static long getLatestVersion(IInstanceContext context) {
         var lastVersion = Utils.first(
                 context.query(Version.IDX_VERSION.newQueryBuilder().limit(1).desc(true).build())
         );

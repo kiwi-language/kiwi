@@ -1,7 +1,7 @@
 package org.metavm.ddl;
 
 import org.metavm.api.Entity;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.MvInstance;
@@ -24,7 +24,7 @@ import static org.metavm.task.DDLTask.DISABLE_DELAY;
 public enum CommitState {
     PREPARING0(0) {
         @Override
-        public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
             Instances.applyDDL(instances, commit, context);
         }
 
@@ -50,7 +50,7 @@ public enum CommitState {
     },
     SUBMITTING(1) {
         @Override
-        public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
         }
 
         @Override
@@ -76,7 +76,7 @@ public enum CommitState {
     },
     RELOCATING(2) {
         @Override
-        public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
         }
 
         @Override
@@ -92,7 +92,7 @@ public enum CommitState {
     },
     SETTING_REFERENCE_FLAGS(3) {
         @Override
-        public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
             var valueToEntityKlasses = Utils.map(commit.getValueToEntityKlassIds(), context::getKlass);
             for (var instance : instances) {
                 instance.forEachReference(r -> {
@@ -130,7 +130,7 @@ public enum CommitState {
     },
     SWITCHING_ID(4) {
         @Override
-        public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
             for (var instance : instances) {
                 if(instance.tryGetOldId() != null && instance instanceof MvInstance mvInst && mvInst.isUseOldId())
                     mvInst.switchId();
@@ -144,7 +144,7 @@ public enum CommitState {
     },
     UPDATING_REFERENCE(5) {
         @Override
-        public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
             for (var instance : instances) {
                 instance.forEachReference(r -> {
                     if(r.isForwarded())
@@ -173,7 +173,7 @@ public enum CommitState {
     },
     CLEANING_UP(6) {
         @Override
-        public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
             var toEnumKlasses = Utils.map(commit.getToEnumKlassIds(), context::getKlass);
             var fromEnumKlasses = Utils.mapToSet(commit.getFromEnumKlassIds(), context::getKlass);
             var removedChildFields = Utils.map(commit.getRemovedChildFieldIds(), context::getField);
@@ -215,7 +215,7 @@ public enum CommitState {
     },
     COMPLETED(7) {
         @Override
-        public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
             throw new UnsupportedOperationException();
         }
 
@@ -226,7 +226,7 @@ public enum CommitState {
     },
     ABORTING(8) {
         @Override
-        public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
             Instances.rollbackDDL(instances, commit, context);
         }
 
@@ -237,7 +237,7 @@ public enum CommitState {
     },
     ABORTED(9) {
         @Override
-        public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
+        public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
             throw new UnsupportedOperationException();
         }
 
@@ -256,9 +256,9 @@ public enum CommitState {
         this.code = code;
     }
 
-    public abstract void process(Iterable<Instance> instances, Commit commit, IEntityContext context);
+    public abstract void process(Iterable<Instance> instances, Commit commit, IInstanceContext context);
 
-    public void onStart(IEntityContext context, Commit commit) {}
+    public void onStart(IInstanceContext context, Commit commit) {}
 
     public void onCompletion(Commit commit) {}
 
@@ -298,7 +298,7 @@ public enum CommitState {
         return new DDLTask(commit, this);
     }
 
-    public void transition(Commit commit, IEntityContext taskContext) {
+    public void transition(Commit commit, IInstanceContext taskContext) {
         CommitState nextState;
         if(isPreparing() && commit.isCancelled())
             nextState = CommitState.ABORTING;

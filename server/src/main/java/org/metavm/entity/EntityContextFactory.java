@@ -4,7 +4,6 @@ import org.metavm.object.instance.ChangeLogPlugin;
 import org.metavm.object.instance.CheckConstraintPlugin;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.IndexConstraintPlugin;
-import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.log.InstanceLogService;
@@ -33,75 +32,71 @@ public class EntityContextFactory {
         this.indexEntryMapper = indexEntryMapper;
     }
 
-    public IEntityContext newContext() {
+    public IInstanceContext newContext() {
         return newContext(ContextUtil.getAppId());
     }
 
 
-    public IEntityContext newContext(long appId, IdInitializer idProvider) {
+    public IInstanceContext newContext(long appId, IdInitializer idProvider) {
         return newContext(appId, defContext, idProvider);
     }
 
-    public IEntityContext newLoadedContext(WAL cachingWAL) {
+    public IInstanceContext newLoadedContext(WAL cachingWAL) {
         return newLoadedContext(ContextUtil.getAppId(), cachingWAL);
     }
 
-    public IEntityContext newLoadedContext(long appId, WAL cachingWAL) {
+    public IInstanceContext newLoadedContext(long appId, WAL cachingWAL) {
         return newLoadedContext(appId, cachingWAL, false);
     }
 
-    public IEntityContext newLoadedContext(long appId, WAL cachingWAL, boolean migrationDisabled) {
+    public IInstanceContext newLoadedContext(long appId, WAL cachingWAL, boolean migrationDisabled) {
         return newContext(appId, defContext, null, cachingWAL, null, migrationDisabled, null, builder -> {
         });
     }
 
-    public IEntityContext newBufferingContext(WAL bufferingWAL) {
+    public IInstanceContext newBufferingContext(WAL bufferingWAL) {
         return newBufferingContext(ContextUtil.getAppId(), bufferingWAL);
     }
 
-    public IEntityContext newBufferingContext(long appId, WAL bufferingWAL) {
+    public IInstanceContext newBufferingContext(long appId, WAL bufferingWAL) {
         return newContext(appId, defContext, null, null, bufferingWAL, false, null, builder -> {
         });
     }
 
-    public IEntityContext newContext(long appId) {
+    public IInstanceContext newContext(long appId) {
         return newContext(appId, defContext);
     }
 
-    public IEntityContext newContext(long appId, Consumer<InstanceContextBuilder> customizer) {
+    public IInstanceContext newContext(long appId, Consumer<InstanceContextBuilder> customizer) {
         return newContext(appId, defContext, null, null, null,
                 false, null, customizer);
     }
 
-    public IEntityContext newContext(long appId, @Nullable IEntityContext parent) {
+    public IInstanceContext newContext(long appId, @Nullable IInstanceContext parent) {
         return newContext(appId, parent, (IdInitializer) null);
     }
 
-    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, Consumer<InstanceContextBuilder> customizer) {
+    public IInstanceContext newContext(long appId, @Nullable IInstanceContext parent, Consumer<InstanceContextBuilder> customizer) {
         return newContext(appId, parent, null, null, null,
                 false, null, customizer);
     }
 
-    public IEntityContext newContext(long appId, @Nullable IEntityContext parent, @Nullable IdInitializer idProvider) {
+    public IInstanceContext newContext(long appId, @Nullable IInstanceContext parent, @Nullable IdInitializer idProvider) {
         return newContext(appId, parent, idProvider, null, null, false, null, builder -> {
         });
     }
 
-    public IEntityContext newContext(long appId,
-                                     @Nullable IEntityContext parent,
+    public IInstanceContext newContext(long appId,
+                                     @Nullable IInstanceContext parent,
                                      @Nullable IdInitializer idProvider,
                                      @Nullable WAL cachingWAL,
                                      @Nullable WAL bufferingWAL,
                                      boolean migrationDisabled, @Nullable IInstanceStore store, Consumer<InstanceContextBuilder> customizer) {
-        var bridge = new EntityInstanceContextBridge();
-        var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(),
-                parent, idProvider, bridge, cachingWAL, bufferingWAL, store, migrationDisabled, customizer);
-        var context = new EntityContext(instanceContext, parent instanceof DefContext dc ? dc : defContext);
-        bridge.setEntityContext(context);
-        return context;
+        return newBridgedInstanceContext(appId, isReadonlyTransaction(),
+                parent, idProvider, cachingWAL, bufferingWAL, store, migrationDisabled, customizer);
     }
 
-    public IEntityContext newContextWithStore(long appId, IInstanceStore instanceStore) {
+    public IInstanceContext newContextWithStore(long appId, IInstanceStore instanceStore) {
         return newContext(appId, defContext, null, null, null, false, instanceStore, builder -> {
         });
     }
@@ -110,11 +105,10 @@ public class EntityContextFactory {
                                                       boolean readonly,
                                                       @Nullable IInstanceContext parent,
                                                       @Nullable IdInitializer idProvider,
-                                                      EntityInstanceContextBridge bridge,
                                                       @Nullable WAL cachingWAL,
                                                       @Nullable WAL bufferingWAL,
                                                       @Nullable IInstanceStore store, boolean migrationDisabled, Consumer<InstanceContextBuilder> customizer) {
-        var builder = instanceContextFactory.newBuilder(appId, bridge, bridge, bridge)
+        var builder = instanceContextFactory.newBuilder(appId)
                 .readonly(readonly)
                 .parent(parent)
                 .relocationEnabled(migrationDisabled)
@@ -130,8 +124,8 @@ public class EntityContextFactory {
                 currentStore -> List.of(
 //                        new MetaVersionPlugin(bridge, bridge),
                         new CheckConstraintPlugin(),
-                        new IndexConstraintPlugin(currentStore, bridge),
-                        new ChangeLogPlugin(currentStore, instanceLogService, bridge)
+                        new IndexConstraintPlugin(currentStore),
+                        new ChangeLogPlugin(currentStore, instanceLogService)
                 ));
         return builder.build();
     }

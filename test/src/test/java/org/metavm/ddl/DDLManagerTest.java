@@ -293,7 +293,7 @@
 //        Assert.assertTrue(defContext.containsInstance(StdField.enumName.get()));
 //    }
 //
-//    private IEntityContext newContext() {
+//    private IInstanceContext newContext() {
 //        return entityContextFactory.newContext(TestConstants.APP_ID);
 //    }
 //

@@ -91,12 +91,12 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
     }
 
     @Override
-    public List<Instance> beforeRemove(IEntityContext context) {
+    public List<Instance> beforeRemove(IInstanceContext context) {
         return List.of();
     }
 
     @Override
-    public void onBind(IEntityContext context) {
+    public void onBind(IInstanceContext context) {
     }
 
     public boolean afterContextInitIds() {
@@ -199,4 +199,8 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
 
     protected abstract void buildSource(Map<String, Value> source);
 
+    @Override
+    public String getText() {
+        return toString();
+    }
 }

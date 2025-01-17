@@ -7,6 +7,7 @@ import org.metavm.common.Page;
 import org.metavm.entity.*;
 import org.metavm.message.Message;
 import org.metavm.message.MessageKind;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.GlobalKlassTagAssigner;
 import org.metavm.object.type.KlassSourceCodeTagAssigner;
@@ -146,7 +147,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
         }
     }
 
-    private Application createApp(Long id, String name, PlatformUser owner, IEntityContext platformContext) {
+    private Application createApp(Long id, String name, PlatformUser owner, IInstanceContext platformContext) {
         long appId = id != null ? id :
                 idService.allocateOne(PLATFORM_APP_ID);
         Application application = new Application(name, owner);
@@ -183,7 +184,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
         return new CreateAppResult(appId, owner.getStringId());
     }
 
-    private void setupApplication(long appId, IEntityContext platformContext) {
+    private void setupApplication(long appId, IInstanceContext platformContext) {
         try(var context = newContext(appId)) {
             BeanDefinitionRegistry.initialize(context);
             KlassTagAssigner.initialize(context, GlobalKlassTagAssigner.getInstance(platformContext));
@@ -196,7 +197,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
     public void update(ApplicationDTO applicationDTO) {
         setupContextInfo(applicationDTO.id());
         Objects.requireNonNull(applicationDTO.id());
-        try (IEntityContext platformContext = newPlatformContext()) {
+        try (IInstanceContext platformContext = newPlatformContext()) {
             Application app = platformContext.getEntity(Application.class, Constants.getAppId(applicationDTO.id()));
             ensureAppAdmin(app);
             app.setName(applicationDTO.name());
@@ -206,7 +207,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
 
     @Transactional
     public void delete(long appId) {
-        try (IEntityContext platformContext = newPlatformContext()) {
+        try (IInstanceContext platformContext = newPlatformContext()) {
             var id = Constants.getAppId(appId);
             var app = platformContext.getEntity(Application.class, id);
             ensureAppOwner(app);

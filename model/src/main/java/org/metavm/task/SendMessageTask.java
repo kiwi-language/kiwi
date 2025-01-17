@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.event.rest.dto.ReceiveMessageEvent;
 import org.metavm.message.Message;
 import org.metavm.object.instance.core.Instance;
@@ -39,7 +39,7 @@ public class SendMessageTask extends Task {
     }
 
     @Override
-    protected boolean run0(IEntityContext context, IEntityContext taskContext) {
+    protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
         Hooks.PUBLISH_USER_EVENT.accept(new ReceiveMessageEvent(message.toDTO()));
         return true;
     }

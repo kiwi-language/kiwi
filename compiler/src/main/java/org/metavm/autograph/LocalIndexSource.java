@@ -1,6 +1,6 @@
 package org.metavm.autograph;
 
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;
@@ -57,7 +57,7 @@ public class LocalIndexSource implements IndexSource {
         return new IndexKeyPO(indexKeyRT.getIndex().getId().toBytes(), indexKeyRT.getKeyBytes());
     }
 
-    public IEntityContext newContext() {
+    public IInstanceContext newContext() {
         return contextFactory.newEntityContext(CompilerHttpUtils.getAppId());
     }
 

@@ -8,7 +8,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.expression.antlr.MetaVMLexer;
 import org.metavm.expression.antlr.MetaVMParser;
 import org.metavm.object.instance.core.Id;
@@ -27,7 +27,7 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public class ExpressionParser {
 
-    public static Expression parse(@NotNull Klass type, @NotNull String expression, @NotNull IEntityContext entityContext) {
+    public static Expression parse(@NotNull Klass type, @NotNull String expression, @NotNull IInstanceContext entityContext) {
         return parse(expression, TypeParsingContext.create(type, entityContext));
     }
 

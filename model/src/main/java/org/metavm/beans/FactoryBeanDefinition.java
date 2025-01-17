@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.ClassInstance;
@@ -53,7 +53,7 @@ public class FactoryBeanDefinition extends BeanDefinition {
     }
 
     @Override
-    public ClassInstance createBean(BeanDefinitionRegistry registry, IEntityContext context) {
+    public ClassInstance createBean(BeanDefinitionRegistry registry, IInstanceContext context) {
         return Objects.requireNonNull(Flows.invoke(getMethod().getRef(), getConfigurationBeanDef().resolveBean(), registry.getFlowArguments(getMethod()), context)).resolveObject();
     }
 

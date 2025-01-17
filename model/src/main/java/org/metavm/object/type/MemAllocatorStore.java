@@ -83,6 +83,15 @@ public class MemAllocatorStore implements AllocatorStore {
         }
     }
 
+    public void printAll() {
+        propertiesMap.forEach((name, props) -> {
+            try {
+                props.store(System.out, "test");
+            }
+            catch (IOException ignored) {}
+        });
+    }
+
     public void dump() {
         for (var entry : propertiesMap.entrySet()) {
             var fileName = entry.getKey();

@@ -176,7 +176,7 @@ public class EntityUtils {
         var builtinClasses = Utils.filterAndMapUnique(List.of(StdKlass.values()), StdKlass::isAutoDefine, StdKlass::getJavaClass);
         return Utils.filterUnique(
                 Utils.mergeSets(List.of(entitySubTypes, entityTypes, nativeValueClasses, builtinClasses)),
-                klass -> !isCompiled(klass)
+                klass -> !isCompiled(klass) && !klass.isAnonymousClass()
         );
     }
 

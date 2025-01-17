@@ -1,6 +1,6 @@
 package org.metavm.expression;
 
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.InstanceProvider;
 import org.metavm.object.instance.core.Value;
@@ -14,7 +14,7 @@ import java.util.List;
 
 public class TypeParsingContext extends BaseParsingContext {
 
-    public static TypeParsingContext create(Klass type, IEntityContext context) {
+    public static TypeParsingContext create(Klass type, IInstanceContext context) {
         return new TypeParsingContext(
                 context,
                 new ContextTypeDefRepository(context),

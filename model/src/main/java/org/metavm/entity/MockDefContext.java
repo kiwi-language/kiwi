@@ -98,11 +98,6 @@ public class MockDefContext extends DefContext {
     }
 
     @Override
-    public DefContext getDefContext() {
-        return this;
-    }
-
-    @Override
     public <T> List<T> getAllBufferedEntities(Class<T> entityClass) {
         return Utils.filterByType(entities, entityClass);
     }
@@ -118,18 +113,8 @@ public class MockDefContext extends DefContext {
     }
 
     @Override
-    public <T> T getBufferedEntity(Class<T> entityType, Id id) {
-        return entityType.cast(entityMap.get(id));
-    }
-
-    @Override
     public <T> T getEntity(Class<T> entityType, Id id) {
-        return getBufferedEntity(entityType, id);
-    }
-
-    @Override
-    public <T> T getRemoved(Class<T> entityClass, Id id) {
-        throw new UnsupportedOperationException();
+        return entityType.cast(entityMap.get(id));
     }
 
     @Nullable
@@ -290,23 +275,14 @@ public class MockDefContext extends DefContext {
     }
 
     @Override
-    public <T extends Entity> List<T> query(EntityIndexQuery<T> query) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public long count(EntityIndexQuery<?> query) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void flush() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Value... refValues) {
         return List.of();
+    }
+
+    @Nullable
+    @Override
+    public <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Value... values) {
+        return null;
     }
 
     @Override
@@ -315,7 +291,7 @@ public class MockDefContext extends DefContext {
     }
 
     @Override
-    public IEntityContext createSame(long appId) {
+    public IInstanceContext createSame(long appId) {
         throw new UnsupportedOperationException();
     }
 
@@ -413,16 +389,6 @@ public class MockDefContext extends DefContext {
 
     @Override
     public void removeForwardingPointer(MvInstance instance, boolean clearingOldId) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ParameterizedMap getParameterizedMap() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setParameterizedMap(ParameterizedMap parameterizedMap) {
         throw new UnsupportedOperationException();
     }
 

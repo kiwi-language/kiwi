@@ -1,11 +1,14 @@
 package org.metavm.object.instance.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Identifiable;
 import org.metavm.entity.Tree;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Type;
 import org.metavm.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -15,7 +18,10 @@ import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
 
+
 public interface Instance extends Message, Identifiable {
+
+    Logger log = LoggerFactory.getLogger(Instance.class);
 
     default Reference getReference() {
         return new Reference(this);
@@ -64,6 +70,8 @@ public interface Instance extends Message, Identifiable {
     default void setRemoved() {
         if (isRemoved())
             throw new InternalException(String.format("Instance %s is already removed", this));
+        if (DebugEnv.traceInstanceRemoval)
+            log.debug("Removing instance {} {}", this, tryGetId(), new Exception());
         state().setRemoved();
     }
 
@@ -364,4 +372,7 @@ public interface Instance extends Message, Identifiable {
     default void clearRemoving() {
         state().clearRemoving();
     }
+
+    String getText();
+
 }

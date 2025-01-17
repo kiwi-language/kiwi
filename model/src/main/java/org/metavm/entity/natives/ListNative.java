@@ -117,11 +117,11 @@ public class ListNative extends IterableNative {
     }
 
     public Value remove(Value instance, CallContext callContext) {
-        return Instances.intInstance(array.removeElement(instance));
+        return Instances.intInstance(array.remove(instance));
     }
 
     public Value removeAt(Value index, CallContext callContext) {
-        return array.removeElement(getInt(index));
+        return array.remove(getInt(index));
     }
 
     public Value contains(Value value, CallContext callContext) {

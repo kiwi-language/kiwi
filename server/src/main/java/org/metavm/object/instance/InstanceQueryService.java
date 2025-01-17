@@ -2,7 +2,7 @@ package org.metavm.object.instance;
 
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Page;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.InstanceQuery;
 import org.metavm.entity.InstanceQueryField;
 import org.metavm.expression.*;
@@ -47,7 +47,7 @@ public class InstanceQueryService {
         );
     }
 
-    public Page<Reference> query(InstanceQuery query, IEntityContext context) {
+    public Page<Reference> query(InstanceQuery query, IInstanceContext context) {
         return query(query, context,
                 new ContextTypeDefRepository(context));
     }
@@ -77,7 +77,7 @@ public class InstanceQueryService {
                 (condition == null || ((BooleanValue) condition.evaluate(new InstanceEvaluationContext(instance))).isTrue());
     }
 
-    public long count(InstanceQuery query, IEntityContext context) {
+    public long count(InstanceQuery query, IInstanceContext context) {
         return instanceSearchService.count(buildSearchQuery(query,
                 buildCondition(query, new ContextTypeDefRepository(context), context)));
     }

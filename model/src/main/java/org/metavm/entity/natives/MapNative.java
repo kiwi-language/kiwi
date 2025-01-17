@@ -119,8 +119,8 @@ public class MapNative extends NativeBase {
             int lastIndex = keyArray.size() - 1;
             Value lastKey = keyArray.get(lastIndex);
             Value lastValue = valueArray.get(lastIndex);
-            keyArray.removeElement(lastIndex);
-            valueArray.removeElement(lastIndex);
+            keyArray.remove(lastIndex);
+            valueArray.remove(lastIndex);
             if (!key.equals(lastKey)) {
                 keyArray.setElement(entry.index, lastKey);
                 valueArray.setElement(entry.index, lastValue);

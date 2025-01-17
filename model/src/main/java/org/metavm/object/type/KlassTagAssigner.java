@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -30,7 +30,7 @@ public class KlassTagAssigner extends org.metavm.entity.Entity {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public static KlassTagAssigner getInstance(IEntityContext context) {
+    public static KlassTagAssigner getInstance(IInstanceContext context) {
         return Objects.requireNonNull(
                 context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()),
                 () -> "ClassTagAssigner instance not found for application: " + context.getAppId()
@@ -49,7 +49,7 @@ public class KlassTagAssigner extends org.metavm.entity.Entity {
         this.max = max;
     }
 
-    public static void initialize(IEntityContext context, GlobalKlassTagAssigner globalKlassTagAssigner) {
+    public static void initialize(IInstanceContext context, GlobalKlassTagAssigner globalKlassTagAssigner) {
         var existing = context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance());
         if(existing != null)
             throw new IllegalStateException("ClassTagAssigner already exists");

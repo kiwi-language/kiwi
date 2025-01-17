@@ -4,7 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.ClassInstance;
@@ -55,7 +55,7 @@ public class ComponentBeanDefinition extends BeanDefinition {
     }
 
     @Override
-    protected ClassInstance createBean(BeanDefinitionRegistry registry, IEntityContext context) {
+    protected ClassInstance createBean(BeanDefinitionRegistry registry, IInstanceContext context) {
         var c = getConstructor();
         return Objects.requireNonNull(Flows.invoke(c.getRef(), ClassInstance.allocate(getKlass().getType()), registry.getFlowArguments(c), context)).resolveObject();
     }

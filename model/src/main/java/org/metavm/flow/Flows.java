@@ -3,7 +3,7 @@ package org.metavm.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.expression.Expression;
@@ -73,7 +73,7 @@ public class Flows {
             return result.ret();
     }
 
-    public static @Nullable Value invokeVirtual(@NotNull FlowRef flow, @NotNull ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
+    public static @Nullable Value invokeVirtual(@NotNull FlowRef flow, @NotNull ClassInstance self, List<? extends Value> arguments, IInstanceContext context) {
         if(flow instanceof MethodRef method && method.isInstanceMethod()) {
             flow = self.getInstanceType().getOverride(method);
             return invoke(flow, self, arguments, context);
@@ -91,7 +91,7 @@ public class Flows {
             throw new InternalException("Can not invoke virtual method: " + flow);
     }
 
-    public static Value invokeGetter(MethodRef getter, ClassInstance instance, IEntityContext context) {
+    public static Value invokeGetter(MethodRef getter, ClassInstance instance, IInstanceContext context) {
         var result = execute(getter, instance, List.of(), context);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));
@@ -99,7 +99,7 @@ public class Flows {
             return Objects.requireNonNull(result.ret());
     }
 
-    public static void invokeSetter(MethodRef setter, ClassInstance instance, Value value, IEntityContext context) {
+    public static void invokeSetter(MethodRef setter, ClassInstance instance, Value value, IInstanceContext context) {
         var result = execute(setter, instance, List.of(value), context);
         if(result.exception() != null)
             throw new BusinessException(ErrorCode.FLOW_EXECUTION_FAILURE, ThrowableNative.getMessage(result.exception()));

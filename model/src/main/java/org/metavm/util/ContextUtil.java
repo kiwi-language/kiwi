@@ -2,7 +2,7 @@ package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.profile.Profiler;
@@ -24,7 +24,7 @@ public class ContextUtil {
         String token;
         private Profiler profiler = new Profiler();
         private final Map<String, Value> userData = new HashMap<>();
-        private IEntityContext entityContext;
+        private IInstanceContext context;
         private int contextFinishCount;
         private final List<String> finishedContexts = new ArrayList<>();
         private boolean isDDL;
@@ -75,8 +75,8 @@ public class ContextUtil {
             return userData.getOrDefault(key, Instances.nullInstance());
         }
 
-        public IEntityContext getEntityContext() {
-            return entityContext;
+        public IInstanceContext getContext() {
+            return context;
         }
 
         public void resetProfiler() {
@@ -179,8 +179,8 @@ public class ContextUtil {
         getContextInfo().resetProfiler();
     }
 
-    public static void setEntityContext(IEntityContext entityContext) {
-        getContextInfo().entityContext = entityContext;
+    public static void setContext(IInstanceContext context) {
+        getContextInfo().context = context;
     }
 
     public static void setUserData(String key, Value value) {
@@ -191,8 +191,8 @@ public class ContextUtil {
         return getContextInfo().getUserData(key);
     }
 
-    public static IEntityContext getEntityContext() {
-        return getContextInfo().getEntityContext();
+    public static IInstanceContext getEntityContext() {
+        return getContextInfo().getContext();
     }
 
     public static String getToken() {

@@ -6,7 +6,7 @@ import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
-import org.metavm.entity.IEntityContext;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.flow.DeployKlassInput;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.core.Id;
@@ -85,11 +85,11 @@ public class TypeManager extends EntityContextFactoryAware {
         }
     }
 
-    private TreeDTO getTypeTree(Instance entity, IEntityContext context) {
+    private TreeDTO getTypeTree(Instance entity, IInstanceContext context) {
         return entity.toTree().toDTO();
     }
 
-    private void initClass(Klass klass, IEntityContext context) {
+    private void initClass(Klass klass, IInstanceContext context) {
         var classInit = klass.findMethodByName("__cinit__");
         if (classInit != null)
             Flows.execute(classInit.getRef(), null, List.of(), context);
@@ -117,7 +117,7 @@ public class TypeManager extends EntityContextFactoryAware {
         }
     }
 
-    public SaveTypeBatch deploy(InputStream input, IEntityContext context) {
+    public SaveTypeBatch deploy(InputStream input, IInstanceContext context) {
         try (var zipIn = new ZipInputStream(input)) {
             var runningCommit = context.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
             if (runningCommit != null)

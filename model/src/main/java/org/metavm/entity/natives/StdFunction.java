@@ -569,7 +569,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(Array.class, "newInstance", Class.class, int.class)),
             (func, args, callContext) -> {
-                var k = ContextUtil.getEntityContext().getEntity(Klass.class, args.getFirst().resolveObject());
+                var k = (Klass) args.getFirst().resolveObject();
                 var len = ((IntValue) args.get(1)).value;
                 var type = new ArrayType(Types.getNullableType(Types.getGeneralType(k)), ArrayKind.READ_WRITE);
                 var array = new ArrayInstance(type);

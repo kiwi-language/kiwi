@@ -1,7 +1,7 @@
 package org.metavm.object.instance;
 
-import org.metavm.entity.DefContextProvider;
 import org.metavm.entity.EntityChange;
+import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
@@ -27,12 +27,10 @@ public class ChangeLogPlugin implements ContextPlugin {
 
     private final IInstanceStore instanceStore;
     private final InstanceLogService instanceLogService;
-    private final DefContextProvider defContextProvider;
 
-    public ChangeLogPlugin(IInstanceStore instanceStore, InstanceLogService instanceLogService, DefContextProvider defContextProvider) {
+    public ChangeLogPlugin(IInstanceStore instanceStore, InstanceLogService instanceLogService) {
         this.instanceStore = instanceStore;
         this.instanceLogService = instanceLogService;
-        this.defContextProvider = defContextProvider;
     }
 
     @Override
@@ -61,7 +59,7 @@ public class ChangeLogPlugin implements ContextPlugin {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
         if (Utils.isNotEmpty(logs) || !context.getSearchReindexSet().isEmpty()) {
             instanceLogService.process(context.getAppId(), logs,
-                    instanceStore, Utils.map(context.getRelocated(), Instance::getId), context.getClientId(), defContextProvider.getDefContext());
+                    instanceStore, Utils.map(context.getRelocated(), Instance::getId), context.getClientId(), ModelDefRegistry.getDefContext());
             var tasks = new ArrayList<Task>();
             var idsToIndex = new HashSet<>(Utils.filterAndMap(context.getSearchReindexSet(), i -> !i.isRemoved(), Instance::getId));
             var idsToRemove = new ArrayList<Id>();
@@ -82,7 +80,7 @@ public class ChangeLogPlugin implements ContextPlugin {
             if(!tasks.isEmpty())
                 ShadowTask.saveShadowTasksHook.accept(context.getAppId(), tasks);
             if(!idsToIndex.isEmpty() || !idsToRemove.isEmpty())
-                instanceLogService.createSearchSyncTask(context.getAppId(), idsToIndex, idsToRemove, defContextProvider.getDefContext());
+                instanceLogService.createSearchSyncTask(context.getAppId(), idsToIndex, idsToRemove, ModelDefRegistry.getDefContext());
         }
     }
 
