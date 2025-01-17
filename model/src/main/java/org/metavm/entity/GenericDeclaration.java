@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.api.JsonIgnore;
 import org.metavm.flow.Flow;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.util.InternalException;
@@ -8,7 +9,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-public interface GenericDeclaration {
+public interface GenericDeclaration extends Identifiable {
 
     List<TypeVariable> getTypeParameters();
 
@@ -33,5 +34,6 @@ public interface GenericDeclaration {
 
     String getInternalName(@Nullable Flow current);
 
+    @JsonIgnore
     GenericDeclarationRef getRef();
 }

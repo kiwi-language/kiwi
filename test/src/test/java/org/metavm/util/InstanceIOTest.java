@@ -70,18 +70,20 @@ public class InstanceIOTest extends TestCase {
                 .isChild(true)
                 .build();
         TestUtils.initEntityIds(fooKlass);
+        var entityMap = new HashMap<Id, Instance>();
+        fooKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
         var names = new ArrayInstance(stringArrayType, List.of(Instances.stringInstance("foo")));
-        names.initId(PhysicalId.of(1L, 1L, stringArrayType));
+        names.initId(PhysicalId.of(1L, 1L));
         var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType())
                 .data(Map.of(namesField, names.getReference()))
-                .id(PhysicalId.of(1L, 0L, fooKlass.getType()))
+                .id(PhysicalId.of(1L, 0L))
                 .build();
         var instanceMap = new HashMap<Id, Instance>();
-        var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(foo)), id -> null,
-                i -> instanceMap.put(i.getId(), i), id -> id.equals(fooKlass.getId()) ? fooKlass : null, id -> null);
+        var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(foo)), entityMap::get,
+                i -> instanceMap.put(i.getId(), i), id -> null);
         var recovered = (ClassInstance) input.readSingleMessageGrove();
         var recoveredNames = recovered.getField(namesField).resolveArray();
-        var name = recoveredNames.get(0);
+        var name = recoveredNames.getFirst();
         Assert.assertEquals(Instances.stringInstance("foo"), name);
         Assert.assertNotNull(instanceMap.get(names.getId()));
     }
@@ -92,76 +94,82 @@ public class InstanceIOTest extends TestCase {
         var derivedKlass = TestUtils.newKlassBuilder("Derived").superType(baseKlass.getType()).build();
         var codeField = FieldBuilder.newBuilder("code", derivedKlass, Types.getLongType()).build();
         TestUtils.initEntityIds(derivedKlass);
+        var entityMap = new HashMap<Id, Instance>();
+        baseKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
+        derivedKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
+
         var inst = ClassInstanceBuilder.newBuilder(derivedKlass.getType())
                 .data(Map.of(
                         nameField, Instances.stringInstance("foo"),
                         codeField, Instances.longInstance(1)
                 ))
                 .build();
-        inst.initId(PhysicalId.of(1L, 1L, inst.getType()));
-        var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(inst)), id -> null, i -> {
-        }, id -> id.equals(derivedKlass.getId()) ? derivedKlass : null, id -> null);
+        inst.initId(PhysicalId.of(1L, 1L));
+        var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(inst)), entityMap::get, i -> {
+        }, id -> null);
         var recovered = (ClassInstance) input.readSingleMessageGrove();
         Assert.assertEquals(inst.getField(nameField), recovered.getField(nameField));
     }
 
     public void test() {
         String fooName = "foo", barCode = "bar001";
-        Klass fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
-        Klass barType = TestUtils.newKlassBuilder("Bar", "Bar").build();
-        Klass quxType = TestUtils.newKlassBuilder("Qux", "Qux").build();
-
-        fooType.initId(PhysicalId.of(10001L, 0L, TestUtils.mockClassType()));
-        barType.initId(PhysicalId.of(10002L, 0L, TestUtils.mockClassType()));
-        quxType.initId(PhysicalId.of(10003L, 0L, TestUtils.mockClassType()));
+        Klass fooKlass = TestUtils.newKlassBuilder("Foo", "Foo").build();
+        Klass barKlass = TestUtils.newKlassBuilder("Bar", "Bar").build();
+        Klass quxKlass = TestUtils.newKlassBuilder("Qux", "Qux").build();
 
         Field nameField = FieldBuilder
-                .newBuilder("name", fooType, Types.getStringType()).build();
-        nameField.initId(PhysicalId.of(10001L, 1L, TestUtils.mockClassType()));
+                .newBuilder("name", fooKlass, Types.getStringType()).build();
         Field barField = FieldBuilder
-                .newBuilder("bar", fooType, barType.getType()).isChild(true).build();
-        barField.initId(PhysicalId.of(10001L, 2L, TestUtils.mockClassType()));
-        Field quxField = FieldBuilder.newBuilder("qux", fooType, quxType.getType()).build();
-        quxField.initId(PhysicalId.of(10001L, 3L, TestUtils.mockClassType()));
+                .newBuilder("bar", fooKlass, barKlass.getType()).isChild(true).build();
+        Field quxField = FieldBuilder.newBuilder("qux", fooKlass, quxKlass.getType()).build();
 
         Field barCodeField = FieldBuilder
-                .newBuilder("code", barType, Types.getStringType()).build();
-        barCodeField.initId(PhysicalId.of(10002L, 1L, TestUtils.mockClassType()));
+                .newBuilder("code", barKlass, Types.getStringType()).build();
 
         Field quxNameField = FieldBuilder
-                .newBuilder("name", quxType, Types.getStringType()).build();
-        quxNameField.initId(PhysicalId.of(10003L, 1L, TestUtils.mockClassType()));
+                .newBuilder("name", quxKlass, Types.getStringType()).build();
 
-        var barInst = new ClassInstance(
-                PhysicalId.of(30001L, 1L, TestUtils.mockClassType()),
+        TestUtils.initEntityIds(fooKlass);
+        TestUtils.initEntityIds(barKlass);
+        TestUtils.initEntityIds(quxField);
+
+        var entityMap = new HashMap<Id, Instance>();
+        fooKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
+        barKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
+        quxKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
+
+        var barInst = new MvClassInstance(
+                PhysicalId.of(30001L, 1L),
                 Map.of(
                         barCodeField,
                         new StringValue(barCode)
                 ),
-                barType
+                barKlass
         );
 
-        var quxInst = new ClassInstance(
-                PhysicalId.of(30002L, 0L, TestUtils.mockClassType()),
+        var quxInst = new MvClassInstance(
+                PhysicalId.of(30002L, 0L),
                 Map.of(
                         quxNameField,
                         new StringValue("qux001")
                 ),
-                quxType
+                quxKlass
         );
 
-        var fooInst = new ClassInstance(
-                PhysicalId.of(30001L, 0L, TestUtils.mockClassType()),
+        var fooInst = new MvClassInstance(
+                PhysicalId.of(30001L, 0L),
                 Map.of(
                         nameField, new StringValue(fooName),
                         barField, barInst.getReference(),
                         quxField, quxInst.getReference()
                 ),
-                fooType
+                fooKlass
         );
         barInst.setParentInternal(fooInst, barField, true);
 
         Function<Id, Instance> resolveInst = id -> {
+            var entity = entityMap.get(id);
+            if (entity != null) return entity;
             if(Objects.equals(id, fooInst.tryGetId()))
                 return ClassInstance.allocateUninitialized(id);
             else if(Objects.equals(id, barInst.tryGetId()))
@@ -171,17 +179,8 @@ public class InstanceIOTest extends TestCase {
             else
                 throw new InternalException(String.format("Invalid id %s", id));
         };
-        TypeDefProvider typeDefProvider = id -> {
-            if(fooType.idEquals(id))
-                return fooType;
-            if(barType.idEquals(id))
-                return barType;
-            if(quxType.idEquals(id))
-                return quxType;
-            throw new NullPointerException("Can not find type def for id: " + id);
-        };
         var bytes = InstanceOutput.toBytes(fooInst);
-        var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, i -> {}, typeDefProvider, id -> null);
+        var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, i -> {}, id -> null);
         var recoveredFooInst = (ClassInstance) input.readSingleMessageGrove();
         MatcherAssert.assertThat(recoveredFooInst, InstanceMatcher.of(fooInst));
         new StreamVisitor(new ByteArrayInputStream(bytes)) {

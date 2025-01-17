@@ -9,7 +9,7 @@ import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.*;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,13 +62,14 @@ public class ReflectDefiner {
                 .kind(kind)
                 .declaringKlass(declaringKlass)
                 .isAbstract(Modifier.isAbstract(javaClass.getModifiers()))
+                .maintenanceDisabled()
                 .build();
         addKlass.accept(javaClass, klass);
-        klass.setTypeParameters(NncUtils.map(javaClass.getTypeParameters(), tv -> defineTypeVariable(tv, klass)));
+        klass.setTypeParameters(Utils.map(javaClass.getTypeParameters(), tv -> defineTypeVariable(tv, klass)));
         if (javaClass.getGenericSuperclass() != null && javaClass.getGenericSuperclass() != Object.class) {
             klass.setSuperType((ClassType) resolveType(javaClass.getGenericSuperclass()));
         }
-        klass.setInterfaces(NncUtils.map(javaClass.getGenericInterfaces(), it -> (ClassType) resolveType(it)));
+        klass.setInterfaces(Utils.map(javaClass.getGenericInterfaces(), it -> (ClassType) resolveType(it)));
         var methodSignatures = new HashSet<MethodSignature>();
         for (Constructor<?> javaConstructor : javaClass.getDeclaredConstructors()) {
             var mod = javaConstructor.getModifiers();
@@ -79,8 +80,8 @@ public class ReflectDefiner {
                     .isNative(true)
                     .isConstructor(true)
                     .build();
-            constructor.setTypeParameters(NncUtils.map(javaConstructor.getTypeParameters(), tv -> defineTypeVariable(tv, constructor)));
-            constructor.setParameters(NncUtils.map(javaConstructor.getParameters(), p -> parseParameter(p, constructor)));
+            constructor.setTypeParameters(Utils.map(javaConstructor.getTypeParameters(), tv -> defineTypeVariable(tv, constructor)));
+            constructor.setParameters(Utils.map(javaConstructor.getParameters(), p -> parseParameter(p, constructor)));
             if(!methodSignatures.add(MethodSignature.of(constructor)))
                 klass.removeMethod(constructor);
         }
@@ -93,14 +94,16 @@ public class ReflectDefiner {
                 if(javaMethod.isDefault() || ignoredFunctionalInterfaceMethods.contains(JavaMethodSignature.of(javaMethod)))
                     continue;
             }
-            var abs = Modifier.isAbstract(javaMethod.getModifiers());
+            var _static = Modifier.isStatic(javaMethod.getModifiers());
+            var abs = Modifier.isAbstract(javaMethod.getModifiers()) ||
+                    kind == ClassKind.INTERFACE && !_static && !javaMethod.isDefault();
             var method = MethodBuilder.newBuilder(klass, javaMethod.getName())
                     .isAbstract(abs)
-                    .isStatic(Modifier.isStatic(javaMethod.getModifiers()))
-                    .isNative(!abs && kind != ClassKind.INTERFACE)
+                    .isStatic(_static)
+                    .isNative(!abs)
                     .build();
-            method.setTypeParameters(NncUtils.map(javaMethod.getTypeParameters(), tv -> defineTypeVariable(tv, method)));
-            method.setParameters(NncUtils.map(javaMethod.getParameters(), p -> parseParameter(p, method)));
+            method.setTypeParameters(Utils.map(javaMethod.getTypeParameters(), tv -> defineTypeVariable(tv, method)));
+            method.setParameters(Utils.map(javaMethod.getParameters(), p -> parseParameter(p, method)));
             method.setReturnType(resolveNullableType(javaMethod.getGenericReturnType()));
             if(!methodSignatures.add(MethodSignature.of(method))) {
                 var name = method.getName();
@@ -151,7 +154,7 @@ public class ReflectDefiner {
     private TypeVariable defineTypeVariable(java.lang.reflect.TypeVariable<?> typeVariable, GenericDeclaration genericDeclaration) {
         var tv = new TypeVariable(null, typeVariable.getName(), genericDeclaration);
         typeVariableMap.put(typeVariable, tv);
-        tv.setBounds(NncUtils.map(typeVariable.getBounds(), this::resolveType));
+        tv.setBounds(Utils.map(typeVariable.getBounds(), this::resolveType));
         return tv;
     }
 
@@ -203,9 +206,9 @@ public class ReflectDefiner {
                 var rawKlass = ((ClassType) resolveType(pType.getRawType())).getKlass();
                 if(rawKlass.isTemplate()) {
                     yield new KlassType(
-                            (ClassType) NncUtils.get(pType.getOwnerType(), this::resolveType),
+                            (ClassType) Utils.safeCall(pType.getOwnerType(), this::resolveType),
                             rawKlass,
-                            NncUtils.map(List.of(pType.getActualTypeArguments()), this::resolveType)
+                            Utils.map(List.of(pType.getActualTypeArguments()), this::resolveType)
                     );
                 } else
                     yield rawKlass.getType();
@@ -213,8 +216,8 @@ public class ReflectDefiner {
             case WildcardType wildcardType -> new UncertainType(
                     wildcardType.getLowerBounds().length == 0 ?
                             Types.getNeverType() :
-                            Types.getUnionType(NncUtils.map(wildcardType.getLowerBounds(), this::resolveType)),
-                    Types.getIntersectionType(NncUtils.map(wildcardType.getUpperBounds(), this::resolveType))
+                            Types.getUnionType(Utils.map(wildcardType.getLowerBounds(), this::resolveType)),
+                    Types.getIntersectionType(Utils.map(wildcardType.getUpperBounds(), this::resolveType))
             );
             case java.lang.reflect.TypeVariable<?> tv -> Objects.requireNonNull(typeVariableMap.get(tv),
                     () -> "Cannot find type variable " + tv.getName() + " in class " + javaClass.getName()

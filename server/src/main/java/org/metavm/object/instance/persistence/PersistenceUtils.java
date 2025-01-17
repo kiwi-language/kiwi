@@ -2,9 +2,10 @@ package org.metavm.object.instance.persistence;
 
 import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceIndexKey;
 import org.metavm.object.type.*;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.StreamVisitor;
 
 import java.io.ByteArrayInputStream;
@@ -34,12 +35,12 @@ public class PersistenceUtils {
         return result;
     }
 
-    public static void forEachIndexEntries(ClassInstance instance, long appId, Consumer<IndexEntryPO> action,
+    public static void forEachIndexEntries(Instance instance, long appId, Consumer<IndexEntryPO> action,
                                            Consumer<IndexEntryPO> actionForUnique) {
-        instance.getType().foreachIndex(index -> forEachIndexEntries(index, instance, appId, action, actionForUnique));
+        ((ClassType) instance.getInstanceType()).foreachIndex(index -> forEachIndexEntries(index, instance, appId, action, actionForUnique));
     }
 
-    private static void forEachIndexEntries(IndexRef index, ClassInstance instance,
+    private static void forEachIndexEntries(IndexRef index, Instance instance,
                                             long appId, Consumer<IndexEntryPO> action, Consumer<IndexEntryPO> actionForUnique) {
         index.forEachIndexKey(instance,
                 key -> {
@@ -68,8 +69,8 @@ public class PersistenceUtils {
         return new IndexQueryPO(
                 appId,
                 query.index().getId().toBytes(),
-                NncUtils.get(query.from(), InstanceIndexKey::toPO),
-                NncUtils.get(query.to(), InstanceIndexKey::toPO),
+                Utils.safeCall(query.from(), InstanceIndexKey::toPO),
+                Utils.safeCall(query.to(), InstanceIndexKey::toPO),
                 query.desc(),
                 query.limit(),
                 lockMode

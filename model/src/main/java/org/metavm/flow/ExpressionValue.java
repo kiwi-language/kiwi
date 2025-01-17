@@ -2,11 +2,17 @@ package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
-import org.metavm.entity.ElementVisitor;
+import org.metavm.api.Generated;
 import org.metavm.expression.EvaluationContext;
 import org.metavm.expression.Expression;
 import org.metavm.expression.VarType;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.Type;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
+
+import java.util.function.Consumer;
 
 @Entity
 public class ExpressionValue extends Value {
@@ -15,6 +21,16 @@ public class ExpressionValue extends Value {
 
     public ExpressionValue(@NotNull Expression expression) {
         this.expression = expression;
+    }
+
+    @Generated
+    public static ExpressionValue read(MvInput input) {
+        return new ExpressionValue(Expression.read(input));
+    }
+
+    @Generated
+    public static void visit(StreamVisitor visitor) {
+        Expression.visit(visitor);
     }
 
     @Override
@@ -37,8 +53,22 @@ public class ExpressionValue extends Value {
         return expression;
     }
 
-    @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitExpressionValue(this);
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        expression.forEachReference(action);
+    }
+
+    public void buildJson(java.util.Map<String, Object> map) {
+        map.put("type", this.getType().toJson());
+        map.put("text", this.getText());
+        map.put("expression", this.getExpression().toJson());
+    }
+
+    @Generated
+    public void write(MvOutput output) {
+        output.write(TYPE_ExpressionValue);
+        super.write(output);
+        expression.write(output);
     }
 }

@@ -25,7 +25,7 @@ public class IndexNative extends NativeBase {
     }
 
     public Value Index(Value name, Value unique, Value keyComputer, CallContext callContext) {
-        instance.initField(StdField.indexMapName.get(), name);
+        instance.initField(StdField.indexName.get(), name);
         return instance.getReference();
     }
 
@@ -58,7 +58,7 @@ public class IndexNative extends NativeBase {
     }
 
     private Value convertToList(List<Reference> result, CallContext callContext) {
-        var type = (ClassType) instance.getType().getTypeArguments().get(1);
+        var type = (ClassType) instance.getInstanceType().getTypeArguments().get(1);
         var listType = new KlassType(null, StdKlass.arrayList.get(), List.of(type));
         var list = ClassInstance.allocate(listType);
         var listNative = new ListNative(list);
@@ -69,8 +69,8 @@ public class IndexNative extends NativeBase {
 
     private IndexRef getIndex() {
         if (index == null) {
-            var indexName = ((StringValue) instance.getField(StdField.indexMapName.get())).getValue();
-            var valueType = (ClassType) instance.getType().getTypeArguments().get(1);
+            var indexName = ((StringValue) instance.getField(StdField.indexName.get())).getValue();
+            var valueType = (ClassType) instance.getInstanceType().getTypeArguments().get(1);
             index = Objects.requireNonNull(
                     valueType.findSelfIndex(idx -> idx.getName().equals(indexName)),
                     () -> "Cannot find index with name '" + indexName + "' in class " + valueType

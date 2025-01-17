@@ -10,7 +10,7 @@ public class RecordToClassTest extends TestCase {
     public void test() {
         var file = TranspileTestTools.getPsiJavaFile(RecordToClassFoo.class);
         TranspileTestTools.executeCommand(() -> file.accept(new RecordToClass()));
-        log.debug("{}", file.getText());
+        log.info("{}", file.getText());
     }
 
 }

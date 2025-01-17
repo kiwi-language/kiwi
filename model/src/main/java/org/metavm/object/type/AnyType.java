@@ -4,28 +4,29 @@ import org.jetbrains.annotations.Nullable;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.InstanceVisitor;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.rest.dto.AnyTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Entity
 public class AnyType extends Type {
 
     public static final AnyType instance = new AnyType();
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     private AnyType() {
         super();
-    }
-
-    @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitAnyType(this);
     }
 
     @Override
@@ -38,10 +39,6 @@ public class AnyType extends Type {
         return TypeCategory.ANY;
     }
 
-    @Override
-    public Type getType() {
-        return StdKlass.anyType.type();
-    }
 
     @Override
     public boolean isEphemeral() {
@@ -56,11 +53,6 @@ public class AnyType extends Type {
     @Override
     protected boolean isAssignableFrom0(Type that) {
         return !that.isNull();
-    }
-
-    @Override
-    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
-        return visitor.visitAnyType(this, s);
     }
 
     @Override
@@ -89,7 +81,7 @@ public class AnyType extends Type {
     }
 
     @Override
-    protected boolean equals0(Object obj) {
+    public boolean equals(Object obj) {
         return obj instanceof AnyType;
     }
 
@@ -98,4 +90,27 @@ public class AnyType extends Type {
         return AnyType.class.hashCode();
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitAnyType(this);
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitAnyType(this, s);
+    }
+
+    @Override
+    public ClassType getValueType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+    }
 }

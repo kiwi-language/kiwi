@@ -1,7 +1,7 @@
 package org.metavm.object.instance.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 import java.util.Objects;
@@ -58,7 +58,7 @@ public class ListFieldValue extends FieldValue {
         if (that instanceof ListFieldValue thatListFieldValue) {
             return Objects.equals(id, thatListFieldValue.id)
                     && elementAsChild == thatListFieldValue.elementAsChild
-                    && NncUtils.listEquals(elements, thatListFieldValue.elements,
+                    && Utils.listEquals(elements, thatListFieldValue.elements,
                     (fieldValue, that1) -> fieldValue.valueEquals(that1, newIds));
         } else
             return false;
@@ -66,6 +66,6 @@ public class ListFieldValue extends FieldValue {
 
     @Override
     public Object toJson() {
-        return NncUtils.map(elements, FieldValue::toJson);
+        return Utils.map(elements, FieldValue::toJson);
     }
 }

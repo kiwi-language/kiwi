@@ -115,17 +115,17 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException typeReferredByFields(Klass type, List<String> fieldNames) {
-        List<String> quotedFieldNames = NncUtils.map(fieldNames, s -> "\"" + s + "\"");
+        List<String> quotedFieldNames = Utils.map(fieldNames, s -> "\"" + s + "\"");
         return new BusinessException(
                 ErrorCode.ERROR_DELETING_TYPE,
-                "\"" + type.getName() + "\" is used by types：" + NncUtils.join(quotedFieldNames)
+                "\"" + type.getName() + "\" is used by types：" + Utils.join(quotedFieldNames)
         );
     }
 
     public static BusinessException typeReferredByFlows(List<String> flowNames) {
         return new BusinessException(
                 ErrorCode.ERROR_DELETING_TYPE,
-                "type is used by flows: " + NncUtils.join(flowNames)
+                "type is used by flows: " + Utils.join(flowNames)
         );
     }
 
@@ -184,10 +184,10 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException duplicateKey(ClassInstance instance, Id constraintId) {
-        Index constraint = instance.getKlass().getUniqueConstraint(constraintId);
+        Index constraint = instance.getInstanceKlass().getUniqueConstraint(constraintId);
         return new BusinessException(
                 ErrorCode.DUPLICATE_KEY,
-                NncUtils.join(constraint.getTypeFields(), Field::getName)
+                Utils.join(constraint.getTypeFields(), Field::getName)
         );
     }
 
@@ -230,7 +230,7 @@ public class BusinessException extends RuntimeException {
     }
 
     public static BusinessException invalidInstancePath(List<String> path) {
-        throw new BusinessException(ErrorCode.INVALID_INSTANCE_PATH, NncUtils.join(path, "."));
+        throw new BusinessException(ErrorCode.INVALID_INSTANCE_PATH, Utils.join(path, "."));
     }
 
     public static BusinessException invalidTypePath(String path) {

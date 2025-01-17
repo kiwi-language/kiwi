@@ -1,16 +1,17 @@
 package org.metavm.object.type.generic;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.flow.FunctionRef;
-import org.metavm.flow.MethodRef;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.EntityUtils;
+import org.metavm.flow.FunctionRef;
+import org.metavm.flow.MethodRef;
 import org.metavm.object.type.*;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -29,15 +30,20 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
                            List<? extends Type> typeArguments) {
         if (typeVariables.size() != typeArguments.size())
             throw new InternalException("Type variables and type arguments have different sizes. " +
-                    "type variables: [" + NncUtils.join(typeVariables, Type::getTypeDesc) + "]"
-                    + ", type arguments: [" + NncUtils.join(typeArguments, Type::getTypeDesc) + "]");
-        this.variableMap = new HashMap<>(NncUtils.zip(typeVariables, typeArguments));
+                    "type variables: [" + Utils.join(typeVariables, Type::getTypeDesc) + "]"
+                    + ", type arguments: [" + Utils.join(typeArguments, Type::getTypeDesc) + "]");
+        this.variableMap = new HashMap<>(Utils.zip(typeVariables, typeArguments));
     }
 
     public void addMapping(Type from, Type to) {
         variableMap.put(from, to);
         if (DebugEnv.debugging)
             debugLogger.info("added mapping: {} -> {}", EntityUtils.getEntityDesc(from), EntityUtils.getEntityDesc(to));
+    }
+
+    @Override
+    public Type visitElement(Element element) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -68,7 +74,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var subst = substitute(type);
         if (subst != null)
             return subst;
-        return new IntersectionType(NncUtils.mapUnique(type.getTypes(), t -> t.accept(this)));
+        return new IntersectionType(Utils.mapToSet(type.getTypes(), t -> t.accept(this)));
     }
 
     @Override
@@ -77,7 +83,7 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         if (subst != null)
             return subst;
         return new FunctionType(
-                NncUtils.map(type.getParameterTypes(), t -> t.accept(this)),
+                Utils.map(type.getParameterTypes(), t -> t.accept(this)),
                 type.getReturnType().accept(this)
         );
     }
@@ -87,17 +93,17 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
         var subst = substitute(type);
         if (subst != null)
             return subst;
-        return new UnionType(NncUtils.mapUnique(type.getMembers(), t -> t.accept(this)));
+        return new UnionType(Utils.mapToSet(type.getMembers(), t -> t.accept(this)));
     }
 
     @Override
-    public Type visitClassType(ClassType type) {
+    public Type visitKlassType(KlassType type) {
         var subst = substitute(type);
         if (subst != null)
             return subst;
         return new KlassType(
-                (ClassType) NncUtils.get(type.getOwner(), t -> t.accept(this)),
-                type.getKlass(), NncUtils.map(type.getTypeArguments(), t -> t.accept(this)));
+                (ClassType) Utils.safeCall(type.getOwner(), t -> t.accept(this)),
+                type.getKlass(), Utils.map(type.getTypeArguments(), t -> t.accept(this)));
     }
 
 

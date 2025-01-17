@@ -4,7 +4,7 @@ import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.object.instance.IndexEntryRT;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.type.Index;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +25,7 @@ public class InstanceMemoryIndex {
     }
 
     public @Nullable ClassInstance selectUnique(IndexKeyRT key) {
-        NncUtils.requireTrue(key.getIndex().isUnique());
+        Utils.require(key.getIndex().isUnique());
         return subIndex(key.getIndex()).selectUnique(key);
     }
 
@@ -80,8 +80,8 @@ public class InstanceMemoryIndex {
         }
 
         public @Nullable ClassInstance selectUnique(IndexKeyRT key) {
-            NncUtils.requireTrue(index.isUnique());
-            return NncUtils.first(select(key));
+            Utils.require(index.isUnique());
+            return Utils.first(select(key));
         }
 
         public void remove(IndexKeyRT key, ClassInstance instance) {
@@ -93,7 +93,7 @@ public class InstanceMemoryIndex {
         }
 
         public List<ClassInstance> query(InstanceIndexQuery query) {
-            var entries = query(query.index(), NncUtils.get(query.from(), InstanceIndexKey::toRT), NncUtils.get(query.to(), InstanceIndexKey::toRT));
+            var entries = query(query.index(), Utils.safeCall(query.from(), InstanceIndexKey::toRT), Utils.safeCall(query.to(), InstanceIndexKey::toRT));
             return entries.stream().map(IndexEntryRT::getInstance)
                     .distinct()
                     .limit(Objects.requireNonNullElse(query.limit(), Long.MAX_VALUE))
@@ -102,10 +102,10 @@ public class InstanceMemoryIndex {
 
         private Collection<IndexEntryRT> query(Index index, @Nullable IndexKeyRT from, @Nullable IndexKeyRT to) {
             if (from == null)
-                from = new IndexKeyRT(index, NncUtils.toMap(index.getFields(), f -> f, f -> MIN_INSTANCE));
+                from = new IndexKeyRT(index, Utils.toMap(index.getFields(), f -> f, f -> MIN_INSTANCE));
             if (to == null)
-                to = new IndexKeyRT(index, NncUtils.toMap(index.getFields(), f -> f, f -> MAX_INSTANCE));
-            return map.subSet(new IndexEntryRT(from, (ClassInstance) MIN_INSTANCE.resolve()), true, new IndexEntryRT(to, (ClassInstance) MAX_INSTANCE.resolve()), true);
+                to = new IndexKeyRT(index, Utils.toMap(index.getFields(), f -> f, f -> MAX_INSTANCE));
+            return map.subSet(new IndexEntryRT(from, (ClassInstance) MIN_INSTANCE.get()), true, new IndexEntryRT(to, (ClassInstance) MAX_INSTANCE.get()), true);
         }
 
         public List<ClassInstance> scan(IndexKeyRT from, IndexKeyRT to) {

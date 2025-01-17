@@ -20,7 +20,7 @@ public class PasswordValue extends PrimitiveValue {
     }
 
     @Override
-    public PrimitiveType getType() {
+    public PrimitiveType getValueType() {
         return PrimitiveType.passwordType;
     }
 

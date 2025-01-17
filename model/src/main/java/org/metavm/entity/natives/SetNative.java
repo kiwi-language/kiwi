@@ -4,7 +4,7 @@ import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.IntValue;
+import org.metavm.object.instance.core.MvClassInstance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
@@ -16,8 +16,8 @@ public abstract class SetNative extends IterableNative {
 
     public Value equals(Value o, CallContext callContext) {
         if(o instanceof Reference ref) {
-            if(ref.resolve() instanceof ClassInstance that
-                    && Objects.equals(that.getType().findAncestorByKlass(StdKlass.set.get()), getInstance().getType().findAncestorByKlass(StdKlass.set.get()))) {
+            if(ref.get() instanceof MvClassInstance that
+                    && Objects.equals(that.getInstanceType().asSuper(StdKlass.set.get()), getInstance().getInstanceType().asSuper(StdKlass.set.get()))) {
                 var thatNat = (SetNative) NativeMethods.getNativeObject(that);
                 if(size() == thatNat.size()) {
                     for (Value value : thatNat) {
@@ -63,7 +63,7 @@ public abstract class SetNative extends IterableNative {
 
     public Value retainAll(Value value, CallContext callContext) {
         var coll = value.resolveObject();
-        var containsMethod = coll.getType().getMethod(StdMethod.collectionContains.get());
+        var containsMethod = coll.getInstanceType().getMethod(StdMethod.collectionContains.get());
         var it = iterator();
         boolean changed = false;
         while (it.hasNext()) {

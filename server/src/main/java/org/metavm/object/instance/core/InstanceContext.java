@@ -14,7 +14,6 @@ import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.type.ActiveCommitProvider;
 import org.metavm.object.type.RedirectStatusProvider;
-import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.LinkedList;
 import org.metavm.util.*;
@@ -29,7 +28,7 @@ import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
-import static org.metavm.util.NncUtils.mergeSets;
+import static org.metavm.util.Utils.mergeSets;
 
 public class InstanceContext extends BufferingInstanceContext {
 
@@ -105,8 +104,6 @@ public class InstanceContext extends BufferingInstanceContext {
         if (DebugEnv.debugging)
             debugLogger.info("InstanceContext.finish");
         var commit = activeCommitProvider.getActiveCommit();
-        if(commit != null)
-            EntityUtils.ensureTreeInitialized(commit);
         headContext.freeze();
         if(commit != null)
             tryCancelCommit(commit);
@@ -132,14 +129,16 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private void tryCancelCommit(Commit commit) {
         if(commit != null) {
-            forEachInitialized(instance -> {
-                instance.forEachReference((r, isChild) -> {
-                    if(!isChild && r.isResolved() && r.resolve().isRemoving()) {
-                        if(!commit.isCancelled()) {
-                            commit.cancel();
+            forEach(instance -> {
+                if (instance instanceof MvInstance mvInst) {
+                    mvInst.forEachReference((r, isChild) -> {
+                        if (!isChild && r.isResolved() && r.resolveMv().isRemoving()) {
+                            if (!commit.isCancelled()) {
+                                commit.cancel();
+                            }
                         }
-                    }
-                });
+                    });
+                }
             });
         }
     }
@@ -203,13 +202,13 @@ public class InstanceContext extends BufferingInstanceContext {
     private void check() {
         try (var ignored = getProfiler().enter("check")) {
             clearMarks();
-            forEachInitializedRoot(root -> {
+            forEachRoot(root -> {
                 if (root.getParent() == null) {
                     root.forEachDescendant(instance -> {
                         if (instance.isMarked()) {
                             throw new BusinessException(ErrorCode.MULTI_PARENT, Instances.getInstanceDesc(instance.getReference()));
                         }
-                        instance.setMarked(true);
+                        instance.setMarked();
                     });
                 }
             });
@@ -224,41 +223,29 @@ public class InstanceContext extends BufferingInstanceContext {
     public void initIds() {
         try (var ignored = getProfiler().enter("initIds")) {
             var instancesToInitId =
-                    NncUtils.filter(this, i -> !i.isIdInitialized() && !i.isEphemeral() && !i.isValue());
+                    Utils.filter(this, i -> !i.isIdInitialized() && !i.isEphemeral() && !i.isValue());
             if (instancesToInitId.isEmpty())
                 return;
             idInitializer.initializeIds(appId, instancesToInitId);
             for (var instance : instancesToInitId) {
                 onIdInitialized(instance);
             }
+//            for (var instance : this) {
+//                instance.forEachReference(Reference::refreshId);
+//            }
         }
     }
 
-    private List<Instance> getByTypeFromBuffer(Type type, @Nullable Instance startExclusive, int limit, Set<Long> persistedIds) {
-        var typeInstances = NncUtils.filter(
-                this,
-                i -> type == i.getType() && !persistedIds.contains(i.tryGetTreeId())
-        );
-        if (startExclusive == null)
-            return typeInstances.subList(0, Math.min(typeInstances.size(), limit));
-        int index = typeInstances.indexOf(startExclusive);
-        return typeInstances.subList(
-                index + 1,
-                Math.min(typeInstances.size(), index + 1 + limit)
-        );
-    }
-
-    private void forEachInitializedRoot(Consumer<Instance> action) {
+    private void forEachRoot(Consumer<? super Instance> action) {
         for (var instance : this) {
-            if (instance.isInitialized() && instance.isRoot())
+            if (instance.isRoot())
                 action.accept(instance);
         }
     }
 
-    private void forEachInitialized(Consumer<Instance> action) {
+    public void forEach(Consumer<? super Instance> action) {
         for (var instance : this) {
-            if (instance.isInitialized())
-                action.accept(instance);
+            action.accept(instance);
         }
     }
 
@@ -307,7 +294,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 for (Instance extracted : relocations.extracted) {
                     toRebuild.add(extracted.getRoot());
                 }
-                var trees = NncUtils.exclude(bufferedTrees, t -> discardedTreeIds.contains(t.id()));
+                var trees = Utils.exclude(bufferedTrees, t -> discardedTreeIds.contains(t.id()));
                 toRebuild.forEach(i -> trees.add(buildTree(i)));
                 difference.diffEntities(headContext.trees(), trees);
                 relocations.recover();
@@ -334,7 +321,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private Patch processChanges(Patch patch, List<Instance> nonPersistedOrphans, PatchContext patchContext) {
         try (var ignored = getProfiler().enter("InstanceContext.processChanges")) {
             if (DebugEnv.debugging)
-                debugLogger.info("nonPersistedOrphans: [{}]", NncUtils.join(nonPersistedOrphans, i -> Instances.getInstanceDesc(i) + "/" + i.getStringId()));
+                debugLogger.info("nonPersistedOrphans: [{}]", Utils.join(nonPersistedOrphans, i -> Instances.getInstanceDesc(i) + "/" + i.getStringId()));
             var ref = new Object() {
                 boolean changed = false;
             };
@@ -369,9 +356,9 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private String getInstanceDesc(Instance instance) {
         if (instance instanceof ArrayInstance)
-            return instance.getType().getName();
-        else if (instance.getMappedEntity() != null)
-            return EntityUtils.getEntityDesc(instance.getMappedEntity());
+            return instance.getInstanceType().getName();
+        else if (instance instanceof Entity entity)
+            return EntityUtils.getEntityDesc(entity);
         else
             return instance.toString();
     }
@@ -383,17 +370,17 @@ public class InstanceContext extends BufferingInstanceContext {
             path.addFirst(i);
             i = i.getParent();
         }
-        return NncUtils.join(path, this::getInstanceDesc, "/");
+        return Utils.join(path, this::getInstanceDesc, "/");
     }
 
     private void validateRemoval() {
         var visited = new IdentitySet<Instance>();
-        forEachInitializedRoot(root -> {
+        forEachRoot(root -> {
             if (!root.isRemoved() && !root.isEphemeral()) {
                 root.visitGraph(i -> {
                     if (i.isRemoved()) {
                         if(DebugEnv.recordPath)
-                            logger.debug("Reference path: {}", NncUtils.join(DebugEnv.path));
+                            logger.info("Reference path: {}", Utils.join(DebugEnv.path));
                         throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(i.getReference()));
                     }
                     return true;
@@ -405,7 +392,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private void processRemoval(Patch patch) {
         try (var ignored = getProfiler().enter("processRemoval")) {
             var entityChange = patch.entityChange;
-            if (NncUtils.isEmpty(entityChange.deletes()))
+            if (Utils.isEmpty(entityChange.deletes()))
                 return;
             var idsToRemove = new HashSet<Id>();
             for (VersionRT delete : entityChange.deletes()) {
@@ -415,9 +402,9 @@ public class InstanceContext extends BufferingInstanceContext {
                 if(i.tryGetOldId() != null)
                     idsToRemove.add(i.getOldId());
             }
-            var idsToUpdate = NncUtils.mapUnique(entityChange.updates(), v -> v.id().getTreeId());
+            var idsToUpdate = Utils.mapToSet(entityChange.updates(), v -> v.id().getTreeId());
             var ref = instanceStore.getFirstReference(
-                    appId, idsToRemove, mergeSets(NncUtils.mapUnique(idsToRemove, Id::getTreeId), idsToUpdate)
+                    appId, idsToRemove, mergeSets(Utils.mapToSet(idsToRemove, Id::getTreeId), idsToUpdate)
             );
             if (ref != null) {
                 unfrozen(() -> {
@@ -438,8 +425,7 @@ public class InstanceContext extends BufferingInstanceContext {
             var trees = new ArrayList<Tree>();
             var fpMap = new HashMap<>(getForwardingPointers());
             for (var instance : this) {
-                if (instance.isInitialized()
-                        && instance.isRoot()
+                if (instance.isRoot()
                         && !instance.isRemoved() && !instance.isEphemeral()
                         && !instance.isLoadedFromCache()) {
                     var bout = new ByteArrayOutputStream();
@@ -540,7 +526,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
     @Override
     public void registerCommitCallback(Runnable action) {
-        NncUtils.requireTrue(TransactionSynchronizationManager.isActualTransactionActive(),
+        Utils.require(TransactionSynchronizationManager.isActualTransactionActive(),
                 "Can not register commit callback outside of transactions");
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
@@ -586,13 +572,14 @@ public class InstanceContext extends BufferingInstanceContext {
         for (Long treeId : treeIds) {
             var ids = loadingBuffer.getIdsInTree(treeId);
             if(ids != null && !ids.isEmpty()) {
-                var root = get(ids.get(0));
+                var root = get(ids.getFirst());
                 root.accept(new StructuralInstanceVisitor() {
                     @Override
-                    public void visitInstance(Instance instance) {
+                    public Void visitInstance(Instance instance) {
                         if (instance.tryGetId() != null)
                             batch.add(instance);
                         super.visitInstance(instance);
+                        return null;
                     }
                 });
             }
@@ -602,8 +589,8 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     public record Relocations(
-            List<Instance> merged,
-            List<Instance> extracted
+            List<MvInstance> merged,
+            List<MvInstance> extracted
     ) {
 
         static final Relocations EMPTY = new Relocations(List.of(), List.of());
@@ -614,12 +601,12 @@ public class InstanceContext extends BufferingInstanceContext {
         }
 
         void rollback() {
-            merged.forEach(Instance::rollbackMerge);
-            extracted.forEach(Instance::rollbackExtraction);
+            merged.forEach(MvInstance::rollbackMerge);
+            extracted.forEach(MvInstance::rollbackExtraction);
         }
 
         void recover() {
-            merged.forEach(Instance::merge);
+            merged.forEach(MvInstance::merge);
             extracted.forEach(i -> i.extract(i.getRelocatedId().isRoot()));
         }
 
@@ -629,7 +616,7 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void finalizeRedirections() {
-        forEachInitialized(instance -> instance.transformReference(r -> {
+        forEach(instance -> instance.transformReference(r -> {
             if(r instanceof RedirectingReference redirectingRef && redirectingRef.shouldRedirect())
                 return redirectingRef.getRedirectionReference();
             else
@@ -644,16 +631,17 @@ public class InstanceContext extends BufferingInstanceContext {
         return new Relocations(merged, extracted);
     }
 
-    private List<Instance> merge() {
-        var merged = new ArrayList<Instance>();
-        forEachInitialized(instance -> {
-            if (!instance.isEphemeral() && !instance.isRemoved()) {
-                if(instance.canMerge()) {
-                    instance.forEachDescendant(i -> {
-                        i.merge();
-                        addForwardingPointer(new ForwardingPointer(i.getOldId(), i.getCurrentId()));
+    private List<MvInstance> merge() {
+        var merged = new ArrayList<MvInstance>();
+        forEach(instance -> {
+            if (instance instanceof MvInstance mvInst && !instance.isEphemeral() && !instance.isRemoved()) {
+                if(mvInst.canMerge()) {
+                    mvInst.forEachDescendant(i -> {
+                        var d = (MvInstance) i;
+                        d.merge();
+                        addForwardingPointer(new ForwardingPointer(i.getOldId(), d.getCurrentId()));
                         mapManually(i.getId(), i);
-                        merged.add(i);
+                        merged.add(d);
                     });
                     this.relocated.add(instance);
                 }
@@ -663,11 +651,11 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void mergeDetachedValues() {
-        forEachInitialized(instance -> {
-            if(!instance.isEphemeral() && !instance.isRemoved()) {
-                instance.transformReference((r, isChild) -> {
+        forEach(instance -> {
+            if(instance instanceof MvInstance mvInst && !instance.isEphemeral() && !instance.isRemoved()) {
+                mvInst.transformReference((r, isChild) -> {
                     if(r.isValueReference() && !isChild) {
-                        var v = r.resolve();
+                        var v = r.resolveMv();
                         if(v.isDetachedValue())
                             return v.copy().getReference();
                     }
@@ -677,25 +665,26 @@ public class InstanceContext extends BufferingInstanceContext {
         });
     }
 
-    private List<Instance> extract() {
-        var extracted = new ArrayList<Instance>();
-        forEachInitialized(instance -> {
-            if (!instance.isRemoved() && !instance.isEphemeral() && instance.canExtract()) {
-                //                    allExtracted.add(i);
+    private List<MvInstance> extract() {
+        var extracted = new ArrayList<MvInstance>();
+        forEach(instance -> {
+            if (instance instanceof MvInstance mvInst && !mvInst.isRemoved() && !mvInst.isEphemeral() && mvInst.canExtract()) {
                 var ref = instance.getReference();
                 Objects.requireNonNull(instance.getParent()).forEachReference(r -> {
-                    if(r.equals(ref))
-                        r.setForwarded();
+                    if(r.equals(ref)) r.setForwarded();
                 });
-                instance.forEachDescendant(i -> {
-                    i.extract(i == instance);
-                    extracted.add(i);
+                mvInst.extract(true);
+                extracted.add(mvInst);
+                mvInst.forEachProperDescendant(i -> {
+                    var d = (MvInstance) i;
+                    d.extract(false);
+                    extracted.add(d);
                 });
-                relocated.add(instance);
+                relocated.add(mvInst);
             }
         });
         idInitializer.initializeIds(appId, extracted);
-        for (Instance instance : extracted) {
+        for (var instance : extracted) {
             addForwardingPointer(new ForwardingPointer(instance.getOldId(), instance.getCurrentId()));
             mapManually(instance.getId(), instance);
         }
@@ -710,23 +699,23 @@ public class InstanceContext extends BufferingInstanceContext {
     // For debugging, don't remove
     @SuppressWarnings("unused")
     private void logTreeChanges(EntityChange<InstancePO> treeChanges) {
-        logger.debug("inserts");
+        logger.info("inserts");
         for (InstancePO insert : treeChanges.inserts()) {
-            logger.debug("Tree ID: {}", insert.getId());
+            logger.info("Tree ID: {}", insert.getId());
         }
-        logger.debug("updates");
+        logger.info("updates");
         for (InstancePO update : treeChanges.updates()) {
-            logger.debug("Tree ID: {}, size: {}", update.getId(), update.getData().length);
+            logger.info("Tree ID: {}, size: {}", update.getId(), update.getData().length);
         }
-        logger.debug("deletes");
+        logger.info("deletes");
         for (InstancePO delete : treeChanges.deletes()) {
-            logger.debug("Tree ID: {}", delete.getId());
+            logger.info("Tree ID: {}", delete.getId());
         }
     }
 
     private void loadSeparateChildren() {
         // Assuming multiple levels of separate children are rare, hence only one level of buffering is applied
-        forEachInitialized(i -> {
+        forEach(i -> {
             if(i instanceof ClassInstance classInstance) {
                 classInstance.forEachField((f, v) -> {
                     if (f.isChild() && v instanceof Reference r) {
@@ -737,7 +726,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 });
             }
         });
-        forEachInitializedRoot(r -> {
+        forEachRoot(r -> {
             if (r.getParent() == null)
                 r.forEachDescendant(i -> {});
         });

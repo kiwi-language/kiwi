@@ -10,7 +10,7 @@ import org.metavm.flow.Values;
 import org.metavm.object.type.*;
 import org.metavm.util.CompilerException;
 import org.metavm.util.LinkedList;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +38,7 @@ public class IndexCreator extends VisitorBase {
             classes.push(classInfo);
             super.visitClass(aClass);
             classes.pop();
-            NncUtils.exclude(klass.getIndices(), classInfo.visitedIndexes::contains).forEach(klass::removeConstraint);
+            Utils.exclude(klass.getIndices(), classInfo.visitedIndexes::contains).forEach(klass::removeConstraint);
         }
     }
 
@@ -59,12 +59,12 @@ public class IndexCreator extends VisitorBase {
             classInfo.visitedIndexes.add(index);
             var methodRef = (PsiMethodReferenceExpression) args[2];
             index.setMethod(requireNonNull(requireNonNull(methodRef.resolve()).getUserData(Keys.Method)));
-            var keyType = classType.getTypeArguments().get(0);
-            if (keyType instanceof KlassType ct && ct.isValue()) {
+            var keyType = classType.getTypeArguments().getFirst();
+            if (keyType instanceof KlassType ct && ct.isValueType()) {
                 var indexF = index;
                 ct.foreachField(keyField -> {
                     if (!keyField.isStatic() && !keyField.isTransient()) {
-                        var indexField = NncUtils.find(indexF.getFields(), f -> Objects.equals(f.getName(), keyField.getName()));
+                        var indexField = Utils.find(indexF.getFields(), f -> Objects.equals(f.getName(), keyField.getName()));
                         if (indexField == null)
                             new IndexField(indexF, keyField.getName(), keyField.getPropertyType(), Values.nullValue());
                         else
@@ -72,7 +72,7 @@ public class IndexCreator extends VisitorBase {
                     }
                 });
             } else {
-                var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), "value"));
+                var indexField = Utils.find(index.getFields(), f -> Objects.equals(f.getName(), "value"));
                 if (indexField == null)
                     new IndexField(index, "value", keyType, Values.nullValue());
                 else

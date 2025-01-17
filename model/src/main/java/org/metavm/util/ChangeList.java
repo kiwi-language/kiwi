@@ -58,16 +58,16 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
     }
 
     public List<T> insertsOrUpdates() {
-        return NncUtils.union(inserts, updates);
+        return Utils.union(inserts, updates);
     }
 
     public T any() {
-        if (NncUtils.isNotEmpty(inserts))
-            return inserts.get(0);
-        if (NncUtils.isNotEmpty(updates))
-            return updates.get(0);
-        if (NncUtils.isNotEmpty(deletes))
-            return deletes.get(0);
+        if (Utils.isNotEmpty(inserts))
+            return inserts.getFirst();
+        if (Utils.isNotEmpty(updates))
+            return updates.getFirst();
+        if (Utils.isNotEmpty(deletes))
+            return deletes.getFirst();
         throw new InternalException("Empty change list");
     }
 
@@ -76,35 +76,35 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
             Consumer<List<T>> updatesConsumer,
             Consumer<List<T>> deletesConsumer
     ) {
-        if (NncUtils.isNotEmpty(inserts))
-            NncUtils.doInBatch(inserts, insertsConsumer);
-        if (NncUtils.isNotEmpty(updates))
-            NncUtils.doInBatch(updates, updatesConsumer);
-        if (NncUtils.isNotEmpty(deletes))
-            NncUtils.doInBatch(deletes, deletesConsumer);
+        if (Utils.isNotEmpty(inserts))
+            Utils.doInBatch(inserts, insertsConsumer);
+        if (Utils.isNotEmpty(updates))
+            Utils.doInBatch(updates, updatesConsumer);
+        if (Utils.isNotEmpty(deletes))
+            Utils.doInBatch(deletes, deletesConsumer);
     }
 
     public <R> ChangeList<R> filterAndMap(Predicate<T> filter, Function<T, R> mapper) {
         return new ChangeList<>(
-                NncUtils.filterAndMap(inserts, filter, mapper),
-                NncUtils.filterAndMap(updates, filter, mapper),
-                NncUtils.filterAndMap(deletes, filter, mapper)
+                Utils.filterAndMap(inserts, filter, mapper),
+                Utils.filterAndMap(updates, filter, mapper),
+                Utils.filterAndMap(deletes, filter, mapper)
         );
     }
 
     public ChangeList<T> filter(Predicate<T> filter) {
         return new ChangeList<>(
-                NncUtils.filter(inserts, filter),
-                NncUtils.filter(updates, filter),
-                NncUtils.filter(deletes, filter)
+                Utils.filter(inserts, filter),
+                Utils.filter(updates, filter),
+                Utils.filter(deletes, filter)
         );
     }
 
     public ChangeList<T> filterNot(Predicate<T> filter) {
         return new ChangeList<>(
-                NncUtils.exclude(inserts, filter),
-                NncUtils.exclude(updates, filter),
-                NncUtils.exclude(deletes, filter)
+                Utils.exclude(inserts, filter),
+                Utils.exclude(updates, filter),
+                Utils.exclude(deletes, filter)
         );
     }
 

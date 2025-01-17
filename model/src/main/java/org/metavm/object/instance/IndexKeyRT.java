@@ -9,7 +9,7 @@ import org.metavm.object.type.Klass;
 import org.metavm.object.type.KlassBuilder;
 import org.metavm.util.BytesUtils;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +49,7 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
             var indexField = index.getFields().get(i);
             this.fields.put(
                     indexField,
-                    NncUtils.requireNonNull(fields.get(indexField),
+                    Objects.requireNonNull(fields.get(indexField),
                             () -> "Not an index prefix")
             );
         }
@@ -76,7 +76,7 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
     }
 
     public InstanceIndexQuery toQuery() {
-        var key = new InstanceIndexKey(index, NncUtils.map(index.getFields(), fields::get));
+        var key = new InstanceIndexKey(index, Utils.map(index.getFields(), fields::get));
         return new InstanceIndexQuery(
                 index,
                 key,
@@ -130,7 +130,7 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
         if(first instanceof Reference d1
                 && second instanceof Reference d2) {
             if(d1.isNew() && d2.isNew())
-                return Integer.compare(d1.resolve().getSeq(), d2.resolve().getSeq());
+                return Integer.compare(d1.get().getSeq(), d2.get().getSeq());
             if(d1.isNew())
                 return 1;
             else if(d2.isNew())
@@ -143,13 +143,13 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
     @Override
     public String toString() {
         var sb = new StringBuilder("{index: ").append(index.getName()).append(", fields: {");
-        sb.append(NncUtils.join(fields.entrySet(), e -> e.getKey().getName() + ": " + e.getValue().getText()));
+        sb.append(Utils.join(fields.entrySet(), e -> e.getKey().getName() + ": " + e.getValue().getText()));
         sb.append("}}");
         return sb.toString();
     }
 
     public byte[] getKeyBytes() {
-        return toKeyBytes(NncUtils.map(index.getFields(), fields::get));
+        return toKeyBytes(Utils.map(index.getFields(), fields::get));
     }
 
     public static byte[] toKeyBytes(List<Value> values) {

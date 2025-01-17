@@ -5,7 +5,7 @@ import org.metavm.entity.natives.ListNative;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 public class InstanceDTOBuilder {
 
@@ -26,7 +26,7 @@ public class InstanceDTOBuilder {
                 if (reference.isArray())
                     yield buildForArray(reference.resolveArray(), depth, isChild);
                 else
-                    yield buildForClassInstance(reference.resolveObject(), depth, isChild);
+                    yield buildForClassInstance(reference.resolveMvObject(), depth, isChild);
             }
             case PrimitiveValue primitiveValue -> buildForPrimitive(primitiveValue);
             case NullValue nullValue -> nullValue.toFieldValueDTO();
@@ -34,14 +34,14 @@ public class InstanceDTOBuilder {
         };
     }
 
-    private static FieldValue buildForClassInstance(ClassInstance instance, int depth, boolean isChild) {
-        if(instance.getType().isList())
+    private static FieldValue buildForClassInstance(MvClassInstance instance, int depth, boolean isChild) {
+        if(instance.getInstanceType().isList())
             return buildForListInstance(instance, depth, isChild);
         else
             return buildForOrdinaryClassInstance(instance, depth, isChild);
     }
 
-    private static FieldValue buildForListInstance(ClassInstance instance, int depth, boolean isChild) {
+    private static FieldValue buildForListInstance(MvClassInstance instance, int depth, boolean isChild) {
         try (var serContext = SerializeContext.enter()) {
             if (depth <= 0 && !isChild) {
                 return instance.toFieldValueDTO();
@@ -49,12 +49,12 @@ public class InstanceDTOBuilder {
                 var array = new ListNative(instance).toArray();
                 InstanceDTO instanceDTO = new InstanceDTO(
                         instance.getStringIdForDTO(),
-                        instance.getType().toExpression(serContext),
-                        instance.getType().getName(),
+                        instance.getInstanceType().toExpression(serContext),
+                        instance.getInstanceType().getName(),
                         instance.getTitle(),
                         new ListInstanceParam(
                                 array.isChildArray(),
-                                NncUtils.map(
+                                Utils.map(
                                         array.getElements(),
                                         e -> build(e, depth, isChild && array.isChildArray())
                                 )
@@ -65,19 +65,19 @@ public class InstanceDTOBuilder {
         }
     }
 
-    private static FieldValue buildForOrdinaryClassInstance(ClassInstance instance, int depth, boolean isChild) {
+    private static FieldValue buildForOrdinaryClassInstance(MvClassInstance instance, int depth, boolean isChild) {
         try (var serContext = SerializeContext.enter()) {
             if (depth <= 0 && !isChild) {
                 return instance.toFieldValueDTO();
             } else {
                 InstanceDTO instanceDTO = new InstanceDTO(
                         instance.getStringIdForDTO(),
-                        instance.getType().toExpression(serContext),
-                        instance.getType().getName(),
+                        instance.getInstanceType().toExpression(serContext),
+                        instance.getInstanceType().getName(),
                         instance.getTitle(),
                         new ClassInstanceParam(
-                                NncUtils.map(
-                                        instance.getKlass().getAllFields(),
+                                Utils.map(
+                                        instance.getInstanceKlass().getAllFields(),
                                         f -> new InstanceFieldDTO(
                                                 f.getId().toString(),
                                                 f.getName(),
@@ -100,12 +100,12 @@ public class InstanceDTOBuilder {
             try (var serContext = SerializeContext.enter()) {
                 InstanceDTO instanceDTO = new InstanceDTO(
                         array.getStringIdForDTO(),
-                        array.getType().toExpression(serContext),
-                        array.getType().getName(),
+                        array.getInstanceType().toExpression(serContext),
+                        array.getInstanceType().getName(),
                         array.getTitle(),
                         new ArrayInstanceParam(
                                 array.isChildArray(),
-                                NncUtils.map(
+                                Utils.map(
                                         array.getElements(),
                                         e -> build(e, depth, isChild && array.isChildArray())
                                 )

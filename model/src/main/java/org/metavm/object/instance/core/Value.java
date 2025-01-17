@@ -1,6 +1,5 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.entity.IEntityContext;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.ClosureContext;
@@ -8,10 +7,9 @@ import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.Type;
-import org.metavm.util.InstanceOutput;
 import org.metavm.util.Instances;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -19,7 +17,7 @@ import java.util.Objects;
 public interface Value {
 
     @NoProxy
-    Type getType();
+    Type getValueType();
 
     @NoProxy
     default boolean isValue() {
@@ -38,7 +36,7 @@ public interface Value {
 
     @NoProxy
     default boolean isPassword() {
-        return getType().isPassword();
+        return getValueType().isPassword();
     }
 
     default StringValue toStringInstance() {
@@ -59,13 +57,6 @@ public interface Value {
         return false;
     }
 
-    @NoProxy
-    default boolean isNotPrimitive() {
-        return !isPrimitive();
-    }
-
-    boolean isReference();
-
     default String toStringValue() {
         throw new UnsupportedOperationException();
     }
@@ -85,7 +76,7 @@ public interface Value {
     }
 
     default @Nullable String getStringId() {
-        return NncUtils.get(tryGetId(), Id::toString);
+        return Utils.safeCall(tryGetId(), Id::toString);
     }
 
     default @Nullable String getStringIdForDTO() {
@@ -102,7 +93,7 @@ public interface Value {
     String getTitle();
 
 
-    void writeInstance(InstanceOutput output) ;
+    void writeInstance(MvOutput output) ;
 
     void write(MvOutput output);
 
@@ -116,8 +107,8 @@ public interface Value {
         try (var serContext = SerializeContext.enter()) {
             return new InstanceDTO(
                     getStringIdForDTO(),
-                    getType().toExpression(serContext),
-                    getType().getName(),
+                    getValueType().toExpression(serContext),
+                    getValueType().getName(),
                     getTitle(),
                     param
             );
@@ -129,10 +120,6 @@ public interface Value {
     @NoProxy
     <R> R accept(ValueVisitor<R> visitor);
 
-    <R> void acceptReferences(ValueVisitor<R> visitor);
-
-    <R> void acceptChildren(ValueVisitor<R> visitor);
-
     default String getText() {
         var treeWriter = new TreeWriter();
         writeTree(treeWriter);
@@ -141,9 +128,7 @@ public interface Value {
 
     void writeTree(TreeWriter treeWriter);
 
-    boolean isMutable();
-
-    Object toJson(IEntityContext context);
+    Object toJson();
 
     default ClassInstance resolveObject() {
         return (ClassInstance) resolveDurable();
@@ -154,7 +139,15 @@ public interface Value {
     }
 
     default Instance resolveDurable(){
-        return ((Reference) this).resolve();
+        return ((Reference) this).get();
+    }
+
+    default MvInstance resolveMv() {
+        return (MvInstance) ((Reference) this).get();
+    }
+
+    default MvClassInstance resolveMvObject() {
+        return (MvClassInstance) ((Reference) this).get();
     }
 
     default Value toStackValue() {

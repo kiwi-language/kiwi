@@ -94,7 +94,7 @@ public class MarkingInstanceOutput extends InstanceOutput {
 
     public static abstract class Block {
 
-        public static Block read(InstanceInput input) {
+        public static Block read(MvInput input) {
             var tag = input.read();
             return switch (tag) {
                 case BytesBlock.TAG -> new BytesBlock(input.readInt());
@@ -107,7 +107,7 @@ public class MarkingInstanceOutput extends InstanceOutput {
 
         public abstract int getTag();
 
-        public abstract void write(InstanceOutput out);
+        public abstract void write(MvOutput out);
 
         public abstract void visitBody(StreamVisitor visitor);
 
@@ -129,7 +129,7 @@ public class MarkingInstanceOutput extends InstanceOutput {
         }
 
         @Override
-        public void write(InstanceOutput out) {
+        public void write(MvOutput out) {
             out.write(TAG);
             out.writeInt(length);
         }
@@ -161,7 +161,7 @@ public class MarkingInstanceOutput extends InstanceOutput {
         }
 
         @Override
-        public void write(InstanceOutput out) {
+        public void write(MvOutput out) {
             if(count == 1)
                 out.write(TAG_SINGLE);
             else {
@@ -193,7 +193,7 @@ public class MarkingInstanceOutput extends InstanceOutput {
         }
 
         @Override
-        public void write(InstanceOutput out) {
+        public void write(MvOutput out) {
             out.write(TAG);
         }
 

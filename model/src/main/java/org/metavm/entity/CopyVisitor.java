@@ -1,10 +1,11 @@
 package org.metavm.entity;
 
 import org.metavm.api.ValueObject;
+import org.metavm.expression.VoidStructuralVisitor;
 import org.metavm.object.type.Klass;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,17 +18,24 @@ public class CopyVisitor extends ElementVisitor<Element> {
 
     public static final Logger logger = LoggerFactory.getLogger(CopyVisitor.class);
 
-    public final Object root;
+    public final Element root;
     private final IdentityHashMap<Object, Object> map = new IdentityHashMap<>();
     private final Set<Object> descendants = new IdentitySet<>();
     private final Map<Object, List<Consumer<Object>>> valueListeners = new HashMap<>();
     private final LinkedList<Object> elements = new LinkedList<>();
     private final boolean strictEphemeral;
 
-    public CopyVisitor(Object root, boolean strictEphemeral) {
+    public CopyVisitor(Element root, boolean strictEphemeral) {
         this.root = root;
         this.strictEphemeral = strictEphemeral;
-        EntityUtils.forEachDescendant(root, descendants::add, true);
+        root.accept(new VoidStructuralVisitor() {
+
+            @Override
+            public Void visitElement(Element element) {
+                descendants.add(element);
+                return super.visitElement(element);
+            }
+        });
     }
 
     public void enterElement(Object element) {
@@ -70,7 +78,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
 
     public void check() {
         if (!valueListeners.isEmpty()) {
-            throw new InternalException("Unprocessed children: " + NncUtils.join(valueListeners.keySet(), EntityUtils::getEntityDesc));
+            throw new InternalException("Unprocessed children: " + Utils.join(valueListeners.keySet(), EntityUtils::getEntityDesc));
         }
     }
 
@@ -184,7 +192,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
     protected Object allocateCopy(Object entity) {
         var copy = ReflectionUtils.allocateInstance(EntityUtils.getRealType(entity.getClass()));
         if (copy instanceof Entity e && !(copy instanceof ValueObject))
-            e.setStrictEphemeral(strictEphemeral);
+            e.setEphemeral();
         return copy;
     }
 
@@ -197,47 +205,46 @@ public class CopyVisitor extends ElementVisitor<Element> {
         try {
             enterElement(entity);
             return switch (entity) {
-                case ChildArray<?> childArray -> {
-                    ChildArray copy;
-                    if (existing != null) {
-                        copy = (ChildArray) existing;
-                        copy.clear();
-                    } else {
-                        copy = new ChildArray<>(childArray.getElementType());
-                        copy.setStrictEphemeral(strictEphemeral);
-                    }
-                    addCopy(entity, copy);
-                    for (Entity child : childArray) {
-                        copy.addChild((Entity) copy0(child));
-                    }
-                    yield copy;
-                }
-                case ReadWriteArray readWriteArray -> {
-                    ReadWriteArray copy;
-                    if (existing != null) {
-                        copy = (ReadWriteArray) existing;
-                        copy.clear();
-                    } else {
-                        copy = new ReadWriteArray<>(readWriteArray.getElementType());
-                        copy.setStrictEphemeral(strictEphemeral);
-                    }
-                    addCopy(entity, copy);
-                    for (int i = 0; i < readWriteArray.size(); i++) {
-                        final int _i = i;
-                        copy.add(getValue(readWriteArray.get(i), v -> copy.set(_i, v)));
-                    }
-                    yield copy;
-                }
-                case ValueArray valueArray -> {
-                    var copy = new ValueArray<>(valueArray.getElementType(), List.of());
-                    var table = copy.secretlyGetTable();
-                    for (int i = 0; i < valueArray.size(); i++) {
-                        final int _i = i;
-                        table.add(getValue(valueArray.get(i), v -> table.set(_i, v)));
-                    }
-                    yield copy;
-                }
-                case ReadonlyArray<?> objects -> throw new InternalException("Readonly array copy not supported yet");
+//                case ChildArray<?> childArray -> {
+//                    ChildArray copy;
+//                    if (existing != null) {
+//                        copy = (ChildArray) existing;
+//                        copy.clear();
+//                    } else {
+//                        copy = new ChildArray<>(childArray.getElementType());
+//                        copy.setStrictEphemeral(strictEphemeral);
+//                    }
+//                    addCopy(entity, copy);
+//                    for (Entity child : childArray) {
+//                        copy.addChild((Entity) copy0(child));
+//                    }
+//                    yield copy;
+//                }
+//                case ReadWriteArray readWriteArray -> {
+//                    ReadWriteArray copy;
+//                    if (existing != null) {
+//                        copy = (ReadWriteArray) existing;
+//                        copy.clear();
+//                    } else {
+//                        copy = new ReadWriteArray<>(readWriteArray.getElementType());
+//                        copy.setStrictEphemeral(strictEphemeral);
+//                    }
+//                    addCopy(entity, copy);
+//                    for (int i = 0; i < readWriteArray.size(); i++) {
+//                        final int _i = i;
+//                        copy.add(getValue(readWriteArray.get(i), v -> copy.set(_i, v)));
+//                    }
+//                    yield copy;
+//                }
+//                case ValueArray valueArray -> {
+//                    var copy = new List<>(valueArray.getElementType(), List.of());
+//                    var table = copy.secretlyGetTable();
+//                    for (int i = 0; i < valueArray.size(); i++) {
+//                        final int _i = i;
+//                        table.add(getValue(valueArray.get(i), v -> table.set(_i, v)));
+//                    }
+//                    yield copy;
+//                }
                 case List<?> list -> {
                     var copy = new ArrayList<>();
                     int i = 0;
@@ -265,16 +272,10 @@ public class CopyVisitor extends ElementVisitor<Element> {
                             fieldValueCopy = null;
                         else if (prop.isChildEntity()) {
                             assert copy instanceof Entity;
-                            fieldValueCopy = ((Entity) copy).addChild((Entity) copy0(fieldValue), prop.getName());
+                            fieldValueCopy = copy0(fieldValue);
                         } else
                             fieldValueCopy = getValue(fieldValue, v -> prop.set(copy, v));
-                        try {
-                            prop.set(copy, fieldValueCopy);
-                        } catch (RuntimeException e) {
-                            logger.info("Fail to set field {}. entity: {}, fieldValue: {}, fieldValueCopy: {}", prop, EntityUtils.getEntityPath(entity),
-                                    EntityUtils.getEntityDesc(fieldValue), EntityUtils.getEntityDesc(fieldValueCopy));
-                            throw e;
-                        }
+                        prop.set(copy, fieldValueCopy);
                     }
                     yield copy;
                 }

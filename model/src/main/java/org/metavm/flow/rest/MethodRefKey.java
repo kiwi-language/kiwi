@@ -12,7 +12,7 @@ import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.Constants;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +33,7 @@ public record MethodRefKey(
         return declaringType + "::" + Constants.addIdPrefix(rawFlowId) +
                 (
                         typeArguments.isEmpty() ? "" :
-                                "<" + NncUtils.join(typeArguments, String::toString) + ">"
+                                "<" + Utils.join(typeArguments, String::toString) + ">"
                 );
     }
 
@@ -41,7 +41,7 @@ public record MethodRefKey(
     public GenericDeclarationRef resolve(TypeDefProvider typeDefProvider) {
         var classType = TypeParser.parseClassType(declaringType, typeDefProvider);
         var rawMethod = (Method) typeDefProvider.getTypeDef(Id.parse(rawFlowId));
-        var typeArgs = NncUtils.map(typeArguments, t -> TypeParser.parseType(t, typeDefProvider));
+        var typeArgs = Utils.map(typeArguments, t -> TypeParser.parseType(t, typeDefProvider));
         return new MethodRef(classType, rawMethod, typeArgs);
     }
 
@@ -50,7 +50,7 @@ public record MethodRefKey(
                 ctx.classType().getText(),
                 Constants.removeIdPrefix(ctx.IDENTIFIER().getText()),
                 ctx.typeArguments() != null ?
-                        NncUtils.map(ctx.typeArguments().typeList().type(), RuleContext::getText) : List.of()
+                        Utils.map(ctx.typeArguments().typeList().type(), RuleContext::getText) : List.of()
         );
     }
 
@@ -77,7 +77,7 @@ public record MethodRefKey(
         return new MethodRef(
                 TypeParser.parseClassType(declaringType, typeDefProvider),
                 (Method) typeDefProvider.getTypeDef(Id.parse(rawFlowId)),
-                NncUtils.map(typeArguments, t -> TypeParser.parseType(t, typeDefProvider))
+                Utils.map(typeArguments, t -> TypeParser.parseType(t, typeDefProvider))
         );
     }
 

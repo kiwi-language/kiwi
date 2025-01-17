@@ -3,7 +3,7 @@ package org.metavm.object.type;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.Flow;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -39,6 +39,7 @@ public class KlassBuilder {
     private int since = 0;
     private @Nullable Flow enclosingFlow;
     private @Nullable Klass declaringKlass;
+    private boolean maintenanceDisabled;
 
     private KlassBuilder(String name, @Nullable String qualifiedName) {
         this.name = name;
@@ -116,7 +117,7 @@ public class KlassBuilder {
     }
 
     public KlassBuilder randomSuffix() {
-        return suffix(NncUtils.randomNonNegative());
+        return suffix(Utils.randomNonNegative());
     }
 
     public KlassBuilder suffix(@Nullable Long suffix) {
@@ -169,15 +170,20 @@ public class KlassBuilder {
         return this;
     }
 
+    public KlassBuilder maintenanceDisabled() {
+        this.maintenanceDisabled = true;
+        return this;
+    }
+
     public Klass build() {
-        NncUtils.requireFalse(done, "Build has already been invoked");
+        Utils.require(!done, "Build has already been invoked");
         done = true;
         return create();
     }
 
     @NotNull
     private Klass create() {
-        if (NncUtils.isNotEmpty(typeParameters)) {
+        if (Utils.isNotEmpty(typeParameters)) {
             isTemplate = true;
         }
         Klass klass;
@@ -204,7 +210,8 @@ public class KlassBuilder {
                     typeParameters,
                     tag,
                     sourceTag,
-                    since);
+                    since,
+                    maintenanceDisabled);
         } else {
             klass = existing;
             existing.setName(effectiveName);

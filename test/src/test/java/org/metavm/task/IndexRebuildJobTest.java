@@ -36,7 +36,9 @@ public class IndexRebuildJobTest extends TestCase {
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
                 for (int i = 0; i < 100; i++) {
-                    context.bind(new Foo("foo" + i, new Bar("bar" + i)));
+                    var foo = new Foo("foo" + i, null);
+                    foo.setBar(new Bar(foo, "bar" + i));
+                    context.bind(foo);
                 }
                 context.bind(job);
                 context.finish();
@@ -55,7 +57,7 @@ public class IndexRebuildJobTest extends TestCase {
         });
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try (var context = newContext()) {
-            var instances = context.selectByKey(Foo.IDX_ALL_FLAG, true);
+            var instances = context.selectByKey(Foo.IDX_ALL_FLAG, Instances.trueInstance());
             for (var instance : instances) {
                 Assert.assertTrue(instanceSearchService.contains(instance.getId()));
             }

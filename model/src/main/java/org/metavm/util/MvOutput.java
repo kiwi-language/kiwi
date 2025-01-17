@@ -2,14 +2,19 @@ package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.Entity;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.IdTag;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.Value;
+import org.metavm.object.type.Type;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Date;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -27,6 +32,11 @@ public abstract class MvOutput extends OutputStream {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void writeBytes(byte[] bytes) {
+        writeInt(bytes.length);
+        write(bytes);
     }
 
     public void write(byte @NotNull [] bytes) {
@@ -63,6 +73,10 @@ public abstract class MvOutput extends OutputStream {
         write(b);
     }
 
+    public void writeDate(Date date) {
+        writeLong(date.getTime());
+    }
+
     public void writeDouble(double d) {
         long l = Double.doubleToRawLongBits(d);
         for (int s = 0; s < 64; s += 8)
@@ -85,6 +99,10 @@ public abstract class MvOutput extends OutputStream {
 
     public void writeEntityId(Entity entity) {
         writeId(entity.getId());
+    }
+
+    public void writeReference(Reference reference) {
+        writeId(reference.getId());
     }
 
     public Id getId(Entity entity) {
@@ -121,10 +139,43 @@ public abstract class MvOutput extends OutputStream {
         list.forEach(write);
     }
 
+    public <T> void writeArray(T[] array, Consumer<T> write) {
+        writeInt(array.length);
+        for (T t : array) {
+            write.accept(t);
+        }
+    }
+
+    public <T> void writeNullable(@Nullable T value, Consumer<T> write) {
+        if (value != null) {
+            writeBoolean(true);
+            write.accept(value);
+        }
+        else
+            writeBoolean(false);
+    }
+
     public void writeFixedInt(int i) {
         write(i >> 24 & 0xff);
         write(i >> 16 & 0xff);
         write(i >> 8 & 0xff);
         write(i & 0xff);
     }
+
+    public void writeInstance(Value value) {
+        value.writeInstance(this);
+    }
+
+    public void writeValue(Value value) {
+        value.write(this);
+    }
+
+    public void writeEntity(Entity entity) {
+        entity.write(this);
+    }
+
+    public void writeType(Type type) {
+        type.write(this);
+    }
+
 }

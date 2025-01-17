@@ -4,15 +4,20 @@ import org.jetbrains.annotations.Nullable;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceVisitor;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.rest.dto.PrimitiveTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.MvOutput;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Entity
@@ -30,6 +35,8 @@ public class PrimitiveType extends ClassType {
     public static final PrimitiveType floatType = new PrimitiveType(PrimitiveKind.FLOAT);
     public static final PrimitiveType shortType = new PrimitiveType(PrimitiveKind.SHORT);
     public static final PrimitiveType byteType = new PrimitiveType(PrimitiveKind.BYTE);
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     private final PrimitiveKind kind;
 
@@ -60,16 +67,11 @@ public class PrimitiveType extends ClassType {
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
-        return equals0(that);
+        return equals(that);
     }
 
     @Override
-    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
-        return visitor.visitPrimitiveType(this, s);
-    }
-
-    @Override
-    protected boolean equals0(Object obj) {
+    public boolean equals(Object obj) {
         return obj instanceof PrimitiveType that && kind == that.kind;
     }
 
@@ -150,11 +152,6 @@ public class PrimitiveType extends ClassType {
     }
 
     @Override
-    public Type getType() {
-        return StdKlass.primitiveType.type();
-    }
-
-    @Override
     public boolean isPassword() {
         return kind == PrimitiveKind.PASSWORD;
     }
@@ -164,7 +161,7 @@ public class PrimitiveType extends ClassType {
     }
 
     @Override
-    protected String toString0() {
+    public String toString() {
         return "PrimitiveType " + kind.getName();
     }
 
@@ -181,11 +178,6 @@ public class PrimitiveType extends ClassType {
     @Override
     public int getTypeKeyCode() {
         return PrimitiveTypeKey.getTypeKeyCode(kind.code());
-    }
-
-    @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitPrimitiveType(this);
     }
 
     @Override
@@ -207,4 +199,27 @@ public class PrimitiveType extends ClassType {
         return kind.fromStackValue(value);
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitPrimitiveType(this);
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitPrimitiveType(this, s);
+    }
+
+    @Override
+    public ClassType getValueType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+    }
 }

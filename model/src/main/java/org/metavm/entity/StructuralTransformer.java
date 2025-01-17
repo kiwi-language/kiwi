@@ -1,9 +1,11 @@
 package org.metavm.entity;
 
-public class StructuralTransformer extends StructuralVisitor<Element> {
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceVisitor;
 
-    @Override
-    public Element defaultValue(Element element) {
-        return element;
+public class StructuralTransformer extends InstanceVisitor<Element> {
+
+    public Instance defaultValue(Instance instance) {
+        return instance;
     }
 }

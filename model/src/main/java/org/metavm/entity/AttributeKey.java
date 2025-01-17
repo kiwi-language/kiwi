@@ -1,8 +1,8 @@
 package org.metavm.entity;
 
-import org.metavm.util.NncUtils;
 import org.metavm.util.TypeReference;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class AttributeKey<T> {
@@ -19,8 +19,8 @@ public class AttributeKey<T> {
         this.type = type;
         this.nullable = nullable;
         if(!nullable) {
-            NncUtils.requireNonNull(defaultValueSupplier);
-            NncUtils.requireNonNull(defaultValueSupplier.get());
+            Objects.requireNonNull(defaultValueSupplier);
+            Objects.requireNonNull(defaultValueSupplier.get());
         }
         this.defaultValueSupplier = defaultValueSupplier;
     }

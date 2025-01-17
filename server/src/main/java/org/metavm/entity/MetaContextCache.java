@@ -7,8 +7,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.ddl.Commit;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.WAL;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.TypeDef;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
 import org.metavm.util.ParameterizedStore;
@@ -73,20 +71,9 @@ public class MetaContextCache extends EntityContextFactoryAware {
                 }
             } else
                 context = newContext(key.appId);
-            loadAllTypeDefs(context);
+            context.loadKlasses();
             context.setParameterizedMap(ParameterizedStore.getMap());
             return context;
-        }
-    }
-
-    private void loadAllTypeDefs(IEntityContext context) {
-        var typeDefs = context.selectByKey(Klass.IDX_ALL_FLAG, true);
-        for (TypeDef typeDef : typeDefs) {
-            EntityUtils.ensureTreeInitialized(typeDef);
-        }
-        for (TypeDef typeDef : typeDefs) {
-            if(typeDef instanceof Klass klass)
-                klass.resetHierarchy();
         }
     }
 

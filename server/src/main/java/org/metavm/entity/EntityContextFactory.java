@@ -11,7 +11,6 @@ import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
-import org.metavm.util.NncUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -96,8 +95,8 @@ public class EntityContextFactory {
                                      boolean migrationDisabled, @Nullable IInstanceStore store, Consumer<InstanceContextBuilder> customizer) {
         var bridge = new EntityInstanceContextBridge();
         var instanceContext = newBridgedInstanceContext(appId, isReadonlyTransaction(),
-                NncUtils.get(parent, IEntityContext::getInstanceContext), idProvider, bridge, cachingWAL, bufferingWAL, store, migrationDisabled, customizer);
-        var context = new EntityContext(instanceContext, parent, parent instanceof DefContext dc ? dc : defContext);
+                parent, idProvider, bridge, cachingWAL, bufferingWAL, store, migrationDisabled, customizer);
+        var context = new EntityContext(instanceContext, parent instanceof DefContext dc ? dc : defContext);
         bridge.setEntityContext(context);
         return context;
     }

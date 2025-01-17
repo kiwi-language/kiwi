@@ -22,7 +22,7 @@ public class FlowParsingContext extends BaseParsingContext {
 
     public static FlowParsingContext create(Code code, Node prev, IEntityContext entityContext) {
         return new FlowParsingContext(
-                entityContext.getInstanceContext(),
+                entityContext,
                 new ContextTypeDefRepository(entityContext),
                 prev);
     }

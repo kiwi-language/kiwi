@@ -10,6 +10,7 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.flow.DeployKlassInput;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.rest.TreeDTO;
@@ -17,9 +18,7 @@ import org.metavm.object.type.rest.dto.TreeResponse;
 import org.metavm.object.type.rest.dto.TypeTreeQuery;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.version.Versions;
-import org.metavm.util.BusinessException;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,20 +50,20 @@ public class TypeManager extends EntityContextFactoryAware {
 
     public TreeResponse queryTrees(TypeTreeQuery query) {
         try (var context = newContext()) {
-            List<?> entities;
+            List<? extends Instance> entities;
             List<Long> removedIds;
             long version;
             if (query.version() == -1L) {
-                entities = versionManager.getAllTypes(context);
+                entities = versionManager.getAllKlasses(context);
                 removedIds = List.of();
                 version = Versions.getLatestVersion(context);
             } else {
                 var patch = versionManager.pullInternal(query.version(), context);
-                entities = NncUtils.merge(
-                        NncUtils.map(patch.changedTypeDefIds(), context::getTypeDef),
-                        NncUtils.map(patch.changedFunctionIds(), context::getFunction)
+                entities = Utils.merge(
+                        Utils.map(patch.changedTypeDefIds(), context::getTypeDef),
+                        Utils.map(patch.changedFunctionIds(), context::getFunction)
                 );
-                var removedInstanceIds = NncUtils.merge(
+                var removedInstanceIds = Utils.merge(
                         patch.removedTypeDefIds(),
                         patch.removedFunctionIds()
                 );
@@ -78,17 +77,16 @@ public class TypeManager extends EntityContextFactoryAware {
             }
             return new TreeResponse(
                     version,
-                    NncUtils.filterAndMap(entities,
-                            t -> context.getInstance(t).isRoot(),
+                    Utils.filterAndMap(entities,
+                            Instance::isRoot,
                             t -> getTypeTree(t, context)),
                     removedIds
             );
         }
     }
 
-    private TreeDTO getTypeTree(Object entity, IEntityContext context) {
-        var typeInstance = context.getInstance(entity);
-        return typeInstance.toTree().toDTO();
+    private TreeDTO getTypeTree(Instance entity, IEntityContext context) {
+        return entity.toTree().toDTO();
     }
 
     private void initClass(Klass klass, IEntityContext context) {
@@ -121,7 +119,7 @@ public class TypeManager extends EntityContextFactoryAware {
 
     public SaveTypeBatch deploy(InputStream input, IEntityContext context) {
         try (var zipIn = new ZipInputStream(input)) {
-            var runningCommit = context.selectFirstByKey(Commit.IDX_RUNNING, true);
+            var runningCommit = context.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
             if (runningCommit != null)
                 throw new BusinessException(ErrorCode.COMMIT_RUNNING);
             var batch = SaveTypeBatch.create(context);
@@ -150,15 +148,16 @@ public class TypeManager extends EntityContextFactoryAware {
 
     private void readKlass(InputStream in, SaveTypeBatch batch) {
         var klassIn = new DeployKlassInput(in, batch);
-        klassIn.readKlass();
+        klassIn.readEntity(Klass.class, null);
     }
 
     public String getEnumConstantId(String klassName, String enumConstantName) {
         try(var context = newContext()) {
-            var klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klassName);
+            var klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(klassName));
             if(klass == null)
                 throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, klassName);
             if(klass.isEnum()) {
+                klass.resetHierarchy();
                 var sft = StaticFieldTable.getInstance(klass.getType(), context);
                 var ec = sft.getEnumConstantByName(enumConstantName);
                 return ec.getStringId();
@@ -195,6 +194,12 @@ public class TypeManager extends EntityContextFactoryAware {
                 }
             }
             throw new BusinessException(ErrorCode.INVALID_ELEMENT_NAME, name);
+        }
+    }
+
+    public Id getKlassId(String qualifiedName) {
+        try (var context = entityContextFactory.newContext()) {
+            return context.getKlassByQualifiedName(qualifiedName).getId();
         }
     }
 

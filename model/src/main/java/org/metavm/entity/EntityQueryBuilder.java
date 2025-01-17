@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
-import org.metavm.util.NncUtils;
+import org.metavm.object.instance.core.Value;
+import org.metavm.util.Utils;
 import org.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
@@ -18,11 +19,8 @@ public class EntityQueryBuilder<T extends Entity> {
     }
 
     private final Class<T> entityClass;
-    private String searchText;
-    @Nullable
-    private String expression;
-    private List<String> searchFields = new ArrayList<>();
-    private List<EntityQueryField> fields = new ArrayList<>();
+    private List<SearchField<? super T>> searchFields = new ArrayList<>();
+    private List<EntityQueryField<? super T>> fields = new ArrayList<>();
     private boolean includeBuiltin;
     private int page = 1;
     private int pageSize = 20;
@@ -33,40 +31,24 @@ public class EntityQueryBuilder<T extends Entity> {
         this.entityClass = entityClass;
     }
 
-    public EntityQueryBuilder<T> searchText(String searchText) {
-        this.searchText = searchText;
-        return this;
-    }
-
-    public EntityQueryBuilder<T> fields(EntityQueryField...fields) {
-        return fields(List.of(fields));
-    }
-
-    public EntityQueryBuilder<T> fields(List<EntityQueryField> fields) {
+    public EntityQueryBuilder<T> fields(List<EntityQueryField<? super T>> fields) {
         this.fields = new ArrayList<>(fields);
         return this;
     }
 
-    public <E> EntityQueryBuilder<T> addFieldIfNotNull(String fieldName, @Nullable E value) {
+    public EntityQueryBuilder<T> addFieldIfNotNull(SearchField<? super T> field, @Nullable Value value) {
         if(value != null)
-            addField(fieldName, value);
+            addField(field, value);
         return this;
     }
 
-    public <E> EntityQueryBuilder<T> addField(String fieldName, E value) {
-        this.fields.add(new EntityQueryField(fieldName, value));
+    public <E> EntityQueryBuilder<T> addField(SearchField<? super T> field, Value value) {
+        this.fields.add(new EntityQueryField<>(field, value));
         return this;
     }
 
 
-    public <E> EntityQueryBuilder<T> addFieldIf(boolean condition, String fieldName, E value) {
-        if(condition)
-            return addField(fieldName, value);
-        else
-            return this;
-    }
-
-    public EntityQueryBuilder<T> searchFields(List<String> searchFields) {
+    public EntityQueryBuilder<T> searchFields(List<SearchField<? super T>> searchFields) {
         this.searchFields = searchFields;
         return this;
     }
@@ -79,31 +61,24 @@ public class EntityQueryBuilder<T extends Entity> {
         return this;
     }
 
-    public EntityQueryBuilder<T> expression(@Nullable String expression) {
-        this.expression = expression;
-        return this;
-    }
-
     public EntityQueryBuilder<T> includeBuiltin(boolean includeBuiltin) {
         this.includeBuiltin = includeBuiltin;
         return this;
     }
 
     public EntityQueryBuilder<T> newlyCreated(List<String> newlyCreated) {
-        this.newlyCreated = NncUtils.orElse(newlyCreated, List.of());
+        this.newlyCreated = Utils.orElse(newlyCreated, List.of());
         return this;
     }
 
     public EntityQueryBuilder<T> excluded(List<String> excluded) {
-        this.excluded = NncUtils.orElse(excluded, List.of());
+        this.excluded = Utils.orElse(excluded, List.of());
         return this;
     }
 
     public EntityQuery<T> build() {
         return new EntityQuery<>(
                 entityClass,
-                searchText,
-                expression,
                 searchFields,
                 includeBuiltin,
                 page,

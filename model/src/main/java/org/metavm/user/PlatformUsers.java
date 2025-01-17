@@ -25,10 +25,12 @@ public class PlatformUsers {
         }
         try (var context = platformContext.createSame(app.getTreeId())) {
             for (PlatformUser platformUser : platformUsers) {
-                var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, platformUser.tryGetId());
+                var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, Instances.stringInstance(platformUser.getStringId()));
                 if (user != null) {
                     user.setState(UserState.DETACHED);
-                    var sessions = context.selectByKey(Session.IDX_USER_STATE, user, SessionState.ACTIVE);
+                    var sessions = context.selectByKey(Session.IDX_USER_STATE,
+                            user.getReference(),
+                            Instances.intInstance(SessionState.ACTIVE.code()));
                     sessions.forEach(Session::close);
                 }
             }
@@ -36,7 +38,7 @@ public class PlatformUsers {
         }
         var eventQueue = platformContext.getEventQueue();
         if (eventQueue != null) {
-            platformContext.getInstanceContext().registerCommitCallback(() -> {
+            platformContext.registerCommitCallback(() -> {
                 for (PlatformUser platformUser : platformUsers) {
                     eventQueue.publishUserEvent(new LeaveAppEvent(platformUser.getStringId(), app.getStringId()));
                 }

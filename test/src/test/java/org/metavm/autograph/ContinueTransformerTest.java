@@ -2,7 +2,6 @@ package org.metavm.autograph;
 
 import junit.framework.TestCase;
 import org.metavm.autograph.mocks.ContinueFoo;
-import org.metavm.util.NncUtils;
 
 import java.io.IOException;
 

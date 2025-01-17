@@ -35,4 +35,8 @@ public class ArrayInstanceWrap extends InstanceWrap {
     public String toString() {
         return list.toString();
     }
+
+    public Object getFirst() {
+        return get(0);
+    }
 }

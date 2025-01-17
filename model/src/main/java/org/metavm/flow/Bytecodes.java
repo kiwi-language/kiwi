@@ -41,7 +41,6 @@ public class Bytecodes {
     public static final int INDEX_SELECT = 38;
     public static final int INDEX_SELECT_FIRST = 39;
     public static final int GOTO = 40;
-    public static final int TARGET = 41;
     public static final int NON_NULL = 42;
     public static final int SET_ELEMENT = 43;
     public static final int IF_NE = 44;

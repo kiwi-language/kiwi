@@ -26,8 +26,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
-
-import static org.metavm.util.NncUtils.requireNonNull;
+import java.util.Objects;
 
 public class DiskFormatter {
 
@@ -151,7 +150,7 @@ public class DiskFormatter {
             String idDirPath = dir + "/id";
             File idDir = new File(idDirPath);
             if (idDir.exists()) {
-                for (String idFile : requireNonNull(idDir.list())) {
+                for (String idFile : Objects.requireNonNull(idDir.list())) {
                     if (!new File(idDirPath + "/" + idFile).delete()) {
                         System.err.println("Fail to delete id file '" + idFile + "'");
                     }

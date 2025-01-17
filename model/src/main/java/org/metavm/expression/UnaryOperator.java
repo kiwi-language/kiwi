@@ -8,7 +8,7 @@ import org.metavm.object.instance.core.NumberValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 
@@ -88,6 +88,10 @@ public enum UnaryOperator {
         this.resultType = resultClass;
     }
 
+    public static UnaryOperator fromCode(int code) {
+        return Utils.findRequired(values(), v -> v.code == code);
+    }
+
     public abstract Value evaluate(Value operand);
 
     public int code() {
@@ -99,7 +103,7 @@ public enum UnaryOperator {
     }
 
     public Type resultType() {
-        return NncUtils.get(resultType, ModelDefRegistry::getType);
+        return Utils.safeCall(resultType, ModelDefRegistry::getType);
     }
 
     public boolean isPrefix() {

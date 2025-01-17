@@ -1,7 +1,7 @@
 package org.metavm.system;
 
 import org.metavm.system.persistence.BlockMapper;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.Collection;
 import java.util.List;
@@ -22,16 +22,16 @@ public class StoreBlockSource implements BlockSource{
     @Override
     public List<BlockRT> getActive(List<Long> typeIds) {
         var blockPOs = blockMapper.selectActive(typeIds);
-        return NncUtils.map(blockPOs, BlockUtils::createBlockRT);
+        return Utils.map(blockPOs, BlockUtils::createBlockRT);
     }
 
     @Override
     public void create(Collection<BlockRT> blocks) {
-        blockMapper.batchInsert(NncUtils.map(blocks, BlockUtils::toPO));
+        blockMapper.batchInsert(Utils.map(blocks, BlockUtils::toPO));
     }
 
     @Override
     public void update(Collection<BlockRT> blocks) {
-        blockMapper.batchUpdate(NncUtils.map(blocks, BlockUtils::toPO));
+        blockMapper.batchUpdate(Utils.map(blocks, BlockUtils::toPO));
     }
 }

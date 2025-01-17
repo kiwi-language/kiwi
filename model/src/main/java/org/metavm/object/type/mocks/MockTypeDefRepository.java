@@ -5,7 +5,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeDef;
 import org.metavm.object.type.TypeDefRepository;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +17,7 @@ public class MockTypeDefRepository implements TypeDefRepository {
     @Nullable
     @Override
     public Klass findKlassByName(String name) {
-        return (Klass) NncUtils.find(
+        return (Klass) Utils.find(
                 map.values(),
                 t -> t instanceof Klass c && c.getName().equals(name)
         );

@@ -20,6 +20,7 @@ import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.PhysicalId;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.instance.rest.FieldValue;
@@ -107,7 +108,7 @@ public class TestUtils {
     }
 
     public static <R> R parseJson(String jsonStr, Class<R> klass) {
-        return NncUtils.readJSONString(jsonStr, klass);
+        return Utils.readJSONString(jsonStr, klass);
     }
 
     public static <R> R readJson(String path, Class<R> klass) {
@@ -156,7 +157,7 @@ public class TestUtils {
     public static void clearTestResourceDir(String dirName) {
         File dir = new File(TEST_RESOURCE_ROOT + "/" + dirName);
         if (dir.listFiles() != null) {
-            for (File file : NncUtils.requireNonNull(dir.listFiles())) {
+            for (File file : Objects.requireNonNull(dir.listFiles())) {
                 if (!file.delete()) {
                     throw new InternalException("Fail to delete file " + file.getPath());
                 }
@@ -165,7 +166,7 @@ public class TestUtils {
 
         File targetDir = new File(TEST_RESOURCE_TARGET_ROOT + "/" + dirName);
         if (targetDir.listFiles() != null) {
-            for (File file : NncUtils.requireNonNull(targetDir.listFiles())) {
+            for (File file : Objects.requireNonNull(targetDir.listFiles())) {
                 if (!file.delete()) {
                     throw new InternalException("Fail to delete file " + file.getPath());
                 }
@@ -236,14 +237,15 @@ public class TestUtils {
         }
     }
 
-    public static void initEntityIds(Object entry) {
+    public static void initEntityIds(Instance entry) {
         var nextTreeIdRef = new Object() {
             long value = 10000L;
         };
         var roots = new IdentitySet<Entity>();
-        EntityUtils.visitGraph(List.of(entry), o -> {
+        entry.visitGraph(o -> {
             if (o instanceof Entity entity)
                 roots.add(entity.getRootEntity());
+            return true;
         });
         roots.forEach(r -> {
             long treeId;
@@ -260,10 +262,31 @@ public class TestUtils {
             else
                 treeId = nextTreeIdRef.value++;
             r.forEachDescendant(e -> {
-                if(!e.isEphemeralEntity() && !(e instanceof ValueObject) && !e.hasPhysicalId()) {
+                if(!e.isEphemeral() && !(e instanceof ValueObject) && !e.hasPhysicalId()) {
                     var type =
-                            ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType(e) : AnyType.instance;
-                    e.initId(PhysicalId.of(treeId, nextNodeIdRef.value++, type));
+                            ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType((Entity) e) : AnyType.instance;
+                    e.initId(PhysicalId.of(treeId, nextNodeIdRef.value++));
+                }
+            });
+        });
+    }
+
+    public static void initEntityTmpIds(List<? extends Instance> instances) {
+        var ref = new Object() {
+            long value = 10000L;
+        };
+        var roots = new IdentitySet<Entity>();
+        for (Instance entry : instances) {
+            entry.visitGraph(o -> {
+                if (o instanceof Entity entity)
+                    roots.add(entity.getRootEntity());
+                return true;
+            });
+        }
+        roots.forEach(r -> {
+            r.forEachDescendant(e -> {
+                if(!e.isEphemeral() && !(e instanceof ValueObject) && !e.hasPhysicalId()) {
+                    e.initId(TmpId.of(ref.value++));
                 }
             });
         });
@@ -286,11 +309,11 @@ public class TestUtils {
             return true;
         }));
         roots.forEach(r -> {
-            var treeId = idProvider.allocateOne(TestConstants.APP_ID, r.getType());
+            var treeId = idProvider.allocateOne(TestConstants.APP_ID);
             var nodeIdRef = new Object() {
                 long nextNodeId;
             };
-            r.forEachDescendant(instance -> instance.initId(PhysicalId.of(treeId, nodeIdRef.nextNodeId++, instance.getType())));
+            r.forEachDescendant(instance -> instance.initId(PhysicalId.of(treeId, nodeIdRef.nextNodeId++)));
         });
     }
 

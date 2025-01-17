@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.ReferencePO;
@@ -36,7 +37,7 @@ public class ContextDifference {
 
     public void diffReferences(Collection<ReferencePO> head, Collection<ReferencePO> buffer) {
         try (var ignored = ContextUtil.getProfiler().enter("Difference.diffReferences")) {
-            NncUtils.forEachPair(head, buffer, Function.identity(), (r1, r2) -> {
+            Utils.forEachPair(head, buffer, Function.identity(), (r1, r2) -> {
                 if (r1 == null) {
                     referenceChange.addInsert(r2);
                 } else if (r2 == null) {
@@ -48,13 +49,13 @@ public class ContextDifference {
 
     public void diffTrees(Collection<Tree> head, Collection<Tree> buffer) {
         try (var ignored = ContextUtil.getProfiler().enter("Difference.diff")) {
-            NncUtils.forEachPair(head, buffer, this::diffTree);
+            Utils.forEachPair(head, buffer, this::diffTree);
         }
     }
 
     public void diffEntities(Collection<Tree> head, Collection<Tree> buffered) {
         try(var ignored = ContextUtil.getProfiler().enter("ContextDifference.diffEntities")) {
-            NncUtils.forEachPair(head, buffered, this::diffEntity);
+            Utils.forEachPair(head, buffered, this::diffEntity);
         }
     }
 
@@ -74,22 +75,22 @@ public class ContextDifference {
             return;
         if (t1 == null) {
             getInstanceIds(t2).forEach(id ->
-                    entityChange.addInsert(new VersionRT(appId, id.getId(), t2.version())));
+                    entityChange.addInsert(new VersionRT(appId, id.getId(), t2.version(), id.entityTag())));
         } else if (t2 == null) {
             getInstanceIds(t1).forEach(id -> {
-                entityChange.addDelete(new VersionRT(appId, id.getId(), t1.version() + 1));
+                entityChange.addDelete(new VersionRT(appId, id.getId(), t1.version() + 1, id.entityTag()));
             });
 
         } else if (!Arrays.equals(t1.data(), t2.data())) {
-            NncUtils.forEachPair(getSubTrees(t1), getSubTrees(t2), (s1, s2) -> {
+            Utils.forEachPair(getSubTrees(t1), getSubTrees(t2), (s1, s2) -> {
                 if (s1 == null && s2 == null)
                     return;
                 if (s1 == null)
-                    entityChange.addInsert(new VersionRT(appId, s2.getId(), t2.version()));
+                    entityChange.addInsert(new VersionRT(appId, s2.getId(), t2.version(), s2.entityTag()));
                 else if (s2 == null)
-                    entityChange.addDelete(new VersionRT(appId, s1.getId(), t2.version()));
+                    entityChange.addDelete(new VersionRT(appId, s1.getId(), t2.version(), s1.entityTag()));
                 else if (!s1.equals(s2))
-                    entityChange.addUpdate(new VersionRT(appId, s2.getId(), t2.version()));
+                    entityChange.addUpdate(new VersionRT(appId, s2.getId(), t2.version(), s2.entityTag()));
             });
         }
     }
@@ -128,12 +129,17 @@ public class ContextDifference {
 
             @Override
             public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
-                var id =  PhysicalId.of(treeId, nodeId, typeOrTypeKey);
-                var oldId = oldTreeId != -1L ? PhysicalId.of(oldTreeId, oldNodeId, typeOrTypeKey) : null;
-                ids.add(new DiffId(id, oldId, useOldId));
+                var id =  PhysicalId.of(treeId, nodeId);
+                var oldId = oldTreeId != -1L ? PhysicalId.of(oldTreeId, oldNodeId) : null;
+                ids.add(new DiffId(id, oldId, useOldId, -1));
                 super.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
             }
 
+            @Override
+            public void visitEntityBody(int tag, Id id) {
+                ids.add(new DiffId(id, null, false, tag));
+                super.visitEntityBody(tag, id);
+            }
         }.visitGrove();
         return ids;
     }

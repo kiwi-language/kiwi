@@ -10,7 +10,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.InstanceIndexKey;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.util.CompilerHttpUtils;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +28,7 @@ public class LocalIndexSource implements IndexSource {
     private final LocalIndex index;
 
     public LocalIndexSource(long appId, DiskTreeStore treeStore, String indexDir) {
-        NncUtils.ensureDirectoryExists(indexDir);
+        Utils.ensureDirectoryExists(indexDir);
         this.treeStore = treeStore;
         this.index = new LocalIndex(appId, indexDir + File.separator + "index");
     }
@@ -36,10 +36,9 @@ public class LocalIndexSource implements IndexSource {
     public void populateIndex() {
         try (var context = newContext()) {
             var ids = treeStore.getAllInstanceIds();
-            var instanceContext = context.getInstanceContext();
             Map<IndexKeyPO, String> indexMap = new HashMap<>();
             for (var id : ids) {
-                instanceContext.get(id).forEachDescendant(instance -> {
+                context.get(id).forEachDescendant(instance -> {
                     if (instance.isEphemeral())
                         return;
                     if(instance instanceof ClassInstance classInstance) {
@@ -64,14 +63,14 @@ public class LocalIndexSource implements IndexSource {
 
     public LocalIndex.Query convertQuery(InstanceIndexQuery query) {
         return new LocalIndex.Query(query.index().getId(),
-                NncUtils.get(query.from(), InstanceIndexKey::toPO),
-                NncUtils.get(query.to(), InstanceIndexKey::toPO),
+                Utils.safeCall(query.from(), InstanceIndexKey::toPO),
+                Utils.safeCall(query.to(), InstanceIndexKey::toPO),
                 query.desc(), query.limit());
     }
 
     @Override
     public List<Id> query(InstanceIndexQuery query, IInstanceContext context) {
-        return NncUtils.map(index.query(convertQuery(query)).ids(), Id::parse);
+        return Utils.map(index.query(convertQuery(query)).ids(), Id::parse);
     }
 
     @Override
@@ -86,7 +85,7 @@ public class LocalIndexSource implements IndexSource {
 
     @Override
     public List<Id> scan(IndexKeyRT from, IndexKeyRT to, IInstanceContext context) {
-        return NncUtils.map(index.scan(from.toPO(), to.toPO()), Id::parse);
+        return Utils.map(index.scan(from.toPO(), to.toPO()), Id::parse);
     }
 
     public void setContextFactory(CompilerInstanceContextFactory contextFactory) {

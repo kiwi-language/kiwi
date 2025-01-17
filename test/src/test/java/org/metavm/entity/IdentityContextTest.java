@@ -2,11 +2,12 @@ package org.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.api.ValueObject;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
-import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.*;
+import org.metavm.object.type.ClassSource;
+import org.metavm.object.type.FieldBuilder;
+import org.metavm.object.type.TypeVariable;
+import org.metavm.object.type.Types;
 import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,16 +41,15 @@ public class IdentityContextTest extends TestCase {
                 .build();
         method.setParameters(List.of(new Parameter(null, "t", typeVar.getType(), method)));
         var identities = new IdentityHashMap<Object, ModelIdentity>();
-        EntityUtils.visitGraph(List.of(fooKlass),
-                entity -> {
-                    if (!(entity instanceof Value) && !(entity instanceof ValueObject))
-                        identities.put(entity, identityContext.getModelId(entity));
-                }
-        );
+        fooKlass.visitGraph(i -> {
+            if (i instanceof Entity entity)
+                identities.put(entity, identityContext.getModelId(entity));
+            return true;
+        });
         Assert.assertTrue(identities.containsKey(fooKlass));
         Assert.assertTrue(identities.containsKey(fooNameField));
         Assert.assertTrue(identities.containsKey(method));
-        Assert.assertTrue(identities.containsKey(method.getParameters().get(0)));
+        Assert.assertTrue(identities.containsKey(method.getParameters().getFirst()));
         Assert.assertTrue(identities.containsKey(method.getCode()));
     }
 

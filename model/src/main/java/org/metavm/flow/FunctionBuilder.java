@@ -5,7 +5,7 @@ import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.Types;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -113,7 +113,7 @@ public class FunctionBuilder {
             existing.setNative(isNative);
             existing.setReturnType(returnType);
             existing.setState(state);
-            existing.setParameters(NncUtils.map(parameters, p -> new Parameter(null, p.name(), p.type(), existing)));
+            existing.setParameters(Utils.map(parameters, p -> new Parameter(null, p.name(), p.type(), existing)));
             return existing;
         }
     }

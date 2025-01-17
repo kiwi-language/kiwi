@@ -31,12 +31,12 @@ public enum StdFunction implements ValueHolderOwner<Function> {
     functionToInstance(
             "T functionToInstance<T>(any function)", true, List.of(),
             (func, args, callContext) -> {
-                if (args.get(0) instanceof FunctionValue functionValue) {
-                    var samInterface = ((ClassType) func.getTypeArguments().get(0));
+                if (args.getFirst() instanceof FunctionValue functionValue) {
+                    var samInterface = ((ClassType) func.getTypeArguments().getFirst());
                     var type = Types.createSAMInterfaceImpl(samInterface, functionValue);
-                    return FlowExecResult.of(new ClassInstance(null, Map.of(), type).getReference());
+                    return FlowExecResult.of(new MvClassInstance(null, Map.of(), type).getReference());
                 } else {
-                    throw new InternalException("Invalid function instance: " + Instances.getInstancePath(args.get(0)));
+                    throw new InternalException("Invalid function instance: " + Instances.getInstancePath(args.getFirst()));
                 }
             }),
     getSessionEntry(
@@ -44,23 +44,23 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(SessionUtils.class, "getEntry", String.class)),
             (func, args, callContext) -> {
-                var key = ((StringValue) args.get(0)).getValue();
+                var key = ((StringValue) args.getFirst()).getValue();
                 var entityContext = ContextUtil.getEntityContext();
-                var session = entityContext.selectFirstByKey(Session.IDX_TOKEN, ContextUtil.getToken());
+                var session = entityContext.selectFirstByKey(Session.IDX_TOKEN, Instances.stringInstance(ContextUtil.getToken()));
                 if (session == null || !session.isActive())
                     throw new BusinessException(ErrorCode.LOGIN_REQUIRED);
                 var value = session.getEntry(key);
-                return FlowExecResult.of(NncUtils.orElse(value, Instances.nullInstance()));
+                return FlowExecResult.of(Utils.orElse(value, Instances.nullInstance()));
             }),
     setSessionEntry(
             "void setSessionEntry(string key, any value)",
             false,
             List.of(ReflectionUtils.getMethod(SessionUtils.class, "setEntry", String.class, Object.class)),
             (func, args, callContext) -> {
-                var key = ((StringValue) args.get(0)).getValue();
+                var key = ((StringValue) args.getFirst()).getValue();
                 var value = args.get(1);
                 var entityContext = ContextUtil.getEntityContext();
-                var session = entityContext.selectFirstByKey(Session.IDX_TOKEN, ContextUtil.getToken());
+                var session = entityContext.selectFirstByKey(Session.IDX_TOKEN, Instances.stringInstance(ContextUtil.getToken()));
                 if (session == null || !session.isActive())
                     throw new BusinessException(ErrorCode.LOGIN_REQUIRED);
                 session.setEntry(key, value);
@@ -71,9 +71,9 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(SessionUtils.class, "removeEntry", String.class)),
             (func, args, callContext) -> {
-                var key = ((StringValue) args.get(0)).getValue();
+                var key = ((StringValue) args.getFirst()).getValue();
                 var entityContext = ContextUtil.getEntityContext();
-                var session = entityContext.selectFirstByKey(Session.IDX_TOKEN, ContextUtil.getToken());
+                var session = entityContext.selectFirstByKey(Session.IDX_TOKEN, Instances.stringInstance(ContextUtil.getToken()));
                 if (session == null || !session.isActive())
                     throw new BusinessException(ErrorCode.LOGIN_REQUIRED);
                 return FlowExecResult.of(Instances.intInstance(session.removeEntry(key)));
@@ -83,14 +83,14 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(),
             (func, args, callContext) -> {
-                var type = func.getTypeArguments().get(0);
-                var value = args.get(0);
+                var type = func.getTypeArguments().getFirst();
+                var value = args.getFirst();
                 if (type.isInstance(value))
                     return FlowExecResult.of(value);
                 else {
                     var exception = ClassInstance.allocate(StdKlass.classCastException.type());
                     var nat = new ClassCastExceptionNative(exception);
-                    var msg = value.getType().getTypeDesc() + " cannot be cast to " + type.getTypeDesc();
+                    var msg = value.getValueType().getTypeDesc() + " cannot be cast to " + type.getTypeDesc();
                     nat.ClassCastException(Instances.stringInstance(msg), callContext);
                     return FlowExecResult.ofException(exception);
                 }
@@ -100,7 +100,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "print", Object.class)),
             (func, args, callContext) -> {
-                System.out.println(args.get(0).getTitle());
+                System.out.println(args.getFirst().getTitle());
                 return FlowExecResult.of(null);
             }),
     delete(
@@ -109,9 +109,9 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             List.of(ReflectionUtils.getMethod(Lang.class, "delete", Object.class)),
             (func, args, callContext) -> {
                 var entityContext = ContextUtil.getEntityContext();
-                var instance = args.get(0);
+                var instance = args.getFirst();
                 if (instance instanceof Reference ref) {
-                    entityContext.getInstanceContext().remove(ref.resolve());
+                    entityContext.remove(ref.get());
                     return FlowExecResult.of(null);
                 } else
                     throw new BusinessException(ErrorCode.DELETE_NON_DURABLE_INSTANCE, instance);
@@ -121,7 +121,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "setContext", String.class, Object.class)),
             (func, args, callContext) -> {
-                var key = (StringValue) args.get(0);
+                var key = (StringValue) args.getFirst();
                 ContextUtil.setUserData(key.getValue(), args.get(1));
                 return FlowExecResult.of(null);
             }),
@@ -130,7 +130,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "getContext", String.class)),
             (func, args, callContext) -> {
-                var key = (StringValue) args.get(0);
+                var key = (StringValue) args.getFirst();
                 return FlowExecResult.of(ContextUtil.getUserData(key.getValue()));
             }),
     toString(
@@ -140,7 +140,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     ReflectionUtils.getMethod(Objects.class, "toString", Object.class)
             ),
             (func, args, callContext) -> FlowExecResult.of(
-                    Instances.stringInstance(Instances.toString(args.get(0), callContext)))
+                    Instances.stringInstance(Instances.toString(args.getFirst(), callContext)))
     ),
     hashCode(
             "int hashCode(any instance)",
@@ -148,7 +148,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             List.of(ReflectionUtils.getMethod(Object.class, "hashCode")
             ),
             (func, args, callContext) -> {
-                var value = args.get(0);
+                var value = args.getFirst();
                 if(value instanceof PrimitiveValue primitiveValue)
                     return FlowExecResult.of(Instances.intInstance(primitiveValue.getValue().hashCode()));
                 else {
@@ -167,7 +167,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (args.size() != 1) {
                     throw new IllegalArgumentException("requireNonNull requires exactly one argument");
                 }
-                var value = args.get(0);
+                var value = args.getFirst();
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
@@ -185,7 +185,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (args.size() != 2) {
                     throw new IllegalArgumentException("requireNonNull requires exactly two arguments");
                 }
-                var value = args.get(0);
+                var value = args.getFirst();
                 var message = args.get(1);
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
@@ -204,14 +204,14 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (args.size() != 2) {
                     throw new IllegalArgumentException("requireNonNull requires exactly three arguments");
                 }
-                var value = args.get(0);
+                var value = args.getFirst();
                 var messageSupplier = args.get(1).resolveObject();
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
                     var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
-                    var getMethod = messageSupplier.getType().getMethodByNameAndParamTypes("get", List.of());
+                    var getMethod = messageSupplier.getInstanceType().getMethodByNameAndParamTypes("get", List.of());
                     var getResult = getMethod.execute(messageSupplier.getReference(), List.of(), ctx);
                     if (getResult.exception() != null)
                         return FlowExecResult.ofException(getResult.exception());
@@ -225,7 +225,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Date.class, "before", Date.class)),
             (func, args, ctx) -> {
-                var date1 = (TimeValue) args.get(0);
+                var date1 = (TimeValue) args.getFirst();
                 var date2 = (TimeValue) args.get(1);
                 return FlowExecResult.of(date1.before(date2));
             }),
@@ -234,7 +234,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Date.class, "after", Date.class)),
             (func, args, ctx) -> {
-                var date1 = (TimeValue) args.get(0);
+                var date1 = (TimeValue) args.getFirst();
                 var date2 = (TimeValue) args.get(1);
                 return FlowExecResult.of(date1.after(date2));
             }),
@@ -243,7 +243,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(String.class, "replace", CharSequence.class, CharSequence.class)),
             (func, args, ctx) -> {
-                var str = (StringValue) args.get(0);
+                var str = (StringValue) args.getFirst();
                 var target = (StringValue) args.get(1);
                 var replacement = (StringValue) args.get(2);
                 return FlowExecResult.of(Instances.stringInstance(str.getValue().replace(target.getValue(), replacement.getValue())));
@@ -265,28 +265,28 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Objects.class, "equals", Object.class, Object.class),
                     ReflectionUtils.getMethod(Object.class, "equals", Object.class)),
-            (func, args, ctx) -> FlowExecResult.of(Instances.intInstance(args.get(0).equals(args.get(1))))
+            (func, args, ctx) -> FlowExecResult.of(Instances.intInstance(args.getFirst().equals(args.get(1))))
     ),
     md5(
             "string md5(string str)",
             true,
             List.of(ReflectionUtils.getMethod(MD5Utils.class, "md5", String.class)),
             (func, args, ctx) -> {
-                var str = (StringValue) args.get(0);
+                var str = (StringValue) args.getFirst();
                 return FlowExecResult.of(Instances.stringInstance(EncodingUtils.md5(str.getValue())));
             }),
     randomPassword(
             "string randomPassword()",
             true,
             List.of(ReflectionUtils.getMethod(PasswordUtils.class, "randomPassword")),
-            (func, args, ctx) -> FlowExecResult.of(Instances.stringInstance(NncUtils.randomPassword()))
+            (func, args, ctx) -> FlowExecResult.of(Instances.stringInstance(Utils.randomPassword()))
     ),
     password(
             "password passwd(string s)",
             true,
             List.of(),
             (func, args, ctx) -> {
-                var s = ((StringValue) args.get(0)).getValue();
+                var s = ((StringValue) args.getFirst()).getValue();
                 return FlowExecResult.of(Instances.passwordInstance(EncodingUtils.md5(s)));
             }
     ),
@@ -295,7 +295,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(RegexUtils.class, "match", String.class, String.class)),
             (func, args, ctx) -> {
-                var pattern = (StringValue) args.get(0);
+                var pattern = (StringValue) args.getFirst();
                 var str = (StringValue) args.get(1);
                 return FlowExecResult.of(Instances.intInstance(Pattern.compile(pattern.getValue()).matcher(str.getValue()).matches()));
             }),
@@ -304,8 +304,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "random", long.class)),
             (func, args, ctx) -> {
-                var bound = (LongValue) args.get(0);
-                return FlowExecResult.of(Instances.longInstance(NncUtils.random(bound.getValue())));
+                var bound = (LongValue) args.getFirst();
+                return FlowExecResult.of(Instances.longInstance(Utils.random(bound.getValue())));
             }
     ),
     timeToLong(
@@ -313,7 +313,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Date.class, "getTime")),
             (func, args, ctx) -> {
-                var date = (TimeValue) args.get(0);
+                var date = (TimeValue) args.getFirst();
                 return FlowExecResult.of(Instances.longInstance(date.getValue()));
             }),
     now(
@@ -327,7 +327,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(),
             (func, args, ctx) -> {
-                var millis = (LongValue) args.get(0);
+                var millis = (LongValue) args.getFirst();
                 return FlowExecResult.of(Instances.timeInstance(millis.getValue()));
             }
     ),
@@ -336,7 +336,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "formatNumber", String.class, long.class)),
             (func, args, ctx) -> {
-                var format = (StringValue) args.get(0);
+                var format = (StringValue) args.getFirst();
                 var number = (LongValue) args.get(1);
                 return FlowExecResult.of(Instances.stringInstance(new DecimalFormat(format.getValue()).format(number.getValue())));
             }),
@@ -345,7 +345,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "getId", Object.class)),
             (func, args, ctx) -> {
-                var obj = args.get(0);
+                var obj = args.getFirst();
                 if (obj instanceof Reference d) {
                     var id = d.getStringId();
                     if (id != null)
@@ -362,7 +362,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             List.of(ReflectionUtils.getMethod(EmailUtils.class, "send", String.class, String.class, String.class)),
             (func, args, callContext) -> {
                 Constants.emailSender.send(
-                        ((StringValue) args.get(0)).getValue(),
+                        ((StringValue) args.getFirst()).getValue(),
                         ((StringValue) args.get(1)).getValue(),
                         ((StringValue) args.get(2)).getValue()
                 );
@@ -373,7 +373,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "secureRandom", int.class)),
             (func, args, callContext) -> {
-                var len = ((IntValue) args.get(0)).value;
+                var len = ((IntValue) args.getFirst()).value;
                 return FlowExecResult.of(Instances.stringInstance(EncodingUtils.secureRandom(len)));
             }
     ),
@@ -382,7 +382,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "secureHash", String.class, String.class)),
             (func, args, callContext) -> {
-                var v = ((StringValue) args.get(0)).getValue();
+                var v = ((StringValue) args.getFirst()).getValue();
                 var s = args.get(1) instanceof StringValue str ? str.getValue() : null;
                 var h = EncodingUtils.secureHash(v, s);
                 return FlowExecResult.of(Instances.stringInstance(h));
@@ -393,8 +393,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "getParent", Object.class)),
             (func, args, callContext) -> {
-                var obj = args.get(0).resolveDurable();
-                return FlowExecResult.of(NncUtils.getOrElse(obj.getParent(), Instance::getReference, Instances.nullInstance()));
+                var obj = args.getFirst().resolveDurable();
+                return FlowExecResult.of(Utils.getOrElse(obj.getParent(), Instance::getReference, Instances.nullInstance()));
             }
     ),
     getRoot(
@@ -402,7 +402,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             true,
             List.of(ReflectionUtils.getMethod(Lang.class, "getRoot", Object.class)),
             (func, args, callContext) -> {
-                var obj = args.get(0).resolveDurable();
+                var obj = args.getFirst().resolveDurable();
                 return FlowExecResult.of(obj.getRoot().getReference());
             }
     ),
@@ -413,7 +413,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     ReflectionUtils.getMethod(Collections.class, "sort", List.class)
             ),
             (func, args, callContext) -> {
-                var list = args.get(0).resolveObject();
+                var list = args.getFirst().resolveObject();
                 var nat = new ListNative(list);
                 nat.sort(callContext);
                 return FlowExecResult.of(null);
@@ -426,13 +426,13 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     ReflectionUtils.getMethod(Arrays.class, "sort", Object[].class, Comparator.class)
             ),
             (func, args, callContext) -> {
-                var array = args.get(0).resolveArray();
+                var array = args.getFirst().resolveArray();
                 var c = args.get(1);
                 if(c.isNull())
                     array.sort((e1,e2) -> Instances.compare(e1, e2, callContext));
                 else {
                     var comparator = c.resolveObject();
-                    var cmpMethod = comparator.getType().getMethod(StdMethod.comparatorCompare.get());
+                    var cmpMethod = comparator.getInstanceType().getMethod(StdMethod.comparatorCompare.get());
                     array.sort((e1, e2) -> Instances.toInt(
                             Flows.invokeVirtual(cmpMethod, comparator, List.of(e1,e2), callContext
                             )));
@@ -447,7 +447,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     ReflectionUtils.getMethod(Arrays.class, "sort", Object[].class, int.class, int.class, Comparator.class)
             ),
             (func, args, callContext) -> {
-                var array = args.get(0).resolveArray();
+                var array = args.getFirst().resolveArray();
                 var from = ((IntValue) args.get(1)).value;
                 var to = ((IntValue) args.get(2)).value;
                 var c = args.get(3);
@@ -455,7 +455,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     array.sort(from, to, (e1,e2) -> Instances.compare(e1, e2, callContext));
                 else {
                     var comparator = c.resolveObject();
-                    var cmpMethod = comparator.getType().getMethod(StdMethod.comparatorCompare.get());
+                    var cmpMethod = comparator.getInstanceType().getMethod(StdMethod.comparatorCompare.get());
                     array.sort(from, to, (e1, e2) -> Instances.toInt(
                             Flows.invokeVirtual(cmpMethod, comparator, List.of(e1,e2), callContext
                     )));
@@ -470,7 +470,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     ReflectionUtils.getMethod(Arrays.class, "copyOf", Object[].class, int.class)
             ),
             (func, args, callContext) -> {
-                var array = args.get(0).resolveArray();
+                var array = args.getFirst().resolveArray();
                 var newLength = ((IntValue) args.get(1)).value;
                 return FlowExecResult.of(array.copyOf(newLength).getReference());
             }
@@ -482,7 +482,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     ReflectionUtils.getMethod(Arrays.class, "copyOf", long[].class, int.class)
             ),
             (func, args, callContext) -> {
-                var array = args.get(0).resolveArray();
+                var array = args.getFirst().resolveArray();
                 var newLength = ((IntValue) args.get(1)).value;
                 return FlowExecResult.of(array.copyOf(newLength).getReference());
             }
@@ -494,9 +494,9 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     ReflectionUtils.getMethod(Arrays.class, "copyOf", Object[].class, int.class, Class.class)
             ),
             (func, args, callContext) -> {
-                var array = args.get(0).resolveArray();
+                var array = args.getFirst().resolveArray();
                 var newLength = ((IntValue) args.get(1)).value;
-                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().get(0)), ArrayKind.READ_WRITE);
+                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().getFirst()), ArrayKind.READ_WRITE);
                 return FlowExecResult.of(array.copyOf(newLength, newType).getReference());
             }
     ),
@@ -507,7 +507,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     ReflectionUtils.getMethod(Arrays.class, "copyOfRange", Object[].class, int.class, int.class)
             ),
             (func, args, callContext) -> {
-                var array = args.get(0).resolveArray();
+                var array = args.getFirst().resolveArray();
                 var from = ((IntValue) args.get(1)).value;
                 var to = ((IntValue) args.get(2)).value;
                 return FlowExecResult.of(array.copyOfRange(from, to).getReference());
@@ -520,10 +520,10 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     ReflectionUtils.getMethod(Arrays.class, "copyOfRange", Object[].class, int.class, int.class, Class.class)
             ),
             (func, args, callContext) -> {
-                var array = args.get(0).resolveArray();
+                var array = args.getFirst().resolveArray();
                 var from = ((IntValue) args.get(1)).value;
                 var to = ((IntValue) args.get(2)).value;
-                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().get(0)), ArrayKind.READ_WRITE);
+                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().getFirst()), ArrayKind.READ_WRITE);
                 return FlowExecResult.of(array.copyOfRange(from, to, newType).getReference());
             }
     ),
@@ -534,7 +534,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     ReflectionUtils.getMethod(System.class, "arraycopy", Object.class, int.class, Object.class, int.class, int.class)
             ),
             (func, args, callContext) -> {
-                var src = args.get(0).resolveArray();
+                var src = args.getFirst().resolveArray();
                 var srcPos = ((IntValue) args.get(1)).value;
                 var dest = args.get(2).resolveArray();
                 var destPos = ((IntValue) args.get(3)).value;
@@ -549,7 +549,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(Collections.class, "reverse", List.class)),
             (func, args, callContext) -> {
-                var list = args.get(0).resolveObject();
+                var list = args.getFirst().resolveObject();
                 var nat = new ListNative(list);
                 nat.reverse();
                 return FlowExecResult.of(null);
@@ -560,11 +560,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(Object.class, "getClass")),
             (func, args, callContext) -> {
-                var o = args.get(0).resolveDurable();
-                var entityContext = ContextUtil.getEntityContext();
-                return FlowExecResult.of(entityContext.getInstance(
-                        Instances.getGeneralClass(o)).getReference()
-                );
+                var o = args.getFirst().resolveDurable();
+                return FlowExecResult.of(Instances.getGeneralClass(o).getReference());
             }
     ),
     newArray(
@@ -572,7 +569,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(Array.class, "newInstance", Class.class, int.class)),
             (func, args, callContext) -> {
-                var k = ContextUtil.getEntityContext().getEntity(Klass.class, args.get(0).resolveObject());
+                var k = ContextUtil.getEntityContext().getEntity(Klass.class, args.getFirst().resolveObject());
                 var len = ((IntValue) args.get(1)).value;
                 var type = new ArrayType(Types.getNullableType(Types.getGeneralType(k)), ArrayKind.READ_WRITE);
                 var array = new ArrayInstance(type);
@@ -585,8 +582,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(Class.class, "getComponentType")),
             (func, args, callContext) -> {
-                var k = ContextUtil.getEntityContext().getEntity(Klass.class, args.get(0).resolveObject());
-                var c = ContextUtil.getEntityContext().getInstance(Objects.requireNonNull(k.getComponentKlass()));
+                var k = (Klass) args.getFirst().resolveDurable();
+                var c = Objects.requireNonNull(k.getComponentKlass());
                 return FlowExecResult.of(c.getReference());
             }
     ),
@@ -595,7 +592,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(Objects.class, "checkIndex", int.class, int.class)),
             (func, args, callContext) -> {
-                var index = ((IntValue) args.get(0)).value;
+                var index = ((IntValue) args.getFirst()).value;
                 var length = ((IntValue) args.get(1)).value;
                 if(index >= 0 && index < length)
                     return FlowExecResult.of(Instances.intInstance(index));
@@ -612,7 +609,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(Math.class, "max", int.class, int.class)),
             (func, args, callContext) -> {
-                var v1 = ((IntValue) args.get(0));
+                var v1 = ((IntValue) args.getFirst());
                 var v2 = ((IntValue) args.get(1));
                 if(v1.value >= v2.value)
                     return FlowExecResult.of(v1);
@@ -625,7 +622,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(Math.class, "max", long.class, long.class)),
             (func, args, callContext) -> {
-                var v1 = ((LongValue) args.get(0));
+                var v1 = ((LongValue) args.getFirst());
                 var v2 = ((LongValue) args.get(1));
                 if(v1.value >= v2.value)
                     return FlowExecResult.of(v1);
@@ -638,19 +635,19 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getDeclaredMethod(Object.class, "clone", List.of())),
             (func, args, callContext) -> {
-                var clone = args.get(0).resolveDurable().copy();
-                ContextUtil.getEntityContext().getInstanceContext().bind(clone);
+                var clone = args.getFirst().resolveMv().copy();
+                ContextUtil.getEntityContext().bind(clone);
                 return FlowExecResult.of(clone.getReference());
             }
     ),
     concat(
-            "string concat(string s1, string s2)",
+            "string concat(any|null s1, any|null s2)",
             false,
-            List.of(),
+            List.of(ReflectionUtils.getMethod(Lang.class, "concat", Object.class, Object.class)),
             (func, args, callContext) -> {
-                var s1 = (StringValue) args.get(0);
-                var s2 = (StringValue) args.get(1);
-                return FlowExecResult.of(s1.concat(s2));
+                var s1 = Instances.toString(args.getFirst(), callContext);
+                var s2 = Instances.toString(args.get(1), callContext);
+                return FlowExecResult.of(Instances.stringInstance(s1 + s2));
             }
     ),
     checkFromIndexSize(
@@ -658,7 +655,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getMethod(Objects.class, "checkFromIndexSize", int.class, int.class, int.class)),
             (func, args, callContext) -> {
-                var from = ((IntValue) args.get(0)).getValue();
+                var from = ((IntValue) args.getFirst()).getValue();
                 var size = ((IntValue) args.get(1)).getValue();
                 var len = ((IntValue) args.get(2)).getValue();
                 if(from < 0 || size < 0 || from + size > len || len < 0) {
@@ -712,7 +709,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
     public static void initializeFromDefContext(DefContext defContext, boolean local) {
         for (StdFunction def : values()) {
             var func = requireNonNull(
-                    defContext.selectFirstByKey(Function.UNIQUE_NAME, def.getName()),
+                    defContext.selectFirstByKey(Function.UNIQUE_NAME, Instances.stringInstance(def.getName())),
                     "Function not found: " + def.getName());
             if(local)
                 def.setLocal(func);

@@ -3,14 +3,16 @@ package org.metavm.object.type;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.mocks.MockEntityRepository;
 import org.metavm.flow.*;
-import org.metavm.util.Instances;
-import org.metavm.util.TestUtils;
+import org.metavm.object.instance.core.Id;
+import org.metavm.util.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
@@ -18,6 +20,181 @@ import java.util.Objects;
 public class KlassTest extends TestCase {
 
     public void testIO() {
+        var testKlasses = createTestKlasses();
+        TestUtils.initEntityTmpIds(testKlasses);
+        var fooKlass = testKlasses.getFirst();
+        var nameIndexKlass = testKlasses.get(1);
+        var supplierKlass = testKlasses.get(2);
+
+//        Assert.assertFalse(factoryMethod.getRef().isParameterized());
+        byte[] bytes;
+        try (var serContext = SerializeContext.enter()) {
+            var bout = new ByteArrayOutputStream();
+            var out = new KlassOutput(bout, serContext);
+            testKlasses.forEach(out::writeEntity);
+            bytes = bout.toByteArray();
+        }
+
+        var repo = new MockEntityRepository();
+        var in = new KlassInput(new ByteArrayInputStream(bytes), repo);
+        var k = in.readEntity(Klass.class, null);
+        var nk = in.readEntity(Klass.class, null);
+        in.readEntity(Klass.class, null);
+        Objects.requireNonNull(k);
+
+        Assert.assertNotSame(fooKlass, k);
+        Assert.assertEquals(fooKlass.getName(), k.getName());
+        Assert.assertEquals(fooKlass.getQualifiedName(), k.getQualifiedName());
+        Assert.assertEquals(fooKlass.getFields().size(), k.getFields().size());
+        Assert.assertEquals(fooKlass.isSearchable(), k.isSearchable());
+        Assert.assertEquals(fooKlass.isStruct(), k.isStruct());
+        Assert.assertEquals(fooKlass.isAbstract(), k.isAbstract());
+        Assert.assertEquals(fooKlass.isEphemeralKlass(), k.isEphemeralKlass());
+        Assert.assertEquals(fooKlass.getTag(), k.getTag());
+        Assert.assertEquals(fooKlass.getSourceTag(), k.getSourceTag());
+        Assert.assertSame(fooKlass.getSource(), k.getSource());
+        Assert.assertEquals(fooKlass.getSince(), k.getSince());
+
+        Assert.assertEquals(fooKlass.getTypeParameters().size(), k.getTypeParameters().size());
+        var tp = k.getTypeParameters().getFirst();
+        var typeParam = fooKlass.getTypeParameters().getFirst();
+        Assert.assertEquals(typeParam.getName(), tp.getName());
+        Assert.assertEquals(typeParam.getBounds(), tp.getBounds());
+
+        Assert.assertEquals(fooKlass.getFields().size(), k.getFields().size());
+        for (Field field : k.getFields()) {
+            Assert.assertSame(k, field.getDeclaringType());
+        }
+
+        var nameField = fooKlass.getFields().getFirst();
+        var f = k.getFields().getFirst();
+        Assert.assertSame(k, f.getDeclaringType());
+        Assert.assertEquals(nameField.getName(), f.getName());
+        Assert.assertEquals(nameField.getType(), f.getType());
+        Assert.assertEquals(nameField.getFlags(), f.getFlags());
+        Assert.assertEquals(nameField.getSourceTag(), f.getSourceTag());
+
+        Assert.assertEquals(fooKlass.getMethods().size(), k.getMethods().size());
+        for (Method method : k.getMethods()) {
+            Assert.assertSame(k, method.getDeclaringType());
+        }
+        var constructor = fooKlass.getMethods().getFirst();
+        var m1 = k.getMethods().getFirst();
+        Assert.assertEquals(constructor.getName(), m1.getName());
+        Assert.assertEquals(constructor.getFlags(), m1.getFlags());
+        Assert.assertEquals(constructor.getConstantPool().size(), m1.getConstantPool().size());
+        Assert.assertArrayEquals(constructor.getCode().getCode(), m1.getCode().getCode());
+        Assert.assertEquals(k.getType(), m1.getReturnType());
+        Assert.assertEquals(constructor.getParameters().size(), m1.getParameters().size());
+
+        var getComparatorMethod = fooKlass.getMethod(m -> m.getName().equals("getComparator"));
+        var lambda = getComparatorMethod.getLambdas().getFirst();
+        var m2 = k.getMethod(m -> m.getName().equals(getComparatorMethod.getName()));
+        Assert.assertEquals(getComparatorMethod.getLambdas().size(), m2.getLambdas().size());
+        var l = m2.getLambdas().getFirst();
+        Assert.assertEquals(lambda.getCode().length(), l.getCode().length());
+
+        Assert.assertEquals(fooKlass.getIndices().size(), k.getIndices().size());
+        for (Constraint constraint : k.getIndices()) {
+            Assert.assertSame(k, constraint.getDeclaringType());
+        }
+        var index = fooKlass.getIndices().getFirst();
+        var idx = k.getIndices().getFirst();
+        Assert.assertEquals(index.getName(), idx.getName());
+        Assert.assertEquals(nameIndexKlass.isEphemeralKlass(), nk.isEphemeralKlass());
+    }
+
+    public void testInstanceIO() {
+        var testKlasses = createTestKlasses();
+        var fooKlass = testKlasses.getFirst();
+        var nameIndexKlass = testKlasses.get(1);
+        var supplierKlass = testKlasses.get(2);
+
+        TestUtils.initEntityIds(fooKlass);
+        Assert.assertNotNull(nameIndexKlass.tryGetId());
+        Assert.assertNotNull(supplierKlass.tryGetId());
+
+        var repo = new MockEntityRepository();
+        testKlasses.forEach(repo::bind);
+
+        var bout = new ByteArrayOutputStream();
+        var out = new InstanceOutput(bout);
+        testKlasses.forEach(out::writeEntity);
+
+        var in = new InstanceInput(
+                new ByteArrayInputStream(bout.toByteArray()),
+                InstanceInput.UNSUPPORTED_RESOLVER,
+                i -> {},
+                InstanceInput.UNSUPPORTED_REDIRECTION_SIGNAL_PROVIDER
+        );
+        var k1 = in.readEntity(Klass.class, null);
+        var k2 = in.readEntity(Klass.class, null);
+        var k3 = in.readEntity(Klass.class, null);
+        Assert.assertEquals(fooKlass.getName(), k1.getName());
+        Assert.assertEquals(nameIndexKlass.getName(), k2.getName());
+        Assert.assertEquals(supplierKlass.getName(), k3.getName());
+
+        var ref = new Object() {
+            int klassCount;
+            int referenceCount;
+            int classTypeCount;
+            int methodCount;
+        };
+
+        var visitor = new StreamVisitor(new ByteArrayInputStream(bout.toByteArray())) {
+            @Override
+            public void visitEntityBody(int tag, Id id) {
+                if (tag == EntityRegistry.TAG_Klass)
+                    ref.klassCount++;
+                else if (tag == EntityRegistry.TAG_Method)
+                    ref.methodCount++;
+                super.visitEntityBody(tag, id);
+            }
+
+            @Override
+            public void visitClassType() {
+                ref.classTypeCount++;
+                super.visitClassType();
+            }
+
+            @Override
+            public void visitReference() {
+                ref.referenceCount++;
+                super.visitReference();
+            }
+        };
+        visitor.visitEntity();
+        visitor.visitEntity();
+        visitor.visitEntity();
+        Assert.assertEquals(3, ref.klassCount);
+        log.info("Reference count: {}", ref.referenceCount);
+        log.info("Method count: {}", ref.methodCount);
+        log.info("ClassType count: {}", ref.classTypeCount);
+    }
+
+    public void testRebuildNodes() throws IOException {
+        var klasses = createTestKlasses();
+        var fooKlass = klasses.getFirst();
+        var method = fooKlass.getMethod(Method::isConstructor);
+        log.info("{}", EncodingUtils.bytesToHex(method.getCode().getCode()));
+        log.info("{}", method.getText());
+        method.getCode().clearNodes();
+        method.getCode().rebuildNodes();
+        log.info("{}", method.getText());
+    }
+
+    public void testVisitGraph() {
+        var fooKlass = TestUtils.newKlassBuilder("Foo").build();
+        var barKlass = TestUtils.newKlassBuilder("Bar").build();
+        FieldBuilder.newBuilder("bar", fooKlass, Types.getNullableType(barKlass.getType())).build();
+        fooKlass.visitGraph(i -> {
+            i.setMarked();
+            return true;
+        });
+        Assert.assertTrue(barKlass.isMarked());
+    }
+
+    private List<Klass> createTestKlasses() {
         var supplierKlass = TestUtils.newKlassBuilder("Supplier").kind(ClassKind.INTERFACE).build();
         var supplierTypeParam = new TypeVariable(null, "T", supplierKlass);
         MethodBuilder.newBuilder(supplierKlass, "get")
@@ -134,7 +311,7 @@ public class KlassTest extends TestCase {
         }
         var index = new org.metavm.object.type.Index(fooKlass, "nameIndex", "", true,
                 List.of(), nameIndexMethod);
-        new IndexField(index, "name", Types.getStringType(), Values.nullValue());
+        new IndexField(index, "name", Types.getStringType(), null);
         var getByNameMethod = MethodBuilder.newBuilder(fooKlass, "getByName")
                 .isStatic(true)
                 .parameters(new NameAndType("name", Types.getStringType()))
@@ -149,78 +326,7 @@ public class KlassTest extends TestCase {
         }
         fooKlass.emitCode();
         nameIndexKlass.emitCode();
-        Assert.assertFalse(factoryMethod.getRef().isParameterized());
-        byte[] bytes;
-        try (var serContext = SerializeContext.enter()) {
-            var bout = new ByteArrayOutputStream();
-            var out = new KlassOutput(bout, serContext);
-            fooKlass.write(out);
-            nameIndexKlass.write(out);
-            supplierKlass.write(out);
-            bytes = bout.toByteArray();
-        }
-
-        var repo = new MockEntityRepository();
-        var in = new KlassInput(new ByteArrayInputStream(bytes), repo);
-        var k = in.readKlass();
-        var nk = in.readKlass();
-        in.readKlass();
-        Objects.requireNonNull(k);
-
-        Assert.assertNotSame(fooKlass, k);
-        Assert.assertEquals(fooKlass.getName(), k.getName());
-        Assert.assertEquals(fooKlass.getQualifiedName(), k.getQualifiedName());
-        Assert.assertEquals(fooKlass.getFields().size(), k.getFields().size());
-        Assert.assertEquals(fooKlass.isSearchable(), k.isSearchable());
-        Assert.assertEquals(fooKlass.isStruct(), k.isStruct());
-        Assert.assertEquals(fooKlass.isAbstract(), k.isAbstract());
-        Assert.assertEquals(fooKlass.isEphemeral(), k.isEphemeral());
-        Assert.assertEquals(fooKlass.getTag(), k.getTag());
-        Assert.assertEquals(fooKlass.getSourceTag(), k.getSourceTag());
-        Assert.assertSame(fooKlass.getSource(), k.getSource());
-        Assert.assertEquals(fooKlass.getSince(), k.getSince());
-
-        Assert.assertEquals(fooKlass.getTypeParameters().size(), k.getTypeParameters().size());
-        var tp = k.getTypeParameters().get(0);
-        Assert.assertEquals(typeParam.getName(), tp.getName());
-        Assert.assertEquals(typeParam.getBounds(), tp.getBounds());
-
-        Assert.assertEquals(fooKlass.getFields().size(), k.getFields().size());
-        for (Field field : k.getFields()) {
-            Assert.assertSame(k, field.getDeclaringType());
-        }
-        var f = k.getFields().get(0);
-        Assert.assertSame(k, f.getDeclaringType());
-        Assert.assertEquals(nameField.getName(), f.getName());
-        Assert.assertEquals(nameField.getType(), f.getType());
-        Assert.assertEquals(nameField.getFlags(), f.getFlags());
-        Assert.assertEquals(nameField.getSourceTag(), f.getSourceTag());
-
-        Assert.assertEquals(fooKlass.getMethods().size(), k.getMethods().size());
-        for (Method method : k.getMethods()) {
-            Assert.assertSame(k, method.getDeclaringType());
-        }
-        var m1 = k.getMethods().get(0);
-        Assert.assertEquals(constructor.getName(), m1.getName());
-        Assert.assertEquals(constructor.getFlags(), m1.getFlags());
-        Assert.assertEquals(constructor.getConstantPool().size(), m1.getConstantPool().size());
-        Assert.assertArrayEquals(constructor.getCode().getCode(), m1.getCode().getCode());
-        Assert.assertEquals(k.getType(), m1.getReturnType());
-        Assert.assertEquals(constructor.getParameters().size(), m1.getParameters().size());
-
-        var m2 = k.getMethod(m -> m.getName().equals(getComparatorMethod.getName()));
-        Assert.assertEquals(getComparatorMethod.getLambdas().size(), m2.getLambdas().size());
-        var l = m2.getLambdas().get(0);
-        Assert.assertEquals(lambda.getCode().length(), l.getCode().length());
-
-        Assert.assertEquals(fooKlass.getConstraints().size(), k.getConstraints().size());
-        for (Constraint constraint : k.getConstraints()) {
-            Assert.assertSame(k, constraint.getDeclaringType());
-        }
-        var idx = k.getConstraints().get(0);
-        Assert.assertEquals(index.getName(), idx.getName());
-
-        Assert.assertEquals(nameIndexKlass.isEphemeral(), nk.isEphemeral());
+        return List.of(fooKlass, nameIndexKlass, supplierKlass);
 
     }
 

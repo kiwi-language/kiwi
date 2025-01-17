@@ -1,19 +1,17 @@
 package org.metavm.object.type;
 
-import org.metavm.api.Entity;
 import org.metavm.entity.natives.ArrayNative;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.type.rest.dto.TypeCategoryCodes;
 import org.metavm.system.RegionConstants;
 import org.metavm.system.RegionInfo;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-@Entity
 public enum TypeCategory {
     CLASS(TypeCategoryCodes.CLASS, ColumnKind.REFERENCE, 2),
     ENUM(TypeCategoryCodes.ENUM, ColumnKind.REFERENCE, 2),
@@ -112,7 +110,7 @@ public enum TypeCategory {
     }
 
     public boolean idRangeContains(long id) {
-        return NncUtils.mapOrElse(getIdRegion(), r -> r.contains(id), () -> false);
+        return Utils.mapOrElse(getIdRegion(), r -> r.contains(id), () -> false);
     }
 
     public @Nullable RegionInfo getIdRegion() {

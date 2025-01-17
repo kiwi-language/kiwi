@@ -113,7 +113,7 @@ public class InstancePO {
     }
 
     public InstancePO copy() {
-        return new InstancePO(appId, id, data, version, syncVersion, nextNodeId);
+        return new InstancePO(appId, id, Arrays.copyOf(data, data.length), version, syncVersion, nextNodeId);
     }
 
 }

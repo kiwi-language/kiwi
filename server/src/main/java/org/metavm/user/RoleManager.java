@@ -3,9 +3,12 @@ package org.metavm.user;
 import org.metavm.common.Page;
 import org.metavm.entity.*;
 import org.metavm.user.rest.dto.RoleDTO;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Component
 public class RoleManager extends EntityContextFactoryAware {
@@ -19,14 +22,14 @@ public class RoleManager extends EntityContextFactoryAware {
 
     public Page<RoleDTO> list(int page, int pageSize, String searchText) {
         var query = EntityQueryBuilder.newBuilder(Role.class)
-                .searchText(searchText)
+                .addFieldIfNotNull(Role.esName, Utils.safeCall(searchText, Instances::stringInstance))
                 .page(page)
                 .pageSize(pageSize)
                 .build();
         Page<Role> dataPage =
                 entityQueryService.query(query, newContext());
         return new Page<>(
-                NncUtils.map(dataPage.data(), Role::toRoleDTO),
+                Utils.map(dataPage.data(), Role::toRoleDTO),
                 dataPage.total()
         );
     }
@@ -34,7 +37,7 @@ public class RoleManager extends EntityContextFactoryAware {
     public RoleDTO get(String id) {
         try (var context = newContext()) {
             Role role = context.getEntity(Role.class, id);
-            NncUtils.requireNonNull(role, () -> "Role not found: " + id);
+            Objects.requireNonNull(role, () -> "Role not found: " + id);
             return role.toRoleDTO();
         }
     }
@@ -63,7 +66,7 @@ public class RoleManager extends EntityContextFactoryAware {
     public void delete(String id) {
         try (var context = newContext()) {
             Role role = context.getEntity(Role.class, id);
-            NncUtils.requireNonNull(role, () -> "Role not found: " + id);
+            Objects.requireNonNull(role, () -> "Role not found: " + id);
             context.remove(role);
             context.finish();
         }

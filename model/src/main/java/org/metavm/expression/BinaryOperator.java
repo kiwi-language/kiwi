@@ -9,7 +9,7 @@ import org.metavm.object.instance.query.OperatorTypes;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -206,7 +206,7 @@ public enum BinaryOperator {
     }
 
     public static BinaryOperator getByCode(int code) {
-        return NncUtils.findRequired(values(), op -> op.code == code);
+        return Utils.findRequired(values(), op -> op.code == code);
     }
 
     public static BinaryOperator getByOp(String op) {
@@ -222,6 +222,10 @@ public enum BinaryOperator {
 
     public static boolean isOperator(String op) {
         return Arrays.stream(values()).anyMatch(operator -> operator.op.equalsIgnoreCase(op));
+    }
+
+    public static BinaryOperator fromCode(int code) {
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 
     public @Nullable Type resultType() {

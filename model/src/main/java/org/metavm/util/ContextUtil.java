@@ -20,7 +20,7 @@ public class ContextUtil {
         Id userId;
         long appId = -1L;
         // Add randomness to challenge unit tests
-        long nextTmpId = NncUtils.randomInt(1000000);
+        long nextTmpId = Utils.randomInt(1000000);
         String token;
         private Profiler profiler = new Profiler();
         private final Map<String, Value> userData = new HashMap<>();

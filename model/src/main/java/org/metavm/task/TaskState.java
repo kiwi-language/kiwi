@@ -1,7 +1,7 @@
 package org.metavm.task;
 
 import org.metavm.api.Entity;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 @Entity
 public enum TaskState {
@@ -22,8 +22,8 @@ public enum TaskState {
         return code;
     }
 
-    public static TaskState getByCode(int code) {
-        return NncUtils.findRequired(values(), e -> e.code == code);
+    public static TaskState fromCode(int code) {
+        return Utils.findRequired(values(), e -> e.code == code);
     }
 
 }

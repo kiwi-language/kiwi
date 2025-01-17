@@ -6,7 +6,7 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 
 import java.util.ArrayList;
@@ -22,7 +22,7 @@ public class ReferenceTree {
     private final List<ReferenceTree> children = new ArrayList<>();
 
     public ReferenceTree(Instance instance, int rootMode) {
-        NncUtils.requireTrue(rootMode == 1 || rootMode == 2, "Invalid rootMode: " + rootMode);
+        Utils.require(rootMode == 1 || rootMode == 2, "Invalid rootMode: " + rootMode);
         this.rootMode = rootMode;
         this.instance = instance;
     }
@@ -44,8 +44,8 @@ public class ReferenceTree {
     private boolean isRoot() {
         if (rootMode == 1) {
             if (instance instanceof ClassInstance classInstance) {
-                if (classInstance.getType() == ModelDefRegistry.getClassType(Klass.class)) {
-                    var anonymousField = classInstance.getKlass().getFieldByJavaField(
+                if (classInstance.getInstanceType() == ModelDefRegistry.getClassType(Klass.class)) {
+                    var anonymousField = classInstance.getInstanceKlass().getFieldByJavaField(
                             ReflectionUtils.getField(Type.class, "anonymous")
                     );
                     return ((BooleanValue) classInstance.getField(anonymousField)).isFalse();

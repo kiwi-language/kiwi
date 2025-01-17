@@ -82,12 +82,12 @@ public class AssemblerTest extends TestCase {
     public void testCreateArray() {
         deploy("/Users/leen/workspace/object/test/src/test/resources/asm/CreateArray.masm");
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "Utils"));
+            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance("Utils")));
             var method = klass.getMethod("createArray", List.of());
             var result = Flows.invoke(method.getRef(), null, List.of(), context);
             Assert.assertNotNull(result);
             var array = result.resolveArray();
-            Assert.assertSame(ArrayKind.CHILD, array.getType().getKind());
+            Assert.assertSame(ArrayKind.CHILD, array.getInstanceType().getKind());
         }
     }
 
@@ -160,6 +160,7 @@ public class AssemblerTest extends TestCase {
     private void deploy(String source) {
         FlowSavingContext.initConfig();
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            context.loadKlasses();
             var assembler = AssemblerFactory.createWithStandardTypes(context);
             assemble(List.of(source), assembler);
             ContextUtil.setAppId(TestConstants.APP_ID);

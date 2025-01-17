@@ -49,7 +49,7 @@ public class CompilerHttpUtils {
     public static String getToken(long appId) {
         var cookieName = getTokenCookieName(appId);
         var cookieManager = getCookieManager();
-        return NncUtils.findRequired(
+        return Utils.findRequired(
                         cookieManager.getCookieStore().getCookies(), c -> c.getName().equals(cookieName),
                         "Token not available"
                 )
@@ -96,7 +96,7 @@ public class CompilerHttpUtils {
                     .header(Headers.APP_ID, Long.toString(appId))
                     .POST(
                             request != null ?
-                                    HttpRequest.BodyPublishers.ofString(NncUtils.toJSONString(request)) :
+                                    HttpRequest.BodyPublishers.ofString(Utils.toJSONString(request)) :
                                     HttpRequest.BodyPublishers.noBody()
                     )
                     .build();
@@ -143,7 +143,7 @@ public class CompilerHttpUtils {
 
     private static <R> R processResult(String responseStr, TypeReference<R> responseTypeRef) {
         //noinspection unchecked
-        var result = (Result<R>) NncUtils.readJSONString(responseStr,
+        var result = (Result<R>) Utils.readJSONString(responseStr,
                 ParameterizedTypeImpl.create(Result.class, responseTypeRef.getGenericType()));
         if (!result.isSuccessful())
             throw new InternalException(result.getMessage());
@@ -207,7 +207,7 @@ public class CompilerHttpUtils {
         var id = "02b2fafab9070028";
         var treeId = Id.parse(id).getTreeId();
         var trees = typeClient.getTrees(new GetTreesRequest(List.of(treeId)));
-        System.out.println(NncUtils.toPrettyJsonString(trees));
+        System.out.println(Utils.toPrettyJsonString(trees));
     }
 
 }

@@ -1,13 +1,12 @@
 package org.metavm.object.instance;
 
-import org.metavm.object.instance.TreeSource;
+import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 import org.metavm.entity.Tree;
 import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.KeyValue;
-import org.metavm.util.NncUtils;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
@@ -36,7 +35,7 @@ public class CacheTreeSource implements TreeSource {
     public List<Tree> load(Collection<Long> ids, IInstanceContext context) {
         var bytes = cache.batchGet(ids);
         var trees = new ArrayList<Tree>();
-        NncUtils.biForEach(ids, bytes, (id, bs) -> {
+        Utils.biForEach(ids, bytes, (id, bs) -> {
             if (bs != null) {
                 var input = new InstanceInput(new ByteArrayInputStream(bs));
                 trees.add(new Tree(id, input.readLong(), input.readInt(), bs));

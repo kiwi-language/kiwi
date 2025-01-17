@@ -1,6 +1,7 @@
 package org.metavm.task;
 
-import org.metavm.ddl.DefContextUtils;
+//import org.metavm.ddl.DefContextUtils;
+
 import org.metavm.entity.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -35,7 +36,7 @@ public class Worker extends EntityContextFactoryAware {
     public void sendHeartbeat() {
         transactionOperations.executeWithoutResult(s -> {
             try (var context = newPlatformContext()) {
-                var executorData = context.selectFirstByKey(ExecutorData.IDX_IP, NetworkUtils.localIP);
+                var executorData = context.selectFirstByKey(ExecutorData.IDX_IP, Instances.stringInstance(NetworkUtils.localIP));
                 if (executorData == null) {
                     executorData = new ExecutorData(NetworkUtils.localIP);
                     context.bind(executorData);
@@ -63,7 +64,7 @@ public class Worker extends EntityContextFactoryAware {
     public boolean waitFor(Predicate<Task> predicate, int maxRuns, long delay) {
         for (int i = 0; i < maxRuns; i++) {
             var tasks = run0();
-            if (NncUtils.anyMatch(tasks, t -> t.isCompleted() && predicate.test(t)))
+            if (Utils.anyMatch(tasks, t -> t.isCompleted() && predicate.test(t)))
                 return true;
             if(delay > 0) {
                 try {
@@ -79,7 +80,7 @@ public class Worker extends EntityContextFactoryAware {
     public boolean waitForGroup(Predicate<TaskGroup> predicate, int maxRuns) {
         for (int i = 0; i < maxRuns; i++) {
             var tasks = run0();
-            if (NncUtils.anyMatch(tasks, t -> t.getGroup() != null && t.getGroup().isCompleted() && predicate.test(t.getGroup())))
+            if (Utils.anyMatch(tasks, t -> t.getGroup() != null && t.getGroup().isCompleted() && predicate.test(t.getGroup())))
                 return true;
         }
         return false;
@@ -90,8 +91,14 @@ public class Worker extends EntityContextFactoryAware {
             var tasks = context.query(
                     new EntityIndexQuery<>(
                             ShadowTask.IDX_EXECUTOR_IP_START_AT,
-                            new EntityIndexKey(List.of(NetworkUtils.localIP, 0L)),
-                            new EntityIndexKey(List.of(NetworkUtils.localIP, System.currentTimeMillis())),
+                            new EntityIndexKey(List.of(
+                                    Instances.stringInstance(NetworkUtils.localIP),
+                                    Instances.longInstance(0)
+                                    )),
+                            new EntityIndexKey(List.of(
+                                    Instances.stringInstance(NetworkUtils.localIP),
+                                    Instances.longInstance(System.currentTimeMillis()))
+                            ),
                             false,
                             16
                     )
@@ -116,12 +123,13 @@ public class Worker extends EntityContextFactoryAware {
         return transactionOperations.execute(s -> {
             try (var appContext = newContext(shadowTask.getAppId())) {
                 var appTask = appContext.getEntity(Task.class, shadowTask.getAppTaskId());
-                appContext.getInstanceContext().setTimeout(appTask.getTimeout());
+                appContext.setTimeout(appTask.getTimeout());
                 logger.info("Running task {}-{}", shadowTask.getAppId(), appTask.getTitle());
                 boolean terminated;
                 try {
-                    var parentContext = shadowTask.getDefWal() != null ?
-                            DefContextUtils.createReversedDefContext(shadowTask.getDefWal(), entityContextFactory, appTask.getExtraStdKlassIds()) :
+                    var parentContext = /*shadowTask.getDefWal() != null ?
+                            DefContextUtils.createReversedDefContext(shadowTask.getDefWal(), entityContextFactory,
+                                    NncUtils.map(appTask.getExtraStdKlassIds(), Id::toString)) :*/
 //                            ModelDefRegistry.getDefContext();
                             (
                                     shadowTask.getAppId() != Constants.ROOT_APP_ID ?
@@ -140,8 +148,8 @@ public class Worker extends EntityContextFactoryAware {
                             logger.info("Task {}-{} completed successfully", shadowTask.getAppId(), appTask.getTitle());
                     }
                     finally {
-                        if(parentContext instanceof ReversedDefContext reversedDefContext)
-                            SystemConfig.clearLocal();
+//                        if(parentContext instanceof ReversedDefContext)
+//                            SystemConfig.clearLocal();
                     }
                 }
                 catch (Exception e) {

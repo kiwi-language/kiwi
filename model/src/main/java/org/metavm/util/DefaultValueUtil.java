@@ -23,8 +23,8 @@ public class DefaultValueUtil {
             return null;
         }
         if(Types.isArray(type)) {
-            List<Object> values = NncUtils.readJSONString(str, new TypeReference<>() {});
-            return NncUtils.map(values, value -> convertFromStr(NncUtils.toJSONString(value), Types.getElementType(type)));
+            List<Object> values = Utils.readJSONString(str, new TypeReference<>() {});
+            return Utils.map(values, value -> convertFromStr(Utils.toJSONString(value), Types.getElementType(type)));
         }
         else if(type.isNullable()) {
             return convertFromStr(str, type.getUnderlyingType());
@@ -64,7 +64,7 @@ public class DefaultValueUtil {
             return "";
         }
         if(multiValued) {
-            return NncUtils.toJSONString(value);
+            return Utils.toJSONString(value);
         }
         else {
             return value.toString();

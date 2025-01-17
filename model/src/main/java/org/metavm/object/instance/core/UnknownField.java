@@ -2,6 +2,7 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -49,7 +50,7 @@ public class UnknownField implements IInstanceField {
     }
 
     @Override
-    public void writeValue(InstanceOutput output) {
+    public void writeValue(MvOutput output) {
         output.write(bytes);
     }
 

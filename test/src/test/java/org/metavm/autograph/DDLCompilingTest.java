@@ -34,7 +34,7 @@ public class DDLCompilingTest extends CompilerTestBase {
                 ref.derivedInstanceId = Id.parse(saveInstance("swapsuper.Derived",
                         Map.of("value1", 1, "value2", 2, "value3", 3)));
                 var indexFooKlass = context.getKlassByQualifiedName("index.IndexFoo");
-                Assert.assertEquals(1, indexFooKlass.getConstraints().size());
+                Assert.assertEquals(1, indexFooKlass.getIndices().size());
             }
             ref.fooId = saveInstance("index.IndexFoo", Map.of("name", "foo", "seq", 1));
             ref.productId = saveInstance("Product", Map.of("name", "Shoes",
@@ -47,6 +47,7 @@ public class DDLCompilingTest extends CompilerTestBase {
         compile(DDL2_SOURCE_ROOT);
         submit(() -> {
             try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                context.loadKlasses();
                 var productKlass = context.getKlassByQualifiedName("Product");
                 var descField = productKlass.getFieldByName("description");
                 Assert.assertSame(MetadataState.REMOVED, descField.getState());
@@ -68,7 +69,7 @@ public class DDLCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(0, errors.size());
                 Assert.assertEquals(2, callMethod(ref.derivedInstanceId.toString(), "getValue2", List.of()));
                 var indexFooKlass = context.getKlassByQualifiedName("index.IndexFoo");
-                Assert.assertEquals(1, indexFooKlass.getConstraints().size());
+                Assert.assertEquals(1, indexFooKlass.getIndices().size());
                 Assert.assertEquals(4, currencyKlass.getEnumConstants().size());
                 int ordinal = 0;
                 for (var enumConstantDef : currencyKlass.getEnumConstants()) {

@@ -35,7 +35,7 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
                 }
                 response.setHeader("content-type","application/json;charset=UTF-8");
                 response.setCharacterEncoding("UTF-8");
-                response.getOutputStream().write(NncUtils.toJSONString(failureResult).getBytes(StandardCharsets.UTF_8));
+                response.getOutputStream().write(Utils.toJSONString(failureResult).getBytes(StandardCharsets.UTF_8));
                 logger.info("business exception", bizExp);
             }
             else {

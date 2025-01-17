@@ -1,7 +1,7 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 
 public interface IInstanceField extends Comparable<IInstanceField> {
 
@@ -15,7 +15,7 @@ public interface IInstanceField extends Comparable<IInstanceField> {
 
     void clear();
 
-    void writeValue(InstanceOutput output);
+    void writeValue(MvOutput output);
 
     @NotNull Value getValue();
 

@@ -5,7 +5,7 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
@@ -19,7 +19,7 @@ public class FunctionDesc {
 
     public FunctionDesc(Func function) {
         this.function = function;
-        List<Class<?>> instanceParamTypes = NncUtils.map(
+        List<Class<?>> instanceParamTypes = Utils.map(
                 function.getParameterTypes(),
                 Instances::getInstanceClassByJavaClass
         );

@@ -29,22 +29,16 @@ public class IdServiceTest extends TestCase {
     }
 
     public void test() {
-        var type = ModelDefRegistry.getType(Klass.class);
         int count = (int) IdConstants.DEFAULT_BLOCK_SIZE / 2 + 1;
-        var ids = idService.allocate(TestConstants.APP_ID, Map.of(type, count)).get(type);
+        var ids = idService.allocate(TestConstants.APP_ID, count);
         Assert.assertEquals(count, ids.size());
-        ids = idService.allocate(TestConstants.APP_ID, Map.of(type, count)).get(type);
+        ids = idService.allocate(TestConstants.APP_ID, count);
         Assert.assertEquals(count, ids.size());
     }
 
     public void testAllocate() {
-        var type2ids = idService.allocate(TestConstants.APP_ID, Map.of(
-                StdKlass.valueList.type(), 10,
-                StdKlass.hashSet.type(), 10
-        ));
-        type2ids.forEach((type, ids) -> {
-            logger.info("{}", ids);
-        });
+        var ids = idService.allocate(TestConstants.APP_ID, 20);
+        logger.info("{}", ids);
     }
 
 }

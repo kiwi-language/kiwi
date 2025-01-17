@@ -16,11 +16,11 @@ public class MetaVersionStore {
 
     public long getMetaVersion() {
         var file = new File(versionFile);
-        return file.exists() ? NncUtils.readLong(file) : -1L;
+        return file.exists() ? Utils.readLong(file) : -1L;
     }
 
     public void setMetaVersion(long l) {
-        NncUtils.writeFile(versionFile, Long.toString(l));
+        Utils.writeFile(versionFile, Long.toString(l));
     }
 
 }

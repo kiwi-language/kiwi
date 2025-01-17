@@ -77,7 +77,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 // assert that the feedQualityInspectionStates field of the material object contains the QUALIFIED constant
                 var feedQualityInspectionStates = material.getArray("feedQualityInspectionStates");
                 Assert.assertEquals(1, feedQualityInspectionStates.size());
-                Assert.assertEquals("QUALIFIED", feedQualityInspectionStates.get(0));
+                Assert.assertEquals("QUALIFIED", feedQualityInspectionStates.getFirst());
 
 
                 // reload the material view object
@@ -85,7 +85,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 // check the feedQualityInspectionStates field and assert that it didn't change
                 var reloadedFeedQualityInspectionStates = reloadedMaterial.getArray("feedQualityInspectionStates");
                 Assert.assertEquals(1, reloadedFeedQualityInspectionStates.size());
-                Assert.assertEquals("QUALIFIED", reloadedFeedQualityInspectionStates.get(0));
+                Assert.assertEquals("QUALIFIED", reloadedFeedQualityInspectionStates.getFirst());
 
                 // get Utils type
                 var storageObjects = createPosition();
@@ -207,7 +207,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 )
         );
         Assert.assertEquals(1, queryResp.page().total());
-        var queriedInventory = queryResp.page().data().get(0);
+        var queriedInventory = queryResp.page().data().getFirst();
         Assert.assertEquals(inventoryId, queriedInventory);
 
         // decrease the inventory by 100 and asserts that the inventory is removed

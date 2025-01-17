@@ -8,6 +8,8 @@ import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.common.ErrorCode;
+import org.metavm.http.HttpCookieImpl;
+import org.metavm.http.HttpHeaderImpl;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
@@ -135,12 +137,12 @@ public class ApiController {
         var names = servletRequest.getHeaderNames();
         while (names.hasMoreElements()) {
             var name = names.nextElement();
-            headers.add(new HttpHeader(name, servletRequest.getHeader(name)));
+            headers.add(new HttpHeaderImpl(name, servletRequest.getHeader(name)));
         }
         var cookies = new ArrayList<HttpCookie>();
         if(servletRequest.getCookies() != null) {
             for (Cookie cookie : servletRequest.getCookies()) {
-                cookies.add(new HttpCookie(cookie.getName(), cookie.getValue()));
+                cookies.add(new HttpCookieImpl(cookie.getName(), cookie.getValue()));
             }
         }
         return new HttpRequestImpl(

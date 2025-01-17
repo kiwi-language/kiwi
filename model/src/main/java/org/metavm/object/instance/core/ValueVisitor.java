@@ -94,10 +94,6 @@ public abstract class ValueVisitor<R> {
         return visitNumberValue(value);
     }
 
-    public R visitElement(ElementValue element) {
-        return visitValue(element);
-    }
-
     public R visitType(Type type) {
         return visitValue(type);
     }

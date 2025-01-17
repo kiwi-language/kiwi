@@ -15,7 +15,7 @@ public class IdStringTypeHandler extends BaseTypeHandler<List<Long>> {
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, List<Long> parameter, JdbcType jdbcType) throws SQLException {
-        ps.setString(i, NncUtils.join(NncUtils.map(parameter, Objects::toString)));
+        ps.setString(i, Utils.join(Utils.map(parameter, Objects::toString)));
     }
 
     @Override

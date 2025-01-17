@@ -1,98 +1,112 @@
 package org.metavm.object.type;
 
 import org.metavm.api.Entity;
-import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.object.type.rest.dto.UnionTypeKey;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Entity
 public class UnionType extends CompositeType {
 
     public static final UnionType nullableAnyType = new UnionType(Set.of(NullType.instance, AnyType.instance));
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     public static UnionType create(Type...types) {
         return new UnionType(Set.of(types));
     }
 
-    private final ValueArray<Type> members;
-
-    private transient Set<Type> memberSet;
+    private final List<Type> members;
 
     public UnionType(Set<Type> members) {
         super();
         if(members.isEmpty())
             throw new IllegalArgumentException("members can not be empty");
-        // maintain a relatively deterministic order so that the ModelIdentities of the members are not changed between reboots
-        // the order is not fully deterministic but it's sufficient for bootstrap because only binary-nullable union types are involved.
-        this.members = new ValueArray<>(Type.class, members);
+        this.members = new ArrayList<>(members);
     }
 
     private UnionType(List<Type> members) {
-        this.members = new ValueArray<>(Type.class, members);
+        this.members = members;
     }
 
     public Set<Type> getMembers() {
-        return new HashSet<>(members.toList());
+        return new HashSet<>(members);
     }
 
     @Override
     public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
-        return new UnionTypeKey(NncUtils.mapUnique(members, type -> type.toTypeKey(getTypeDefId)));
+        return new UnionTypeKey(Utils.mapToSet(members, type -> type.toTypeKey(getTypeDefId)));
     }
 
     @Override
     public Type getConcreteType() {
         if (isNullable()) {
-            return NncUtils.findRequired(members, t -> !t.isNull()).getConcreteType();
+            return Utils.findRequired(members, t -> !t.isNull()).getConcreteType();
         }
         return this;
     }
 
-    public ReadonlyArray<Type> getDeclaredMembers() {
-        return members;
-    }
-
     @Override
     protected boolean isAssignableFrom0(Type that) {
-        return NncUtils.anyMatch(members, m -> m.isAssignableFrom(that));
+        for (Type member : members) {
+            if (member.isAssignableFrom(that)) return true;
+        }
+        return false;
     }
 
     @Override
-    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
-        return visitor.visitUnionType(this, s);
-    }
-
-    @Override
-    protected boolean equals0(Object obj) {
-        return obj instanceof UnionType that && memberSet().equals(that.memberSet());
+    public boolean equals(Object obj) {
+        if (obj instanceof UnionType that) {
+            var m1 = members;
+            var m2 = that.members;
+            if (m1.size() == m2.size()) {
+                out: for (Type t1 : m1) {
+                    for (Type t2 : m2) {
+                        if (t1.equals(t2)) continue out;
+                    }
+                    return false;
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(memberSet());
+        int h = 0;
+        for (Type obj : members) {
+            if (obj != null)
+                h += obj.hashCode();
+        }
+        return h;
     }
 
     @Override
-    protected String toString0() {
-        List<String> memberNames = NncUtils.mapAndSort(members, Type::getName, String::compareTo);
+    public String toString() {
+        List<String> memberNames = Utils.mapAndSort(members, Type::getName, String::compareTo);
         return "UnionType " + String.join("|", memberNames);
     }
 
     @Override
     public String getInternalName(@Nullable Flow current) {
-        var names = NncUtils.mapAndSort(members, type -> type.getInternalName(current), String::compareTo);
-        return NncUtils.join(names, "|");
+        var names = Utils.mapAndSort(members, type -> type.getInternalName(current), String::compareTo);
+        return Utils.join(names, "|");
     }
 
     @Override
@@ -104,7 +118,7 @@ public class UnionType extends CompositeType {
     public Type getUnderlyingType() {
         if (members.size() != 2)
             return this;
-        Type t1 = members.get(0), t2 = members.get(1);
+        Type t1 = members.getFirst(), t2 = members.getLast();
         if (t1.isNull())
             return t2;
         else if (t2.isNull())
@@ -123,22 +137,17 @@ public class UnionType extends CompositeType {
 
     @Override
     public List<? extends Type> getSuperTypes() {
-        return List.of(Types.getLeastUpperBound(memberSet()));
+        return List.of(Types.getLeastUpperBound(members));
     }
 
     @Override
     public String getTypeDesc() {
-        return NncUtils.join(members, Type::getTypeDesc, "|");
+        return Utils.join(members, Type::getTypeDesc, "|");
     }
 
     @Override
     public TypeCategory getCategory() {
         return TypeCategory.UNION;
-    }
-
-    @Override
-    public Type getType() {
-        return StdKlass.unionType.type();
     }
 
     @Override
@@ -148,27 +157,24 @@ public class UnionType extends CompositeType {
 
     @Override
     public List<Type> getComponentTypes() {
-        return members.toList();
-    }
-
-    @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitUnionType(this);
+        return members;
     }
 
     @Override
     public String getName() {
-        return NncUtils.join(members, Type::getName, "|");
+        return Utils.join(members, Type::getName, "|");
     }
 
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
-        return NncUtils.join(members, type -> {
+        var shuffledMembers = new ArrayList<>(members);
+        Collections.shuffle(shuffledMembers);
+        return (shuffledMembers.stream().map(type -> {
             var memberExpr = type.toExpression(serializeContext, getTypeDefExpr);
             if(type.getPrecedence() >= getPrecedence())
                 memberExpr = "("+ memberExpr + ")";
             return memberExpr;
-        }, "|");
+        }).collect(Collectors.joining("|")));
     }
 
     @Override
@@ -179,22 +185,11 @@ public class UnionType extends CompositeType {
     @Override
     public void write(MvOutput output) {
         output.write(WireTypes.UNION_TYPE);
-        output.writeInt(members.size());
-        members.forEach(t -> t.write(output));
+        output.writeList(members, t -> t.write(output));
     }
 
     public static UnionType read(MvInput input) {
-        var numMembers = input.readInt();
-        var members = new ArrayList<Type>(numMembers);
-        for (int i = 0; i < numMembers; i++)
-            members.add(input.readType());
-        return new UnionType(members);
-    }
-
-    public Set<Type> memberSet() {
-        if(memberSet == null)
-            memberSet = new HashSet<>(members.toList());
-        return memberSet;
+        return new UnionType(input.readList(input::readType));
     }
 
     @Override
@@ -215,6 +210,34 @@ public class UnionType extends CompositeType {
 
     @Override
     public boolean isNullable() {
-        return NncUtils.anyMatch(members, Type::isNullable);
+        return Utils.anyMatch(members, Type::isNullable);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitUnionType(this);
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitUnionType(this, s);
+    }
+
+    @Override
+    public ClassType getValueType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        for (var member : members) {
+            member.accept(visitor);
+        }
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        members.forEach(arg -> arg.forEachReference(action));
     }
 }

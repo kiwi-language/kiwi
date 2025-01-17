@@ -2,8 +2,10 @@ package org.metavm.entity;
 
 import org.metavm.api.Entity;
 import org.metavm.flow.Flow;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeVariable;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 @Entity
@@ -50,5 +52,11 @@ public enum DummyGenericDeclaration implements GenericDeclaration {
     @Override
     public GenericDeclarationRef getRef() {
         throw new NullPointerException();
+    }
+
+    @Nullable
+    @Override
+    public Id tryGetId() {
+        return null;
     }
 }

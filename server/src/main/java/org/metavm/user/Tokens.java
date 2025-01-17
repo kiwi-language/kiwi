@@ -4,7 +4,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.metavm.util.Constants;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -48,9 +48,9 @@ public class Tokens {
 
     public static @Nullable Token getToken(long appId, HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
-        Map<String, Cookie> cookieMap = NncUtils.toMap(cookies, Cookie::getName);
-        String rawToken = NncUtils.get(cookieMap.get(getTokenCookieName(appId)), Cookie::getValue);
-        return NncUtils.get(rawToken, t -> new Token(appId, t));
+        Map<String, Cookie> cookieMap = Utils.toMap(cookies, Cookie::getName);
+        String rawToken = Utils.safeCall(cookieMap.get(getTokenCookieName(appId)), Cookie::getValue);
+        return Utils.safeCall(rawToken, t -> new Token(appId, t));
     }
 
     public static void setPlatformToken(HttpServletResponse response, Token token) {

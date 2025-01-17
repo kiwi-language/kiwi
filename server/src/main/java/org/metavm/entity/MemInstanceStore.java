@@ -5,7 +5,7 @@ import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.mappers.InstanceMapper;
 import org.metavm.object.instance.persistence.mappers.*;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 
@@ -41,7 +41,7 @@ public class MemInstanceStore extends InstanceStore {
     }
 
     public InstancePO get(long appId, long id) {
-        return NncUtils.first(instanceMapper.selectByIds(appId, List.of(id), 0));
+        return Utils.first(instanceMapper.selectByIds(appId, List.of(id), 0));
     }
 
     public MemInstanceMapper getInstanceMapper() {

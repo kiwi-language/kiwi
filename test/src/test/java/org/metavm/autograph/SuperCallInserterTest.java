@@ -10,7 +10,7 @@ public class SuperCallInserterTest extends TestCase {
         var source = "/Users/leen/workspace/object/lab/src/main/basics/innerclass/InnerClassInheritance.java";
         var file = TranspileTestTools.getPsiJavaFile(source);
         TranspileTestTools.executeCommand(() -> file.accept(new SuperCallInserter()));
-        log.debug("{}", file.getText());
+        log.info("{}", file.getText());
     }
 
 }

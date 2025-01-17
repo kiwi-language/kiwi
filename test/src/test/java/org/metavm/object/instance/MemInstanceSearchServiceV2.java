@@ -3,13 +3,12 @@ package org.metavm.object.instance;
 import org.metavm.common.Page;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.rest.FieldValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.instance.search.SearchQuery;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.Hooks;
-import org.metavm.util.Instances;
 import org.metavm.util.MultiApplicationMap;
-import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,9 +66,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     private boolean match(Source source, SearchQuery query) {
         if (!query.types().contains(source.typeKey().toTypeExpression()))
             return false;
-        return query.condition() == null || Instances.isTrue(
-                query.condition().evaluate(new SourceEvaluationContext(source))
-        );
+        return query.condition() == null || query.condition().evaluate(source.fields());
     }
 
 
@@ -89,7 +86,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     @Override
     public void bulk(long appId, List<ClassInstance> toIndex, List<Id> toDelete) {
         for (ClassInstance instance : toIndex) {
-            NncUtils.requireNonNull(instance.tryGetTreeId());
+            Objects.requireNonNull(instance.tryGetTreeId());
             sourceMap.put(
                     appId,
                     instance.tryGetId(),
@@ -103,15 +100,10 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
     private Source buildSource(ClassInstance instance) {
-        var fields = new HashMap<Id, FieldValue>();
-        instance.forEachField((field, value) -> {
-            if (!field.isChild()) {
-                fields.put(field.getId(), value.toFieldValueDTO());
-            }
-        });
+        var fields = instance.buildSource();
         return new Source(
                 instance.getId(),
-                instance.getType().toTypeKey(),
+                instance.getInstanceType().toTypeKey(),
                 fields
         );
     }

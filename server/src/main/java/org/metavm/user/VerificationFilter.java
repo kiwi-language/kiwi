@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Headers;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -49,9 +49,9 @@ public class VerificationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        var appId = NncUtils.tryParseLong(request.getHeader(Headers.APP_ID));
+        var appId = Utils.tryParseLong(request.getHeader(Headers.APP_ID));
         if(appId == null)
-            appId = NncUtils.tryParseLong(request.getParameter("__app_id__"));
+            appId = Utils.tryParseLong(request.getParameter("__app_id__"));
         if (appId != null) {
             var token = Tokens.getToken(appId, request);
             if (token != null &&  loginService.verify(token).isSuccessful()) {
@@ -63,6 +63,6 @@ public class VerificationFilter extends OncePerRequestFilter {
     }
 
     private boolean shouldPass(HttpServletRequest request) {
-        return NncUtils.anyMatch(PASSING_PREFIXES, p -> request.getRequestURI().startsWith(p));
+        return Utils.anyMatch(PASSING_PREFIXES, p -> request.getRequestURI().startsWith(p));
     }
 }

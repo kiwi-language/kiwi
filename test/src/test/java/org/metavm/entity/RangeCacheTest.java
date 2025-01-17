@@ -3,7 +3,7 @@ package org.metavm.entity;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.util.IdAndValue;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -78,7 +78,7 @@ public class RangeCacheTest extends TestCase {
         }
         for (RangeQuery q : queries) {
             List<Long> result = resultMap.get(q);
-            List<Long> expected = NncUtils.map(internalLoad(q.startId(), q.limit()), IdAndValue::value);
+            List<Long> expected = Utils.map(internalLoad(q.startId(), q.limit()), IdAndValue::value);
             Assert.assertEquals(expected, result);
         }
     }
@@ -94,7 +94,7 @@ public class RangeCacheTest extends TestCase {
 
     private Map<RangeQuery, List<IdAndValue<Long>>> load(List<RangeQuery> queries) {
         loadingCount++;
-        return NncUtils.toMap(
+        return Utils.toMap(
                 queries,
                 Function.identity(),
                 q -> internalLoad(q.startId(), q.limit())

@@ -32,10 +32,6 @@ public class RegionConstants {
         return region;
     }
 
-    public static boolean isArrayId(Id id) {
-        return id.isArray();
-    }
-
     public static boolean isArrayId(long id) {
         return id >= READ_WRITE_ARRAY_REGION_BASE && id <= CHILD_ARRAY_REGION_END;
     }

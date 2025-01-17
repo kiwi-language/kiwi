@@ -6,11 +6,11 @@ import org.antlr.v4.runtime.CharStreams;
 import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.Entity;
-import org.metavm.entity.EntityUtils;
 import org.metavm.flow.FunctionBuilder;
 import org.metavm.flow.FunctionRef;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.util.Constants;
 import org.metavm.util.TestUtils;
 
@@ -71,7 +71,7 @@ public class TypeParserImplTest extends TestCase {
         }).parseFunction(functionSig);
         Assert.assertEquals("requireNonNull2", func.getName());
         Assert.assertEquals(1, func.getTypeParameters().size());
-        var variableType = func.getTypeParameters().get(0).getType();
+        var variableType = func.getTypeParameters().getFirst().getType();
         Assert.assertEquals(variableType, func.getReturnType());
         Assert.assertEquals(2, func.getParameters().size());
         Assert.assertEquals("value", func.getParameter(0).getName());
@@ -117,7 +117,7 @@ public class TypeParserImplTest extends TestCase {
         Assert.assertEquals(List.of(Types.getStringType()), ppM2.getTypeArguments());
 
 
-        var tv = pM2.getTypeParameters().get(0).getType();
+        var tv = pM2.getTypeParameters().getFirst().getType();
         var expr = tv.toExpression();
         var map = getEntityMap(klass);
         var typeDefProvider = (TypeDefProvider) id -> (ITypeDef) map.get(id);
@@ -152,9 +152,9 @@ public class TypeParserImplTest extends TestCase {
         Assert.assertEquals(pFunc, pFuncRef1);
     }
 
-    private Map<Id, Entity> getEntityMap(Object root) {
+    private Map<Id, Entity> getEntityMap(Instance root) {
         var map = new HashMap<Id, Entity>();
-        EntityUtils.forEachDescendant(root, e -> {
+        root.forEachDescendant(e -> {
             if(e instanceof Entity entity && entity.tryGetId() != null)
                 map.put(entity.getId(), entity);
         });

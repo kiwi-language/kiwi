@@ -1,6 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.api.Entity;
+import org.metavm.api.JsonIgnore;
 import org.metavm.entity.LocalKey;
 import org.metavm.object.instance.core.Id;
 
@@ -43,18 +44,22 @@ public interface Property extends ClassMember, LocalKey {
 
     void setState(MetadataState state);
 
+    @JsonIgnore
     default boolean isPublic() {
         return getAccess() == Access.PUBLIC;
     }
 
+    @JsonIgnore
     default boolean isPrivate() {
         return getAccess() == Access.PRIVATE;
     }
 
+    @JsonIgnore
     default boolean isPackagePrivate() {
         return getAccess() == Access.PACKAGE;
     }
 
+    @JsonIgnore
     default boolean isProtected() {
         return getAccess() == Access.PROTECTED;
     }

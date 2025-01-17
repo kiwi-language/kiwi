@@ -1,5 +1,7 @@
 package org.metavm.entity;
 
+import org.metavm.object.instance.core.Instance;
+
 import javax.annotation.Nullable;
 import java.util.IdentityHashMap;
 
@@ -12,7 +14,7 @@ public class BuildKeyContext {
         this.identityContext = identityContext;
     }
 
-    public String getModelName(Object object, @Nullable Object current) {
+    public String getModelName(Entity object, @Nullable Object current) {
         return identityContext.getModelName(object, this, current);
     }
 

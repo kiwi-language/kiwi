@@ -4,38 +4,41 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
-import org.metavm.entity.ValueArray;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.rest.dto.FunctionTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Entity
 public class FunctionType extends CompositeType {
 
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
+    private final List<Type> parameterTypes;
     private Type returnType;
-    private final ValueArray<Type> parameterTypes;
 
     public FunctionType(List<Type> parameterTypes, @NotNull Type returnType) {
         super();
-        this.parameterTypes = new ValueArray<>(Type.class, parameterTypes);
+        this.parameterTypes = new ArrayList<>(parameterTypes);
         this.returnType = returnType;
     }
 
     @Override
     public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
-        return new FunctionTypeKey(NncUtils.map(parameterTypes, type -> type.toTypeKey(getTypeDefId)), returnType.toTypeKey(getTypeDefId));
+        return new FunctionTypeKey(Utils.map(parameterTypes, type -> type.toTypeKey(getTypeDefId)), returnType.toTypeKey(getTypeDefId));
     }
 
     @Override
@@ -53,11 +56,6 @@ public class FunctionType extends CompositeType {
         return false;
     }
 
-    @Override
-    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
-        return visitor.visitFunctionType(this, s);
-    }
-
     public void setReturnType(Type returnType) {
         this.returnType = returnType;
     }
@@ -67,27 +65,22 @@ public class FunctionType extends CompositeType {
     }
 
     public List<Type> getParameterTypes() {
-        return parameterTypes.toList();
+        return Collections.unmodifiableList(parameterTypes);
     }
 
     @Override
     public String getName() {
-        return "(" + NncUtils.join(parameterTypes, Type::getName) + ")->" + returnType.getName();
+        return "(" + Utils.join(parameterTypes, Type::getName) + ")->" + returnType.getName();
     }
 
     @Override
     public String getTypeDesc() {
-        return "(" + NncUtils.join(parameterTypes, Type::getTypeDesc) + ")" + "->" + returnType.getTypeDesc();
+        return "(" + Utils.join(parameterTypes, Type::getTypeDesc) + ")" + "->" + returnType.getTypeDesc();
     }
 
     @Override
     public TypeCategory getCategory() {
         return TypeCategory.FUNCTION;
-    }
-
-    @Override
-    public Type getType() {
-        return StdKlass.functionType.type();
     }
 
     @Override
@@ -97,23 +90,18 @@ public class FunctionType extends CompositeType {
 
     @Override
     public List<Type> getComponentTypes() {
-        return NncUtils.append(getParameterTypes(), returnType);
+        return Utils.append(getParameterTypes(), returnType);
     }
 
     @Override
     public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
-        return "(" + NncUtils.join(parameterTypes, type -> type.getInternalName(current)) + ")"
+        return "(" + Utils.join(parameterTypes, type -> type.getInternalName(current)) + ")"
                 + "->" + returnType.getInternalName(current);
     }
 
     @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitFunctionType(this);
-    }
-
-    @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
-        return "(" + NncUtils.join(parameterTypes, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ")" + "->" + returnType.toExpression(serializeContext, getTypeDefExpr);
+        return "(" + Utils.join(parameterTypes, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ")" + "->" + returnType.toExpression(serializeContext, getTypeDefExpr);
     }
 
     @Override
@@ -124,8 +112,7 @@ public class FunctionType extends CompositeType {
     @Override
     public void write(MvOutput output) {
         output.write(WireTypes.FUNCTION_TYPE);
-        output.writeInt(parameterTypes.size());
-        parameterTypes.forEach(t -> t.write(output));
+        output.writeList(parameterTypes, t -> t.write(output));
         returnType.write(output);
     }
 
@@ -135,20 +122,44 @@ public class FunctionType extends CompositeType {
     }
 
     public static FunctionType read(MvInput input) {
-        var numParamTypes = input.readInt();
-        var paramTypes = new ArrayList<Type>(numParamTypes);
-        for (int i = 0; i < numParamTypes; i++)
-            paramTypes.add(input.readType());
-        return new FunctionType(paramTypes, input.readType());
+        return new FunctionType(input.readList(input::readType), input.readType());
     }
 
     @Override
-    protected boolean equals0(Object obj) {
+    public boolean equals(Object obj) {
         return obj instanceof FunctionType that && parameterTypes.equals(that.parameterTypes) && returnType.equals(that.returnType);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(parameterTypes, returnType);
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitFunctionType(this);
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitFunctionType(this, s);
+    }
+
+    @Override
+    public ClassType getValueType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        parameterTypes.forEach(arg -> arg.accept(visitor));
+        returnType.accept(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        parameterTypes.forEach(arg -> arg.forEachReference(action));
+        returnType.forEachReference(action);
     }
 }

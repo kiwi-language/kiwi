@@ -5,9 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.metavm.application.ApplicationManager;
 import org.metavm.application.rest.dto.ApplicationCreateRequest;
 import org.metavm.common.Result;
-import org.metavm.ddl.DDLManager;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.rest.dto.PreUpgradeRequest;
 import org.metavm.system.CacheManager;
 import org.metavm.system.StoreManager;
 import org.metavm.user.PlatformUserManager;
@@ -16,7 +14,7 @@ import org.metavm.user.rest.controller.LoginController;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
@@ -63,16 +61,17 @@ public class SystemController {
 
     private final StoreManager storeManager;
 
-    private final DDLManager ddlManager;
+//    private final DDLManager ddlManager;
 
-    public SystemController(ApplicationManager applicationManager, LoginController loginController, BootstrapController bootstrapController, PlatformUserManager platformUserManager, CacheManager cacheManager, StoreManager storeManager, DDLManager ddlManager) {
+    public SystemController(ApplicationManager applicationManager, LoginController loginController, BootstrapController bootstrapController, PlatformUserManager platformUserManager, CacheManager cacheManager, StoreManager storeManager
+            /*, DDLManager ddlManager*/) {
         this.applicationManager = applicationManager;
         this.loginController = loginController;
         this.bootstrapController = bootstrapController;
         this.platformUserManager = platformUserManager;
         this.cacheManager = cacheManager;
         this.storeManager = storeManager;
-        this.ddlManager = ddlManager;
+//        this.ddlManager = ddlManager;
     }
 
     @PostMapping("/init-test")
@@ -80,8 +79,8 @@ public class SystemController {
         bootstrapController.boot(true);
         var createAppResult = applicationManager.createBuiltin(ApplicationCreateRequest.fromNewUser(APP_NAME, LOGIN_NAME, PASSWD));
         loginController.login(request, response, new LoginRequest(Constants.PLATFORM_APP_ID, LOGIN_NAME, PASSWD));
-        NncUtils.writeFile(RESULT_JSON_FILE, "[]");
-        NncUtils.writeFile(APP_ID_FILE, createAppResult.appId() + "");
+        Utils.writeFile(RESULT_JSON_FILE, "[]");
+        Utils.writeFile(APP_ID_FILE, createAppResult.appId() + "");
         clearDirectory(METAVM_HOME);
         clearDirectory(METAVM_HOME_1);
         clearDirectory(METAVM_HOME_2);
@@ -110,8 +109,8 @@ public class SystemController {
 
     @PostMapping("/new-app")
     public Result<Long> newApp(HttpServletRequest request, HttpServletResponse response) {
-        String appName = "test_" + NncUtils.randomInt(1000);
-        String loginName = "admin_" + NncUtils.randomInt(1000);
+        String appName = "test_" + Utils.randomInt(1000);
+        String loginName = "admin_" + Utils.randomInt(1000);
         var appId = applicationManager.createBuiltin(ApplicationCreateRequest.fromNewUser(appName, loginName, PASSWD)).appId();
         loginController.login(request, response, new LoginRequest(Constants.PLATFORM_APP_ID, LOGIN_NAME, PASSWD));
         return Result.success(appId);
@@ -145,16 +144,16 @@ public class SystemController {
         return Result.voidSuccess();
     }
 
-    @PostMapping("/build-pre-upgrade-request")
-    public Result<PreUpgradeRequest> buildPreUpgradeRequest(@RequestParam("since") int since) {
-        return Result.success(ddlManager.buildUpgradePreparationRequest(since));
-    }
+//    @PostMapping("/build-pre-upgrade-request")
+//    public Result<PreUpgradeRequest> buildPreUpgradeRequest(@RequestParam("since") int since) {
+//        return Result.success(ddlManager.buildUpgradePreparationRequest(since));
+//    }
 
-    @PostMapping("/pre-upgrade")
-    public Result<Void> preUpgrade(@RequestBody PreUpgradeRequest request) {
-        ddlManager.preUpgrade(request);
-        return Result.voidSuccess();
-    }
+//    @PostMapping("/pre-upgrade")
+//    public Result<Void> preUpgrade(@RequestBody PreUpgradeRequest request) {
+//        ddlManager.preUpgrade(request);
+//        return Result.voidSuccess();
+//    }
 
     @GetMapping("/tree-id")
     public Result<Long> getTreeId(@RequestParam("id") String id) {

@@ -1,6 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -13,13 +13,13 @@ public class StoreLoadRequest {
 
     public static StoreLoadRequest create(List<Long> ids) {
         return new StoreLoadRequest(
-                NncUtils.map(ids, id -> new StoreLoadRequestItem(id, LoadingOption.none()))
+                Utils.map(ids, id -> new StoreLoadRequestItem(id, LoadingOption.none()))
         );
     }
 
     public static StoreLoadRequest create(List<Long> ids, Set<LoadingOption> options) {
         return new StoreLoadRequest(
-                NncUtils.map(ids, id -> new StoreLoadRequestItem(id, options))
+                Utils.map(ids, id -> new StoreLoadRequestItem(id, options))
         );
     }
 
@@ -36,7 +36,7 @@ public class StoreLoadRequest {
     }
 
     public List<Long> ids() {
-        return NncUtils.map(items(), StoreLoadRequestItem::id);
+        return Utils.map(items(), StoreLoadRequestItem::id);
     }
 
     public List<Long> idsWithoutOption(LoadingOption option) {
@@ -48,7 +48,7 @@ public class StoreLoadRequest {
     }
 
     public List<Long> idsWithFilter(Predicate<StoreLoadRequestItem> filter) {
-        return NncUtils.filterAndMap(
+        return Utils.filterAndMap(
                 items(),
                 filter,
                 StoreLoadRequestItem::id

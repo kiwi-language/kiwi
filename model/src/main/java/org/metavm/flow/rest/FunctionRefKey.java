@@ -11,7 +11,7 @@ import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.Constants;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +29,7 @@ public record FunctionRefKey(
     public String toTypeExpression() {
         return "func " + Constants.addIdPrefix(rawFlowId) + (
                 typeArguments.isEmpty() ? ""
-                        : "<" + NncUtils.join(typeArguments) + ">"
+                        : "<" + Utils.join(typeArguments) + ">"
 
         );
     }
@@ -54,7 +54,7 @@ public record FunctionRefKey(
     public FunctionRef toFunctionRef(TypeDefProvider typeDefProvider) {
         return new FunctionRef(
                 (Function) typeDefProvider.getTypeDef(Id.parse(rawFlowId)),
-                NncUtils.map(typeArguments, t -> TypeParser.parseType(t, typeDefProvider))
+                Utils.map(typeArguments, t -> TypeParser.parseType(t, typeDefProvider))
         );
     }
 
@@ -66,7 +66,7 @@ public record FunctionRefKey(
     @Override
     public GenericDeclarationRef resolve(TypeDefProvider typeDefProvider) {
         var rawFunc = (Function) typeDefProvider.getTypeDef(Id.parse(rawFlowId));
-        var typeArgs = NncUtils.map(typeArguments, t -> TypeParser.parseType(t, typeDefProvider));
+        var typeArgs = Utils.map(typeArguments, t -> TypeParser.parseType(t, typeDefProvider));
         return new FunctionRef(rawFunc, typeArgs);
     }
 }

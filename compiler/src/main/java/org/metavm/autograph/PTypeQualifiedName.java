@@ -1,6 +1,6 @@
 package org.metavm.autograph;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 
@@ -37,7 +37,7 @@ public class PTypeQualifiedName extends QualifiedName {
 
     @Override
     public String toString() {
-        return rawTypeName + "<" + NncUtils.join(typeArgumentNames, Objects::toString) + ">";
+        return rawTypeName + "<" + Utils.join(typeArgumentNames, Objects::toString) + ">";
     }
 
     @Override

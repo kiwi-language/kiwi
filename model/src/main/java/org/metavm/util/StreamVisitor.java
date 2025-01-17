@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.*;
@@ -27,7 +28,7 @@ public class StreamVisitor {
             case WireTypes.NULL -> visitNull();
             case WireTypes.DOUBLE -> visitDouble();
             case WireTypes.FLOAT -> visitFloat();
-            case WireTypes.STRING -> visitString();
+            case WireTypes.STRING -> visitUTF();
             case WireTypes.LONG -> visitLong();
             case WireTypes.INT -> visitInt();
             case WireTypes.BOOLEAN -> visitBoolean();
@@ -45,7 +46,6 @@ public class StreamVisitor {
             case WireTypes.VALUE_INSTANCE -> visitValueInstance();
             case WireTypes.REMOVING_INSTANCE -> visitRemovingInstance();
             case WireTypes.CLASS_TYPE -> visitClassType();
-            case WireTypes.TAGGED_CLASS_TYPE -> visitTaggedClassType();
             case WireTypes.PARAMETERIZED_TYPE -> visitParameterizedType();
             case WireTypes.VARIABLE_TYPE -> visitVariableType();
             case WireTypes.CAPTURED_TYPE -> visitCapturedType();
@@ -87,7 +87,7 @@ public class StreamVisitor {
     }
 
     public void visitMethodRef() {
-        visitValue();;
+        visitValue();
         readId();
         var typeArgCnt = readInt();
         for (int i = 0; i < typeArgCnt; i++) {
@@ -114,17 +114,12 @@ public class StreamVisitor {
     }
 
     public void visitClassType() {
-        readId();
-    }
-
-    public void visitTaggedClassType() {
-        readId();
-        readLong();
+        visitReference();
     }
 
     public void visitParameterizedType() {
         visitValue();
-        readId();
+        visitReference();
         int typeArgCnt = readInt();
         for (int i = 0; i < typeArgCnt; i++) {
             visitValue();
@@ -132,11 +127,11 @@ public class StreamVisitor {
     }
 
     public void visitVariableType() {
-        readId();
+        visitReference();
     }
 
     public void visitCapturedType() {
-        readId();
+        visitReference();
     }
 
     public void visitLongType() {
@@ -228,12 +223,12 @@ public class StreamVisitor {
     public void visitAnyType() {
     }
 
-    protected void visitShort() {
+    public void visitShort() {
         input.readShort();
     }
 
-    protected void visitByte() {
-        input.read();
+    public int visitByte() {
+        return input.read();
     }
 
     protected int readShort() {
@@ -274,11 +269,15 @@ public class StreamVisitor {
     }
 
     public void visitTree() {
-        var treeTag = read();
+        visitTree(read());
+    }
+
+    public void visitTree(int treeTag) {
         switch (treeTag) {
             case TreeTags.DEFAULT -> visitMessage();
             case TreeTags.RELOCATED -> visitForwardingPointer();
-            default -> throw new IllegalStateException("Invalid tree tag: " + treeTag);
+            case TreeTags.ENTITY -> visitEntityMessage();
+            default -> throw new IllegalStateException("Unrecognized tree tag: " + treeTag);
         }
     }
 
@@ -297,6 +296,12 @@ public class StreamVisitor {
             readId();
         }
         visitValue();
+    }
+
+    public void visitEntityMessage() {
+        readTreeId();
+        visitNextNodeId(input.readLong());
+        visitEntity();
     }
 
     public void visitVersion(long version) {}
@@ -368,8 +373,12 @@ public class StreamVisitor {
         input.read(buf);
     }
 
-    public String readString() {
+    public String readUTF() {
         return input.readUTF();
+    }
+
+    public byte[] readBytes() {
+        return input.readBytes();
     }
 
     public boolean readBoolean() {
@@ -427,8 +436,12 @@ public class StreamVisitor {
         input.readId();
     }
 
-    public void visitString() {
-        input.readUTF();
+    public String visitUTF() {
+        return input.readUTF();
+    }
+
+    public void visitBytes() {
+        input.readBytes();
     }
 
     public void visitLong() {
@@ -477,4 +490,34 @@ public class StreamVisitor {
     public void visitBytes(int length) {
         input.skip(length);
     }
+
+    public void visitNullable(Runnable visit) {
+        if (readBoolean())
+            visit.run();
+    }
+
+    public void visitList(Runnable visit) {
+        var size = readInt();
+        for (int i = 0; i < size; i++) {
+            visit.run();
+        }
+    }
+
+    public void visitId() {
+        input.readId();
+    }
+
+    public void visitEntity() {
+        visitEntityBody(read(), readId());
+    }
+
+    public void visitEntityBody(int tag, Id id) {
+        var h = EntityRegistry.getVisitBodyHandle(tag);
+        try {
+            h.invokeExact(this);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

@@ -1,6 +1,5 @@
 package org.metavm.util;
 
-import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeOrTypeKey;
 
@@ -33,11 +32,14 @@ public class StreamCopier extends StreamVisitor {
     public void visitTree() {
         var treeTag = read();
         output.write(treeTag);
-        switch (treeTag) {
-            case TreeTags.DEFAULT -> visitMessage();
-            case TreeTags.RELOCATED -> visitForwardingPointer();
-            default -> throw new IllegalStateException("Invalid tree tag: " + treeTag);
-        }
+        visitTree(treeTag);
+    }
+
+    @Override
+    public void visitValue() {
+        var tag = read();
+        write(tag);
+        visitValue(tag);
     }
 
     @Override
@@ -63,6 +65,13 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
+    public void visitEntityMessage() {
+        output.writeLong(readTreeId());
+        output.writeLong(readLong());
+        visitEntity();
+    }
+
+    @Override
     public void visitVersion(long version) {
         output.writeLong(version);
     }
@@ -75,13 +84,11 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     protected void visitRemovingInstance() {
-        output.write(WireTypes.REMOVING_INSTANCE);
         copyInstance();
     }
 
     @Override
     public void visitInstance() {
-        output.write(WireTypes.INSTANCE);
         copyInstance();
     }
 
@@ -93,7 +100,6 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitRelocatingInstance() {
-        output.write(WireTypes.RELOCATING_INSTANCE);
         var oldTreeId = readLong();
         output.writeLong(oldTreeId);
         var oldNodeId = readLong();
@@ -112,10 +118,17 @@ public class StreamCopier extends StreamVisitor {
         visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeKey);
     }
 
+    @Override
+    public void visitEntity() {
+        var tag = read();
+        var id = readId();
+        output.write(tag);
+        output.writeId(id);
+        visitEntityBody(tag, id);
+    }
 
     @Override
     public void visitValueInstance() {
-        output.write(WireTypes.VALUE_INSTANCE);
         var typeKey = readTypeKey();
         typeKey.write(output);
         visitBody(typeKey);
@@ -179,13 +192,11 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitReference() {
-        output.write(WireTypes.REFERENCE);
         output.writeId(readId());
     }
 
     @Override
     public void visitRedirectingReference() {
-        output.write(WireTypes.REDIRECTING_REFERENCE);
         output.write(read());
         output.writeId(readId());
         visitValue();
@@ -194,7 +205,6 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitRedirectingInstance() {
-        output.write(WireTypes.REDIRECTING_INSTANCE);
         visitValue();
         output.writeId(readId());
         visitValue();
@@ -202,96 +212,79 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     protected void visitFlaggedReference() {
-        output.write(WireTypes.FLAGGED_REFERENCE);
         var flags = read();
         output.write(flags);
         output.writeId(readId());
     }
 
     @Override
-    public void visitString() {
-        output.write(WireTypes.STRING);
-        output.writeUTF(readString());
+    public String visitUTF() {
+        var utf = readUTF();
+        output.writeUTF(utf);
+        return utf;
+    }
+
+    @Override
+    public void visitBytes() {
+        output.writeBytes(readBytes());
     }
 
     @Override
     public void visitLong() {
-        output.write(WireTypes.LONG);
         output.writeLong(readLong());
     }
 
     @Override
     public void visitInt() {
-        output.write(WireTypes.INT);
         output.writeLong(readInt());
     }
 
     @Override
     public void visitChar() {
-        output.write(WireTypes.CHAR);
         output.writeChar(readChar());
     }
 
     @Override
-    protected void visitShort() {
-        output.write(WireTypes.SHORT);
+    public void visitShort() {
         output.writeShort(readShort());
     }
 
     @Override
-    protected void visitByte() {
-        output.write(WireTypes.BYTE);
-        output.write(read());
+    public int visitByte() {
+        var b = read();
+        output.write(b);
+        return b;
     }
 
     @Override
     public void visitDouble() {
-        output.write(WireTypes.DOUBLE);
         output.writeDouble(readDouble());
     }
 
     @Override
     public void visitFloat() {
-        output.write(WireTypes.FLOAT);
         output.writeFloat(readFloat());
     }
 
     @Override
     public void visitBoolean() {
-        output.write(WireTypes.BOOLEAN);
         output.writeBoolean(readBoolean());
     }
 
     @Override
     public void visitPassword() {
-        output.write(WireTypes.PASSWORD);
-        output.writeUTF(readString());
+        output.writeUTF(readUTF());
     }
 
     @Override
     public void visitTime() {
-        output.write(WireTypes.TIME);
-        output.writeLong(readLong());
-    }
-
-    @Override
-    public void visitClassType() {
-        output.write(WireTypes.CLASS_TYPE);
-        output.writeId(readId());
-    }
-
-    @Override
-    public void visitTaggedClassType() {
-        output.write(WireTypes.TAGGED_CLASS_TYPE);
-        output.writeId(readId());
         output.writeLong(readLong());
     }
 
     @Override
     public void visitParameterizedType() {
-        output.write(WireTypes.PARAMETERIZED_TYPE);
         visitValue();
-        output.writeId(readId());
+        visitReference();
         int typeArgCnt = readInt();
         output.writeInt(typeArgCnt);
         for (int i = 0; i < typeArgCnt; i++) {
@@ -300,85 +293,7 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
-	public void visitVariableType() {
-        output.write(WireTypes.VARIABLE_TYPE);
-        output.writeId(readId());
-    }
-
-    @Override
-	public void visitCapturedType() {
-        output.write(WireTypes.CAPTURED_TYPE);
-        output.writeId(readId());
-    }
-
-    @Override
-	public void visitLongType() {
-        output.write(WireTypes.LONG_TYPE);
-    }
-
-    @Override
-	public void visitIntType() {
-        output.write(WireTypes.INT_TYPE);
-    }
-
-    @Override
-	public void visitCharType() {
-        output.write(WireTypes.CHAR_TYPE);
-    }
-
-    @Override
-	public void visitShortType() {
-        output.write(WireTypes.SHORT_TYPE);
-    }
-
-    @Override
-	public void visitByteType() {
-        output.write(WireTypes.BYTE_TYPE);
-    }
-
-    @Override
-	public void visitDoubleType() {
-        output.write(WireTypes.DOUBLE_TYPE);
-    }
-
-    @Override
-	public void visitFloatType() {
-        output.write(WireTypes.FLOAT_TYPE);
-    }
-
-    @Override
-	public void visitNullType() {
-        output.write(WireTypes.NULL_TYPE);
-    }
-
-    @Override
-	public void visitVoidType() {
-        output.write(WireTypes.VOID_TYPE);
-    }
-
-    @Override
-	public void visitTimeType() {
-        output.write(WireTypes.TIME_TYPE);
-    }
-
-    @Override
-	public void visitPasswordType() {
-        output.write(WireTypes.PASSWORD_TYPE);
-    }
-
-    @Override
-	public void visitStringType() {
-        output.write(WireTypes.STRING_TYPE);
-    }
-
-    @Override
-	public void visitBooleanType() {
-        output.write(WireTypes.BOOLEAN_TYPE);
-    }
-
-    @Override
 	public void visitFunctionType() {
-        output.write(WireTypes.FUNCTION_TYPE);
         int paramCnt = readInt();
         output.writeInt(paramCnt);
         for (int i = 0; i < paramCnt; i++) {
@@ -389,14 +304,12 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
 	public void visitUncertainType() {
-        output.write(WireTypes.UNCERTAIN_TYPE);
         visitValue();
         visitValue();
     }
 
     @Override
 	public void visitUnionType() {
-        output.write(WireTypes.UNION_TYPE);
         int memberCnt = readInt();
         output.writeInt(memberCnt);
         for (int i = 0; i < memberCnt; i++) {
@@ -406,7 +319,6 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
 	public void visitIntersectionType() {
-        output.write(WireTypes.INTERSECTION_TYPE);
         int memberCnt = readInt();
         output.writeInt(memberCnt);
         for (int i = 0; i < memberCnt; i++) {
@@ -416,48 +328,32 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
 	public void visitReadOnlyArrayType() {
-        output.write(WireTypes.READ_ONLY_ARRAY_TYPE);
         visitValue();
     }
 
     @Override
 	public void visitReadWriteArrayType() {
-        output.write(WireTypes.READ_WRITE_ARRAY_TYPE);
         visitValue();
     }
 
     @Override
 	public void visitChildArrayType() {
-        output.write(WireTypes.CHILD_ARRAY_TYPE);
         visitValue();
     }
 
     @Override
 	public void visitValueArrayType() {
-        output.write(WireTypes.VALUE_ARRAY_TYPE);
         visitValue();
     }
 
     @Override
-	public void visitNeverType() {
-        output.write(WireTypes.NEVER_TYPE);
-    }
-
-    @Override
-	public void visitAnyType() {
-        output.write(WireTypes.ANY_TYPE);
-    }
-
-    @Override
     public void visitFieldRef() {
-        write(WireTypes.FIELD_REF);
         visitValue();
         output.writeId(readId());
     }
 
     @Override
     public void visitMethodRef() {
-        write(WireTypes.METHOD_REF);
         visitValue();
         output.writeId(readId());
         var typeArgCnt = readInt();
@@ -469,7 +365,6 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitFunctionRef() {
-        write(WireTypes.FUNCTION_REF);
         output.writeId(readId());
         var typeArgCnt = readInt();
         output.writeInt(typeArgCnt);
@@ -480,14 +375,12 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitIndexRef() {
-        write(WireTypes.INDEX_REF);
         visitValue();
         output.writeId(readId());
     }
 
     @Override
     public void visitLambdaRef() {
-        write(WireTypes.LAMBDA_REF);
         visitValue();
         output.writeId(readId());
     }
@@ -505,8 +398,25 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
-    public void visitNull() {
-        output.write(WireTypes.NULL);
+    public void visitNullable(Runnable visit) {
+        var notNull = readBoolean();
+        output.writeBoolean(notNull);
+        if (notNull)
+            visit.run();
+    }
+
+    @Override
+    public void visitList(Runnable visit) {
+        var size = readInt();
+        output.writeInt(size);
+        for (int i = 0; i < size; i++) {
+            visit.run();
+        }
+    }
+
+    @Override
+    public void visitId() {
+        output.writeId(readId());
     }
 
     public InstanceOutput getOutput() {

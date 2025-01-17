@@ -1,16 +1,17 @@
 package org.metavm.object.instance.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.util.Instances;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
 public class StringValue extends PrimitiveValue {
 
     public final String value;
 
-    public StringValue(String value) {
+    public StringValue(@NotNull String value) {
         this.value = value;
     }
 
@@ -20,7 +21,7 @@ public class StringValue extends PrimitiveValue {
     }
 
     @Override
-    public PrimitiveType getType() {
+    public PrimitiveType getValueType() {
         return PrimitiveType.stringType;
     }
 
@@ -47,7 +48,7 @@ public class StringValue extends PrimitiveValue {
     }
 
     public BooleanValue isBlank() {
-        return Instances.createBoolean(NncUtils.isBlank(value));
+        return Instances.createBoolean(Utils.isBlank(value));
     }
 
     @Override

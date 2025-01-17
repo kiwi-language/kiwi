@@ -1,7 +1,7 @@
 package org.metavm.object.instance.cache;
 
 import org.metavm.util.KeyValue;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.RedisRepository;
 
 import java.util.Collection;
@@ -18,15 +18,15 @@ public class RedisCache implements Cache {
 
     @Override
     public List<byte[]> batchGet(Collection<Long> ids) {
-        return redisRepository.batchGet(NncUtils.map(ids, NncUtils::toBytes));
+        return redisRepository.batchGet(Utils.map(ids, Utils::toBytes));
     }
 
     @Override
     public void batchAdd(List<KeyValue<Long, byte[]>> entries) {
         redisRepository.batchSet(
-                NncUtils.map(
+                Utils.map(
                         entries,
-                        entry -> new KeyValue<>(NncUtils.toBytes(entry.key()), entry.value())
+                        entry -> new KeyValue<>(Utils.toBytes(entry.key()), entry.value())
                 )
         );
     }
@@ -38,6 +38,6 @@ public class RedisCache implements Cache {
 
     @Override
     public void batchRemove(List<Long> ids) {
-        redisRepository.batchDelete(NncUtils.map(ids, NncUtils::toBytes));
+        redisRepository.batchDelete(Utils.map(ids, Utils::toBytes));
     }
 }

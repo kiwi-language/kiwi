@@ -3,7 +3,7 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiJavaFile;
 import junit.framework.TestCase;
 import org.metavm.autograph.mocks.BreakFoo;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 public class BreakTransformerTest extends TestCase {
 
@@ -18,7 +18,7 @@ public class BreakTransformerTest extends TestCase {
         var file = TranspileTestTools.getPsiJavaFile(source);
         transform(file);
         var output = "/Users/leen/workspace/object/lab/src/main/tmp/break2/BreakFoo.java";
-        NncUtils.writeFile(output, file.getText().replace("package break_;", "package break2;"));
+        Utils.writeFile(output, file.getText().replace("package break_;", "package break2;"));
     }
 
     private void transform(PsiJavaFile file) {

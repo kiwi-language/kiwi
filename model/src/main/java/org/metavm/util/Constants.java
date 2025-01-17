@@ -1,7 +1,5 @@
 package org.metavm.util;
 
-import org.metavm.application.Application;
-import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.natives.EmailSender;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
@@ -52,15 +50,15 @@ public class Constants {
     private Constants() {}
 
     public static Id getRootAppId() {
-        return PhysicalId.of(ROOT_APP_ID, 0L, ModelDefRegistry.getType(Application.class));
+        return PhysicalId.of(ROOT_APP_ID, 0L);
     }
 
     public static Id getPlatformAppId() {
-        return PhysicalId.of(PLATFORM_APP_ID, 0L, ModelDefRegistry.getType(Application.class));
+        return PhysicalId.of(PLATFORM_APP_ID, 0L);
     }
 
     public static Id getAppId(long id) {
-        return PhysicalId.of(id, 0L, ModelDefRegistry.getType(Application.class));
+        return PhysicalId.of(id, 0L);
     }
 
     public static String removeIdPrefix(String str) {

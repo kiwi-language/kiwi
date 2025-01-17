@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.api.Entity;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 @Entity
 public enum ClassSource {
@@ -20,7 +20,7 @@ public enum ClassSource {
     }
 
     public static ClassSource fromCode(int code) {
-        return NncUtils.findRequired(values(), source -> source.code == code);
+        return Utils.findRequired(values(), source -> source.code == code);
     }
 
 }

@@ -8,6 +8,7 @@ import org.metavm.util.MockUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Set;
 
 public class SearchBuilderTest extends TestCase {
@@ -22,14 +23,18 @@ public class SearchBuilderTest extends TestCase {
     public void test() {
         var fooTypes = MockUtils.createFooTypes(true);
         var foo = MockUtils.createFoo(fooTypes, true);
-        var baz = foo.getClassInstance(fooTypes.fooQuxField());
+        var qux = foo.getClassInstance(fooTypes.fooQuxField());
 
-        var condition = Expressions.and(
-                Expressions.fieldStartsWith(
-                        fooTypes.fooNameField(),
-                        foo.getStringField(fooTypes.fooNameField())
-                ),
-                Expressions.fieldEq(fooTypes.fooQuxField(), baz.getReference())
+        var condition = new AndSearchCondition(
+                List.of(
+                    new StartsWithSearchCondition(
+                            fooTypes.fooNameField().getColumn().name(),
+                            foo.getStringField(fooTypes.fooNameField())
+                    ),
+                    new MatchSearchCondition(
+                            fooTypes.fooQuxField().getColumn().name(), qux.getReference()
+                    )
+                )
         );
         var query = new SearchQuery(
                 Constants.ROOT_APP_ID,

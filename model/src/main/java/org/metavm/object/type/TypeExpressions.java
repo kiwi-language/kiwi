@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.entity.StdKlass;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 import java.util.Set;
@@ -25,7 +25,7 @@ public class TypeExpressions {
     }
 
     public static String getUnionType(Set<String> types) {
-        return NncUtils.join(types, "|");
+        return Utils.join(types, "|");
     }
 
     public static String getParameterizedType(String templateId, String...typeArguments) {

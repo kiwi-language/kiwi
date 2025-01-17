@@ -11,13 +11,13 @@ public class Indexes {
 
     public static List<Value> getIndexValues(IndexRef indexRef, Value key) {
         if (key instanceof Reference ref) {
-            if (ref.resolve() instanceof ClassInstance obj && obj.isValue()) {
+            if (ref.get() instanceof ClassInstance obj && obj.isValue()) {
                 var values = new ArrayList<Value>();
                 obj.forEachField((f, v) -> values.add(v));
                 return values;
             }
         }
-        var type = indexRef.getIndexFieldTypes().get(0);
+        var type = indexRef.getIndexFieldTypes().getFirst();
         return List.of(type.fromStackValue(key));
     }
 

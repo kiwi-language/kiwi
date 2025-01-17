@@ -82,7 +82,7 @@ public class LabUser {
         var users = loginNameIndex.get(new ApplicationAndLoginName(application, loginName));
         if (users.isEmpty())
             throw new LabBusinessException(LabErrorCode.LOGIN_NAME_NOT_FOUND, loginName);
-        var user = users.get(0);
+        var user = users.getFirst();
         String token;
         if (!user.getPassword().equals(MD5Utils.md5(password)))
             token = null;

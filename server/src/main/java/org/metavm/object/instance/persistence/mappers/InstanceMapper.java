@@ -7,7 +7,7 @@ import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.VersionPO;
 import org.metavm.util.PrimaryMapper;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.Collection;
 import java.util.List;
@@ -30,9 +30,9 @@ public interface InstanceMapper extends PrimaryMapper {
     default void batchDelete1(List<InstancePO> toDeletes) {
         if(toDeletes.isEmpty())
             return;
-        long appId = toDeletes.get(0).getAppId();
+        long appId = toDeletes.getFirst().getAppId();
         long timestamp = System.currentTimeMillis();
-        var versions = NncUtils.map(toDeletes, InstancePO::nextVersion);
+        var versions = Utils.map(toDeletes, InstancePO::nextVersion);
         batchDelete(appId, timestamp, versions);
     }
 

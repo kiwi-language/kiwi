@@ -4,9 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.object.type.rest.dto.VariableTypeKey;
 import org.metavm.util.Constants;
@@ -24,11 +24,19 @@ import java.util.function.Function;
 @Entity
 public class VariableType extends Type implements IVariableType {
 
-    private final TypeVariable variable;
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
+    private final Reference variableReference;
+//    private TypeVariable variable;
 
     public VariableType(@NotNull TypeVariable variable) {
         super();
-        this.variable = variable;
+        this.variableReference = variable.getReference();
+//        this.variable = variable;
+    }
+
+    public VariableType(Reference variableReference) {
+        this.variableReference = variableReference;
     }
 
     @Override
@@ -43,17 +51,12 @@ public class VariableType extends Type implements IVariableType {
 
     @Override
     public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
-        return new VariableTypeKey(getTypeDefId.apply(variable));
+        return new VariableTypeKey(getTypeDefId.apply(getVariable()));
     }
 
     @Override
     protected boolean isAssignableFrom0(Type that) {
         return equals(that);
-    }
-
-    @Override
-    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
-        return visitor.visitVariableType(this, s);
     }
 
     @Override
@@ -79,9 +82,9 @@ public class VariableType extends Type implements IVariableType {
     public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
         var prefix = "@";
         if(getTypeDefExpr == null)
-            return prefix + Constants.ID_PREFIX + serializeContext.getStringId(variable);
+            return prefix + Constants.ID_PREFIX + serializeContext.getStringId(getVariable());
         else
-            return prefix + getTypeDefExpr.apply(variable);
+            return prefix + getTypeDefExpr.apply(getVariable());
     }
 
     @Override
@@ -92,16 +95,15 @@ public class VariableType extends Type implements IVariableType {
     @Override
     public void write(MvOutput output) {
         output.write(WireTypes.VARIABLE_TYPE);
-        output.writeEntityId(variable);
+        output.writeReference(variableReference);
     }
 
     public static VariableType read(MvInput input) {
-        var rawVariable = input.getTypeVariable(input.readId());
-        return new VariableType(rawVariable);
+        return new VariableType(input.readReference());
     }
 
     public TypeVariable getVariable() {
-        return variable;
+        return (TypeVariable) variableReference.get();
     }
 
     @Override
@@ -111,7 +113,7 @@ public class VariableType extends Type implements IVariableType {
 
     @Override
     public String getTypeDesc() {
-        return variable.getQualifiedName();
+        return getVariable().getQualifiedName();
     }
 
     @Override
@@ -120,29 +122,18 @@ public class VariableType extends Type implements IVariableType {
     }
 
     @Override
-    public Type getType() {
-        return StdKlass.variableType.type();
-    }
-
-    @Override
     public boolean isEphemeral() {
         return false;
     }
 
     @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitVariableType(this);
-    }
-
-    @Override
-    protected boolean equals0(Object obj) {
-        return obj instanceof VariableType that
-                && variable == that.variable;
+    public boolean equals(Object obj) {
+        return obj instanceof VariableType that && variableReference.equals(that.variableReference);
     }
 
     @Override
     public int hashCode() {
-        return variable.hashCode();
+        return variableReference.hashCode();
     }
 
     @Override
@@ -153,5 +144,30 @@ public class VariableType extends Type implements IVariableType {
     @Override
     public int getPrecedence() {
         return 0;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitVariableType(this);
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitVariableType(this, s);
+    }
+
+    @Override
+    public ClassType getValueType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        action.accept(variableReference);
     }
 }

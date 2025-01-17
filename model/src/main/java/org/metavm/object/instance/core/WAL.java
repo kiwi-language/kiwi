@@ -1,25 +1,41 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
+import org.metavm.api.Generated;
 import org.metavm.entity.ContextFinishWare;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.LoadAware;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+@NativeEntity(70)
 @Entity
-public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextFinishWare {
+public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextFinishWare, Message {
 
     private static Consumer<WAL> commitHook;
+
     private static BiConsumer<Long, List<InstanceLog>> postProcessHook;
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     public static void setCommitHook(Consumer<WAL> commitHook) {
         WAL.commitHook = commitHook;
@@ -29,7 +45,7 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         WAL.postProcessHook = postProcessHook;
     }
 
-    private final long appId;
+    private long appId;
     private String data = EncodingUtils.encodeBase64(new byte[]{});
 
     private transient Map<Long, InstancePO> inserts = new HashMap<>();
@@ -50,6 +66,12 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         setData(data);
     }
 
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        visitor.visitLong();
+        visitor.visitUTF();
+    }
+
     @Override
     public void onLoad() {
         var input = new InstanceInput(new ByteArrayInputStream(EncodingUtils.decodeBase64(data)));
@@ -63,7 +85,7 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         removedReferences = new ArrayList<>(input.readList(() -> input.readReferencePO(appId)));
         newIndexEntries = new IndexEntryList(input.readList(() -> input.readIndexEntryPO(appId)));
         removedIndexEntries = new IndexEntryList(input.readList(() -> input.readIndexEntryPO(appId)));
-        instanceLogs = input.readList(() -> input.readInstanceLog(appId));
+        instanceLogs = input.readList(() -> InstanceLog.read(input));
     }
 
     @Override
@@ -81,7 +103,7 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         output.writeList(removedReferences, output::writeReferencePO);
         output.writeList(newIndexEntries.values, output::writeIndexEntryPO);
         output.writeList(removedIndexEntries.values, output::writeIndexEntryPO);
-        output.writeList(instanceLogs, output::writeInstanceLog);
+        output.writeList(instanceLogs, log -> log.write(output));
         data = EncodingUtils.encodeBase64(bout.toByteArray());
     }
 
@@ -126,8 +148,8 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
 
     public WALIndexQueryResult query(IndexQueryPO query) {
         return new WALIndexQueryResult(
-                NncUtils.filter(newIndexEntries, e -> query.match(e.getKey())),
-                NncUtils.filter(removedIndexEntries, e -> query.match(e.getKey()))
+                Utils.filter(newIndexEntries, e -> query.match(e.getKey())),
+                Utils.filter(removedIndexEntries, e -> query.match(e.getKey()))
         );
     }
 
@@ -169,8 +191,66 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         return appId;
     }
 
+    @Nullable
+    @Override
+    public org.metavm.entity.Entity getParentEntity() {
+        return null;
+    }
+
     public WAL copy() {
         return new WAL(appId, data);
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("data", this.getData());
+        map.put("newIndexEntries", this.getNewIndexEntries());
+        map.put("instanceChanges", this.getInstanceChanges());
+        map.put("referenceChanges", this.getReferenceChanges());
+        map.put("indexEntryChanges", this.getIndexEntryChanges());
+        map.put("instanceLogs", this.getInstanceLogs().stream().map(InstanceLog::toJson).toList());
+        map.put("appId", this.getAppId());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_WAL;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        this.appId = input.readLong();
+        this.data = input.readUTF();
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        output.writeLong(appId);
+        output.writeUTF(data);
+    }
+
+    @Override
+    protected void buildSource(Map<String, Value> source) {
     }
 
     private static class IndexEntryList implements Iterable<IndexEntryPO> {
@@ -194,11 +274,11 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         }
 
         public List<IndexEntryPO> getByKeys(List<IndexKeyPO> keys) {
-            return NncUtils.flatMap(keys, k -> key2entries.getOrDefault(k, List.of()));
+            return Utils.flatMap(keys, k -> key2entries.getOrDefault(k, List.of()));
         }
 
         public List<IndexEntryPO> getByInstanceIds(Collection<Id> instanceIds) {
-            return NncUtils.flatMap(instanceIds, k -> instanceId2entries.getOrDefault(k, List.of()));
+            return Utils.flatMap(instanceIds, k -> instanceId2entries.getOrDefault(k, List.of()));
         }
 
 

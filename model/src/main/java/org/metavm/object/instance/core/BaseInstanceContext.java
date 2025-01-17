@@ -3,7 +3,6 @@ package org.metavm.object.instance.core;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.ContextAttributeKey;
-import org.metavm.entity.EntityUtils;
 import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.entity.LockMode;
 import org.metavm.entity.natives.CallContext;
@@ -22,7 +21,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static org.metavm.util.NncUtils.requireNonNull;
+import static java.util.Objects.requireNonNull;
 
 public abstract class BaseInstanceContext implements IInstanceContext, Closeable, Iterable<Instance>, CallContext {
 
@@ -97,7 +96,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public List<Reference> indexScan(IndexKeyRT from, IndexKeyRT to) {
-        return NncUtils.map(indexSource.scan(from, to, this), this::createReference);
+        return Utils.map(indexSource.scan(from, to, this), this::createReference);
     }
 
     public Reference createReference(Id id) {
@@ -122,11 +121,11 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public List<Reference> query(InstanceIndexQuery query) {
-        var memResults = NncUtils.map(memIndex.query(query), Instance::getReference);
+        var memResults = Utils.map(memIndex.query(query), Instance::getReference);
         if (query.memoryOnly() || !memResults.isEmpty() && query.index().isUnique())
             return memResults;
-        var storeResults = NncUtils.map(indexSource.query(query, this), this::createReference);
-        return Instances.merge(memResults, storeResults, query.desc(), NncUtils.orElse(query.limit(), -1L));
+        var storeResults = Utils.map(indexSource.query(query, this), this::createReference);
+        return Instances.merge(memResults, storeResults, query.desc(), Utils.orElse(query.limit(), -1L));
     }
 
     @Override
@@ -152,32 +151,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     public boolean isReadonly() {
         return readonly;
-    }
-
-    @Override
-    public void evict(Instance instance) {
-        if (instance == head)
-            head = instance.getNext();
-        if (instance == tail)
-            tail = instance.getPrev();
-        var id = instance.tryGetId();
-        if (id != null)
-            instanceMap.remove(id);
-        instance.setContext(null);
-        instance.unlink();
-    }
-
-    @Override
-    public void pubBack(Instance instance) {
-        if (tail == null)
-            head = tail = instance;
-        else {
-            tail.insertAfter(instance);
-            tail = instance;
-        }
-        var id = instance.tryGetId();
-        if (id != null)
-            instanceMap.put(id, instance);
     }
 
     public void updateMemoryIndex(ClassInstance instance) {
@@ -233,7 +206,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public List<Instance> batchGet(Collection<Id> ids) {
         ids.forEach(this::buffer);
-        return NncUtils.map(ids, this::get);
+        return Utils.map(ids, this::get);
     }
 
     @Override
@@ -242,13 +215,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (found != null) {
             if (found.isRemoved())
                 throw new InternalException(
-                        String.format("Can not get instance '%s' because it's already removed",
-                                found.getMappedEntity() != null ? EntityUtils.getEntityDesc(found.getMappedEntity()) : found));
+                        String.format("Can not get instance '%s' because it's already removed", found));
             return found;
         } else {
             buffer(id);
             initializeInstance(id);
-            return Objects.requireNonNull(getBuffered(id), () -> "Failed to initialize instance " + id);
+            return requireNonNull(getBuffered(id), () -> "Failed to initialize instance " + id);
 //            return add(id);
         }
     }
@@ -281,7 +253,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public List<Id> filterAlive(List<Id> ids) {
         buffer(ids);
-        return NncUtils.filter(ids, this::isAlive);
+        return Utils.filter(ids, this::isAlive);
     }
 
     @Override
@@ -290,10 +262,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             return parent.isAlive(id);
         var instance = getSelfBuffered(id);
         if (instance != null) {
-            if (instance.isRemoved())
-                return false;
-            if (instance.isLoaded())
-                return true;
+            return !instance.isRemoved();
         }
         return checkAliveInStore(id);
     }
@@ -382,8 +351,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     protected abstract void finishInternal();
 
     public Instance getRemoved(Id id) {
-        var instance = NncUtils.requireNonNull(instanceMap.get(id));
-        NncUtils.requireTrue(instance.isRemoved());
+        var instance = requireNonNull(instanceMap.get(id));
+        Utils.require(instance.isRemoved());
         return instance;
     }
 
@@ -398,7 +367,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public void initIdManually(Instance instance, Id id) {
-        NncUtils.requireTrue(instance.getContext() == this);
+        Utils.require(instance.getContext() == this,
+                () -> "Instance " + instance + " is not managed by this context");
         instance.initId(id);
         onIdInitialized(instance);
     }
@@ -436,7 +406,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     protected void onPatchBuild() {
         for (Instance instance : this) {
-            if(instance instanceof ClassInstance clsInst && clsInst.getNativeObject() != null) {
+            if(instance instanceof MvClassInstance clsInst && clsInst.getNativeObject() != null) {
                 var nat = clsInst.getNativeObject();
                 nat.flush();
             }
@@ -473,8 +443,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         var removalBatch = getRemovalBatch(instances);
         removalBatch.forEach(i -> remove0(i, removalBatch));
         for (Instance instance : instances) {
-            if(instance.tryGetOldId() != null)
-                removeForwardingPointer(instance, false);
+            if(instance instanceof MvInstance mvInst && mvInst.tryGetOldId() != null)
+                removeForwardingPointer(mvInst, false);
         }
     }
 
@@ -492,16 +462,18 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (parent != null && !parent.isRemoved() && !removalBatch.contains(parent)) {
             switch (parent) {
                 case ClassInstance classParent -> {
-                    var parentField = requireNonNull(instance.getParentField());
-                    if (classParent.getField(parentField) instanceof Reference r && r.resolve() == instance) {
-                        if (parentField.isNullable())
-                            classParent.setField(parentField, Instances.nullInstance());
-                        else {
-                            throw new BusinessException(
-                                    ErrorCode.STRONG_REFS_PREVENT_REMOVAL2,
-                                    instance.getQualifiedTitle(),
-                                    classParent.getQualifiedTitle()
-                            );
+                    if (instance instanceof MvClassInstance mvInst) {
+                        var parentField = requireNonNull(mvInst.getParentField());
+                        if (classParent.getField(parentField) instanceof Reference r && r.get() == instance) {
+                            if (parentField.isNullable())
+                                classParent.setField(parentField, Instances.nullInstance());
+                            else {
+                                throw new BusinessException(
+                                        ErrorCode.STRONG_REFS_PREVENT_REMOVAL2,
+                                        ((MvInstance) instance).getQualifiedTitle(),
+                                        classParent.getTitle()
+                                );
+                            }
                         }
                     }
                 }
@@ -559,12 +531,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private void checkForBind(Instance instance) {
         //        NncUtils.requireFalse(instance.isEphemeral(), "Can not bind an ephemeral instance");
 //        NncUtils.requireFalse(instance.isValue(), "Can not bind a value instance");
-        NncUtils.requireNull(instance.getContext(), "Instance already bound");
-        NncUtils.requireNull(instance.tryGetTreeId(),
+        Utils.require(instance.getContext() == null, "Instance already bound");
+        Utils.require(instance.tryGetTreeId() == null,
                 () -> {
                     throw new InternalException("Can not bind a persisted instance: " + instance);
                 });
-        NncUtils.requireFalse(instance.isRemoved(),
+        Utils.require(!instance.isRemoved(),
                 () -> "Can not bind instance " + instance + " because it's already removed");
     }
 
@@ -581,14 +553,14 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected void clearMarks() {
-        this.forEach(i -> i.setMarked(false));
+        this.forEach(i -> i.clearMarked());
     }
 
     protected List<Instance> computeNonPersistedOrphans() {
         clearMarks();
         for (var instance : this) {
-            if (instance.isInitialized() && instance.isRoot() && !instance.isRemoved())
-                instance.forEachDescendant(d -> d.setMarked(true));
+            if (instance.isRoot() && !instance.isRemoved())
+                instance.forEachDescendant(d -> d.setMarked());
         }
         var orphans = new ArrayList<Instance>();
         for (var instance : this) {
@@ -600,16 +572,16 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public InstanceInput createInstanceInput(InputStream stream) {
-        return new InstanceInput(stream, this::internalGet, this::add, getTypeDefProvider(), redirectStatusProvider);
+        return new InstanceInput(stream, this::internalGet, this::add, redirectStatusProvider);
     }
 
     private void add(Instance instance) {
-        NncUtils.requireTrue(instance.getContext() == null);
+        Utils.require(instance.getContext() == null);
         instance.setContext(this);
         if (instance.tryGetId() == null && instance.isValue())
             return;
-        NncUtils.requireTrue(instance.getNext() == null && instance.getPrev() == null);
-        NncUtils.requireFalse(instance.isRemoved(),
+        Utils.require(instance.getNext() == null && instance.getPrev() == null);
+        Utils.require(!instance.isRemoved(),
                 () -> String.format("Can not add a removed instance: %d", instance.tryGetTreeId()));
         instance.setSeq(seq++);
         if (tail == null)
@@ -669,9 +641,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 instance.visitGraph(i -> {
                     if (i.isRemoved())
                         return false;
-                    if (i.context != null && i.context != BaseInstanceContext.this)
+                    var ctx = i.getContext();
+                    if (ctx != null && ctx != BaseInstanceContext.this)
                         return false;
-                    if (i.context == null)
+                    if (ctx == null)
                         added.add(i);
                     return true;
                 }, r -> r.tryGetId() == null || instanceMap.containsKey(r.getId()), visited);
@@ -696,7 +669,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 //        NncUtils.requireTrue(key.getIndex().isUnique());
 //        var instances = memIndex.get(key);
 //        if (NncUtils.isNotEmpty(instances)) return instances.iterator().next();
-        return NncUtils.first(selectByKey(key));
+        return Utils.first(selectByKey(key));
     }
 
     public IInstanceContext getParent() {
@@ -773,4 +746,15 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public Set<ClassInstance> getSearchReindexSet() {
         return Collections.unmodifiableSet(searchReindexSet);
     }
+
+    @Override
+    public long getAppId(Instance instance) {
+        if (instance.getContext() == this)
+            return getAppId();
+        else if (parent != null)
+            return parent.getAppId(instance);
+        else
+            throw new InternalException("Instance " + instance + " is not contained in the context");
+    }
+
 }

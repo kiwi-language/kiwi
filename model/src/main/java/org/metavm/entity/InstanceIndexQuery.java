@@ -3,7 +3,7 @@ package org.metavm.entity;
 import org.metavm.object.instance.core.InstanceIndexKey;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.Index;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -29,8 +29,8 @@ public record InstanceIndexQuery(
 
     public boolean memoryOnly() {
         return index.isIdNull()
-                || from != null && NncUtils.anyMatch(from.values(), i -> i instanceof Reference d && !d.isIdInitialized())
-                || to != null && NncUtils.anyMatch(to.values(), i -> i instanceof Reference d && !d.isIdInitialized());
+                || from != null && Utils.anyMatch(from.values(), i -> i instanceof Reference d && !d.isIdInitialized())
+                || to != null && Utils.anyMatch(to.values(), i -> i instanceof Reference d && !d.isIdInitialized());
     }
 
     @Override

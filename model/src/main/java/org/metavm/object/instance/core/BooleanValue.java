@@ -23,7 +23,7 @@ public class BooleanValue extends PrimitiveValue {
     }
 
     @Override
-    public PrimitiveType getType() {
+    public PrimitiveType getValueType() {
         return PrimitiveType.booleanType;
     }
 

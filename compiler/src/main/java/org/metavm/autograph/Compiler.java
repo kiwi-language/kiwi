@@ -11,7 +11,6 @@ import org.metavm.entity.SerializeContext;
 import org.metavm.flow.KlassOutput;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.ResolutionStage;
-import org.metavm.object.type.TypeDef;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +105,7 @@ public class Compiler {
     private final List<String> classNames = new ArrayList<>();
 
     static {
-        NncUtils.ensureDirectoryExists(REQUEST_DIR);
+        Utils.ensureDirectoryExists(REQUEST_DIR);
     }
 
     public Compiler(String sourceRoot, String targetDir, CompilerInstanceContextFactory contextFactory, TypeClient typeClient) {
@@ -156,17 +155,17 @@ public class Compiler {
             Constants.disableMaintenance();
             long start = System.currentTimeMillis();
             var typeResolver = new TypeResolverImpl(context);
-            var files = NncUtils.map(sources, this::getPsiJavaFile);
+            var files = Utils.map(sources, this::getPsiJavaFile);
             for (int i = 0; i < prepareStages.size(); i++) {
                 executeStage(prepareStages.get(i), i, files);
             }
-            var psiClasses = NncUtils.flatMap(files, TranspileUtils::getAllClasses);
+            var psiClasses = Utils.flatMap(files, TranspileUtils::getAllClasses);
             psiClasses.forEach(k -> classNames.add(k.getQualifiedName()));
             for (var stage : stages) {
 //                logger.debug("Stage {}", stage.stage.name());
                 try (var ignored1 = profiler.enter("stage: " + stage)) {
                     var sortedKlasses = stage.sort(psiClasses, typeResolver);
-                    var psiClassTypes = NncUtils.map(
+                    var psiClassTypes = Utils.map(
                             sortedKlasses,
                             TranspileUtils.getElementFactory()::createType
                     );
@@ -174,7 +173,7 @@ public class Compiler {
                          typeResolver.resolve(t, stage.stage);
                         if (stage.stage == ResolutionStage.DECLARATION) {
                             var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS),
-                                    () -> "Cannot find MvClass for " + TranspileUtils.getQualifiedName(t.resolve()));
+                                    () -> "Cannot find MvClass for " + TranspileUtils.getQualifiedName(Objects.requireNonNull(t.resolve())));
                             if (klass.isTemplate())
                                 klass.updateParameterized();
                         }
@@ -288,7 +287,7 @@ public class Compiler {
     private void deploy(Collection<Klass> klasses, TypeResolver typeResolver) {
         try (var serContext = SerializeContext.enter();
              var ignored = ContextUtil.getProfiler().enter("deploy")) {
-            NncUtils.clearDirectory(targetDir);
+            Utils.clearDirectory(targetDir);
             serContext.includingCode(true)
                     .includeNodeOutputType(false)
                     .includingValueType(false);
@@ -311,11 +310,11 @@ public class Compiler {
     }
 
     private void writeClassFile(Klass klass, SerializeContext serializeContext) {
-        var path = targetDir + '/' + klass.getQualifiedName().replace('.', '/') + ".mvclass";
+        var path = targetDir + '/' + Objects.requireNonNull(klass.getQualifiedName()).replace('.', '/') + ".mvclass";
         var bout = new ByteArrayOutputStream();
         var output = new KlassOutput(bout, serializeContext);
-        klass.write(output);
-        NncUtils.writeFile(path, bout.toByteArray());
+        output.writeEntity(klass);
+        Utils.writeFile(path, bout.toByteArray());
     }
 
     private void createArchive() {
@@ -340,7 +339,7 @@ public class Compiler {
     }
 
     public PsiJavaFile getPsiJavaFile(String path) {
-        var file = NncUtils.requireNonNull(fileSystem.findFileByPath(path));
+        var file = Objects.requireNonNull(fileSystem.findFileByPath(path));
         return (PsiJavaFile) PsiManager.getInstance(project).findFile(file);
     }
 

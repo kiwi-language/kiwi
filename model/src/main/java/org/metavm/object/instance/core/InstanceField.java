@@ -7,10 +7,7 @@ import org.metavm.entity.SerializeContext;
 import org.metavm.object.instance.rest.InstanceFieldDTO;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Type;
-import org.metavm.util.BusinessException;
-import org.metavm.util.InstanceOutput;
-import org.metavm.util.Instances;
-import org.metavm.util.InternalException;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,9 +51,9 @@ public class InstanceField implements IInstanceField {
     }
 
     @Override
-    public void writeValue(InstanceOutput output) {
+    public void writeValue(MvOutput output) {
         Objects.requireNonNull(value, () -> "Field " + field.getQualifiedName() + " is not initialized");
-        if (value instanceof Reference r && r.isResolved() && r.resolve().isChildOf(owner, field))
+        if (value instanceof Reference r && r.isResolved() && r.get().isChildOf(owner, field))
             output.writeInstance(value);
         else
             output.writeValue(value);
@@ -75,7 +72,7 @@ public class InstanceField implements IInstanceField {
     public void set(Value value) {
         checkValue(value);
         if (field.isChild() && value.isNotNull())
-            ((Reference) value).resolve().setParent(this.owner, this.field);
+            ((Reference) value).get().setParent(this.owner, this.field);
         this.value = value;
     }
 
@@ -98,7 +95,7 @@ public class InstanceField implements IInstanceField {
             return;
         if (!type.isInstance(value)) {
             throw new BusinessException(ErrorCode.INCORRECT_INSTANCE_FIELD_VALUE,
-                    value + " " + value.getType(), field.getQualifiedName(), field.getType());
+                    value + " " + value.getValueType(), field.getQualifiedName(), field.getType());
         }
     }
 
@@ -147,7 +144,7 @@ public class InstanceField implements IInstanceField {
 
     public ArrayInstance getInstanceArray() {
         assert value != null;
-        return (ArrayInstance) ((Reference) value).resolve();
+        return (ArrayInstance) ((Reference) value).get();
     }
 
     @Override

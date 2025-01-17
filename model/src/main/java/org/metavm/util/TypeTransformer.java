@@ -21,9 +21,9 @@ public abstract class TypeTransformer {
 
     public Type transformParameterizedType(ParameterizedType parameterizedType) {
         return new ParameterizedTypeImpl(
-                NncUtils.get(parameterizedType.getOwnerType(), this::transformType),
+                Utils.safeCall(parameterizedType.getOwnerType(), this::transformType),
                 (Class<?>) transformType(parameterizedType.getRawType()),
-                NncUtils.mapArray(parameterizedType.getActualTypeArguments(), this::transformType, Type[]::new)
+                Utils.mapArray(parameterizedType.getActualTypeArguments(), this::transformType, Type[]::new)
         );
     }
 
@@ -33,8 +33,8 @@ public abstract class TypeTransformer {
 
     public Type transformWildcardType(WildcardType wildcardType) {
         return new WildcardTypeImpl(
-                NncUtils.mapArray(wildcardType.getUpperBounds(), this::transformType, Type[]::new),
-                NncUtils.mapArray(wildcardType.getLowerBounds(), this::transformType, Type[]::new)
+                Utils.mapArray(wildcardType.getUpperBounds(), this::transformType, Type[]::new),
+                Utils.mapArray(wildcardType.getLowerBounds(), this::transformType, Type[]::new)
         );
     }
 

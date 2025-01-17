@@ -19,13 +19,11 @@ public interface DefMap {
 
     boolean containsDef(Type javaType);
 
-    org.metavm.object.type.Type internType(org.metavm.object.type.Type type);
+    void preAddDef(KlassDef<?> def);
 
-    void preAddDef(ModelDef<?> def);
+    void addDef(KlassDef<?> def);
 
-    void addDef(ModelDef<?> def);
-
-    void afterDefInitialized(ModelDef<?> def);
+    void afterDefInitialized(KlassDef<?> def);
 
     boolean containsJavaType(Type javaType);
 

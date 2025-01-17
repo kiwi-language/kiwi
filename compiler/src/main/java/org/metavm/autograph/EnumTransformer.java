@@ -2,7 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 
@@ -13,7 +13,7 @@ public class EnumTransformer extends VisitorBase {
     public void visitClass(PsiClass aClass) {
         super.visitClass(aClass);
         if (aClass.isEnum()) {
-            var isAbstract = NncUtils.anyMatch(List.of(aClass.getMethods()), TranspileUtils::isAbstract);
+            var isAbstract = Utils.anyMatch(List.of(aClass.getMethods()), TranspileUtils::isAbstract);
             var mods = Objects.requireNonNull(aClass.getModifierList()).getText()
                     + (aClass.getContainingClass() == null ||
                             aClass.getModifierList().hasExplicitModifier(PsiModifier.STATIC) ? "" : " static")
@@ -27,7 +27,7 @@ public class EnumTransformer extends VisitorBase {
                 if (field instanceof PsiEnumConstant enumConstant) {
                     enumConstantNames.add(field.getName());
                     var argList = enumConstant.getArgumentList() != null ?
-                            NncUtils.join(enumConstant.getArgumentList().getExpressions(), PsiElement::getText) : "";
+                            Utils.join(enumConstant.getArgumentList().getExpressions(), PsiElement::getText) : "";
                     var modText = Objects.requireNonNull(field.getModifierList()).getText();
                     var fieldText =
                             (modText.isEmpty() ? "" : modText + " ")
@@ -101,7 +101,7 @@ public class EnumTransformer extends VisitorBase {
         return TranspileUtils.createMethodFromText("public static " + enumClass.getName() + "[] values() {"
                 + "return "
                 + "new " + enumClass.getName()
-                + "[] {" + NncUtils.join(enumConstantNames) + "};"
+                + "[] {" + Utils.join(enumConstantNames) + "};"
                 + "}");
     }
 

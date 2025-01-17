@@ -1,7 +1,7 @@
 package org.metavm.entity;
 
-import org.metavm.api.ValueObject;
+import org.metavm.object.instance.core.NativeValue;
 
-public interface Reference extends ValueObject {
+public interface Reference extends ValueElement, NativeValue {
 
 }

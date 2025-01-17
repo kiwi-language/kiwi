@@ -1,64 +1,81 @@
 package org.metavm.task;
 
-import org.metavm.api.ChildEntity;
+import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
+import org.metavm.api.Generated;
 import org.metavm.ddl.FieldAddition;
 import org.metavm.ddl.SystemDDL;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.ReadWriteArray;
+import org.metavm.entity.RemovalAware;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
-import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.WAL;
-import org.metavm.object.instance.log.Identifier;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
+import org.metavm.util.Instances;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
+@NativeEntity(39)
 @Entity
-public class PreUpgradeTask extends ScanTask {
+public class PreUpgradeTask extends ScanTask  implements RemovalAware {
 
-    @ChildEntity
-    private final WAL wal;
-    private final String ddlId;
-    private final Identifier defWalId;
-    @ChildEntity
-    private final ReadWriteArray<String> newKlassIds = addChild(new ReadWriteArray<>(String.class), "newKlassIds");
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
+    private Reference walReference;
+    private Id ddlId;
+    private Id defWalId;
+    private List<Id> newKlassIds = new ArrayList<>();
 
-    public PreUpgradeTask(WAL wal, Identifier defWalId, List<String> newKlassIds, String ddlId) {
+    public PreUpgradeTask(WAL wal, Id defWalId, List<Id> newKlassIds, Id ddlId) {
         super("PreUpgradeTask-" + ddlId);
-        this.wal = wal;
+        this.walReference = wal.getReference();
         this.defWalId = defWalId;
         this.ddlId = ddlId;
         this.newKlassIds.addAll(newKlassIds);
     }
 
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        ScanTask.visitBody(visitor);
+        visitor.visitValue();
+        visitor.visitId();
+        visitor.visitId();
+        visitor.visitList(visitor::visitId);
+    }
+
     @Override
     protected void process(List<Instance> batch, IEntityContext context, IEntityContext taskContext) {
-        var instCtx = context.getInstanceContext();
         for (Instance instance : batch) {
             if(instance instanceof ClassInstance clsInst) {
                 var ddl = context.getEntity(SystemDDL.class, ddlId);
                 for (FieldAddition fieldAdd : ddl.getFieldAdditions()) {
                     var field  = fieldAdd.field();
                     var klass = field.getDeclaringType();
-                    var k = clsInst.getType().findAncestorByKlass(klass);
+                    var k = clsInst.getInstanceType().asSuper(klass);
                     if(k != null) {
-                        var value = Flows.invoke(fieldAdd.initializer().getRef(), null, List.of(clsInst.getReference()), instCtx);
+                        var value = Flows.invoke(fieldAdd.initializer().getRef(), null, List.of(clsInst.getReference()), context);
                         clsInst.setFieldForce(field, value);
-                        clsInst.setDirectlyModified(true);
                     }
                 }
                 for (Method runMethod : ddl.getRunMethods()) {
-                    var paramKlass = ((ClassType) runMethod.getParameterTypes().get(0));
-                    var k = clsInst.getType().findAncestorByKlass(paramKlass.getKlass());
+                    var paramKlass = ((ClassType) runMethod.getParameterTypes().getFirst());
+                    var k = clsInst.getInstanceType().asSuper(paramKlass.getKlass());
                     if(k != null) {
                         var pm = runMethod.getTypeParameters().isEmpty() ? runMethod.getRef() :
-                                runMethod.getRef().getParameterized(List.of(clsInst.getType()));
+                                runMethod.getRef().getParameterized(List.of(clsInst.getInstanceType()));
                         Flows.invoke(pm, null, List.of(clsInst.getReference()), context);
                     }
                 }
@@ -69,7 +86,7 @@ public class PreUpgradeTask extends ScanTask {
     @Override
     protected void onScanOver(IEntityContext context, IEntityContext taskContext) {
         var newKlassIds = getExtraStdKlassIds();
-        for (String klassId : newKlassIds) {
+        for (var klassId : newKlassIds) {
             var klass = context.getKlass(klassId);
             var initializer = tryGetInitializerKlass(klass, context);
             if (initializer != null) {
@@ -83,13 +100,14 @@ public class PreUpgradeTask extends ScanTask {
     }
 
     private Klass tryGetInitializerKlass(Klass klass, IEntityContext context) {
-        return context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klass.getQualifiedName() + "Initializer");
+        return context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
+                Instances.stringInstance(klass.getQualifiedName() + "Initializer"));
     }
 
     @Nullable
     @Override
     public WAL getWAL() {
-        return wal;
+        return (WAL) walReference.get();
     }
 
     @Override
@@ -99,13 +117,92 @@ public class PreUpgradeTask extends ScanTask {
 
     @Nullable
     @Override
-    public Identifier getDefWalId() {
+    public Id getDefWalId() {
         return defWalId;
     }
 
     @Override
-    public List<String> getExtraStdKlassIds() {
-        return newKlassIds.toList();
+    public List<Id> getExtraStdKlassIds() {
+        return Collections.unmodifiableList(newKlassIds);
     }
 
+    @Override
+    public List<Instance> beforeRemove(IEntityContext context) {
+        return List.of(walReference.get());
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        action.accept(walReference);
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        var wAL = this.getWAL();
+        if (wAL != null) map.put("wAL", wAL.getStringId());
+        map.put("timeout", this.getTimeout());
+        var defWalId = this.getDefWalId();
+        if (defWalId != null) map.put("defWalId", defWalId);
+        map.put("extraStdKlassIds", this.getExtraStdKlassIds());
+        var group = this.getGroup();
+        if (group != null) map.put("group", group.getStringId());
+        map.put("runCount", this.getRunCount());
+        map.put("state", this.getState().name());
+        map.put("runnable", this.isRunnable());
+        map.put("running", this.isRunning());
+        map.put("completed", this.isCompleted());
+        map.put("failed", this.isFailed());
+        map.put("terminated", this.isTerminated());
+        map.put("lastRunTimestamp", this.getLastRunTimestamp());
+        map.put("startAt", this.getStartAt());
+        var metaWAL = this.getMetaWAL();
+        if (metaWAL != null) map.put("metaWAL", metaWAL.getStringId());
+        map.put("relocationEnabled", this.isRelocationEnabled());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+        super.forEachChild(action);
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_PreUpgradeTask;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        super.readBody(input, parent);
+        this.walReference = (Reference) input.readValue();
+        this.ddlId = input.readId();
+        this.defWalId = input.readId();
+        this.newKlassIds = input.readList(input::readId);
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        super.writeBody(output);
+        output.writeValue(walReference);
+        output.writeId(ddlId);
+        output.writeId(defWalId);
+        output.writeList(newKlassIds, output::writeId);
+    }
+
+    @Override
+    protected void buildSource(Map<String, Value> source) {
+        super.buildSource(source);
+    }
 }

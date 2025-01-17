@@ -88,14 +88,6 @@ public class ValueUtils {
         return PRIMITIVE_TYPES.contains(klass);
     }
 
-    public static boolean isArrayType(Class<?> klass) {
-        return ReadonlyArray.class.isAssignableFrom(klass);
-    }
-
-    public static boolean isChildArrayType(Class<?> klass) {
-        return ChildArray.class.isAssignableFrom(klass);
-    }
-
     public static boolean isEntityType(Class<?> klass) {
         return Entity.class.isAssignableFrom(klass);
     }
@@ -140,18 +132,6 @@ public class ValueUtils {
                 return TypeCategory.NULL;
             if (Object.class.equals(klass) || Record.class.isAssignableFrom(klass) || isValueType(klass))
                 return TypeCategory.VALUE;
-            if (isArrayType(klass)) {
-                if (isChildArrayType(klass))
-                    return TypeCategory.CHILD_ARRAY;
-                else if (ReadWriteArray.class.isAssignableFrom(klass))
-                    return TypeCategory.READ_WRITE_ARRAY;
-                else if(ValueArray.class.isAssignableFrom(klass))
-                    return TypeCategory.VALUE_ARRAY;
-                else if(ReadonlyArray.class.isAssignableFrom(klass))
-                    return TypeCategory.READ_ONLY_ARRAY;
-                else
-                    throw new InternalException("Unrecognized array class: " + klass.getName());
-            }
             if (isEnumType(klass))
                 return TypeCategory.ENUM;
             if (isEntityType(klass))
@@ -160,18 +140,8 @@ public class ValueUtils {
                 return TypeCategory.CLASS;
         }
         if (type instanceof ParameterizedType parameterizedType) {
-            if (parameterizedType.getRawType() instanceof Class<?> rawClass) {
-                if (ChildArray.class.isAssignableFrom(rawClass))
-                    return TypeCategory.CHILD_ARRAY;
-                else if (ReadWriteArray.class.isAssignableFrom(rawClass))
-                    return TypeCategory.READ_WRITE_ARRAY;
-                else if(ValueArray.class.isAssignableFrom(rawClass))
-                    return TypeCategory.VALUE_ARRAY;
-                else if (ReadonlyArray.class.isAssignableFrom(rawClass))
-                    return TypeCategory.READ_ONLY_ARRAY;
-                else
-                    return getTypeCategory(rawClass);
-            }
+            if (parameterizedType.getRawType() instanceof Class<?> rawClass)
+                return getTypeCategory(rawClass);
         }
         return TypeCategory.CLASS;
     }

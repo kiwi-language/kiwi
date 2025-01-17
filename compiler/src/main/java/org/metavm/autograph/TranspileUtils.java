@@ -18,7 +18,7 @@ import org.metavm.entity.natives.StdFunction;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +40,7 @@ public class TranspileUtils {
 
     private static final String DUMMY_FILE_NAME = "_Dummy_." + JavaFileType.INSTANCE.getDefaultExtension();
 
-    private static PsiElementFactory elementFactory;
+    public static PsiElementFactory elementFactory;
     private static Project project;
 
     public static PsiElementFactory getElementFactory() {
@@ -52,12 +52,12 @@ public class TranspileUtils {
     }
 
     public static String getCanonicalName(PsiTypeParameter typeParameter) {
-        var owner = NncUtils.requireNonNull(typeParameter.getOwner());
+        var owner = Objects.requireNonNull(typeParameter.getOwner());
         return getCanonicalName(owner) + "-" + typeParameter.getName();
     }
 
     public static PsiStatement getLastStatement(PsiCodeBlock codeBlock) {
-        NncUtils.requireFalse(codeBlock.isEmpty(), "Code block is empty");
+        Utils.require(!codeBlock.isEmpty(), "Code block is empty");
         return codeBlock.getStatements()[codeBlock.getStatementCount() - 1];
     }
 
@@ -66,7 +66,7 @@ public class TranspileUtils {
                 () -> "Cannot find functional interface for lambda expression: " + lambdaExpression.getText()))
                 .resolveGenerics();
         var funcClass = funcTypeGenerics.getElement();
-        var funcMethod = NncUtils.find(requireNonNull(funcClass).getAllMethods(),
+        var funcMethod = Utils.find(requireNonNull(funcClass).getAllMethods(),
                 m -> m.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT));
         return funcTypeGenerics.getSubstitutor().substitute(requireNonNull(funcMethod).getReturnType());
     }
@@ -93,7 +93,7 @@ public class TranspileUtils {
     public static MethodSignature getSignature(PsiMethod method, @Nullable PsiClassType qualifierType) {
         var declaringClass = qualifierType != null ? qualifierType :
                 createType(requireNonNull(method.getContainingClass()));
-        var paramClasses = NncUtils.map(method.getParameterList().getParameters(), PsiParameter::getType);
+        var paramClasses = Utils.map(method.getParameterList().getParameters(), PsiParameter::getType);
         var isStatic = method.getModifierList().hasModifierProperty(PsiModifier.STATIC);
         return new MethodSignature(declaringClass, isStatic, method.getName(), paramClasses);
     }
@@ -103,12 +103,12 @@ public class TranspileUtils {
                 createClassType(method.getDeclaringClass()),
                 Modifier.isStatic(method.getModifiers()),
                 method.getName(),
-                NncUtils.map(method.getParameters(), p -> createType(p.getParameterizedType(), p.isVarArgs()))
+                Utils.map(method.getParameters(), p -> createType(p.getParameterizedType(), p.isVarArgs()))
         );
     }
 
     public static PsiMethod getMethodByName(PsiClass klass, String name) {
-        return NncUtils.findRequired(klass.getMethods(), m -> m.getName().equals(name));
+        return Utils.findRequired(klass.getMethods(), m -> m.getName().equals(name));
     }
 
     public static String getMethodQualifiedName(PsiMethod method) {
@@ -176,10 +176,10 @@ public class TranspileUtils {
     public static String getCanonicalName(PsiType type) {
         return switch (type) {
             case PsiClassType classType -> {
-                var klass = NncUtils.requireNonNull(classType.resolve());
+                var klass = Objects.requireNonNull(classType.resolve());
                 yield Types.parameterizedName(
                         getClassCanonicalName(klass),
-                        NncUtils.map(
+                        Utils.map(
                                 classType.getParameters(),
                                 TranspileUtils::getCanonicalName
                         )
@@ -212,9 +212,9 @@ public class TranspileUtils {
     }
 
     private static String getMethodCanonicalName(PsiMethod method) {
-        return getClassCanonicalName(NncUtils.requireNonNull(method.getContainingClass())) + "."
+        return getClassCanonicalName(Objects.requireNonNull(method.getContainingClass())) + "."
                 + method.getName() + "("
-                + NncUtils.join(NncUtils.requireNonNull(method.getParameterList()).getParameters(),
+                + Utils.join(Objects.requireNonNull(method.getParameterList()).getParameters(),
                 param -> getCanonicalName(param.getType()))
                 + ")";
     }
@@ -282,7 +282,7 @@ public class TranspileUtils {
 
     @NotNull
     public static List<PsiMethod> getOverriddenMethods(PsiMethod method) {
-        var declaringClass = NncUtils.requireNonNull(method.getContainingClass());
+        var declaringClass = Objects.requireNonNull(method.getContainingClass());
         Queue<PsiClass> queue = new LinkedList<>();
         queue.offer(declaringClass);
         Set<String> visited = new HashSet<>();
@@ -319,8 +319,8 @@ public class TranspileUtils {
         if (!method.getName().equals(overridden.getName())) {
             return false;
         }
-        var overrideDeclClass = NncUtils.requireNonNull(method.getContainingClass());
-        var overriddenDeclClass = NncUtils.requireNonNull(overridden.getContainingClass());
+        var overrideDeclClass = Objects.requireNonNull(method.getContainingClass());
+        var overriddenDeclClass = Objects.requireNonNull(overridden.getContainingClass());
         if (!overrideDeclClass.isInheritor(overriddenDeclClass, true)) {
             return false;
         }
@@ -331,8 +331,8 @@ public class TranspileUtils {
         }
         var pipeline = getSubstitutorPipeline(createType(method.getContainingClass()), overridden.getContainingClass());
         var subst = PsiSubstitutor.createSubstitutor(
-                NncUtils.zip(List.of(overridden.getTypeParameters()),
-                        NncUtils.map(List.of(method.getTypeParameters()), TranspileUtils::createType))
+                Utils.zip(List.of(overridden.getTypeParameters()),
+                        Utils.map(List.of(method.getTypeParameters()), TranspileUtils::createType))
         );
         pipeline.append(new SubstitutorPipeline(subst));
         for (int i = 0; i < paramCount; i++) {
@@ -351,11 +351,11 @@ public class TranspileUtils {
     );
 
     public static List<PsiPrimitiveType> getPrimitiveTypes() {
-        return NncUtils.map(primitiveClasses, TranspileUtils::createPrimitiveType);
+        return Utils.map(primitiveClasses, TranspileUtils::createPrimitiveType);
     }
 
     public static PsiPrimitiveType createPrimitiveType(Class<?> klass) {
-        NncUtils.requireTrue(klass.isPrimitive());
+        Utils.require(klass.isPrimitive());
         return elementFactory.createPrimitiveType(klass.getName());
     }
 
@@ -390,12 +390,12 @@ public class TranspileUtils {
     public static PsiClassType createParameterizedType(ParameterizedType parameterizedType) {
         return elementFactory.createType(
                 Objects.requireNonNull(createClassType(((Class<?>) parameterizedType.getRawType())).resolve()),
-                NncUtils.mapArray(parameterizedType.getActualTypeArguments(), TranspileUtils::createType, PsiType[]::new)
+                Utils.mapArray(parameterizedType.getActualTypeArguments(), TranspileUtils::createType, PsiType[]::new)
         );
     }
 
     public static PsiArrayType createArrayType(Class<?> klass) {
-        NncUtils.requireTrue(klass.isArray());
+        Utils.require(klass.isArray());
         return new PsiArrayType(createType(klass.getComponentType()));
     }
 
@@ -408,7 +408,7 @@ public class TranspileUtils {
     }
 
     public static PsiArrayType createEllipsisType(Class<?> klass) {
-        NncUtils.requireTrue(klass.isArray());
+        Utils.require(klass.isArray());
         return new PsiEllipsisType(createType(klass.getComponentType()));
     }
 
@@ -451,7 +451,7 @@ public class TranspileUtils {
 
     public static PsiClassType createVariableType(Method method, int typeParameterIndex) {
         var psiClass = requireNonNull(createClassType(method.getDeclaringClass()).resolve());
-        var psiMethod = NncUtils.find(psiClass.getMethods(), m -> matchMethod(m, method));
+        var psiMethod = Utils.find(psiClass.getMethods(), m -> matchMethod(m, method));
         if(psiMethod == null)
             throw new NullPointerException("Failed to find method " + ReflectionUtils.getMethodSignature(method)
                     + " in class " + psiClass.getQualifiedName());
@@ -648,7 +648,7 @@ public class TranspileUtils {
             return createType(psiClass);
         }
         var superTypes = psiClass.getSuperTypes();
-        return NncUtils.findRequired(superTypes, superType -> Objects.equals(superType.resolve(), superClass));
+        return Utils.findRequired(superTypes, superType -> Objects.equals(superType.resolve(), superClass));
     }
 
     public static boolean matchType(PsiType type, Class<?> klass) {
@@ -657,7 +657,7 @@ public class TranspileUtils {
 
     public static boolean matchType(PsiType type, Class<?> klass, boolean erase) {
         if (type instanceof PsiClassType classType) {
-            var resolved = NncUtils.requireNonNull(classType.resolve());
+            var resolved = Objects.requireNonNull(classType.resolve());
             if (erase) {
                 resolved = eraseClass(resolved);
             }
@@ -701,7 +701,7 @@ public class TranspileUtils {
     }
 
     public static PsiJavaToken findFirstTokenRequired(PsiElement element, IElementType tokenType) {
-        return NncUtils.requireNonNull(
+        return Objects.requireNonNull(
                 findFirstToken(element, tokenType),
                 "Can not find a child token with token type: " + tokenType
         );
@@ -774,7 +774,7 @@ public class TranspileUtils {
         while (element != null && !(element instanceof PsiStatement)) {
             element = element.getParent();
         }
-        return NncUtils.requireNonNull((PsiStatement) element,
+        return Objects.requireNonNull((PsiStatement) element,
                 "Can not find a enclosing statement for expression: " + expression);
     }
 
@@ -929,7 +929,7 @@ public class TranspileUtils {
     public static org.metavm.flow.Method getMethidByJavaMethod(Klass klass, PsiMethod psiMethod, TypeResolver typeResolver) {
         return klass.getMethodByNameAndParamTypes(
                 psiMethod.getName(),
-                NncUtils.map(
+                Utils.map(
                         psiMethod.getParameterList().getParameters(),
                         param -> resolveParameterType(param, typeResolver)
                 )
@@ -946,7 +946,7 @@ public class TranspileUtils {
 
     public static PsiClassType createTemplateType(PsiClass klass) {
         var paramList = klass.getTypeParameterList();
-        List<PsiType> paramTypes = paramList != null ? NncUtils.map(
+        List<PsiType> paramTypes = paramList != null ? Utils.map(
                 paramList.getTypeParameters(),
                 elementFactory::createType
         ) : List.of();
@@ -1071,12 +1071,12 @@ public class TranspileUtils {
 
     public static String getBizClassName(PsiClass klass) {
         String bizName = (String) getEntityAnnotationAttr(klass, "value");
-        return NncUtils.isNotBlank(bizName) ? bizName : klass.getName();
+        return Utils.isNotBlank(bizName) ? bizName : klass.getName();
     }
 
     public static boolean isStruct(PsiClass psiClass) {
         return psiClass.isRecord()
-                && NncUtils.count(psiClass.getConstructors(), m -> !(m instanceof LightRecordCanonicalConstructor)) == 0
+                && Utils.count(psiClass.getConstructors(), m -> !(m instanceof LightRecordCanonicalConstructor)) == 0
                 || psiClass.hasAnnotation(EntityStruct.class.getName()) || psiClass.hasAnnotation(ValueStruct.class.getName());
     }
 
@@ -1132,7 +1132,7 @@ public class TranspileUtils {
 
     private static String tryGetNameFromAnnotation(PsiModifierListOwner element, Class<? extends Annotation> annotationClass) {
         var value = (String) getAnnotationAttribute(element, annotationClass, "value");
-        return NncUtils.isNotBlank(value) ? value : null;
+        return Utils.isNotBlank(value) ? value : null;
     }
 
 
@@ -1153,9 +1153,9 @@ public class TranspileUtils {
     }
 
     public static @Nullable PsiMethod findCanonicalConstructor(PsiClass psiClass) {
-        var fieldTypes = NncUtils.map(getAllInstanceFields(psiClass), PsiField::getType);
-        return NncUtils.find(psiClass.getMethods(),
-                m -> m.isConstructor() && NncUtils.map(m.getParameterList().getParameters(), PsiParameter::getType).equals(fieldTypes));
+        var fieldTypes = Utils.map(getAllInstanceFields(psiClass), PsiField::getType);
+        return Utils.find(psiClass.getMethods(),
+                m -> m.isConstructor() && Utils.map(m.getParameterList().getParameters(), PsiParameter::getType).equals(fieldTypes));
     }
 
     public static List<PsiField> getAllInstanceFields(PsiClass psiClass) {
@@ -1217,7 +1217,7 @@ public class TranspileUtils {
     }
 
     public static Object getAnnotationAttribute(PsiAnnotation annotation, String attributeName, @Nullable Object defaultValue) {
-        var attr = NncUtils.find(annotation.getAttributes(), a -> a.getAttributeName().equals(attributeName));
+        var attr = Utils.find(annotation.getAttributes(), a -> a.getAttributeName().equals(attributeName));
         if (attr != null) {
             JvmAnnotationConstantValue value = (JvmAnnotationConstantValue) attr.getAttributeValue();
             var constValue = requireNonNull(value).getConstantValue();
@@ -1251,10 +1251,10 @@ public class TranspileUtils {
     );
 
     public static String getInternalName(PsiMethod method) {
-        var paramTypeNames = new ArrayList<>(NncUtils.map(method.getParameterList().getParameters(),
+        var paramTypeNames = new ArrayList<>(Utils.map(method.getParameterList().getParameters(),
                 p -> getInternalName(p.getType(), true, method)));
         return getInternalName(createType(method.getContainingClass()), null) + "." +
-                method.getName() + "(" + NncUtils.join(paramTypeNames, ",") + ")";
+                method.getName() + "(" + Utils.join(paramTypeNames, ",") + ")";
     }
 
 
@@ -1286,7 +1286,7 @@ public class TranspileUtils {
             }
             var className = Objects.requireNonNullElse(psiClass.getQualifiedName(), psiClass.getName());
             if (classType.getParameters().length > 0) {
-                var typeArgs = NncUtils.map(classType.getParameters(), t -> getInternalName(t, current));
+                var typeArgs = Utils.map(classType.getParameters(), t -> getInternalName(t, current));
                 return Types.parameterizedName(typeNameMap.getOrDefault(className, className), typeArgs);
             } else
                 return typeNameMap.getOrDefault(className, className);
@@ -1309,12 +1309,12 @@ public class TranspileUtils {
     }
 
     public static boolean isColonSwitch(PsiSwitchBlock statement) {
-        var stmts = NncUtils.requireNonNull(statement.getBody()).getStatements();
+        var stmts = Objects.requireNonNull(statement.getBody()).getStatements();
         return stmts.length > 0 && stmts[0] instanceof PsiSwitchLabelStatement;
     }
 
     public static List<PsiField> getEnumConstants(PsiClass psiClass) {
-        return NncUtils.filter(List.of(psiClass.getFields()), TranspileUtils::isEnumConstant);
+        return Utils.filter(List.of(psiClass.getFields()), TranspileUtils::isEnumConstant);
     }
 
     public static PsiClass resolvePsiClass(PsiClassType classType) {
@@ -1364,12 +1364,12 @@ public class TranspileUtils {
 
     public static PsiMethod getMethod(Method javaMethod) {
         var psiClass = getClass(javaMethod.getDeclaringClass());
-        return NncUtils.findRequired(psiClass.getMethods(), m -> matchMethod(m, javaMethod));
+        return Utils.findRequired(psiClass.getMethods(), m -> matchMethod(m, javaMethod));
     }
 
     public static PsiParameter getParameter(Parameter parameter) {
         var psiMethod = getMethod((Method) parameter.getDeclaringExecutable());
-        var index = NncUtils.indexOf(parameter.getDeclaringExecutable().getParameters(), parameter);
+        var index = Utils.indexOf(parameter.getDeclaringExecutable().getParameters(), parameter);
         return psiMethod.getParameterList().getParameters()[index];
     }
 
@@ -1442,7 +1442,7 @@ public class TranspileUtils {
     public static void printContexts(PsiElement element) {
         PsiElement e = element;
         do {
-            logger.debug("{}", getElementDesc(e));
+            logger.info("{}", getElementDesc(e));
             e = e.getParent();
         } while (e != null);
     }

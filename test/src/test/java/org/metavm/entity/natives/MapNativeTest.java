@@ -31,7 +31,6 @@ public class MapNativeTest extends TestCase {
 
     public void testReferenceKey() {
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var instCtx = context.getInstanceContext();
             var map = ClassInstance.allocate(KlassType.create(StdKlass.hashMap.get(),
                     List.of(
                             context.getDefContext().getType(Klass.class),
@@ -39,11 +38,11 @@ public class MapNativeTest extends TestCase {
                     )
             ));
             var nat = new MapNative(map);
-            nat.HashMap(instCtx);
-            var inst = context.getInstance(context.getDefContext().getKlass(Klass.class));
+            nat.HashMap(context);
+            var inst = context.getDefContext().getKlass(Klass.class);
             var value = Instances.stringInstance("value");
-            nat.put(inst.getReference(), value, instCtx);
-            var value1 = nat.get(inst.getReference(), instCtx);
+            nat.put(inst.getReference(), value, context);
+            var value1 = nat.get(inst.getReference(), context);
             Assert.assertEquals(value, value1);
         }
     }

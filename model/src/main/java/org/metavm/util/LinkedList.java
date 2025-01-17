@@ -25,6 +25,11 @@ public class LinkedList<T> extends AbstractList<T> implements Deque<T> {
     }
 
     @Override
+    public LinkedList<T> reversed() {
+        return (LinkedList<T>) super.reversed();
+    }
+
+    @Override
     public int size() {
         beforeAccess();
         return size;
@@ -399,7 +404,7 @@ public class LinkedList<T> extends AbstractList<T> implements Deque<T> {
 
     public void addAfter(T value, T predecessor) {
         Node<T> node = getNodeByValue(predecessor);
-        NncUtils.requireNonNull(node, "Value '" + predecessor + "' not found");
+        Objects.requireNonNull(node, "Value '" + predecessor + "' not found");
         addNode(node, value);
     }
 

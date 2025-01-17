@@ -3,9 +3,9 @@ package org.metavm.object.type;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.rest.dto.CapturedTypeKey;
 import org.metavm.util.Constants;
 import org.metavm.util.MvInput;
@@ -25,33 +25,32 @@ import java.util.function.Function;
 public class CapturedType extends Type {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
-    private final CapturedTypeVariable variable;
+    private final Reference variable;
 
     public CapturedType(CapturedTypeVariable variable) {
-        super(
-        );
+        this.variable = variable.getReference();
+    }
+
+    public CapturedType(Reference variable) {
         this.variable = variable;
     }
 
     @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitCapturedType(this);
-    }
-
-    @Override
     public CapturedTypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
-        return new CapturedTypeKey(getTypeDefId.apply(variable));
+        return new CapturedTypeKey(getTypeDefId.apply(getVariable()));
     }
 
     @Override
     public Type getUpperBound() {
-        return variable.getUpperBound();
+        return getVariable().getUpperBound();
     }
 
     @Override
     public Type getLowerBound() {
-        return variable.getLowerBound();
+        return getVariable().getLowerBound();
     }
 
     @Override
@@ -65,28 +64,18 @@ public class CapturedType extends Type {
     }
 
     @Override
-    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
-        return visitor.visitCapturedType(this, s);
-    }
-
-    @Override
     public String getName() {
-        return "CaptureOf" + variable.getUncertainType().getName();
+        return "CaptureOf" + getVariable().getUncertainType().getName();
     }
 
     @Override
     public String getTypeDesc() {
-        return variable.getScope().getScopeName() + "_" + getName();
+        return getVariable().getScope().getScopeName() + "_" + getName();
     }
 
     @Override
     public TypeCategory getCategory() {
         return TypeCategory.CAPTURED;
-    }
-
-    @Override
-    public Type getType() {
-        return StdKlass.capturedType.type();
     }
 
     @Override
@@ -96,6 +85,7 @@ public class CapturedType extends Type {
 
     @Override
     public String getInternalName(@Nullable Flow current) {
+        var variable = getVariable();
         var scope = variable.getScope();
         return scope.getInternalName(current) + ".CaptureOf" + variable.getUncertainType().getInternalName(current) +
                 scope.getCapturedTypeVariableIndex(variable);
@@ -103,6 +93,7 @@ public class CapturedType extends Type {
 
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
+        var variable = getVariable();
         return getTypeDefExpr == null ? "#" + Constants.ID_PREFIX + serializeContext.getStringId(variable)
                 : getTypeDefExpr.apply(variable);
     }
@@ -115,7 +106,7 @@ public class CapturedType extends Type {
     @Override
     public void write(MvOutput output) {
         output.write(WireTypes.CAPTURED_TYPE);
-        output.writeEntityId(variable);
+        output.writeReference(variable);
     }
 
     @Override
@@ -124,11 +115,11 @@ public class CapturedType extends Type {
     }
 
     public static CapturedType read(MvInput input) {
-        return new CapturedType(input.getCapturedTypeVariable(input.readId()));
+        return new CapturedType(input.readReference());
     }
 
     public UncertainType getUncertainType() {
-        return variable.getUncertainType();
+        return getVariable().getUncertainType();
     }
 
     @Override
@@ -137,8 +128,8 @@ public class CapturedType extends Type {
     }
 
     @Override
-    protected boolean equals0(Object obj) {
-        return obj instanceof CapturedType that && variable == that.variable;
+    public boolean equals(Object obj) {
+        return obj instanceof CapturedType that && variable.equals(that.variable);
     }
 
     @Override
@@ -148,7 +139,7 @@ public class CapturedType extends Type {
 
     @Override
     public void forEachTypeDef(Consumer<TypeDef> action) {
-        action.accept(variable);
+        action.accept(getVariable());
     }
 
     @Override
@@ -157,6 +148,31 @@ public class CapturedType extends Type {
     }
 
     public CapturedTypeVariable getVariable() {
-        return variable;
+        return (CapturedTypeVariable) variable.resolveDurable();
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitCapturedType(this);
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitCapturedType(this, s);
+    }
+
+    @Override
+    public ClassType getValueType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        action.accept(variable);
     }
 }

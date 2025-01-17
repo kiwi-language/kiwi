@@ -1,6 +1,7 @@
 package org.metavm.application;
 
 import org.metavm.api.Entity;
+import org.metavm.util.Utils;
 
 @Entity
 public enum AppInvitationState {
@@ -20,4 +21,7 @@ public enum AppInvitationState {
         return this.code;
     }
 
+    public static AppInvitationState fromCode(int code) {
+        return Utils.findRequired(values(), v -> v.code == code);
+    }
 }

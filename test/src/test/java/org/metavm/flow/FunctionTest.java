@@ -26,7 +26,7 @@ public class FunctionTest extends TestCase {
         var parameterizedFunc = new FunctionRef(function, List.of(Types.getStringType()));
         Assert.assertSame(function, parameterizedFunc.getRawFlow());
         Assert.assertEquals(List.of(Types.getStringType()), parameterizedFunc.getTypeArguments());
-        Assert.assertEquals(Types.getStringType(), parameterizedFunc.getParameterTypes().get(0));
+        Assert.assertEquals(Types.getStringType(), parameterizedFunc.getParameterTypes().getFirst());
     }
 
 }

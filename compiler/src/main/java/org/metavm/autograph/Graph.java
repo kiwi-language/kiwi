@@ -19,13 +19,13 @@ public record Graph(
 ) {
 
     public void log() {
-        log.debug("Cfg for {}", title);
+//        log.debug("Cfg for {}", title);
         logNodeDfs(entry, new IdentitySet<>());
     }
 
     private void logNodeDfs(CfgNode node, IdentitySet<CfgNode> visited) {
         if(visited.add(node)) {
-            log.debug("{} -> {}", node, node.getNext());
+//            log.debug("{} -> {}", node, node.getNext());
             node.getNext().forEach(next -> logNodeDfs(next, visited));
         }
     }

@@ -1,15 +1,26 @@
 package org.metavm.object.instance.core;
 
-public abstract class InstanceVisitor {
+import org.metavm.entity.Entity;
 
-    public void visitInstance(Instance instance) {}
+public abstract class InstanceVisitor<R> {
 
-    public void visitClassInstance(ClassInstance instance) {
-        visitInstance(instance);
+    public R visitInstance(Instance instance) {
+        throw new UnsupportedOperationException();
     }
 
-    public void visitArrayInstance(ArrayInstance instance) {
-        visitInstance(instance);
+    public R visitClassInstance(ClassInstance instance) {
+        return visitInstance(instance);
     }
 
+    public R visitArrayInstance(ArrayInstance instance) {
+        return visitInstance(instance);
+    }
+
+    public R visitEntity(Entity entity) {
+        return visitInstance(entity);
+    }
+
+    public R visitNativeEphemeralObject(NativeEphemeralObject nativeEphemeralObject) {
+        return visitInstance(nativeEphemeralObject);
+    }
 }

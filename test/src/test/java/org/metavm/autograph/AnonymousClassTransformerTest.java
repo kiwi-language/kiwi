@@ -2,7 +2,7 @@ package org.metavm.autograph;
 
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.regex.Pattern;
 
@@ -47,7 +47,7 @@ public class AnonymousClassTransformerTest extends TestCase {
                 file.accept(new SyntheticClassNameTracker());
                 file.accept(new AnonymousClassTransformer());
             });
-            NncUtils.writeFile(target, file.getText().replace(pkgName, newPkgName));
+            Utils.writeFile(target, file.getText().replace(pkgName, newPkgName));
         }
         else
             throw new IllegalArgumentException("Invalid source " + source);

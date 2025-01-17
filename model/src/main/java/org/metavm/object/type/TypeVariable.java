@@ -1,28 +1,40 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.ChildEntity;
+import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
+import org.metavm.api.Generated;
 import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.flow.Flow;
-import org.metavm.flow.KlassInput;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.util.InternalException;
+import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
+@NativeEntity(15)
 @Entity
 public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAware {
 
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
     @EntityField(asTitle = true)
     private String name;
-    @ChildEntity
-    private final ReadWriteArray<Type> bounds = addChild(new ReadWriteArray<>(Type.class), "bounds");
+    private List<Type> bounds = new ArrayList<>();
     private @NotNull GenericDeclaration genericDeclaration;
     private transient VariableType type;
     private transient Type bound;
@@ -33,6 +45,13 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
         this.name = name;
         this.genericDeclaration = genericDeclaration;
         genericDeclaration.addTypeParameter(this);
+    }
+
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        TypeDef.visitBody(visitor);
+        visitor.visitUTF();
+        visitor.visitList(visitor::visitValue);
     }
 
     @Override
@@ -67,7 +86,8 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
     }
 
     public void setBounds(List<Type> bounds) {
-        this.bounds.reset(bounds);
+        this.bounds.clear();
+        this.bounds.addAll(bounds);
     }
 
     @Override
@@ -77,18 +97,18 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
 
     public Type getUpperBound() {
         if (bounds.size() == 1)
-            return bounds.get(0);
+            return bounds.getFirst();
         if (bound != null)
             return bound;
-        return bound = bounds.isEmpty() ? AnyType.instance : new IntersectionType(new HashSet<>(bounds.toList()));
+        return bound = bounds.isEmpty() ? AnyType.instance : new IntersectionType(new HashSet<>(bounds));
     }
 
     public List<? extends Type> getSuperTypes() {
-        return Collections.unmodifiableList(bounds.toList());
+        return Collections.unmodifiableList(bounds);
     }
 
     public List<Type> getBounds() {
-        return bounds.toList();
+        return Collections.unmodifiableList(bounds);
     }
 
 
@@ -122,11 +142,6 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
     }
 
     @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitTypeVariable(this);
-    }
-
-    @Override
     public boolean isValidLocalKey() {
         return true;
     }
@@ -142,31 +157,97 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
         return type;
     }
 
+    @Override
+    public String getTitle() {
+        return name;
+    }
+
     public int getIndex() {
         return genericDeclaration.getTypeParameterIndex(this);
     }
 
+    @Nullable
     @Override
-    protected String toString0() {
+    public org.metavm.entity.Entity getParentEntity() {
+        return (org.metavm.entity.Entity) genericDeclaration;
+    }
+
+    @Override
+    public String toString() {
         return "TypeVariable-" + getTypeDesc();
     }
 
-    public void write(MvOutput output) {
-        output.writeEntityId(this);
-        output.writeUTF(name);
-        output.writeInt(bounds.size());
-        bounds.forEach(b -> b.write(output));
-        writeAttributes(output);
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitTypeVariable(this);
     }
 
-    public void read(KlassInput input) {
-        setName(input.readUTF());
-        var boundCount = input.readInt();
-        var bounds = new ArrayList<Type>();
-        for (int i = 0; i < boundCount; i++) {
-            bounds.add(input.readType());
-        }
-        setBounds(bounds);
-        readAttributes(input);
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        bounds.forEach(arg -> arg.accept(visitor));
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        bounds.forEach(arg -> arg.forEachReference(action));
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("genericDeclaration", this.getGenericDeclaration().getStringId());
+        map.put("name", this.getName());
+        map.put("qualifiedName", this.getQualifiedName());
+        map.put("upperBound", this.getUpperBound().toJson());
+        map.put("superTypes", this.getSuperTypes().stream().map(Type::toJson).toList());
+        map.put("bounds", this.getBounds().stream().map(Type::toJson).toList());
+        map.put("stage", this.getStage().name());
+        map.put("typeDesc", this.getTypeDesc());
+        map.put("type", this.getType().toJson());
+        map.put("index", this.getIndex());
+        map.put("attributes", this.getAttributes().stream().map(Attribute::toJson).toList());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+        super.forEachChild(action);
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_TypeVariable;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        super.readBody(input, parent);
+        this.genericDeclaration = (GenericDeclaration) parent;
+        this.name = input.readUTF();
+        this.bounds = input.readList(input::readType);
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        super.writeBody(output);
+        output.writeUTF(name);
+        output.writeList(bounds, output::writeValue);
+    }
+
+    @Override
+    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
+        super.buildSource(source);
     }
 }

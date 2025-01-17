@@ -10,7 +10,7 @@ import org.metavm.flow.MethodRef;
 import org.metavm.flow.Node;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.KlassType;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +26,7 @@ public class SetOfResolver implements MethodCallResolver {
     static {
         var setType = TranspileUtils.createClassType(Set.class);
         var setClass = requireNonNull(setType.resolve());
-        var methods = NncUtils.filter(List.of(setClass.getMethods()),
+        var methods = Utils.filter(List.of(setClass.getMethods()),
                 m -> m.getModifierList().hasModifierProperty(PsiModifier.STATIC) && m.getName().equals("of"));
         var signatures = new ArrayList<MethodSignature>();
         for (PsiMethod method : methods) {

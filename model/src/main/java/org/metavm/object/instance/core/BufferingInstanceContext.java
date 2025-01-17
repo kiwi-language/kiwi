@@ -59,19 +59,20 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         var instances = initializeInstance0(id);
         var visited = new IdentitySet<Instance>();
         for (Instance instance : instances) {
-            instance.accept(new InstanceVisitor() {
+            instance.accept(new InstanceVisitor<Void>() {
                 @Override
-                public void visitInstance(Instance instance) {
+                public Void visitInstance(Instance instance) {
                     if (!visited.add(instance))
-                       return;
+                       return null;
                     if(instance instanceof ClassInstance clsInst)
                         updateMemoryIndex(clsInst);
-                    instance.forEachReference((r, isChild) -> {
+                    instance.forEachReference(r -> {
                         if (r.isEager())
-                            r.resolve();
+                            r.get();
                         if(r.isResolved())
-                            r.resolve().accept(this);
+                            r.get().accept(this);
                     });
+                    return null;
                 }
             });
         }
@@ -154,21 +155,16 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
     }
 
     @Override
-    public void invalidateCache(Reference instance) {
-        loadingBuffer.invalidateCache(List.of(instance.getTreeId()));
-    }
-
-    @Override
     public List<Instance> batchGetRoots(List<Long> treeIds) {
         treeIds.forEach(loadingBuffer::buffer);
-        return NncUtils.map(
+        return Utils.map(
                 treeIds,
-                treeId -> get(loadingBuffer.getRootId(treeId))
+            treeId -> get(loadingBuffer.getRootId(treeId))
         );
     }
 
     @Override
-    public void removeForwardingPointer(Instance instance, boolean clearingOldId) {
+    public void removeForwardingPointer(MvInstance instance, boolean clearingOldId) {
         Objects.requireNonNull(forwardingPointers.get(instance.getOldId().getTreeId()))
                 .remove(new ForwardingPointer(instance.getOldId(), instance.getCurrentId()));
         if(clearingOldId)

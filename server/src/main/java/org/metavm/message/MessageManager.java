@@ -1,6 +1,7 @@
 package org.metavm.message;
 
-import org.metavm.message.Message;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -18,7 +19,6 @@ import org.metavm.message.rest.dto.MessageQuery;
 import org.metavm.user.User;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
-import org.metavm.util.NncUtils;
 
 @Component
 public class MessageManager extends EntityContextFactoryAware {
@@ -40,15 +40,15 @@ public class MessageManager extends EntityContextFactoryAware {
                     EntityQueryBuilder.newBuilder(Message.class)
                             .page(query.page())
                             .pageSize(query.pageSize())
-                            .searchText(query.searchText())
-                            .addFieldIfNotNull("read", query.read())
-                            .addField("receiver", user)
+                            .addFieldIfNotNull(Message.esTitle, Utils.safeCall(query.searchText(), Instances::stringInstance))
+                            .addFieldIfNotNull(Message.esRead, Utils.safeCall(query.read(), Instances::booleanInstance))
+                            .addField(Message.esReceiver, user.getReference())
                             .newlyCreated(query.newlyCreated())
                             .build(),
                     context
             );
             return new Page<>(
-                    NncUtils.map(dataPage.data(), Message::toDTO),
+                    Utils.map(dataPage.data(), Message::toDTO),
                     dataPage.total()
             );
         }
@@ -79,8 +79,8 @@ public class MessageManager extends EntityContextFactoryAware {
             var user = context.getEntity(User.class, ContextUtil.getUserId());
             return entityQueryService.count(
                     EntityQueryBuilder.newBuilder(Message.class)
-                            .addField("receiver", user)
-                            .addField("read", false)
+                            .addField(Message.esReceiver, user.getReference())
+                            .addField(Message.esRead, Instances.falseInstance())
                             .build(),
                     context
             );

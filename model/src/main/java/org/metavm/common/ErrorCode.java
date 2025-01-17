@@ -48,7 +48,7 @@ public enum ErrorCode {
     STRONG_REFS_PREVENT_REMOVAL2(308, "'{}' is referenced by '{}', cannot be deleted"),
     INVALID_INSTANCE_PATH(307, "Invalid object path: {}"),
     INCORRECT_PARENT_REF(308, "Invalid parent object reference, child: {}, parent: {}, reference: {}"),
-    MULTI_PARENT(309, "Child object belongs to multiple parents: {}"),
+    MULTI_PARENT(309, "Object '{}' has multiple parents"),
     CONVERSION_FAILED(410, "Cannot convert object '{}' to type '{}'"),
     CAN_NOT_MODIFY_READONLY_FIELD(411, "Cannot modify read-only field {}"),
     TYPE_CAST_ERROR(412, "Type conversion error, original type: {}, target type: {}"),

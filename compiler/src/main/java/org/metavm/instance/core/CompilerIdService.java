@@ -1,10 +1,8 @@
 package org.metavm.instance.core;
 
 import org.metavm.entity.EntityIdProvider;
-import org.metavm.object.type.Type;
 
 import java.util.List;
-import java.util.Map;
 
 public class CompilerIdService implements EntityIdProvider {
 
@@ -13,7 +11,7 @@ public class CompilerIdService implements EntityIdProvider {
     }
 
     @Override
-    public Map<Type, List<Long>> allocate(long appId, Map<? extends Type, Integer> typeId2count) {
+    public List<Long> allocate(long appId, int count) {
         throw new UnsupportedOperationException();
     }
 }

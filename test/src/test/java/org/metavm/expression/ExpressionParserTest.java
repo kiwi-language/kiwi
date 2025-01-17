@@ -6,10 +6,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
-import org.metavm.object.instance.core.CharValue;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.InstanceProvider;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 
 import javax.annotation.Nullable;
@@ -27,7 +24,8 @@ public class ExpressionParserTest extends TestCase {
     }
 
     public void testNotInstanceOf() {
-        var parser = new ExpressionParser("!($13aed34c instanceof $$028ea80100c002:115)", new MyParsingContext());
+        var id = PhysicalId.of(1L, 1L);
+        var parser = new ExpressionParser("!($13aed34c instanceof $$" + id + ")", new MyParsingContext());
         var expr = parser.parse(Types.getAnyType());
     }
 

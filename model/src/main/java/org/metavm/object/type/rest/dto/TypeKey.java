@@ -93,14 +93,14 @@ public interface TypeKey extends TypeOrTypeKey {
             return new UncertainTypeKey(fromTypeContext(ctx.type(0)), fromTypeContext(ctx.type(1)));
         if(ctx.ARROW() != null) {
             return new FunctionTypeKey(
-                    ctx.typeList() != null ? NncUtils.map(ctx.typeList().type(), TypeKey::fromTypeContext) : List.of(),
+                    ctx.typeList() != null ? Utils.map(ctx.typeList().type(), TypeKey::fromTypeContext) : List.of(),
                     fromTypeContext(ctx.type(0))
             );
         }
         if(!ctx.BITAND().isEmpty())
-            return new IntersectionTypeKey(NncUtils.mapUnique(ctx.type(), TypeKey::fromTypeContext));
+            return new IntersectionTypeKey(Utils.mapToSet(ctx.type(), TypeKey::fromTypeContext));
         if(!ctx.BITOR().isEmpty())
-            return new UnionTypeKey(NncUtils.mapUnique(ctx.type(), TypeKey::fromTypeContext));
+            return new UnionTypeKey(Utils.mapToSet(ctx.type(), TypeKey::fromTypeContext));
         if(ctx.NEVER() != null)
             return new NeverTypeKey();
         if(ctx.ANY() != null)
@@ -111,9 +111,7 @@ public interface TypeKey extends TypeOrTypeKey {
     static TypeKey fromClassTypeContext(TypeParser.ClassTypeContext classType) {
         var id = Id.parse(classType.qualifiedName().getText().substring(Constants.ID_PREFIX.length()));
         if(classType.typeArguments() != null)
-            return new ParameterizedTypeKey(null, id, NncUtils.map(classType.typeArguments().typeList().type(), TypeKey::fromTypeContext));
-        else if(classType.DECIMAL_LITERAL() != null)
-            return new TaggedClassTypeKey(id, Integer.parseInt(classType.DECIMAL_LITERAL().getText()));
+            return new ParameterizedTypeKey(null, id, Utils.map(classType.typeArguments().typeList().type(), TypeKey::fromTypeContext));
         else
             return new ClassTypeKey(id);
     }
@@ -155,7 +153,6 @@ public interface TypeKey extends TypeOrTypeKey {
             case WireTypes.READ_WRITE_ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.READ_WRITE.code(), read(input));
             case WireTypes.VALUE_ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.VALUE.code(), read(input));
             case WireTypes.CLASS_TYPE -> new ClassTypeKey(input.readId());
-            case WireTypes.TAGGED_CLASS_TYPE -> new TaggedClassTypeKey(input.readId(), input.readInt());
             case WireTypes.PARAMETERIZED_TYPE ->
                     new ParameterizedTypeKey(readGenericDeclarationRef(input), input.readId(), readTypeKeyList(input));
             case WireTypes.UNION_TYPE -> new UnionTypeKey(readTypeKeySet(input));

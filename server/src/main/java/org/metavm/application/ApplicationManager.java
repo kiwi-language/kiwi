@@ -36,11 +36,11 @@ public class ApplicationManager extends EntityContextFactoryAware {
 
     private final VerificationCodeService verificationCodeService;
 
-    private final IdService idService;
+    private final EntityIdProvider idService;
 
     private final EntityQueryService entityQueryService;
 
-    public ApplicationManager(EntityContextFactory entityContextFactory, RoleManager roleManager, PlatformUserManager platformUserManager, VerificationCodeService verificationCodeService, IdService idService, EntityQueryService entityQueryService) {
+    public ApplicationManager(EntityContextFactory entityContextFactory, RoleManager roleManager, PlatformUserManager platformUserManager, VerificationCodeService verificationCodeService, EntityIdProvider idService, EntityQueryService entityQueryService) {
         super(entityContextFactory);
         this.roleManager = roleManager;
         this.platformUserManager = platformUserManager;
@@ -53,14 +53,14 @@ public class ApplicationManager extends EntityContextFactoryAware {
         try (var context = newPlatformContext()) {
             var dataPage = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Application.class)
-                            .searchText(searchText)
+                            .addFieldIfNotNull(Application.esName, Utils.safeCall(searchText, Instances::stringInstance))
                             .page(page)
                             .pageSize(pageSize)
                             .build(),
                     context
             );
             return new Page<>(
-                    NncUtils.map(dataPage.data(), Application::toDTO),
+                    Utils.map(dataPage.data(), Application::toDTO),
                     dataPage.total()
             );
         }
@@ -148,9 +148,10 @@ public class ApplicationManager extends EntityContextFactoryAware {
 
     private Application createApp(Long id, String name, PlatformUser owner, IEntityContext platformContext) {
         long appId = id != null ? id :
-                idService.allocate(PLATFORM_APP_ID, ModelDefRegistry.getType(Application.class));
+                idService.allocateOne(PLATFORM_APP_ID);
         Application application = new Application(name, owner);
         // initIdManually will bind application to context
+        platformContext.bind(application);
         platformContext.initIdManually(application, Constants.getAppId(appId));
         platformUserManager.joinApplication(owner, application, platformContext);
         setupApplication(appId, platformContext);
@@ -163,7 +164,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
         PlatformUser owner;
         try (var platformContext = newPlatformContext()) {
             appId = id != null ? id :
-                    idService.allocate(PLATFORM_APP_ID, ModelDefRegistry.getType(Application.class));
+                    idService.allocateOne(PLATFORM_APP_ID);
             if (request.creatorId() == null) {
                 Role role = roleManager.save(new RoleDTO(TmpId.of(ContextUtil.nextTmpId()).toString(), ADMIN_ROLE_NAME), platformContext);
                 owner = platformUserManager.save(
@@ -210,7 +211,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
             var app = platformContext.getEntity(Application.class, id);
             ensureAppOwner(app);
             app.deactivate();
-            platformContext.bind(new RemoveAppTaskGroup(id.toString()));
+            platformContext.bind(new RemoveAppTaskGroup(id));
             platformContext.finish();
         }
     }
@@ -220,7 +221,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
         try (var platformCtx = newPlatformContext()) {
             var app = platformCtx.getEntity(Application.class, Constants.getAppId(request.appId()));
             ensureAppAdmin(app);
-            var users = NncUtils.map(request.userIds(), userId -> platformCtx.getEntity(PlatformUser.class, userId));
+            var users = Utils.map(request.userIds(), userId -> platformCtx.getEntity(PlatformUser.class, userId));
             PlatformUsers.leaveApp(users, app, platformCtx);
             platformCtx.finish();
         }
@@ -236,12 +237,11 @@ public class ApplicationManager extends EntityContextFactoryAware {
                 throw new BusinessException(ErrorCode.ALREADY_JOINED_APP, invitee.getLoginName());
             var currentUser = platformCtx.getEntity(User.class, ContextUtil.getUserId());
             var invitation = platformCtx.bind(new AppInvitation(app, invitee, request.isAdmin()));
-            var invitationInst = platformCtx.getInstance(invitation);
             platformCtx.bind(
                     new Message(
                             invitee,
                             String.format("'%s' invited you to join application '%s'", currentUser.getName(), app.getName()),
-                            MessageKind.INVITATION, invitationInst.getReference())
+                            MessageKind.INVITATION, invitation.getReference())
             );
             platformCtx.finish();
         }
@@ -289,7 +289,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
                     query.pageSize()
             ), context);
             return new Page<>(
-                    NncUtils.map(dataPage.data(),
+                    Utils.map(dataPage.data(),
                             user -> new AppMemberDTO(user.getStringId(), user.getName(),
                                     app.isAdmin(user),
                                     app.isOwner(user))),
@@ -310,7 +310,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
                 invitees.add(new InviteeDTO(
                         user.getStringId(),
                         user.getLoginName(),
-                        NncUtils.anyMatch(user.getApplications(), app -> app.idEquals(Constants.getAppId(query.appId())))
+                        Utils.anyMatch(user.getApplications(), app -> app.idEquals(Constants.getAppId(query.appId())))
                 ));
             }
             return new Page<>(invitees, dataPage.total());
@@ -322,7 +322,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
     }
 
     public void ensureAppAdmin(Application application) {
-        if (NncUtils.noneMatch(application.getAdmins(), admin -> admin.idEquals(ContextUtil.getUserId())))
+        if (Utils.noneMatch(application.getAdmins(), admin -> admin.idEquals(ContextUtil.getUserId())))
             throw new BusinessException(ErrorCode.CURRENT_USER_NOT_APP_ADMIN);
     }
 

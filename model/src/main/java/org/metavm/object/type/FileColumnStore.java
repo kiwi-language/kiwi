@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.PropertiesUtils;
 
 import java.io.FileOutputStream;
@@ -26,7 +26,7 @@ public class FileColumnStore extends MemColumnStore {
         }
         for (String propName : properties.stringPropertyNames()) {
             int idx = propName.lastIndexOf('.');
-            NncUtils.requireTrue(idx > 0, "Invalid column file property name '" + propName + "'");
+            Utils.require(idx > 0, "Invalid column file property name '" + propName + "'");
             String typeName = propName.substring(0, idx);
             String fieldName = propName.substring(idx + 1);
             var splits = properties.getProperty(propName).split(",");

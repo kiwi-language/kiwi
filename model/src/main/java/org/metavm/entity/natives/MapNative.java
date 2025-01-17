@@ -8,7 +8,7 @@ import org.metavm.object.type.KlassType;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +33,7 @@ public class MapNative extends NativeBase {
 
     public MapNative(ClassInstance instance) {
         this.instance = instance;
-        var type = instance.getType();
+        var type = instance.getInstanceType();
         keyArrayField = Objects.requireNonNull(type.findFieldByName("keyArray"));
         valueArrayField = Objects.requireNonNull(type.findFieldByName("valueArray"));
         keyType = ((ArrayType) keyArrayField.getPropertyType()).getElementType();
@@ -45,7 +45,7 @@ public class MapNative extends NativeBase {
                 throw new InternalException("Map data corrupted");
             }
             var instCtx = Objects.requireNonNull(instance.getContext(), () -> "Context is missing from instance " + instance);
-            NncUtils.biForEachWithIndex(keyArray, valueArray, (key, value, index) -> {
+            Utils.biForEachWithIndex(keyArray, valueArray, (key, value, index) -> {
                 map.put(new HashKeyWrap(key, instCtx), new Entry(value, index));
             });
         }
@@ -60,8 +60,8 @@ public class MapNative extends NativeBase {
     }
 
     public Value keySet(CallContext callContext) {
-        var keySetKlass = KlassType.create(StdKlass.hashSet.get(), List.of(instance.getType().getFirstTypeArgument()));
-        ClassInstance keySet = ClassInstance.allocate(keySetKlass);
+        var keySetKlass = KlassType.create(StdKlass.hashSet.get(), List.of(instance.getInstanceType().getFirstTypeArgument()));
+        var keySet = ClassInstance.allocate(keySetKlass);
         var setNative = (HashSetNative) NativeMethods.getNativeObject(keySet);
         setNative.HashSet(callContext);
         for (Value key : keyArray) {
@@ -159,8 +159,8 @@ public class MapNative extends NativeBase {
 
     public Value equals(Value o, CallContext callContext) {
         if(o instanceof Reference ref) {
-            if(ref.resolve() instanceof ClassInstance that
-                    && Objects.equals(that.getType().findAncestorByKlass(StdKlass.map.get()), instance.getType().findAncestorByKlass(StdKlass.map.get()))) {
+            if(ref.get() instanceof ClassInstance that
+                    && Objects.equals(that.getInstanceType().asSuper(StdKlass.map.get()), instance.getInstanceType().asSuper(StdKlass.map.get()))) {
                 var thatNat = new MapNative(that);
                 if(keyArray.size() == thatNat.size()) {
                     int i = 0;
@@ -186,11 +186,11 @@ public class MapNative extends NativeBase {
     }
 
     private void checkKey(Value key, CallContext callContext) {
-        NncUtils.requireTrue(keyType.isInstance(key));
+        Utils.require(keyType.isInstance(key));
     }
 
     private void checkValue(Value value, CallContext callContext) {
-        NncUtils.requireTrue(valueType.isInstance(value));
+        Utils.require(valueType.isInstance(value));
     }
 
     private static class Entry {

@@ -10,7 +10,7 @@ import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.type.IndexProvider;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ChangeList;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,25 +40,26 @@ public class IndexConstraintPlugin implements ContextPlugin {
 
     @Override
     public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
-        var instanceMap = new HashMap<Id, ClassInstance>();
+        var instanceMap = new HashMap<Id, Instance>();
         var currentEntries = new ArrayList<IndexEntryPO>();
         var currentUniqueKeys = new HashSet<IndexKeyPO>();
-        var objectsToIndex = new HashSet<>(NncUtils.exclude(context.getReindexSet(), Instance::isRemoved));
+        var objectsToIndex = new HashSet<Instance>(Utils.exclude(context.getReindexSet(), Instance::isRemoved));
         change.forEachInsertOrUpdate(ver -> {
             var instance = context.get(ver.id());
-            if (instance instanceof ClassInstance classInstance)
-                objectsToIndex.add(classInstance);
+            if (instance instanceof ClassInstance) {
+                objectsToIndex.add(instance);
+            }
         });
-        objectsToIndex.forEach(classInstance -> {
-            instanceMap.put(classInstance.getId(), classInstance);
-            PersistenceUtils.forEachIndexEntries(classInstance, context.getAppId(),
+        objectsToIndex.forEach(instance -> {
+            instanceMap.put(instance.getId(), instance);
+            PersistenceUtils.forEachIndexEntries(instance, context.getAppId(),
                     currentEntries::add,
                     entry -> {
                         if (!currentUniqueKeys.add(entry.getKey()))
                             throw new BusinessException(
                                     ErrorCode.DUPLICATE_KEY2,
                                     indexProvider.getIndex(Id.fromBytes(entry.getIndexId())).getName(),
-                                    NncUtils.join(entry.getKey().getColumnValues(context::internalGet), Value::getText)
+                                    Utils.join(entry.getKey().getColumnValues(context::internalGet), Value::getText)
                             );
                     });
         });
@@ -73,13 +74,13 @@ public class IndexConstraintPlugin implements ContextPlugin {
             oldIds.add(inst.getId());
         }
         var oldEntries = new ArrayList<IndexEntryPO>();
-        NncUtils.doInBatch(oldIds,
+        Utils.doInBatch(oldIds,
                 ids -> oldEntries.addAll(instanceStore.getIndexEntriesByInstanceIds(ids, context)));
-        NncUtils.doInBatch(new ArrayList<>(currentUniqueKeys),
+        Utils.doInBatch(new ArrayList<>(currentUniqueKeys),
                 keys -> instanceStore.getIndexEntriesByKeys( keys, context).forEach(entry -> {
                     var id = entry.getId();
                     if (!oldIdSet.contains(id)) {
-                        var currentEntry = NncUtils.findRequired(currentEntries, e -> e.getKey().equals(entry.getKey()));
+                        var currentEntry = Utils.findRequired(currentEntries, e -> e.getKey().equals(entry.getKey()));
                         var index = indexProvider.getIndex(Id.fromBytes(entry.getIndexId()));
                         throw BusinessException.constraintCheckFailed(instanceMap.get(currentEntry.getId()), index);
                     }

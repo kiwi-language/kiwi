@@ -1,9 +1,10 @@
 package org.metavm.object.instance;
 
 import junit.framework.TestCase;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.expression.Expressions;
-import org.metavm.expression.ThisExpression;
+import org.metavm.object.instance.search.AndSearchCondition;
+import org.metavm.object.instance.search.MatchSearchCondition;
 import org.metavm.object.instance.search.SearchQuery;
 import org.metavm.util.MockUtils;
 import org.metavm.util.TestConstants;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+@Slf4j
 public class MemInstanceSearchServiceV2Test extends TestCase {
 
     private MemInstanceSearchServiceV2 memInstanceSearchServiceV2;
@@ -30,29 +32,24 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
                 TestConstants.APP_ID,
                 Set.of(fooType.toExpression()),
-                Expressions.and(
-                        Expressions.and(
-                                Expressions.eq(
-                                        Expressions.property(
-                                                new ThisExpression(fooType),
-                                                fooTypes.fooNameField()
-                                        ),
-                                        Expressions.constant(foo.getField(fooTypes.fooNameField()))
+                new AndSearchCondition(
+                        List.of(
+                                new AndSearchCondition(
+                                        List.of(
+                                                new MatchSearchCondition(
+                                                        fooTypes.fooNameField().getEsField(),
+                                                        foo.getField(fooTypes.fooNameField())
+                                                ),
+                                                new MatchSearchCondition(
+                                                        fooTypes.fooQuxField().getEsField(),
+                                                        foo.getField(fooTypes.fooQuxField())
+                                                )
+                                        )
                                 ),
-                                Expressions.eq(
-                                        Expressions.property(
-                                                new ThisExpression(fooType),
-                                                fooTypes.fooQuxField()
-                                        ),
-                                        Expressions.constant(foo.getField(fooTypes.fooQuxField()))
+                                new MatchSearchCondition(
+                                        fooTypes.fooBazListField().getEsField(),
+                                        foo.getField(fooTypes.fooBazListField()).resolveArray().getFirst()
                                 )
-                        ),
-                        Expressions.eq(
-                                Expressions.property(
-                                        new ThisExpression(fooType),
-                                        fooTypes.fooBazListField()
-                                ),
-                                Expressions.constant(foo.getField(fooTypes.fooBazListField()).resolveArray().get(0))
                         )
                 ),
                 false,
@@ -61,7 +58,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
                 0
         ));
         assertEquals(1, result.total());
-        assertEquals(Objects.requireNonNull(foo.tryGetId()), result.data().get(0));
+        assertEquals(Objects.requireNonNull(foo.tryGetId()), result.data().getFirst());
     }
 
     public void testSearchingSuperClassField() {
@@ -72,12 +69,9 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
                 TestConstants.APP_ID,
                 Set.of(humanType.toExpression()),
-                Expressions.eq(
-                        Expressions.property(
-                                new ThisExpression(humanType),
-                                livingBeingTypes.livingBeingAgeField()
-                        ),
-                        Expressions.constant(human.getField(livingBeingTypes.livingBeingAgeField()))
+                new MatchSearchCondition(
+                        livingBeingTypes.livingBeingAgeField().getEsField(),
+                        human.getField(livingBeingTypes.livingBeingAgeField())
                 ),
                 false,
                 1,
@@ -85,7 +79,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
                 0
         ));
         assertEquals(1, result.total());
-        assertEquals(Objects.requireNonNull(human.tryGetId()), result.data().get(0));
+        assertEquals(Objects.requireNonNull(human.tryGetId()), result.data().getFirst());
 
     }
 

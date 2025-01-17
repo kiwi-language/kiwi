@@ -1,12 +1,11 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 public enum IdTag {
 
     NULL(0),
     PHYSICAL(1),
-    TAGGED_PHYSICAL(2),
     TMP(19),
     MOCK(100);
 
@@ -25,7 +24,7 @@ public enum IdTag {
     }
 
     public static IdTag fromCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code, () -> "Can not find IdTag for code: " + code);
+        return Utils.findRequired(values(), v -> v.code == code, () -> "Can not find IdTag for code: " + code);
     }
 
 }

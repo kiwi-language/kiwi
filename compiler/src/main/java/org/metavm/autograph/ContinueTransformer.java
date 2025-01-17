@@ -2,7 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.metavm.util.NncUtils.requireNonNull;
+import static java.util.Objects.requireNonNull;
 
 @Slf4j
 public class ContinueTransformer extends SkipDiscardedVisitor {
@@ -31,7 +31,7 @@ public class ContinueTransformer extends SkipDiscardedVisitor {
 
     @Override
     public void visitContinueStatement(PsiContinueStatement statement) {
-        String label = NncUtils.get(statement.getLabelIdentifier(), PsiIdentifier::getText);
+        String label = Utils.safeCall(statement.getLabelIdentifier(), PsiIdentifier::getText);
         var loop = currentLoop();
         if (label != null) {
             while (loop != null && !Objects.equals(loop.label, label)) {
@@ -106,7 +106,7 @@ public class ContinueTransformer extends SkipDiscardedVisitor {
             var block = currentBlockInfo();
             if (block.continueUsed()) {
                 var cond = TranspileUtils.createExpressionFromText(block.getConditionText());
-                var currentCond = Objects.requireNonNull(statement.getCondition());
+                var currentCond = requireNonNull(statement.getCondition());
                 currentCond.replace(TranspileUtils.and(currentCond, cond));
             }
         }
@@ -200,7 +200,7 @@ public class ContinueTransformer extends SkipDiscardedVisitor {
         }
 
         private boolean matchLabel(@Nullable String label) {
-            NncUtils.requireTrue(isLoop);
+            Utils.require(isLoop);
             return label == null || Objects.equals(label, this.label);
         }
 
@@ -213,7 +213,7 @@ public class ContinueTransformer extends SkipDiscardedVisitor {
         }
 
         String getConditionText() {
-            return NncUtils.join(usedContinues, var -> "!" + var, " && ");
+            return Utils.join(usedContinues, var -> "!" + var, " && ");
         }
 
     }

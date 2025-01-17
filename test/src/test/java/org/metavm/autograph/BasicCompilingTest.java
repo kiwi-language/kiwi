@@ -5,10 +5,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.type.*;
 import org.metavm.task.SynchronizeSearchTask;
-import org.metavm.util.BusinessException;
-import org.metavm.util.NncUtils;
-import org.metavm.util.TestConstants;
-import org.metavm.util.TestUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -286,7 +283,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var bazKlass = context.getKlassByQualifiedName("hashcode.HashCodeBaz");
-            Assert.assertTrue(bazKlass.isValue());
+            Assert.assertTrue(bazKlass.isValueKlass());
         }
 
         // Test value object
@@ -399,7 +396,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processAsterisk() {
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
-                    "asterisk.AsteriskTypeFoo"));
+                    Instances.stringInstance("asterisk.AsteriskTypeFoo")));
             var method = klass.getMethodByName("getInstance");
             var serializableKlass = StdKlass.serializable.get();
             var expectedType = Types.getNullableType(KlassType.create(
@@ -412,7 +409,8 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processDefaultMethod() {
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID))  {
-            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "defaultmethod.IFoo"));
+            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
+                    Instances.stringInstance("defaultmethod.IFoo")));
             var method = klass.getMethodByName("foo");
             Assert.assertTrue(method.isCodePresent());
         }
@@ -855,7 +853,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processBitNot() {
         var klassName = "operators.BitNotFoo";
-        long v = NncUtils.random();
+        long v = Utils.random();
         Assert.assertEquals(
                 ~v,
                 callMethod(klassName, "bitNot", List.of(v))
@@ -864,7 +862,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processPrefixOnParenthesized() {
         var klassName = "operators.PrefixOnParenthesizedFoo";
-        long v = NncUtils.random();
+        long v = Utils.random();
         Assert.assertEquals(
                 v & ~(Spliterator.SIZED | Spliterator.SUBSIZED),
                 callMethod(klassName, "test", List.of(v))
@@ -909,7 +907,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     private void processPrimitiveUtilMethods() {
         var klassName = "utils.PrimitiveUtilMethods";
-        var l = NncUtils.random();
+        var l = Utils.random();
         Assert.assertEquals(
                 Long.numberOfLeadingZeros(l),
                 callMethod(klassName, "numberOfLeadingZeros", List.of(l))
@@ -918,7 +916,7 @@ public class BasicCompilingTest extends CompilerTestBase {
                 Long.numberOfTrailingZeros(l),
                 callMethod(klassName, "numberOfTrailingZeros", List.of(l))
         );
-        var i = NncUtils.randomInt(Integer.MAX_VALUE);
+        var i = Utils.randomInt(Integer.MAX_VALUE);
         Assert.assertEquals(
                 Integer.numberOfLeadingZeros(i),
                 callMethod(klassName, "intNumberOfLeadingZeros", List.of(i))
@@ -1154,7 +1152,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var list = (List<String>) callMethod(fooClass, "queryBySeq", List.of(0, 5));
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
-        Assert.assertEquals(fooId, list.get(0));
+        Assert.assertEquals(fooId, list.getFirst());
         Assert.assertEquals(fooId, callMethod(fooClass, "findByBar", List.of(barId)));
         Assert.assertEquals(fooId, callMethod(fooClass, "findByNameAndSeq", List.of("foo", 3)));
         Assert.assertEquals(fooId, callMethod("fooService", "findByDesc", List.of("foo-3-bar001")));
@@ -1166,7 +1164,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, schedulerAndWorker);
         var page = search(className, Map.of("name", "foo", "seq", List.of(50, 200)), 1, 20).page();
         Assert.assertEquals(1, page.size());
-        Assert.assertEquals(id, page.get(0));
+        Assert.assertEquals(id, page.getFirst());
     }
 
     private void processCharReplace() {

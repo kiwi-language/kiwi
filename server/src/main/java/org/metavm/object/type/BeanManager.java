@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.beans.BeanDefinition;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.beans.ComponentBeanDefinition;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 @Component
+@Slf4j
 public class BeanManager {
 
     public void createBeans(Collection<Klass> klasses, BeanDefinitionRegistry registry, IEntityContext context) {
@@ -26,16 +28,16 @@ public class BeanManager {
         BeanDefinition beanDef;
         var beakKind = klass.getAttribute(AttributeNames.BEAN_KIND);
         if (beakKind != null) {
-            if (context.isNewEntity(klass))
-                beanDefinitions.add(beanDef = new ComponentBeanDefinition(klass.getAttributeNonNull(AttributeNames.BEAN_NAME), klass));
+            if (klass.isNew())
+                beanDefinitions.add(beanDef = new ComponentBeanDefinition(klass.getAttributeNonNull(AttributeNames.BEAN_NAME), registry, klass));
             else
-                beanDef = registry.getBeanDefinitionsByType(klass.getType()).get(0);
+                beanDef = registry.getBeanDefinitionsByType(klass.getType()).getFirst();
             if (beakKind.equals(BeanKinds.CONFIGURATION)) {
                 klass.forEachMethod(method -> {
                     String beanName;
-                    if (context.isNewEntity(method)
+                    if (method.isNew()
                             && (beanName = method.getAttribute(AttributeNames.BEAN_NAME)) != null) {
-                        beanDefinitions.add(new FactoryBeanDefinition(beanDef, beanName, method));
+                        beanDefinitions.add(new FactoryBeanDefinition(beanDef, beanName, registry, method));
                     }
                 });
             }

@@ -1,6 +1,6 @@
 package org.metavm.object.instance.rest;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 public enum FieldValueKind {
 
@@ -26,11 +26,11 @@ public enum FieldValueKind {
     }
 
     public static FieldValueKind getByCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code);
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 
     public static FieldValueKind getByDTOClass(Class<?> dtoClass) {
-        return NncUtils.findRequired(values(), v -> v.dtoClass == dtoClass);
+        return Utils.findRequired(values(), v -> v.dtoClass == dtoClass);
     }
 
 }

@@ -11,7 +11,7 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
@@ -60,13 +60,13 @@ public class StandardStaticMethods {
     }
 
     public static List<Function> defineFunctions() {
-        return NncUtils.map(functionDefs, FunctionDef::define);
+        return Utils.map(functionDefs, FunctionDef::define);
     }
 
     public static void initialize(DefContext defContext, boolean local) {
         for (FunctionDef def : functionDefs) {
             var func = Objects.requireNonNull(
-                    defContext.selectFirstByKey(Function.UNIQUE_NAME, def.getName()),
+                    defContext.selectFirstByKey(Function.UNIQUE_NAME, Instances.stringInstance(def.getName())),
                     "Function not found: " + def.getName());
             if(local)
                 def.setLocal(func);
@@ -133,7 +133,7 @@ public class StandardStaticMethods {
             }
             var func = FunctionBuilder.newBuilder(name)
                     .typeParameters(
-                            NncUtils.map(
+                            Utils.map(
                                     method.getTypeParameters(),
                                     tv -> new TypeVariable(null, tv.getName(), DummyGenericDeclaration.INSTANCE)
                             )
@@ -167,7 +167,7 @@ public class StandardStaticMethods {
 
     public static String getFunctionName(Method method) {
         return method.getDeclaringClass().getSimpleName()+ "_" + method.getName() + "_" +
-                NncUtils.join(List.of(method.getParameterTypes()), Class::getSimpleName, "_");
+                Utils.join(List.of(method.getParameterTypes()), Class::getSimpleName, "_");
     }
 
 }

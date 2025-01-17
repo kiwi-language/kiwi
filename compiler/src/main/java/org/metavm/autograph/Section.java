@@ -88,7 +88,7 @@ public class Section {
     }
 
     public void printBlocks() {
-        log.debug("{} {}", element != null ? element.getClass().getSimpleName() : null, label);
+        log.info("{} {}", element != null ? element.getClass().getSimpleName() : null, label);
         if(parent != null)
             parent.printBlocks();
     }

@@ -3,7 +3,7 @@ package org.metavm.object.type;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodRef;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -55,7 +55,7 @@ public class MethodTable {
         });
         type.foreachMethod((method) -> {
             if(method.isVirtual()) {
-                var override = NncUtils.find(sig2methods.get(SimpleSignature.of(method.getRawFlow())), m -> m.isOverrideOf(method));
+                var override = Utils.find(sig2methods.get(SimpleSignature.of(method.getRawFlow())), m -> m.isOverrideOf(method));
                 overriddenIndex.put(method.getRawFlow(), constantPool.addValue(requireNonNullElse(override, method)));
             }
         });

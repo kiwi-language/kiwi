@@ -5,7 +5,7 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Field;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 public class FieldRemovalTask {
 
@@ -20,8 +20,8 @@ public class FieldRemovalTask {
     }
 
     public boolean executeBatch(IEntityContext context) {
-        var instances = context.getInstanceContext().scan(cursor, BATCH_SIZE).instances();
-        if(NncUtils.isEmpty(instances)) {
+        var instances = context.scan(cursor, BATCH_SIZE).instances();
+        if(Utils.isEmpty(instances)) {
             doFinally(context);
             return true;
         }

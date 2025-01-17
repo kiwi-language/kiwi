@@ -3,7 +3,7 @@ package org.metavm.object.type.rest.dto;
 import org.metavm.object.type.IntersectionType;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
 import java.util.Set;
@@ -18,12 +18,12 @@ public record IntersectionTypeKey(Set<TypeKey> typeKeys) implements TypeKey {
 
     @Override
     public String toTypeExpression() {
-        return NncUtils.join(typeKeys, TypeKey::toTypeExpression, "&");
+        return Utils.join(typeKeys, TypeKey::toTypeExpression, "&");
     }
 
     @Override
     public IntersectionType toType(TypeDefProvider typeDefProvider) {
-        return new IntersectionType(NncUtils.mapUnique(typeKeys, k -> k.toType(typeDefProvider)));
+        return new IntersectionType(Utils.mapToSet(typeKeys, k -> k.toType(typeDefProvider)));
     }
 
     @Override

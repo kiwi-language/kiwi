@@ -70,8 +70,8 @@ public class ReflectionUtilsTest extends TestCase {
         Assert.assertTrue(value);
     }
 
-    public void testGetMethodHandle() throws Throwable {
-        var mh = ReflectionUtils.getMethodHandle(MethodHandles.lookup(), ReflectionUtilsTest.class, "setValue",
+    public void testGetMethodHandleWithSpread() throws Throwable {
+        var mh = ReflectionUtils.getMethodHandleWithSpread(MethodHandles.lookup(), ReflectionUtilsTest.class, "setValue",
                 void.class, List.of(), false);
         mh.invokeExact(new Object[] {this});
         Assert.assertTrue(value);

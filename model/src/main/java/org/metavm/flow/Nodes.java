@@ -841,7 +841,7 @@ public class Nodes {
                 code.nextNodeName("lambda"),
                 code.getLastNode(),
                 code,
-                lambda,
+                lambda.getRef(),
                 null
         );
     }
@@ -922,7 +922,7 @@ public class Nodes {
     }
 
     public static Node floatToDouble(Code code) {
-        return new FloattoDoubleNode(code.nextNodeName("f2d"), code.getLastNode(), code);
+        return new FloatToDoubleNode(code.nextNodeName("f2d"), code.getLastNode(), code);
     }
 
     public static Node intToFloat(Code code) {
@@ -934,7 +934,7 @@ public class Nodes {
     }
 
     public static Node doubleToFloat(Code code) {
-        return new DoubleToFloat(code.nextNodeName("d2f"), code.getLastNode(), code);
+        return new DoubleToFloatNode(code.nextNodeName("d2f"), code.getLastNode(), code);
     }
 
     public static Node intToShort(Code code) {

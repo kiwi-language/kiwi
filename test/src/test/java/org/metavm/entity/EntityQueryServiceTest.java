@@ -27,9 +27,8 @@ public class EntityQueryServiceTest extends TestCase {
         var bootResult = BootstrapUtils.bootstrap();
         var instanceSearchService = bootResult.instanceSearchService();
         entityContextFactory = bootResult.entityContextFactory();
-        var instanceQueryService = new InstanceQueryService(instanceSearchService);
         schedulerAndWorker = bootResult.schedulerAndWorker();
-        entityQueryService = new EntityQueryService(instanceQueryService);
+        entityQueryService = new EntityQueryService(instanceSearchService);
         ContextUtil.setAppId(TestConstants.APP_ID);
     }
 
@@ -67,49 +66,32 @@ public class EntityQueryServiceTest extends TestCase {
             var qux = context.getEntity(Qux.class, Objects.requireNonNull(foo.getQux()).getId());
             Page<Foo> page = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Foo.class)
-                            .addField("name", foo.getName())
-                            .addField("qux", qux)
+                            .addField(Foo.esName, Instances.stringInstance(foo.getName()))
+                            .addField(Foo.esQux, qux.getReference())
                             .build(),
                     context
             );
             Assert.assertEquals(1, page.total());
-            Assert.assertSame(foo, page.data().get(0));
+            Assert.assertSame(foo, page.data().getFirst());
         }
     }
 
     public void testSearchText() {
         Foo foo = addEntity(MockUtils.getFoo());
+        logger.info("Foo ID: {}", foo.getId());
+        DebugEnv.id = foo.getId();
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try (var context = newContext()) {
             foo = context.getEntity(Foo.class, foo.getId());
             Page<Foo> page = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Foo.class)
-                            .searchText("Foo001")
-                            .searchFields(List.of("code"))
+                            .addField(Foo.esCode, Instances.stringInstance("Foo001"))
                             .build(),
                     context
             );
             Assert.assertEquals(1, page.total());
-            Assert.assertSame(foo, page.data().get(0));
+            Assert.assertSame(foo, page.data().getFirst());
         }
     }
-
-    public void testSearchTypes() {
-        Klass fooType = ModelDefRegistry.getClassType(Foo.class).getKlass();
-        TestUtils.waitForAllTasksDone(schedulerAndWorker);
-        try (var context = entityContextFactory.newContext(Constants.ROOT_APP_ID)) {
-            Page<Klass> page = entityQueryService.query(
-                    EntityQueryBuilder.newBuilder(Klass.class)
-                            .addField("kind", fooType.getKind())
-                            .addField("name", fooType.getName())
-                            .includeBuiltin(true)
-                            .build(),
-                    context
-            );
-            Assert.assertEquals(1, page.total());
-            Assert.assertSame(fooType, page.data().get(0));
-        }
-    }
-
 
 }

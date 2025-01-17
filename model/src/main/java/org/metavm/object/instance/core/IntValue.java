@@ -24,7 +24,7 @@ public class IntValue extends NumberValue {
     }
 
     @Override
-    public PrimitiveType getType() {
+    public PrimitiveType getValueType() {
         return PrimitiveType.intType;
     }
 

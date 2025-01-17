@@ -5,11 +5,11 @@ import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.Klass;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.IdentitySet;
-import org.metavm.util.NncUtils;
 
 import java.io.Closeable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class SerializeContext implements Closeable {
@@ -39,7 +39,7 @@ public class SerializeContext implements Closeable {
     }
 
     public Long getTmpId(Object model) {
-        NncUtils.requireNonNull(model);
+        Objects.requireNonNull(model);
         if (model instanceof Entity entity) {
             if (entity.tryGetId() != null)
                 return null;

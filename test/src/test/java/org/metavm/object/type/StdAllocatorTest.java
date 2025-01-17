@@ -22,19 +22,19 @@ public class StdAllocatorTest extends TestCase {
 
 //    public void testSmoking() {
 //        var ids = allocator.allocate(3);
-//        allocator.putId(Klass.class.getName(), PhysicalId.of(ids.get(0), 0L, TestUtils.mockClassType()), null);
+//        allocator.putId(Klass.class.getName(), PhysicalId.of(ids.getFirst(), 0L, TestUtils.mockClassType()), null);
 //        allocator.putId(Field.class.getName(), PhysicalId.of(ids.get(1), 0L, TestUtils.mockClassType()), null);
 //        allocator.putId(Index.class.getName(), PhysicalId.of(ids.get(2), 0L, TestUtils.mockClassType()), null);
 //        var typeId = allocator.getId(Klass.class.getName());
 //        var fieldId = allocator.getId(Field.class.getName());
 //        var uniqueConstraintId = allocator.getId(Index.class.getName());
-//        Assert.assertEquals(PhysicalId.of(ids.get(0), 0L, TestUtils.mockClassType()), typeId);
+//        Assert.assertEquals(PhysicalId.of(ids.getFirst(), 0L, TestUtils.mockClassType()), typeId);
 //        Assert.assertEquals(PhysicalId.of(ids.get(1), 0L, TestUtils.mockClassType()), fieldId);
 //        Assert.assertEquals(PhysicalId.of(ids.get(2), 0L, TestUtils.mockClassType()), uniqueConstraintId);
 //    }
 
 //    public void testIdContains() {
-//        var allocatedId = allocator.allocate(1).get(0);
+//        var allocatedId = allocator.allocate(1).getFirst();
 //        allocator.putId(Field.class.getName(), PhysicalId.of(allocatedId, 0L, TestUtils.mockClassType()), null);
 //        var fieldId = allocator.getId(Field.class.getName());
 //        Assert.assertEquals(PhysicalId.of(allocatedId, 0L, TestUtils.mockClassType()), fieldId);

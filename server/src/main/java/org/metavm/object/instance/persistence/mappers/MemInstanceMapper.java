@@ -4,10 +4,9 @@ import org.metavm.object.instance.ScanQuery;
 import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.VersionPO;
-import org.metavm.util.DiffUtils;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +46,7 @@ public class MemInstanceMapper implements InstanceMapper {
 
     @Override
     public List<InstancePO> selectByIds(long appId, Collection<Long> ids, int lockMode) {
-        return NncUtils.mapAndFilter(ids, id2instance::get, i -> i != null && i.getAppId() == appId);
+        return Utils.mapAndFilter(ids, id2instance::get, i -> i != null && i.getAppId() == appId);
     }
 
     @Override
@@ -72,15 +71,15 @@ public class MemInstanceMapper implements InstanceMapper {
                             long timestamp,
                             Collection<VersionPO> versions) {
         for (VersionPO version : versions) {
-            InstancePO instancePO = NncUtils.requireNonNull(id2instance.get(version.id()));
+            InstancePO instancePO = Objects.requireNonNull(id2instance.get(version.id()));
             remove(version.id());
             removed.put(version.id(), instancePO);
         }
     }
 
     private void add(InstancePO instancePO) {
-        instancePO = DiffUtils.copyPojo(instancePO);
-        NncUtils.requireNull(id2instance.get(instancePO.getId()),
+        instancePO = instancePO.copy();
+        Utils.require(id2instance.get(instancePO.getId()) == null,
                 "Instance with id " + instancePO.getId() + " already exists");
         id2instance.put(instancePO.getId(), instancePO);
 //        type2instances.computeIfAbsent(Id.fromBytes(instancePO.getTypeId()), k -> new ArrayList<>()).add(instancePO);

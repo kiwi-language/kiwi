@@ -3,6 +3,7 @@ package org.metavm.util;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.metavm.entity.Entity;
 import sun.misc.Unsafe;
 
 import java.lang.annotation.Annotation;
@@ -33,6 +34,12 @@ public class ReflectionUtils {
     public static final Field ENUM_ORDINAL_FIELD = getField(Enum.class, "ordinal");
 
     public static final String CONSTRUCTOR_NAME = "<init>";
+
+    public static final MethodHandle entityReadHandle;
+
+    static {
+        entityReadHandle = getMethodHandleWithSpread(MethodHandles.lookup(), Entity.class, "read", void.class, List.of(MvInput.class, Entity.class), false);
+    }
 
     public static final Map<Class<?>, String> PRIMITIVE_CLASS_INTERNAL_NAME_MAP = Map.of(
             byte.class, "B",
@@ -98,7 +105,7 @@ public class ReflectionUtils {
     );
 
     public static boolean isInstance(Collection<? extends Class<?>> classes, Object object) {
-        return NncUtils.anyMatch(classes, k -> k.isInstance(object));
+        return Utils.anyMatch(classes, k -> k.isInstance(object));
     }
 
     public static Unsafe getUnsafe() {
@@ -113,7 +120,7 @@ public class ReflectionUtils {
     }
 
     public static void ensureFieldDeclared(Class<?> klass, Field field) {
-        NncUtils.requireTrue(field.getDeclaringClass().isAssignableFrom(klass));
+        Utils.require(field.getDeclaringClass().isAssignableFrom(klass));
     }
 
     public static Class<?> getWrapperClass(Class<?> klass) {
@@ -132,7 +139,7 @@ public class ReflectionUtils {
     }
 
     public static boolean isPrimitiveBoxClassName(String name) {
-        return NncUtils.anyMatch(wrapper2primitive.keySet(), k -> k.getName().equals(name));
+        return Utils.anyMatch(wrapper2primitive.keySet(), k -> k.getName().equals(name));
     }
 
     public static String getMethodQualifiedSignature(Method method) {
@@ -145,7 +152,7 @@ public class ReflectionUtils {
 
     public static String getConstructorSignature(Constructor<?> constructor) {
         return CONSTRUCTOR_NAME + "("
-                + NncUtils.join(
+                + Utils.join(
                 Arrays.asList(constructor.getParameterTypes()),
                 Class::getName,
                 ","
@@ -156,7 +163,7 @@ public class ReflectionUtils {
     public static String getMethodSignature(Method method) {
         return method.getName() +
                 '(' +
-                NncUtils.join(
+                Utils.join(
                         Arrays.asList(method.getParameterTypes()),
                         Class::getName,
                         ","
@@ -211,7 +218,7 @@ public class ReflectionUtils {
     public static Class<?> getInnerClassRecursively(Class<?> klass, String name) {
         var innerClassName = klass.getName() + "&&" + name;
         var innerClass =
-                NncUtils.find(klass.getDeclaredClasses(), c -> c.getName().equals(innerClassName));
+                Utils.find(klass.getDeclaredClasses(), c -> c.getName().equals(innerClassName));
         if (innerClass != null) {
             return innerClass;
         }
@@ -228,7 +235,7 @@ public class ReflectionUtils {
         } catch (NoSuchMethodException e) {
             throw new InternalException(
                     "Can not find method " + klass.getName() + "." + methodName + "("
-                            + NncUtils.join(paramTypes, Class::getSimpleName) + ")"
+                            + Utils.join(paramTypes, Class::getSimpleName) + ")"
             );
         }
     }
@@ -275,7 +282,7 @@ public class ReflectionUtils {
     }
 
     public static Class<?> getCompatibleType(List<Class<?>> classes) {
-        NncUtils.requireNotEmpty(classes);
+        Utils.requireNotEmpty(classes);
         Class<?> result = null;
         for (Class<?> klass : classes) {
             if (result == null) {
@@ -333,7 +340,7 @@ public class ReflectionUtils {
     }
 
     private static int primitiveTypeOrder(Class<?> klass) {
-        return NncUtils.requireNonNull(
+        return Objects.requireNonNull(
                 PRIMITIVE_TYPE_ORDERING_MAP.get(klass),
                 "class '" + klass.getName() + "' is not a primitive type"
         );
@@ -347,7 +354,7 @@ public class ReflectionUtils {
         if (klass.isPrimitive()) {
             return klass;
         }
-        return NncUtils.requireNonNull(
+        return Objects.requireNonNull(
                 wrapper2primitive.get(klass),
                 "klass '" + klass + "' is not a primitive type"
         );
@@ -419,10 +426,23 @@ public class ReflectionUtils {
     }
 
     public static MethodHandle getMethodHandle(MethodHandles.Lookup lookup,
-                                               Class<?> klass,
-                                               String name,
-                                               Class<?> returnClass, List<Class<?>> parameterClasses,
-                                               boolean static_) {
+                                                         Class<?> klass,
+                                                         String name,
+                                                         Class<?> returnClass, List<Class<?>> parameterClasses,
+                                                         boolean static_) {
+        try {
+            var mt = MethodType.methodType(returnClass, parameterClasses.toArray(Class[]::new));
+            return static_ ? lookup.findStatic(klass, name, mt) : lookup.findVirtual(klass, name, mt);
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static MethodHandle getMethodHandleWithSpread(MethodHandles.Lookup lookup,
+                                                         Class<?> klass,
+                                                         String name,
+                                                         Class<?> returnClass, List<Class<?>> parameterClasses,
+                                                         boolean static_) {
         try {
             var mt = MethodType.methodType(returnClass, parameterClasses.toArray(Class[]::new));
             var mh = static_ ? lookup.findStatic(klass, name, mt) : lookup.findVirtual(klass, name, mt);
@@ -449,13 +469,13 @@ public class ReflectionUtils {
         }
         throw new RuntimeException(
                 "Method " + klass.getName() + "." + name + "(" +
-                        NncUtils.join(paramClasses, Class::getName)
+                        Utils.join(paramClasses, Class::getName)
                         + ") not found"
         );
     }
 
     public static List<Method> getMethods(Class<?> klass, String name) {
-        return NncUtils.filter(Arrays.asList(klass.getMethods()), m -> m.getName().equals(name));
+        return Utils.filter(Arrays.asList(klass.getMethods()), m -> m.getName().equals(name));
     }
 
     public static Method getMethodByName(@NotNull Class<?> klass, String methodName, boolean failIfNotFound) {
@@ -551,14 +571,14 @@ public class ReflectionUtils {
     public static List<Method> getDeclaredMethodsRecursively(Class<?> klass, Predicate<Method> filter) {
         List<Method> result = new ArrayList<>();
         walkClassHierarchyUpwards(klass, k -> {
-            result.addAll(NncUtils.filter(Arrays.asList(k.getDeclaredMethods()), filter));
+            result.addAll(Utils.filter(Arrays.asList(k.getDeclaredMethods()), filter));
             return false;
         });
         return result;
     }
 
     public static Method getDeclaredMethodRecursively(Class<?> klass, Predicate<Method> filter) {
-        return NncUtils.requireNonNull(findDeclaredMethodRecursively(klass, filter));
+        return Objects.requireNonNull(findDeclaredMethodRecursively(klass, filter));
     }
 
     @Nullable
@@ -584,7 +604,7 @@ public class ReflectionUtils {
             return klass.getDeclaredMethod(name, paramClassArray);
         } catch (NoSuchMethodException e) {
             throw new InternalException("Can not find method " + klass.getName() + "." + name + "("
-                    + NncUtils.join(parameterClasses, Class::getName, ",") + ")"
+                    + Utils.join(parameterClasses, Class::getName, ",") + ")"
             );
         }
     }
@@ -673,7 +693,12 @@ public class ReflectionUtils {
         return results;
     }
 
-    public static Field getField(Class<?> klass, String name) {
+    public static Field getField(final Class<?> klass, String name) {
+        return Objects.requireNonNull(findField(klass, name),
+                () -> "Cannot find field '" + name + "' in class" + klass.getName());
+    }
+
+    public static @Nullable Field findField(Class<?> klass, String name) {
         var key = new FieldKey(klass, name);
         var existing = fieldMap.get(key);
         if(existing != null)
@@ -685,12 +710,14 @@ public class ReflectionUtils {
             return field;
         } catch (NoSuchFieldException e) {
             if (klass.getSuperclass() != null) {
-                return getField(klass.getSuperclass(), name);
+                return findField(klass.getSuperclass(), name);
             } else {
-                throw new RuntimeException(e);
+                return null;
             }
         }
+
     }
+
 
     public static Field getStaticField(Class<?> klass, String name) {
         try {
@@ -713,7 +740,7 @@ public class ReflectionUtils {
     }
 
     public static List<Field> getStaticFields(Class<?> klass) {
-        return NncUtils.filter(
+        return Utils.filter(
                 Arrays.asList(klass.getFields()),
                 f -> Modifier.isStatic(f.getModifiers())
         );
@@ -744,7 +771,7 @@ public class ReflectionUtils {
 
     private static void getMethodsRecursively0(Class<?> klass, IntPredicate modifierFilter, List<Method> result) {
         result.addAll(
-                NncUtils.filter(
+                Utils.filter(
                         Arrays.asList(klass.getDeclaredMethods()),
                         m -> modifierFilter.test(m.getModifiers())
                 )
@@ -764,7 +791,7 @@ public class ReflectionUtils {
 
     private static void getAllDeclaredStaticFields(Class<?> klass, List<Field> result) {
         result.addAll(
-                NncUtils.filter(
+                Utils.filter(
                         Arrays.asList(klass.getDeclaredFields()),
                         f -> Modifier.isStatic(f.getModifiers())
                 )
@@ -860,7 +887,7 @@ public class ReflectionUtils {
         if (type instanceof ParameterizedType parameterizedType) {
             Class<?> rawClass = (Class<?>) parameterizedType.getRawType();
             return rawClass.getSimpleName() + "<" +
-                    NncUtils.join(
+                    Utils.join(
                             parameterizedType.getActualTypeArguments(),
                             t -> getSimpleTypeName0(t, visited)
                     ) + ">";
@@ -905,7 +932,7 @@ public class ReflectionUtils {
                 if (RuntimeGeneric.class.isAssignableFrom(rawClass) || List.class.isAssignableFrom(rawClass)) {
                     yield ParameterizedTypeImpl.create(
                             rawClass,
-                            NncUtils.map(
+                            Utils.map(
                                     parameterizedType.getActualTypeArguments(),
                                     t -> eraseType0(t, visited)
                             )
@@ -941,7 +968,7 @@ public class ReflectionUtils {
         public void visitParameterizedType(ParameterizedType pType) {
             var klass = (Class<?>) pType.getRawType();
             Map<TypeVariable<?>, Type> map = new HashMap<>();
-            NncUtils.biForEach(
+            Utils.biForEach(
                     klass.getTypeParameters(),
                     pType.getActualTypeArguments(),
                     map::put
@@ -965,7 +992,7 @@ public class ReflectionUtils {
         if (fieldType instanceof ParameterizedType pType) {
             return ParameterizedTypeImpl.create(
                     (Class<?>) pType.getRawType(),
-                    NncUtils.map(
+                    Utils.map(
                             pType.getActualTypeArguments(),
                             typeArg -> evaluateFieldType(declaringType, typeArg)
                     )
@@ -1083,7 +1110,7 @@ public class ReflectionUtils {
             return "null";
         Map<String, Object> values = new HashMap<>();
         forEachField(object, (f, v) -> values.put(f.getName(), Objects.toString(v)));
-        return NncUtils.toPrettyJsonString(values);
+        return Utils.toPrettyJsonString(values);
     }
 
     public static boolean isPrimitiveType(Type type) {

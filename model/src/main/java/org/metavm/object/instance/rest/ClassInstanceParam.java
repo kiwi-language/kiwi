@@ -1,7 +1,7 @@
 package org.metavm.object.instance.rest;
 
 import org.metavm.object.instance.InstanceKind;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.io.Serializable;
 import java.util.Comparator;
@@ -19,8 +19,8 @@ public record ClassInstanceParam(
     }
 
     public ClassInstanceParam copyWithNewField(InstanceFieldDTO fieldDTO) {
-        var oldFields = NncUtils.filter(fields, f -> !Objects.equals(f.fieldId(), fieldDTO.fieldId()));
-        return new ClassInstanceParam(NncUtils.append(oldFields, fieldDTO));
+        var oldFields = Utils.filter(fields, f -> !Objects.equals(f.fieldId(), fieldDTO.fieldId()));
+        return new ClassInstanceParam(Utils.append(oldFields, fieldDTO));
     }
 
     @Override
@@ -28,7 +28,7 @@ public record ClassInstanceParam(
         if (param1 instanceof ClassInstanceParam param2 && fields.size() == param2.fields.size()) {
             var fields1 = fields.stream().sorted(Comparator.comparing(InstanceFieldDTO::fieldId)).toList();
             var fields2 = param2.fields.stream().sorted(Comparator.comparing(InstanceFieldDTO::fieldId)).toList();
-            return NncUtils.listEquals(fields1, fields2, (fieldDTO, that) -> fieldDTO.valueEquals(that, newIds));
+            return Utils.listEquals(fields1, fields2, (fieldDTO, that) -> fieldDTO.valueEquals(that, newIds));
         } else
             return false;
     }

@@ -6,7 +6,7 @@ import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +41,7 @@ public class ArrayNode extends InstanceNode<Reference> {
         InstanceNode<?> child = children.get(path.firstItem());
         if(child.isAsterisk()) {
             return Instances.createArray(
-                    NncUtils.map(
+                    Utils.map(
                             instance.resolveArray().getElements(),
                             e -> child.getByPath(e, path.subPath())
                     )

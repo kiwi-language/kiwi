@@ -54,8 +54,8 @@ public class ApiService extends EntityContextFactoryAware {
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, null, rawArguments, false, true, context);
             var self = ClassInstanceBuilder.newBuilder(klass).build();
-            context.getInstanceContext().bind(self);
             var result = execute(r.method, self, r.arguments, request, response, context);
+            context.bind(self);
             context.finish();
             return (String) formatInstance(result, false);
         }
@@ -66,7 +66,7 @@ public class ApiService extends EntityContextFactoryAware {
         try (var context = newContext()) {
             Value result;
             if (qualifier.startsWith("0")) {
-                var self = (ClassInstance) context.getInstanceContext().get(Id.parse(qualifier));
+                var self = (ClassInstance) context.get(Id.parse(qualifier));
                 result = executeInstanceMethod(self, methodCode, rawArguments, request, response, context);
             } else {
                 var registry = BeanDefinitionRegistry.getInstance(context);
@@ -80,7 +80,6 @@ public class ApiService extends EntityContextFactoryAware {
                     result = execute(r.method, null, r.arguments, request, response, context);
                 }
             }
-            context.updateEntity(response);
             context.finish();
             return formatInstance(result, false);
         }
@@ -92,7 +91,7 @@ public class ApiService extends EntityContextFactoryAware {
                                         HttpRequest request,
                                         HttpResponse response,
                                         IEntityContext context) {
-        var r = resolveMethod(self.getType(), methodCode, rawArguments, false, false, context);
+        var r = resolveMethod(self.getInstanceType(), methodCode, rawArguments, false, false, context);
         var method = r.method;
         return execute(method, self, r.arguments, request, response, context);
     }
@@ -115,7 +114,7 @@ public class ApiService extends EntityContextFactoryAware {
                           HttpResponse response,
                           IEntityContext context) {
         return doIntercepted(
-                () -> handleExecutionResult(Flows.execute(method, self, NncUtils.map(arguments, Value::toStackValue), context)),
+                () -> handleExecutionResult(Flows.execute(method, self, Utils.map(arguments, Value::toStackValue), context)),
                 request,
                 response,
                 method.getReturnType(),
@@ -128,8 +127,8 @@ public class ApiService extends EntityContextFactoryAware {
         var beforeMethod = StdMethod.interceptorBefore.get();
         var afterMethod = StdMethod.interceptorAfter.get();
         var interceptors = registry.getInterceptors();
-        var reqInst = context.getInstance(request);
-        var respInst = context.getInstance(response);
+        var reqInst = (Instance) request;
+        var respInst = (Instance) response;
         for (ClassInstance interceptor : interceptors) {
             Flows.invokeVirtual(beforeMethod.getRef(), interceptor, List.of(reqInst.getReference(), respInst.getReference()), context);
         }
@@ -146,7 +145,8 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private ClassType getKlass(String classCode, IEntityContext context) {
-        ParserTypeDefProvider typeDefProvider = name -> context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, name);
+        ParserTypeDefProvider typeDefProvider = name -> context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
+                Instances.stringInstance(name));
         var type = (ClassType) new TypeParserImpl(typeDefProvider).parseType(classCode);
         if (type == null)
             throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, classCode);
@@ -156,7 +156,7 @@ public class ApiService extends EntityContextFactoryAware {
     @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
     public Object getInstance(String id) {
         try (var context = newContext()) {
-            return formatInstance(context.getInstanceContext().get(Id.parse(id)).getReference(), true);
+            return formatInstance(context.get(Id.parse(id)).getReference(), true);
         }
     }
 
@@ -172,8 +172,7 @@ public class ApiService extends EntityContextFactoryAware {
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public void deleteInstance(String id) {
         try (var context = newContext()) {
-            var instanceContext = context.getInstanceContext();
-            instanceContext.remove(instanceContext.get(Id.parse(id)));
+            context.remove(context.get(Id.parse(id)));
             context.finish();
         }
     }
@@ -184,8 +183,8 @@ public class ApiService extends EntityContextFactoryAware {
 //            logTxId();
             ClassType type;
             if(object.containsKey(KEY_ID)) {
-                var inst0 = (ClassInstance) context.getInstanceContext().get(Id.parse((String) object.get(KEY_ID)));
-                type = inst0.getType();
+                var inst0 = (ClassInstance) context.get(Id.parse((String) object.get(KEY_ID)));
+                type = inst0.getInstanceType();
             }
             else
                 type = getKlass(classCode, context);
@@ -193,14 +192,12 @@ public class ApiService extends EntityContextFactoryAware {
                 var r = tryResolveValue(object, type, true, null, context);
                 if (r.successful()) {
                     var i = (Reference) r.resolved();
-                    var instanceContext = context.getInstanceContext();
-                    if (!instanceContext.containsInstance(i.resolve()))
-                        instanceContext.bind(i.resolve());
+                    if (!context.containsInstance(i.get()))
+                        context.bind(i.get());
                     return i;
                 } else
                     return null;
             }, request, response, type, context);
-            context.updateEntity(response);
             if (inst != null) {
                 context.finish();
                 return inst.getStringId();
@@ -219,7 +216,7 @@ public class ApiService extends EntityContextFactoryAware {
                 var field = klass.findFieldByName(name);
                 if (field != null) {
                     if (field.getType().isNumber() && value instanceof List<?> list && list.size() == 2) {
-                        var min = resolveValue(list.get(0), field.getType(), false, null, entityContext);
+                        var min = resolveValue(list.getFirst(), field.getType(), false, null, entityContext);
                         var max = resolveValue(list.get(1), field.getType(), false, null, entityContext);
                         fields.add(new InstanceQueryField(field, null, min, max));
                     }
@@ -244,12 +241,12 @@ public class ApiService extends EntityContextFactoryAware {
             var dataPage1 = instanceQueryService.query(internalQuery, entityContext);
             if (returnObjects) {
               return new SearchResult(
-                      NncUtils.map(dataPage1.data(), i -> formatInstance(i, true)),
+                      Utils.map(dataPage1.data(), i -> formatInstance(i, true)),
                       dataPage1.total()
               );
             } else {
                 return new SearchResult(
-                        NncUtils.map(dataPage1.data(), Reference::getStringId),
+                        Utils.map(dataPage1.data(), Reference::getStringId),
                         dataPage1.total()
                 );
             }
@@ -267,24 +264,29 @@ public class ApiService extends EntityContextFactoryAware {
     private Object formatInstance(@Nullable Value instance, boolean asValue) {
         return switch (instance) {
             case null -> null;
-            case NullValue nullValue -> null;
+            case NullValue ignored -> null;
             case PrimitiveValue primitiveValue -> primitiveValue.getValue();
             case Reference reference -> {
-                var resolved = reference.resolve();
-                if(resolved instanceof ClassInstance clsInst) {
-                    if (clsInst.isEnum())
-                        yield ((StringValue) clsInst.getField(StdField.enumName.get())).getValue();
-                    if(clsInst.isList())
-                        yield formatList(clsInst);
-                    else if(asValue || reference.isValueReference())
-                        yield formatValueObject(clsInst);
-                    else
-                        yield reference.getStringId();
+                var resolved = reference.get();
+                switch (resolved) {
+                    case Entity entity -> {
+                        yield entity.toJson();
+                    }
+                    case ClassInstance clsInst -> {
+                        if (clsInst.isEnum())
+                            yield ((StringValue) clsInst.getField(StdField.enumName.get())).getValue();
+                        if (clsInst.isList())
+                            yield formatList(clsInst);
+                        else if (asValue || reference.isValueReference())
+                            yield formatValueObject(clsInst);
+                        else
+                            yield reference.getStringId();
+                    }
+                    case ArrayInstance array -> {
+                        yield formatArray(array);
+                    }
+                    case null, default -> throw new IllegalStateException("Unrecognized DurableInstance: " + resolved);
                 }
-                else if(resolved instanceof ArrayInstance array)
-                    yield formatArray(array);
-                else
-                    throw new IllegalStateException("Unrecognized DurableInstance: " + resolved);
             }
             default -> throw new BusinessException(ErrorCode.FAILED_TO_FORMAT_VALUE, instance);
         };
@@ -295,7 +297,7 @@ public class ApiService extends EntityContextFactoryAware {
         var id = instance.getStringId();
         if (id != null)
             map.put(KEY_ID, id);
-        map.put(KEY_CLASS, instance.getType().getKlass().getQualifiedName());
+        map.put(KEY_CLASS, instance.getInstanceType().getKlass().getQualifiedName());
         instance.forEachField((field, value) -> map.put(field.getName(), formatInstance(value, field.isChild())));
         return map;
     }
@@ -435,7 +437,7 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private ValueResolutionResult tryResolveEnumConstant(String name, ClassType classType, IEntityContext context) {
-        var ec = NncUtils.find(classType.getKlass().getEnumConstants(), f -> Objects.equals(f.getName(), name));
+        var ec = Utils.find(classType.getKlass().getEnumConstants(), f -> Objects.equals(f.getName(), name));
         return ec != null ? ValueResolutionResult.of(StaticFieldTable.getInstance(classType, context).get(ec))
                 : ValueResolutionResult.failed;
     }
@@ -493,7 +495,7 @@ public class ApiService extends EntityContextFactoryAware {
     private @Nullable ClassInstance saveObject(Map<?, ?> map, ClassType type, IEntityContext context) {
         var id = (String) map.get(KEY_ID);
         if (id != null) {
-            var inst = (ClassInstance) context.getInstanceContext().get(Id.parse(id));
+            var inst = (ClassInstance) context.get(Id.parse(id));
             if (!type.isInstance(inst.getReference()))
                 return null;
             updateObject(inst, map, context);
@@ -504,7 +506,7 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private ValueResolutionResult tryResolveArray(Object rawValue, ArrayType type, @Nullable Value currentValue, IEntityContext context) {
-        if (!type.isValue() && rawValue instanceof String s)
+        if (!type.isValueType() && rawValue instanceof String s)
             return tryResolveReference(s, type, context);
         else if (rawValue instanceof List<?> list) {
             var elements = new ArrayList<Value>();
@@ -537,9 +539,9 @@ public class ApiService extends EntityContextFactoryAware {
         } else {
             ClassType concreteType;
             if (type.isInterface() || type.isAbstract()) {
-                var iterableType = type.findAncestorByKlass(StdKlass.iterable.get());
+                var iterableType = type.asSuper(StdKlass.iterable.get());
                 if (iterableType != null) {
-                    var elementType = iterableType.getTypeArguments().get(0).getUpperBound2();
+                    var elementType = iterableType.getTypeArguments().getFirst().getUpperBound2();
                     concreteType = KlassType.create(StdKlass.arrayList.get(), List.of(elementType));
                     if (!type.isAssignableFrom(concreteType))
                         return ValueResolutionResult.failed;
@@ -553,7 +555,7 @@ public class ApiService extends EntityContextFactoryAware {
             listNative.List();
         }
         var elements = new ArrayList<Value>();
-        var actualType = listNative.getInstance().getType();
+        var actualType = listNative.getInstance().getInstanceType();
         var isChildList = actualType.getKlass().isChildList();
         var elementType = actualType.getFirstTypeArgument();
         for (Object o : list) {
@@ -571,7 +573,7 @@ public class ApiService extends EntityContextFactoryAware {
         if (rawValue instanceof String str) {
             var id = Id.tryParse(str);
             if (id != null) {
-                var inst = context.getInstanceContext().get(id);
+                var inst = context.get(id);
                 return type.isInstance(inst.getReference()) ? ValueResolutionResult.of(inst.getReference()) : ValueResolutionResult.failed;
             }
         }
@@ -585,7 +587,7 @@ public class ApiService extends EntityContextFactoryAware {
             if (str.startsWith("0")) {
                 var id = Id.tryParse(str);
                 if (id != null)
-                    return context.getInstanceContext().get(id).getReference();
+                    return context.get(id).getReference();
             }
             return Instances.stringInstance(str);
         }
@@ -604,19 +606,19 @@ public class ApiService extends EntityContextFactoryAware {
         if (rawValue instanceof List<?> list) {
             var listType = KlassType.create(StdKlass.arrayList.get(), List.of(Types.getAnyType()));
             return Instances.createList(listType,
-                    NncUtils.map(list, e -> resolveAny(e, context))).getReference();
+                    Utils.map(list, e -> resolveAny(e, context))).getReference();
         }
-        throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE, NncUtils.toJSONString(rawValue));
+        throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE, Utils.toJSONString(rawValue));
     }
 
     private ClassInstance createObject(Map<?, ?> map, ClassType type, IEntityContext context) {
         var klassCode = map.get("$class");
         var actualType = klassCode != null ?
-                Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, klassCode)).getType() : type;
+                Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance((String) klassCode))).getType() : type;
         var r = resolveConstructor(actualType, map, context);
         var self = ClassInstance.allocate(actualType);
-        context.getInstanceContext().bind(self);
-        var result = Flows.execute(r.method, self, NncUtils.map(r.arguments, Value::toStackValue), context);
+        var result = Flows.execute(r.method, self, Utils.map(r.arguments, Value::toStackValue), context);
+        context.bind(self);
         if (result.exception() != null)
             throw new InternalException("Failed to instantiate " + type.getTypeDesc() + " with value " + map
                     + ": " + ThrowableNative.getMessage(result.exception()));
@@ -633,8 +635,7 @@ public class ApiService extends EntityContextFactoryAware {
     private void updateObject(ClassInstance instance, Object json, IEntityContext context) {
         //noinspection unchecked
         var map = (Map<String, Object>) json;
-        var type = instance.getType();
-        instance.setDirectlyModified(true);
+        var type = instance.getInstanceType();
         map.forEach((k, v) -> {
             var fieldRef = type.findFieldByName(k);
             if (fieldRef != null && fieldRef.isPublic()) {
@@ -646,7 +647,7 @@ public class ApiService extends EntityContextFactoryAware {
                 if (setter != null) {
                     var getter = type.findGetterByPropertyName(k);
                     var existing = getter != null ? Flows.invokeGetter(getter, instance, context) : null;
-                    Flows.invokeSetter(setter, instance, resolveValue(v, setter.getParameterTypes().get(0), false, existing, context), context);
+                    Flows.invokeSetter(setter, instance, resolveValue(v, setter.getParameterTypes().getFirst(), false, existing, context), context);
                 }
             }
         });
@@ -658,7 +659,7 @@ public class ApiService extends EntityContextFactoryAware {
             if (method.isConstructor()) {
                 var args = tryResolveConstructor(method, map, context);
                 if (args != null) {
-                    if (result == null || NncUtils.count(result.arguments, Value::isNotNull) < NncUtils.count(args, Value::isNotNull))
+                    if (result == null || Utils.count(result.arguments, Value::isNotNull) < Utils.count(args, Value::isNotNull))
                         result = new ResolutionResult(method, args);
                 }
             }
@@ -694,17 +695,11 @@ public class ApiService extends EntityContextFactoryAware {
     private record ResolutionResult(MethodRef method, List<Value> arguments) {
     }
 
-    private void logTxId() {
-        if(jdbcTemplate != null) {
-            var txId = jdbcTemplate.queryForObject("SELECT pg_catalog.txid_current();", Long.class);
-            logger.info("Transaction ID: {}", txId);
-        }
-    }
-
     @Override
     public IEntityContext newContext() {
         var appId = ContextUtil.getAppId();
-        return entityContextFactory.newContext(appId, metaContextCache.get(appId));
+        var metaContext = metaContextCache.get(appId);
+        return entityContextFactory.newContext(appId, metaContext);
     }
 
     @Autowired

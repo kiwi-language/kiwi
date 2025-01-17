@@ -1,9 +1,11 @@
 package org.metavm.entity;
 
 import javassist.util.proxy.ProxyObject;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.*;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.NativeEphemeralObject;
 import org.metavm.object.type.EnumConstantRT;
 import org.metavm.object.type.Klass;
 import org.metavm.util.LinkedList;
@@ -17,12 +19,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static org.metavm.util.ReflectionUtils.*;
 
+@Slf4j
 public class EntityUtils {
 
     public static final long MAXIMUM_DIFF_DEPTH = 1000;
@@ -38,194 +40,6 @@ public class EntityUtils {
             EnumConstantRT.class
     );
 
-    public static void clearIdRecursively(Object model) {
-        traverseModelGraph(model, (path, o) -> {
-            if (o instanceof IdInitializing idInitializing) {
-                idInitializing.clearId();
-            }
-        });
-    }
-
-    public static Type getRuntimeType(Object object) {
-        if (object instanceof RuntimeGeneric runtimeGeneric)
-            return runtimeGeneric.getGenericType();
-        else
-            return object.getClass();
-    }
-
-    public static void forEachDescendant(Object object, Consumer<Object> action) {
-        forEachDescendant(object, action, false);
-    }
-
-    public static void forEachDescendant(Object object, Consumer<Object> action, boolean skipCopyIgnore) {
-        if (object instanceof Entity entity)
-            entity.forEachDescendant(action::accept, skipCopyIgnore);
-        else
-            action.accept(object);
-    }
-
-    public static void forEachMember(Object object, Consumer<Object> action) {
-        forEachMember(object, action, false);
-    }
-
-    public static void forEachMember(Object object, Consumer<Object> action, boolean skipCopyIgnore) {
-        action.accept(object);
-        if (object instanceof ChildArray<?> childArray) {
-            childArray.forEach(e -> forEachMember(e, action, skipCopyIgnore));
-        }
-        else if(object instanceof ReadonlyArray<?> array) {
-            array.forEach(e -> {
-                if (e instanceof ValueObject v)
-                    forEachMember(v, action, skipCopyIgnore);
-            });
-        }
-        else {
-            var desc = DescStore.get(EntityUtils.getRealType(object));
-            desc.forEachNonTransientProp(prop -> {
-                if(skipCopyIgnore && prop.isCopyIgnore())
-                    return;
-                var value = prop.get(object);
-                if (value != null && (prop.isChildEntity() || value instanceof ValueObject)) {
-                    forEachMember(value, action, skipCopyIgnore);
-                }
-            });
-        }
-    }
-
-    public static Object getRoot(Object object) {
-        if (object instanceof Entity entity) {
-            if (entity.getParentEntity() == null)
-                return entity;
-            else
-                return getRoot(entity.getParentEntity());
-        } else
-            return object;
-    }
-
-    public static boolean isMapper(Object object) {
-        return object instanceof Function func && func.getName().startsWith("map");
-    }
-
-    public static boolean isDurable(Object object) {
-        return !isEphemeral(object);
-    }
-
-    public static boolean isEphemeral(Object object) {
-        return object instanceof Entity entity && entity.isEphemeralEntity();
-    }
-
-    public static boolean isOrphaned(Object object) {
-        if(object instanceof Entity entity) {
-            if(entity.getParentEntity() != null) {
-                if(entity.getParentEntityField() == null)
-                    return !((ReadonlyArray<?>) entity.getParentEntity()).contains(entity);
-                else
-                    return ReflectionUtils.get(entity.getParentEntity(), entity.getParentEntityField()) != entity;
-            }
-        }
-        return false;
-    }
-
-    public static void traverseModelGraph(Object model, BiConsumer<List<String>, Object> action) {
-        traverseModelGraph0(model, action, new LinkedList<>(), new IdentitySet<>());
-    }
-
-    private static void traverseModelGraph0(Object model,
-                                            BiConsumer<List<String>, Object> action,
-                                            LinkedList<String> path,
-                                            IdentitySet<Object> visited) {
-        if (model == null || visited.contains(model)
-                || isPrimitive(model.getClass())) {
-            return;
-        }
-        visited.add(model);
-        action.accept(path, model);
-        Class<?> realClass = getRealType(model.getClass());
-        EntityDesc desc = DescStore.get(realClass);
-        for (EntityProp prop : desc.getProps()) {
-            if (prop.isAccessible() && !prop.isTransient()) {
-                path.addLast(prop.getName());
-                traverseModelGraph0(prop.get(model), action, path, visited);
-                path.removeLast();
-            }
-        }
-    }
-
-    public static void visitGraph(Object object, Consumer<Object> action) {
-        visitGraph(List.of(object), action);
-    }
-
-    public static void visitGraph(Collection<?> objects, Consumer<Object> action) {
-        var visited = new IdentitySet<>();
-        objects.forEach(object -> {
-            if(DebugEnv.recordPath) {
-                EntityUtils.enterPath();
-                visitGraph(object, visited, action);
-                EntityUtils.exitPath();
-            }
-            else
-                visitGraph(object, visited, action);
-        });
-    }
-
-    private static final LinkedList<LinkedList<String>> paths = new LinkedList<>();
-
-    private static LinkedList<String> path() {
-        return Objects.requireNonNull(paths.peek());
-    }
-
-    public static String currentPath() {
-        return String.join(".", path());
-    }
-
-    public static void enterPathItem(String item) {
-        path().addLast(item);
-    }
-
-    public static void exitPathItem() {
-        path().removeLast();
-    }
-
-    public static void enterPath() {
-        paths.addLast(new LinkedList<>());
-    }
-
-    public static void exitPath() {
-        paths.removeLast();
-    }
-
-    private static void visitGraph(Object object, IdentitySet<Object> visited, Consumer<Object> action) {
-        if (visited.add(object)) {
-            action.accept(object);
-            if (object instanceof Entity entity)
-                entity.forEachReference(o -> visitGraph(o, visited, action));
-        }
-    }
-
-    public static <T extends Entity> boolean entityEquals(T entity1, T entity2) {
-        if (entity1 == entity2) {
-            return true;
-        }
-        if (entity1 == null || entity2 == null) {
-            return false;
-        }
-        if (entity1.tryGetId() != null && entity2.tryGetId() != null) {
-            return Objects.equals(entity1.tryGetId(), entity2.tryGetId());
-        }
-        return false;
-    }
-
-    public static List<Field> getIndexDefFields(Class<?> klass) {
-        return getDeclaredStaticFields(
-                klass,
-                f -> f.getType() == IndexDef.class
-        );
-    }
-
-
-    public static String getMetaFieldName(Class<?> klass, String javaFieldName) {
-        return getMetaFieldName(getField(klass, javaFieldName));
-    }
 
     public static String getMetaFieldName(Field javaField) {
         if (ENUM_NAME_FIELD.equals(javaField)) {
@@ -236,9 +50,9 @@ public class EntityUtils {
         }
         EntityField entityField = javaField.getAnnotation(EntityField.class);
         ChildEntity childEntity = javaField.getAnnotation(ChildEntity.class);
-        return NncUtils.firstNonBlank(
-                NncUtils.get(entityField, EntityField::value),
-                NncUtils.get(childEntity, ChildEntity::value),
+        return Utils.firstNonBlank(
+                Utils.safeCall(entityField, EntityField::value),
+                Utils.safeCall(childEntity, ChildEntity::value),
                 javaField.getName()
         );
     }
@@ -253,26 +67,19 @@ public class EntityUtils {
         return anno != null && !anno.value().isEmpty() ? anno.value() : method.getName();
     }
 
-    public static String getMetaEnumConstantName(java.lang.Enum<?> enumConstant) {
-        var field = getField(enumConstant.getDeclaringClass(), enumConstant.name());
-        var anno = field.getAnnotation(EnumConstant.class);
-        return anno != null && !anno.value().isEmpty() ? anno.value() : enumConstant.name();
-    }
-
     public static String getMetaTypeName(Class<?> javaType) {
         var entityType = javaType.getAnnotation(org.metavm.api.Entity.class);
         var valueType = javaType.getAnnotation(Value.class);
         var entityStruct = javaType.getAnnotation(EntityStruct.class);
         var valueStruct = javaType.getAnnotation(ValueStruct.class);
-        return NncUtils.firstNonBlank(
-                NncUtils.get(entityType, org.metavm.api.Entity::value),
-                NncUtils.get(valueType, Value::value),
-                NncUtils.get(entityStruct, EntityStruct::value),
-                NncUtils.get(valueStruct, ValueStruct::value),
+        return Utils.firstNonBlank(
+                Utils.safeCall(entityType, org.metavm.api.Entity::value),
+                Utils.safeCall(valueType, Value::value),
+                Utils.safeCall(entityStruct, EntityStruct::value),
+                Utils.safeCall(valueStruct, ValueStruct::value),
                 javaType.getSimpleName()
         );
     }
-
 
     private static boolean isCompiled(Class<?> klass) {
         var entityType = klass.getAnnotation(org.metavm.api.Entity.class);
@@ -292,10 +99,6 @@ public class EntityUtils {
         return getMethodByName(klass, methodName, false);
     }
 
-
-    public static boolean isIndexDefField(Field field) {
-        return Modifier.isStatic(field.getModifiers()) && field.getType() == IndexDef.class;
-    }
 
     public static Set<ModelAndPath> getReachableObjects(Collection<Object> objects,
                                                         Predicate<Object> filter,
@@ -317,7 +120,7 @@ public class EntityUtils {
         if (object == null || ValueUtils.isPrimitive(object) || visited.contains(object) || !filter.test(object)) {
             return;
         }
-        result.add(new ModelAndPath(object, NncUtils.join(path, Objects::toString, ".")));
+        result.add(new ModelAndPath(object, Utils.join(path, Objects::toString, ".")));
         visited.add(object);
         if (object instanceof Collection<?> collection) {
             int index = 0;
@@ -336,15 +139,6 @@ public class EntityUtils {
                 }
             }
         }
-    }
-
-    public static Map<Object, List<org.metavm.util.Reference>> buildInvertedIndex(Collection<Object> objects, Predicate<Object> filter) {
-        var references = extractReferences(objects, filter);
-        Map<Object, List<org.metavm.util.Reference>> index = new IdentityHashMap<>();
-        for (var reference : references) {
-            index.computeIfAbsent(reference.target(), t -> new ArrayList<>()).add(reference);
-        }
-        return index;
     }
 
     public static List<org.metavm.util.Reference> extractReferences(Collection<Object> objects, Predicate<Object> filter) {
@@ -378,9 +172,10 @@ public class EntityUtils {
                 new Reflections(new ConfigurationBuilder().forPackages("org.metavm"));
         Set<Class<? extends Entity>> entitySubTypes = reflections.getSubTypesOf(Entity.class);
         Set<Class<?>> entityTypes = reflections.getTypesAnnotatedWith(org.metavm.api.Entity.class);
-        var builtinClasses = NncUtils.filterAndMapUnique(List.of(StdKlass.values()), StdKlass::isAutoDefine, StdKlass::getJavaClass);
-        return NncUtils.filterUnique(
-                NncUtils.mergeSets(entitySubTypes, entityTypes, builtinClasses),
+        var nativeValueClasses = reflections.getSubTypesOf(NativeEphemeralObject.class);
+        var builtinClasses = Utils.filterAndMapUnique(List.of(StdKlass.values()), StdKlass::isAutoDefine, StdKlass::getJavaClass);
+        return Utils.filterUnique(
+                Utils.mergeSets(List.of(entitySubTypes, entityTypes, nativeValueClasses, builtinClasses)),
                 klass -> !isCompiled(klass)
         );
     }
@@ -401,32 +196,6 @@ public class EntityUtils {
         }
     }
 
-    public static void ensureTreeInitialized(Object object) {
-        forEachDescendant(object, EntityUtils::ensureProxyInitialized);
-    }
-
-    public static EntityMethodHandler.State getProxyState(Object object) {
-        if (object instanceof ProxyObject proxyObject) {
-            var handler = EntityProxyFactory.getHandler(proxyObject);
-            return handler.getState();
-        } else
-            throw new InternalException(String.format("%s is not a proxy object", object));
-    }
-
-    public static void setProxyState(Object object, EntityMethodHandler.State state) {
-        if (!trySetProxyState(object, state))
-            throw new InternalException(String.format("%s is not a proxy object", object));
-    }
-
-    public static boolean trySetProxyState(Object object, EntityMethodHandler.State state) {
-        if (object instanceof ProxyObject proxyObject) {
-            var handler = EntityProxyFactory.getHandler(proxyObject);
-            handler.setState(state);
-            return true;
-        } else
-            return false;
-    }
-
     public static boolean isModelInitialized(Object object) {
         if (object instanceof ProxyObject proxyObject) {
             EntityMethodHandler<?> handler = EntityProxyFactory.getHandler(proxyObject);
@@ -436,29 +205,8 @@ public class EntityUtils {
         }
     }
 
-    public static Class<?> getRealClass(Class<?> klass1, Class<?> klass2) {
-        if (klass1 == klass2) {
-            return klass1;
-        }
-        if (klass1 == klass2.getSuperclass()) {
-            if (ProxyObject.class.isAssignableFrom(klass2)) {
-                return klass1;
-            }
-        }
-        if (klass2 == klass1.getSuperclass()) {
-            if (ProxyObject.class.isAssignableFrom(klass1)) {
-                return klass2;
-            }
-        }
-        return null;
-    }
-
     public static boolean isPrimitive(Class<?> klass) {
         return PRIM_CLASSES.contains(klass);
-    }
-
-    private static boolean isEnum(Class<?> klass) {
-        return java.lang.Enum.class.isAssignableFrom(klass);
     }
 
     public static Id tryGetId(Object entity) {
@@ -469,7 +217,7 @@ public class EntityUtils {
     }
 
     public static Long tryGetPhysicalId(Object entity) {
-        return NncUtils.get(tryGetId(entity), Id::tryGetTreeId);
+        return Utils.safeCall(tryGetId(entity), Id::tryGetTreeId);
     }
 
     @SuppressWarnings("unused")
@@ -600,7 +348,6 @@ public class EntityUtils {
             case org.metavm.flow.Method method -> method.toString();
             case Function func -> func.toString();
             case Klass klass -> klass.toString();
-            case ReadonlyArray<?> array -> getRealType(array.getClass()).getSimpleName();
             default -> getRealType(entity).getSimpleName() + "-" + entity;
         };
     }
@@ -613,7 +360,7 @@ public class EntityUtils {
                 list.addFirst(e1);
                 e1 = e1.getParentEntity();
             }
-            return NncUtils.join(list, EntityUtils::getEntityDesc, "/");
+            return Utils.join(list, EntityUtils::getEntityDesc, "/");
         } else
             return getEntityDesc(entity);
     }
@@ -622,4 +369,5 @@ public class EntityUtils {
     public static Object getParent(Object entity) {
         return entity instanceof Entity e ? e.getParentEntity() : null;
     }
+
 }

@@ -1,25 +1,40 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
+import org.metavm.api.Generated;
+import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.flow.Flows;
-import org.metavm.flow.KlassInput;
-import org.metavm.flow.KlassOutput;
 import org.metavm.flow.Method;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
+@NativeEntity(72)
 @Entity
-public class Field extends Element implements ChangeAware, Property, ITypeDef {
+public class Field extends org.metavm.entity.Entity implements ChangeAware, Property, ITypeDef, Element {
 
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
     @EntityField(asTitle = true)
     private String name;
     private Klass declaringType;
@@ -39,7 +54,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
     private int since;
     private @Nullable Integer sourceTag;
     public transient int offset;
-    private @Nullable Method initializer;
+    private @Nullable Reference initializerReference;
     private boolean isEnumConstant;
     private int ordinal;
 
@@ -80,14 +95,14 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         this.readonly = readonly;
         this.isTransient = isTransient;
         this.since = since;
-        this.initializer = initializer;
+        this.initializerReference = Utils.safeCall(initializer, Instance::getReference);
         this.isEnumConstant = isEnumConstant;
         this.ordinal = ordinal;
         if (column != null) {
-            NncUtils.requireTrue(declaringType.checkColumnAvailable(column));
+            Utils.require(declaringType.checkColumnAvailable(column));
             this.column = column;
         } else {
-            this.column = NncUtils.requireNonNull(declaringType.allocateColumn(this),
+            this.column = Objects.requireNonNull(declaringType.allocateColumn(this),
                     "Fail to allocate a column for field " + this);
         }
         setDefaultValue(defaultValue);
@@ -97,6 +112,29 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         }
         this.lazy = lazy;
         declaringType.addField(this);
+    }
+
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        visitor.visitUTF();
+        visitor.visitByte();
+        visitor.visitBoolean();
+        visitor.visitValue();
+        visitor.visitBoolean();
+        Column.visit(visitor);
+        visitor.visitBoolean();
+        visitor.visitBoolean();
+        visitor.visitBoolean();
+        visitor.visitByte();
+        visitor.visitInt();
+        visitor.visitValue();
+        visitor.visitInt();
+        visitor.visitInt();
+        visitor.visitInt();
+        visitor.visitNullable(visitor::visitInt);
+        visitor.visitNullable(visitor::visitValue);
+        visitor.visitBoolean();
+        visitor.visitInt();
     }
 
     public boolean isChild() {
@@ -111,6 +149,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         return declaringType.getTitleField() == this;
     }
 
+    @JsonIgnore
     public Type getConcreteType() {
         return getType().getConcreteType();
     }
@@ -131,7 +170,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         if (unique && isArray()) {
             throw BusinessException.invalidField(this, "Array fields can not be unique");
         }
-        Index constraint = declaringType.findSelfUniqueConstraint(List.of(this));
+        Index constraint = declaringType.findSelfIndex(List.of(this));
         if (constraint != null && !unique) {
             declaringType.removeConstraint(constraint);
         }
@@ -140,16 +179,22 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         }
     }
 
+    @Nullable
     @Override
-    public List<Object> beforeRemove(IEntityContext context) {
-        List<Object> cascades = new ArrayList<>(super.beforeRemove(context));
+    public org.metavm.entity.Entity getParentEntity() {
+        return declaringType;
+    }
+
+    @Override
+    public List<Instance> beforeRemove(IEntityContext context) {
+        List<Instance> cascades = new ArrayList<>(super.beforeRemove(context));
         List<Index> fieldIndices = declaringType.getFieldIndices(this);
         for (Index fieldIndex : fieldIndices) {
             declaringType.removeConstraint(fieldIndex);
             cascades.add(fieldIndex);
         }
         if(isStatic()) {
-            var sft = context.selectFirstByKey(StaticFieldTable.IDX_KLASS, declaringType);
+            var sft = context.selectFirstByKey(StaticFieldTable.IDX_KLASS, declaringType.getReference());
             if(sft != null)
                 sft.remove(this);
         }
@@ -158,19 +203,19 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
     }
 
     public LongValue getLong(@NotNull ClassInstance instance) {
-            return NncUtils.requireNonNull(instance).getLongField(this);
+            return Objects.requireNonNull(instance).getLongField(this);
     }
 
     public DoubleValue getDouble(@NotNull ClassInstance instance) {
-        return NncUtils.requireNonNull(instance).getDoubleField(this);
+        return Objects.requireNonNull(instance).getDoubleField(this);
     }
 
     public StringValue getString(@NotNull ClassInstance instance) {
-        return NncUtils.requireNonNull((instance)).getStringField(this);
+        return Objects.requireNonNull((instance)).getStringField(this);
     }
 
     public Value get(@NotNull ClassInstance instance) {
-        return NncUtils.requireNonNull((instance)).getField(this);
+        return Objects.requireNonNull((instance)).getField(this);
     }
 
     public Type getType() {
@@ -185,30 +230,37 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         return getType().isArray();
     }
 
-    public boolean isReference() {
-        return getType().isReference();
+    @Override
+    public String getTitle() {
+        return null;
     }
 
+    @JsonIgnore
     public boolean isNullable() {
         return !isNotNull();
     }
 
+    @JsonIgnore
     public boolean isSingleValued() {
         return !isArray();
     }
 
+    @JsonIgnore
     public boolean isInt64() {
         return getConcreteType().isLong();
     }
 
+    @JsonIgnore
     public boolean isNumber() {
         return getConcreteType().isNumber();
     }
 
+    @JsonIgnore
     public boolean isBool() {
         return getConcreteType().isBoolean();
     }
 
+    @JsonIgnore
     public boolean isString() {
         return getConcreteType().isString();
     }
@@ -217,14 +269,17 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         return defaultValue;
     }
 
+    @JsonIgnore
     public boolean isPrimitive() {
         return getType().isPrimitive();
     }
 
+    @JsonIgnore
     public boolean isUnique() {
-        return declaringType.findSelfUniqueConstraint(List.of(this)) != null;
+        return declaringType.findSelfIndex(List.of(this)) != null;
     }
 
+    @JsonIgnore
     public boolean isNotNull() {
         return getType().isNotNull();
     }
@@ -233,14 +288,21 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         return column;
     }
 
+    @JsonIgnore
     public String getColumnName() {
-        return NncUtils.get(column, Column::name);
+        return Utils.safeCall(column, Column::name);
+    }
+
+    @JsonIgnore
+    public String getEsField() {
+        return "l" + getDeclaringType().getLevel() + "." + getColumnName();
     }
 
 //    public Object preprocessValue(Object rawValue) {
 //        return ValueFormatter.parse(rawValue, type);
 //    }
 
+    @JsonIgnore
     public String getDisplayValue(Value value) {
         if (value == null) {
             return "";
@@ -248,20 +310,24 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         return value.getTitle();
     }
 
+    @JsonIgnore
     public String getStrRawDefaultValue() {
         return DefaultValueUtil.convertToStr(defaultValue, getType().getCategory().code(), isArray());
     }
 
+    @JsonIgnore
+    @Override
     public String getQualifiedName() {
         return declaringType.getName() + "." + getName();
     }
 
+    @JsonIgnore
     public boolean isTime() {
         return getType().isTime();
     }
 
     @Override
-    protected String toString0() {
+    public String toString() {
         return "Field " + getDesc();
     }
 
@@ -270,7 +336,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
     }
 
     @Override
-    public void onChange(ClassInstance instance, IEntityContext context) {
+    public void onChange(IEntityContext context) {
 //        if (_static) {
 //            var staticValueField = ModelDefRegistry.getField(Field.class, "staticValue");
 //            var value = instance.getField(staticValueField);
@@ -283,11 +349,6 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
     @Override
     public boolean isChangeAware() {
         return _static;
-    }
-
-    @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitField(this);
     }
 
     public boolean isReadonly() {
@@ -424,6 +485,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         this.state = MetadataState.REMOVED;
     }
 
+    @JsonIgnore
     public boolean isMetadataRemoved() {
         return state == MetadataState.REMOVED;
     }
@@ -469,59 +531,22 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         setEnumConstant((flags & FLAG_ENUM_CONSTANT) != 0);
     }
 
-    public void write(MvOutput output) {
-        output.writeEntityId(this);
-        output.writeUTF(name);
-        output.write(access.code());
-        output.writeShort(typeIndex);
-        output.writeInt(getFlags());
-        output.write(state.code());
-        output.writeInt(tag);
-        output.writeInt(sourceTag != null ? sourceTag : -1);
-        output.writeInt(since);
-        column.write(output);
-        defaultValue.write(output);
-        output.writeInt(ordinal);
-        if (initializer != null)
-            output.writeEntityId(initializer);
-        else
-            output.writeId(new NullId());
-    }
-
-    public void read(KlassInput input) {
-        name = input.readUTF();
-        access = Access.fromCode(input.read());
-        typeIndex = input.readShort();
-        type = declaringType.getConstantPool().getType(typeIndex);
-        setFlags(input.readInt());
-        state = MetadataState.fromCode(input.read());
-        tag = input.readInt();
-        sourceTag = input.readInt();
-        if(sourceTag == -1)
-            sourceTag = null;
-        since = input.readInt();
-        column = input.readColumn();
-        defaultValue = input.readValue();
-        ordinal = input.readInt();
-        var initializerId = input.readId();
-        initializer = initializerId instanceof NullId ? null : input.getMethod(initializerId);
-    }
-
     public int getTypeIndex() {
         return typeIndex;
     }
 
     @Nullable
     public Method getInitializer() {
-        return initializer;
+        return initializerReference != null ? (Method) initializerReference.get() : null;
     }
 
     public void setInitializer(@Nullable Method initializer) {
-        this.initializer = initializer;
+        this.initializerReference = Utils.safeCall(initializer, Instance::getReference);
     }
 
     public void initialize(@Nullable ClassInstance self,  IEntityContext context) {
-        if (initializer != null) {
+        if (initializerReference != null) {
+            var initializer = (Method) initializerReference.get();
             if (isStatic()) {
                 var value = getType().fromStackValue(
                         Flows.invoke(initializer.getRef(), null, List.of(), context)
@@ -530,7 +555,7 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
             }
             else {
                 Objects.requireNonNull(self);
-                var value = getType(self.getType().getTypeMetadata()).fromStackValue(
+                var value = getType(self.getInstanceType().getTypeMetadata()).fromStackValue(
                         Flows.invoke(initializer.getRef(), self, List.of(), context)
                 );
                 self.setField(this, value);
@@ -564,5 +589,126 @@ public class Field extends Element implements ChangeAware, Property, ITypeDef {
         var value = getStatic(context).resolveObject();
         value.setField(StdField.enumName.get(), Instances.stringInstance(name));
         value.setField(StdField.enumOrdinal.get(), Instances.intInstance(ordinal));
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitField(this);
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        type.accept(visitor);
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        if (defaultValue instanceof Reference r) action.accept(r);
+        else if (defaultValue instanceof NativeValue t) t.forEachReference(action);
+        column.forEachReference(action);
+        type.forEachReference(action);
+        if (initializerReference != null) action.accept(initializerReference);
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("child", this.isChild());
+        map.put("lazy", this.isLazy());
+        map.put("type", this.getType().toJson());
+        map.put("defaultValue", this.getDefaultValue().toJson());
+        map.put("column", this.getColumn().toJson());
+        map.put("readonly", this.isReadonly());
+        map.put("transient", this.isTransient());
+        map.put("declaringType", this.getDeclaringType().getStringId());
+        map.put("name", this.getName());
+        map.put("access", this.getAccess().name());
+        map.put("static", this.isStatic());
+        map.put("state", this.getState().name());
+        map.put("ref", this.getRef().toJson());
+        map.put("klassTag", this.getKlassTag());
+        map.put("tag", this.getTag());
+        var sourceTag = this.getSourceTag();
+        if (sourceTag != null) map.put("sourceTag", sourceTag);
+        map.put("originalTag", this.getOriginalTag());
+        map.put("offset", this.getOffset());
+        map.put("since", this.getSince());
+        map.put("flags", this.getFlags());
+        map.put("typeIndex", this.getTypeIndex());
+        var initializer = this.getInitializer();
+        if (initializer != null) map.put("initializer", initializer.getStringId());
+        map.put("enumConstant", this.isEnumConstant());
+        map.put("ordinal", this.getOrdinal());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_Field;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        this.declaringType = (Klass) parent;
+        this.name = input.readUTF();
+        this.access = Access.fromCode(input.read());
+        this._static = input.readBoolean();
+        this.defaultValue = input.readValue();
+        this.lazy = input.readBoolean();
+        this.column = Column.read(input);
+        this.isChild = input.readBoolean();
+        this.readonly = input.readBoolean();
+        this.isTransient = input.readBoolean();
+        this.state = MetadataState.fromCode(input.read());
+        this.typeIndex = input.readInt();
+        this.type = input.readType();
+        this.originalTag = input.readInt();
+        this.tag = input.readInt();
+        this.since = input.readInt();
+        this.sourceTag = input.readNullable(input::readInt);
+        this.initializerReference = input.readNullable(() -> (Reference) input.readValue());
+        this.isEnumConstant = input.readBoolean();
+        this.ordinal = input.readInt();
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        output.writeUTF(name);
+        output.write(access.code());
+        output.writeBoolean(_static);
+        output.writeValue(defaultValue);
+        output.writeBoolean(lazy);
+        column.write(output);
+        output.writeBoolean(isChild);
+        output.writeBoolean(readonly);
+        output.writeBoolean(isTransient);
+        output.write(state.code());
+        output.writeInt(typeIndex);
+        output.writeValue(type);
+        output.writeInt(originalTag);
+        output.writeInt(tag);
+        output.writeInt(since);
+        output.writeNullable(sourceTag, output::writeInt);
+        output.writeNullable(initializerReference, output::writeValue);
+        output.writeBoolean(isEnumConstant);
+        output.writeInt(ordinal);
+    }
+
+    @Override
+    protected void buildSource(Map<String, Value> source) {
     }
 }

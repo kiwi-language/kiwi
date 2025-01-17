@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 
 public class InstanceContextTest extends TestCase {
 
-    private EntityRepository entityRepository;
+    private DefContext entityRepository;
     private IInstanceStore instanceStore;
     private Cache cache;
     private EventQueue eventQueue;
@@ -33,7 +33,7 @@ public class InstanceContextTest extends TestCase {
         super.setUp();
         MockStandardTypesInitializer.init();
         instanceStore = new MemInstanceStore(new LocalCache());
-        entityRepository = new MockEntityRepository();
+        entityRepository = new MockDefContext();
         cache = new MockCache();
         eventQueue = new MockEventQueue();
         idProvider = new MockIdProvider();
@@ -47,7 +47,7 @@ public class InstanceContextTest extends TestCase {
                 new DefaultIdInitializer(idProvider),
                 executor,
                 List.of(),
-                null,
+                entityRepository,
                 entityRepository,
                 entityRepository,
                 entityRepository,
@@ -57,18 +57,18 @@ public class InstanceContextTest extends TestCase {
     }
 
     public void test() {
-        var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
-        fooType.initId(PhysicalId.of(101L, 0L, TestUtils.mockClassType()));
-        var fooNameField = FieldBuilder.newBuilder("name", fooType, Types.getStringType())
+        var fooKlass = TestUtils.newKlassBuilder("Foo", "Foo").build();
+        var fooNameField = FieldBuilder.newBuilder("name", fooKlass, Types.getStringType())
                 .build();
-        fooNameField.initId(PhysicalId.of(111L, 0L, TestUtils.mockClassType()));
+        fooKlass.initId(PhysicalId.of(101L, 0L));
+        fooNameField.initId(PhysicalId.of(111L, 0L));
 
-        entityRepository.bind(fooType);
+        entityRepository.bind(fooKlass);
         var tmpId = TmpId.of(10001L);
         String name = "foo";
         Id id;
         try (var context = newContext()) {
-            var instance = ClassInstanceBuilder.newBuilder(fooType.getType())
+            var instance = ClassInstanceBuilder.newBuilder(fooKlass.getType())
                     .id(tmpId)
                     .data(Map.of(fooNameField, Instances.stringInstance(name)))
                     .build();
@@ -87,14 +87,16 @@ public class InstanceContextTest extends TestCase {
         Id fooId;
         Id bazId;
         var fooTypes = MockUtils.createFooTypes(true);
-        EntityUtils.visitGraph(fooTypes.fooType(), object -> {
+
+        fooTypes.fooType().visitGraph(object -> {
             if (object instanceof Entity entity && entity.isIdNotNull())
                 entityRepository.bind(entity);
+            return true;
         });
         try (var context = newContext()) {
             var foo = MockUtils.createFoo(fooTypes);
             var bars = foo.getField(fooTypes.fooBarsField()).resolveArray();
-            var bar001 = bars.get(0);
+            var bar001 = bars.getFirst();
             var baz = ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
                     .data(Map.of(fooTypes.bazBarsField(), new ArrayInstance(fooTypes.barArrayType(), List.of(bar001)).getReference()))
                     .build();
@@ -109,9 +111,8 @@ public class InstanceContextTest extends TestCase {
                 var foo = (ClassInstance) context.get(fooId);
                 var baz = (ClassInstance) context.get(bazId);
                 var bars = foo.getField(fooTypes.fooBarsField()).resolveArray();
-                var bar001 = (Reference) bars.get(0);
-                baz.ensureLoaded();
-                context.remove(bar001.resolve());
+                var bar001 = (Reference) bars.getFirst();
+                context.remove(bar001.get());
                 final boolean[] onChangeCalled = new boolean[1];
                 context.addListener(new ContextListener() {
                     @Override

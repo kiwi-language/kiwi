@@ -1,8 +1,7 @@
 package org.metavm.entity.natives;
 
-import org.metavm.util.NncUtils;
-
 import java.util.Map;
+import java.util.Objects;
 
 public class Natives {
 
@@ -17,7 +16,7 @@ public class Natives {
     );
 
     public static Class<?> getNative(String nativeClass) {
-        return NncUtils.requireNonNull(nativeClassMap.get(nativeClass),
+        return Objects.requireNonNull(nativeClassMap.get(nativeClass),
                 "Can't find native class for templateName '" + nativeClass + "'");
     }
 

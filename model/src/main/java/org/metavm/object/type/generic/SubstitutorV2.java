@@ -9,9 +9,10 @@ import org.metavm.flow.FlowRef;
 import org.metavm.flow.FunctionRef;
 import org.metavm.flow.LambdaRef;
 import org.metavm.flow.MethodRef;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.DebugEnv;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.IdentityHashMap;
@@ -41,11 +42,11 @@ public class SubstitutorV2 extends ElementVisitor<Element> {
                          Object existingRoot,
                          ResolutionStage stage) {
         if (DebugEnv.debugging) {
-            log.debug("substituting {}, type parameters: {}, type arguments: {}, stage: {}",
-                    EntityUtils.getEntityDesc(root), NncUtils.map(typeParameters, TypeVariable::getTypeDesc),
-                    NncUtils.map(typeArguments, Type::getTypeDesc), stage.name());
+            log.info("substituting {}, type parameters: {}, type arguments: {}, stage: {}",
+                    EntityUtils.getEntityDesc(root), Utils.map(typeParameters, TypeVariable::getTypeDesc),
+                    Utils.map(typeArguments, Type::getTypeDesc), stage.name());
         }
-        this.typeSubstitutor = new TypeSubstitutor(NncUtils.map(typeParameters, TypeVariable::getType), typeArguments);
+        this.typeSubstitutor = new TypeSubstitutor(Utils.map(typeParameters, TypeVariable::getType), typeArguments);
         this.stage = stage;
         if (existingRoot != null) {
             addExistingCopy(root, existingRoot);
@@ -63,12 +64,10 @@ public class SubstitutorV2 extends ElementVisitor<Element> {
         copy.clear();
         int i = 0;
         for (var entry : constantPool.getEntries()) {
-            if(entry instanceof ValueCpEntry valueEntry)
-                copy.addEntry(valueEntry);
-            else if(entry instanceof ElementCpEntry elementEntry)
-                copy.addEntry(new ElementCpEntry(i, elementEntry.getValue().accept(this)));
+            if(entry instanceof Element e)
+                copy.addEntry((Value) e.accept(this));
             else
-                throw new IllegalStateException("Unexpected cp entry " + entry);
+                copy.addEntry(entry);
             i++;
         }
         copy.onLoadPrepare();
@@ -85,23 +84,23 @@ public class SubstitutorV2 extends ElementVisitor<Element> {
         return MethodRef.create(
                 (ClassType) methodRef.getDeclaringType().accept(this),
                 methodRef.getRawFlow(),
-                NncUtils.map(methodRef.getTypeArguments(), t -> (Type) t.accept(this))
+                Utils.map(methodRef.getTypeArguments(), t -> (Type) t.accept(this))
         );
     }
 
     @Override
-    public Element visitClassType(ClassType type) {
+    public Element visitKlassType(KlassType type) {
         return KlassType.create(
-                (GenericDeclarationRef) NncUtils.get(type.getOwner(), k -> k.accept(this)),
+                (GenericDeclarationRef) Utils.safeCall(type.getOwner(), k -> k.accept(this)),
                 type.getKlass(),
-                NncUtils.map(type.getTypeArguments(), t -> (Type) t.accept(this))
+                Utils.map(type.getTypeArguments(), t -> (Type) t.accept(this))
         );
     }
 
     @Override
     public Element visitFunctionRef(FunctionRef functionRef) {
         return FunctionRef.create(functionRef.getRawFlow(),
-                NncUtils.map(functionRef.getTypeArguments(), t -> (Type) t.accept(this)));
+                Utils.map(functionRef.getTypeArguments(), t -> (Type) t.accept(this)));
     }
 
     @Override
@@ -122,7 +121,7 @@ public class SubstitutorV2 extends ElementVisitor<Element> {
 
     @Override
     public Element visitUnionType(UnionType type) {
-        var members = NncUtils.mapUnique(type.getMembers(), t -> (Type) t.accept(this));
+        var members = Utils.mapToSet(type.getMembers(), t -> (Type) t.accept(this));
         if(members.size() == 1)
             return members.iterator().next();
         else
@@ -132,7 +131,7 @@ public class SubstitutorV2 extends ElementVisitor<Element> {
 
     @Override
     public Element visitIntersectionType(IntersectionType type) {
-        var members = NncUtils.mapUnique(type.getTypes(), t -> (Type) t.accept(this));
+        var members = Utils.mapToSet(type.getTypes(), t -> (Type) t.accept(this));
         if(members.size() == 1)
             return members.iterator().next();
         else
@@ -147,7 +146,7 @@ public class SubstitutorV2 extends ElementVisitor<Element> {
     @Override
     public Element visitFunctionType(FunctionType type) {
         return new FunctionType(
-                NncUtils.map(type.getParameterTypes(), t -> (Type) t.accept(this)),
+                Utils.map(type.getParameterTypes(), t -> (Type) t.accept(this)),
                 (Type) type.getReturnType().accept(this)
         );
     }
@@ -171,6 +170,11 @@ public class SubstitutorV2 extends ElementVisitor<Element> {
                 (ClassType) indexRef.getDeclaringType().accept(this),
                 indexRef.getRawIndex()
         );
+    }
+
+    @Override
+    public Element visitElement(Element element) {
+        return element;
     }
 
     @Override

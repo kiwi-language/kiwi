@@ -1,10 +1,11 @@
 package org.metavm.object.instance.search;
 
+import org.metavm.application.Application;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,24 +16,28 @@ import static org.metavm.constant.FieldNames.*;
 public class IndexSourceBuilder {
 
     public static Map<String, Object> buildSource(long appId, ClassInstance instance) {
-        Klass type = instance.getKlass();
+        Klass type = instance.getInstanceKlass();
         Map<String, Object> source = new HashMap<>();
         source.put(APPLICATION_ID, appId);
         source.put(TYPE, type.getType().toExpression());
         source.put(ID, instance.getStringId());
-
-        List<Klass> hierarchy = type.getAncestorClasses();
-        for (int lev = 0; lev < hierarchy.size(); lev++) {
-            Map<String, Object> subSource = new HashMap<>();
-            source.put("l" + lev, subSource);
-            for (Field field : hierarchy.get(lev).getReadyFields()) {
-                setEsValue(
-                        instance.getField(field),
-                        field,
-                        subSource
-                );
-            }
-        }
+        var fields = instance.buildSource();
+        fields.forEach((f, v) -> {
+            Object esValue = getEsValue(v);
+            source.put(f, esValue);
+        });
+//        List<Klass> hierarchy = type.getAncestorClasses();
+//        for (int lev = 0; lev < hierarchy.size(); lev++) {
+//            Map<String, Object> subSource = new HashMap<>();
+//            source.put("l" + lev, subSource);
+//            for (Field field : hierarchy.get(lev).getReadyFields()) {
+//                setEsValue(
+//                        instance.getField(field),
+//                        field,
+//                        subSource
+//                );
+//            }
+//        }
         return source;
     }
 
@@ -49,7 +54,7 @@ public class IndexSourceBuilder {
 
     private static Object getEsValue(Value value) {
         if (value.isArray()) {
-            return NncUtils.map(value.resolveArray().getElements(), IndexSourceBuilder::getEsValue);
+            return Utils.map(value.resolveArray().getElements(), IndexSourceBuilder::getEsValue);
         } else if (value instanceof NullValue)
             return null;
         else if (value instanceof PrimitiveValue primitiveValue) {

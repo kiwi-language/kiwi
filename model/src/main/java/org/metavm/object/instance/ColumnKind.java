@@ -1,7 +1,7 @@
 package org.metavm.object.instance;
 
 import org.metavm.util.Column;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 
@@ -21,7 +21,7 @@ public enum ColumnKind {
 
     ;
 
-    private final int tagSuffix;
+    private final int code;
 
     private final String sqlType;
 
@@ -65,12 +65,12 @@ public enum ColumnKind {
         COLUMNS = Collections.unmodifiableList(columns);
         COLUMN_MAP = Collections.unmodifiableMap(columnMap);
         COLUMN_NAMES = Collections.unmodifiableList(columnNames);
-        SQL_COLUMNS_NAMES = NncUtils.map(sqlColumns, Column::name);
-        TAG_2_COLUMN = NncUtils.toMap(sqlColumns, Column::tag);
+        SQL_COLUMNS_NAMES = Utils.map(sqlColumns, Column::name);
+        TAG_2_COLUMN = Utils.toMap(sqlColumns, Column::tag);
     }
 
-    ColumnKind(int tagSuffix, String sqlName, String esType, String prefix, int count) {
-        this.tagSuffix = tagSuffix;
+    ColumnKind(int code, String sqlName, String esType, String prefix, int count) {
+        this.code = code;
         this.sqlType = sqlName;
         this.esType = esType;
         this.prefix = prefix;
@@ -82,7 +82,7 @@ public enum ColumnKind {
     }
 
     public static ColumnKind getByPrefix(String prefix) {
-        return NncUtils.findRequired(values(), v -> v.prefix.equals(prefix));
+        return Utils.findRequired(values(), v -> v.prefix.equals(prefix));
     }
 
     public Column getColumn(int index) {
@@ -90,7 +90,7 @@ public enum ColumnKind {
     }
 
     public static Column getColumnByName(String name) {
-        return NncUtils.requireNonNull(NAME_2_COLUMN.get(name),
+        return Objects.requireNonNull(NAME_2_COLUMN.get(name),
                 "Can not find column with name '" + name + "'");
     }
 
@@ -106,8 +106,8 @@ public enum ColumnKind {
         return count;
     }
 
-    public int tagSuffix() {
-        return tagSuffix;
+    public int code() {
+        return code;
     }
 
     public boolean checkColumnName(String columnName) {
@@ -137,8 +137,8 @@ public enum ColumnKind {
         return esType;
     }
 
-    public static ColumnKind fromTagSuffix(int tagSuffix) {
-        return NncUtils.findRequired(values(), v -> v.tagSuffix == tagSuffix);
+    public static ColumnKind fromCode(int tagSuffix) {
+        return Utils.findRequired(values(), v -> v.code == tagSuffix);
     }
 
     }

@@ -1,8 +1,8 @@
 package org.metavm.entity;
 
-public class EntityIndexQueryBuilder<T> {
+public class EntityIndexQueryBuilder<T extends Entity> {
 
-    public static <T> EntityIndexQueryBuilder<T> newBuilder(IndexDef<T> indexDef) {
+    public static <T extends Entity> EntityIndexQueryBuilder<T> newBuilder(IndexDef<T> indexDef) {
         return new EntityIndexQueryBuilder<>(indexDef);
     }
 

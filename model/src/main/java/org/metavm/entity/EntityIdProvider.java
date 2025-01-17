@@ -1,16 +1,13 @@
 package org.metavm.entity;
 
-import org.metavm.object.type.Type;
-
 import java.util.List;
-import java.util.Map;
 
 public interface EntityIdProvider {
 
-    Map<Type, List<Long>> allocate(long appId, Map<? extends Type, Integer> typeId2count);
+    List<Long> allocate(long appId, int count);
 
-    default Long allocateOne(long appId, Type type) {
-        return allocate(appId, Map.of(type, 1)).values().iterator().next().get(0);
+    default Long allocateOne(long appId) {
+        return allocate(appId, 1).getFirst();
     }
 
 }

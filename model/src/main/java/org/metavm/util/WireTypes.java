@@ -46,7 +46,6 @@ public class WireTypes {
     public static final int READ_WRITE_ARRAY_TYPE = 40;
     public static final int CHILD_ARRAY_TYPE = 41;
     public static final int CAPTURED_TYPE = 42;
-    public static final int TAGGED_CLASS_TYPE = 43;
     public static final int VALUE_ARRAY_TYPE = 44;
     public static final int INT_TYPE = 45;
     public static final int FLOAT_TYPE = 46;
@@ -60,6 +59,9 @@ public class WireTypes {
     public static final int FIELD_REF = 72;
     public static final int INDEX_REF = 73;
     public static final int LAMBDA_REF = 74;
+
+
+    public static final int ENTITY = 80;
 
 //    LONG(1),
 //    DOUBLE(2),

@@ -37,15 +37,14 @@ public class MetaContextCacheTest extends TestCase {
             }
         });
         var metaContext = cache.get(TestConstants.APP_ID);
-        Assert.assertTrue(metaContext.containsEntity(Klass.class, fooKlassId));
+        Assert.assertTrue(metaContext.contains(fooKlassId));
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID, metaContext)) {
-                var parent = Objects.requireNonNull(context.getParent());
-                Assert.assertTrue(parent.containsUniqueKey(Klass.UNIQUE_QUALIFIED_NAME, "Foo"));
-                var instCtx = context.getInstanceContext();
+                Assert.assertTrue(context.containsUniqueKey(Klass.UNIQUE_QUALIFIED_NAME,
+                        Instances.stringInstance("Foo")));
                 var fooKlass = context.getKlass(fooKlassId);
                 var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType()).build();
-                instCtx.bind(foo);
+                context.bind(foo);
                 var reg = BeanDefinitionRegistry.getInstance(context);
                 reg.getInterceptors();
                 context.finish();

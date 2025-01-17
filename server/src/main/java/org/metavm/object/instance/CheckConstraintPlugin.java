@@ -22,7 +22,7 @@ public class CheckConstraintPlugin implements ContextPlugin {
     }
 
     private void checkConstraints(ClassInstance instance) {
-        List<CheckConstraint> constraints = instance.getKlass().getAllConstraints(CheckConstraint.class);
+        List<CheckConstraint> constraints = instance.getInstanceKlass().getAllConstraints(CheckConstraint.class);
         for (CheckConstraint constraint : constraints) {
             if(!constraint.check(instance)) {
                 throw BusinessException.constraintCheckFailed(instance, constraint);

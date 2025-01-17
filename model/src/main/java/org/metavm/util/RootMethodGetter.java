@@ -42,7 +42,7 @@ public class RootMethodGetter {
     @Nullable
     private Method getMatchingMethod(Method method, Class<?> klass) {
         var declaredMethods = Arrays.asList(klass.getDeclaredMethods());
-        return NncUtils.find(declaredMethods, m -> isMethodSignatureMatched(m, method));
+        return Utils.find(declaredMethods, m -> isMethodSignatureMatched(m, method));
     }
 
     private boolean isMethodSignatureMatched(Method m1, Method m2) {
@@ -52,7 +52,7 @@ public class RootMethodGetter {
     private List<Class<?>> getSupers(Class<?> klass) {
         List<Class<?>> supers = Arrays.asList(klass.getInterfaces());
         if(klass.getSuperclass() != null) {
-            supers = NncUtils.prepend(klass.getSuperclass(), supers);
+            supers = Utils.prepend(klass.getSuperclass(), supers);
         }
         return supers;
     }

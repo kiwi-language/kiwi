@@ -1,9 +1,9 @@
 package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.entity.Entity;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.TreeTags;
-import org.metavm.flow.Lambda;
-import org.metavm.flow.Method;
 import org.metavm.object.instance.ChangeType;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
@@ -13,8 +13,6 @@ import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.type.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -25,8 +23,6 @@ import java.util.function.Function;
 
 @Slf4j
 public class InstanceInput extends MvInput {
-
-    public static final Logger debugLog = LoggerFactory.getLogger("Debug");
 
     public static final Function<Id, Instance> UNSUPPORTED_RESOLVER = id -> {
         throw new UnsupportedOperationException();
@@ -54,29 +50,26 @@ public class InstanceInput extends MvInput {
 
     private final Function<Id, Instance> resolver;
     private final Consumer<Instance> addValue;
-    private final TypeDefProvider typeDefProvider;
     private final RedirectStatusProvider redirectStatusProvider;
     private long treeId;
     @Nullable
-    private Instance parent;
+    private MvInstance parent;
     @Nullable
     private Field parentField;
     private @Nullable KlassDataSlot currentKlassSlot;
     private boolean loadedFromCache;
 
     public InstanceInput(InputStream in) {
-        this(in, UNSUPPORTED_RESOLVER, UNSUPPORTED_ADD_VALUE, UNSUPPORTED_TYPE_DEF_PROVIDER, UNSUPPORTED_REDIRECTION_SIGNAL_PROVIDER);
+        this(in, UNSUPPORTED_RESOLVER, UNSUPPORTED_ADD_VALUE, UNSUPPORTED_REDIRECTION_SIGNAL_PROVIDER);
     }
 
     public InstanceInput(InputStream in,
                          Function<Id, Instance> resolver,
                          Consumer<Instance> addValue,
-                         TypeDefProvider typeDefProvider,
                          RedirectStatusProvider redirectStatusProvider) {
         super(in);
         this.resolver = resolver;
         this.addValue = addValue;
-        this.typeDefProvider = typeDefProvider;
         this.redirectStatusProvider = redirectStatusProvider;
     }
 
@@ -85,16 +78,26 @@ public class InstanceInput extends MvInput {
         return (Instance) readTree();
     }
 
+    @Override
     public Message readTree() {
         var treeTag = read();
         return switch (treeTag) {
             case TreeTags.DEFAULT -> readMessage();
-            case TreeTags.RELOCATED -> readForwardingPointer();
-            default -> throw new IllegalStateException("Invalid tree tag: " + treeTag);
+            case TreeTags.RELOCATED-> readForwardingPointer();
+            case TreeTags.ENTITY -> readEntityMessage();
+            default -> throw new IllegalStateException("Unrecognized tree tag: " + treeTag);
         };
     }
 
-    public Instance readMessage() {
+    public Entity readEntityMessage() {
+        readTreeId();
+        var nextNodeId = readLong();
+        var entity = readEntity(Entity.class, null);
+        entity.setNextNodeId(nextNodeId);
+        return entity;
+    }
+
+    public MvInstance readMessage() {
         var version = readLong();
         readTreeId();
         var nextNodeId = readLong();
@@ -105,15 +108,15 @@ public class InstanceInput extends MvInput {
         if (separateChild) {
             parent = resolveInstance(readId());
             var fieldId = readId();
-            parentField = ((ClassInstance) parent.resolve()).getKlass().findField(f -> f.idEquals(fieldId));
+            parentField = ((ClassInstance) parent.get()).getInstanceKlass().findField(f -> f.idEquals(fieldId));
             pendingChild = parentField == null || !parentField.isChild();
         }
-        var instance = (Instance) readValue().resolveDurable();
+        var instance = (MvInstance) readValue().resolveDurable();
         instance.setVersion(version);
         instance.setNextNodeId(nextNodeId);
         if (separateChild) {
             instance.setPendingChild(pendingChild);
-            instance.setParentInternal(parent.resolve(), parentField, false);
+            instance.setParentInternal((MvInstance) parent.get(), parentField, false);
         }
         return instance;
     }
@@ -124,7 +127,7 @@ public class InstanceInput extends MvInput {
 
     public Value readRemovingInstance() {
         var ref = readInstance();
-        ref.resolve().setRemoving(true);
+        ref.get().setRemoving();
         return ref;
     }
 
@@ -132,7 +135,7 @@ public class InstanceInput extends MvInput {
         var redirectionRef = (Reference) readValue();
         var redirectionStatus = redirectStatusProvider.getRedirectStatus(readId());
         var record = (Reference) readValue();
-        return new RedirectingReference(record.resolve(), redirectionRef, redirectionStatus);
+        return new RedirectingReference(record.get(), redirectionRef, redirectionStatus);
     }
 
     public Reference readReference() {
@@ -176,14 +179,14 @@ public class InstanceInput extends MvInput {
 
     private Reference readInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
         var type = this.readType();
-        var id = PhysicalId.of(treeId, nodeId, type);
+        var id = PhysicalId.of(treeId, nodeId);
         var instance = type instanceof ArrayType arrayType ?
                 new ArrayInstance(id, arrayType, false, null) :
                 ClassInstanceBuilder.newBuilder((ClassType) type).id(id).initFieldTable(false).build();
         if(parent != null)
             instance.setParentInternal(parent, parentField, true);
         if(oldTreeId != -1L) {
-            instance.setOldId(PhysicalId.of(oldTreeId, oldNodeId, type));
+            instance.setOldId(PhysicalId.of(oldTreeId, oldNodeId));
             instance.setUseOldId(useOldId);
         }
         var oldParent = parent;
@@ -215,52 +218,7 @@ public class InstanceInput extends MvInput {
         return bout.toByteArray();
     }
 
-    @Override
-    public Klass getKlass(Id id) {
-        return (Klass) typeDefProvider.getTypeDef(id);
-    }
-
-    @Override
-    public Method getMethod(Id id) {
-        return (Method) typeDefProvider.getTypeDef(id);
-    }
-
-    @Override
-    public Field getField(Id id) {
-        return (Field) typeDefProvider.getTypeDef(id);
-    }
-
-    @Override
-    public TypeVariable getTypeVariable(Id id) {
-        return (TypeVariable) typeDefProvider.getTypeDef(id);
-    }
-
-    @Override
-    public org.metavm.flow.Function getFunction(Id id) {
-        return (org.metavm.flow.Function) typeDefProvider.getTypeDef(id);
-    }
-
-    @Override
-    public CapturedTypeVariable getCapturedTypeVariable(Id id) {
-        return (CapturedTypeVariable) typeDefProvider.getTypeDef(id);
-    }
-
-    @Override
-    public Lambda getLambda(Id id) {
-        return (Lambda) typeDefProvider.getTypeDef(id);
-    }
-
-    @Override
-    public Index getIndex(Id id) {
-        return (Index) typeDefProvider.getTypeDef(id);
-    }
-
-    @Override
-    public IndexField getIndexField(Id id) {
-        return (IndexField) typeDefProvider.getTypeDef(id);
-    }
-
-    public void setParent(@Nullable Instance parent) {
+    public void setParent(@Nullable MvInstance parent) {
         this.parent = parent;
     }
 
@@ -307,10 +265,6 @@ public class InstanceInput extends MvInput {
         return new ReferencePO(appId, readLong(), readId().toBytes(), readInt());
     }
 
-    public InstanceLog readInstanceLog(long appId) {
-        return new InstanceLog(appId, readId(), ChangeType.values()[readInt()], readLong());
-    }
-
     @Nullable
     public Instance getParent() {
         return parent;
@@ -326,7 +280,7 @@ public class InstanceInput extends MvInput {
     }
 
     public InstanceInput copy(InputStream in) {
-        var copy = new InstanceInput(in, resolver, addValue, typeDefProvider, redirectStatusProvider);
+        var copy = new InstanceInput(in, resolver, addValue, redirectStatusProvider);
         copy.parent = parent;
         copy.parentField = parentField;
         copy.treeId = treeId;
@@ -335,4 +289,13 @@ public class InstanceInput extends MvInput {
         return copy;
     }
 
+    @Override
+    public <T extends Entity> T readEntity(Class<T> klass, Entity parent) {
+        var tag = read();
+        //noinspection unchecked
+        klass = (Class<T>) EntityRegistry.getEntityClass(tag);
+        var entity = super.readEntity(klass, parent);
+        addValue.accept(entity);
+        return entity;
+    }
 }

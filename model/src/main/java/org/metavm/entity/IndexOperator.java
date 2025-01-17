@@ -5,7 +5,7 @@ import org.metavm.object.instance.core.TimeValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.BytesUtils;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -123,7 +123,7 @@ public enum IndexOperator {
     }
 
     public static IndexOperator getByCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code);
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 
     public int code() {

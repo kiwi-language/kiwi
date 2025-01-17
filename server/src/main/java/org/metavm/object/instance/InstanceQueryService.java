@@ -8,12 +8,13 @@ import org.metavm.entity.InstanceQueryField;
 import org.metavm.expression.*;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.search.InstanceSearchService;
+import org.metavm.object.instance.search.SearchBuilder;
 import org.metavm.object.instance.search.SearchQuery;
 import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -30,17 +31,15 @@ public class InstanceQueryService {
     }
 
     private SearchQuery buildSearchQuery(InstanceQuery query,
-                                         IndexedTypeDefProvider typeDefProvider,
-                                         InstanceProvider instanceProvider) {
-        var expression = buildCondition(query, typeDefProvider, instanceProvider);
+                                         Expression condition) {
         var type = query.klass().getType();
         Set<String> typeExpressions = (type instanceof KlassType classType) ?
-                NncUtils.mapUnique(classType.getKlass().getDescendantTypes(), k -> k.getType().toExpression()) :
+                Utils.mapToSet(classType.getKlass().getDescendantTypes(), k -> k.getType().toExpression()) :
                 Set.of(type.toExpression());
         return new SearchQuery(
                 ContextUtil.getAppId(),
                 typeExpressions,
-                expression,
+                Utils.safeCall(condition, SearchBuilder::buildSearchCondition),
                 query.includeBuiltin(),
                 query.page(),
                 query.pageSize(),
@@ -49,34 +48,38 @@ public class InstanceQueryService {
     }
 
     public Page<Reference> query(InstanceQuery query, IEntityContext context) {
-        return query(query, context.getInstanceContext(),
+        return query(query, context,
                 new ContextTypeDefRepository(context));
     }
 
     public Page<Reference> query(InstanceQuery query,
                                  InstanceRepository instanceRepository,
                                  IndexedTypeDefProvider typeDefProvider) {
-        var searchQuery = buildSearchQuery(query, typeDefProvider, instanceRepository);
+        var condition = buildCondition(query, typeDefProvider, instanceRepository);
+        var searchQuery = buildSearchQuery(query, condition);
         var idPage = instanceSearchService.search(searchQuery);
 //        var newlyCreatedIds = NncUtils.map(query.createdIds(), id -> ((PhysicalId) id).getId());
 //        var excludedIds = NncUtils.mapUnique(query.excludedIds(), id -> ((PhysicalId) id).getId());
-        var created = NncUtils.map(query.createdIds(), instanceRepository::get);
+        var created = Utils.map(query.createdIds(), instanceRepository::get);
         var filteredCreatedId =
-                NncUtils.filterAndMap(created, i -> searchQuery.match((ClassInstance) i), Instance::tryGetId);
-        List<Id> ids = NncUtils.merge(idPage.data(), filteredCreatedId, true);
-        ids = NncUtils.filter(ids, id -> !query.excludedIds().contains(id));
+                Utils.filterAndMap(created, i -> match((ClassInstance) i, searchQuery.types(), condition), Instance::tryGetId);
+        List<Id> ids = Utils.merge(idPage.data(), filteredCreatedId, true);
+        ids = Utils.filter(ids, id -> !query.excludedIds().contains(id));
         ids = instanceRepository.filterAlive(ids);
         int actualSize = ids.size();
         ids = ids.subList(0, Math.min(ids.size(), query.pageSize()));
         long total = idPage.total() + (actualSize - idPage.data().size());
-        return new Page<>(NncUtils.map(ids, id -> instanceRepository.get(id).getReference()), total);
+        return new Page<>(Utils.map(ids, id -> instanceRepository.get(id).getReference()), total);
+    }
+
+    private boolean match(ClassInstance instance, Set<String> types, Expression condition) {
+        return types.contains(instance.getInstanceType().toExpression()) &&
+                (condition == null || ((BooleanValue) condition.evaluate(new InstanceEvaluationContext(instance))).isTrue());
     }
 
     public long count(InstanceQuery query, IEntityContext context) {
         return instanceSearchService.count(buildSearchQuery(query,
-                new ContextTypeDefRepository(context),
-                context.getInstanceContext())
-        );
+                buildCondition(query, new ContextTypeDefRepository(context), context)));
     }
 
     private Expression buildCondition(InstanceQuery query,
@@ -124,7 +127,7 @@ public class InstanceQueryService {
     private Expression buildConditionForSearchText(Klass klass, String searchText,
                                                    List<Field> searchFields,
                                                    TypeDefProvider typeDefProvider) {
-        if (NncUtils.isEmpty(searchText))
+        if (Utils.isEmpty(searchText))
             return null;
         Set<Field> searchFieldSet = new HashSet<>(searchFields);
         Field titleField = klass.getTitleField();

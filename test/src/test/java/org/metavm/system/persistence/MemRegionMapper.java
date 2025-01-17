@@ -1,6 +1,6 @@
 package org.metavm.system.persistence;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 
@@ -10,7 +10,7 @@ public class MemRegionMapper implements RegionMapper {
 
     @Override
     public List<RegionPO> selectByTypeCategories(Collection<Integer> typeCategories) {
-        return NncUtils.filterAndMap(typeCategories, category2region::containsKey,
+        return Utils.filterAndMap(typeCategories, category2region::containsKey,
                 c -> category2region.get(c).copy());
     }
 

@@ -5,7 +5,7 @@ import javax.annotation.Nullable;
 public record Pair<T>(@Nullable T first, @Nullable T second) {
 
     public T any() {
-        return NncUtils.anyNonNull(first, second);
+        return Utils.anyNonNull(first, second);
     }
 
     @SuppressWarnings("unchecked")

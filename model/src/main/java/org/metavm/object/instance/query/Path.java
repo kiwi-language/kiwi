@@ -1,7 +1,7 @@
 package org.metavm.object.instance.query;
 
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ValueUtils;
 
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class Path {
     }
 
     public String getPathString() {
-        return NncUtils.joinWithDot(getPath());
+        return Utils.joinWithDot(getPath());
     }
 
     public String firstItem() {

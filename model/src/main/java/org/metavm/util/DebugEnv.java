@@ -10,6 +10,7 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Klass;
+import org.metavm.object.type.Type;
 import org.metavm.task.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +72,7 @@ public class DebugEnv {
     public static volatile IInstanceContext context;
 
     public static volatile Id inventoryId;
+    public static List<Type> types;
 
     public static void enterPathItem(String pathItem) {
         path.addLast(pathItem);

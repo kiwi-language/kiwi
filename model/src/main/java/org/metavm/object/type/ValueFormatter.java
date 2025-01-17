@@ -7,7 +7,7 @@ import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +25,7 @@ public class ValueFormatter {
     public static Reference parseInstance(InstanceDTO instanceDTO, IInstanceContext context) {
         Type actualType;
         if (!instanceDTO.isNew())
-            actualType = context.get(instanceDTO.parseId()).getType();
+            actualType = context.get(instanceDTO.parseId()).getInstanceType();
         else
             actualType = TypeParser.parseType(instanceDTO.type(), context.getTypeDefProvider());
         if (actualType instanceof KlassType classType) {
@@ -51,7 +51,7 @@ public class ValueFormatter {
             } else {
                 Map<Field, Value> fieldValueMap = new HashMap<>();
                 ClassInstanceParam param = (ClassInstanceParam) instanceDTO.param();
-                Map<String, InstanceFieldDTO> fieldDTOMap = NncUtils.toMap(
+                Map<String, InstanceFieldDTO> fieldDTOMap = Utils.toMap(
                         param.fields(),
                         InstanceFieldDTO::fieldId
                 );
@@ -62,7 +62,7 @@ public class ValueFormatter {
                     instance = ClassInstance.allocate(classType);
                 }
                 classType.foreachField(field -> {
-                    FieldValue rawValue = NncUtils.get(fieldDTOMap.get(field.getRawField().getStringId()), InstanceFieldDTO::value);
+                    FieldValue rawValue = Utils.safeCall(fieldDTOMap.get(field.getRawField().getStringId()), InstanceFieldDTO::value);
                     Value fieldValue = rawValue != null ?
                             parseOne(rawValue, field.getPropertyType(), InstanceParentRef.ofObject(instance.getReference(), field.getRawField()), context)
                             : Instances.nullInstance();
@@ -108,8 +108,8 @@ public class ValueFormatter {
         Value value = InstanceFactory.resolveValue(
                 rawValue, type, parentRef, context
         );
-        if (value instanceof Reference r && r.tryGetId() == null && !context.containsInstance(r.resolve()))
-            context.bind(r.resolve());
+        if (value instanceof Reference r && r.tryGetId() == null && !context.containsInstance(r.get()))
+            context.bind(r.get());
         return value;
     }
 
@@ -120,14 +120,14 @@ public class ValueFormatter {
         if (value instanceof NullValue)
             return null;
         if (value instanceof PrimitiveValue primitiveValue) {
-            if (primitiveValue.getType().isPassword()) {
+            if (primitiveValue.getValueType().isPassword()) {
                 return null;
             } else {
                 return primitiveValue.getValue();
             }
         } else {
             var d = (Instance) value.resolveDurable();
-            if (value.getType().isValue()) {
+            if (value.getValueType().isValueType()) {
                 return value.toDTO();
             } else if (d.tryGetTreeId() != null) {
                 return new ReferenceDTO(d.getTreeId());

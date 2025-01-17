@@ -2,7 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -63,14 +63,14 @@ public class ForTransformer extends SkipDiscardedVisitor {
         PsiWhileStatement whileStmt =
                 (PsiWhileStatement) TranspileUtils.createStatementFromText("while (" + condText + ") {}");
         if (statement.getBody() != null) {
-            NncUtils.requireNonNull(whileStmt.getBody()).replace(body);
+            Objects.requireNonNull(whileStmt.getBody()).replace(body);
         }
         replace(statement, whileStmt);
     }
 
     private List<PsiStatement> tryBreakupStatements(PsiStatement statement) {
         if (statement instanceof PsiExpressionListStatement exprListStmt) {
-            return NncUtils.map(
+            return Utils.map(
                     exprListStmt.getExpressionList().getExpressions(),
                     expr -> TranspileUtils.createStatementFromText(expr.getText() + ";")
             );
@@ -107,7 +107,7 @@ public class ForTransformer extends SkipDiscardedVisitor {
     @Override
     public void visitContinueStatement(PsiContinueStatement statement) {
         super.visitContinueStatement(statement);
-        var label = NncUtils.get(statement.getLabelIdentifier(), PsiElement::getText);
+        var label = Utils.safeCall(statement.getLabelIdentifier(), PsiElement::getText);
         var loopInfo = currentLoop();
         while (loopInfo != null && !loopInfo.matchLabel(label)) {
             loopInfo = loopInfo.parent;

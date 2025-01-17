@@ -69,7 +69,7 @@ public class Main {
         var apps = listApps();
         System.out.print("application: ");
         var appName = scanner.nextLine();
-        var appId = NncUtils.findRequired(apps, app -> app.name().equals(appName)).id();
+        var appId = Utils.findRequired(apps, app -> app.name().equals(appName)).id();
         enterApp(appId);
         System.out.println("Logged in successfully");
     }
@@ -85,9 +85,9 @@ public class Main {
         CompilerHttpUtils.post("/platform-user/enter-app/" + appId, null, new TypeReference<LoginInfo>() {
         });
         CompilerHttpUtils.setAppId(appId);
-        NncUtils.writeFile(getAppFile(), Long.toString(appId));
-        NncUtils.writeFile(getTokenFile(), CompilerHttpUtils.getToken());
-        NncUtils.writeFile(getPlatformTokenFile(), CompilerHttpUtils.getToken(2L));
+        Utils.writeFile(getAppFile(), Long.toString(appId));
+        Utils.writeFile(getTokenFile(), CompilerHttpUtils.getToken());
+        Utils.writeFile(getPlatformTokenFile(), CompilerHttpUtils.getToken(2L));
     }
 
     private static void createApp(String name) {
@@ -127,10 +127,10 @@ public class Main {
     }
 
     private static void ensureHomeCreated() {
-        NncUtils.createDirectories(HOME);
-        NncUtils.createDirectories(getEnvPath("default"));
+        Utils.createDirectories(HOME);
+        Utils.createDirectories(getEnvPath("default"));
         if (!new File(ENV_FILE).exists())
-            NncUtils.writeFile(ENV_FILE, "default");
+            Utils.writeFile(ENV_FILE, "default");
     }
 
     private static void createEnv(String name) {
@@ -139,13 +139,13 @@ public class Main {
             System.err.println("Env " + name + " already exists");
             System.exit(1);
         }
-        NncUtils.createDirectories(path);
+        Utils.createDirectories(path);
     }
 
     private static void deleteEnv(String name) {
         var path = getEnvPath(name);
-        if (NncUtils.isDirectory(path)) {
-            NncUtils.clearDirectory(path);
+        if (Utils.isDirectory(path)) {
+            Utils.clearDirectory(path);
         } else {
             System.err.println("Env " + name + " does not exist");
             System.exit(1);
@@ -154,8 +154,8 @@ public class Main {
 
     private static void setEnv(String name) {
         var path = getEnvPath(name);
-        if (NncUtils.isDirectory(path)) {
-            NncUtils.writeFile(ENV_FILE, name);
+        if (Utils.isDirectory(path)) {
+            Utils.writeFile(ENV_FILE, name);
             selectedEnv = path;
         } else {
             System.err.println("Env " + name + " does not exist");
@@ -166,9 +166,9 @@ public class Main {
     private static void initSelectedEnv() {
         var envFile = new File(ENV_FILE);
         if (envFile.isFile()) {
-            var env = NncUtils.readLine(envFile);
+            var env = Utils.readLine(envFile);
             var path = getEnvPath(env);
-            if (NncUtils.isDirectory(path)) {
+            if (Utils.isDirectory(path)) {
                 selectedEnv = path;
                 return;
             }
@@ -181,19 +181,19 @@ public class Main {
     }
 
     private static void clear() {
-        NncUtils.clearDirectory(HOME);
+        Utils.clearDirectory(HOME);
         System.out.println("Clear successfully");
     }
 
     private static void changeHost(String host) {
-        NncUtils.writeFile(getHostFile(), host);
+        Utils.writeFile(getHostFile(), host);
         System.out.println("Host changed");
     }
 
     private static String getHost() {
         var hostFile = new File(getHostFile());
         if (hostFile.exists())
-            return NncUtils.readLine(hostFile);
+            return Utils.readLine(hostFile);
         else
             return Constants.DEFAULT_HOST;
     }
@@ -205,6 +205,10 @@ public class Main {
         } else {
             System.out.println("Not logged in");
         }
+    }
+
+    private static void redeploy(TypeClient typeClient, String targetDir) {
+        typeClient.deploy(targetDir + "/target.mva");
     }
 
     private static List<ApplicationDTO> listApps() {
@@ -223,10 +227,10 @@ public class Main {
         var platformTokenFile = new File(getPlatformTokenFile());
         var appFile = new File(getAppFile());
         if (tokenFile.exists() && platformTokenFile.exists() && appFile.exists()) {
-            var appId = NncUtils.readLong(appFile);
+            var appId = Utils.readLong(appFile);
             CompilerHttpUtils.setAppId(appId);
-            CompilerHttpUtils.setToken(appId, NncUtils.readLine(tokenFile));
-            CompilerHttpUtils.setToken(2L, NncUtils.readLine(platformTokenFile));
+            CompilerHttpUtils.setToken(appId, Utils.readLine(tokenFile));
+            CompilerHttpUtils.setToken(2L, Utils.readLine(platformTokenFile));
         }
     }
 
@@ -239,6 +243,7 @@ public class Main {
     private static void usage() {
         System.out.println("Usage: ");
         System.out.println("metavm deploy");
+        System.out.println("metavm redeploy");
         System.out.println("metavm clear");
         System.out.println("metavm host <host>");
         System.out.println("metavm login");
@@ -292,7 +297,7 @@ public class Main {
                     printSourceTag(args[1]);
                 }
                 case "env" -> {
-                    var selected = NncUtils.readLine(ENV_FILE);
+                    var selected = Utils.readLine(ENV_FILE);
                     var home = new File(HOME);
                     for (File file : Objects.requireNonNull(home.listFiles())) {
                         if (file.isDirectory())
@@ -330,18 +335,19 @@ public class Main {
                     var typeClient = new HttpTypeClient();
                     ensureLoggedIn();
                     logger.info("Host: " + CompilerHttpUtils.getHost());
-                    logger.info("Application ID: {}", NncUtils.readLong(getAppFile()));
+                    logger.info("Application ID: {}", Utils.readLong(getAppFile()));
                     var main = new Main(selectedEnv,
                             sourceRoot,
                             "target",
-                            NncUtils.readLong(getAppFile()),
-                            NncUtils.readLine(getTokenFile()),
+                            Utils.readLong(getAppFile()),
+                            Utils.readLine(getTokenFile()),
                             typeClient,
                             new DirectoryAllocatorStore("/not_exist"),
                             new FileColumnStore("/not_exist"),
                             new FileTypeTagStore("/not_exist"));
                     main.run();
                 }
+                case "redeploy" -> redeploy(new HttpTypeClient(), "target");
                 case "deploy_direct" -> {
                     CompilerHttpUtils.setHost(Constants.DEFAULT_HOST);
                     var main = new Main(

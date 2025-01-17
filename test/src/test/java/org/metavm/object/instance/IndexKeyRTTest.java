@@ -18,7 +18,7 @@ public class IndexKeyRTTest extends TestCase {
         var data = IndexKeyRT.toKeyBytes(List.of(Instances.longInstance(1L)));
         Assert.assertTrue(data.length > 1);
         var cols = IndexKeyPO.toColumns(data);
-        var value = BytesUtils.readIndexBytes(cols.get(0));
+        var value = BytesUtils.readIndexBytes(cols.getFirst());
         Assert.assertEquals(1L, value);
     }
 

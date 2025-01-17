@@ -16,7 +16,7 @@ import org.metavm.system.RegionConstants;
 import org.metavm.util.ChangeList;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -65,14 +65,14 @@ public class InstanceStore extends BaseInstanceStore {
     public List<TreeVersion> getVersions(List<Long> ids, IInstanceContext context) {
         try (var entry = context.getProfiler().enter("getRootVersions")) {
             entry.addMessage("numIds", ids.size());
-            var systemIds = NncUtils.filter(ids, RegionConstants::isSystemId);
-            var nonSystemIds = NncUtils.exclude(ids, RegionConstants::isSystemId);
+            var systemIds = Utils.filter(ids, RegionConstants::isSystemId);
+            var nonSystemIds = Utils.exclude(ids, RegionConstants::isSystemId);
             List<TreeVersion> systemTrees = systemIds.isEmpty() ? List.of() : instanceMapper.selectVersions(Constants.ROOT_APP_ID, systemIds);
             List<TreeVersion> nonSystemTrees = nonSystemIds.isEmpty() ? List.of() : instanceMapper.selectVersions(context.getAppId(), nonSystemIds);
             var treeMap = new HashMap<Long, TreeVersion>();
             systemTrees.forEach(v -> treeMap.put(v.id(), v));
             nonSystemTrees.forEach(v -> treeMap.put(v.id(), v));
-            return NncUtils.mapAndFilter(ids, treeMap::get, Objects::nonNull);
+            return Utils.mapAndFilter(ids, treeMap::get, Objects::nonNull);
         }
     }
 
@@ -83,7 +83,7 @@ public class InstanceStore extends BaseInstanceStore {
 
     @Override
     public List<IndexEntryPO> getIndexEntriesByInstanceIds(Collection<Id> instanceIds, IInstanceContext context) {
-        return indexEntryMapper.selectByInstanceIds(context.getAppId(), NncUtils.map(instanceIds, Id::toBytes));
+        return indexEntryMapper.selectByInstanceIds(context.getAppId(), Utils.map(instanceIds, Id::toBytes));
     }
 
     @Override
@@ -118,20 +118,20 @@ public class InstanceStore extends BaseInstanceStore {
         if (targetIds.isEmpty())
             return null;
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getFirstStrongReferences")) {
-            return referenceMapper.selectFirstStrongReference(appId, NncUtils.map(targetIds, Id::toBytes), excludedSourceIds);
+            return referenceMapper.selectFirstStrongReference(appId, Utils.map(targetIds, Id::toBytes), excludedSourceIds);
         }
     }
 
     @Override
     public List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds) {
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getAllStrongReferences")) {
-            return referenceMapper.selectAllStrongReferences(appId, NncUtils.map(targetIds, Id::toBytes), excludedSourceIds);
+            return referenceMapper.selectAllStrongReferences(appId, Utils.map(targetIds, Id::toBytes), excludedSourceIds);
         }
     }
 
     @Override
     public List<Id> indexScan(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
-        return NncUtils.map(indexEntryMapper.scan(context.getAppId(), from, to),
+        return Utils.map(indexEntryMapper.scan(context.getAppId(), from, to),
                 IndexEntryPO::getId);
     }
 
@@ -143,7 +143,7 @@ public class InstanceStore extends BaseInstanceStore {
     @Override
     public List<Id> query(InstanceIndexQuery query, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.query")) {
-            return NncUtils.map(queryEntries(query, context), IndexEntryPO::getId);
+            return Utils.map(queryEntries(query, context), IndexEntryPO::getId);
         }
     }
 
@@ -162,7 +162,7 @@ public class InstanceStore extends BaseInstanceStore {
     @Override
     public List<Long> getByReferenceTargetId(Id targetId, long startIdExclusive, long limit, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.getByReferenceTargetId")) {
-            return NncUtils.map(
+            return Utils.map(
                     referenceMapper.selectByTargetId(context.getAppId(), targetId.toBytes(), startIdExclusive, limit),
                     ReferencePO::getSourceTreeId
             );
@@ -189,13 +189,13 @@ public class InstanceStore extends BaseInstanceStore {
 
     public void updateSyncVersion(List<VersionPO> versions) {
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.updateSyncVersion")) {
-            NncUtils.doInBatch(versions, instanceMapper::updateSyncVersion);
+            Utils.doInBatch(versions, instanceMapper::updateSyncVersion);
         }
     }
 
     @Override
     public List<InstancePO> loadForest(Collection<Long> ids, IInstanceContext context) {
-        if (NncUtils.isEmpty(ids))
+        if (Utils.isEmpty(ids))
             return List.of();
         try (var entry = context.getProfiler().enter("InstanceStore.loadForest")) {
             entry.addMessage("numInstances", ids.size());
@@ -229,7 +229,7 @@ public class InstanceStore extends BaseInstanceStore {
             if (entry.isVerbose()) {
                 entry.addMessage("ids", request.ids());
             }
-            if (NncUtils.isEmpty(request.ids())) {
+            if (Utils.isEmpty(request.ids())) {
                 return List.of();
             }
             List<InstancePO> records = instanceMapper.selectByIds(context.getAppId(), request.ids(), context.getLockMode().code());

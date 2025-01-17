@@ -5,102 +5,37 @@ import org.metavm.util.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeGeneric, Iterable<T> {
+public class ReadonlyArray<T> implements Iterable<T> {
 
     final List<T> table;
-
-    public static final int DEFAULT_INDEX_BUILD_THRESHOLD = 3;
-
-    public static <T> ReadonlyArray<T> createProxy(Class<? extends ReadonlyArray<T>> proxyClass, Type elementType) {
-        return ReflectionUtils.invokeConstructor(
-                ReflectionUtils.getConstructor(proxyClass, Type.class),
-                elementType
-        );
-    }
-
-    private Type genericType;
     private Type elementType;
     private ModelIdentity identifier;
 
     public ReadonlyArray(Class<T> klass, Collection<? extends T> data) {
-        this(TypeReference.of(klass).getGenericType(), data, DEFAULT_INDEX_BUILD_THRESHOLD);
-    }
-
-    public ReadonlyArray(TypeReference<T> typeRef, Collection<? extends T> data) {
-        this(typeRef.getGenericType(), data, DEFAULT_INDEX_BUILD_THRESHOLD);
+        this(TypeReference.of(klass).getGenericType(), data);
     }
 
     public ReadonlyArray(Class<T> klass) {
-        this(TypeReference.of(klass).getType(), List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
+        this(TypeReference.of(klass).getType(), List.of());
     }
 
-    public ReadonlyArray(TypeReference<T> typeRef) {
-        this(typeRef.getType(), List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
-    }
-
-    public ReadonlyArray(Type elementType) {
-        this(elementType, List.of(), DEFAULT_INDEX_BUILD_THRESHOLD);
-    }
-
-    public ReadonlyArray() {
-        table = new ArrayList<>();
-    }
-
-    private ReadonlyArray(Type elementType, Collection<? extends T> data, int buildIndexThreshold) {
+    private ReadonlyArray(Type elementType, Collection<? extends T> data) {
         this.elementType = elementType;
-        this.genericType = new ParameterizedTypeImpl(
-                null,
-                getRawClass(),
-                new Type[]{ReflectionUtils.eraseType(elementType)}
-        );
         table = new ArrayList<>(data);
     }
 
-    private ReadonlyArray(Type elementType, Type genericType, List<T> table) {
-        this.elementType = elementType;
-        this.genericType = genericType;
-        this.table = table;
-    }
-
-    @Override
-    public void forEachReference(Consumer<Object> action) {
-        int i = 0;
-        for (T t : this) {
-            if (t != null && !ValueUtils.isPrimitive(t)) {
-                if(DebugEnv.recordPath) {
-                    EntityUtils.enterPathItem(i + "");
-                    action.accept(t);
-                    EntityUtils.exitPathItem();
-                }
-                else
-                    action.accept(t);
-            }
-            i++;
-        }
-    }
-
-    @Override
-    public void forEachDescendant(Consumer<Entity> action, boolean skipCopyIgnore) {
-        action.accept(this);
-    }
 
     @NoProxy
     public void initialize(ParameterizedType type, Collection<? extends T> data) {
-        this.genericType = type;
         this.elementType = type.getActualTypeArguments()[0];
         table.clear();
         table.addAll(data);
-    }
-
-    protected Class<?> getRawClass() {
-        return ReadonlyArray.class;
     }
 
     public T get(int index) {
@@ -108,7 +43,7 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
     }
 
     public <K> T get(IndexMapper<? super T, K> keyMapper, K key) {
-        return NncUtils.find(table, t -> Objects.equals(keyMapper.apply(t), key));
+        return Utils.find(table, t -> Objects.equals(keyMapper.apply(t), key));
     }
 
     public <K> T remove(IndexMapper<T, K> keyMapper, K key) {
@@ -130,12 +65,6 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
 //        table.buildIndex(keyMapper);
     }
 
-    public ReadonlyArray<T> merge(ReadonlyArray<T> that) {
-        var mergedTable = new ArrayList<>(this.table);
-        mergedTable.addAll(that.table);
-        return new ReadonlyArray<>(genericType, elementType, mergedTable);
-    }
-
     public <R> List<R> map(Function<T, R> mapper) {
         return mapAndFilter(mapper, t -> true);
     }
@@ -155,22 +84,7 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
 
     @SuppressWarnings("unused")
     public String getIdentifierName() {
-        return NncUtils.get(identifier, ModelIdentity::name);
-    }
-
-    @Override
-    public Type getGenericType() {
-        return genericType;
-    }
-
-    @Override
-    public Map<TypeVariable<?>, Type> getTypeVariableMap() {
-        return Map.of(Table.class.getTypeParameters()[0], elementType);
-    }
-
-    @Override
-    public void clearId() {
-        this.id = null;
+        return Utils.safeCall(identifier, ModelIdentity::name);
     }
 
     @NotNull
@@ -201,26 +115,12 @@ public class ReadonlyArray<T> extends Entity implements IdInitializing, RuntimeG
         return elementType;
     }
 
-    public Class<?> getElementClass() {
-        return ReflectionUtils.getRawClass(elementType);
-    }
-
     public boolean isEmpty() {
         return table.isEmpty();
     }
 
     public int indexOf(Object value) {
         return table.indexOf(value);
-    }
-
-    public int identityIndexOf(Object value) {
-        int i = 0;
-        for (T t : this) {
-            if (t == value)
-                return i;
-            i++;
-        }
-        return -1;
     }
 
     public int lastIndexOf(Object o) {

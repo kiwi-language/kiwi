@@ -13,7 +13,8 @@ public record Subtree(
         long parentFieldTag,
         @Nullable Id oldId,
         boolean useOldId,
-        byte[] data
+        byte[] data,
+        int entityTag
 ) implements Comparable<Subtree> {
 
     public Id getId() {

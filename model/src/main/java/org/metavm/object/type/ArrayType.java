@@ -3,10 +3,13 @@ package org.metavm.object.type;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.InstanceVisitor;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.rest.dto.ArrayTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.MvInput;
@@ -15,11 +18,14 @@ import org.metavm.util.MvOutput;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Entity
 public class ArrayType extends CompositeType {
 
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
     private final Type elementType;
 
     private final ArrayKind kind;
@@ -54,11 +60,6 @@ public class ArrayType extends CompositeType {
         } else {
             return false;
         }
-    }
-
-    @Override
-    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
-        return visitor.visitArrayType(this, s);
     }
 
     @Override
@@ -139,11 +140,6 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitArrayType(this);
-    }
-
-    @Override
     public String getName() {
         return getArrayTypeName(elementType, kind);
     }
@@ -159,17 +155,12 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public Type getType() {
-        return StdKlass.arrayType.type();
-    }
-
-    @Override
-    public boolean isValue() {
+    public boolean isValueType() {
         return kind == ArrayKind.VALUE;
     }
 
     @Override
-    protected boolean equals0(Object obj) {
+    public boolean equals(Object obj) {
         return obj instanceof ArrayType that && kind == that.kind && elementType.equals(that.elementType);
     }
 
@@ -178,4 +169,29 @@ public class ArrayType extends CompositeType {
         return Objects.hash(kind, elementType);
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitArrayType(this);
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitArrayType(this, s);
+    }
+
+    @Override
+    public ClassType getValueType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        elementType.accept(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        elementType.forEachReference(action);
+    }
 }

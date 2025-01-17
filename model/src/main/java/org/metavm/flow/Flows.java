@@ -15,7 +15,7 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,16 +53,8 @@ public class Flows {
             throw new InternalException("Can not get static type of flow: " + flow);
     }
 
-    public static FlowExecResult execute(FlowRef flow, @Nullable ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
-        return execute(flow, self, arguments, context.getInstanceContext());
-    }
-
     public static FlowExecResult execute(@NotNull FlowRef flow, @Nullable ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
-        return flow.execute(NncUtils.get(self, Instance::getReference), arguments, callContext);
-    }
-
-    public static @Nullable Value invoke(@NotNull FlowRef flow, ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
-        return invoke(flow, self, arguments, context.getInstanceContext());
+        return flow.execute(Utils.safeCall(self, Instance::getReference), arguments, callContext);
     }
 
     public static @Nullable Value invoke(@NotNull FlowRef flow, ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
@@ -83,7 +75,7 @@ public class Flows {
 
     public static @Nullable Value invokeVirtual(@NotNull FlowRef flow, @NotNull ClassInstance self, List<? extends Value> arguments, IEntityContext context) {
         if(flow instanceof MethodRef method && method.isInstanceMethod()) {
-            flow = self.getType().getOverride(method);
+            flow = self.getInstanceType().getOverride(method);
             return invoke(flow, self, arguments, context);
         }
         else
@@ -92,7 +84,7 @@ public class Flows {
 
     public static @Nullable Value invokeVirtual(@NotNull FlowRef flow, @NotNull ClassInstance self, List<? extends Value> arguments, CallContext callContext) {
         if(flow instanceof MethodRef method && method.isInstanceMethod()) {
-            flow = self.getType().getOverride(method);
+            flow = self.getInstanceType().getOverride(method);
             return invoke(flow, self, arguments, callContext);
         }
         else

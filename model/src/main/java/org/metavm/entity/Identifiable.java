@@ -1,7 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.object.instance.core.Id;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -24,7 +24,7 @@ public interface Identifiable {
 
     @NoProxy
     default Long tryGetPhysicalId() {
-        return NncUtils.get(tryGetId(), Id::tryGetTreeId);
+        return Utils.safeCall(tryGetId(), Id::tryGetTreeId);
     }
 
 }

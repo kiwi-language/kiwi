@@ -8,7 +8,7 @@ import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.*;
 import org.metavm.util.ChangeList;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.Collection;
 import java.util.List;
@@ -39,7 +39,7 @@ public interface IInstanceStore {
     long indexCount(IndexKeyPO from, IndexKeyPO to, IInstanceContext context);
 
     default List<Id> query(InstanceIndexQuery query, IInstanceContext context) {
-        return NncUtils.map(queryEntries(query, context), IndexEntryPO::getId);
+        return Utils.map(queryEntries(query, context), IndexEntryPO::getId);
     }
 
     long count(InstanceIndexQuery query, IInstanceContext context);

@@ -1,6 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
@@ -46,7 +46,7 @@ public class EntityDesc {
     }
 
     public List<EntityProp> getNonTransientProps() {
-        return NncUtils.exclude(props, EntityProp::isTransient);
+        return Utils.exclude(props, EntityProp::isTransient);
     }
 
     public void forEachNonTransientProp(Consumer<EntityProp> action) {
@@ -57,7 +57,7 @@ public class EntityDesc {
     }
 
     public List<EntityProp> getPropsWithAnnotation(Class<? extends Annotation> annotationClass) {
-        return NncUtils.filter(props, p -> p.getField().isAnnotationPresent(annotationClass));
+        return Utils.filter(props, p -> p.getField().isAnnotationPresent(annotationClass));
     }
 
     public Class<?> getKlass() {

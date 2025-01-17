@@ -3,7 +3,7 @@ package org.metavm.object.type.rest.dto;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.object.type.UnionType;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
 import java.util.Set;
@@ -18,12 +18,12 @@ public record UnionTypeKey(Set<TypeKey> memberKeys) implements TypeKey {
 
     @Override
     public String toTypeExpression() {
-        return NncUtils.join(memberKeys, TypeKey::toTypeExpression, "|");
+        return Utils.join(memberKeys, TypeKey::toTypeExpression, "|");
     }
 
     @Override
     public UnionType toType(TypeDefProvider typeDefProvider) {
-        return new UnionType(NncUtils.mapUnique(memberKeys, k -> k.toType(typeDefProvider)));
+        return new UnionType(Utils.mapToSet(memberKeys, k -> k.toType(typeDefProvider)));
     }
 
     @Override

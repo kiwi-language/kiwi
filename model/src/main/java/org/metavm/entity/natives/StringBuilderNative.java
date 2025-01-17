@@ -5,7 +5,8 @@ import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+
+import java.util.Objects;
 
 public class StringBuilderNative extends NativeBase {
 
@@ -15,7 +16,7 @@ public class StringBuilderNative extends NativeBase {
 
     public StringBuilderNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = NncUtils.requireNonNull(instance.getKlass().findFieldByName("array"));
+        arrayField = Objects.requireNonNull(instance.getInstanceKlass().findFieldByName("array"));
         if(instance.isFieldInitialized(arrayField)) {
             array = instance.getField(arrayField).resolveArray();
         }

@@ -1,7 +1,8 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
-import org.metavm.util.NncUtils;
+
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.TranspileUtils.createStatementFromText;
@@ -30,7 +31,7 @@ public class SwitchLabelStatementTransformer extends SkipDiscardedVisitor {
     }
 
     private void processSwitchBody(PsiCodeBlock body) {
-        var stmts = NncUtils.requireNonNull(body).getStatements();
+        var stmts = Objects.requireNonNull(body).getStatements();
         var newBody = TranspileUtils.createCodeBlock();
         PsiCodeBlock dest = null;
         for (PsiStatement stmt : stmts) {

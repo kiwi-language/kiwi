@@ -10,7 +10,6 @@ import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +28,7 @@ public class ListNative extends IterableNative {
 
     public ListNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = NncUtils.requireNonNull(instance.getType().findFieldByName("array"));
+        arrayField = Objects.requireNonNull(instance.getInstanceType().findFieldByName("array"));
         if(instance.isFieldInitialized(arrayField.getRawField())) {
             array = instance.getField(arrayField.getRawField()).resolveArray();
         }
@@ -47,7 +46,7 @@ public class ListNative extends IterableNative {
 
     public Value List(Value c, CallContext callContext) {
         if(c instanceof Reference collection) {
-            var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
+            var thatArrayField = collection.resolveObject().getInstanceKlass().getFieldByName("array");
             var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
             array = new ArrayInstance((ArrayType) arrayField.getPropertyType(),
                     new InstanceParentRef(instance.getReference(), arrayField.getRawField()));
@@ -84,7 +83,7 @@ public class ListNative extends IterableNative {
     }
 
     public Value iterator(CallContext callContext) {
-        var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getType().getFirstTypeArgument()));
+        var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getInstanceType().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);
@@ -99,6 +98,14 @@ public class ListNative extends IterableNative {
     @Override
     public @NotNull Iterator<Value> iterator() {
         return array.iterator();
+    }
+
+    public Value getFirst(CallContext callContext) {
+        return array.getFirst();
+    }
+
+    public Value getLast(CallContext callContext) {
+        return array.getLast();
     }
 
     public Value get(Value index, CallContext callContext) {
@@ -141,7 +148,7 @@ public class ListNative extends IterableNative {
 
     public Value addAll(Value c, CallContext callContext) {
         if(c instanceof Reference collection && collection.resolveObject().isList()) {
-            var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
+            var thatArrayField = collection.resolveObject().getInstanceKlass().getFieldByName("array");
             var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
             array.addAll(thatArray);
             return Instances.one();
@@ -177,7 +184,7 @@ public class ListNative extends IterableNative {
 
     public Value removeIf(Value filter, CallContext callContext) {
         if(filter instanceof Reference r) {
-            var method = r.resolveObject().getType().getMethods().get(0);
+            var method = r.resolveObject().getInstanceType().getMethods().getFirst();
             return Instances.intInstance(array.removeIf(e -> method.execute(
                     r, List.of(e), callContext).booleanRet()));
         }
@@ -195,8 +202,8 @@ public class ListNative extends IterableNative {
 
     public Value equals(Value o, CallContext callContext) {
         if(o instanceof Reference ref) {
-            if(ref.resolve() instanceof ClassInstance that
-                    && Objects.equals(that.getType().findAncestorByKlass(StdKlass.list.get()), instance.getType().findAncestorByKlass(StdKlass.list.get()))) {
+            if(ref.get() instanceof ClassInstance that
+                    && Objects.equals(that.getInstanceType().asSuper(StdKlass.list.get()), instance.getInstanceType().asSuper(StdKlass.list.get()))) {
                 var thatNat = new ListNative(that);
                 var thatArray = thatNat.toArray();
                 if(array.size() == thatArray.size()) {
@@ -223,7 +230,7 @@ public class ListNative extends IterableNative {
     @Override
     public Value forEach(Value action, CallContext callContext) {
         if(action instanceof Reference r) {
-            var method = r.resolveObject().getType().getMethods().get(0);
+            var method = r.resolveObject().getInstanceType().getMethods().getFirst();
             array.forEach(e -> method.execute(r, List.of(e), callContext));
             return Instances.nullInstance();
         }
@@ -244,7 +251,7 @@ public class ListNative extends IterableNative {
             sort(callContext);
         else {
             var l = comparator.resolveObject();
-            var compareMethod = l.getType().getMethod(StdMethod.comparatorCompare.get());
+            var compareMethod = l.getInstanceType().getMethod(StdMethod.comparatorCompare.get());
             array.sort((e1, e2) -> Instances.toInt(Flows.invokeVirtual(compareMethod, l, List.of(e1, e2), callContext)));
         }
         return Instances.nullInstance();

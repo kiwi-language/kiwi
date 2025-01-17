@@ -61,7 +61,7 @@ public class InstanceTest extends TestCase {
     public void testFoo() {
         var fooTypes = MockUtils.createFooTypes(false);
         var foo = getFooInstance(fooTypes);
-        var bar = foo.getInstanceArray(fooTypes.fooBarsField()).get(0).resolveObject();
+        var bar = foo.getInstanceArray(fooTypes.fooBarsField()).getFirst().resolveObject();
         Assert.assertEquals(CONST_FOO_NAME, foo.getStringField(fooTypes.fooNameField()).getValue());
         Assert.assertNotNull(bar);
         Assert.assertEquals(CONST_BAR_CODE, bar.getStringField(fooTypes.barCodeField()).getValue());

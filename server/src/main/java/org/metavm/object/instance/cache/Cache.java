@@ -3,7 +3,7 @@ package org.metavm.object.instance.cache;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.util.ChangeList;
 import org.metavm.util.KeyValue;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,11 +17,11 @@ public interface Cache {
         if(!entries.isEmpty())
             batchAdd(entries);
         if(!change.deletes().isEmpty())
-            batchRemove(NncUtils.map(change.deletes(), InstancePO::getId));
+            batchRemove(Utils.map(change.deletes(), InstancePO::getId));
     }
 
     default byte[] get(Long id) {
-        return NncUtils.first(batchGet(List.of(id)));
+        return Utils.first(batchGet(List.of(id)));
     }
 
     default void add(Long id, byte[] value) {

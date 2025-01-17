@@ -2,7 +2,7 @@ package org.metavm.asm;
 
 import org.metavm.entity.GenericDeclaration;
 import org.metavm.object.type.TypeVariable;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -19,7 +19,7 @@ public interface AsmScope {
     GenericDeclaration getGenericDeclaration();
 
     default @Nullable TypeVariable findTypeParameter(String name) {
-        return NncUtils.find(getTypeParameters(), tv -> tv.getName().equals(name));
+        return Utils.find(getTypeParameters(), tv -> tv.getName().equals(name));
     }
 
 }

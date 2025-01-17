@@ -2,20 +2,33 @@ package org.metavm.flow;
 
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.FieldRef;
+import org.metavm.object.type.Klass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.function.Consumer;
 
 @Entity
 public class SetStaticNode extends Node {
 
     public static final Logger logger = LoggerFactory.getLogger(SetStaticNode.class);
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     private final FieldRef fieldRef;
 
     public SetStaticNode(String name, Node previous, Code code, FieldRef fieldRef) {
         super(name, null, previous, code);
         this.fieldRef = fieldRef;
+    }
+
+    public static Node read(CodeInput input, String name) {
+        return new SetStaticNode(name, input.getPrev(), input.getCode(), (FieldRef) input.readConstant());
     }
 
     @Override
@@ -47,5 +60,56 @@ public class SetStaticNode extends Node {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitSetStaticNode(this);
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        fieldRef.accept(visitor);
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        fieldRef.forEachReference(action);
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("stackChange", this.getStackChange());
+        map.put("length", this.getLength());
+        map.put("flow", this.getFlow().getStringId());
+        map.put("name", this.getName());
+        var successor = this.getSuccessor();
+        if (successor != null) map.put("successor", successor.getStringId());
+        var predecessor = this.getPredecessor();
+        if (predecessor != null) map.put("predecessor", predecessor.getStringId());
+        map.put("code", this.getCode().getStringId());
+        map.put("exit", this.isExit());
+        map.put("unconditionalJump", this.isUnconditionalJump());
+        map.put("sequential", this.isSequential());
+        var error = this.getError();
+        if (error != null) map.put("error", error);
+        var type = this.getType();
+        if (type != null) map.put("type", type.toJson());
+        map.put("expressionTypes", this.getExpressionTypes());
+        map.put("text", this.getText());
+        map.put("nextExpressionTypes", this.getNextExpressionTypes());
+        map.put("offset", this.getOffset());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+        super.forEachChild(action);
     }
 }

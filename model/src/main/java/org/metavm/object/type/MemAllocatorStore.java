@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class MemAllocatorStore implements AllocatorStore {
 
     @Override
     public Properties load(String fileName) {
-        return NncUtils.get(propertiesMap.get(fileName), this::copyProperties);
+        return Utils.safeCall(propertiesMap.get(fileName), this::copyProperties);
     }
 
     @Override

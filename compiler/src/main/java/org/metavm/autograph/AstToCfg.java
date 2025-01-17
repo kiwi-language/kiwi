@@ -3,7 +3,6 @@ package org.metavm.autograph;
 import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -175,7 +174,7 @@ public class AstToCfg extends SkipDiscardedVisitor {
         }
         List<PsiElement> statements = extractStatementsFromForLoop(statement);
         if (!statements.isEmpty()) {
-            builder.enterLoopSection(statement, statements.get(0));
+            builder.enterLoopSection(statement, statements.getFirst());
             for (int i = 1; i < statements.size(); i++) {
                 statements.get(i).accept(this);
             }
@@ -202,7 +201,7 @@ public class AstToCfg extends SkipDiscardedVisitor {
                                       boolean mayExitViaExcept,
                                       @Nullable PsiIdentifier label) {
         var nodeAndFinallyBlocks = tryGetFinallyScopes(exitsNodesOfType, label);
-        var tryNode = NncUtils.requireNonNull(nodeAndFinallyBlocks.node);
+        var tryNode = Objects.requireNonNull(nodeAndFinallyBlocks.node);
         var guards = nodeAndFinallyBlocks.blocks;
         var node = builder.addExitNode(statement, tryNode, guards);
         if (mayExitViaExcept)

@@ -1,45 +1,108 @@
 package org.metavm.http;
 
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpResponse;
-import org.metavm.entity.ReadWriteArray;
+import org.metavm.entity.StdKlass;
+import org.metavm.entity.natives.CallContext;
+import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 @Entity(ephemeral = true, systemAPI = true)
-public class HttpResponseImpl extends org.metavm.entity.Entity implements HttpResponse {
+public class HttpResponseImpl implements HttpResponse, NativeEphemeralObject {
 
-    @ChildEntity
-    private final ReadWriteArray<HttpHeader> headers = addChild(new ReadWriteArray<>(HttpHeader.class), "headers");
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
+    private final transient InstanceState state = InstanceState.ephemeral(this);
 
-    @ChildEntity
-    private final ReadWriteArray<HttpCookie> cookies = addChild(new ReadWriteArray<>(HttpCookie.class), "cookies");
+    public final List<HttpHeader> headers = new ArrayList<>();
+
+    public final List<HttpCookie> cookies = new ArrayList<>();
 
     @Override
     public void addCookie(String name, String value) {
         cookies.removeIf(c -> c.name().equals(name));
-        cookies.add(new HttpCookie(name, value));
+        cookies.add(new HttpCookieImpl(name, value));
     }
 
     @Override
     public void addHeader(String name, String value) {
         headers.removeIf(h -> h.name().equals(name));
-        headers.add(new HttpHeader(name, value));
+        headers.add(new HttpHeaderImpl(name, value));
     }
 
     @Override
     @Nonnull
     public List<HttpCookie> getCookies() {
-        return cookies.toList();
+        return Collections.unmodifiableList(cookies);
     }
 
     @Override
     @Nonnull
     public List<HttpHeader> getHeaders() {
-        return headers.toList();
+        return Collections.unmodifiableList(headers);
+    }
+
+    @Override
+    public InstanceState state() {
+        return state;
+    }
+
+    public Value addCookie(Value name, Value value, CallContext callContext) {
+        addCookie(name.stringValue(), value.stringValue());
+        return Instances.nullInstance();
+    }
+
+    public Value addHeader(Value name, Value value, CallContext callContext) {
+        addHeader(name.stringValue(), value.stringValue());
+        return Instances.nullInstance();
+    }
+
+    public Value getCookies(CallContext callContext) {
+        return Instances.list(StdKlass.httpCookie.type(),
+                Utils.map(getCookies(), c -> (Value) c));
+    }
+
+    public Value getHeaders(CallContext callContext) {
+        return Instances.list(StdKlass.httpHeader.type(),
+                Utils.map(getHeaders(), h -> (Value) h));
+    }
+
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("cookies", this.getCookies());
+        map.put("headers", this.getHeaders());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
     }
 }

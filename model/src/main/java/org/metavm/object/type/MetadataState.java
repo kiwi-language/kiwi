@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.api.Entity;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 @Entity
 public enum MetadataState {
@@ -22,7 +22,7 @@ public enum MetadataState {
     }
 
     public static MetadataState fromCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code);
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 
 }

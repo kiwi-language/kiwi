@@ -1,7 +1,7 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.PsiCodeBlock;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 
@@ -15,7 +15,7 @@ public class TrySection extends Section {
 
     public void handleExit(MethodGenerator methodGenerator) {
         methodGenerator.createTryExit();
-        NncUtils.ifNotNull(finallyBlock, b -> b.accept(methodGenerator.getVisitor()));
+        Utils.ifNotNull(finallyBlock, b -> b.accept(methodGenerator.getVisitor()));
     }
 
     public void handleReturn(MethodGenerator methodGenerator) {

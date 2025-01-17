@@ -2,8 +2,9 @@ package org.metavm.task;
 
 import org.metavm.entity.*;
 import org.metavm.util.ContextUtil;
+import org.metavm.util.Instances;
 import org.metavm.util.NetworkUtils;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -49,8 +50,8 @@ public class Scheduler extends EntityContextFactoryAware {
             }
             var tasks = context.query(new EntityIndexQuery<>(
                     ShadowTask.IDX_EXECUTOR_IP_START_AT,
-                    new EntityIndexKey(Arrays.asList(null, 0L)),
-                    new EntityIndexKey(Arrays.asList(null, Long.MAX_VALUE)),
+                    new EntityIndexKey(Arrays.asList(Instances.nullInstance(), Instances.longInstance(0))),
+                    new EntityIndexKey(Arrays.asList(Instances.nullInstance(), Instances.longInstance(Long.MAX_VALUE))),
                     false,
                     200
             ));
@@ -58,8 +59,8 @@ public class Scheduler extends EntityContextFactoryAware {
                 return;
             var executors = context.query(new EntityIndexQuery<>(
                     ExecutorData.IDX_AVAIlABLE,
-                    new EntityIndexKey(List.of(true)),
-                    new EntityIndexKey(List.of(true)),
+                    new EntityIndexKey(List.of(Instances.trueInstance())),
+                    new EntityIndexKey(List.of(Instances.trueInstance())),
                     false,
                     200
             ));
@@ -77,8 +78,8 @@ public class Scheduler extends EntityContextFactoryAware {
                 return;
             }
             executors = executors.stream().sorted(Comparator.comparing(ExecutorData::getIp)).toList();
-            logger.info("Scheduling tasks {}", NncUtils.join(tasks, t -> EntityUtils.getRealType(t).getSimpleName()));
-            logger.info("Online executors {}", NncUtils.join(executors, ExecutorData::getIp));
+            logger.info("Scheduling tasks {}", Utils.join(tasks, t -> EntityUtils.getRealType(t).getSimpleName()));
+            logger.info("Online executors {}", Utils.join(executors, ExecutorData::getIp));
             var i = 0;
             if (nextWorkerIP != null) {
                 while (i < executors.size() && executors.get(i).getIp().compareTo(nextWorkerIP) < 0)
@@ -112,8 +113,8 @@ public class Scheduler extends EntityContextFactoryAware {
             var timeoutTasks = context.query(
                     new EntityIndexQuery<>(
                             ShadowTask.IDX_RUN_AT,
-                            new EntityIndexKey(List.of(1L)),
-                            new EntityIndexKey(List.of(now - timeout)),
+                            new EntityIndexKey(List.of(Instances.longInstance(1))),
+                            new EntityIndexKey(List.of(Instances.longInstance(now - timeout))),
                             false,
                             500
                     )

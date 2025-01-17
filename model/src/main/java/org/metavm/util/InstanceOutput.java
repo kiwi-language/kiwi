@@ -2,10 +2,10 @@ package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
+import org.metavm.entity.Entity;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.KlassDataSlot;
 import org.metavm.object.instance.core.Message;
-import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
@@ -42,14 +42,6 @@ public class InstanceOutput extends MvOutput {
         super(outputStream);
     }
 
-    public void writeInstance(Value value) {
-        value.writeInstance(this);
-    }
-
-    public void writeValue(Value value) {
-        value.write(this);
-    }
-
     public void writeInstancePO(InstancePO instancePO) {
         writeLong(instancePO.getId());
         writeInt(instancePO.getData().length);
@@ -74,12 +66,6 @@ public class InstanceOutput extends MvOutput {
         writeInt(referencePO.getKind());
     }
 
-    public void writeInstanceLog(InstanceLog instanceLog) {
-        writeId(instanceLog.getId());
-        writeInt(instanceLog.getChangeType().ordinal());
-        writeLong(instanceLog.getVersion());
-    }
-
     public @javax.annotation.Nullable Instance getCurrent() {
         return current;
     }
@@ -95,5 +81,11 @@ public class InstanceOutput extends MvOutput {
 
     public void setCurrentKlassSlot(@javax.annotation.Nullable KlassDataSlot currentKlassSlot) {
         this.currentKlassSlot = currentKlassSlot;
+    }
+
+    @Override
+    public void writeEntity(Entity entity) {
+        write(entity.getEntityTag());
+        super.writeEntity(entity);
     }
 }

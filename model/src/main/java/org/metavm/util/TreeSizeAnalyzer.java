@@ -56,7 +56,7 @@ public class TreeSizeAnalyzer extends StreamCopier {
 
     @Override
     public void visitBody(TypeOrTypeKey typeOrTypeKey) {
-        var id = treeId != null ? PhysicalId.of(treeId, nodeId, typeOrTypeKey) : null;
+        var id = treeId != null ? PhysicalId.of(treeId, nodeId) : null;
         var sizeBefore = bout.size();
         var headSize = sizeBefore - sizeBeforeRecord;
         totalHeadSize += headSize;

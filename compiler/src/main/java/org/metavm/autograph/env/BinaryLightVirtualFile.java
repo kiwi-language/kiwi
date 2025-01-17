@@ -10,10 +10,10 @@ import com.intellij.util.LocalTimeCounter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.autograph.Keys;
-import org.metavm.util.NncUtils;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * In-memory implementation of {@link VirtualFile}.
@@ -50,7 +50,7 @@ public class BinaryLightVirtualFile extends LightVirtualFileBase {
     @Override
     public @NotNull InputStream getInputStream() throws IOException {
         ensureContentInitialized();
-        return VfsUtilCore.byteStreamSkippingBOM(NncUtils.requireNonNull(myContent), this);
+        return VfsUtilCore.byteStreamSkippingBOM(Objects.requireNonNull(myContent), this);
     }
 
     private void ensureContentInitialized() throws IOException {
@@ -82,7 +82,7 @@ public class BinaryLightVirtualFile extends LightVirtualFileBase {
     @Override
     public byte @NotNull [] contentsToByteArray() throws IOException {
         ensureContentInitialized();
-        return NncUtils.requireNonNull(myContent);
+        return Objects.requireNonNull(myContent);
     }
 
     private void setContent(byte @NotNull [] content) {

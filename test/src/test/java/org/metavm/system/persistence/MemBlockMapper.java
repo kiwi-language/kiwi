@@ -1,6 +1,6 @@
 package org.metavm.system.persistence;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 
@@ -12,7 +12,7 @@ public class MemBlockMapper implements BlockMapper {
 
     @Override
     public List<BlockPO> selectByIds(Collection<Long> ids) {
-        return makeCopies(NncUtils.mapAndFilter(ids, blocks::get, Objects::nonNull));
+        return makeCopies(Utils.mapAndFilter(ids, blocks::get, Objects::nonNull));
     }
 
     @Override
@@ -30,7 +30,7 @@ public class MemBlockMapper implements BlockMapper {
 
     @Override
     public List<BlockPO> selectActive(Collection<Long> typeIds) {
-        return makeCopies(NncUtils.mapAndFilter(typeIds, activeBlocks::get, Objects::nonNull));
+        return makeCopies(Utils.mapAndFilter(typeIds, activeBlocks::get, Objects::nonNull));
     }
 
     @Override
@@ -51,7 +51,7 @@ public class MemBlockMapper implements BlockMapper {
 
     @Override
     public BlockPO selectContaining(long point) {
-        return NncUtils.get(treeMap.higherEntry(point), e -> e.getValue().copy());
+        return Utils.safeCall(treeMap.higherEntry(point), e -> e.getValue().copy());
     }
 
     @Override
@@ -77,11 +77,11 @@ public class MemBlockMapper implements BlockMapper {
 
     @Override
     public List<BlockPO> selectActiveRanges(long appId, Collection<Long> typeIds) {
-        return makeCopies(NncUtils.mapAndFilter(typeIds, activeBlocks::get, blk -> blk.getAppId() == appId));
+        return makeCopies(Utils.mapAndFilter(typeIds, activeBlocks::get, blk -> blk.getAppId() == appId));
     }
 
     private List<BlockPO> makeCopies(List<BlockPO> blocks) {
-        return NncUtils.map(blocks, BlockPO::copy);
+        return Utils.map(blocks, BlockPO::copy);
     }
 
     public MemBlockMapper copy() {

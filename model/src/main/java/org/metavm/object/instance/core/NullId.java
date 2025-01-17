@@ -8,7 +8,7 @@ public class NullId extends Id {
     public static final byte[] BYTES = new byte[] {0};
 
     public NullId() {
-        super(false);
+        super();
     }
 
     @Override

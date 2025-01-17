@@ -5,7 +5,7 @@ import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiBlockStatement;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiIfStatement;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 
@@ -39,7 +39,7 @@ public class ControlFlowTransformer extends JavaRecursiveElementVisitor {
     private Set<QualifiedName> getCompositeBlockVars(Set<QualifiedName> modified, Set<QualifiedName> liveIn) {
         Set<QualifiedName> blockVars = new HashSet<>();
         for (QualifiedName qualifiedName : modified) {
-            if(NncUtils.allMatch(qualifiedName.supportSet(), liveIn::contains)) {
+            if(Utils.allMatch(qualifiedName.supportSet(), liveIn::contains)) {
                 blockVars.add(qualifiedName);
             }
         }

@@ -1,6 +1,6 @@
 package org.metavm.entity;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.Collection;
 import java.util.List;
@@ -28,7 +28,7 @@ public record StoreLoadRequestItem(
     }
 
     public static List<StoreLoadRequestItem> of(Collection<Long> ids, Set<LoadingOption> options) {
-        return NncUtils.map(ids, id -> new StoreLoadRequestItem(id, options));
+        return Utils.map(ids, id -> new StoreLoadRequestItem(id, options));
     }
 
 }

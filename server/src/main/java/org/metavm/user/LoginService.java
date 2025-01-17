@@ -33,16 +33,31 @@ public class LoginService extends EntityContextFactoryAware {
     public LoginResult login(LoginRequest request, String clientIP) {
         try (IEntityContext context = newContext(request.appId())) {
             var failedCountByIP = context.count(LoginAttempt.IDX_CLIENT_IP_SUCC_TIME.newQueryBuilder()
-                    .from(new EntityIndexKey(List.of(clientIP, false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS))))
-                    .to(new EntityIndexKey(List.of(clientIP, false, new Date(Long.MAX_VALUE))))
+                    .from(new EntityIndexKey(List.of(
+                            Instances.stringInstance(clientIP),
+                            Instances.falseInstance(),
+                            Instances.longInstance(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS))
+                    ))
+                    .to(new EntityIndexKey(List.of(
+                            Instances.stringInstance(clientIP),
+                            Instances.falseInstance(),
+                            Instances.longInstance(Long.MAX_VALUE)
+                    )))
                     .build()
             );
             if (failedCountByIP > MAX_ATTEMPTS_IN_15_MINUTES)
                 throw new BusinessException(ErrorCode.TOO_MANY_LOGIN_ATTEMPTS);
 
             var failedCountByLoginName = context.count(LoginAttempt.IDX_LOGIN_NAME_SUCC_TIME.newQueryBuilder()
-                    .from(new EntityIndexKey(List.of(request.loginName(), false, new Date(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS))))
-                    .to(new EntityIndexKey(List.of(request.loginName(), false, new Date(Long.MAX_VALUE))))
+                    .from(new EntityIndexKey(List.of(
+                            Instances.stringInstance(request.loginName()),
+                            Instances.falseInstance(),
+                            Instances.longInstance(System.currentTimeMillis() - _15_MINUTES_IN_MILLIS))))
+                    .to(new EntityIndexKey(List.of(
+                            Instances.stringInstance(request.loginName()),
+                            Instances.falseInstance(),
+                            Instances.longInstance(Long.MAX_VALUE)))
+                    )
                     .build()
             );
             if (failedCountByLoginName > MAX_ATTEMPTS_IN_15_MINUTES)
@@ -50,11 +65,11 @@ public class LoginService extends EntityContextFactoryAware {
 
             List<User> users = context.selectByKey(
                     User.IDX_LOGIN_NAME,
-                    request.loginName()
+                    Instances.stringInstance(request.loginName())
             );
-            if (NncUtils.isEmpty(users))
+            if (Utils.isEmpty(users))
                 throw BusinessException.loginNameNotFound(request.loginName());
-            User user = users.get(0);
+            User user = users.getFirst();
             Token token;
             if (!user.getPassword().equals(EncodingUtils.md5(request.password())))
                 token = null;
@@ -76,7 +91,7 @@ public class LoginService extends EntityContextFactoryAware {
     public void logout(List<Token> tokens) {
         for (Token token : tokens) {
             try (var context = newContext(token.appId())) {
-                var session = context.selectFirstByKey(Session.IDX_TOKEN, token.token());
+                var session = context.selectFirstByKey(Session.IDX_TOKEN, Instances.stringInstance(token.token()));
                 if (session != null) {
                     if (session.isActive())
                         session.close();
@@ -91,7 +106,7 @@ public class LoginService extends EntityContextFactoryAware {
         var appId = token.appId();
         try (var context = newContext(appId);
              var ignored = ContextUtil.getProfiler().enter("verifyAndSetContext")) {
-            var session = context.selectFirstByKey(Session.IDX_TOKEN, token.token());
+            var session = context.selectFirstByKey(Session.IDX_TOKEN, Instances.stringInstance(token.token()));
             if (session != null && session.isActive()) {
                 ContextUtil.setAppId(appId);
                 ContextUtil.setUserId(session.getUser().getId());

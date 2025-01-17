@@ -30,14 +30,13 @@ public class CompilerInstanceContextFactory {
     }
 
     public IInstanceContext newContext(long appId) {
-        //noinspection resource
-        return newEntityContext(appId).getInstanceContext();
+        return newEntityContext(appId);
     }
 
     public IEntityContext newEntityContext(long appId) {
         var bridge = new EntityInstanceContextBridge();
         var context = newBridgedInstanceContext(appId, bridge, new DefaultIdInitializer(idService));
-        var entityContext = new CompilerEntityContext(context, defContext, defContext);
+        var entityContext = new CompilerEntityContext(context, defContext);
         bridge.setEntityContext(entityContext);
         return entityContext;
     }

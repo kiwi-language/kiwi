@@ -1,51 +1,53 @@
 package org.metavm.flow;
 
 import org.metavm.api.Entity;
-import org.metavm.entity.StdKlass;
-import org.metavm.entity.Writable;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.object.instance.core.ElementValue;
+import org.metavm.entity.Writable;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.FunctionType;
-import org.metavm.object.type.Type;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeMetadata;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
 @Entity
-public class LambdaRef extends ElementValue implements Writable, CallableRef {
+public class LambdaRef implements Writable, CallableRef {
+
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     public static LambdaRef read(MvInput input) {
-        return new LambdaRef(
-                (FlowRef) input.readValue(),
-                input.getLambda(input.readId()));
+        return new LambdaRef((FlowRef) input.readValue(), input.readReference());
     }
 
     private final FlowRef flowRef;
-    private final Lambda rawLambda;
+//    public Lambda rawLambda;
+    private final Reference lambdaReference;
 
     public LambdaRef(FlowRef flowRef, Lambda rawLambda) {
+        this(flowRef, rawLambda.getReference());
+    }
+
+    private LambdaRef(FlowRef flowRef, Reference lambdaReference) {
         this.flowRef = flowRef;
-        this.rawLambda = rawLambda;
+        this.lambdaReference = lambdaReference;
     }
 
     @Override
-    protected boolean equals0(Object obj) {
+    public boolean equals(Object obj) {
         if (this == obj) return true;
         if (!(obj instanceof LambdaRef that)) return false;
-        return Objects.equals(rawLambda, that.rawLambda);
+        return Objects.equals(lambdaReference, that.lambdaReference);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(rawLambda);
-    }
-
-    @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitLambdaRef(this);
+        return Objects.hash(lambdaReference);
     }
 
     @Override
@@ -55,7 +57,7 @@ public class LambdaRef extends ElementValue implements Writable, CallableRef {
 
     @Override
     public Code getCode() {
-        return rawLambda.getCode();
+        return getRawLambda().getCode();
     }
 
     @Override
@@ -63,19 +65,15 @@ public class LambdaRef extends ElementValue implements Writable, CallableRef {
         return flowRef;
     }
 
-    @Override
-    public Type getType() {
-        return StdKlass.lambdaRef.type();
-    }
 
     public void write(MvOutput output) {
         output.write(WireTypes.LAMBDA_REF);
         flowRef.write(output);
-        output.writeEntityId(rawLambda);
+        output.writeReference(lambdaReference);
     }
 
     public FunctionType getFunctionType() {
-        return flowRef.getTypeMetadata().getFunctionType(rawLambda.getTypeIndex());
+        return flowRef.getTypeMetadata().getFunctionType(getRawLambda().getTypeIndex());
     }
 
     public FlowRef getFlowRef() {
@@ -83,11 +81,31 @@ public class LambdaRef extends ElementValue implements Writable, CallableRef {
     }
 
     public Lambda getRawLambda() {
-        return rawLambda;
+        return (Lambda) lambdaReference.get();
     }
 
     @Override
-    protected String toString0() {
+    public String toString() {
         return "LambdaRef " + flowRef + ".<lambda>";
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitLambdaRef(this);
+    }
+
+    @Override
+    public ClassType getValueType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        flowRef.accept(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        flowRef.forEachReference(action);
+        action.accept(lambdaReference);
     }
 }

@@ -1,19 +1,25 @@
 package org.metavm.object.instance.core;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.flow.*;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.FunctionType;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeMetadata;
-import org.metavm.util.InstanceOutput;
 import org.metavm.util.MvOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Consumer;
 
 @Slf4j
 public class FlowValue extends FunctionValue {
 
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
     private final FlowRef flow;
     @Nullable
     private final ClassInstance boundSelf;
@@ -28,29 +34,24 @@ public class FlowValue extends FunctionValue {
         if(boundSelf != null)
             return flow.execute(boundSelf.getReference(), arguments, callContext);
         else
-            return flow.execute(arguments.get(0), arguments.subList(1, arguments.size()), callContext);
+            return flow.execute(arguments.getFirst(), arguments.subList(1, arguments.size()), callContext);
     }
 
 //    public Frame createFrame(FlowStack stack, List<Instance> arguments) {
-//        var self = boundSelf != null ? boundSelf : arguments.get(0);
+//        var self = boundSelf != null ? boundSelf : arguments.getFirst();
 //        var actualArgs = boundSelf != null ? arguments : arguments.subList(1, arguments.size());
 //        return flow.isNative() ? new NativeFrame(flow, self, arguments) :
 //                new MetaFrame(flow, self, actualArgs, stack);
 //    }
 
     @Override
-    public void writeInstance(InstanceOutput output) {
+    public void writeInstance(MvOutput output) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public void write(MvOutput output) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <R> R accept(ValueVisitor<R> visitor) {
-        return visitor.visitFlowValue(this);
     }
 
     @Nullable
@@ -60,11 +61,6 @@ public class FlowValue extends FunctionValue {
 
     public FlowRef getFlow() {
         return flow;
-    }
-
-    @Override
-    public FunctionType getType() {
-        return !Flows.isInstanceMethod(flow.getRawFlow()) || boundSelf != null ? flow.getPropertyType() : Flows.getStaticType(flow);
     }
 
     @Override
@@ -89,5 +85,24 @@ public class FlowValue extends FunctionValue {
                 (flow instanceof MethodRef m && !m.isStatic() ?
                         stack[base].getClosureContext() : null
                 );
+    }
+
+    @Override
+    public FunctionType getValueType() {
+        if (flow instanceof MethodRef method && !method.isStatic() && boundSelf == null)
+            return method.getStaticType();
+        else
+            return flow.getPropertyType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        flow.accept(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        flow.forEachReference(action);
     }
 }

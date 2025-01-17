@@ -98,7 +98,7 @@ public class Templates {
         public void visitReferenceExpression(PsiReferenceExpression expression) {
             var replacement = replacements.get(expression.getQualifiedName());
             if (replacement != null) {
-                var firstRep = replacement.get(0);
+                var firstRep = replacement.getFirst();
                 PsiElement replaced = expression.replace(firstRep);
                 for (int i = 1; i < replacement.size(); i++) {
                     replaced = replaced.getParent().addAfter(replaced, replacement.get(i));

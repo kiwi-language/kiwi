@@ -1,17 +1,22 @@
 package org.metavm.entity;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.Generated;
 import org.metavm.object.instance.core.Id;
-import org.metavm.util.IdentitySet;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
-import org.metavm.util.ReflectionUtils;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.Value;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
+import org.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.function.Consumer;
 
+@Slf4j
 public class EntityMemoryIndex {
 
     private final IdentitySet<Object> entities = new IdentitySet<>();
@@ -30,7 +35,7 @@ public class EntityMemoryIndex {
             startIdx = idx + 1;
         }
         var subList = objects.subList(startIdx, Math.min(objects.size(), startIdx + (int) limit));
-        return NncUtils.map(subList, type::cast);
+        return Utils.map(subList, type::cast);
     }
 
     public void save(Object object) {
@@ -42,7 +47,7 @@ public class EntityMemoryIndex {
         defList.forEach(def -> save(def, object));
     }
 
-    public <T> void save(IndexDef<T> indexDef, Object object) {
+    public <T extends Entity> void save(IndexDef<T> indexDef, Object object) {
         var index = getIndex(indexDef);
         index.save(indexDef.getType().cast(object));
     }
@@ -56,7 +61,7 @@ public class EntityMemoryIndex {
         defList.forEach(def -> remove(def, object));
     }
 
-    public <T> void remove(IndexDef<T> indexDef, Object object) {
+    public <T extends Entity> void remove(IndexDef<T> indexDef, Object object) {
         var index = getIndex(indexDef);
         index.remove(indexDef.getType().cast(object));
     }
@@ -70,25 +75,25 @@ public class EntityMemoryIndex {
         return indexDefList;
     }
 
-    public <T> List<T> selectByKey(IndexDef<T> indexDef, List<Object> values) {
+    public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, List<Value> values) {
         return getIndex(indexDef).selectByKey(values);
     }
 
-    public <T> @Nullable T selectByUniqueKey(IndexDef<T> indexDef, List<Object> values) {
+    public <T extends Entity> @Nullable T selectByUniqueKey(IndexDef<T> indexDef, List<Value> values) {
         return getIndex(indexDef).selectByUniqueKey(values);
     }
 
-    public <T> List<T> query(EntityIndexQuery<T> query) {
+    public <T extends Entity> List<T> query(EntityIndexQuery<T> query) {
         var index = getIndex(query.indexDef());
         return index.query(query);
     }
 
-    private <T> SubIndex<T> getIndex(IndexDef<T> def) {
+    private <T extends Entity> SubIndex<T> getIndex(IndexDef<T> def) {
         //noinspection unchecked
         return (SubIndex<T>) indices.computeIfAbsent(def, SubIndex::new);
     }
 
-    private static class SubIndex<T> {
+    private static class SubIndex<T extends Entity> {
 
         private final IdentityHashMap<Object, List<Key>> object2keys = new IdentityHashMap<>();
         private final IndexDef<T> indexDef;
@@ -98,35 +103,24 @@ public class EntityMemoryIndex {
             this.indexDef = indexDef;
         }
 
-        public List<T> selectByKey(List<Object> values) {
-            for (Entry<T> e : index) {
-                if(e.object() instanceof Entity entity &&  "03c6ce0200-01c6ce021c03b8bf0200".equals(entity.getStringId()))
-                    System.out.println("Found");
-            }
+        public List<T> selectByKey(List<Value> values) {
             var key = new Key(values);
             //noinspection unchecked
             return index.subSet(new Entry<>(key, null), new Entry<>(key, (T) MAX_OBJECT)).stream().map(Entry::object).toList();
         }
 
-        public @Nullable T selectByUniqueKey(List<Object> values) {
-            return NncUtils.first(selectByKey(values));
+        public @Nullable T selectByUniqueKey(List<Value> values) {
+            return Utils.first(selectByKey(values));
         }
 
-        private List<Key> getKey(Object object) {
-            var fields = getIndexFields(indexDef);
-            var values = NncUtils.map(fields, f -> ReflectionUtils.get(object, f));
-            return List.of(new Key(values));
-        }
-
-        private List<Field> getIndexFields(IndexDef<?> def) {
-            var klass = def.getType();
-            return NncUtils.map(def.getFieldNames(), fn -> ReflectionUtils.getDeclaredFieldRecursively(klass, fn));
+        private List<Key> getKey(Entity object) {
+            return List.of(new Key(indexDef.getValues(object)));
         }
 
         public List<T> query(EntityIndexQuery<T> query) {
-            NncUtils.requireTrue(indexDef == query.indexDef());
-            return query(NncUtils.get(query.from(), f -> new Key(f.values())),
-                    NncUtils.get(query.to(), t -> new Key(t.values()))).stream()
+            Utils.require(indexDef == query.indexDef());
+            return query(Utils.safeCall(query.from(), f -> new Key(f.values())),
+                    Utils.safeCall(query.to(), t -> new Key(t.values()))).stream()
                     .map(Entry::object)
                     .sorted(query.desc() ? Collections.reverseOrder(SubIndex::compareObject) : SubIndex::compareObject)
                     .distinct()
@@ -151,11 +145,11 @@ public class EntityMemoryIndex {
                 return 1;
             if(o2 == MAX_OBJECT)
                 return -1;
-            if (o1 instanceof Entity e1 && o2 instanceof Entity e2) {
+            if (o1 instanceof Reference e1 && o2 instanceof Reference e2) {
                 if (e1.tryGetId() != null && e2.tryGetId() != null)
                     return Objects.compare(e1.tryGetId(), e2.tryGetId(), Id::compareTo);
-                if (e1.getTmpId() != null && e2.getTmpId() != null)
-                    return Long.compare(e1.getTmpId(), e2.getTmpId());
+//                if (e1.getTmpId() != null && e2.getTmpId() != null)
+//                    return Long.compare(e1.getTmpId(), e2.getTmpId());
             }
             return Integer.compare(System.identityHashCode(o1), System.identityHashCode(o2));
         }
@@ -195,17 +189,78 @@ public class EntityMemoryIndex {
 
         }
 
-        public static final Object MAX_OBJECT = new Object() {
+        public static final Object MAX_OBJECT = new Entity() {
+
+            public int getEntityTag() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Generated
+            public static void visitBody(StreamVisitor visitor) {
+            }
+
+            @Generated
+            @Override
+            public void readBody(MvInput input, Entity parent) {
+            }
+
+            @Generated
+            @Override
+            public void writeBody(MvOutput output) {
+            }
+
+            @Override
+            public void forEachChild(Consumer<? super Instance> action) {
+
+            }
+
+            @Override
+            public void forEachValue(Consumer<? super Instance> action) {
+
+            }
+
+            @Override
+            protected void buildJson(Map<String, Object> map) {
+
+            }
+
+            @Override
+            protected void buildSource(Map<String, Value> source) {
+                
+            }
+
+            @Override
+            public ClassType getInstanceType() {
+                return null;
+            }
+
+            @Override
+            public void forEachReference(Consumer<Reference> action) {
+
+            }
+
+            @Override
+            public Klass getInstanceKlass() {
+                return null;
+            }
+
+            @Nullable
+            @Override
+            public Entity getParentEntity() {
+                return null;
+            }
+
             @Override
             public String toString() {
                 return "MAX_OBJECT";
             }
+
         };
 
-        private record Key(List<Object> values) implements Comparable<Key> {
+        private record Key(@NotNull List<Value> values) implements Comparable<Key> {
 
             boolean containsNull() {
-                return values.contains(null);
+                return Utils.anyMatch(values, Value::isNull);
             }
 
             @SuppressWarnings({"rawtypes", "unchecked"})
@@ -226,6 +281,10 @@ public class EntityMemoryIndex {
                         return -1;
                     if (v2 == null)
                         return 1;
+                    if (v1 instanceof Reference e1 && v2 instanceof Reference e2) {
+                        if (e1.tryGetId() != null && e2.tryGetId() != null)
+                            return Objects.compare(e1.tryGetId(), e2.tryGetId(), Id::compareTo);
+                    }
                     if (v1 instanceof Comparable c1 && v2 instanceof Comparable c2) {
                         var cmp = Objects.compare(c1, c2, Comparable::compareTo);
                         if (cmp != 0)

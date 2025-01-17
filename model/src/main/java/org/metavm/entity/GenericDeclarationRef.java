@@ -4,7 +4,12 @@ import org.metavm.api.ValueObject;
 import org.metavm.flow.FunctionRef;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.*;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.Value;
+import org.metavm.object.type.ITypeDef;
+import org.metavm.object.type.KlassType;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.TypeDef;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -16,7 +21,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface GenericDeclarationRef extends ValueObject {
+public interface GenericDeclarationRef extends ValueObject, Element, Value {
 
     void write(MvOutput output);
 
@@ -51,7 +56,6 @@ public interface GenericDeclarationRef extends ValueObject {
         var kind = input.read();
         return switch (kind) {
             case WireTypes.CLASS_TYPE -> KlassType.read(input);
-            case WireTypes.TAGGED_CLASS_TYPE -> KlassType.readTagged(input);
             case WireTypes.PARAMETERIZED_TYPE -> KlassType.readParameterized(input);
             case WireTypes.METHOD_REF -> MethodRef.read(input);
             case WireTypes.FUNCTION_REF -> FunctionRef.read(input);
@@ -66,4 +70,7 @@ public interface GenericDeclarationRef extends ValueObject {
     String getTypeDesc();
 
     <R> R accept(ElementVisitor<R> visitor);
+
+    void forEachReference(Consumer<Reference> action);
+
 }

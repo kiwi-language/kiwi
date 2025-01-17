@@ -4,7 +4,7 @@ import org.metavm.object.instance.rest.ArrayInstanceParam;
 import org.metavm.object.instance.rest.ClassInstanceParam;
 import org.metavm.object.instance.rest.ListInstanceParam;
 import org.metavm.object.instance.rest.PrimitiveInstanceParam;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 public enum InstanceKind {
 
@@ -24,14 +24,14 @@ public enum InstanceKind {
     }
 
     public static InstanceKind getByParamClass(Class<?> paramClass) {
-        return NncUtils.findRequired(
+        return Utils.findRequired(
                 values(),
                 v -> v.paramClass == paramClass
         );
     }
 
     public static InstanceKind getByCode(int code) {
-        return NncUtils.findRequired(
+        return Utils.findRequired(
                 values(),
                 v -> v.code == code
         );

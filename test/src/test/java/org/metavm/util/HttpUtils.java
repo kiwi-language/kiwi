@@ -59,7 +59,7 @@ public class HttpUtils {
                     .DELETE()
                     .build();
             var respStr = client.send(httpRequest, HttpResponse.BodyHandlers.ofString()).body();
-            return NncUtils.readJSONString(respStr, responseTypeRef);
+            return Utils.readJSONString(respStr, responseTypeRef);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -83,11 +83,11 @@ public class HttpUtils {
                     .header("Content-Type", "application/json")
                     .header(Headers.APP_ID, Long.toString(appId))
                     .POST(
-                            HttpRequest.BodyPublishers.ofString(NncUtils.toJSONString(request))
+                            HttpRequest.BodyPublishers.ofString(Utils.toJSONString(request))
                     )
                     .build();
             var respStr = client.send(httpRequest, HttpResponse.BodyHandlers.ofString()).body();
-            return NncUtils.readJSONString(respStr, responseTypeRef);
+            return Utils.readJSONString(respStr, responseTypeRef);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

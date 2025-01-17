@@ -1,18 +1,14 @@
 package org.metavm.util;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.metavm.entity.*;
+import org.metavm.object.instance.core.InstanceContext;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
-import org.metavm.entity.*;
-import org.metavm.object.instance.core.InstanceContext;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.*;
-
-import static org.metavm.entity.EntityUtils.getRealClass;
 
 public class DiffUtils {
 
@@ -57,39 +53,22 @@ public class DiffUtils {
     }
 
     private static boolean isPojoDifferent(Object pojo1, Object pojo2, Map<Object, Object> visited) {
-        if (visited.size() > EntityUtils.MAXIMUM_DIFF_DEPTH) {
+        if (visited.size() > EntityUtils.MAXIMUM_DIFF_DEPTH)
             throw new InternalException("Diff depth exceeds maximum depth " + EntityUtils.MAXIMUM_DIFF_DEPTH);
-        }
         DiffPair diffPair = new DiffPair(pojo1, pojo2);
-        if (visited.containsKey(diffPair)) {
-            return false;
-//            DiffState state = (DiffState) visited.get(diffPair);
-//            if(state == DiffState.DONE) {
-//                return false;
-//            }
-//            throw new RuntimeException("Back reference of POJO is currently not supported");
-        }
-        if (pojo1 == pojo2)
-            return false;
-        if (pojo1 == null || pojo2 == null)
-            return true;
-        Class<?> realClass = getRealClass(pojo1.getClass(), pojo2.getClass());
-        if (realClass == null)
-            return true;
+        if (visited.containsKey(diffPair)) return false;
+        if (pojo1 == pojo2) return false;
+        if (pojo1 == null || pojo2 == null) return true;
+        Class<?> clazz = pojo1.getClass();
+        if (clazz != pojo2.getClass()) return true;
         visited.put(diffPair, DiffState.DOING);
-//        visited.put(pojo2, pojo1);
         EntityUtils.ensureProxyInitialized(pojo1);
         EntityUtils.ensureProxyInitialized(pojo2);
-//        Class<?> klass = pojo1.getClass();
-        EntityDesc desc = DescStore.get(realClass);
+        EntityDesc desc = DescStore.get(clazz);
         for (EntityProp prop : desc.getProps()) {
-            if (prop.isTransient()) {
-                continue;
-            }
+            if (prop.isTransient()) continue;
             Object value1 = prop.get(pojo1), value2 = prop.get(pojo2);
-            if (isDifferent(value1, value2, visited)) {
-                return true;
-            }
+            if (isDifferent(value1, value2, visited)) return true;
         }
         visited.put(diffPair, DiffState.DONE);
         return false;
@@ -110,7 +89,7 @@ public class DiffUtils {
         if (map1.size() != map2.size()) {
             return true;
         }
-        List<Pair<Object>> pairs = NncUtils.buildPairsForMap(map1, map2);
+        List<Pair<Object>> pairs = Utils.buildPairsForMap(map1, map2);
         for (Pair<Object> pair : pairs) {
             if (isDifferent(pair.first(), pair.second(), visited)) {
                 return true;
@@ -156,7 +135,7 @@ public class DiffUtils {
         if (coll1.size() != coll2.size()) {
             return true;
         }
-        List<Pair<Object>> pairs = NncUtils.buildPairs(coll1, coll2);
+        List<Pair<Object>> pairs = Utils.buildPairs(coll1, coll2);
         for (Pair<Object> pair : pairs) {
             if (isDifferent(pair.first(), pair.second(), visited)) {
                 return true;
@@ -177,88 +156,6 @@ public class DiffUtils {
 
     public static boolean pojoEquals(Object pojo1, Object pojo2) {
         return !isPojoDifferent(pojo1, pojo2);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> T copy(T object, IdentityHashMap<Object, Object> copyMap) {
-        if (object == null) {
-            return null;
-        }
-        if (copyMap.containsKey(object)) {
-            return (T) copyMap.get(object);
-        }
-        if (object instanceof List<?> list) {
-            return (T) copyList(list, copyMap);
-        }
-        if (object instanceof Set<?> set) {
-            return (T) copySet(set, copyMap);
-        }
-        if (object instanceof Map<?, ?> map) {
-            return (T) copyMap(map, copyMap);
-        }
-        if (isShallow(object.getClass())) {
-            return object;
-        }
-        if(object instanceof byte[] bytes) {
-            return (T) Arrays.copyOf(bytes, bytes.length);
-        }
-        if (object instanceof Entity entity) {
-            return (T) EntityUtils.makeDummyRef(EntityUtils.getRealEntityType(entity), entity.getId());
-        }
-        return (T) copyPojo(object, copyMap, false);
-    }
-
-    public static Object copyPojo(Object object, IdentityHashMap<Object, Object> copyMap, boolean ignoreTransient) {
-        Object copy = ReflectionUtils.allocateInstance(object.getClass());
-        copyMap.put(object, copy);
-        copyPojo(object, copy, copyMap, ignoreTransient);
-        return copy;
-    }
-
-    public static void copyPojo(Object src, Object target, IdentityHashMap<Object, Object> copyMap, boolean ignoreTransient) {
-        List<Field> fields = ReflectionUtils.getInstanceFields(src.getClass());
-        for (Field field : fields) {
-            if (ignoreTransient && Modifier.isTransient(field.getModifiers())) {
-                continue;
-            }
-            ReflectionUtils.set(
-                    target,
-                    field,
-                    copy(ReflectionUtils.get(src, field), copyMap)
-            );
-        }
-    }
-
-    private static Set<Object> copySet(Set<?> set, IdentityHashMap<Object, Object> copyMap) {
-        Set<Object> copied = EntityUtils.newSet(set);
-        copyMap.put(set, copied);
-        copied.addAll(NncUtils.map(set, ele -> copy(ele, copyMap)));
-        return copied;
-    }
-
-    private static List<Object> copyList(List<?> list, IdentityHashMap<Object, Object> copyMap) {
-        List<Object> copied = EntityUtils.newList(list);
-        copyMap.put(list, copied);
-        copied.addAll(NncUtils.map(list, ele -> copy(ele, copyMap)));
-        return copied;
-    }
-
-    private static Map<Object, Object> copyMap(Map<?, ?> map, IdentityHashMap<Object, Object> copyMap) {
-        Map<Object, Object> copy = EntityUtils.newMap(map);
-        copyMap.put(map, copy);
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            copy.put(entry.getKey(), copy(entry.getValue(), copyMap));
-        }
-        return copy;
-    }
-
-    public static Entity copyEntity(Entity entity) {
-        return (Entity) copyPojo(entity, new IdentityHashMap<>(), true);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> T copyPojo(T pojo) {
-        return (T) copyPojo(pojo, new IdentityHashMap<>(), true);
     }
 
     private enum DiffState {

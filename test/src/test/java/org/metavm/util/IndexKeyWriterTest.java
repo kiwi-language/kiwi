@@ -19,7 +19,7 @@ public class IndexKeyWriterTest extends TestCase {
                 DoubleValue.create(1000.0)
         ));
         Collections.sort(values);
-        Assert.assertEquals(-1000, values.get(0).value, 0.0);
+        Assert.assertEquals(-1000, values.getFirst().value, 0.0);
         Assert.assertEquals(-0.1, values.get(1).value, 0.0);
         Assert.assertEquals(0, values.get(2).value, 0.0);
         Assert.assertEquals(1.0, values.get(3).value, 0.0);
@@ -48,7 +48,7 @@ public class IndexKeyWriterTest extends TestCase {
                 LongValue.create(-1L), LongValue.create(0), LongValue.create(1L), LongValue.create(2L)
         ));
         Collections.sort(values);
-        Assert.assertEquals(-1L, values.get(0).value);
+        Assert.assertEquals(-1L, values.getFirst().value);
         Assert.assertEquals(0L, values.get(1).value);
         Assert.assertEquals(1L, values.get(2).value);
         Assert.assertEquals(2L, values.get(3).value);

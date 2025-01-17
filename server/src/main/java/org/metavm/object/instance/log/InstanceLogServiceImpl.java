@@ -1,20 +1,20 @@
 package org.metavm.object.instance.log;
 
 import org.metavm.ddl.Commit;
-import org.metavm.ddl.DefContextUtils;
 import org.metavm.entity.*;
-import org.metavm.flow.Function;
 import org.metavm.object.instance.CachingInstanceStore;
 import org.metavm.object.instance.IInstanceStore;
-import org.metavm.object.instance.core.*;
-import org.metavm.object.type.TypeDef;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.WAL;
 import org.metavm.object.version.Version;
 import org.metavm.object.version.VersionRepository;
 import org.metavm.object.version.Versions;
 import org.metavm.task.PublishMetadataEventTask;
 import org.metavm.task.SynchronizeSearchTask;
 import org.metavm.util.ContextUtil;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -49,10 +49,10 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
 
     @Override
     public void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, List<Id> migrated, @Nullable String clientId, DefContext defContext) {
-        if (NncUtils.isEmpty(logs) && migrated.isEmpty())
+        if (Utils.isEmpty(logs) && migrated.isEmpty())
             return;
         try (var ignored = ContextUtil.getProfiler().enter("InstanceLogServiceImpl.process")) {
-            var newInstanceIds = NncUtils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
+            var newInstanceIds = Utils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
             handleDDL(appId, newInstanceIds);
             handleMetaChanges(appId, logs, clientId);
         }
@@ -65,12 +65,10 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             var ignored = ContextUtil.getProfiler().enter("createSearchSyncTask")) {
             WAL wal = instanceStore instanceof CachingInstanceStore cachingInstanceStore ?
                     cachingInstanceStore.getWal().copy() : null;
-            WAL defWal = defContext instanceof ReversedDefContext reversedDefContext ?
-                    DefContextUtils.getWal(reversedDefContext) : null;
+//            WAL defWal = defContext instanceof ReversedDefContext reversedDefContext ?
+//                    DefContextUtils.getWal(reversedDefContext) : null;
             context.bind(new SynchronizeSearchTask(
-                    NncUtils.map(idsToIndex, Identifier::fromId),
-                    NncUtils.map(idsToRemove, Identifier::fromId),
-                    wal, defWal != null ? Identifier.fromId(defWal.getId()) : null));
+                    idsToIndex, idsToRemove, wal, /*defWal != null ? defWal.getId() : null*/ null));
 //                this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
             context.finish();
             }
@@ -79,38 +77,29 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
     private void handleMetaChanges(long appId, List<InstanceLog> logs, @Nullable String clientId) {
         try (var ignored = ContextUtil.getProfiler().enter("handleMetaChanges")){
             var changedTypeDefIds = new HashSet<String>();
-            var changedMappingIds = new HashSet<String>();
             var changedFunctionIds = new HashSet<String>();
             var removedTypeDefIds = new HashSet<String>();
-            var removedMappingIds = new HashSet<String>();
             var removedFunctionIds = new HashSet<String>();
             for (InstanceLog log : logs) {
                 var id = log.getId();
-                if (id instanceof TaggedPhysicalId tpId && tpId.getTypeTag() > 4) {
-                    var defContext = ModelDefRegistry.getDefContext();
-                    var mapper = defContext.tryGetMapper(tpId.getTypeTag());
-                    if (mapper != null) {
-                        var javaClass = mapper.getEntityClass();
-                        if (TypeDef.class.isAssignableFrom(javaClass)) {
-                            if (log.isDelete())
-                                removedTypeDefIds.add(id.toString());
-                            else
-                                changedTypeDefIds.add(id.toString());
-                        } else if (Function.class.isAssignableFrom(javaClass)) {
-                            if (log.isDelete())
-                                removedFunctionIds.add(id.toString());
-                            else
-                                changedFunctionIds.add(id.toString());
-                        }
-                    }
+                var entityTag = log.getEntityTag();
+                if (entityTag == EntityRegistry.TAG_Klass) {
+                    if (log.isDelete())
+                        removedTypeDefIds.add(id.toString());
+                    else
+                        changedTypeDefIds.add(id.toString());
+                } else if (entityTag == EntityRegistry.TAG_Function) {
+                    if (log.isDelete())
+                        removedFunctionIds.add(id.toString());
+                    else
+                        changedFunctionIds.add(id.toString());
                 }
             }
             if (!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty()
-                    || !changedMappingIds.isEmpty() || !removedMappingIds.isEmpty()
                     || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
                 transactionOperations.executeWithoutResult(s -> {
                     try (var context = newContext(appId, builder -> builder.timeout(0))) {
-                        context.getInstanceContext().setDescription("MetaChange");
+                        context.setDescription("MetaChange");
                         var v = Versions.create(
                                 changedTypeDefIds,
                                 removedTypeDefIds,
@@ -120,7 +109,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                                     @Nullable
                                     @Override
                                     public Version getLastVersion() {
-                                        return NncUtils.first(
+                                        return Utils.first(
                                                 context.query(Version.IDX_VERSION.newQueryBuilder().limit(1).desc(true).build())
                                         );
                                     }
@@ -146,7 +135,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         try (var ignored = ContextUtil.getProfiler().enter("handleDDL")) {
             transactionOperations.executeWithoutResult(s -> {
                 try (var context = newContext(appId, builder -> builder.timeout(0))) {
-                    var commit = context.selectFirstByKey(Commit.IDX_RUNNING, true);
+                    var commit = context.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
                     if (commit != null) {
                         var commitState = commit.getState();
                         var wal = commitState.isPreparing() ? commit.getWal() : null;
@@ -158,8 +147,8 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                                         .timeout(0)
                         )
                         ) {
-                            loadedContext.getInstanceContext().setDescription("DDLHandler");
-                            Iterable<Instance> instances = () -> instanceIds.stream().map(loadedContext.getInstanceContext()::get)
+                            loadedContext.setDescription("DDLHandler");
+                            Iterable<Instance> instances = () -> instanceIds.stream().map(loadedContext::get)
                                     .iterator();
                             commit.getState().process(instances, commit, loadedContext);
                             loadedContext.finish();
@@ -168,19 +157,6 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                 }
             });
         }
-    }
-
-    private <T extends Entity> boolean invokeHandler(List<ClassInstance> instances, LogHandler<T> handler,
-                                                  @Nullable String clientId, IEntityContext context) {
-        var type = context.getDefContext().getClassType(handler.getEntityClass());
-        var entities = NncUtils.filterAndMap(instances, i -> type.isInstance(i.getReference()),
-                i -> context.getEntity(handler.getEntityClass(), i));
-        if (!entities.isEmpty()) {
-            handler.process(entities, clientId, context, entityContextFactory);
-            return true;
-        }
-        else
-            return false;
     }
 
 }

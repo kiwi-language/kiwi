@@ -2,8 +2,11 @@ package org.metavm.entity;
 
 import org.metavm.ddl.Commit;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -11,6 +14,8 @@ import java.util.List;
 public interface EntityProvider extends TypeDefProvider, RedirectStatusProvider, ActiveCommitProvider {
 
     <T> T getEntity(Class<T> entityType, Id id);
+
+    Reference createReference(Id id);
 
     default Klass getKlass(Id id) {
         return getEntity(Klass.class, id);
@@ -31,12 +36,12 @@ public interface EntityProvider extends TypeDefProvider, RedirectStatusProvider,
     @Nullable
     @Override
     default Commit getActiveCommit() {
-        return selectFirstByKey(Commit.IDX_RUNNING, true);
+        return selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
     }
 
-    <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... values);
+    <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Value... values);
 
-    default @Nullable <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Object... values) {
-        return NncUtils.first(selectByKey(indexDef, values));
+    default @Nullable <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Value... values) {
+        return Utils.first(selectByKey(indexDef, values));
     }
 }

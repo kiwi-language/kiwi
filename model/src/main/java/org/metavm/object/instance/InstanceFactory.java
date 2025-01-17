@@ -9,7 +9,7 @@ import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 
 import javax.annotation.Nullable;
@@ -33,7 +33,7 @@ public class InstanceFactory {
         if (instanceType == ArrayInstance.class)
             instance = instanceType.cast(new ArrayInstance(id, Types.getAnyArrayType(), ephemeral, null));
         else
-            instance = instanceType.cast(new ClassInstance(id, ClassInstance.uninitializedKlass.getType(), ephemeral, null));
+            instance = instanceType.cast(new MvClassInstance(id, ClassInstance.uninitializedKlass.getType(), ephemeral, null));
 //        Method allocateMethod = getAllocateMethod(instanceType, type.getClass());
 //        T instance = instanceType.cast(ReflectUtils.invoke(null, allocateMethod, type));
         return instance;
@@ -56,11 +56,11 @@ public class InstanceFactory {
                                  IInstanceContext context) {
         if (!instanceDTO.isNew()) {
             var instance = context.get(instanceDTO.parseId());
-            if (parentRef != null) {
-                NncUtils.requireTrue(
-                        Objects.equals(instance.getParentRef(), parentRef),
-                        "Trying to change parent. instance id: " + instanceDTO.id());
-            }
+//            if (parentRef != null) {
+//                NncUtils.requireTrue(
+//                        Objects.equals(instance.getParentRef(), parentRef),
+//                        "Trying to change parent. instance id: " + instanceDTO.id());
+//            }
             return ValueFormatter.parseInstance(instanceDTO, context);
         } else {
             return create(instanceDTO, parentRef, context);
@@ -71,14 +71,14 @@ public class InstanceFactory {
             InstanceDTO instanceDTO,
             @Nullable InstanceParentRef parentRef,
             IInstanceContext context) {
-        NncUtils.requireTrue(instanceDTO.isNew(),
+        Utils.require(instanceDTO.isNew(),
                 "Id of new instance must be null or zero");
         Type type = TypeParser.parseType(instanceDTO.type(), context.getTypeDefProvider()) ;
         Instance instance;
         var param = instanceDTO.param();
         if (param instanceof ClassInstanceParam classInstanceParam) {
             var classType = (ClassType) type;
-            Map<String, InstanceFieldDTO> fieldMap = NncUtils.toMap(classInstanceParam.fields(), InstanceFieldDTO::fieldId);
+            Map<String, InstanceFieldDTO> fieldMap = Utils.toMap(classInstanceParam.fields(), InstanceFieldDTO::fieldId);
             ClassInstance object = ClassInstance.allocate(classType, parentRef);
             instance = object;
             classType.forEachField(field -> {
@@ -100,7 +100,7 @@ public class InstanceFactory {
             var arrayType = (ArrayType) type;
             ArrayInstance array = new ArrayInstance(arrayType, parentRef);
             instance = array;
-            var elements = NncUtils.map(
+            var elements = Utils.map(
                     arrayInstanceParam.elements(),
                     v -> resolveValue(v, arrayType.getElementType(),
                             InstanceParentRef.ofArray(array.getReference()), context)
@@ -111,9 +111,9 @@ public class InstanceFactory {
             var list = ClassInstance.allocate(listType);
             var listNative = new ListNative(list);
             listNative.List();
-            NncUtils.forEach(
+            Utils.forEach(
                     listInstanceParam.elements(),
-                    v -> listNative.add(resolveValue(v, listType.getTypeArguments().get(0), null, context
+                    v -> listNative.add(resolveValue(v, listType.getTypeArguments().getFirst(), null, context
                     ))
             );
             instance = list;
@@ -126,7 +126,7 @@ public class InstanceFactory {
 
     public static Value resolveValue(FieldValue rawValue, Type type, IEntityContext context) {
         return resolveValue(rawValue, type, null,
-                Objects.requireNonNull(context.getInstanceContext()));
+                Objects.requireNonNull(context));
     }
 
     public static Value resolveValue(FieldValue rawValue, Type type,
@@ -157,9 +157,9 @@ public class InstanceFactory {
                 ArrayInstance arrayInstance = (ArrayInstance) context.get(Id.parse(arrayFieldValue.getId()));
                 arrayInstance.clear();
                 arrayInstance.setElements(
-                        NncUtils.map(
+                        Utils.map(
                                 arrayFieldValue.getElements(),
-                                e -> resolveValue(e, arrayInstance.getType().getElementType(),
+                                e -> resolveValue(e, arrayInstance.getInstanceType().getElementType(),
                                         InstanceParentRef.ofArray(arrayInstance.getReference()),
                                         context)
                         )
@@ -167,7 +167,7 @@ public class InstanceFactory {
                 return arrayInstance.getReference();
             } else {
                 var array = ArrayInstance.allocate((ArrayType) type);
-                var elements = NncUtils.map(
+                var elements = Utils.map(
                         arrayFieldValue.getElements(),
                         e -> resolveValue(e, Types.getAnyType(),
                                 InstanceParentRef.ofArray(array.getReference()), context)
@@ -181,9 +181,9 @@ public class InstanceFactory {
                 var list = (ClassInstance) context.get(Id.parse(listFieldValue.getId()));
                 var listNative = new ListNative(list);
                 listNative.clear();
-                NncUtils.forEach(
+                Utils.forEach(
                         listFieldValue.getElements(),
-                        e -> listNative.add(resolveValue(e, list.getType().getFirstTypeArgument(), null, context))
+                        e -> listNative.add(resolveValue(e, list.getInstanceType().getFirstTypeArgument(), null, context))
                 );
                 return list.getReference();
             } else {
@@ -202,9 +202,9 @@ public class InstanceFactory {
                 var list = ClassInstance.allocate(klass);
                 var listNative = new ListNative(list);
                 listNative.List();
-                NncUtils.forEach(
+                Utils.forEach(
                         listFieldValue.getElements(),
-                        e -> listNative.add(resolveValue(e, list.getType().getFirstTypeArgument(), null, context))
+                        e -> listNative.add(resolveValue(e, list.getInstanceType().getFirstTypeArgument(), null, context))
                 );
                 list.setParentInternal(parentRef);
                 return list.getReference();

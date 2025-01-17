@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import org.metavm.system.persistence.BlockMapper;
 import org.metavm.system.persistence.BlockPO;
 import org.metavm.system.rest.dto.BlockDTO;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public class BlockManager {
     }
 
     public List<BlockDTO> getActive(List<Long> typeIds) {
-        return NncUtils.map(blockMapper.selectActive(typeIds), this::toDTO);
+        return Utils.map(blockMapper.selectActive(typeIds), this::toDTO);
     }
 
     private BlockDTO toDTO(BlockPO blockPO) {

@@ -4,7 +4,8 @@ import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiMethod;
 import org.metavm.autograph.mocks.AstWildcardFoo;
-import org.metavm.util.NncUtils;
+
+import java.util.Objects;
 
 public class AstWildcardLab {
 
@@ -17,7 +18,7 @@ public class AstWildcardLab {
 
         @Override
         public void visitMethod(PsiMethod method) {
-            var returnType = (PsiClassType) NncUtils.requireNonNull(method.getReturnType());
+            var returnType = (PsiClassType) Objects.requireNonNull(method.getReturnType());
             var typeArgs = returnType.getParameters();
             super.visitMethod(method);
         }

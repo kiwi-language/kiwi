@@ -1,22 +1,13 @@
 package org.metavm.object.type;
 
-import org.metavm.api.ChildList;
-import org.metavm.api.ReadonlyList;
-import org.metavm.api.ValueList;
-import org.metavm.entity.ChildArray;
-import org.metavm.entity.ReadWriteArray;
-import org.metavm.entity.ReadonlyArray;
-import org.metavm.entity.ValueArray;
 import org.metavm.flow.Flow;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 
 public enum ArrayKind {
 
-    READ_WRITE(1, TypeCategory.READ_WRITE_ARRAY, TypeTags.READ_WRITE_ARRAY, ReadWriteArray.class, "[]") {
+    READ_WRITE(1, TypeCategory.READ_WRITE_ARRAY, TypeTags.READ_WRITE_ARRAY, "[]") {
         @Override
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
              return (that == READ_WRITE || that == CHILD) && assignedElementType.contains(assignmentElementType);
@@ -28,7 +19,7 @@ public enum ArrayKind {
         }
 
     },
-    READ_ONLY(2, TypeCategory.READ_ONLY_ARRAY, TypeTags.READONLY_ARRAY, ReadonlyArray.class, "[R]") {
+    READ_ONLY(2, TypeCategory.READ_ONLY_ARRAY, TypeTags.READONLY_ARRAY, "[R]") {
         @Override
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
             return assignedElementType.isAssignableFrom(assignmentElementType);
@@ -39,7 +30,7 @@ public enum ArrayKind {
             return elementInternalName + "[R]";
         }
     },
-    CHILD(3, TypeCategory.CHILD_ARRAY, TypeTags.CHILD_ARRAY, ChildArray.class, "[C]") {
+    CHILD(3, TypeCategory.CHILD_ARRAY, TypeTags.CHILD_ARRAY, "[C]") {
         @Override
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
             return that == CHILD && assignedElementType.contains(assignmentElementType);
@@ -50,7 +41,7 @@ public enum ArrayKind {
             return elementInternalName + "[C]";
         }
     },
-    VALUE(4, TypeCategory.VALUE_ARRAY, TypeTags.VALUE_ARRAY, ValueArray.class, "[V]") {
+    VALUE(4, TypeCategory.VALUE_ARRAY, TypeTags.VALUE_ARRAY, "[V]") {
         @Override
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
             return that == VALUE && assignedElementType.contains(assignmentElementType);
@@ -66,23 +57,17 @@ public enum ArrayKind {
     private final int code;
     private final TypeCategory category;
     private final int typeTag;
-    private final Class<?> entityClass;
     private final String suffix;
 
-    ArrayKind(int code, TypeCategory category, int typeTag, Class<?> entityClass, String suffix) {
+    ArrayKind(int code, TypeCategory category, int typeTag, String suffix) {
         this.code = code;
         this.category = category;
         this.typeTag = typeTag;
-        this.entityClass = entityClass;
         this.suffix = suffix;
     }
 
     public static ArrayKind fromCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code);
-    }
-
-    public static ArrayKind fromEntityClass(Class<?> entityClass) {
-        return NncUtils.findRequired(values(), v -> v.entityClass == entityClass);
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 
     public int code() {
@@ -103,16 +88,6 @@ public enum ArrayKind {
 
     public String getInternalName(Type elementType, @Nullable Flow current) {
         return getInternalName(elementType.getInternalName(current));
-    }
-    
-    @SuppressWarnings("rawtypes")
-    public Class<? extends ReadonlyArray> getEntityClass() {
-        //noinspection unchecked
-        return (Class<? extends ReadonlyArray<?>>) entityClass;
-    }
-
-    public static ArrayKind getByEntityClass(Class<?> klass) {
-        return NncUtils.findRequired(values(), v -> v.entityClass == klass);
     }
 
     public String getSuffix() {

@@ -1,7 +1,7 @@
 package org.metavm.autograph;
 
 import junit.framework.TestCase;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 
 public class DoWhileTransformerTest extends TestCase {
@@ -11,7 +11,7 @@ public class DoWhileTransformerTest extends TestCase {
         var file = TranspileTestTools.getPsiJavaFile(source);
         TranspileTestTools.executeCommand(() -> file.accept(new DoWhileTransformer()));
         var output = "/Users/leen/workspace/object/lab/src/main/tmp/dowhile2/DoWhileFoo.java";
-        NncUtils.writeFile(output, file.getText().replace("package dowhile;", "package dowhile2;"));
+        Utils.writeFile(output, file.getText().replace("package dowhile;", "package dowhile2;"));
     }
 
 }

@@ -18,7 +18,7 @@ public class NamingUtils {
     }
 
     private static String ensureValidName(@Nullable String name, Pattern pattern) {
-        if (name == null || NncUtils.isBlank(name))
+        if (name == null || Utils.isBlank(name))
             return null;
         name = removeSpaces(name);
         if (pattern.matcher(name).matches())
@@ -30,7 +30,7 @@ public class NamingUtils {
 
     public static String ensureValidName(String name) {
         name = removeSpaces(name);
-        if (NncUtils.isBlank(name))
+        if (Utils.isBlank(name))
             throw BusinessException.invalidName(name);
         for (String s : SPECIAL_CHARACTERS) {
             if (name.contains(s))

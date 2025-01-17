@@ -4,7 +4,7 @@ import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 public class IteratorImplNative extends NativeBase {
 
@@ -18,7 +18,7 @@ public class IteratorImplNative extends NativeBase {
     }
 
     public Value IteratorImpl(ClassInstance collection, CallContext callContext) {
-        var arrayField = collection.getKlass().getFieldByName("array");
+        var arrayField = collection.getInstanceKlass().getFieldByName("array");
         array = collection.getField(arrayField).resolveArray();
         size = array.size();
         return instance.getReference();
@@ -33,7 +33,7 @@ public class IteratorImplNative extends NativeBase {
     }
 
     public Value next(CallContext callContext) {
-        NncUtils.requireTrue(index < size);
+        Utils.require(index < size);
         return array.get(index++);
     }
 

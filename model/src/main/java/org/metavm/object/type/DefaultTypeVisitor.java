@@ -7,7 +7,7 @@ public abstract class DefaultTypeVisitor<R, S> implements TypeVisitor<R, S> {
     }
 
     @Override
-    public R visitClassType(ClassType type, S s) {
+    public R visitKlassType(KlassType type, S s) {
         return visitType(type, s);
     }
 

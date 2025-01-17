@@ -36,12 +36,14 @@ public class BootstrapUtils {
         if (state != null) {
             var defContext = state.defContext();
             ModelDefRegistry.setDefContext(defContext);
-            StdFunction.initializeFromDefContext(defContext, false);
             StdFunction.setEmailSender(MockEmailSender.INSTANCE);
-            PrimitiveKind.initialize(defContext);
-            StdKlass.initialize(defContext, false);
-            StdMethod.initialize(defContext, false);
-            StdField.initialize(defContext, false);
+//            defContext.buildMemoryIndex();
+//            StdFunction.initializeFromDefContext(defContext, false);
+//            PrimitiveKind.initialize(defContext);
+//            StdKlass.initialize(defContext, false);
+//            StdMethod.initialize(defContext, false);
+//            StdField.initialize(defContext, false);
+            ParameterizedStore.getMap().clear();
             var state = BootstrapUtils.state.copy();
             var instanceStore = new MemInstanceStore(
                     state.instanceMapper(),
@@ -133,8 +135,7 @@ public class BootstrapUtils {
                 entityContextFactory,
                 new StdAllocators(allocatorStore),
                 columnStore,
-                typeTagStore,
-                stdIdStore
+                typeTagStore
         );
         bootstrap.setClassBlacklist(classBlacklist);
         bootstrap.setFieldBlacklist(fieldBlacklist);
@@ -200,7 +201,7 @@ public class BootstrapUtils {
         );
     }
 
-    private static DefContext copyDefContext(EntityContextFactory entityContextFactory, EntityIdProvider idProvider, SystemDefContext sysDefContext) {
+    private static SystemDefContext copyDefContext(EntityContextFactory entityContextFactory, EntityIdProvider idProvider, SystemDefContext sysDefContext) {
 //        var bridge = new EntityInstanceContextBridge();
 //        var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
 //                ROOT_APP_ID, false, null, null,

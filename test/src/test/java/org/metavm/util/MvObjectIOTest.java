@@ -32,14 +32,15 @@ public class MvObjectIOTest extends TestCase {
         var ref = new Object() { byte[] bytes;};
         TestUtils.doInTransactionWithoutResult( () -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                var foo = context.bind(new Foo("foo", new Bar("bar001")));
+                var foo = new Foo("foo", null);
+                foo.setBar(new Bar(foo, "bar001"));
+                context.bind(foo);
                 context.initIds();
                 var output = new MarkingInstanceOutput();
-                var objOut = context.bind( MvObjectOutputStream.create(output));
-                var objOutInst = (ClassInstance) context.getInstance(objOut);
+                var objOut = context.bind(MvObjectOutputStream.create(output));
                 Flows.invoke(StdMethod.objectOutputStreamWriteObject.get().getRef(),
-                        objOutInst,
-                        List.of(context.getInstance(foo).getReference()),
+                        objOut,
+                        List.of(foo.getReference()),
                         context);
                 Assert.assertTrue(output.size() > 0);
                 ref.bytes = output.toByteArray();
@@ -47,13 +48,12 @@ public class MvObjectIOTest extends TestCase {
             }
         });
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var input = context.getInstanceContext().createInstanceInput(new ByteArrayInputStream(ref.bytes));
+            var input = context.createInstanceInput(new ByteArrayInputStream(ref.bytes));
             var objInput = context.bind(new MvObjectInputStream(input));
-            var objInputInst = (ClassInstance) context.getInstance(objInput);
             var readObjectMethod = StdMethod.objectInputStreamReadObject.get();
-            var r = Objects.requireNonNull(Flows.invoke(readObjectMethod.getRef(), objInputInst, List.of(), context));
-            var inst = r.resolveObject();
-            Assert.assertEquals(Instances.stringInstance("foo"), inst.getField("name"));
+            var r = Objects.requireNonNull(Flows.invoke(readObjectMethod.getRef(), objInput, List.of(), context));
+            var inst = (Foo) r.resolveObject();
+            Assert.assertEquals("foo", inst.getName());
         }
     }
 

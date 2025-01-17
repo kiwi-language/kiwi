@@ -7,7 +7,7 @@ import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.type.Klass;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 
@@ -18,7 +18,7 @@ public class GraphQueryExecutor {
     public List<InstanceDTO[]> execute(Klass type, List<Instance> instances, List<Expression> expressions) {
         PathTree path = resolvePath(expressions);
         ObjectNode tree = new ObjectNode(path, type);
-        loadTree(NncUtils.map(instances, i -> new NodeInstancePair(tree, i.getReference())));
+        loadTree(Utils.map(instances, i -> new NodeInstancePair(tree, i.getReference())));
         Expression[] exprArray = new Expression[expressions.size()];
         expressions.toArray(exprArray);
         List<InstanceDTO[]> results = new ArrayList<>();

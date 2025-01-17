@@ -1,17 +1,22 @@
 package org.metavm.entity.mocks;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Entity;
 import org.metavm.entity.EntityMemoryIndex;
 import org.metavm.entity.EntityRepository;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.IdentitySet;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class MockEntityRepository implements EntityRepository {
 
     private final IdentitySet<Object> objects = new IdentitySet<>();
@@ -24,12 +29,25 @@ public class MockEntityRepository implements EntityRepository {
     }
 
     @Override
-    public <T> T bind(T entity) {
-        NncUtils.requireTrue(objects.add(entity));
+    public Reference createReference(Id id) {
+
+        return new Reference(id, () -> {
+            var e = entities.get(id);
+            if (e == null) {
+//                entities.forEach((id1, e1) -> log.debug("Entity ID: {}, entity: {}", id1, e1.getClass().getName()));
+                throw new NullPointerException("Cannot find entity for ID " + id);
+            }
+            return e;
+        });
+    }
+
+    @Override
+    public <T extends Instance> T bind(T entity) {
+        Utils.require(objects.add(entity));
         if (entity instanceof Entity e) {
             e.forEachDescendant(d -> {
-                if (d.tryGetId() != null)
-                    entities.put(d.getId(), d);
+                if (d.tryGetId() != null && d instanceof Entity e1)
+                    entities.put(d.getId(), e1);
             });
         }
         index.save(entity);
@@ -37,26 +55,7 @@ public class MockEntityRepository implements EntityRepository {
     }
 
     @Override
-    public boolean tryBind(Object entity) {
-        bind(entity);
-        return true;
-    }
-
-    @Override
-    public boolean remove(Object object) {
-        if(object instanceof Entity entity && entity.tryGetId() != null)
-            entities.remove(entity.getId());
-        index.remove(object);
-        return true;
-    }
-
-    @Override
-    public boolean containsEntity(Object object) {
-        return objects.contains(object);
-    }
-
-    @Override
-    public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... values) {
+    public <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Value... values) {
         return index.selectByKey(indexDef, List.of(values));
     }
 

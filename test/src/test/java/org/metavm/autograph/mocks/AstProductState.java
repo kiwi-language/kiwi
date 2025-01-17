@@ -1,6 +1,7 @@
 package org.metavm.autograph.mocks;
 
 import org.metavm.api.Entity;
+import org.metavm.util.Utils;
 
 @Entity
 public enum AstProductState {
@@ -16,7 +17,12 @@ public enum AstProductState {
         this.code = code;
     }
 
-    public int getCode() {
+    public int code() {
         return code;
     }
+
+    public static AstProductState fromCode(int code) {
+        return Utils.findRequired(values(), v -> v.code == code);
+    }
+
 }

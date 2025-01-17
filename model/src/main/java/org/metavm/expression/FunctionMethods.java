@@ -9,7 +9,7 @@ import org.metavm.object.type.Types;
 import org.metavm.util.BusinessException;
 import org.metavm.util.EncodingUtils;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.text.DecimalFormat;
 import java.util.List;
@@ -99,7 +99,7 @@ public class FunctionMethods {
 
     public static LongValue GET_ID(Value instance) {
         if(instance instanceof Reference d)
-            return Instances.longInstance(NncUtils.orElse(d.tryGetTreeId(), 0L));
+            return Instances.longInstance(Utils.orElse(d.tryGetTreeId(), 0L));
         else
             return Instances.longInstance(0L);
     }
@@ -134,7 +134,7 @@ public class FunctionMethods {
     }
 
     public static LongValue RANDOM() {
-        return new LongValue(NncUtils.random());
+        return new LongValue(Utils.random());
     }
 
     public static Value IF(BooleanValue condition, Value value1, Value value2) {
@@ -154,7 +154,7 @@ public class FunctionMethods {
     }
 
     public static Boolean IS_BLANK(String value) {
-        return NncUtils.isBlank(value);
+        return Utils.isBlank(value);
     }
 
     public static Object IF(Boolean condition, Object value1, Object value2) {
@@ -182,13 +182,13 @@ public class FunctionMethods {
     }
 
     public static StringValue RANDOM_PASSWORD() {
-        return Instances.stringInstance(NncUtils.randomPassword());
+        return Instances.stringInstance(Utils.randomPassword());
     }
 
     public static Type IF$_TYPE_RESOLVER(List<Type> argumentCLasses) {
-        NncUtils.requireTrue(argumentCLasses.size() == 2,
+        Utils.require(argumentCLasses.size() == 2,
                 "Incorrect number of arguments for function IF");
-        return Types.getCompatibleType(argumentCLasses.get(0), argumentCLasses.get(1));
+        return Types.getCompatibleType(argumentCLasses.getFirst(), argumentCLasses.get(1));
     }
 
     public static boolean isAssignable(Type from, Type to) {
@@ -203,7 +203,7 @@ public class FunctionMethods {
     }
 
     public static Value HAS_NEXT(Value iterator) {
-        var iteratorNative = (IteratorImplNative) NativeMethods.getNativeObject(iterator.resolveObject());
+        var iteratorNative = (IteratorImplNative) NativeMethods.getNativeObject(iterator.resolveMvObject());
         return iteratorNative.hasNext();
     }
 
@@ -221,7 +221,7 @@ public class FunctionMethods {
 
     public static StringValue STRING_FORMAT(StringValue format, ArrayInstance values) {
         var args = new Object[values.size()];
-        NncUtils.map(values, Value::getTitle).toArray(args);
+        Utils.map(values, Value::getTitle).toArray(args);
         return Instances.stringInstance(String.format(format.getValue(), args));
     }
 

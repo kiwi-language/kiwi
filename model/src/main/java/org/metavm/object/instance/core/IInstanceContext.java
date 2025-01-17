@@ -10,7 +10,7 @@ import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.InstanceInput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
@@ -43,12 +43,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     List<Instance> batchGetRoots(List<Long> treeIds);
 
     default Instance getRoot(long treeId) {
-        return NncUtils.first(batchGetRoots(List.of(treeId)));
+        return Utils.first(batchGetRoots(List.of(treeId)));
     }
-
-//    Instance get(RefDTO ref);
-
-//    Instance get(InstanceId id);
 
     @Nullable
     Instance getBuffered(Id id);
@@ -57,19 +53,11 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     Instance internalGet(Id id);
 
-//    Instance getIfPresentByTmpId(long tmpId);
-
     boolean contains(Id id);
 
     Profiler getProfiler();
 
     List<Instance> batchGet(Collection<Id> ids);
-
-//    List<DurableInstance> getByType(Type type, @Nullable DurableInstance startExclusive, long limit);
-
-//    List<DurableInstance> scan(DurableInstance startExclusive, long limit);
-
-//    boolean existsInstances(Type type, boolean persistedOnly);
 
     ScanResult scan(long start, long limit);
 
@@ -78,12 +66,10 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
         return this;
     }
 
-//    TypeProvider getTypeProvider();
-
     void loadTree(long id);
 
     default boolean isReferenced(Instance instance) {
-        if(instance.isReferencedByParent())
+        if(instance instanceof MvInstance mvInst && mvInst.isReferencedByParent())
             return true;
         if(instance.tryGetId() instanceof PhysicalId id)
             return !getByReferenceTargetId(id, 0, 1).isEmpty();
@@ -105,7 +91,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void buffer(Id id);
 
-    void removeForwardingPointer(Instance instance, boolean clearingOldId);
+    void removeForwardingPointer(MvInstance instance, boolean clearingOldId);
 
     default void buffer(Collection<? extends Id> ids) {
         ids.forEach(this::buffer);
@@ -138,11 +124,12 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     boolean containsUniqueKey(IndexKeyRT key);
 
     default Reference selectFirstByKey(IndexKeyRT key) {
-        return NncUtils.first(selectByKey(key));
+        return Utils.first(selectByKey(key));
     }
 
-    default void bind(Instance instance) {
+    default <T extends Instance> T bind(T instance) {
         batchBind(List.of(instance));
+        return instance;
     }
 
     void batchBind(Collection<Instance> instances);
@@ -155,17 +142,11 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void increaseVersionsForAll();
 
-    void evict(Instance instance);
-
-    void pubBack(Instance instance);
-
     void updateMemoryIndex(ClassInstance instance);
 
     @Nullable Consumer<Object> getBindHook();
 
     Instance getRemoved(Id id);
-
-    void invalidateCache(Reference instance);
 
     @Nullable EventQueue getEventQueue();
 
@@ -186,5 +167,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     void forceSearchReindex(ClassInstance instance);
 
     Set<ClassInstance> getSearchReindexSet();
+
+    long getAppId(Instance instance);
 
 }

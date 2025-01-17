@@ -125,15 +125,9 @@ public class TypeResolverImpl implements TypeResolver {
         return type;
     }
 
-        @SuppressWarnings("UnstableApiUsage")
     public Type resolve(PsiType psiType, ResolutionStage stage) {
         return switch (psiType) {
-            case PsiPrimitiveType primitiveType -> {
-                if (primitiveType.getName().equals("null"))
-                    yield Types.getNullType();
-                var klass = ReflectionUtils.getWrapperClass(KIND_2_PRIM_CLASS.get(primitiveType.getKind()));
-                yield context.getType(klass);
-            }
+            case PsiPrimitiveType primitiveType -> resolvePrimitiveType(primitiveType);
             case PsiClassType classType -> resolveClassType(classType, stage);
             case PsiWildcardType wildcardType -> resolveWildcardType(wildcardType, stage);
             case PsiArrayType arrayType -> resolveArrayType(arrayType, stage);
@@ -146,6 +140,31 @@ public class TypeResolverImpl implements TypeResolver {
         };
     }
 
+    private Type resolvePrimitiveType(PsiPrimitiveType primitiveType) {
+        if (primitiveType.equals(PsiType.NULL))
+            return Types.getNullType();
+        else if (primitiveType.equals(PsiType.BYTE))
+            return Types.getByteType();
+        else if (primitiveType.equals(PsiType.SHORT))
+            return Types.getShortType();
+        else if (primitiveType.equals(PsiType.INT))
+            return Types.getIntType();
+        else if (primitiveType.equals(PsiType.LONG))
+            return Types.getLongType();
+        else if (primitiveType.equals(PsiType.FLOAT))
+            return Types.getFloatType();
+        else if (primitiveType.equals(PsiType.DOUBLE))
+            return Types.getDoubleType();
+        else if (primitiveType.equals(PsiType.BOOLEAN))
+            return Types.getBooleanType();
+        else if (primitiveType.equals(PsiType.CHAR))
+            return Types.getCharType();
+        else if (primitiveType.equals(PsiType.VOID))
+            return Types.getVoidType();
+        else
+            throw new IllegalStateException("Unrecognized primitive type: " + primitiveType.getCanonicalText());
+    }
+
     private ArrayType resolveArrayType(PsiArrayType psiArrayType, ResolutionStage stage) {
         return new ArrayType(
                 resolveNullable(psiArrayType.getComponentType(), stage),
@@ -155,13 +174,13 @@ public class TypeResolverImpl implements TypeResolver {
 
     private IntersectionType resolveIntersectionType(PsiIntersectionType psiIntersectionType, ResolutionStage stage) {
         return new IntersectionType(
-                NncUtils.mapUnique(List.of(psiIntersectionType.getConjuncts()), t -> resolve(t, stage))
+                Utils.mapToSet(List.of(psiIntersectionType.getConjuncts()), t -> resolve(t, stage))
         );
     }
 
     private UnionType resolveDisjunctionType(PsiDisjunctionType psiDisjunctionType, ResolutionStage stage) {
         return new UnionType(
-                NncUtils.mapUnique(psiDisjunctionType.getDisjunctions(), t -> resolve(t, stage))
+                Utils.mapToSet(psiDisjunctionType.getDisjunctions(), t -> resolve(t, stage))
         );
     }
 
@@ -291,7 +310,7 @@ public class TypeResolverImpl implements TypeResolver {
 
     public Flow resolveFlow(PsiMethod method) {
         var klass = ((ClassType) resolveDeclaration(TranspileUtils.createType(method.getContainingClass()))).getKlass();
-        return NncUtils.findRequired(klass.getMethods(), f ->
+        return Utils.findRequired(klass.getMethods(), f ->
                 f.getInternalName(null).equals(TranspileUtils.getInternalName(method)));
     }
 
@@ -324,15 +343,11 @@ public class TypeResolverImpl implements TypeResolver {
             var builtinKlass = tryResolveBuiltinClass(TranspileUtils.createType(psiClass));
             if (builtinKlass != null) {
                 var internalName = TranspileUtils.getInternalName(method);
-                var found =  NncUtils.find(builtinKlass.getMethods(), m ->
+                var found =  Utils.find(builtinKlass.getMethods(), m ->
                                 m.getInternalName(null).equals(internalName));
 //                        () -> "Can not find method " + internalName + " in class " + builtinKlass.getTypeDesc());
-                if(found == null) {
-                    for (Method m : builtinKlass.getMethods()) {
-                        logger.debug("Method: {}", m.getInternalName(null));
-                    }
+                if(found == null)
                     throw new NullPointerException("Can not find method " + internalName + " in class " + builtinKlass.getTypeDesc());
-                }
                 return found;
             }
             return method.getUserData(Keys.Method);
@@ -377,13 +392,13 @@ public class TypeResolverImpl implements TypeResolver {
             return typeVariable.getType();
         var genericDeclaration = tryResolveGenericDeclaration(typeParameter.getOwner());
         if (genericDeclaration != null)
-            typeVariable = NncUtils.find(genericDeclaration.getTypeParameters(),
+            typeVariable = Utils.find(genericDeclaration.getTypeParameters(),
                     tv -> Objects.equals(tv.getName(), typeParameter.getName()));
         if (typeVariable == null)
             typeVariable = new TypeVariable(null, Objects.requireNonNull(typeParameter.getName()),
                     genericDeclaration != null ? genericDeclaration : DummyGenericDeclaration.INSTANCE);
         typeParameter.putUserData(Keys.TYPE_VARIABLE, typeVariable);
-        typeVariable.setBounds(NncUtils.map(
+        typeVariable.setBounds(Utils.map(
                 typeParameter.getExtendsListTypes(),
                 this::resolveTypeOnly
         ));
@@ -404,7 +419,7 @@ public class TypeResolverImpl implements TypeResolver {
                 var javaClass = TranspileUtils.getJavaClass(psiClass);
                 var klass = ModelDefRegistry.getDefContext().tryGetKlass(javaClass);
                 if(klass != null) {
-                    int index = NncUtils.requireNonNull(psiClass.getTypeParameterList())
+                    int index = Objects.requireNonNull(psiClass.getTypeParameterList())
                             .getTypeParameterIndex(typeParameter);
                     return klass.getTypeParameters().get(index);
                 }
@@ -426,7 +441,7 @@ public class TypeResolverImpl implements TypeResolver {
     private Klass createMvClass(PsiClass psiClass) {
         try (var ignored = ContextUtil.getProfiler().enter("createMvClass")) {
             var qualName = psiClass.getQualifiedName();
-            NncUtils.requireFalse(qualName != null && qualName.startsWith("org.metavm.api."),
+            Utils.require(qualName == null || !qualName.startsWith("org.metavm.api."),
                     () -> "Can not create metavm class for API class: " + qualName);
             var name = TranspileUtils.getBizClassName(psiClass);
             var kind = getClassKind(psiClass);
@@ -435,9 +450,9 @@ public class TypeResolverImpl implements TypeResolver {
             var tag = (int) TranspileUtils.getEntityAnnotationAttr(psiClass, "tag", -1);
             Klass klass;
             if(tag >= 0)
-                klass = context.selectFirstByKey(Klass.UNIQUE_SOURCE_TAG, tag);
+                klass = context.selectFirstByKey(Klass.UNIQUE_SOURCE_TAG, Instances.intInstance(tag));
             else if(qualName != null)
-                klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, qualName);
+                klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(qualName));
             else
                 klass = null;
             var parent = TranspileUtils.getProperParent(psiClass, Set.of(PsiMethod.class, PsiClass.class));

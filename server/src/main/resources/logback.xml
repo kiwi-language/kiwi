@@ -23,8 +23,8 @@
         <appender-ref ref="FILE" />
     </logger>
 
-    <logger name="Debug" level="info" additivity="false">
-        <appender-ref ref="DEBUG" />
+    <logger name="Debug" level="debug" additivity="false">
+        <appender-ref ref="STDOUT" />
     </logger>
 
     <root level="info">

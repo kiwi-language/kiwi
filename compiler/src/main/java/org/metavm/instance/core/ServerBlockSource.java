@@ -6,7 +6,7 @@ import org.metavm.object.instance.core.TypeTag;
 import org.metavm.system.BlockRT;
 import org.metavm.system.BlockSource;
 import org.metavm.system.rest.dto.BlockDTO;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.Collection;
 import java.util.List;
@@ -26,7 +26,7 @@ public class ServerBlockSource implements BlockSource {
 
     @Override
     public List<BlockRT> getActive(List<Long> typeIds) {
-        return NncUtils.map(typeClient.getActive(typeIds), this::fromDTO);
+        return Utils.map(typeClient.getActive(typeIds), this::fromDTO);
     }
 
     private BlockRT fromDTO(BlockDTO blockDTO) {

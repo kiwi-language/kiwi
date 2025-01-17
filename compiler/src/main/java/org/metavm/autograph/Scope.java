@@ -1,6 +1,6 @@
 package org.metavm.autograph;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 
@@ -67,7 +67,7 @@ public class Scope {
     }
 
     public Scope copy() {
-        var copy = new Scope(NncUtils.get(parent, Scope::copy), methodName, isolated);
+        var copy = new Scope(Utils.safeCall(parent, Scope::copy), methodName, isolated);
         copy.copyFrom(this);
         return copy;
     }
@@ -92,11 +92,11 @@ public class Scope {
         if (parent != null) {
             // TODO: check correctness
             if(isolated)
-                parent.read.addAll(NncUtils.diffSet(read, defined));
+                parent.read.addAll(Utils.diffSet(read, defined));
             else {
                 parent.defined.addAll(defined);
-                parent.read.addAll(NncUtils.diffSet(read, isolatedNames));
-                parent.modified.addAll(NncUtils.diffSet(modified, isolatedNames));
+                parent.read.addAll(Utils.diffSet(read, isolatedNames));
+                parent.modified.addAll(Utils.diffSet(modified, isolatedNames));
             }
         }
     }

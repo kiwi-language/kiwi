@@ -9,7 +9,8 @@ import org.metavm.entity.TypeRegistry;
 import org.metavm.object.type.*;
 import org.metavm.object.version.Version;
 import org.metavm.object.version.VersionRepository;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
 
 public class EntityInstanceContextBridge implements
         TypeDefProvider, IndexProvider, VersionRepository, TypeRegistry, RedirectStatusProvider, ActiveCommitProvider, DefContextProvider {
@@ -38,7 +39,7 @@ public class EntityInstanceContextBridge implements
     @Nullable
     @Override
     public Version getLastVersion() {
-        return NncUtils.first(
+        return Utils.first(
                 entityContext.query(Version.IDX_VERSION.newQueryBuilder().limit(1).desc(true).build())
         );
     }
@@ -56,7 +57,7 @@ public class EntityInstanceContextBridge implements
     @javax.annotation.Nullable
     @Override
     public Commit getActiveCommit() {
-        return entityContext.selectFirstByKey(Commit.IDX_RUNNING, true);
+        return entityContext.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
     }
 
     public DefContext getDefContext() {

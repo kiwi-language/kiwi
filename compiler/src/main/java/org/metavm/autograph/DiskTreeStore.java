@@ -8,7 +8,7 @@ import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.TypeOrTypeKey;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +35,14 @@ public class DiskTreeStore implements TreeSource {
 
                 @Override
                 public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
-                    ids.add(PhysicalId.of(treeId, nodeId, typeOrTypeKey));
+                    ids.add(PhysicalId.of(treeId, nodeId));
                     super.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
+                }
+
+                @Override
+                public void visitEntityBody(int tag, Id id) {
+                    ids.add(id);
+                    super.visitEntityBody(tag, id);
                 }
             }.visitGrove();
         }
@@ -48,7 +54,7 @@ public class DiskTreeStore implements TreeSource {
     }
 
     public void load(List<Tree> trees, List<Long> removedIds) {
-        NncUtils.forEach(removedIds, this.trees::remove);
+        Utils.forEach(removedIds, this.trees::remove);
         for (Tree tree : trees) {
             this.trees.put(tree.id(), tree);
         }
@@ -64,7 +70,7 @@ public class DiskTreeStore implements TreeSource {
 
     @Override
     public List<Tree> load(Collection<Long> ids, IInstanceContext context) {
-        return NncUtils.mapAndFilter(ids, trees::get, Objects::nonNull);
+        return Utils.mapAndFilter(ids, trees::get, Objects::nonNull);
     }
 
     @Override

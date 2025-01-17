@@ -2,7 +2,7 @@ package org.metavm.expression;
 
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 
@@ -21,7 +21,7 @@ public class Var {
     }
 
     public static List<Var> nameVars(String...names) {
-        return NncUtils.map(names, Var::nameVar);
+        return Utils.map(names, Var::nameVar);
     }
 
     public static Var idVar(String id) {

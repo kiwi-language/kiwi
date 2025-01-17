@@ -3,8 +3,7 @@ package org.metavm.autograph;
 import com.intellij.psi.*;
 
 import java.util.HashSet;
-
-import static org.metavm.util.NncUtils.requireNonNull;
+import java.util.Objects;
 
 public class DefaultSwitchCaseAppender extends SkipDiscardedVisitor {
 
@@ -22,7 +21,7 @@ public class DefaultSwitchCaseAppender extends SkipDiscardedVisitor {
 
     private void processSwitch(PsiSwitchBlock statement) {
         if (!TranspileUtils.isColonSwitch(statement)) {
-            var statements = requireNonNull(statement.getBody()).getStatements();
+            var statements = Objects.requireNonNull(statement.getBody()).getStatements();
             boolean hasDefault = false;
             for (var stmt : statements) {
                 if(stmt instanceof PsiSwitchLabelStatement labelStmt) {
@@ -50,7 +49,7 @@ public class DefaultSwitchCaseAppender extends SkipDiscardedVisitor {
     private boolean isAllCasesCovered(PsiSwitchBlock statement) {
         var expr = statement.getExpression();
         if (expr.getType() instanceof PsiClassType classType) {
-            var psiClass = requireNonNull(classType.resolve());
+            var psiClass = Objects.requireNonNull(classType.resolve());
             if (psiClass.isEnum()) {
                 return isAllEnumCasesCovered(statement, psiClass);
             }
@@ -61,11 +60,11 @@ public class DefaultSwitchCaseAppender extends SkipDiscardedVisitor {
     private boolean isAllEnumCasesCovered(PsiSwitchBlock statement, PsiClass psiClass) {
         var enumConstants = new HashSet<>(TranspileUtils.getEnumConstants(psiClass));
         boolean nullCovered = false;
-        var stmts = requireNonNull(statement.getBody()).getStatements();
+        var stmts = Objects.requireNonNull(statement.getBody()).getStatements();
         for (var stmt : stmts) {
             var labelStmt = (PsiSwitchLabeledRuleStatement) stmt;
             if (!labelStmt.isDefaultCase()) {
-                var caseElements = requireNonNull(labelStmt.getCaseLabelElementList());
+                var caseElements = Objects.requireNonNull(labelStmt.getCaseLabelElementList());
                 for (var caseElement : caseElements.getElements()) {
                     if (caseElement instanceof PsiReferenceExpression refExpr) {
                         var target = refExpr.resolve();

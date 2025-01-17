@@ -24,7 +24,7 @@ public class ClientInfoFilter extends OncePerRequestFilter {
                                     @NotNull HttpServletResponse response,
                                     @NotNull FilterChain filterChain) throws ServletException, IOException {
         ContextUtil.setClientId(request.getHeader(Headers.CLIENT_ID));
-        Long metaVersion = NncUtils.tryParseLong(request.getHeader(Headers.META_VERSION));
+        Long metaVersion = Utils.tryParseLong(request.getHeader(Headers.META_VERSION));
         if(metaVersion != null)
             ContextUtil.setMetaVersion(metaVersion);
         filterChain.doFilter(request, response);

@@ -13,8 +13,9 @@ import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.type.*;
 import org.metavm.util.CompilerConfig;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.NamingUtils;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +61,7 @@ public class Declarator extends VisitorBase {
             requireNonNull(parent.getUserData(Keys.Method),
                     () -> "Cannot find parent method for class: " + psiClass.getName() + " inside " + TranspileUtils.getQualifiedName(parentMethod) + " in file " + psiClass.getContainingFile().getName())
                     .addLocalKlass(klass);
-        klass.setKlasses(NncUtils.map(psiClass.getInnerClasses(),
+        klass.setKlasses(Utils.map(psiClass.getInnerClasses(),
                 k -> Objects.requireNonNull(k.getUserData(Keys.MV_CLASS), () -> "Cannot find metavm class for class " + k.getQualifiedName())));
         if (psiClass.getSuperClass() != null &&
                 !Objects.equals(psiClass.getSuperClass().getQualifiedName(), Object.class.getName())) {
@@ -69,7 +70,7 @@ public class Declarator extends VisitorBase {
         else
             klass.setSuperType(null);
         klass.setInterfaces(
-                NncUtils.map(
+                Utils.map(
                         TranspileUtils.getInterfaceTypes(psiClass),
                         it -> ((ClassType) typeResolver.resolveTypeOnly(it))
                 )
@@ -91,13 +92,13 @@ public class Declarator extends VisitorBase {
         classStack.push(classInfo);
         super.visitClass(psiClass);
         classStack.pop();
-        var removedFields = NncUtils.exclude(klass.getFields(), classInfo.visitedFields::contains);
+        var removedFields = Utils.exclude(klass.getFields(), classInfo.visitedFields::contains);
         removedFields.forEach(f -> {
             f.setInitializer(null);
             f.setMetadataRemoved();
             f.resetTypeIndex();
         });
-        var removedStaticFields = NncUtils.exclude(klass.getStaticFields(), classInfo.visitedFields::contains);
+        var removedStaticFields = Utils.exclude(klass.getStaticFields(), classInfo.visitedFields::contains);
         removedStaticFields.forEach(klass::removeField);
         var fieldIndices = new HashMap<String, Integer>();
         for (int i = 0; i < psiClass.getFields().length; i++) {
@@ -117,7 +118,7 @@ public class Declarator extends VisitorBase {
                 methodIndices.put(method, i);
         }
         klass.sortMethods(Comparator.comparingInt(m -> methodIndices.getOrDefault(m, -1)));
-        NncUtils.exclude(klass.getMethods(), classInfo.visitedMethods::contains).forEach(klass::removeMethod);
+        Utils.exclude(klass.getMethods(), classInfo.visitedMethods::contains).forEach(klass::removeMethod);
         for (PsiField psiField : psiClass.getFields()) {
             var initializer = psiField.getUserData(Keys.INITIALIZER);
             if (initializer != null) {
@@ -138,7 +139,7 @@ public class Declarator extends VisitorBase {
             return;
         var klass = currentClass().klass;
         var internalName = TranspileUtils.getInternalName(method);
-        var flow = NncUtils.find(klass.getMethods(), f -> f.getInternalName(null).equals(internalName));
+        var flow = Utils.find(klass.getMethods(), f -> f.getInternalName(null).equals(internalName));
         if (flow != null)
             method.putUserData(Keys.Method, flow);
         var access = resolveAccess(method.getModifierList());
@@ -160,7 +161,7 @@ public class Declarator extends VisitorBase {
             flow.setAbstract(isAbstract);
             flow.setKlasses(List.of());
         }
-        flow.setTypeParameters(NncUtils.map(
+        flow.setTypeParameters(Utils.map(
                 method.getTypeParameters(),
                 t -> typeResolver.resolveTypeVariable(t).getVariable()
         ));
@@ -199,7 +200,7 @@ public class Declarator extends VisitorBase {
     }
 
     private List<Parameter> processParameters(PsiParameterList parameterList, Method method) {
-        return NncUtils.map(
+        return Utils.map(
                 parameterList.getParameters(),
                 param -> {
                     var p = method.findParameter(p1 -> param.getName().equals(p1.getName()));
@@ -273,7 +274,7 @@ public class Declarator extends VisitorBase {
     }
 
     private ClassInfo currentClass() {
-        return NncUtils.requireNonNull(classStack.peek());
+        return Objects.requireNonNull(classStack.peek());
     }
 
     private Type getReturnType(PsiMethod method) {

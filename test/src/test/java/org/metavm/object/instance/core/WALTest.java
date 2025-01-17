@@ -84,7 +84,8 @@ public class WALTest extends TestCase {
                 var wal = outerContext.bind(new WAL(outerContext.getAppId()));
                 Id fooId;
                 try (var context = entityContextFactory.newBufferingContext(APP_ID, wal)) {
-                    var foo = new Foo(fooName, new Bar("bar001"));
+                    var foo = new Foo(fooName, null);
+                    foo.setBar(new Bar(foo, "bar001"));
                     context.bind(foo);
                     context.finish();
                     fooId = foo.getId();
@@ -95,7 +96,7 @@ public class WALTest extends TestCase {
             }
         });
         try (var outerContext = newContext()) {
-            Assert.assertTrue(instanceStore.loadForest(List.of(ids[1].getTreeId()), outerContext.getInstanceContext()).isEmpty());
+            Assert.assertTrue(instanceStore.loadForest(List.of(ids[1].getTreeId()), outerContext).isEmpty());
             var wal = outerContext.getEntity(WAL.class, ids[0]);
             try (var context = entityContextFactory.newLoadedContext(APP_ID, wal)) {
                 var loadedFoo = context.getEntity(Foo.class, ids[1]);
@@ -110,7 +111,7 @@ public class WALTest extends TestCase {
                 var klass = TestUtils.newKlassBuilder("Foo", "Foo").build();
                 context.bind(klass);
                 var inst = ClassInstance.create(Map.of(), klass.getType());
-                context.getInstanceContext().bind(inst);
+                context.bind(inst);
                 context.finish();
                 return new Id[]{klass.getId(), inst.getId()};
             }
@@ -157,17 +158,18 @@ public class WALTest extends TestCase {
         // create a new instance and check that its version field has been initialized by log service
         var instanceId2 = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
+                context.loadKlasses();
                 var klass = context.getKlass(klassId);
                 var inst = ClassInstance.create(Map.of(), klass.getType());
-                context.getInstanceContext().bind(inst);
+                context.bind(inst);
                 context.finish();
                 return inst.getId();
             }
         });
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
-                var inst = context.getInstanceContext().get(instanceId2);
-                inst.ensureLoaded();
+                context.loadKlasses();
+                context.get(instanceId2);
                 context.finish();
             }
         });
@@ -175,16 +177,18 @@ public class WALTest extends TestCase {
             var wal = context.getEntity(WAL.class, walId);
             var commit = context.getEntity(Commit.class, commitId);
             Assert.assertEquals(CommitState.PREPARING0, commit.getState());
-            Assert.assertEquals(commit, context.selectFirstByKey(Commit.IDX_RUNNING, true));
+            Assert.assertEquals(commit, context.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance()));
             try (var loadedContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
-                var inst = (ClassInstance) loadedContext.getInstanceContext().get(instanceId2);
+                loadedContext.loadKlasses();
+                var inst = (ClassInstance) loadedContext.get(instanceId2);
                 Assert.assertEquals(Instances.longInstance(0L), inst.getField("version"));
             }
         }
         // check the old instance
         TestUtils.waitForDDLPrepared(schedulerAndWorker);
         try (var context = newContext()) {
-            var inst = (ClassInstance) context.getInstanceContext().get(instId);
+            context.loadKlasses();
+            var inst = (ClassInstance) context.get(instId);
             Assert.assertEquals(Instances.longInstance(0L), inst.getField("version"));
         }
     }
@@ -205,7 +209,7 @@ public class WALTest extends TestCase {
         try (var context = newContext()) {
             var wal = context.getEntity(WAL.class, walId);
             try (var loadedContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
-                var klass = loadedContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, className);
+                var klass = loadedContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(className));
                 Assert.assertNotNull(klass);
             }
         }
@@ -217,7 +221,7 @@ public class WALTest extends TestCase {
         });
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
-                var klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, className);
+                var klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(className));
                 Assert.assertNotNull(klass);
                 var wal = context.bind(new WAL(context.getAppId()));
                 try (var bufContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
@@ -225,7 +229,7 @@ public class WALTest extends TestCase {
                     bufContext.finish();
                 }
                 try (var loadedContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
-                    Assert.assertNull(loadedContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, className));
+                    Assert.assertNull(loadedContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(className)));
                 }
                 context.finish();
             }

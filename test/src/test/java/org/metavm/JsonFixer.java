@@ -2,7 +2,7 @@ package org.metavm;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.metavm.util.LinkedList;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.TestUtils;
 
 import java.io.FileReader;
@@ -27,7 +27,7 @@ public class JsonFixer {
         try (var reader = new FileReader(FILE); var writer = new FileWriter(OUTPUT)) {
             int n = reader.read(buffer);
             String jsonStr = new String(buffer, 0, n);
-            var map = NncUtils.readJSONString(jsonStr, new TypeReference<Map<String, Object>>() {
+            var map = Utils.readJSONString(jsonStr, new TypeReference<Map<String, Object>>() {
             });
             fixMap(map);
             writer.write(TestUtils.toJSONString(map));

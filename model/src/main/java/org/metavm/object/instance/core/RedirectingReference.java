@@ -28,7 +28,7 @@ public class RedirectingReference extends Reference {
     }
 
     @Override
-    public void writeInstance(InstanceOutput output) {
+    public void writeInstance(MvOutput output) {
         output.write(WireTypes.REDIRECTING_INSTANCE);
         Objects.requireNonNull(redirectionReference).write(output);
         output.writeId(status.getId());
@@ -49,8 +49,8 @@ public class RedirectingReference extends Reference {
     }
 
     @Override
-    public Instance resolve() {
-        return shouldRedirect() ? redirectionReference.resolve() : super.resolve();
+    public Instance get() {
+        return shouldRedirect() ? redirectionReference.get() : super.get();
     }
 
     public boolean isResolved() {

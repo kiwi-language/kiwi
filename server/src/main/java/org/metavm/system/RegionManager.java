@@ -1,12 +1,12 @@
 package org.metavm.system;
 
+import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.metavm.object.type.TypeCategory;
 import org.metavm.system.persistence.RegionMapper;
 import org.metavm.system.persistence.RegionPO;
 import org.metavm.util.ContextUtil;
-import org.metavm.util.NncUtils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -26,8 +26,8 @@ public class RegionManager {
 
     @Transactional
     public void initialize() {
-        List<Integer> codes = NncUtils.map(RegionConstants.VALUE_MAP.keySet(), TypeCategory::code);
-        Map<Integer, RegionPO> existing = NncUtils.toMap(
+        List<Integer> codes = Utils.map(RegionConstants.VALUE_MAP.keySet(), TypeCategory::code);
+        Map<Integer, RegionPO> existing = Utils.toMap(
                 regionMapper.selectByTypeCategories(codes),
                 RegionPO::getTypeCategory
         );
@@ -44,7 +44,7 @@ public class RegionManager {
                 );
             }
         }
-        if(NncUtils.isNotEmpty(toInserts)) {
+        if(Utils.isNotEmpty(toInserts)) {
             regionMapper.batchInsert(toInserts);
         }
     }
@@ -52,8 +52,8 @@ public class RegionManager {
     public @Nullable RegionRT get(TypeCategory typeCategory) {
         try(var ignored= ContextUtil.getProfiler().enter("RegionManager.get")) {
             List<RegionPO> regionPOs = regionMapper.selectByTypeCategories(List.of(typeCategory.code()));
-            NncUtils.requireNotEmpty(regionPOs, "No region found for type category: " + typeCategory);
-            return new RegionRT(regionPOs.get(0));
+            Utils.requireNotEmpty(regionPOs, "No region found for type category: " + typeCategory);
+            return new RegionRT(regionPOs.getFirst());
         }
     }
 

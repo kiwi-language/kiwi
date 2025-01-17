@@ -11,7 +11,7 @@ public class RawTypeTransformerTest extends TestCase {
     public void test() {
         var file = TranspileTestTools.getPsiJavaFile(source);
         TranspileTestTools.executeCommand(() -> file.accept(new RawTypeTransformer()));
-        log.debug("{}", file.getText());
+        log.info("{}", file.getText());
     }
 
 }

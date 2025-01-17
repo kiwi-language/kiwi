@@ -3,7 +3,7 @@ package org.metavm.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Attribute;
 import org.metavm.object.type.*;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -125,7 +125,7 @@ public class MethodBuilder {
             if (isConstructor)
                 returnType = declaringType.getType();
             else
-                returnType = NncUtils.orElse(Types.getVoidType(), Types::getVoidType);
+                returnType = Utils.orElse(Types.getVoidType(), Types::getVoidType);
         }
         Method method;
         if (existing == null) {
@@ -153,7 +153,7 @@ public class MethodBuilder {
             existing.setName(name);
             existing.setReturnType(returnType);
             existing.setTypeParameters(typeParameters);
-            existing.setParameters(NncUtils.map(parameters, p -> new Parameter(null, p.name(), p.type(), method)));
+            existing.setParameters(Utils.map(parameters, p -> new Parameter(null, p.name(), p.type(), method)));
             if (state != null)
                 existing.setState(state);
         }

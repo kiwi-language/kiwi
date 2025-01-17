@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import org.metavm.object.instance.InstanceParamTypeIdResolver;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
@@ -87,13 +87,13 @@ public record InstanceDTO(
     @JsonIgnore
     public FieldValue getFieldValue(String fieldId) {
         var param = (ClassInstanceParam) param();
-        return NncUtils.findRequired(param.fields(), f -> Objects.equals(f.fieldId(), fieldId)).value();
+        return Utils.findRequired(param.fields(), f -> Objects.equals(f.fieldId(), fieldId)).value();
     }
 
     @JsonIgnore
     public FieldValue getFieldValueByName(String fieldName) {
         var param = (ClassInstanceParam) param();
-        return NncUtils.findRequired(param.fields(), f -> Objects.equals(f.fieldName(), fieldName)).value();
+        return Utils.findRequired(param.fields(), f -> Objects.equals(f.fieldName(), fieldName)).value();
     }
 
     @JsonIgnore
@@ -182,8 +182,8 @@ public record InstanceDTO(
                 yield  map;
             }
             case ArrayInstanceParam arrayInstanceParam ->
-                    NncUtils.map(arrayInstanceParam.elements(), FieldValue::toJson);
-            case ListInstanceParam listInstanceParam -> NncUtils.map(listInstanceParam.elements(), FieldValue::toJson);
+                    Utils.map(arrayInstanceParam.elements(), FieldValue::toJson);
+            case ListInstanceParam listInstanceParam -> Utils.map(listInstanceParam.elements(), FieldValue::toJson);
             case PrimitiveInstanceParam primitiveInstanceParam -> primitiveInstanceParam.value();
             default -> throw new IllegalStateException("Unrecognized instance param: " + param);
         };

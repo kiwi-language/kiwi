@@ -2,7 +2,7 @@ package org.metavm.asm;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.Type;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 @Slf4j
 record AsmVariable(String name, int index, Type type, AsmCallable callable) {
@@ -14,7 +14,7 @@ record AsmVariable(String name, int index, Type type, AsmCallable callable) {
             c = c.parent();
             idx++;
         }
-        NncUtils.requireTrue(c == this.callable, () -> "Cannot find context for variable " + name);
+        Utils.require(c == this.callable, () -> "Cannot find context for variable " + name);
         return idx;
     }
 

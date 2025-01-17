@@ -7,7 +7,7 @@ import org.metavm.flow.Function;
 import org.metavm.flow.FunctionRef;
 import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
@@ -27,9 +27,9 @@ public class StandardStaticMethodsTest extends TestCase {
     }
 
     public void test() {
-        log.debug("Number of function defs: {}", StandardStaticMethods.getDefs().size());
+        log.info("Number of function defs: {}", StandardStaticMethods.getDefs().size());
         var numberOfTrailingZeros = ReflectionUtils.getMethod(Long.class, "numberOfTrailingZeros", long.class);
-        var l = NncUtils.random();
+        var l = Utils.random();
         var r = getFunction(numberOfTrailingZeros).execute(null, List.of(Instances.longInstance(l)), () -> null);
         Assert.assertEquals(Instances.intInstance(Long.numberOfTrailingZeros(l)), r.ret());
 
@@ -71,7 +71,7 @@ public class StandardStaticMethodsTest extends TestCase {
     }
 
     private FunctionRef getFunction(Method javaMethod) {
-        return NncUtils.findRequired(functions, f -> f.getName().equals(StandardStaticMethods.getFunctionName(javaMethod))).getRef();
+        return Utils.findRequired(functions, f -> f.getName().equals(StandardStaticMethods.getFunctionName(javaMethod))).getRef();
     }
 
 }

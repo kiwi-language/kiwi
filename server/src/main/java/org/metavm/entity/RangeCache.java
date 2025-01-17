@@ -2,7 +2,7 @@ package org.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.util.IdAndValue;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 import java.util.function.Function;
@@ -19,7 +19,7 @@ public class RangeCache<V> {
 
     public Map<RangeQuery, List<V>> query(List<RangeQuery> queries) {
         load(queries);
-        return NncUtils.toMap(queries, Function.identity(), this::query0);
+        return Utils.toMap(queries, Function.identity(), this::query0);
     }
 
     public List<V> query(RangeQuery query) {
@@ -30,19 +30,19 @@ public class RangeCache<V> {
         if(query.limit() == 0) {
             return List.of();
         }
-        int idx = NncUtils.binarySearch(ranges, query.startId(), Range::compareWithId);
+        int idx = Utils.binarySearch(ranges, query.startId(), Range::compareWithId);
         if(idx < 0) {
             return List.of();
         }
         Range<V> r = ranges.get(idx);
-        return NncUtils.map(
+        return Utils.map(
                 r.query(query.startId(), query.limit()),
                 IdAndValue::value
         );
     }
 
     private void load(List<RangeQuery> rangeQueries) {
-        List<Query> queries = NncUtils.mapAndSort(rangeQueries, Query::new, Query::compareTo);
+        List<Query> queries = Utils.mapAndSort(rangeQueries, Query::new, Query::compareTo);
         ListIterator<Query> queryIt = queries.listIterator();
         ListIterator<Range<V>> rangeIt = ranges.listIterator();
         LinkedList<RangeQuery> loadingQueries = new LinkedList<>();
@@ -75,7 +75,7 @@ public class RangeCache<V> {
         for (Map.Entry<RangeQuery, List<IdAndValue<V>>> e : loadResult.entrySet()) {
             RangeQuery q = e.getKey();
             List<IdAndValue<V>> idAndValues = e.getValue();
-            if(NncUtils.isEmpty(idAndValues)) {
+            if(Utils.isEmpty(idAndValues)) {
                 continue;
             }
             Range<V> range;

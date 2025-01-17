@@ -1,6 +1,6 @@
 package org.metavm.autograph;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -18,7 +18,7 @@ public class Namer {
             reservedNames.add(qn.toString());
         }
         int n;
-        if(NncUtils.isDigits(pieces[pieces.length-1])) {
+        if(Utils.isDigits(pieces[pieces.length-1])) {
             nameRoot = Arrays.stream(pieces).limit(pieces.length-1).collect(Collectors.joining("_"));
             n = Integer.parseInt(pieces[pieces.length-1]);
         } else {

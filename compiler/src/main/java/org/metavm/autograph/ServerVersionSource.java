@@ -4,7 +4,7 @@ import org.metavm.entity.VersionSource;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.rest.InstanceVersionsRequest;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 
@@ -20,7 +20,7 @@ public class ServerVersionSource implements VersionSource {
     public List<TreeVersion> getVersions(List<Long> ids, IInstanceContext context) {
         var versions = typeClient.getVersions(
                 new InstanceVersionsRequest(ids));
-        return NncUtils.map(
+        return Utils.map(
                 versions,
                 v -> new TreeVersion(v.id(), v.version())
         );

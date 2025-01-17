@@ -2,32 +2,45 @@ package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.ChildEntity;
+import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
+import org.metavm.api.Generated;
 import org.metavm.entity.*;
+import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.util.Instances;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
+import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
+@NativeEntity(58)
 @Entity
 @Slf4j
 public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAware, GlobalKey {
 
     public static final Logger logger = LoggerFactory.getLogger(StaticFieldTable.class);
 
-    public static final IndexDef<StaticFieldTable> IDX_KLASS = IndexDef.createUnique(StaticFieldTable.class, "klass");
+    public static final IndexDef<StaticFieldTable> IDX_KLASS = IndexDef.createUnique(StaticFieldTable.class,
+            1, staticFieldTable -> List.of(staticFieldTable.klassReference));
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     public static StaticFieldTable getInstance(ClassType type, IEntityContext context) {
         var klass = type.getKlass();
-        var sft = context.selectFirstByKey(IDX_KLASS, klass);
+        var sft = context.selectFirstByKey(IDX_KLASS, klass.getReference());
         if(sft == null) {
             sft = new StaticFieldTable(klass);
             context.bind(sft);
@@ -35,15 +48,20 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
         return sft;
     }
 
-    private final Klass klass;
+    private Reference klassReference;
 
-    @ChildEntity
-    private final ChildArray<StaticFieldTableEntry> entries = addChild(new ChildArray<>(StaticFieldTableEntry.class), "entries");
+    private List<StaticFieldTableEntry> entries = new ArrayList<>();
 
     private transient Map<Field, StaticFieldTableEntry> map = new HashMap<>();
 
     public StaticFieldTable(Klass klass) {
-        this.klass = klass;
+        this.klassReference = klass.getReference();
+    }
+
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        visitor.visitValue();
+        visitor.visitList(visitor::visitEntity);
     }
 
     @Override
@@ -54,16 +72,12 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
         }
     }
 
-    public Klass getKlass() {
-        return klass;
-    }
-
     public Value getByName(String name) {
-        return get(klass.getStaticFieldByName(name));
+        return get(getKlass().getStaticFieldByName(name));
     }
 
     public Value get(Field field) {
-        assert field.getDeclaringType() == klass;
+        assert field.getDeclaringType() == getKlass();
         var entry = map.get(field);
         return entry != null ? entry.getValue() : Instances.nullInstance();
     }
@@ -77,20 +91,20 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     }
 
     public void set(Field field, Value value) {
-        assert field.getDeclaringType() == klass : "Field " + field.getQualifiedName() + " is not defined in class " + klass ;
+        assert field.getDeclaringType() == getKlass() : "Field " + field.getQualifiedName() + " is not defined in class " + getKlass() ;
         var entry = map.get(field);
         if(entry != null)
             entry.setValue(value);
         else {
-            entry = new StaticFieldTableEntry(field, value);
-            entries.addChild(entry);
+            entry = new StaticFieldTableEntry(this, field, value);
+            entries.add(entry);
             map.put(field, entry);
         }
     }
 
     public boolean isEnumConstant(Reference reference) {
-        assert klass.isEnum();
-        for (var ec : klass.getEnumConstants()) {
+        assert getKlass().isEnum();
+        for (var ec : getKlass().getEnumConstants()) {
             if(reference.equals(get(ec)))
                 return true;
         }
@@ -98,7 +112,7 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     }
 
     public List<ClassInstance> getEnumConstants() {
-        return NncUtils.map(klass.getEnumConstants(), ec -> get(ec).resolveObject());
+        return Utils.map(getKlass().getEnumConstants(), ec -> get(ec).resolveObject());
     }
 
     public void remove(Field field) {
@@ -106,8 +120,8 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     }
 
     public EnumConstantRT getEnumConstant(Id id) {
-        assert klass.isEnum();
-        for (var ec : klass.getEnumConstants()) {
+        assert getKlass().isEnum();
+        for (var ec : getKlass().getEnumConstants()) {
             var ref = (Reference) get(ec);
             if(id.equals(ref.tryGetId()))
                 return createEnumConstant(ref.resolveObject());
@@ -116,7 +130,7 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     }
 
     public ClassInstance getEnumConstantByName(String name) {
-        var ec = NncUtils.findRequired(klass.getEnumConstants(), e -> e.getName().equals(name));
+        var ec = Utils.findRequired(getKlass().getEnumConstants(), e -> e.getName().equals(name));
         return get(ec).resolveObject();
     }
 
@@ -126,7 +140,71 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
 
     @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
-        return klass.getQualifiedName();
+        return getKlass().getQualifiedName();
     }
 
+    @Nullable
+    @Override
+    public org.metavm.entity.Entity getParentEntity() {
+        return null;
+    }
+
+    @Override
+    public String getTitle() {
+        return "";
+    }
+
+    public Klass getKlass() {
+        return (Klass) klassReference.get();
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        action.accept(klassReference);
+        entries.forEach(arg -> action.accept(arg.getReference()));
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("enumConstants", this.getEnumConstants());
+        map.put("klass", this.getKlass().getStringId());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+        entries.forEach(action);
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_StaticFieldTable;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        this.klassReference = (Reference) input.readValue();
+        this.entries = input.readList(() -> input.readEntity(StaticFieldTableEntry.class, this));
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        output.writeValue(klassReference);
+        output.writeList(entries, output::writeEntity);
+    }
+
+    @Override
+    protected void buildSource(Map<String, Value> source) {
+    }
 }

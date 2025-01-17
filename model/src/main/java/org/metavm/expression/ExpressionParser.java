@@ -17,7 +17,7 @@ import org.metavm.object.type.*;
 import org.metavm.util.Constants;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -156,7 +156,7 @@ public class ExpressionParser {
     }
 
     private List<Expression> parseExpressionList(MetaVMParser.ExpressionListContext expressionList) {
-        return NncUtils.map(expressionList.expression(), this::parse);
+        return Utils.map(expressionList.expression(), this::parse);
     }
 
     private Expression parsePrefix(MetaVMParser.ExpressionContext expression) {
@@ -261,12 +261,12 @@ public class ExpressionParser {
         if (typeType.classOrInterfaceType() != null)
             return parseClassType(typeType.classOrInterfaceType());
         if (!typeType.BITOR().isEmpty())
-            return new UnionType(NncUtils.mapUnique(typeType.typeType(), this::parseTypeType)).flatten();
+            return new UnionType(Utils.mapToSet(typeType.typeType(), this::parseTypeType)).flatten();
         if (!typeType.BITAND().isEmpty())
-            return new IntersectionType(NncUtils.mapUnique(typeType.typeType(), this::parseTypeType)).flatten();
+            return new IntersectionType(Utils.mapToSet(typeType.typeType(), this::parseTypeType)).flatten();
         if(typeType.ARROW() != null) {
             List<Type> paramTypes = typeType.typeList() != null ?
-                    NncUtils.map(typeType.typeList().typeType(), this::parseTypeType) : List.of();
+                    Utils.map(typeType.typeList().typeType(), this::parseTypeType) : List.of();
             return new FunctionType(paramTypes, parseTypeType(typeType.typeType(0)));
         }
         if(typeType.arrayKind() != null)
@@ -286,7 +286,7 @@ public class ExpressionParser {
         else
             klass = requireNonNull(context.getTypeDefProvider().findKlassByName(name));
         if(ctx.typeArguments() != null)
-            return KlassType.create(klass, NncUtils.map(ctx.typeArguments().typeType(), this::parseTypeType));
+            return KlassType.create(klass, Utils.map(ctx.typeArguments().typeType(), this::parseTypeType));
         else
             return klass.getType();
     }

@@ -3,7 +3,7 @@ package org.metavm.object.instance.query;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Klass;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -28,7 +28,7 @@ public class ObjectNode extends InstanceNode<Reference> {
 
     @Override
     public List<NodeInstancePair> getNodeInstancePairsForChildren0(Reference instance) {
-        return NncUtils.map(
+        return Utils.map(
                 getChildren(),
                 child -> new NodeInstancePair(child, instance.resolveObject().getField(child.getName()))
         );

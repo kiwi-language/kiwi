@@ -4,6 +4,7 @@ import javax.annotation.Nullable;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 public class Lang {
@@ -53,4 +54,9 @@ public class Lang {
     public static Object getRoot(Object object) {
         return value;
     }
+
+    public static String concat(Object o1, Object o2) {
+        return Objects.toString(o1) + o2;
+    }
+
 }

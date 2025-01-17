@@ -2,15 +2,18 @@ package org.metavm.expression;
 
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
+import org.metavm.util.Utils;
 
 import java.util.Arrays;
 import java.util.List;
 
 public enum Func {
 
-    STARTS_WITH(Boolean.class, Object.class, String.class),
-    CONTAINS(Boolean.class, Object.class, String.class),
+    STARTS_WITH(1, Boolean.class, Object.class, String.class),
+    CONTAINS(2, Boolean.class, Object.class, String.class),
     ;
+
+    private final int code;
 
     private final FunctionDesc desc;
 
@@ -19,11 +22,12 @@ public enum Func {
 //    private final Class<?> resultType;
 
 
-    Func(Class<?> resultType, Class<?>...argumentTypes) {
-        this(resultType, Arrays.asList(argumentTypes),null);
+    Func(int code, Class<?> resultType, Class<?>...argumentTypes) {
+        this(code, resultType, Arrays.asList(argumentTypes),null);
     }
 
-    Func(Class<?> resultType, List<Class<?>> parameterTypes, java.util.function.Function<List<Type>, Type> resultTypeFunc) {
+    Func(int code, Class<?> resultType, List<Class<?>> parameterTypes, java.util.function.Function<List<Type>, Type> resultTypeFunc) {
+        this.code = code;
         this.parameterTypes = parameterTypes;
 //        this.resultType = resultType;
 //        this.resultTypeFunc = resultTypeFunc;
@@ -35,6 +39,10 @@ public enum Func {
                 .filter(value -> value.name().equalsIgnoreCase(name))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("No func found for name: " + name));
+    }
+
+    public static Func fromCode(int code) {
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 
     public Type getReturnType(List<Type> argumentTypes) {
@@ -49,4 +57,7 @@ public enum Func {
         return desc.evaluate(arguments);
     }
 
+    public int code() {
+        return code;
+    }
 }

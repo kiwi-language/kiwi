@@ -89,13 +89,13 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     }
 
     public void initId(Id id) {
-        NncUtils.requireNull(this.id, "id already initialized");
+        Utils.require(this.id == null, "id already initialized");
         this.id = id;
     }
 
     public <K> T get(IndexMapper<? super T, K> keyMapper, K key) {
         beforeAccess();
-        return NncUtils.get(getNode(keyMapper, key), Node::getValue);
+        return Utils.safeCall(getNode(keyMapper, key), Node::getValue);
     }
 
     public <K> T remove(IndexMapper<T, K> keyMapper, K key) {
@@ -110,7 +110,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
     protected  <K> Node<T> getNode(IndexMapper<? super T, K> keyMapper, K key) {
         Map<?, LinkedList<Node<T>>> index = tryGetIndex(keyMapper);
         if(index != null) {
-            return NncUtils.first(index.get(key));
+            return Utils.first(index.get(key));
         }
         else {
             return findNode(v -> Objects.equals(keyMapper.apply(v), key));
@@ -121,7 +121,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         beforeAccess();
         Map<?, LinkedList<Node<T>>> index = tryGetIndex(keyMapper);
         if(index != null) {
-            return NncUtils.map(index.get(key), Node::getValue);
+            return Utils.map(index.get(key), Node::getValue);
         }
         else {
             return filter(value -> Objects.equals(keyMapper.apply(value), key));
@@ -301,7 +301,7 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
 
     @SuppressWarnings("unused")
     public String getIdentifierName() {
-        return NncUtils.get(identifier, ModelIdentity::name);
+        return Utils.safeCall(identifier, ModelIdentity::name);
     }
 
     @Override

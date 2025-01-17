@@ -3,7 +3,8 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiCodeBlock;
 import com.intellij.psi.PsiStatement;
 import com.intellij.psi.PsiVariable;
-import org.metavm.util.NncUtils;
+
+import java.util.Objects;
 
 public class BlockAnnotator extends VisitorBase {
 
@@ -28,7 +29,7 @@ public class BlockAnnotator extends VisitorBase {
     }
 
     private Block currentBlock() {
-        return NncUtils.requireNonNull(block);
+        return Objects.requireNonNull(block);
     }
 
     private void enterBlock(PsiCodeBlock block) {

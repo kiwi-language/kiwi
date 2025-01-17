@@ -3,7 +3,6 @@ package org.metavm.autograph;
 import com.intellij.openapi.util.Key;
 import com.intellij.psi.*;
 import org.metavm.util.KeyValue;
-import org.metavm.util.NncUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -13,7 +12,7 @@ import java.util.Objects;
 import static java.util.Objects.requireNonNull;
 import static org.metavm.autograph.Keys.*;
 import static org.metavm.autograph.TranspileUtils.createTemplateType;
-import static org.metavm.util.NncUtils.ifNotNull;
+import static org.metavm.util.Utils.ifNotNull;
 
 public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
 
@@ -170,7 +169,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
             statement.getResourceList().accept(this);
             exitAndRecordScope(statement, RESOURCE_SCOPE);
         }
-        var tryBlock = NncUtils.requireNonNull(statement.getTryBlock());
+        var tryBlock = Objects.requireNonNull(statement.getTryBlock());
         enterScope();
         tryBlock.accept(this);
         exitAndRecordScope(statement, BODY_SCOPE);
@@ -339,7 +338,7 @@ public class ActivityAnalyzer extends JavaRecursiveElementVisitor {
     public void visitDeclarationStatement(PsiDeclarationStatement statement) {
         for (PsiElement declaredElement : statement.getDeclaredElements()) {
             if(!(declaredElement instanceof PsiClass)) {
-                var qnAndMode = NncUtils.requireNonNull(declaredElement.getUserData(QN_AND_MODE));
+                var qnAndMode = Objects.requireNonNull(declaredElement.getUserData(QN_AND_MODE));
                 scope.addIsolatedName(qnAndMode.qualifiedName());
             }
         }

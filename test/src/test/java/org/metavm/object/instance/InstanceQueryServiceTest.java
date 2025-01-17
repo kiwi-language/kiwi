@@ -43,7 +43,7 @@ public class InstanceQueryServiceTest extends TestCase {
         var fooBazListField = fooTypes.fooBazListField();
 
         var foo = addInstance(MockUtils.createFoo(fooTypes, true));
-        var qux = foo.getInstanceField(fooQuxField);
+        var qux = foo.getField(fooQuxField);
         var baz = foo.getInstanceArray(fooBazListField).getInstance(0);
 
         var query = InstanceQueryBuilder.newBuilder(fooKlass)
@@ -61,7 +61,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 typeRepository
         );
         Assert.assertEquals(1, page.total());
-        Assert.assertEquals(foo.tryGetTreeId(), page.data().get(0).tryGetTreeId());
+        Assert.assertEquals(foo.tryGetTreeId(), page.data().getFirst().tryGetTreeId());
     }
 
     private ClassInstance addInstance(ClassInstance instance) {
@@ -84,7 +84,7 @@ public class InstanceQueryServiceTest extends TestCase {
         var page2 = instanceQueryService.query(query2,
                 instanceRepository, typeRepository);
         Assert.assertEquals(1, page2.total());
-        Assert.assertEquals(foo.tryGetTreeId(), page2.data().get(0).tryGetTreeId());
+        Assert.assertEquals(foo.tryGetTreeId(), page2.data().getFirst().tryGetTreeId());
     }
 
     public void testCreatedIds() {
@@ -108,7 +108,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 typeRepository
         );
         Assert.assertEquals(1, page.total());
-        Assert.assertEquals(foo.tryGetTreeId(), page.data().get(0).tryGetTreeId());
+        Assert.assertEquals(foo.tryGetTreeId(), page.data().getFirst().tryGetTreeId());
     }
 
 }

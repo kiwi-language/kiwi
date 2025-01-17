@@ -1,9 +1,11 @@
 package org.metavm.entity;
 
+import org.metavm.object.instance.core.Instance;
+
 import java.util.List;
 
 public interface RemovalAware {
 
-    List<Object> beforeRemove(IEntityContext context);
+    List<Instance> beforeRemove(IEntityContext context);
 
 }

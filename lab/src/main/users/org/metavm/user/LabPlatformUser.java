@@ -97,7 +97,7 @@ public class LabPlatformUser extends LabUser {
         }
 //        var eventQueue = platformContext.getEventQueue();
 //        if (eventQueue != null) {
-//            platformContext.getInstanceContext().registerCommitCallback(() -> {
+//            platformContext.registerCommitCallback(() -> {
 //                for (PlatformUser platformUser : platformUsers) {
 //                    eventQueue.publishUserEvent(new LeaveAppEvent(platformUser.getId(), app.getId()));
 //                }

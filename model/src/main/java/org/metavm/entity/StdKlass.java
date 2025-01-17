@@ -14,6 +14,8 @@ import org.metavm.flow.FlowRef;
 import org.metavm.flow.FunctionRef;
 import org.metavm.flow.LambdaRef;
 import org.metavm.flow.MethodRef;
+import org.metavm.http.HttpCookieImpl;
+import org.metavm.http.HttpHeaderImpl;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.type.*;
@@ -106,6 +108,8 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     number(Number.class),
     mvObjectOutputStream(MvObjectOutputStream.class, false, MvObjectOutputStreamNative.class),
     mvObjectInputStream(MvObjectInputStream .class, false, MvObjectInputStreamNative.class),
+    httpCookieImpl(HttpCookieImpl.class),
+    httpHeaderImpl(HttpHeaderImpl.class)
     ;
 
     private final Class<?> javaClass;

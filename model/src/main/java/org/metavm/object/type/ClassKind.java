@@ -1,9 +1,7 @@
 package org.metavm.object.type;
 
-import org.metavm.api.Entity;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
-@Entity
 public enum ClassKind {
     CLASS(1, TypeCategory.CLASS),
     ENUM(2, TypeCategory.ENUM),
@@ -29,11 +27,11 @@ public enum ClassKind {
     }
 
     public static ClassKind fromCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code, () -> "Can not find ClassKind for code: " + code);
+        return Utils.findRequired(values(), v -> v.code == code, () -> "Can not find ClassKind for code: " + code);
     }
 
     public static ClassKind fromTypeCategory(TypeCategory typeCategory) {
-        return NncUtils.findRequired(values(), v -> v.typeCategory == typeCategory);
+        return Utils.findRequired(values(), v -> v.typeCategory == typeCategory);
     }
 
 }

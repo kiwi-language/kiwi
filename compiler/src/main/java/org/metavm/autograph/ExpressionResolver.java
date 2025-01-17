@@ -6,15 +6,13 @@ import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.BinaryOperator;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
-import org.metavm.util.Instances;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
-import org.metavm.util.ReflectionUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.LinkedList;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -288,14 +286,14 @@ public class ExpressionResolver {
             switch (e) {
                 case PsiLambdaExpression ignored -> cIdx++;
                 case PsiMethod psiMethod -> {
-                    NncUtils.requireFalse(TranspileUtils.isStatic(psiMethod),
+                    Utils.require(!TranspileUtils.isStatic(psiMethod),
                             () -> "Encountered static method " + psiMethod.getName() + " on the path to class " + targetKlass.getName());
                     cIdx++;
                     pIdx = -1;
                     enclosingMethod = psiMethod;
                 }
                 case PsiClass psiClass -> {
-                    NncUtils.requireFalse(TranspileUtils.isStatic(psiClass),
+                    Utils.require(!TranspileUtils.isStatic(psiClass),
                             () -> "Encountered static class " + psiClass.getName() + " on the path to class " + targetKlass.getName());
                     pIdx++;
                 }
@@ -373,7 +371,7 @@ public class ExpressionResolver {
                                 return methodGenerator.createLoadConstant(Instances.fromConstant(PrimitiveStaticFields.getConstant(javaField)));
                         }
                         var type = ((ClassType) typeResolver.resolveDeclaration(TranspileUtils.getRawType(psiClass)));
-                        var field = Objects.requireNonNull(type.getKlass().findSelfStaticFieldByName(psiField.getName()));
+                        var field = type.getKlass().getSelfStaticFieldByName(psiField.getName());
                         return methodGenerator.createGetStaticField(new FieldRef(type, field));
                     } else {
                         var qualifierExpr = psiReferenceExpression.getQualifierExpression();
@@ -562,7 +560,7 @@ public class ExpressionResolver {
                         TranspileUtils.getNativeFunctionCallResolvers().stream(),
                         methodCallResolvers.stream()
                 )
-                .filter(resolver -> NncUtils.anyMatch(resolver.getSignatures(), s -> s.matches(signature)))
+                .filter(resolver -> Utils.anyMatch(resolver.getSignatures(), s -> s.matches(signature)))
                 .findFirst().orElse(null);
     }
 
@@ -577,9 +575,9 @@ public class ExpressionResolver {
             var rawType = (PsiClassType) TranspileUtils.getRawType(Objects.requireNonNull(newExpression.getType()));
             signature = org.metavm.autograph.MethodSignature.create(rawType, rawType.getName());
         }
-        return NncUtils.find(
+        return Utils.find(
                 newResolvers,
-                resolver -> NncUtils.anyMatch(resolver.getSignatures(), s -> s.matches(signature))
+                resolver -> Utils.anyMatch(resolver.getSignatures(), s -> s.matches(signature))
         );
     }
 
@@ -618,7 +616,7 @@ public class ExpressionResolver {
                 var psiClass = (PsiClass) ((PsiReferenceExpression) psiSelf).resolve();
                 ensureTypeDeclared(TranspileUtils.createType(psiClass));
             } else {
-                ensureTypeDeclared(NncUtils.requireNonNull(psiSelf.getType()));
+                ensureTypeDeclared(Objects.requireNonNull(psiSelf.getType()));
             }
         }
         var methodGenerics = expression.resolveMethodGenerics();
@@ -627,14 +625,14 @@ public class ExpressionResolver {
         var type = (ClassType) typeResolver.resolveDeclaration(
                 substitutor.substitute(createTemplateType(requireNonNull(psiMethod.getContainingClass())))
         );
-        List<Type> paramTypes = NncUtils.map(
+        List<Type> paramTypes = Utils.map(
                 psiMethod.getParameterList().getParameters(),
                 param -> typeResolver.resolveNullable(param.getType(), ResolutionStage.DECLARATION)
         );
         var method = type.getKlass().getSelfMethod(
                 m -> m.getName().equals(psiMethod.getName()) && m.getParameterTypes().equals(paramTypes)
         );
-        var typeArgs = NncUtils.map(psiMethod.getTypeParameters(),
+        var typeArgs = Utils.map(psiMethod.getTypeParameters(),
                 tp -> typeResolver.resolveDeclaration(substitutor.substitute(tp)));
         var psiArgs = expression.getArgumentList().getExpressions();
         for (var psiArg : psiArgs) {
@@ -665,7 +663,7 @@ public class ExpressionResolver {
         var type = (ArrayType) typeResolver.resolveDeclaration(expression.getType());
         Node node;
         if (expression.getArrayInitializer() == null) {
-            NncUtils.map(expression.getArrayDimensions(), d -> resolve(d, context));
+            Utils.map(expression.getArrayDimensions(), d -> resolve(d, context));
             node = methodGenerator.createNewArrayWithDimensions(type, expression.getArrayDimensions().length);
         } else {
             node = methodGenerator.createNewArray(type);
@@ -702,17 +700,18 @@ public class ExpressionResolver {
                 resolve(qualifier, context);
                 methodGenerator.createNewChild(type);
             }
-            NncUtils.map(
+            Utils.map(
                     requireNonNull(expression.getArgumentList()).getExpressions(),
                     expr -> resolve(expr, context)
             );
             var methodGenerics = expression.resolveMethodGenerics();
             var method = (PsiMethod) requireNonNull(methodGenerics.getElement());
-            var paramTypes = NncUtils.map(method.getParameterList().getParameters(),
+            var paramTypes = Utils.map(method.getParameterList().getParameters(),
                     p -> typeResolver.resolveNullable(p.getType(), ResolutionStage.DECLARATION));
             var klass = type.getKlass();
+            DebugEnv.types = paramTypes;
             var flow = klass.getMethod(m -> m.isConstructor() && m.getParameterTypes().equals(paramTypes));
-            var typeArgs = NncUtils.map(
+            var typeArgs = Utils.map(
                     method.getTypeParameters(),
                     tp -> typeResolver.resolveDeclaration(methodGenerics.getSubstitutor().substitute(tp))
             );

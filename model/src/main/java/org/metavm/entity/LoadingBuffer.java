@@ -44,7 +44,7 @@ public class LoadingBuffer {
     public Id getRootId(long id) {
         buffer(id);
         flush();
-        return requireNonNull(index.get(id)).get(0);
+        return requireNonNull(index.get(id), () -> "Tree not found: " + id).getFirst();
     }
 
     public TreeLoadResult getTree(Id id) {
@@ -128,14 +128,21 @@ public class LoadingBuffer {
 
             @Override
             public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
-                var id = PhysicalId.of(treeId, nodeId, typeOrTypeKey);
+                var id = PhysicalId.of(treeId, nodeId);
                 invertedIndex.put(id, tree);
                 if(oldTreeId != -1L) {
-                    var oldId = PhysicalId.of(oldTreeId, oldNodeId, typeOrTypeKey);
+                    var oldId = PhysicalId.of(oldTreeId, oldNodeId);
                     invertedIndex.put(oldId, tree);
                 }
                 ids.add(id);
                 super.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
+            }
+
+            @Override
+            public void visitEntityBody(int tag, Id id) {
+                invertedIndex.put(id, tree);
+                ids.add(id);
+                super.visitEntityBody(tag, id);
             }
 
             @Override

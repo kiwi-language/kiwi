@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static org.metavm.util.NncUtils.diffSet;
-import static org.metavm.util.NncUtils.unionSet;
+import static org.metavm.util.Utils.diffSet;
+import static org.metavm.util.Utils.unionSet;
 
 @Slf4j
 public class LivenessAnalyzer extends SkipDiscardedVisitor {

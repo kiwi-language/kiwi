@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.PropertiesUtils;
 
 import java.io.*;
@@ -59,7 +59,7 @@ public class DirectoryAllocatorStore implements AllocatorStore {
 
     @Override
     public void saveNextId(long nextId) {
-        NncUtils.writeLong(saveDir + NEXT_ID_FILE, nextId);
+        Utils.writeLong(saveDir + NEXT_ID_FILE, nextId);
     }
 
     @Override

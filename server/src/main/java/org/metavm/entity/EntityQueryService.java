@@ -1,85 +1,62 @@
 package org.metavm.entity;
 
 import org.metavm.common.Page;
-import org.metavm.object.instance.InstanceQueryService;
-import org.metavm.object.instance.core.ArrayInstance;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ContextTypeDefRepository;
-import org.metavm.object.type.Field;
-import org.metavm.object.type.Types;
-import org.metavm.util.NncUtils;
+import org.metavm.object.instance.search.*;
+import org.metavm.util.ContextUtil;
+import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
+import java.util.ArrayList;
 
 @Component
 public class EntityQueryService {
 
-    private final InstanceQueryService instanceQueryService;
+    private final InstanceSearchService instanceSearchService;
 
-    public EntityQueryService(InstanceQueryService instanceQueryService) {
-        this.instanceQueryService = instanceQueryService;
+    public EntityQueryService(InstanceSearchService instanceSearchService) {
+        this.instanceSearchService = instanceSearchService;
     }
 
     public <T extends Entity> Page<T> query(EntityQuery<T> query, IEntityContext context) {
-        InstanceQuery instanceQuery = convertToInstanceQuery(query, context);
-        var idPage = instanceQueryService.query(instanceQuery,
-                context.getInstanceContext(),
-                new ContextTypeDefRepository(context)
-        );
+        var searchQuery = buildSearchQuery(query);
+        var idPage = instanceSearchService.search(searchQuery);
         return new Page<>(
-                NncUtils.map(idPage.data(), inst -> context.getEntity(query.entityType(), inst.getId())),
+                Utils.map(idPage.data(), id -> context.getEntity(query.entityType(), id)),
                 idPage.total()
         );
     }
 
-    public <T extends Entity> long count(EntityQuery<T> query, IEntityContext context) {
-        InstanceQuery instanceQuery = convertToInstanceQuery(query, context);
-        return instanceQueryService.count(instanceQuery, context);
+    public <T extends Entity> long count(EntityQuery<T> query, IEntityContext ignored) {
+        return instanceSearchService.count(buildSearchQuery(query));
     }
 
-    private InstanceQuery convertToInstanceQuery(EntityQuery<?> entityQuery, IEntityContext context) {
-        EntityDef<?> entityDef = (EntityDef<?>) ModelDefRegistry.getDef(entityQuery.entityType());
-        return new InstanceQuery(
-                entityDef.getKlass(),
-                entityQuery.searchText(),
-                entityQuery.expression(),
-                NncUtils.map(entityQuery.searchFields(), entityDef::getFieldByJavaFieldName),
-                entityQuery.includeBuiltin(),
-                true,
-                entityQuery.page(),
-                entityQuery.pageSize(),
-                NncUtils.map(entityQuery.fields(), f -> convertToInstanceQueryField(entityDef, f, context)),
-                NncUtils.map(entityQuery.newlyCreated(), Id::parse),
-                NncUtils.map(entityQuery.excluded(), Id::parse)
+    private SearchQuery buildSearchQuery(EntityQuery<?> query) {
+        var expression = buildCondition(query);
+        var type = ModelDefRegistry.getDefContext().getKlass(query.entityType()).getType();
+        var typeExpressions = Utils.mapToSet(type.getKlass().getDescendantTypes(), k -> k.getType().toExpression());
+        return new SearchQuery(
+                ContextUtil.getAppId(),
+                typeExpressions,
+                expression,
+                query.includeBuiltin(),
+                query.page(),
+                query.pageSize(),
+                5
         );
     }
 
-    private InstanceQueryField convertToInstanceQueryField(EntityDef<?> entityDef, EntityQueryField entityQueryField, IEntityContext context) {
-        Field field = entityDef.getFieldByJavaFieldName(entityQueryField.fieldName());
-        Value instanceValue = convertValue(entityQueryField.value(), context);
-        return new InstanceQueryField(field, instanceValue, null, null);
-    }
-
-    private Value convertValue(Object value, IEntityContext context) {
-        if (context.containsEntity(value)) {
-            return context.getInstance(value).getReference();
-        } else if (value instanceof Collection<?> coll) {
-            return new ArrayInstance(
-                    Types.getAnyArrayType(),
-                    NncUtils.map(
-                            coll,
-                            item -> convertSingleValue(item, context)
-                    )
-            ).getReference();
-        } else {
-            return convertSingleValue(value, context);
+    private <T extends Entity> SearchCondition buildCondition(EntityQuery<T> query) {
+        var conditions = new ArrayList<SearchCondition>();
+        for (var queryField : query.fields()) {
+            var esField = queryField.searchField().getEsField();
+            var value  = queryField.value();
+            if (value.isArray())
+                conditions.add(new InSearchCondition(esField, value.resolveArray().getElements()));
+            else
+                conditions.add(new MatchSearchCondition(esField, value));
         }
-    }
-
-    private Value convertSingleValue(Object value, IEntityContext context) {
-        return context.getObjectInstanceMap().getInstance(value);
+        if (conditions.isEmpty()) return null;
+        return conditions.size() == 1 ? conditions.getFirst() : new OrSearchCondition(conditions);
     }
 
 }

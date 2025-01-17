@@ -1,7 +1,7 @@
 package org.metavm.entity;
 
 import org.metavm.object.instance.core.Id;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 import java.util.Map;
@@ -13,7 +13,7 @@ public class EntitySupplier {
     public static <T extends Identifiable> List<EntitySupplier> fromList(List<T> list,
                                                                          Function<T, Supplier<Entity>> creatorMapping)
     {
-        return NncUtils.map(
+        return Utils.map(
                 list,
                 item -> new EntitySupplier(item.getId(), creatorMapping.apply(item))
         );
@@ -23,7 +23,7 @@ public class EntitySupplier {
                                                                          Function<T, Long> keyMapper,
                                                                          Function<T, Supplier<Entity>> creatorMapping)
     {
-        return NncUtils.toMultiMap(
+        return Utils.toMultiMap(
                 list,
                 keyMapper,
                 item -> new EntitySupplier(item.getId(), creatorMapping.apply(item))
@@ -31,7 +31,7 @@ public class EntitySupplier {
     }
 
     public static Map<EntityKey, EntitySupplier> toMap(List<EntitySupplier> creators, Class<? extends Entity> entityType) {
-        return NncUtils.toMap(
+        return Utils.toMap(
                 creators,
                 c -> EntityKey.create(entityType, c.getId()), Function.identity()
         );

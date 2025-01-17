@@ -20,6 +20,6 @@ public class TmpIdDeserializer extends StdDeserializer<Long> {
 
     @Override
     public Long getNullValue(DeserializationContext context) {
-        return NncUtils.randomNonNegative();
+        return Utils.randomNonNegative();
     }
 }

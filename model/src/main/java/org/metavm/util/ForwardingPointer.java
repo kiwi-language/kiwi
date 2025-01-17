@@ -23,7 +23,7 @@ public record ForwardingPointer(
     }
 
     @Override
-    public void writeTo(InstanceOutput output) {
+    public void writeTo(MvOutput output) {
         output.write(TreeTags.RELOCATED);
         output.writeId(sourceId);
         output.writeId(targetId);

@@ -4,7 +4,7 @@ import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.LinkedList;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 
@@ -140,7 +140,7 @@ public class InnerClassTransformer extends VisitorBase {
                             + qualifier.getText() +
                             (
                                     args.isEmpty() ? "" :
-                                            ", " + NncUtils.join(args, PsiElement::getText, ", ")
+                                            ", " + Utils.join(args, PsiElement::getText, ", ")
                             )
                             + ")"
             );
@@ -161,19 +161,11 @@ public class InnerClassTransformer extends VisitorBase {
 
     public void visitReferenceElement(PsiJavaCodeReferenceElement reference) {
         if(typeTextMap.containsKey(reference) || shouldTransform(reference)) {
-            try {
-                var text = getTypeText(reference);
-                if (!text.isValid())
-                    throw new IllegalStateException(String.format("Failed to get type text for reference %s in context %s",
-                            reference.getText(), Objects.requireNonNull(reference.getContext()).getText()));
-                replace(reference, TranspileUtils.createReferenceElement(text.text, reference.getContext()));
-            }
-            catch (Throwable e) {
-                log.error("Failed to get type text for {} in context {}",
-                        reference.getText(), Objects.requireNonNull(reference.getContext()).getText());
-                log.debug("{}", Objects.requireNonNull(TranspileUtils.getAncestor(reference, PsiJavaFile.class)).getText());
-                throw e;
-            }
+            var text = getTypeText(reference);
+            if (!text.isValid())
+                throw new IllegalStateException(String.format("Failed to get type text for reference %s in context %s",
+                        reference.getText(), Objects.requireNonNull(reference.getContext()).getText()));
+            replace(reference, TranspileUtils.createReferenceElement(text.text, reference.getContext()));
         }
         else
             super.visitReferenceElement(reference);
@@ -216,11 +208,11 @@ public class InnerClassTransformer extends VisitorBase {
         var typeArgs = TranspileUtils.getAllTypeArgumentsForInnerClass(klass, substitutor);
         var k = Objects.requireNonNullElse(klass.getUserData(Keys.SUBSTITUTION), klass);
         var enclosingKlasses = TranspileUtils.getEnclosingClasses(k);
-        var prefix = NncUtils.join(enclosingKlasses, PsiNamedElement::getName, ".");
+        var prefix = Utils.join(enclosingKlasses, PsiNamedElement::getName, ".");
         if(typeArgs.isEmpty())
             return prefix;
         else
-            return prefix + "<" + NncUtils.join(typeArgs, this::getTypeText) + ">";
+            return prefix + "<" + Utils.join(typeArgs, this::getTypeText) + ">";
     }
 
     @Override
@@ -249,7 +241,7 @@ public class InnerClassTransformer extends VisitorBase {
 
     private String getSimpleTypeText(PsiClass psiClass) {
         var ownerKlasses = TranspileUtils.getOwnerClasses(psiClass);
-        if(NncUtils.anyMatch(ownerKlasses, k -> k.getTypeParameters().length > 0)) {
+        if(Utils.anyMatch(ownerKlasses, k -> k.getTypeParameters().length > 0)) {
             var sb = new StringBuilder(Objects.requireNonNull(psiClass.getName())).append('<');
             var f = true;
             for (PsiClass ownerKlass : ownerKlasses) {
@@ -305,7 +297,7 @@ public class InnerClassTransformer extends VisitorBase {
                 }
                 catch (Exception e) {
                     throw new RuntimeException("Failed to get type context for reference " + reference.getText()
-                    + " in context " + NncUtils.get(reference.getContext(), PsiElement::getText), e);
+                    + " in context " + Utils.safeCall(reference.getContext(), PsiElement::getText), e);
                 }
             }
             else

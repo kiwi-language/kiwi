@@ -16,7 +16,7 @@ public class TypeParsingContext extends BaseParsingContext {
 
     public static TypeParsingContext create(Klass type, IEntityContext context) {
         return new TypeParsingContext(
-                context.getInstanceContext(),
+                context,
                 new ContextTypeDefRepository(context),
                 type
         );

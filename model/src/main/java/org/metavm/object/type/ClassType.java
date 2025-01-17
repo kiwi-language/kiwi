@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.GenericDeclarationRef;
@@ -7,11 +8,12 @@ import org.metavm.expression.Var;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.TypeId;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
 import org.metavm.util.LinkedList;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -21,11 +23,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+@Slf4j
 public abstract class ClassType extends CompositeType implements ISubstitutor, GenericDeclarationRef {
-    @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitClassType(this);
-    }
 
     @Override
     public GenericDeclarationRefKey toGenericDeclarationKey(Function<ITypeDef, Id> getTypeDefId) {
@@ -43,7 +42,7 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
                         return false;
                 } else if (!Objects.equals(getOwner(), thatClassType.getOwner()))
                     return false;
-                return NncUtils.biAllMatch(getTypeArguments(), thatClassType.getTypeArguments(), Type::contains);
+                return Utils.biAllMatch(getTypeArguments(), thatClassType.getTypeArguments(), Type::contains);
             } else {
                 var thatSuper = thatClassType.getSuperType();
                 if (thatSuper != null && isAssignableFrom(thatSuper))
@@ -69,34 +68,29 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
     }
 
     public Type getFirstTypeArgument() {
-        return getTypeArguments().get(0);
+        return getTypeArguments().getFirst();
     }
 
-    public @Nullable ClassType findAncestor(Predicate<ClassType> filter) {
+    public @Nullable ClassType findSuper(Predicate<ClassType> filter) {
         if (filter.test(this))
             return this;
         var superType = getSuperType();
         ClassType t;
-        if (superType != null && (t = superType.findAncestor(filter)) != null)
+        if (superType != null && (t = superType.findSuper(filter)) != null)
             return t;
         for (ClassType it : getInterfaces()) {
-            if ((t = it.findAncestor(filter)) != null)
+            if ((t = it.findSuper(filter)) != null)
                 return t;
         }
         return null;
     }
 
-    public @Nullable ClassType findAncestorByKlass(Klass rawKlass) {
-        return findAncestor(a -> a.getKlass() == rawKlass);
+    public @Nullable ClassType asSuper(Klass klass) {
+        return findSuper(a -> a.getKlass() == klass);
     }
 
     public List<Type> getTypeArguments() {
         return List.of();
-    }
-
-    @Override
-    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
-        return visitor.visitClassType(this, s);
     }
 
     public boolean isInterface() {
@@ -109,7 +103,7 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
     }
 
     public List<ClassType> getInterfaces() {
-        return NncUtils.map(getKlass().getInterfaceIndexes(), idx -> getTypeMetadata().getClasType(idx));
+        return Utils.map(getKlass().getInterfaceIndexes(), idx -> getTypeMetadata().getClasType(idx));
     }
 
     @Override
@@ -129,7 +123,7 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
 
     @Override
     public boolean isEphemeral() {
-        return getKlass().isEphemeral();
+        return getKlass().isEphemeralKlass();
     }
 
     @Override
@@ -156,7 +150,7 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
     }
 
     @Override
-    public boolean isValue() {
+    public boolean isValueType() {
         return getKlass().getKind() == ClassKind.VALUE;
     }
 
@@ -198,7 +192,7 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
                                    List<MethodRef> candidates) {
         getKlass().getMethods().forEach(m -> {
             if ((m.isStatic() || !staticOnly) && name.equals(m.getName()) && m.getParameters().size() == argumentTypes.size()) {
-                if (NncUtils.isNotEmpty(typeArguments)) {
+                if (Utils.isNotEmpty(typeArguments)) {
                     if (m.getTypeParameters().size() == typeArguments.size()) {
                         var pMethod = new MethodRef(this, m, typeArguments);
                         if (pMethod.matches(name, argumentTypes))
@@ -229,19 +223,19 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
 //        foreachMethod(m -> logger.debug("Method: {}", m));
         throw new NullPointerException(
                 String.format("Can not find method %s%s(%s) in type %s",
-                        NncUtils.isNotEmpty(typeArguments) ? "<" + NncUtils.join(typeArguments, Type::getName) + ">" : "",
+                        Utils.isNotEmpty(typeArguments) ? "<" + Utils.join(typeArguments, Type::getName) + ">" : "",
                         name,
-                        NncUtils.join(argumentTypes, Type::getName, ","), getName()));
+                        Utils.join(argumentTypes, Type::getName, ","), getName()));
     }
 
     @Nullable
     public MethodRef tryResolveNonParameterizedMethod(MethodRef methodRef) {
-        NncUtils.requireFalse(methodRef.isParameterized());
+        Utils.require(!methodRef.isParameterized());
         return getKlass().findOverride(methodRef.getRawFlow(), getTypeMetadata());
     }
 
     public List<MethodRef> getMethods() {
-        return NncUtils.map(getKlass().getMethods(), m -> new MethodRef(this, m, List.of()));
+        return Utils.map(getKlass().getMethods(), m -> new MethodRef(this, m, List.of()));
     }
 
     public void foreachSelfMethod(Consumer<MethodRef> action) {
@@ -320,13 +314,13 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
         var found = findMethodByNameAndParamTypes(name, parameterTypes);
         if (found == null) {
             throw new NullPointerException(String.format("Can not find method %s(%s) in klass %s",
-                    name, NncUtils.join(parameterTypes, Type::getTypeDesc, ","), getTypeDesc()));
+                    name, Utils.join(parameterTypes, Type::getTypeDesc, ","), getTypeDesc()));
         }
         return found;
     }
 
     public MethodRef findMethodByNameAndParamTypes(String name, List<Type> parameterTypes) {
-        var method = NncUtils.find(getMethods(),
+        var method = Utils.find(getMethods(),
                 f -> Objects.equals(f.getName(), name) && f.getParameterTypes().equals(parameterTypes));
         if (method != null)
             return method;
@@ -477,7 +471,7 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
         var superType = getSuperType();
         if (superType != null)
             superType.foreachIndex(action);
-        for (Constraint constraint : getKlass().getConstraints()) {
+        for (Constraint constraint : getKlass().getIndices()) {
             if (constraint instanceof Index index) {
                 action.accept(new IndexRef(this, index));
             }
@@ -485,7 +479,7 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
     }
 
     public IndexRef findSelfIndex(Predicate<IndexRef> filter) {
-        for (Constraint constraint : getKlass().getConstraints()) {
+        for (Constraint constraint : getKlass().getIndices()) {
             if (constraint instanceof Index index) {
                 var indexRef = new IndexRef(this, index);
                 if (filter.test(indexRef))
@@ -501,5 +495,14 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
 
     public MethodRef findGetterByPropertyName(String name) {
         return findMethod(m -> m.isGetter() && m.getPropertyName().equals(name));
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
     }
 }

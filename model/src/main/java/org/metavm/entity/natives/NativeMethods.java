@@ -1,16 +1,14 @@
 package org.metavm.entity.natives;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.entity.Entity;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Method;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.PrimitiveValue;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +56,7 @@ public class NativeMethods {
                     } else {
                         return new FlowExecResult(result, null);
                     }
-                } else if (self instanceof Reference ref && ref.resolve() instanceof ClassInstance classInstance) {
+                } else if (self instanceof Reference ref && ref.get() instanceof ClassInstance classInstance) {
                     Object nativeObject = getNativeObject(classInstance);
                     var args = new Object[arguments.size() + 2];
                     args[0] = nativeObject;
@@ -74,7 +72,7 @@ public class NativeMethods {
                         return new FlowExecResult(result, null);
                     }
                 } else
-                    throw new InternalException("Native invocation is not supported for non class instances");
+                    throw new InternalException("Native invocation is not supported for non class instance: " + self.resolveObject());
             }
         }
         catch (Throwable e) {
@@ -86,19 +84,19 @@ public class NativeMethods {
         var nativeMethod = method.getNativeHandle();
         if (nativeMethod == null) {
             var nativeClass = nativeObject != null ? nativeObject.getClass() : tryGetNativeClass(method.getDeclaringType());
-            NncUtils.requireNonNull(nativeClass,
+            Objects.requireNonNull(nativeClass,
                     "Native class not available for type '" + method.getDeclaringType().getName() + "'");
             List<Class<?>> paramTypes = new ArrayList<>();
             if (method.isStatic())
                 paramTypes.add(Klass.class);
-            paramTypes.addAll(NncUtils.multipleOf(Value.class, method.getParameters().size()));
+            paramTypes.addAll(Utils.multipleOf(Value.class, method.getParameters().size()));
             paramTypes.add(CallContext.class);
             try {
-                nativeMethod = ReflectionUtils.getMethodHandle(MethodHandles.lookup(), nativeClass, method.getNativeName(),
+                nativeMethod = ReflectionUtils.getMethodHandleWithSpread(MethodHandles.lookup(), nativeClass, method.getNativeName(),
                         Value.class, paramTypes, method.isStatic());
             } catch (Exception e) {
                 logger.warn("Cannot find native method for method " + method + " using native name '" + method.getNativeName() + "'");
-                nativeMethod = ReflectionUtils.getMethodHandle(MethodHandles.lookup(), nativeClass, method.getName(),
+                nativeMethod = ReflectionUtils.getMethodHandleWithSpread(MethodHandles.lookup(), nativeClass, method.getName(),
                         Value.class, paramTypes, method.isStatic());
             }
             method.setNativeHandle(nativeMethod);
@@ -107,18 +105,24 @@ public class NativeMethods {
     }
 
     public static Object getNativeObject(ClassInstance instance) {
-        var nativeObject = instance.getNativeObject();
-        if (nativeObject == null) {
-            nativeObject = createNativeObject(instance);
-            instance.setNativeObject(nativeObject);
+        if (instance instanceof Entity || instance instanceof NativeEphemeralObject)
+            return instance;
+        else if (instance instanceof MvClassInstance mvInst) {
+            var nativeObject = mvInst.getNativeObject();
+            if (nativeObject == null) {
+                nativeObject = createNativeObject(mvInst);
+                mvInst.setNativeObject(nativeObject);
+            }
+            return nativeObject;
         }
-        return nativeObject;
+        else
+            throw new IllegalArgumentException("Unrecognized class instance: " + instance);
     }
 
     private static NativeBase createNativeObject(ClassInstance instance) {
-        var nativeClass = tryGetNativeClass(instance.getKlass());
-        NncUtils.requireNonNull(nativeClass,
-                "Native class not available for type '" + instance.getType().getTypeDesc() + "'");
+        var nativeClass = tryGetNativeClass(instance.getInstanceKlass());
+        Objects.requireNonNull(nativeClass,
+                "Native class not available for type '" + instance.getInstanceType().getTypeDesc() + "'");
         Constructor<?> constructor = ReflectionUtils.getConstructor(nativeClass, ClassInstance.class);
         return (NativeBase) ReflectionUtils.invokeConstructor(constructor, instance);
     }
@@ -129,7 +133,7 @@ public class NativeMethods {
             if(nativeClass != null)
                 return nativeClass;
             else
-                klass = NncUtils.get(klass.getSuperType(), ClassType::getKlass);
+                klass = Utils.safeCall(klass.getSuperType(), ClassType::getKlass);
         }
         return null;
     }

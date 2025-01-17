@@ -179,7 +179,7 @@ public class Expressions {
                 BinaryOperator.IN,
                 propertyExpr(field),
                 new ArrayExpression(
-                        NncUtils.map(values, ConstantExpression::new),
+                        Utils.map(values, ConstantExpression::new),
                         Types.getAnyArrayType()
                 )
         );
@@ -300,7 +300,7 @@ public class Expressions {
             return Constants.ID_PREFIX + refFieldValue.getId();
         }
         if (fieldValue instanceof ArrayFieldValue arrayFieldValue) {
-            return "[" + NncUtils.join(arrayFieldValue.getElements(), Expressions::constantToExpression) + "]";
+            return "[" + Utils.join(arrayFieldValue.getElements(), Expressions::constantToExpression) + "]";
         }
         if (fieldValue instanceof ExpressionFieldValue exprFieldValue) {
             return exprFieldValue.getExpression();
@@ -328,7 +328,7 @@ public class Expressions {
     }
 
     public static String deEscapeDoubleQuoted(String escaped) {
-        NncUtils.requireTrue(escaped.length() >= 2);
+        Utils.require(escaped.length() >= 2);
         StringBuilder builder = new StringBuilder();
         boolean lastBackslash = false;
         for (int i = 1; i < escaped.length() - 1; i++) {
@@ -353,7 +353,7 @@ public class Expressions {
 
 
     public static String deEscapeSingleQuoted(String escaped) {
-        NncUtils.requireTrue(escaped.length() >= 2);
+        Utils.require(escaped.length() >= 2);
         StringBuilder builder = new StringBuilder();
         boolean lastBackslash = false;
         for (int i = 1; i < escaped.length() - 1; i++) {

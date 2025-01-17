@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.flow.Method;
 import org.metavm.object.type.Klass;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ public class ReflectDefinerTest extends TestCase {
 
     public void test() {
         var treeSetKlass = getKlass(TreeSet.class);
-        var constructors = NncUtils.filter(treeSetKlass.getMethods(), Method::isConstructor);
+        var constructors = Utils.filter(treeSetKlass.getMethods(), Method::isConstructor);
         Assert.assertEquals(4, constructors.size());
         for (Method c : constructors) {
             Assert.assertEquals(TreeSet.class.getSimpleName(), c.getName());
@@ -35,7 +35,7 @@ public class ReflectDefinerTest extends TestCase {
         var absCollKlass = getKlass(AbstractCollection.class);
         Assert.assertEquals(TreeSet.class.getName(), treeSetKlass.getQualifiedName());
         var addMethod = treeSetKlass.getMethodByName("add");
-        var pAbsCollKlass = treeSetKlass.getType().findAncestorByKlass(absCollKlass);
+        var pAbsCollKlass = treeSetKlass.getType().asSuper(absCollKlass);
         Assert.assertNotNull(pAbsCollKlass);
         var absCollAddMethod = pAbsCollKlass.getMethodByName("add");
         Assert.assertTrue(treeSetKlass.isOverrideOf(addMethod, absCollAddMethod.getRawFlow()));

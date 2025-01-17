@@ -60,11 +60,6 @@ public class ClassInstanceBuilder {
         return this;
     }
 
-//    public ClassInstanceBuilder tmpId(Long tmpId) {
-//        this.tmpId = tmpId;
-//        return this;
-//    }
-
     public ClassInstanceBuilder ephemeral(boolean ephemeral) {
         this.ephemeral = ephemeral;
         return this;
@@ -80,10 +75,8 @@ public class ClassInstanceBuilder {
         return this;
     }
 
-    public ClassInstance build() {
-        //        if(tmpId != null)
-//            instance.setTmpId(tmpId);
-        return new ClassInstance(id, type, version, syncVersion, load, parentRef, data, ephemeral, initFieldTable, closureContext);
+    public MvClassInstance build() {
+        return new MvClassInstance(id, type, version, syncVersion, load, parentRef, data, ephemeral, initFieldTable, closureContext);
     }
 
     public Reference buildAndGetReference() {

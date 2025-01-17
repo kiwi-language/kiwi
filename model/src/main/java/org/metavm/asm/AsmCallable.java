@@ -7,7 +7,7 @@ import org.metavm.flow.Lambda;
 import org.metavm.flow.Method;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -60,7 +60,7 @@ public abstract class AsmCallable implements AsmScope {
             s = c.parent;
             cIdx++;
         }
-        NncUtils.requireTrue(s instanceof AsmMethod);
+        Utils.require(s instanceof AsmMethod);
         return cIdx;
     }
 

@@ -2,8 +2,9 @@ package org.metavm.expression;
 
 import org.metavm.entity.Element;
 import org.metavm.entity.StructuralVisitor;
+import org.metavm.object.instance.core.Instance;
 
-public class VoidStructuralVisitor extends StructuralVisitor<Void> {
+public abstract class VoidStructuralVisitor extends StructuralVisitor<Void> {
 
     @Override
     public Void defaultValue(Element element) {

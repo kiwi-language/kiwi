@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ConstantPool;
 import org.metavm.util.MvOutput;
 
@@ -14,7 +15,7 @@ public class CodeOutput extends MvOutput {
         this.constantPool = constantPool;
     }
 
-    public void writeConstant(Object value) {
+    public void writeConstant(Value value) {
         writeShort(constantPool.addValue(value));
     }
 

@@ -71,7 +71,7 @@ public class ParameterizedElementMap<K, V> {
         }
 
         Collection<V> values() {
-            return NncUtils.mapAndFilter(weakMap.values(), Reference::get, Objects::nonNull);
+            return Utils.mapAndFilter(weakMap.values(), Reference::get, Objects::nonNull);
         }
 
         int size() {

@@ -1,58 +1,56 @@
 package org.metavm.ddl;
 
-import org.metavm.api.ChildEntity;
+import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
+import org.metavm.api.Generated;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
-import org.metavm.entity.ReadWriteArray;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.RedirectStatus;
+import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
-import java.util.Date;
-import java.util.List;
+import javax.annotation.Nullable;
+import java.util.*;
+import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
+@NativeEntity(13)
 @Entity
-public class Commit extends org.metavm.entity.Entity implements RedirectStatus {
+public class Commit extends org.metavm.entity.Entity implements RedirectStatus, Message {
 
-    public static final IndexDef<Commit> IDX_RUNNING = IndexDef.create(Commit.class, "running");
+    public static final IndexDef<Commit> IDX_RUNNING = IndexDef.create(Commit.class,
+            1, commit -> List.of(Instances.booleanInstance(commit.running)));
 
     public static BiConsumer<Long, Id> META_CONTEXT_INVALIDATE_HOOK;
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
-    private final Date time = new Date();
-    private final WAL wal;
-    @ChildEntity
-    private final ReadWriteArray<String> newFieldIds = addChild(new ReadWriteArray<>(String.class), "newFieldIds");
-    @ChildEntity
-    private final ReadWriteArray<String> convertingFieldIds = addChild(new ReadWriteArray<>(String.class), "convertingFieldIds");
-    @ChildEntity
-    private final ReadWriteArray<String> toChildFieldIds = addChild(new ReadWriteArray<>(String.class), "toChildFieldIds");
-    @ChildEntity
-    private final ReadWriteArray<String> toNonChildFieldIds = addChild(new ReadWriteArray<>(String.class), "toNonChildFieldIds");
-    @ChildEntity
-    private final ReadWriteArray<String> removedChildFieldIds = addChild(new ReadWriteArray<>(String.class), "removedChildFieldIds");
-    @ChildEntity
-    private final ReadWriteArray<String> changingSuperKlassIds = addChild(new ReadWriteArray<>(String.class), "changingSuperKlassIds");
-    @ChildEntity
-    private final ReadWriteArray<String> entityToValueKlassIds = addChild(new ReadWriteArray<>(String.class), "entityToValueKlassIds");
-    @ChildEntity
-    private final ReadWriteArray<String> valueToEntityKlassIds = addChild(new ReadWriteArray<>(String.class), "valueToEntityKlassIds");
-    @ChildEntity
-    private final ReadWriteArray<FieldChange> fieldChanges = addChild(new ReadWriteArray<>(FieldChange.class), "fieldChanges");
-    @ChildEntity
-    private final ReadWriteArray<String> newEnumConstantIds = addChild(new ReadWriteArray<>(String.class), "newEnumConstantIds");
-    @ChildEntity
-    private final ReadWriteArray<String> changedEnumConstantIds = addChild(new ReadWriteArray<>(String.class), "changedEnumConstantIds");
-    @ChildEntity
-    private final ReadWriteArray<String> toEnumKlassIds = addChild(new ReadWriteArray<>(String.class), "toEnumKlassIds");
-    @ChildEntity
-    private final ReadWriteArray<String> fromEnumKlassIds = addChild(new ReadWriteArray<>(String.class), "fromEnumKlassIds");
-    @ChildEntity(since = 2)
-    private final ReadWriteArray<String> runMethodIds = addChild(new ReadWriteArray<>(String.class), "runMethodIds");
-    @ChildEntity
-    private final ReadWriteArray<String> newIndexIds = addChild(new ReadWriteArray<>(String.class), "newIndexIds");
-    @ChildEntity
-    private final ReadWriteArray<String> searchEnabledKlassIds = addChild(new ReadWriteArray<>(String.class), "searchEnabledKlassIds");
+    private Date time = new Date();
+    private Reference walReference;
+    private List<String> newFieldIds = new ArrayList<>();
+    private List<String> convertingFieldIds = new ArrayList<>();
+    private List<String> toChildFieldIds = new ArrayList<>();
+    private List<String> toNonChildFieldIds = new ArrayList<>();
+    private List<String> removedChildFieldIds = new ArrayList<>();
+    private List<String> changingSuperKlassIds = new ArrayList<>();
+    private List<String> entityToValueKlassIds = new ArrayList<>();
+    private List<String> valueToEntityKlassIds = new ArrayList<>();
+    private List<FieldChange> fieldChanges = new ArrayList<>();
+    private List<String> newEnumConstantIds = new ArrayList<>();
+    private List<String> changedEnumConstantIds = new ArrayList<>();
+    private List<String> toEnumKlassIds = new ArrayList<>();
+    private List<String> fromEnumKlassIds = new ArrayList<>();
+    private List<String> runMethodIds = new ArrayList<>();
+    private List<String> newIndexIds = new ArrayList<>();
+    private List<String> searchEnabledKlassIds = new ArrayList<>();
 
     private CommitState state = CommitState.PREPARING0;
     private boolean running = true;
@@ -75,7 +73,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus {
                   List<String> searchEnabledKlassIds,
                   List<String> changedEnumConstantIds,
                   List<FieldChange> fieldChanges) {
-        this.wal = wal;
+        this.walReference = wal.getReference();
         this.newFieldIds.addAll(newFieldIds);
         this.convertingFieldIds.addAll(convertingFieldIds);
         this.toChildFieldIds.addAll(toChildFieldIds);
@@ -93,10 +91,37 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus {
         this.fieldChanges.addAll(fieldChanges);
     }
 
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        visitor.visitLong();
+        visitor.visitValue();
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(() -> FieldChange.visit(visitor));
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitList(visitor::visitUTF);
+        visitor.visitByte();
+        visitor.visitBoolean();
+        visitor.visitBoolean();
+        visitor.visitBoolean();
+    }
+
     public void submit() {
         if(submitted)
             throw new IllegalStateException("Commit is already submitted");
         this.submitted = true;
+        var wal = getWal();
         wal.commit();
         if(META_CONTEXT_INVALIDATE_HOOK != null) {
             META_CONTEXT_INVALIDATE_HOOK.accept(wal.getAppId(), null);
@@ -131,67 +156,67 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus {
     }
 
     public List<String> getNewFieldIds() {
-        return newFieldIds.toList();
+        return Collections.unmodifiableList(newFieldIds);
     }
 
     public List<String> getConvertingFieldIds() {
-        return convertingFieldIds.toList();
+        return Collections.unmodifiableList(convertingFieldIds);
     }
 
     public List<String> getToNonChildFieldIds() {
-        return toNonChildFieldIds.toList();
+        return Collections.unmodifiableList(toNonChildFieldIds);
     }
 
     public List<String> getRemovedChildFieldIds() {
-        return removedChildFieldIds.toList();
+        return Collections.unmodifiableList(removedChildFieldIds);
     }
 
     public List<String> getToChildFieldIds() {
-        return toChildFieldIds.toList();
+        return Collections.unmodifiableList(toChildFieldIds);
     }
 
     public List<String> getChangingSuperKlassIds() {
-        return changingSuperKlassIds.toList();
+        return Collections.unmodifiableList(changingSuperKlassIds);
     }
 
     public List<String> getEntityToValueKlassIds() {
-        return entityToValueKlassIds.toList();
+        return Collections.unmodifiableList(entityToValueKlassIds);
     }
 
     public List<String> getValueToEntityKlassIds() {
-        return valueToEntityKlassIds.toList();
+        return Collections.unmodifiableList(valueToEntityKlassIds);
     }
 
     public List<FieldChange> getFieldChanges() {
-        return fieldChanges.toList();
+        return Collections.unmodifiableList(fieldChanges);
     }
 
     public List<String> getNewEnumConstantIds() {
-        return newEnumConstantIds.toList();
+        return Collections.unmodifiableList(newEnumConstantIds);
     }
 
     public List<String> getChangedEnumConstantIds() {
-        return changedEnumConstantIds.toList();
+        return Collections.unmodifiableList(changedEnumConstantIds);
     }
 
     public List<String> getToEnumKlassIds() {
-        return toEnumKlassIds.toList();
+        return Collections.unmodifiableList(toEnumKlassIds);
     }
 
     public List<String> getFromEnumKlassIds() {
-        return fromEnumKlassIds.toList();
+        return Collections.unmodifiableList(fromEnumKlassIds);
     }
 
     public List<String> getRunMethodIds() {
-        return runMethodIds.toList();
+        return Collections.unmodifiableList(runMethodIds);
     }
 
     public List<String> getNewIndexIds() {
-        return newIndexIds.toList();
+        return Collections.unmodifiableList(newIndexIds);
     }
 
     public List<String> getSearchEnabledKlassIds() {
-        return searchEnabledKlassIds.toList();
+        return Collections.unmodifiableList(searchEnabledKlassIds);
     }
 
     public void cancel() {
@@ -203,7 +228,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus {
     }
 
     public WAL getWal() {
-        return wal;
+        return (WAL) walReference.get();
     }
 
     public boolean isRunning() {
@@ -222,4 +247,207 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus {
     public boolean shouldRedirect() {
         return state != CommitState.PREPARING0 && state != CommitState.ABORTING && state != CommitState.ABORTED;
     }
+
+    @Nullable
+    @Override
+    public org.metavm.entity.Entity getParentEntity() {
+        return null;
+    }
+
+    private void writeIds(MvOutput output, List<String> ids) {
+        output.writeInt(ids.size());
+        ids.forEach(output::writeUTF);
+    }
+
+    private static List<String> readIds(MvInput input) {
+        var cnt = input.readInt();
+        var ids = new ArrayList<String>(cnt);
+        for (int i = 0; i < cnt; i++) {
+            ids.add(input.readUTF());
+        }
+        return ids;
+    }
+
+    private static List<FieldChange> readFieldChanges(MvInput input) {
+        int cnt = input.readInt();
+        var fieldChanges = new ArrayList<FieldChange>();
+        for (int i = 0; i < cnt; i++) {
+            fieldChanges.add(FieldChange.read(input));
+        }
+        return fieldChanges;
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        action.accept(walReference);
+        fieldChanges.forEach(arg -> arg.forEachReference(action));
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("time", this.getTime().getTime());
+        map.put("state", this.getState().name());
+        map.put("newFieldIds", this.getNewFieldIds());
+        map.put("convertingFieldIds", this.getConvertingFieldIds());
+        map.put("toNonChildFieldIds", this.getToNonChildFieldIds());
+        map.put("removedChildFieldIds", this.getRemovedChildFieldIds());
+        map.put("toChildFieldIds", this.getToChildFieldIds());
+        map.put("changingSuperKlassIds", this.getChangingSuperKlassIds());
+        map.put("entityToValueKlassIds", this.getEntityToValueKlassIds());
+        map.put("valueToEntityKlassIds", this.getValueToEntityKlassIds());
+        map.put("fieldChanges", this.getFieldChanges().stream().map(FieldChange::toJson).toList());
+        map.put("newEnumConstantIds", this.getNewEnumConstantIds());
+        map.put("changedEnumConstantIds", this.getChangedEnumConstantIds());
+        map.put("toEnumKlassIds", this.getToEnumKlassIds());
+        map.put("fromEnumKlassIds", this.getFromEnumKlassIds());
+        map.put("runMethodIds", this.getRunMethodIds());
+        map.put("newIndexIds", this.getNewIndexIds());
+        map.put("searchEnabledKlassIds", this.getSearchEnabledKlassIds());
+        map.put("wal", this.getWal().getStringId());
+        map.put("running", this.isRunning());
+        map.put("submitted", this.isSubmitted());
+        map.put("cancelled", this.isCancelled());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_Commit;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        this.time = input.readDate();
+        this.walReference = (Reference) input.readValue();
+        this.newFieldIds = input.readList(input::readUTF);
+        this.convertingFieldIds = input.readList(input::readUTF);
+        this.toChildFieldIds = input.readList(input::readUTF);
+        this.toNonChildFieldIds = input.readList(input::readUTF);
+        this.removedChildFieldIds = input.readList(input::readUTF);
+        this.changingSuperKlassIds = input.readList(input::readUTF);
+        this.entityToValueKlassIds = input.readList(input::readUTF);
+        this.valueToEntityKlassIds = input.readList(input::readUTF);
+        this.fieldChanges = input.readList(() -> FieldChange.read(input));
+        this.newEnumConstantIds = input.readList(input::readUTF);
+        this.changedEnumConstantIds = input.readList(input::readUTF);
+        this.toEnumKlassIds = input.readList(input::readUTF);
+        this.fromEnumKlassIds = input.readList(input::readUTF);
+        this.runMethodIds = input.readList(input::readUTF);
+        this.newIndexIds = input.readList(input::readUTF);
+        this.searchEnabledKlassIds = input.readList(input::readUTF);
+        this.state = CommitState.fromCode(input.read());
+        this.running = input.readBoolean();
+        this.cancelled = input.readBoolean();
+        this.submitted = input.readBoolean();
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        output.writeDate(time);
+        output.writeValue(walReference);
+        output.writeList(newFieldIds, output::writeUTF);
+        output.writeList(convertingFieldIds, output::writeUTF);
+        output.writeList(toChildFieldIds, output::writeUTF);
+        output.writeList(toNonChildFieldIds, output::writeUTF);
+        output.writeList(removedChildFieldIds, output::writeUTF);
+        output.writeList(changingSuperKlassIds, output::writeUTF);
+        output.writeList(entityToValueKlassIds, output::writeUTF);
+        output.writeList(valueToEntityKlassIds, output::writeUTF);
+        output.writeList(fieldChanges, arg0 -> arg0.write(output));
+        output.writeList(newEnumConstantIds, output::writeUTF);
+        output.writeList(changedEnumConstantIds, output::writeUTF);
+        output.writeList(toEnumKlassIds, output::writeUTF);
+        output.writeList(fromEnumKlassIds, output::writeUTF);
+        output.writeList(runMethodIds, output::writeUTF);
+        output.writeList(newIndexIds, output::writeUTF);
+        output.writeList(searchEnabledKlassIds, output::writeUTF);
+        output.write(state.code());
+        output.writeBoolean(running);
+        output.writeBoolean(cancelled);
+        output.writeBoolean(submitted);
+    }
+
+    @Override
+    protected void buildSource(Map<String, Value> source) {
+    }
+
+    //    private void handleMetaChanges(long appId, List<InstanceLog> logs, @Nullable String clientId) {
+//        try (var ignored = ContextUtil.getProfiler().enter("handleMetaChanges")){
+//            var changedTypeDefIds = new HashSet<String>();
+//            var changedMappingIds = new HashSet<String>();
+//            var changedFunctionIds = new HashSet<String>();
+//            var removedTypeDefIds = new HashSet<String>();
+//            var removedMappingIds = new HashSet<String>();
+//            var removedFunctionIds = new HashSet<String>();
+//            for (InstanceLog log : logs) {
+//                var id = log.getId();
+//                if (id instanceof TaggedPhysicalId tpId && tpId.getTypeTag() > 4) {
+//                    var defContext = ModelDefRegistry.getDefContext();
+//                    var mapper = defContext.tryGetMapper(tpId.getTypeTag());
+//                    if (mapper != null) {
+//                        var javaClass = mapper.entityClass();
+//                        if (TypeDef.class.isAssignableFrom(javaClass)) {
+//                            if (log.isDelete())
+//                                removedTypeDefIds.add(id.toString());
+//                            else
+//                                changedTypeDefIds.add(id.toString());
+//                        } else if (Function.class.isAssignableFrom(javaClass)) {
+//                            if (log.isDelete())
+//                                removedFunctionIds.add(id.toString());
+//                            else
+//                                changedFunctionIds.add(id.toString());
+//                        }
+//                    }
+//                }
+//            }
+//            if (!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty()
+//                    || !changedMappingIds.isEmpty() || !removedMappingIds.isEmpty()
+//                    || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
+//                transactionOperations.executeWithoutResult(s -> {
+//                    try (var context = newContext(appId, builder -> builder.timeout(0))) {
+//                        context.setDescription("MetaChange");
+//                        var v = Versions.create(
+//                                changedTypeDefIds,
+//                                removedTypeDefIds,
+//                                changedFunctionIds,
+//                                removedFunctionIds,
+//                                new VersionRepository() {
+//                                    @Nullable
+//                                    @Override
+//                                    public Version getLastVersion() {
+//                                        return NncUtils.first(
+//                                                context.query(Version.IDX_VERSION.newQueryBuilder().limit(1).desc(true).build())
+//                                        );
+//                                    }
+//
+//                                    @Override
+//                                    public void save(Version version) {
+//                                        context.bind(version);
+//                                    }
+//                                });
+//                        if (!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty() || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
+//                            context.bind(new PublishMetadataEventTask(changedTypeDefIds, removedTypeDefIds, changedFunctionIds, removedFunctionIds, v.getVersion(), clientId));
+//                        }
+//                        context.finish();
+//                    }
+//                });
+//            }
+//        }
+//    }
+
 }

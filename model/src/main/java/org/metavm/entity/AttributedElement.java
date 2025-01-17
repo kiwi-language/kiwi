@@ -1,19 +1,29 @@
 package org.metavm.entity;
 
-import org.metavm.api.ChildEntity;
-import org.metavm.flow.KlassInput;
+import org.metavm.annotation.NativeEntity;
+import org.metavm.api.Generated;
+import org.metavm.api.JsonIgnore;
+import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
+import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
+import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.Map;
+import java.util.function.Consumer;
 
-public abstract class AttributedElement extends Element {
+@NativeEntity(74)
+public abstract class AttributedElement extends Entity implements Element {
 
-    @ChildEntity
-    protected final ReadWriteArray<Attribute> attributes = addChild(new ReadWriteArray<>(Attribute.class), "attributes");
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
+    protected List<Attribute> attributes = new ArrayList<>();
 
     public AttributedElement() {
     }
@@ -22,12 +32,9 @@ public abstract class AttributedElement extends Element {
         super(tmpId);
     }
 
-    public AttributedElement(Long tmpId, @Nullable EntityParentRef parentRef) {
-        super(tmpId, parentRef);
-    }
-
-    public AttributedElement(Long tmpId, @Nullable EntityParentRef parentRef, boolean ephemeral) {
-        super(tmpId, parentRef, ephemeral);
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        visitor.visitList(() -> Attribute.visit(visitor));
     }
 
     public String getAttributeNonNull(String name) {
@@ -37,7 +44,7 @@ public abstract class AttributedElement extends Element {
     }
 
     public @Nullable String getAttribute(String name) {
-        return NncUtils.findAndMap(attributes, a -> a.name().equals(name), Attribute::value);
+        return Utils.findAndMap(attributes, a -> a.name().equals(name), Attribute::value);
     }
 
     public void clearAttributes() {
@@ -54,7 +61,7 @@ public abstract class AttributedElement extends Element {
     }
 
     public List<Attribute> getAttributes() {
-        return attributes.toList();
+        return Collections.unmodifiableList(attributes);
     }
 
     public void setAttributes(List<Attribute> attributes) {
@@ -62,25 +69,63 @@ public abstract class AttributedElement extends Element {
         this.attributes.addAll(attributes);
     }
 
+    @JsonIgnore
     public Map<String, String> getAttributesMap() {
         var map = new HashMap<String, String>();
         attributes.forEach(attr -> map.put(attr.name(), attr.value()));
         return map;
     }
 
-    public void writeAttributes(MvOutput output) {
-        output.writeInt(attributes.size());
-        for (Attribute attribute : attributes) {
-            attribute.write(output);
-        }
+    public static void visitAttributes(StreamVisitor visitor) {
+        visitor.visitList(() -> Attribute.visit(visitor));
     }
 
-    public void readAttributes(KlassInput input) {
-        attributes.clear();
-        int attributeCount = input.readInt();
-        for (int i = 0; i < attributeCount; i++) {
-            attributes.add(Attribute.read(input));
-        }
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
     }
 
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        attributes.forEach(arg -> arg.forEachReference(action));
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("attributes", this.getAttributes().stream().map(Attribute::toJson).toList());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_AttributedElement;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, Entity parent) {
+        this.attributes = input.readList(() -> Attribute.read(input));
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        output.writeList(attributes, arg0 -> arg0.write(output));
+    }
+
+    @Override
+    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
+    }
 }

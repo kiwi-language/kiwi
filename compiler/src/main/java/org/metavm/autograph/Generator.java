@@ -8,7 +8,7 @@ import org.metavm.object.type.*;
 import org.metavm.util.CompilerConfig;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +16,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
-import static org.metavm.util.NncUtils.ifNotNull;
+import static org.metavm.util.Utils.ifNotNull;
 
 public class Generator extends VisitorBase {
 
@@ -43,7 +43,7 @@ public class Generator extends VisitorBase {
             return;
         if(psiClass != this.psiClass)
             return;
-        var klass = NncUtils.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
+        var klass = Objects.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
         if (klass.getStage().isAfterOrAt(ResolutionStage.DEFINITION))
             return;
         klass.setStage(ResolutionStage.DEFINITION);
@@ -119,8 +119,7 @@ public class Generator extends VisitorBase {
             return;
         if(TranspileUtils.isAbstract(psiMethod))
             return;
-//        logger.debug("Generating code for method {}", TranspileUtils.getMethodQualifiedName(psiMethod));
-        var method = NncUtils.requireNonNull(psiMethod.getUserData(Keys.Method));
+        var method = Objects.requireNonNull(psiMethod.getUserData(Keys.Method));
         method.setLambdas(List.of());
         MethodGenerator builder = new MethodGenerator(method, typeResolver, this);
         builders.push(builder);
@@ -142,7 +141,7 @@ public class Generator extends VisitorBase {
         }
         builder.exitScope();
         builders.pop();
-//        if(method.getName().equals("findByName")) {
+//        if(method.getName().equals("ProductStatus")) {
 //            logger.debug("{}", method.getText());
 //        }
     }
@@ -375,16 +374,16 @@ public class Generator extends VisitorBase {
     public void visitReturnStatement(PsiReturnStatement statement) {
         var trySection = builder().currentTrySection();
         if (Flows.isConstructor(builder().getMethod())) {
-            NncUtils.ifNotNull(trySection, tb -> tb.handleReturn(builder()));
+            Utils.ifNotNull(trySection, tb -> tb.handleReturn(builder()));
             builder().getThis();
             builder().createReturn();
         } else {
             if (statement.getReturnValue() != null) {
                 resolveExpression(statement.getReturnValue());
-                NncUtils.ifNotNull(trySection, tb -> tb.handleReturn(builder()));
+                Utils.ifNotNull(trySection, tb -> tb.handleReturn(builder()));
                 builder().createReturn();
             } else {
-                NncUtils.ifNotNull(trySection, tb -> tb.handleExit(builder()));
+                Utils.ifNotNull(trySection, tb -> tb.handleExit(builder()));
                 builder().createVoidReturn();
             }
         }
@@ -430,7 +429,7 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitBreakStatement(PsiBreakStatement statement) {
-        var label = NncUtils.get(statement.getLabelIdentifier(), PsiElement::getText);
+        var label = Utils.safeCall(statement.getLabelIdentifier(), PsiElement::getText);
         var section = builder().currentSection();
         while (section != null) {
             if (section instanceof TrySection trySection)
@@ -446,7 +445,7 @@ public class Generator extends VisitorBase {
 
     @Override
     public void visitContinueStatement(PsiContinueStatement statement) {
-        var label = NncUtils.get(statement.getLabelIdentifier(), PsiElement::getText);
+        var label = Utils.safeCall(statement.getLabelIdentifier(), PsiElement::getText);
         var section = builder().currentSection();
         while (section != null) {
             if (section instanceof TrySection trySection)

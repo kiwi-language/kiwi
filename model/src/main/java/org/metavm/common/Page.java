@@ -1,7 +1,7 @@
 package org.metavm.common;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 import java.util.function.Function;
@@ -19,7 +19,7 @@ public record Page<T>(List<T> data, long total) {
 
     public <R> Page<R> map(Function<T, R> mapper) {
         return new Page<>(
-                NncUtils.map(data, mapper),
+                Utils.map(data, mapper),
                 total
         );
     }

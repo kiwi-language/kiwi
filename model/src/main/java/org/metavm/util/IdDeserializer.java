@@ -20,6 +20,6 @@ public class IdDeserializer extends StdDeserializer<String> {
 
     @Override
     public String getNullValue(DeserializationContext ctxt) {
-        return TmpId.of(NncUtils.randomNonNegative()).toString();
+        return TmpId.of(Utils.randomNonNegative()).toString();
     }
 }

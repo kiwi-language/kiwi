@@ -3,7 +3,7 @@ package org.metavm.autograph.env;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.io.File;
 import java.util.Objects;
@@ -15,13 +15,13 @@ public class DirectoryLightVirtualFile extends BinaryLightVirtualFile {
 
     public DirectoryLightVirtualFile(File file) {
         super(file);
-        NncUtils.requireTrue(file.isDirectory());
+        Utils.require(file.isDirectory());
     }
 
     @Override
     public VirtualFile[] getChildren() {
         ensureChildrenInitialized();
-        return NncUtils.requireNonNull(children);
+        return Objects.requireNonNull(children);
     }
 
     private void ensureChildrenInitialized() {

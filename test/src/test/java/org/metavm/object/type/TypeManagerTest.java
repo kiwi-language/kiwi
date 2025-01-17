@@ -8,7 +8,6 @@ import org.metavm.entity.MetaContextCache;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceQueryService;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,17 +61,17 @@ public class TypeManagerTest extends TestCase {
     public void testSynchronizeSearch() {
         TestUtils.doInTransaction(() -> {
             try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                var fooKlass = TestUtils.newKlassBuilder("SynchronizeFoo").build();
+                var fooKlass = TestUtils.newKlassBuilder("SynchronizeFoo").searchable(true).build();
                 context.bind(fooKlass);
                 context.finish();
-                Assert.assertTrue(((ClassInstance)context.getInstance(fooKlass)).isSearchable());
+                Assert.assertTrue(fooKlass.isSearchable());
                 return fooKlass.getId();
             }
         });
 //        TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, entityContextFactory);
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var k = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, "SynchronizeFoo");
+            var k = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance("SynchronizeFoo"));
             Assert.assertNotNull(k);
         }
     }
@@ -112,11 +111,10 @@ public class TypeManagerTest extends TestCase {
             try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                 var field = context.getField(fieldId);
                 var klass = field.getDeclaringType();
-                var instCtx = context.getInstanceContext();
-                var fieldInst = context.getInstance(field);
-                instCtx.remove(fieldInst);
+                context.remove(field);
+                klass.removeField(field);
                 Assert.assertEquals(0, klass.getFields().size());
-                Assert.assertEquals(0, klass.getConstraints().size());
+                Assert.assertEquals(0, klass.getIndices().size());
                 context.finish();
             }
         });

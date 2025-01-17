@@ -6,7 +6,7 @@ import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -146,7 +146,7 @@ public class MethodGenerator {
     }
 
     private ScopeInfo currentScope() {
-        return NncUtils.requireNonNull(scopes.peek());
+        return Objects.requireNonNull(scopes.peek());
     }
 
     Value getThis() {
@@ -265,7 +265,7 @@ public class MethodGenerator {
     }
 
     public Node createInvokeMethod(ClassType declaringType, Method method, List<Type> typeArguments) {
-        var ctVars = captureProcessor.extractCapturedTypes(NncUtils.prepend(declaringType, typeArguments));
+        var ctVars = captureProcessor.extractCapturedTypes(Utils.prepend(declaringType, typeArguments));
         var methodRef = new MethodRef(declaringType, method, typeArguments);
         if (ctVars.isEmpty())
             return createInvokeMethod(methodRef);
@@ -356,7 +356,7 @@ public class MethodGenerator {
 
     LambdaNode createLambda(Lambda lambda, ClassType functionalInterface) {
         return onNodeCreated(new LambdaNode(nextName("lambda"), code().getLastNode(), code(),
-                lambda, functionalInterface
+                lambda.getRef(), functionalInterface
         ));
     }
 
@@ -393,7 +393,7 @@ public class MethodGenerator {
     private String nextName(String nameRoot) {
         var pieces = nameRoot.split("_");
         int n;
-        if (NncUtils.isDigits(pieces[pieces.length - 1])) {
+        if (Utils.isDigits(pieces[pieces.length - 1])) {
             nameRoot = Arrays.stream(pieces).limit(pieces.length - 1).collect(Collectors.joining("_"));
             n = Integer.parseInt(pieces[pieces.length - 1]);
         } else {
@@ -1261,7 +1261,7 @@ public class MethodGenerator {
     }
 
     public Node createFloatToDouble() {
-        return onNodeCreated(new FloattoDoubleNode(nextName("f2d"), code().getLastNode(), code()));
+        return onNodeCreated(new FloatToDoubleNode(nextName("f2d"), code().getLastNode(), code()));
     }
 
     public Node createIntToFloat() {
@@ -1273,7 +1273,7 @@ public class MethodGenerator {
     }
 
     public Node createDoubleToFloat() {
-        return onNodeCreated(new DoubleToFloat(nextName("d2f"), code().getLastNode(), code()));
+        return onNodeCreated(new DoubleToFloatNode(nextName("d2f"), code().getLastNode(), code()));
     }
 
     public Node createDoubleToShort() {
@@ -1325,7 +1325,7 @@ public class MethodGenerator {
         return new LabelNode(nextName("label"), code().getLastNode(), code());
     }
 
-    public void connectBranches(Collection<? extends JumpNode> branches) {
+    public void connectBranches(Collection<? extends BranchNode> branches) {
         if (!branches.isEmpty()) {
             var l = createLabel();
             branches.forEach(b -> b.setTarget(l));
@@ -1507,8 +1507,8 @@ public class MethodGenerator {
         return onNodeCreated(new TypeOfNode(nextName("typeof"), code().getLastNode(), code()));
     }
 
-    public List<JumpNode> processCase(PsiCaseLabelElement c, int keyVar, Type keyType) {
-        List<JumpNode> ifNodes;
+    public List<BranchNode> processCase(PsiCaseLabelElement c, int keyVar, Type keyType) {
+        List<BranchNode> ifNodes;
         if (c instanceof PsiTypeTestPattern typeTestPattern)
             ifNodes = List.of(processTypeTesPattern(typeTestPattern, keyVar, keyType));
         else if (c instanceof PsiPatternGuard patternGuard) {
@@ -1525,7 +1525,7 @@ public class MethodGenerator {
         return ifNodes;
     }
 
-    private JumpNode processTypeTesPattern(PsiTypeTestPattern typeTestPattern, int keyVar, Type keyType) {
+    private BranchNode processTypeTesPattern(PsiTypeTestPattern typeTestPattern, int keyVar, Type keyType) {
         var checkType = requireNonNull(typeTestPattern.getCheckType()).getType();
         var patternVar = requireNonNull(typeTestPattern.getPatternVariable());
         createLoad(keyVar, keyType);
@@ -1555,14 +1555,14 @@ public class MethodGenerator {
         }
         var keyType = typeResolver.resolveDeclaration(keyExpr.getType());
         var matches = getSwitchMatches(cases, keyType);
-        var low = matches.isEmpty() ? 0 :matches.get(0);
+        var low = matches.isEmpty() ? 0 :matches.getFirst();
         var high = matches.isEmpty() ? -1 : matches.get(matches.size() - 1);
         expressionResolver.resolve(keyExpr);
         createStore(keyVar);
         createLoadSwitchKey(cases, keyVar, keyType);
         var switchNode = high - low + 1 == matches.size() ?
                 createTableSwitch(low, high) : createLookupSwitch(matches);
-        var targets = new Node[matches.size()];
+        var targets = new LabelNode[matches.size()];
         enterBlock(switchBlock);
         for (PsiStatement stmt : statements) {
             if (stmt instanceof PsiSwitchLabelStatement label) {
@@ -1581,7 +1581,7 @@ public class MethodGenerator {
                 stmt.accept(expressionResolver.getVisitor());
         }
         var exit = createLabel();
-        if (switchNode.getDefaultTarget() == switchNode)
+        if (switchNode.getDefaultTarget() == null)
             switchNode.setDefaultTarget(exit);
         for (int j = 0; j < targets.length; j++) {
             if (targets[j] == null)
@@ -1593,7 +1593,7 @@ public class MethodGenerator {
     }
 
     private void createLoadSwitchKey(List<PsiCaseLabelElement> cases, int keyVar, Type keyType) {
-        var typePatternPresent = NncUtils.anyMatch(cases, e -> e instanceof PsiTypeTestPattern);
+        var typePatternPresent = Utils.anyMatch(cases, e -> e instanceof PsiTypeTestPattern);
         if (keyType.isInt() && !typePatternPresent) {
             createLoad(keyVar, keyType);
         } else {
@@ -1626,11 +1626,11 @@ public class MethodGenerator {
     }
 
     private List<Integer> getSwitchMatches(List<PsiCaseLabelElement> cases, Type keyType) {
-        var matches = NncUtils.map(cases, c -> getSwitchMatch(c, keyType));
+        var matches = Utils.map(cases, c -> getSwitchMatch(c, keyType));
         matches.sort(null);
-        var low = matches.get(0);
-        var high = matches.get(matches.size() - 1);
-        return matches.size() < high - low + 1 >> 1 ? matches : NncUtils.range(low, high + 1);
+        var low = matches.getFirst();
+        var high = matches.getLast();
+        return matches.size() < high - low + 1 >> 1 ? matches : Utils.range(low, high + 1);
     }
 
     public void enterTrySection(PsiCodeBlock finallyBlock) {

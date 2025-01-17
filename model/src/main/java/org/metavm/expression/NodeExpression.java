@@ -2,26 +2,48 @@ package org.metavm.expression;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
+import org.metavm.api.Generated;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Node;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 @Entity
 public class NodeExpression extends Expression {
 
-    private final Node node;
+    @SuppressWarnings("unused")
+    private static org.metavm.object.type.Klass __klass__;
+    private final Reference node;
 
     public NodeExpression(@NotNull Node node) {
+        this.node = node.getReference();
+    }
+
+    public NodeExpression(Reference node) {
         this.node = node;
     }
 
+    @Generated
+    public static NodeExpression read(MvInput input) {
+        return new NodeExpression((Reference) input.readValue());
+    }
+
+    @Generated
+    public static void visit(StreamVisitor visitor) {
+        visitor.visitValue();
+    }
+
     public Node getNode() {
-        return node;
+        return (Node) node.get();
     }
 
     @Override
@@ -32,7 +54,7 @@ public class NodeExpression extends Expression {
                     yield idVarName(serContext.getId(node));
                 }
             }
-            case NAME -> node.getName();
+            case NAME -> getNode().getName();
         };
     }
 
@@ -43,11 +65,11 @@ public class NodeExpression extends Expression {
 
     @Override
     public Type getType() {
-        return node.getType();
+        return getNode().getType();
     }
 
     @Override
-    public List<Expression> getChildren() {
+    public List<Expression> getComponents() {
         return List.of();
     }
 
@@ -71,5 +93,32 @@ public class NodeExpression extends Expression {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitNodeExpression(this);
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        action.accept(node);
+    }
+
+    public void buildJson(java.util.Map<String, Object> map) {
+        map.put("node", this.getNode().getStringId());
+        map.put("type", this.getType().toJson());
+        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
+        map.put("variableComponent", this.getVariableComponent().toJson());
+        map.put("constantComponent", this.getConstantComponent().toJson());
+        map.put("fieldComponent", this.getFieldComponent().toJson());
+        map.put("arrayComponent", this.getArrayComponent().toJson());
+    }
+
+    @Generated
+    public void write(MvOutput output) {
+        output.write(TYPE_NodeExpression);
+        super.write(output);
+        output.writeValue(node);
     }
 }

@@ -43,7 +43,7 @@ public class MockUtils {
                         enumOrdinalField,
                         Instances.intInstance(0)
                 ))
-                .id(TmpId.of(NncUtils.randomNonNegative()))
+                .id(TmpId.of(Utils.randomNonNegative()))
                 .build();
         var couponUsedState = ClassInstanceBuilder.newBuilder(couponStateType.getType())
                 .data(Map.of(
@@ -52,7 +52,7 @@ public class MockUtils {
                         enumOrdinalField,
                         Instances.intInstance(1)
                 ))
-                .id(TmpId.of(NncUtils.randomNonNegative()))
+                .id(TmpId.of(Utils.randomNonNegative()))
                 .build();
         createEnumConstantField(couponNormalState);
         createEnumConstantField(couponUsedState);
@@ -173,7 +173,7 @@ public class MockUtils {
     }
 
     private static Field createEnumConstantField(ClassInstance enumConstant) {
-        var enumType = enumConstant.getKlass();
+        var enumType = enumConstant.getInstanceKlass();
         var nameField = enumType.getFieldByName("name");
         var name = enumConstant.getStringField(nameField).getValue();
         return FieldBuilder.newBuilder(name, enumType, enumType.getType())
@@ -260,6 +260,7 @@ public class MockUtils {
         ContextUtil.setAppId(TestConstants.APP_ID);
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            context.loadKlasses();
             var assembler = AssemblerFactory.createWithStandardTypes(context);
             assembler.assemble(List.of(source));
             assembler.generateClasses(TestConstants.TARGET);
@@ -305,8 +306,12 @@ public class MockUtils {
         var quxAmountField = FieldBuilder.newBuilder("amount", quxType, Types.getLongType()).build();
         var nullableQuxType = new UnionType(Set.of(quxType.getType(), Types.getNullType()));
         var fooQuxField = FieldBuilder.newBuilder("qux", fooType, nullableQuxType).build();
-        if (initIds)
+        if (initIds) {
             TestUtils.initEntityIds(fooType);
+            TestUtils.initEntityIds(bazType);
+            TestUtils.initEntityIds(quxType);
+            TestUtils.initEntityIds(bazType);
+        }
         return new FooTypes(fooType, barType, quxType, bazType, barArrayType, barChildArrayType, bazArrayType, fooNameField,
                 fooCodeField, fooBarsField, fooQuxField, fooBazListField, barCodeField, bazBarsField, quxAmountField);
     }
@@ -466,15 +471,13 @@ public class MockUtils {
     }
 
     public static Foo getFoo() {
-        Foo foo = new Foo(
-                "Big Foo",
-                new Bar("Bar001")
-        );
+        Foo foo = new Foo("Big Foo", null);
+        foo.setBar(new Bar(foo, "Bar001"));
         foo.setCode("Foo001");
 
         foo.setQux(new Qux(100));
         Baz baz1 = new Baz();
-        baz1.setBars(List.of(new Bar("Bar002")));
+        baz1.setBars(List.of(new Bar(null, "Bar002")));
         Baz baz2 = new Baz();
         foo.setBazList(List.of(baz1, baz2));
         return foo;

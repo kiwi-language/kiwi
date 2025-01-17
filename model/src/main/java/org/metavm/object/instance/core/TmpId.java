@@ -3,7 +3,7 @@ package org.metavm.object.instance.core;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.Objects;
 
@@ -15,7 +15,7 @@ public final class TmpId extends Id {
     }
 
     public static TmpId random() {
-        return new TmpId(NncUtils.randomNonNegative());
+        return new TmpId(Utils.randomNonNegative());
     }
 
     public static String randomString() {
@@ -25,8 +25,9 @@ public final class TmpId extends Id {
     private final long tmpId;
 
     public TmpId(long tmpId) {
-        super(false);
+        super();
         this.tmpId = tmpId;
+//        log.debug("Creating tmpId {}", this, new Exception());
     }
 
     @Override

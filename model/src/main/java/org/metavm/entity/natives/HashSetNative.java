@@ -10,7 +10,7 @@ import org.metavm.object.type.KlassType;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -24,7 +24,7 @@ public class HashSetNative extends SetNative {
 
     public HashSetNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = NncUtils.requireNonNull(instance.getType().findFieldByName("array"));
+        arrayField = Objects.requireNonNull(instance.getInstanceType().findFieldByName("array"));
         if (instance.isFieldInitialized(arrayField.getRawField())) {
             var instCtx = Objects.requireNonNull(instance.getContext(), "InstanceContext is missing in " + instance);
             array = instance.getField(arrayField.getRawField()).resolveArray();
@@ -40,7 +40,7 @@ public class HashSetNative extends SetNative {
 
     public Value HashSet__Collection(Value c, CallContext callContext) {
         var collection = (Reference) c;
-        var thatArrayField = collection.resolveObject().getKlass().getFieldByName("array");
+        var thatArrayField = collection.resolveObject().getInstanceKlass().getFieldByName("array");
         var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
         array = new ArrayInstance((ArrayType) arrayField.getPropertyType(),
                 new InstanceParentRef(instance.getReference(), arrayField.getRawField()));
@@ -51,7 +51,7 @@ public class HashSetNative extends SetNative {
     }
 
     public Value iterator(CallContext callContext) {
-        var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getType().getFirstTypeArgument()));
+        var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getInstanceType().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);
@@ -65,7 +65,7 @@ public class HashSetNative extends SetNative {
 
     @Override
     public @NotNull Iterator<Value> iterator() {
-        return NncUtils.mapIterator(set.iterator(), HashKeyWrap::value);
+        return Utils.mapIterator(set.iterator(), HashKeyWrap::value);
     }
 
     public Value add(Value value, CallContext callContext) {
@@ -117,6 +117,6 @@ public class HashSetNative extends SetNative {
 
     @Override
     public void flush() {
-        array.setElements(NncUtils.map(set, HashKeyWrap::value));
+        array.setElements(Utils.map(set, HashKeyWrap::value));
     }
 }

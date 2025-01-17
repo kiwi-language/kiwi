@@ -81,8 +81,7 @@ public class VmStack {
                 var b = bytes[pc] & 0xff;
                 try {
 //                    if(DebugEnv.flag)
-//                    log.debug("Executing bytecode {} at {}, top: {}", Bytecodes.getBytecodeName(b), pc, top);
-
+//                    log.debug("Executing bytecode {} at {}, top: {}, callable: {}", Bytecodes.getBytecodeName(b), pc, top, callableRef);
                     except: {
                         switch (b) {
                             case Bytecodes.ADD_OBJECT -> {
@@ -98,7 +97,7 @@ public class VmStack {
                                 for (int i = 0; i < numFields; i++) {
                                     fieldValues.addFirst(stack[--top]);
                                 }
-                                NncUtils.biForEach(fields, fieldValues, (f, v) -> instance.initField(f, f.getType().fromStackValue(v)));
+                                Utils.biForEach(fields, fieldValues, (f, v) -> instance.initField(f, f.getType().fromStackValue(v)));
                                 if (!instance.isEphemeral())
                                     callContext.instanceRepository().bind(instance);
                                 stack[top++] = instance.getReference();
@@ -108,18 +107,18 @@ public class VmStack {
                                 int fieldIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                                 var field = (FieldRef) constants[fieldIndex];
                                 var value = stack[--top];
-                                var instance = stack[--top].resolveObject();
-                                instance.fields[field.rawField.offset].value = field.getPropertyType().fromStackValue(value);
+                                var instance = stack[--top].resolveMvObject();
+                                instance.fields[field.getRawField().offset].value = field.getPropertyType().fromStackValue(value);
                                 pc += 3;
                             }
                             case Bytecodes.SET_CHILD_FIELD -> {
                                 int fieldIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                                 var field = (FieldRef) constants[fieldIndex];
                                 var value = stack[--top];
-                                var instance = stack[--top].resolveObject();
-                                instance.fields[field.rawField.offset].value = value;
+                                var instance = stack[--top].resolveMvObject();
+                                instance.fields[field.getRawField().offset].value = value;
                                 if (value instanceof Reference ref)
-                                    ref.resolve().setParent(instance, field.rawField);
+                                    ref.get().setParent(instance, field.getRawField());
                                 pc += 3;
                             }
                             case Bytecodes.DELETE_OBJECT -> {
@@ -153,7 +152,7 @@ public class VmStack {
                                 pc += 3;
                                 var self = stack[top - method.getParameterCount() - 1];
                                 if (method.isVirtual())
-                                    method = ((ClassType) requireNonNull(self).getType()).getOverride(method);
+                                    method = ((ClassType) requireNonNull(self).getValueType()).getOverride(method);
                                 if (method.isNative()) {
                                     var paramCount = method.getParameterCount();
                                     var args = new Value[paramCount];
@@ -182,7 +181,7 @@ public class VmStack {
                             }
                             case Bytecodes.GENERIC_INVOKE_VIRTUAL -> {
                                 var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                var m = (Method) (((MethodRef) constants[flowIndex]).rawFlow);
+                                var m = (Method) (((MethodRef) constants[flowIndex]).getRawFlow());
                                 pc += 3;
                                 var typeArgCnt = m.getTypeParameters().size();
                                 var typeArgs = new Type[typeArgCnt];
@@ -193,7 +192,7 @@ public class VmStack {
                                 var method = new MethodRef(declaringType, m, List.of(typeArgs));
                                 var self = stack[top - method.getParameterCount() - 1];
                                 if (method.isVirtual())
-                                    method = ((ClassType) requireNonNull(self).getType()).getOverride(method);
+                                    method = ((ClassType) requireNonNull(self).getValueType()).getOverride(method);
                                 if (method.isNative()) {
                                     var paramCount = method.getParameterCount();
                                     var args = new Value[paramCount];
@@ -253,7 +252,7 @@ public class VmStack {
                             }
                             case Bytecodes.GENERIC_INVOKE_SPECIAL -> {
                                 var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                var m = (Method) (((MethodRef) constants[flowIndex]).rawFlow);
+                                var m = (Method) (((MethodRef) constants[flowIndex]).getRawFlow());
                                 pc += 3;
                                 var typeArgCnt = m.getTypeParameters().size();
                                 var typeArgs = new Type[typeArgCnt];
@@ -320,7 +319,7 @@ public class VmStack {
                             }
                             case Bytecodes.GENERIC_INVOKE_STATIC -> {
                                 var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                var m = (Method) (((MethodRef) constants[flowIndex]).rawFlow);
+                                var m = (Method) (((MethodRef) constants[flowIndex]).getRawFlow());
                                 pc += 3;
                                 var typeArgCnt = m.getTypeParameters().size();
                                 var typeArgs = new Type[typeArgCnt];
@@ -447,7 +446,7 @@ public class VmStack {
                             case Bytecodes.ADD_ELEMENT -> {
                                 var e = stack[--top];
                                 var a = stack[--top].resolveArray();
-                                a.addElement(a.getType().getElementType().fromStackValue(e));
+                                a.addElement(a.getInstanceType().getElementType().fromStackValue(e));
                                 pc++;
                             }
                             case Bytecodes.DELETE_ELEMENT -> {
@@ -501,7 +500,7 @@ public class VmStack {
                             }
                             case Bytecodes.GENERIC_INVOKE_FUNCTION -> {
                                 var flowIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                var f = (Function) (((FunctionRef) constants[flowIndex]).rawFlow);
+                                var f = (Function) (((FunctionRef) constants[flowIndex]).getRawFlow());
                                 pc += 3;
                                 var typeArgCnt = f.getTypeParameters().size();
                                 var typeArgs = new Type[typeArgCnt];
@@ -541,7 +540,7 @@ public class VmStack {
                                 if (type.isInstance(inst)) {
                                     stack[top++] = inst;
                                     pc += 3;
-                                } else if (type.isAssignableFrom(inst.getType())) {
+                                } else if (type.isAssignableFrom(inst.getValueType())) {
                                     stack[top++] = inst;
                                     pc += 3;
                                 } else {
@@ -560,7 +559,7 @@ public class VmStack {
                             }
                             case Bytecodes.COPY -> {
                                 var sourceInst = stack[--top];
-                                var copy = sourceInst.resolveDurable().copy();
+                                var copy = sourceInst.resolveMv().copy();
                                 stack[top++] = copy.getReference();
                                 pc++;
                             }
@@ -597,10 +596,9 @@ public class VmStack {
                             case Bytecodes.INDEX_SELECT_FIRST -> {
                                 var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                                 var result = callContext.instanceRepository().selectFirstByKey(loadIndexKey(index, stack[--top]));
-                                stack[top++] = NncUtils.orElse(result, new NullValue());
+                                stack[top++] = Utils.orElse(result, new NullValue());
                                 pc += 3;
                             }
-                            case Bytecodes.TARGET, Bytecodes.NOOP -> pc++;
                             case Bytecodes.NON_NULL -> {
                                 var inst = stack[top - 1];
                                 if (inst.isNull()) {
@@ -615,7 +613,7 @@ public class VmStack {
                                 var e = stack[--top];
                                 var i = ((IntValue) stack[--top]).value;
                                 var a = stack[--top].resolveArray();
-                                a.setElement(i, a.getType().getElementType().fromStackValue(e));
+                                a.setElement(i, a.getInstanceType().getElementType().fromStackValue(e));
                                 pc++;
                             }
                             case Bytecodes.IF_EQ -> {
@@ -1017,9 +1015,9 @@ public class VmStack {
                                 pc++;
                             }
                             case Bytecodes.GET_FIELD -> {
-                                var i = stack[--top].resolveObject();
+                                var i = stack[--top].resolveMvObject();
                                 var p = (FieldRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
-                                stack[top++] = i.fields[p.rawField.offset].value.toStackValue();
+                                stack[top++] = i.fields[p.getRawField().offset].value.toStackValue();
                                 pc += 3;
                             }
                             case Bytecodes.GET_METHOD -> {
@@ -1107,7 +1105,7 @@ public class VmStack {
                             case Bytecodes.LOAD_KLASS -> {
                                 var type = (Type) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                                 var klass = Types.getKlass(type);
-                                stack[top++] = ContextUtil.getEntityContext().getInstance(klass).getReference();
+                                stack[top++] = klass.getReference();
                                 pc += 3;
                             }
                             case Bytecodes.DUP -> {
@@ -1136,7 +1134,7 @@ public class VmStack {
                             case Bytecodes.LOAD_PARENT -> {
                                 var v = stack[--top];
                                 var idx = (bytes[pc + 1] & 0xff) << 8 | (bytes[pc + 2] & 0xff);
-                                stack[top++] = requireNonNull(v.resolveObject().getParent(idx)).getReference();
+                                stack[top++] = requireNonNull(v.resolveMvObject().getParent(idx)).getReference();
                                 pc += 3;
                             }
                             case Bytecodes.TABLE_SWITCH -> {
@@ -1205,7 +1203,7 @@ public class VmStack {
                                 pc++;
                             }
                             case Bytecodes.LT_KLASS -> {
-                                var k = ((KlassType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).klass;
+                                var k = ((KlassType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getKlass();
                                 var typeArgCount = k.getTypeParameters().size();
                                 var typeArgs = new Type[typeArgCount];
                                 for (int i = typeArgCount - 1; i >= 0; i--) {
@@ -1215,7 +1213,7 @@ public class VmStack {
                                 pc += 3;
                             }
                             case Bytecodes.LT_LOCAL_KLASS -> {
-                                var k = ((KlassType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).klass;
+                                var k = ((KlassType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getKlass();
                                 var typeArgCount = k.getTypeParameters().size();
                                 var typeArgs = new Type[typeArgCount];
                                 for (int i = typeArgCount - 1; i >= 0; i--) {
@@ -1225,7 +1223,7 @@ public class VmStack {
                                 pc += 3;
                             }
                             case Bytecodes.LT_INNER_KLASS -> {
-                                var k = ((KlassType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).klass;
+                                var k = ((KlassType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getKlass();
                                 var typeArgCount = k.getTypeParameters().size();
                                 var typeArgs = new Type[typeArgCount];
                                 for (int i = typeArgCount - 1; i >= 0; i--) {
@@ -1346,7 +1344,7 @@ public class VmStack {
                             }
                             case Bytecodes.TYPEOF -> {
                                 var v = stack[--top];
-                                stack[top++] = v.getType();
+                                stack[top++] = v.getValueType();
                                 pc++;
                             }
                             case Bytecodes.LT_DECLARING_TYPE -> {
@@ -1361,7 +1359,7 @@ public class VmStack {
                             case Bytecodes.LT_ANCESTOR -> {
                                 var k = ((ClassType) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff]).getKlass();
                                 var t = (ClassType) stack[--top];
-                                stack[top++] = Objects.requireNonNull(t.findAncestorByKlass(k));
+                                stack[top++] = Objects.requireNonNull(t.asSuper(k));
                                 pc += 3;
                             }
                             default -> throw new IllegalStateException("Invalid bytecode: " + b);
@@ -1411,7 +1409,7 @@ public class VmStack {
             return flow;
         var actualExprTypes = new Type[capturedVariableIndexes.length];
         for (int i = 0; i < capturedVariableIndexes.length; i++) {
-            actualExprTypes[i] = stack[base + capturedVariableIndexes[i]].getType();
+            actualExprTypes[i] = stack[base + capturedVariableIndexes[i]].getValueType();
         }
         var capturedTypeMap = new HashMap<CapturedType, Type>();
         for (int i = 0; i < actualExprTypes.length; i++) {
@@ -1427,18 +1425,18 @@ public class VmStack {
         });
         var typeSubst = new TypeSubstitutor(capturedTypes, actualCapturedTypes);
         if(flow instanceof MethodRef method && method.getDeclaringType().isParameterized()
-                && NncUtils.anyMatch(method.getDeclaringType().getTypeArguments(), Type::isCaptured)) {
+                && Utils.anyMatch(method.getDeclaringType().getTypeArguments(), Type::isCaptured)) {
             var declaringType = method.getDeclaringType();
-            var actualTypeArgs = NncUtils.map(declaringType.getTypeArguments(), t -> t.accept(typeSubst));
+            var actualTypeArgs = Utils.map(declaringType.getTypeArguments(), t -> t.accept(typeSubst));
             var actualDeclaringType = new KlassType(declaringType.getOwner(), declaringType.getKlass(), actualTypeArgs);
             if(DebugEnv.debugging)
                 log.info("uncapture flow declaring type from {} to {}",
                         declaringType.getTypeDesc(),
                         actualDeclaringType.getTypeDesc());
-            flow = NncUtils.requireNonNull(actualDeclaringType.findSelfMethod(m -> m.getRawFlow() == method.getRawFlow()));
+            flow = Objects.requireNonNull(actualDeclaringType.findSelfMethod(m -> m.getRawFlow() == method.getRawFlow()));
         }
-        if(NncUtils.anyMatch(flow.getTypeArguments(), Type::isCaptured)) {
-            var actualTypeArgs = NncUtils.map(flow.getTypeArguments(), t -> t.accept(typeSubst));
+        if(Utils.anyMatch(flow.getTypeArguments(), Type::isCaptured)) {
+            var actualTypeArgs = Utils.map(flow.getTypeArguments(), t -> t.accept(typeSubst));
             return flow.getParameterized(actualTypeArgs);
         }
         else

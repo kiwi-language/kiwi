@@ -1,9 +1,11 @@
 package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.entity.Entity;
 import org.metavm.object.type.*;
 import org.metavm.util.Constants;
 
+import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,22 +23,37 @@ public class DeployKlassInput extends KlassInput {
     }
 
     @Override
-    public Klass readKlass() {
-        var klass = getKlass(readId());
+    public <T extends Entity> T readEntity(Class<T> klass, Entity parent) {
+        if (klass == Klass.class)
+            //noinspection unchecked
+            return (T) readKlass(parent);
+        else if (klass == Field.class)
+            //noinspection unchecked
+            return (T) readField((Klass) parent);
+        else if (klass == Method.class)
+            //noinspection unchecked
+            return (T) readMethod((Klass) parent);
+        else if (klass == Index.class)
+            //noinspection unchecked
+            return (T) readIndex((Klass) parent);
+        else
+            return super.readEntity(klass, parent);
+    }
+
+    private Klass readKlass(@Nullable Entity parent) {
+        var klass = getEntity(Klass.class, readId());
         var context = batch.getContext();
-        List<Field> prevEnumConstants = klass.isEnum() && !context.isNewEntity(klass) ?
+        List<Field> prevEnumConstants = klass.isEnum() && klass.isPersisted() ?
                 new ArrayList<>(klass.getEnumConstants()) :
                 List.of();
-        setKlassParent(klass);
         var oldKind = klass.getKind();
         var oldSuperType = klass.getSuperType();
         var oldSearchable = klass.isSearchable();
-        enterElement(klass);
-        klass.read(this);
-        exitElement();
+        klass.readHeadAndBody(this, parent);
         batch.addKlass(klass);
         var newKind = klass.getKind();
-        if(context.isNewEntity(klass)) {
+        if(klass.isNew()) {
+            context.bind(klass);
             if(klass.getTag() == TypeTags.DEFAULT)
                 klass.setTag(KlassTagAssigner.getInstance(context).next());
             if(klass.getSourceTag() == null)
@@ -64,31 +81,25 @@ public class DeployKlassInput extends KlassInput {
                 }
             }
         }
-        context.update(klass);
         return klass;
     }
 
-    @Override
-    public Field readField() {
-        var field = getField(readId());
-        var declaringType = (Klass) currentElement();
-        field.setDeclaringType(declaringType);
+    private Field readField(Klass declaringType) {
+        var field = getEntity(Field.class, readId());
         var prevType = field.getType();
         var prevState = field.getState();
         var prevIsChild = field.isChild();
         var prevName = field.getName();
         var prevOrdinal = field.getOrdinal();
-        enterElement(field);
-        field.read(this);
-        exitElement();
-        var context = batch.getContext();
-        if(context.isNewEntity(field)) {
+        field.readHeadAndBody(this, declaringType);
+        if(field.isNew()) {
+            batch.getContext().bind(field);
             field.initTag(declaringType.nextFieldTag());
             if(field.getSourceTag() == null)
                 field.setSourceTag(declaringType.nextFieldSourceCodeTag());
             if(field.isStatic())
                 batch.addNewStaticField(field);
-            else if (!context.isNewEntity(declaringType))
+            else if (declaringType.isPersisted())
                 batch.addNewField(field);
             if (field.isEnumConstant())
                 batch.addNewEnumConstant(field);
@@ -119,19 +130,16 @@ public class DeployKlassInput extends KlassInput {
         return field;
     }
 
-    @Override
-    public Method readMethod() {
-        var method = super.readMethod();
+    private Method readMethod(Klass declaringKlass) {
+        var method = super.readEntity(Method.class, declaringKlass);
         if(method.getParameters().isEmpty() && !method.isStatic() && method.getName().equals(Constants.RUN_METHOD_NAME))
             batch.addRunMethod(method);
         return method;
     }
 
-    @Override
-    public Index readIndex() {
-        var index = super.readIndex();
-        var context = batch.getContext();
-        if (context.isNewEntity(index))
+    private Index readIndex(Klass declaringKlass) {
+        var index = super.readEntity(Index.class, declaringKlass);
+        if (index.isNew())
             batch.addNewIndex(index);
         return index;
     }

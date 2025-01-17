@@ -25,7 +25,7 @@ import com.intellij.util.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.util.InternalException;
 import org.metavm.util.KeyValue;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -133,7 +133,7 @@ public abstract class VisitorBase extends JavaElementVisitor implements PsiRecur
     protected void visitBlock(PsiElement body,
                               @Nullable Consumer<PsiStatement> beforeVisit,
                               @Nullable Function<PsiStatement, KeyValue<PsiStatement, PsiCodeBlock>> afterVisit) {
-        NncUtils.requireTrue(body instanceof PsiCodeBlock || body instanceof PsiStatement);
+        Utils.require(body instanceof PsiCodeBlock || body instanceof PsiStatement);
         PsiCodeBlock block;
         if (body instanceof PsiCodeBlock codeBlock) {
             block = codeBlock;

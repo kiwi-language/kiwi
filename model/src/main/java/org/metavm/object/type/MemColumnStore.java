@@ -3,7 +3,7 @@ package org.metavm.object.type;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.util.Column;
 import org.metavm.util.ColumnAndTag;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +36,7 @@ public class MemColumnStore implements ColumnStore {
 
     private Column allocateColumn(Type type, String fieldName, ColumnKind columnKind) {
         var subMap = getSubMap(type);
-        Set<Column> usedColumns = NncUtils.mapUnique(subMap.values(), ColumnKind::getColumnByName);
+        Set<Column> usedColumns = Utils.mapToSet(subMap.values(), ColumnKind::getColumnByName);
         var column = Column.allocate(usedColumns, columnKind);
         subMap.put(fieldName, column.name());
         return column;

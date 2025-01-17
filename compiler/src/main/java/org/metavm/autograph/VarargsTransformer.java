@@ -1,7 +1,7 @@
 package org.metavm.autograph;
 
 import com.intellij.psi.*;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
@@ -45,7 +45,7 @@ public class VarargsTransformer extends SkipDiscardedVisitor {
             }
             var varargType = ((PsiEllipsisType) varargParam.getType()).getComponentType();
             textBuf.append(String.format("new %s[] {", varargType.getCanonicalText()))
-                    .append(NncUtils.join(List.of(varargs), PsiElement::getText, ", "))
+                    .append(Utils.join(List.of(varargs), PsiElement::getText, ", "))
                     .append("}").append(")");
             var dummyCallExpr = (PsiMethodCallExpression) TranspileUtils.createExpressionFromText(textBuf.toString());
             replace(expression.getArgumentList(), dummyCallExpr.getArgumentList());

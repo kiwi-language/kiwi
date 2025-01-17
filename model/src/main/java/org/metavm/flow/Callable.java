@@ -1,10 +1,11 @@
 package org.metavm.flow;
 
+import org.metavm.api.JsonIgnore;
 import org.metavm.object.type.ConstantPool;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeMetadata;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -18,6 +19,7 @@ public interface Callable {
 
     int getTypeIndex();
 
+    @JsonIgnore
     int getInputCount();
 
     default Parameter getParameter(int index) {
@@ -25,13 +27,13 @@ public interface Callable {
     }
 
     default @Nullable Parameter findParameter(Predicate<Parameter> predicate) {
-        return NncUtils.find(getParameters(), predicate);
+        return Utils.find(getParameters(), predicate);
     }
 
     void setParameters(List<Parameter> parameters);
 
     default Parameter getParameterByName(String name) {
-        return NncUtils.find(getParameters(), p -> p.getName().equals(name));
+        return Utils.find(getParameters(), p -> p.getName().equals(name));
     }
 
     FunctionType getFunctionType();
@@ -41,7 +43,7 @@ public interface Callable {
     }
 
     default List<Type> getParameterTypes(TypeMetadata typeMetadata) {
-        return NncUtils.map(getParameters(), p -> p.getType(typeMetadata));
+        return Utils.map(getParameters(), p -> p.getType(typeMetadata));
     }
 
     CallableRef getRef();

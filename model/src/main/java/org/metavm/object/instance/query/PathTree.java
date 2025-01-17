@@ -1,6 +1,6 @@
 package org.metavm.object.instance.query;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -26,7 +26,7 @@ public class PathTree {
     }
 
     public static PathTree merge(List<PathTree> paths) {
-        if(NncUtils.isEmpty(paths)) {
+        if(Utils.isEmpty(paths)) {
             return PathTree.createRoot();
         }
         PathTree merged = PathTree.createRoot();

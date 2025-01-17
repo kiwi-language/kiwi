@@ -27,7 +27,7 @@ public class LockSupport {
 
     public static void unlockAll() {
         Queue<Lock> acquiredLocks = ACQUIRED_LOCKS_TL.get();
-        if(NncUtils.isNotEmpty(acquiredLocks)) {
+        if(Utils.isNotEmpty(acquiredLocks)) {
             for (Lock acquiredLock : acquiredLocks) {
                 acquiredLock.unlock();
             }

@@ -6,6 +6,8 @@ import org.metavm.object.type.*;
 
 public abstract class ElementVisitor<R> {
 
+    public abstract R visitElement(Element element);
+
     public R visitType(Type type) {
         return visitElement(type);
     }
@@ -18,10 +20,6 @@ public abstract class ElementVisitor<R> {
         return visitElement(constraint);
     }
 
-    public R visitElement(Element element) {
-        throw new UnsupportedOperationException();
-    }
-
     public R visitIndex(Index index) {
         return visitConstraint(index);
     }
@@ -30,7 +28,7 @@ public abstract class ElementVisitor<R> {
         return visitConstraint(checkConstraint);
     }
 
-    public R visitClassType(ClassType type) {
+    public R visitKlassType(KlassType type) {
         return visitType(type);
     }
 
@@ -82,7 +80,7 @@ public abstract class ElementVisitor<R> {
         return visitElement(parameter);
     }
 
-    public R visitScope(Code code) {
+    public R visitCode(Code code) {
         return visitElement(code);
     }
 
@@ -94,7 +92,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitDeleteElementNode(RemoveElementNode node) {
+    public R visitRemoveElementNode(RemoveElementNode node) {
         return visitNode(node);
     }
 
@@ -110,7 +108,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitLambdaEnterNode(LambdaNode node) {
+    public R visitLambdaNode(LambdaNode node) {
         return visitNode(node);
     }
 
@@ -170,7 +168,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitIndexQueryNode(IndexScanNode node) {
+    public R visitIndexScanNode(IndexScanNode node) {
         return visitNode(node);
     }
 
@@ -180,10 +178,6 @@ public abstract class ElementVisitor<R> {
 
     public R visitSetStaticNode(SetStaticNode node) {
         return visitNode(node);
-    }
-
-    public R visitValue(Value value) {
-        return visitElement(value);
     }
 
     public R visitExpression(Expression expression) {
@@ -210,7 +204,7 @@ public abstract class ElementVisitor<R> {
         return visitExpression(expression);
     }
 
-    public R visitFuncExpression(MethodExpression expression) {
+    public R visitMethodExpression(MethodExpression expression) {
         return visitExpression(expression);
     }
 
@@ -242,7 +236,7 @@ public abstract class ElementVisitor<R> {
         return visitExpression(expression);
     }
 
-    public R visitStaticFieldExpression(StaticPropertyExpression expression) {
+    public R visitStaticPropertyExpression(StaticPropertyExpression expression) {
         return visitExpression(expression);
     }
 
@@ -294,7 +288,7 @@ public abstract class ElementVisitor<R> {
         return visitFlow(method);
     }
 
-    public R visitInvokeFunction(InvokeFunctionNode invokeFunctionNode) {
+    public R visitInvokeFunctionNode(InvokeFunctionNode invokeFunctionNode) {
         return visitInvokeNode(invokeFunctionNode);
     }
 
@@ -446,34 +440,6 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitExpressionValue(ExpressionValue value) {
-        return visitValue(value);
-    }
-
-    public R visitPropertyValue(PropertyValue value) {
-        return visitValue(value);
-    }
-
-    public R visitNeverValue(NeverValue value) {
-        return visitValue(value);
-    }
-
-    public R visitArrayValue(ArrayValue value) {
-        return visitValue(value);
-    }
-
-    public R visitConstantValue(ConstantValue value) {
-        return visitValue(value);
-    }
-
-    public R visitTypeValue(TypeValue value) {
-        return visitValue(value);
-    }
-
-    public R visitNodeValue(NodeValue value) {
-        return visitValue(value);
-    }
-
     public R visitStoreNode(StoreNode node) {
         return visitVariableAccessNode(node);
     }
@@ -502,7 +468,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitReturn(VoidReturnNode node) {
+    public R visitVoidReturnNode(VoidReturnNode node) {
         return visitNode(node);
     }
 
@@ -542,7 +508,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitNewChild(NewChildNode node) {
+    public R visitNewChildNode(NewChildNode node) {
         return visitNewObjectNode(node);
     }
 
@@ -622,7 +588,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitIntShiftLeftNod(IntShiftLeftNode node) {
+    public R visitIntShiftLeftNode(IntShiftLeftNode node) {
         return visitNode(node);
     }
 
@@ -630,7 +596,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitIntUnsignedShiftRight(IntUnsignedShiftRightNode node) {
+    public R visitIntUnsignedShiftRightNode(IntUnsignedShiftRightNode node) {
         return visitNode(node);
     }
 
@@ -694,7 +660,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitFloatToDoubleNode(FloattoDoubleNode node) {
+    public R visitFloatoDoubleNode(FloatToDoubleNode node) {
         return visitNode(node);
     }
 
@@ -714,7 +680,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitDoubleToFloatNode(DoubleToFloat node) {
+    public R visitDoubleToFloat(DoubleToFloatNode node) {
         return visitNode(node);
     }
 
@@ -738,7 +704,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitLookupSwitch(LookupSwitchNode node) {
+    public R visitLookupSwitchNode(LookupSwitchNode node) {
         return visitNode(node);
     }
 
@@ -746,7 +712,7 @@ public abstract class ElementVisitor<R> {
         return visitType(type);
     }
 
-    public R visitGetMethod(GetMethodNode node) {
+    public R visitGetMethodNode(GetMethodNode node) {
         return visitNode(node);
     }
 
@@ -762,7 +728,7 @@ public abstract class ElementVisitor<R> {
         return visitInvokeNode(node);
     }
 
-    public R visitSetChildField(SetChildFieldNode node) {
+    public R visitSetChildFieldNode(SetChildFieldNode node) {
         return visitNode(node);
     }
 
@@ -778,7 +744,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitLoadInnerKlassType(LoadInnerKlassTypeNode node) {
+    public R visitLoadInnerKlassTypeNode(LoadInnerKlassTypeNode node) {
         return visitNode(node);
     }
 
@@ -798,7 +764,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitCharTypeNode(LoadCharTypeNode node) {
+    public R visitLoadCharTypeNode(LoadCharTypeNode node) {
         return visitNode(node);
     }
 
@@ -830,7 +796,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitReturnTypeNode(LoadReturnTypeNode node) {
+    public R visitLoadReturnTypeNode(LoadReturnTypeNode node) {
         return visitNode(node);
     }
 
@@ -894,7 +860,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitTimeTypeNode(LoadTimeTypeNode node) {
+    public R visitLoadTimeTypeNode(LoadTimeTypeNode node) {
         return visitNode(node);
     }
 
@@ -910,12 +876,13 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitCurrentFlowNode(LoadCurrentFlowNode node) {
+    public R visitLoadCurrentFlowNode(LoadCurrentFlowNode node) {
         return visitNode(node);
     }
 
     public R visitLoadAncestorTypeNode(LoadAncestorTypeNode node) {
         return visitNode(node);
     }
+
 
 }

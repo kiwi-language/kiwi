@@ -2,11 +2,7 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.metavm.entity.ChildArray;
-import org.metavm.entity.ReadWriteArray;
-import org.metavm.entity.ReadonlyArray;
 import org.metavm.object.instance.core.Id;
-import org.metavm.util.ReflectionUtils;
 import org.metavm.util.TypeParser;
 
 import java.lang.reflect.Type;
@@ -97,18 +93,6 @@ public class StdAllocator {
         id2name.put(id, name);
         if(nextNodeId != null)
             code2nextNodeId.put(name, nextNodeId);
-    }
-
-    public boolean isReadWriteArray() {
-        return ReflectionUtils.getRawClass(javaType) == ReadWriteArray.class;
-    }
-
-    public boolean isChildArray() {
-        return ReflectionUtils.getRawClass(javaType) == ChildArray.class;
-    }
-
-    public boolean isReadonlyArray() {
-        return ReflectionUtils.getRawClass(javaType) == ReadonlyArray.class;
     }
 
 }

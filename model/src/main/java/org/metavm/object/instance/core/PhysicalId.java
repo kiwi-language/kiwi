@@ -1,26 +1,21 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.object.type.TypeOrTypeKey;
 import org.metavm.util.MvOutput;
 
 import java.util.Objects;
 
 public class PhysicalId extends Id {
 
-    public static PhysicalId of(long treeId, long nodeId, TypeOrTypeKey type) {
-        var typeTag = type.getTypeTag();
-        if(typeTag > 0)
-            return new TaggedPhysicalId(treeId, nodeId, typeTag);
-        else
-            return new PhysicalId(type.isArray(), treeId, nodeId);
+    public static PhysicalId of(long treeId, long nodeId) {
+        return new PhysicalId(treeId, nodeId);
     }
 
     protected final long treeId;
     protected final long nodeId;
 
-    public PhysicalId(boolean isArray, long treeId, long nodeId) {
-        super(isArray);
+    public PhysicalId(long treeId, long nodeId) {
+        super();
         this.treeId = treeId;
         this.nodeId = nodeId;
     }
@@ -50,7 +45,7 @@ public class PhysicalId extends Id {
 
     @Override
     public void write(MvOutput output) {
-        output.writeIdTag(IdTag.PHYSICAL, isArray());
+        output.write(IdTag.PHYSICAL.code());
         output.writeLong(getTreeId());
         output.writeLong(getNodeId());
     }

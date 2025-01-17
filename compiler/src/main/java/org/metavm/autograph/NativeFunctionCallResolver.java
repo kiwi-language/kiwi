@@ -4,10 +4,9 @@ import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import org.metavm.flow.Function;
-import org.metavm.flow.FunctionRef;
 import org.metavm.flow.Node;
 import org.metavm.object.type.Type;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 import java.util.Objects;
@@ -35,7 +34,7 @@ public class NativeFunctionCallResolver implements MethodCallResolver {
             var methodGenerics = methodCallExpression.resolveMethodGenerics();
             var subst = methodGenerics.getSubstitutor();
             var method = (PsiMethod) Objects.requireNonNull(methodGenerics.getElement());
-            typeArgs = NncUtils.map(method.getTypeParameters(),
+            typeArgs = Utils.map(method.getTypeParameters(),
                     tp -> methodGenerator.getTypeResolver().resolve(subst.substitute(tp))
             );
         }

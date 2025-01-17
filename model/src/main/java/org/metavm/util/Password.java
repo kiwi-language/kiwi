@@ -14,7 +14,7 @@ public class Password {
         this(passwordInstance.getValue(), false);
     }
 
-    private Password(String password, boolean doEncoding) {
+    public Password(String password, boolean doEncoding) {
         this.password = doEncoding ? EncodingUtils.md5(password) : password;
     }
 

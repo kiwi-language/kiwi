@@ -55,7 +55,6 @@ public class SubstitutorV2Test extends TestCase {
         }
 
         var stringType = PrimitiveType.stringType;
-        stringType.initId(PhysicalId.of(1L, 0L, TestUtils.mockClassType()));
     }
 
 }

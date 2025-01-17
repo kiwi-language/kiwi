@@ -2,7 +2,7 @@ package org.metavm.perf;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.metavm.util.Headers;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +63,7 @@ public class ApiPerf {
         productId = createProduct();
         var product = getObject(productId);
         //noinspection unchecked,rawtypes
-        skuId = (String) ((Map<String, Object>)((List)product.get("skus")).get(0)).get("$id");
+        skuId = (String) ((Map<String, Object>)((List)product.get("skus")).getFirst()).get("$id");
     }
 
     private static void run() {
@@ -130,7 +130,7 @@ public class ApiPerf {
     }
 
     private static Map<String, Object> getObject(String id) {
-        return NncUtils.readJSONString(get("/" + id), new TypeReference<>() {
+        return Utils.readJSONString(get("/" + id), new TypeReference<>() {
         });
     }
 
@@ -183,7 +183,7 @@ public class ApiPerf {
                 .header(Headers.APP_ID, Long.toString(appId))
                 .POST(
                         request != null ?
-                                HttpRequest.BodyPublishers.ofString(NncUtils.toJSONString(request)) :
+                                HttpRequest.BodyPublishers.ofString(Utils.toJSONString(request)) :
                                 HttpRequest.BodyPublishers.noBody()
                 )
                 .build();
@@ -212,7 +212,7 @@ public class ApiPerf {
                 .header(Headers.APP_ID, Long.toString(appId))
                 .PUT(
                         request != null ?
-                                HttpRequest.BodyPublishers.ofString(NncUtils.toJSONString(request)) :
+                                HttpRequest.BodyPublishers.ofString(Utils.toJSONString(request)) :
                                 HttpRequest.BodyPublishers.noBody()
                 )
                 .build();

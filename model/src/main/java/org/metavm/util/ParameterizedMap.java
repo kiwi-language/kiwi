@@ -43,4 +43,8 @@ public class ParameterizedMap {
         map.values().forEach(subMap -> subMap.values().forEach(action));
     }
 
+    public void clear() {
+        map.clear();
+    }
+
 }

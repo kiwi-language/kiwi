@@ -45,7 +45,7 @@ public class Types {
             case KlassType classType -> {
                 if (classType.isParameterized() && actualType instanceof KlassType actualClassType) {
                     var formalTypeArguments = classType.getTypeArguments();
-                    var alignedActualClassType = Objects.requireNonNull(actualClassType.findAncestorByKlass(classType.getTemplateType().getKlass()),
+                    var alignedActualClassType = Objects.requireNonNull(actualClassType.asSuper(classType.getTemplateType().getKlass()),
                             () -> "Cannot find ancestor with template " + classType.getTemplateType().getKlass()
                                     + " in class type " + actualClassType
                     );
@@ -70,7 +70,7 @@ public class Types {
                         actualUt.getMembers() : Set.of(actualType);
                 actualMembers = new HashSet<>(actualMembers);
                 for (Type member : unionType.getMembers()) {
-                    var actualMember = NncUtils.find(actualMembers, member::isAssignableFrom);
+                    var actualMember = Utils.find(actualMembers, member::isAssignableFrom);
                     if (actualMember == null)
                         actualMember = getNeverType();
                     extractCapturedType(member, actualMember, setCaptureType);
@@ -175,27 +175,27 @@ public class Types {
             return type2;
         return switch (type1) {
             case ClassType classType -> Objects.requireNonNullElseGet(
-                    classType.findAncestor(anc -> anc.isAssignableFrom(type2)),
+                    classType.findSuper(anc -> anc.isAssignableFrom(type2)),
                     () -> getAnyType(type2.isNullable()));
             case UnionType unionType -> getLeastUpperBound(getLeastUpperBound(unionType.getMembers()), type2);
             case IntersectionType intersectionType ->
-                    getLowestType(NncUtils.map(intersectionType.getTypes(), t -> getLeastUpperBound(t, type2)));
+                    getLowestType(Utils.map(intersectionType.getTypes(), t -> getLeastUpperBound(t, type2)));
             default -> getAnyType(type1.isNullable() || type2.isNullable());
         };
     }
 
     private static Type getLowestType(Collection<Type> types) {
-        NncUtils.requireNotEmpty(types);
+        Utils.requireNotEmpty(types);
         Set<Type> hasDescendant = new HashSet<>();
         for (Type type : types)
             for (Type type1 : types)
                 if (!type1.equals(type) && type1.isAssignableFrom(type))
                     hasDescendant.add(type1);
-        return NncUtils.findRequired(types, t -> !hasDescendant.contains(t));
+        return Utils.findRequired(types, t -> !hasDescendant.contains(t));
     }
 
     public static FunctionType getFunctionType(List<Parameter> parameters, Type returnType) {
-        return new FunctionType(NncUtils.map(parameters, Parameter::getType), returnType);
+        return new FunctionType(Utils.map(parameters, Parameter::getType), returnType);
     }
 
     public static ClassType createFunctionalClass(ClassType functionalInterface) {
@@ -211,24 +211,24 @@ public class Types {
                 }
             }, null);
         }
-        var typeParams = NncUtils.map(typeVars, tv -> new TypeVariable(null, tv.getName(), DummyGenericDeclaration.INSTANCE));
+        var typeParams = Utils.map(typeVars, tv -> new TypeVariable(null, tv.getName(), DummyGenericDeclaration.INSTANCE));
         var klass = KlassBuilder.newBuilder(functionalInterface.getKlass().getName() + "Impl", null)
                 .typeParameters(typeParams)
                 .ephemeral(true)
                 .build();
-        var subst = new TypeSubstitutor(NncUtils.map(typeVars, TypeVariable::getType), klass.getDefaultTypeArguments());
-        NncUtils.biForEach(typeParams, typeVars, (typeParam, typeVar) ->
-                typeParam.setBounds(NncUtils.map(typeVar.getBounds(), t -> t.accept(subst)))
+        var subst = new TypeSubstitutor(Utils.map(typeVars, TypeVariable::getType), klass.getDefaultTypeArguments());
+        Utils.biForEach(typeParams, typeVars, (typeParam, typeVar) ->
+                typeParam.setBounds(Utils.map(typeVar.getBounds(), t -> t.accept(subst)))
         );
         var substInterface = (ClassType) functionalInterface.accept(subst);
         klass.setInterfaces(List.of(substInterface));
-        klass.setEphemeralEntity(true);
+        klass.setEphemeral();
         var sam = getSAM(substInterface);
         var funcType = new FunctionType(sam.getParameterTypes(), sam.getReturnType());
         var funcField = FieldBuilder.newBuilder("func", klass, funcType).build();
 
         var flow = MethodBuilder.newBuilder(klass, sam.getName())
-                .parameters(NncUtils.map(sam.getParameters(), p -> new NameAndType(p.getName(), p.getType())))
+                .parameters(Utils.map(sam.getParameters(), p -> new NameAndType(p.getName(), p.getType())))
                 .returnType(sam.getReturnType())
                 .build();
         var code = flow.getCode();
@@ -243,42 +243,41 @@ public class Types {
         else
             Nodes.ret(code);
         klass.emitCode();
-        return KlassType.create(klass, NncUtils.map(typeVars, TypeVariable::getType));
+        return KlassType.create(klass, Utils.map(typeVars, TypeVariable::getType));
     }
 
     public static MethodRef getSAM(ClassType functionalInterface) {
-        var abstractFlows = NncUtils.filter(
+        var abstractFlows = Utils.filter(
                 functionalInterface.getMethods(),
                 MethodRef::isAbstract
         );
         if (abstractFlows.size() != 1) {
             throw new InternalException(functionalInterface + " is not a functional interface");
         }
-        return abstractFlows.get(0);
+        return abstractFlows.getFirst();
     }
 
     public static Klass createSAMInterfaceImpl(ClassType samInterface, FunctionValue function) {
         var klass = KlassBuilder.newBuilder(
-                        samInterface.getName() + "$" + NncUtils.randomNonNegative(), null)
+                        samInterface.getName() + "$" + Utils.randomNonNegative(), null)
                 .interfaces(samInterface)
                 .ephemeral(true)
                 .anonymous(true)
                 .build();
-        klass.setEphemeralEntity(true);
+        klass.setEphemeral();
         var sam = samInterface.getSingleAbstractMethod();
         var methodStaticType = new FunctionType(
-                NncUtils.prepend(klass.getType(), sam.getParameterTypes()),
+                Utils.prepend(klass.getType(), sam.getParameterTypes()),
                 sam.getReturnType()
         );
-        methodStaticType.setEphemeralEntity(true);
         var method = MethodBuilder.newBuilder(klass, sam.getName())
-                .parameters(NncUtils.map(sam.getParameters(), p -> new NameAndType(p.getName(), p.getType())))
+                .parameters(Utils.map(sam.getParameters(), p -> new NameAndType(p.getName(), p.getType())))
                 .returnType(sam.getReturnType())
                 .staticType(methodStaticType)
                 .build();
         var code = method.getCode();
         Nodes.loadConstant(function, code);
-        var paramTypeIt = function.getType().getParameterTypes().iterator();
+        var paramTypeIt = function.getValueType().getParameterTypes().iterator();
         int i = 1;
         for (var methodParam : method.getParameters()) {
             var paramType = paramTypeIt.next();
@@ -286,7 +285,7 @@ public class Types {
             if(methodParam.getType().isNullable() && paramType.isNotNull())
                 Nodes.nonNull(code);
         }
-        Nodes.function(code, function.getType());
+        Nodes.function(code, function.getValueType());
         if (sam.getReturnType().isVoid())
             Nodes.voidRet(code);
         else
@@ -361,13 +360,8 @@ public class Types {
     }
 
     public static Type getUnderlyingType(UnionType type) {
-        NncUtils.requireTrue(type.isNullable());
-        return NncUtils.findRequired(type.getMembers(), t -> !t.equals(getNullType()));
-    }
-
-    public static String getParameterizedKey(Element template, List<? extends Type> typeArguments) {
-        return template.getStringId() + "-"
-                + NncUtils.join(typeArguments, Entity::getStringId, "-");
+        Utils.require(type.isNullable());
+        return Utils.findRequired(type.getMembers(), t -> !t.equals(getNullType()));
     }
 
     public static boolean isAny(Type type) {
@@ -438,15 +432,15 @@ public class Types {
         if (typeArguments == null || typeArguments.isEmpty()) {
             return templateName;
         }
-        return parameterizedName(templateName, NncUtils.map(typeArguments, Types::getTypeArgumentName));
+        return parameterizedName(templateName, Utils.map(typeArguments, Types::getTypeArgumentName));
     }
 
     public static String renameAnonymousType(String name) {
         int index = name.indexOf('_');
         if (index >= 0) {
-            return name.substring(0, index + 1) + NncUtils.randomNonNegative();
+            return name.substring(0, index + 1) + Utils.randomNonNegative();
         } else {
-            return name + "_" + NncUtils.randomNonNegative();
+            return name + "_" + Utils.randomNonNegative();
         }
     }
 
@@ -459,7 +453,7 @@ public class Types {
     }
 
     public static String parameterizedName(String templateName, List<String> typeArgumentNames) {
-        return templateName + "<" + NncUtils.join(typeArgumentNames, ",") + ">";
+        return templateName + "<" + Utils.join(typeArgumentNames, ",") + ">";
     }
 
     public static String getTypeName(java.lang.reflect.Type javaType) {
@@ -476,7 +470,7 @@ public class Types {
             }
             case GenericArrayType genericArrayType -> getTypeName(genericArrayType.getGenericComponentType()) + "[]";
             case ParameterizedType pType -> parameterizedName(getTypeName(pType.getRawType()),
-                    NncUtils.map(pType.getActualTypeArguments(), Types::getTypeName));
+                    Utils.map(pType.getActualTypeArguments(), Types::getTypeName));
             case java.lang.reflect.TypeVariable<?> typeVar -> getGenericDeclarationName(typeVar.getGenericDeclaration())
                     + "-" + EntityUtils.getMetaTypeVariableName(typeVar);
             default -> throw new IllegalStateException("Unexpected value: " + javaType);
@@ -491,7 +485,7 @@ public class Types {
             }
             case GenericArrayType genericArrayType -> getTypeCode(genericArrayType.getGenericComponentType()) + "[]";
             case ParameterizedType pType -> parameterizedName(getTypeCode(pType.getRawType()),
-                    NncUtils.map(pType.getActualTypeArguments(), Types::getTypeCode));
+                    Utils.map(pType.getActualTypeArguments(), Types::getTypeCode));
             case java.lang.reflect.TypeVariable<?> typeVar ->
                     getGenericDeclarationCode(typeVar.getGenericDeclaration()) + "." + typeVar.getName();
             default -> throw new IllegalStateException("Unexpected value: " + javaType);
@@ -500,7 +494,7 @@ public class Types {
 
     public static String getFlowCode(java.lang.reflect.Method method) {
         return getTypeCode(method.getDeclaringClass()) + "." +
-                method.getName() + "(" + NncUtils.map(method.getGenericParameterTypes(),
+                method.getName() + "(" + Utils.map(method.getGenericParameterTypes(),
                 Types::getTypeCode) + ")";
     }
 
@@ -715,12 +709,12 @@ public class Types {
         if(type.isNull())
             return Types.getNeverType();
         else if(type instanceof UnionType unionType) {
-            var members = NncUtils.filter(unionType.getMembers(), t -> !t.isNull());
+            var members = Utils.filter(unionType.getMembers(), t -> !t.isNull());
             return getUnionType(members);
         }
         else if(type instanceof IntersectionType intersectionType) {
             return getIntersectionType(
-                    NncUtils.map(intersectionType.getTypes(), Types::getNonNullType)
+                    Utils.map(intersectionType.getTypes(), Types::getNonNullType)
             );
         }
         else if(type instanceof UncertainType uncertainType)
@@ -751,7 +745,7 @@ public class Types {
     }
 
     public static Type getCompatibleType(List<Type> types) {
-        NncUtils.requireMinimumSize(types, 1);
+        Utils.requireNotEmpty(types);
         Iterator<Type> it = types.iterator();
         Type compatibleType = it.next();
         while (it.hasNext()) {

@@ -1,49 +1,37 @@
 package org.metavm.entity;
 
-import org.metavm.util.TypeReference;
+import org.jetbrains.annotations.NotNull;
+import org.metavm.object.instance.core.Value;
+import org.metavm.object.type.Index;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
 
-public class IndexDef<T> {
+public class IndexDef<T extends Entity> {
 
-    public static <T> IndexDef<T> create(Class<T> klass, String...fieldNames) {
-        return new IndexDef<>(klass, false, fieldNames);
+    public static <T extends Entity> IndexDef<T> create(Class<T> klass, int fieldCount, Function<T, List<Value>> valuesFunc) {
+        return new IndexDef<>(klass, klass, fieldCount, false, valuesFunc);
     }
 
-    public static <T> IndexDef<T> createUnique(Class<T> klass, String...fieldNames) {
-        return new IndexDef<>(klass, true, fieldNames);
+    public static <T extends Entity> IndexDef<T> createUnique(Class<T> klass, int fieldCount, Function<T, List<Value>> valuesFunc) {
+        return new IndexDef<>(klass, klass, fieldCount, true, valuesFunc);
     }
 
     private final Class<T> type;
     private final Type genericType;
-    private final List<String> fieldNames;
+    private final int fieldCount;
+    private final Function<T, List<Value>> valuesFunc;
     private final boolean unique;
+    private Index index;
 
-    public IndexDef(TypeReference<T> typeReference, boolean unique, String...fieldNames) {
-        this(typeReference.getType(), typeReference.getGenericType(), unique, fieldNames);
-    }
-
-    public IndexDef(TypeReference<T> typeReference, String...fieldNames) {
-        this(typeReference.getType(), typeReference.getGenericType(), true, fieldNames);
-    }
-
-    public IndexDef(Class<T> type, String...fieldNames) {
-        this(type, type, true, fieldNames);
-    }
-
-
-    public IndexDef(Class<T> type, boolean unique, String...fieldNames) {
-        this(type, type, unique, fieldNames);
-    }
-
-    private IndexDef(Class<T> type, Type genericType, boolean unique, String...fieldNames) {
+    private IndexDef(Class<T> type, Type genericType, int fieldCount, boolean unique, Function<T, List<Value>> valuesFunc) {
         this.type = type;
         this.genericType = genericType;
+        this.fieldCount = fieldCount;
         this.unique = unique;
-        this.fieldNames = new ArrayList<>(Arrays.asList(fieldNames));
+        this.valuesFunc = valuesFunc;
     }
 
     public Class<T> getType() {
@@ -54,12 +42,8 @@ public class IndexDef<T> {
         return genericType;
     }
 
-    public List<String> getFieldNames() {
-        return fieldNames;
-    }
-
-    public String getFieldName(int index) {
-        return fieldNames.get(index);
+    public Function<T, List<Value>> getValuesFunc() {
+        return valuesFunc;
     }
 
     public boolean isUnique() {
@@ -70,4 +54,22 @@ public class IndexDef<T> {
         return EntityIndexQueryBuilder.newBuilder(this);
     }
 
+
+    public @NotNull List<Value> getValues(org.metavm.entity.Entity entity) {
+        return Objects.requireNonNull(valuesFunc.apply(type.cast(entity)),
+                () -> "Failed to get index key values for " + type.getName() + "." + index
+        );
+    }
+
+    public int getFieldCount() {
+        return fieldCount;
+    }
+
+    public Index getIndex() {
+        return index;
+    }
+
+    public void setIndex(Index index) {
+        this.index = index;
+    }
 }

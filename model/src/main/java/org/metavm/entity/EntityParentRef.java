@@ -10,10 +10,6 @@ public record EntityParentRef(
         @Nullable Field field
 ) {
 
-    public static EntityParentRef fromArray(ChildArray<?> parent) {
-        return new EntityParentRef(parent, null);
-    }
-
     public static EntityParentRef fromObject(Entity entity, Field field) {
         ReflectionUtils.ensureFieldDeclared(entity.getClass(), field);
         return new EntityParentRef(entity, field);

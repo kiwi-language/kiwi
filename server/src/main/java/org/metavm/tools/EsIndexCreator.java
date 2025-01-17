@@ -9,7 +9,7 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.util.Constants;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -71,7 +71,7 @@ public class EsIndexCreator {
 
     public static void main(String[] args) {
         EsIndexCreator creator = new EsIndexCreator();
-        System.out.println(NncUtils.toJSONString(creator.buildSource()));
+        System.out.println(Utils.toJSONString(creator.buildSource()));
     }
 
 }

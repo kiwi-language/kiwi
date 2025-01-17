@@ -3,21 +3,23 @@ package org.metavm.object.type;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
-import org.metavm.entity.*;
+import org.metavm.entity.CopyIgnore;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.GenericDeclarationRef;
+import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.NullValue;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.ClassTypeKey;
 import org.metavm.object.type.rest.dto.ParameterizedTypeKey;
-import org.metavm.object.type.rest.dto.TaggedClassTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -27,29 +29,29 @@ import java.util.function.Function;
 @Slf4j
 public class KlassType extends ClassType {
 
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
+
     public static ClassType create(Klass klass, List<? extends Type> typeArguments) {
-        assert klass.getDeclaringKlass() == null;
+        assert klass.getScope() == null;
         return create(null, klass, typeArguments);
     }
 
     public static ClassType create(@Nullable GenericDeclarationRef owner, Klass klass, List<? extends Type> typeArguments) {
         if (typeArguments.equals(klass.getDefaultTypeArguments()))
             typeArguments = List.of();
-        if(klass.getEnclosingFlow() != null && owner == null)
+        if(klass.isLocal() && owner == null)
             throw new IllegalArgumentException("Missing owner for local class type " + klass);
         return new KlassType(owner, klass, typeArguments);
     }
 
-    public static final Logger logger = LoggerFactory.getLogger(KlassType.class);
-
     public final @Nullable GenericDeclarationRef owner;
-    public final Klass klass;
-    private final @Nullable ValueArray<Type> typeArguments;
+    private final Reference klassReference;
+    private final @Nullable List<Type> typeArguments;
     @CopyIgnore
     private transient TypeSubstitutor substitutor;
     @CopyIgnore
     private transient TypeMetadata typeMetadata;
-    private transient int typeTag;
 
     public KlassType(@Nullable GenericDeclarationRef owner, @NotNull Klass klass, List<? extends Type> typeArguments) {
 //        assert klass.getEnclosingFlow() == null && klass.getDeclaringKlass() == null || owner != null :
@@ -58,32 +60,36 @@ public class KlassType extends ClassType {
     }
 
     public KlassType(@Nullable GenericDeclarationRef owner, @NotNull Klass klass, List<? extends Type> typeArguments, int typeTag) {
-        this.owner = owner;
-        this.klass = klass;
-        this.typeArguments = typeArguments.isEmpty() ? null : new ValueArray<>(Type.class, typeArguments);
-        this.typeTag = typeTag;
+        this(owner, klass.getReference(), typeArguments, typeTag);
     }
+
+    public KlassType(@Nullable GenericDeclarationRef owner, @NotNull Reference klassReference, List<? extends Type> typeArguments, int typeTag) {
+        this.owner = owner;
+        this.klassReference = klassReference;
+        this.typeArguments = typeArguments.isEmpty() ? null : new ArrayList<>(typeArguments);
+    }
+
 
     @Override
     public Type substitute(Type type) {
         if (typeArguments != null) {
             if (substitutor == null)
-                substitutor = new TypeSubstitutor(NncUtils.map(getKlass().getTypeParameters(), TypeVariable::getType), typeArguments.toList());
+                substitutor = new TypeSubstitutor(Utils.map(getKlass().getTypeParameters(), TypeVariable::getType), typeArguments);
             return type.accept(substitutor);
         } else
             return type;
     }
 
     @Override
-    protected boolean equals0(Object obj) {
-        return obj instanceof KlassType that && Objects.equals(owner, that.owner) && getKlass() == that.getKlass() &&
+    public boolean equals(Object obj) {
+        return obj instanceof KlassType that && Objects.equals(owner, that.owner) && klassReference.equals(that.klassReference) &&
                 Objects.equals(typeArguments, that.typeArguments);
     }
 
     @Override
     public String getInternalName(@org.jetbrains.annotations.Nullable Flow current) {
         if (isParameterized())
-            return getKlass().getQualifiedName() + "<" + NncUtils.join(typeArguments, type -> type.getInternalName(current)) + ">";
+            return getKlass().getQualifiedName() + "<" + Utils.join(typeArguments, type -> type.getInternalName(current)) + ">";
         else
             return getKlass().getQualifiedName();
     }
@@ -91,63 +97,48 @@ public class KlassType extends ClassType {
     @Override
     public boolean isCaptured() {
         return owner instanceof KlassType ownerKt && ownerKt.isCaptured() ||
-                typeArguments != null && NncUtils.anyMatch(typeArguments, Type::isCaptured);
+                typeArguments != null && Utils.anyMatch(typeArguments, Type::isCaptured);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, getKlass(), typeArguments);
+        return Objects.hash(owner, klassReference, typeArguments);
     }
 
     @Override
     public TypeKey toTypeKey(Function<ITypeDef, Id> getTypeDefId) {
         return owner == null && typeArguments == null ?
-                (getTypeTag() > 0 ?
-                        new TaggedClassTypeKey(getTypeDefId.apply(klass), getTypeTag()) :
-                        new ClassTypeKey(getTypeDefId.apply(klass))
-                ) :
+                new ClassTypeKey(getTypeDefId.apply(getKlass()))
+                :
                 new ParameterizedTypeKey(
                         owner != null ? owner.toGenericDeclarationKey(getTypeDefId) : null,
-                        klass.getId(), NncUtils.map(typeArguments, type -> type.toTypeKey(getTypeDefId)));
+                        klassReference.getId(), Utils.map(typeArguments, type -> type.toTypeKey(getTypeDefId)));
     }
 
     @Override
     public String toExpression(SerializeContext serializeContext, @Nullable Function<ITypeDef, String> getTypeDefExpr) {
-        var id = getTypeDefExpr == null ? Constants.ID_PREFIX + serializeContext.getStringId(klass) : getTypeDefExpr.apply(klass);
-        var tag = getTypeTag();
-        return typeArguments == null ? (tag == 0 ? id : id + ":" + tag)
-                : id + "<" + NncUtils.join(typeArguments, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ">";
+        var id = getTypeDefExpr == null ? Constants.ID_PREFIX + serializeContext.getStringId(getKlass()) : getTypeDefExpr.apply(getKlass());
+        return typeArguments == null ?  id
+                : id + "<" + Utils.join(typeArguments, type -> type.toExpression(serializeContext, getTypeDefExpr)) + ">";
     }
 
     @Override
     public int getTypeKeyCode() {
-        return typeArguments == null ? (getTypeTag() == 0 ? WireTypes.CLASS_TYPE : WireTypes.TAGGED_CLASS_TYPE) : WireTypes.PARAMETERIZED_TYPE;
-    }
-
-    @Override
-    public Type getType() {
-        return StdKlass.klassType.type();
+        return typeArguments == null ? WireTypes.CLASS_TYPE : WireTypes.PARAMETERIZED_TYPE;
     }
 
     @Override
     public void write(MvOutput output) {
         if (owner == null && typeArguments == null) {
-            var tag = getTypeTag();
-            if (tag == 0) {
-                output.write(WireTypes.CLASS_TYPE);
-                output.writeEntityId(klass);
-            } else {
-                output.write(WireTypes.TAGGED_CLASS_TYPE);
-                output.writeEntityId(klass);
-                output.writeLong(tag);
-            }
+            output.write(WireTypes.CLASS_TYPE);
+            output.writeReference(klassReference);
         } else {
             output.write(WireTypes.PARAMETERIZED_TYPE);
             if (owner != null)
                 owner.write(output);
             else
                 output.write(WireTypes.NULL);
-            output.writeEntityId(klass);
+            output.writeReference(klassReference);
             if (typeArguments == null)
                 output.writeInt(0);
             else {
@@ -165,18 +156,14 @@ public class KlassType extends ClassType {
     public void forEachTypeDef(Consumer<TypeDef> action) {
         if (owner != null)
             owner.forEachTypeDef(action);
-        action.accept(klass);
+        action.accept(getKlass());
         getTypeArguments().forEach(t -> t.forEachTypeDef(action));
-    }
-
-    public int getTypeTag() {
-        return typeTag;
     }
 
     public TypeMetadata getTypeMetadata() {
         if (typeMetadata == null) {
 //            logger.debug("Getting type metadata for type {}, owner: {}", this, owner);
-            typeMetadata = klass.getTypeMetadata(getAllTypeArguments());
+            typeMetadata = getKlass().getTypeMetadata(getAllTypeArguments());
         }
         return typeMetadata;
     }
@@ -185,35 +172,35 @@ public class KlassType extends ClassType {
     public String getTypeDesc() {
         String prefix;
         if (owner != null)
-            prefix = owner.getTypeDesc() + "." + klass.getName();
+            prefix = owner.getTypeDesc() + "." + getKlass().getName();
         else
-            prefix = klass.getTypeDesc();
-        return prefix + (typeArguments != null ? "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">" : "");
+            prefix = getKlass().getTypeDesc();
+        return prefix + (typeArguments != null ? "<" + Utils.join(typeArguments, Type::getTypeDesc) + ">" : "");
     }
 
     @Override
     public Klass getKlass() {
-        return klass;
+    return (Klass) klassReference.get();
+    }
+
+    public Id getKlassId() {
+        return klassReference.getId();
     }
 
     @Override
     public List<Type> getTypeArguments() {
         // the type arguments should be the list of type parameters for a raw ClassType
-        return typeArguments != null ? typeArguments.toList() : klass.getDefaultTypeArguments();
+        return typeArguments != null ? Collections.unmodifiableList(typeArguments) : getKlass().getDefaultTypeArguments();
     }
 
     public static ClassType read(MvInput input) {
-        return new KlassType(null, input.getKlass(input.readId()), List.of(), 0);
-    }
-
-    public static ClassType readTagged(MvInput input) {
-        return new KlassType(null, input.getKlass(input.readId()), List.of(),  (int) input.readLong());
+        return new KlassType(null, input.readReference(), List.of(), 0);
     }
 
     public static ClassType readParameterized(MvInput input) {
         var ownerValue = input.readValue();
         var owner = ownerValue instanceof NullValue ? null : (GenericDeclarationRef) ownerValue;
-        var klass = input.getKlass(input.readId());
+        var klass = input.readReference();
         int numTypeArgs = input.readInt();
         var typeArgs = new ArrayList<Type>(numTypeArgs);
         for (int i = 0; i < numTypeArgs; i++)
@@ -227,4 +214,32 @@ public class KlassType extends ClassType {
         return owner;
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitKlassType(this);
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitKlassType(this, s);
+    }
+
+    @Override
+    public ClassType getValueType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        if (owner != null) owner.accept(visitor);
+        if (typeArguments != null) typeArguments.forEach(arg -> arg.accept(visitor));
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        if (owner != null) owner.forEachReference(action);
+        action.accept(klassReference);
+        if (typeArguments != null) typeArguments.forEach(arg -> arg.forEachReference(action));
+    }
 }

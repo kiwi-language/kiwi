@@ -5,7 +5,7 @@ import org.metavm.entity.Element;
 import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
 import org.metavm.util.LinkedList;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 
@@ -58,8 +58,8 @@ public class ExpressionResolverV2 extends CopyVisitor {
             var assignedType = assignedTypeStack.peek();
             var assignedElementType = assignedType instanceof ArrayType arrayType ? arrayType.getElementType() : null;
             assignedTypeStack.push(assignedElementType);
-            var elements = NncUtils.map(array.getExpressions(), expr -> (Expression) copy(expr));
-            var types = NncUtils.map(elements, Expression::getType);
+            var elements = Utils.map(array.getExpressions(), expr -> (Expression) copy(expr));
+            var types = Utils.map(elements, Expression::getType);
             Type elementType = assignedElementType;
             if (elementType == null) {
                 if (types.isEmpty()) {
@@ -108,7 +108,7 @@ public class ExpressionResolverV2 extends CopyVisitor {
                 }
             }
             var qualifier = (Expression) copy(expression.getQualifier());
-            var qualifierType = (ClassType) context.getExpressionType(qualifier);
+            var qualifierType = (ClassType) context.getExpressionType(qualifier).getUnderlyingType();
             var propertyRef = qualifierType.getPropertyByVar(Var.parse(expression.getField().getVariable()));
             if (propertyRef == null)
                 throw new InternalException("Property not found: " + expression.getField().getVariable() + " in type " + qualifierType);

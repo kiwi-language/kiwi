@@ -1,354 +1,97 @@
 package org.metavm.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.metavm.api.ChildEntity;
-import org.metavm.flow.Value;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.PhysicalId;
-import org.metavm.object.instance.core.TmpId;
-import org.metavm.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.metavm.object.instance.core.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Field;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
-public abstract class Entity implements Model, Identifiable, IdInitializing, RemovalAware, BindAware {
+@Slf4j
+public abstract class Entity extends BaseInstance implements IdInitializing, RemovalAware, BindAware, NativeObject {
 
-    public static final Logger logger = LoggerFactory.getLogger(Entity.class);
-
-    @CopyIgnore
-    private transient boolean removed;
-    @CopyIgnore
-    private transient boolean persisted;
-    //    private transient Long tmpId;
-    @Nullable
-    @CopyIgnore
-    protected transient Id id;
-    @Nullable
-    @CopyIgnore
-    private transient Entity parentEntity;
-    @Nullable
-    @CopyIgnore
-    private transient Field parentEntityField;
-    @CopyIgnore
-    private transient long version;
-    @CopyIgnore
-    private transient long syncVersion;
-    @CopyIgnore
-    private transient boolean ephemeralEntity;
-    @CopyIgnore
-    private transient boolean strictEphemeral;
+    private transient Entity root;
 
     public Entity() {
         this(null);
     }
 
     public Entity(Long tmpId) {
-        this(tmpId, null);
+        super(tmpId != null ? TmpId.of(tmpId) : null, 0,0 , false);
     }
-
-    public Entity(Long tmpId, @Nullable EntityParentRef parentRef) {
-        this(tmpId, parentRef, false);
-    }
-
-    public Entity(Long tmpId, @Nullable EntityParentRef parentRef, boolean ephemeral) {
-        this.id = tmpId != null ? TmpId.of(tmpId) : null;
-        this.ephemeralEntity = ephemeral;
-        assert !ephemeral || !(this instanceof Value) : "Can not set a value object to ephemeral";
-        if (parentRef != null) {
-            if (parentRef.parent() instanceof ReadonlyArray<?> array) {
-                NncUtils.requireNull(parentRef.field());
-                NncUtils.requireTrue(array.getElementClass().isAssignableFrom(getClass()));
-            } else {
-                NncUtils.requireNonNull(parentRef.field());
-                NncUtils.requireTrue(parentRef.field().getType().isAssignableFrom(getClass()));
-                this.parentEntityField = parentRef.field();
-            }
-            this.parentEntity = parentRef.parent();
-        }
-    }
-
-//    @Nullable
-//    public final Long tryGetId() {
-//        return id;
-//    }
 
     @NoProxy
     public boolean idEquals(Id id) {
-        return Objects.equals(this.id, id);
+        return Objects.equals(state.id, id);
     }
 
-    @NoProxy
     public boolean isIdNotNull() {
-        return id != null;
+        return state.id != null;
     }
-
-//    public final RefDTO getRef() {
-//        return new RefDTO(id, tmpId, ModelDefRegistry.getTypeId(this.getClass()));
-//    }
-
-    @NoProxy
-    public boolean isEphemeralEntity() {
-        return ephemeralEntity;
-    }
-
-    public void setEphemeralEntity(boolean ephemeralEntity) {
-        assert !ephemeralEntity || !(this instanceof Value) : "can not set a value object to ephemeral";
-        this.ephemeralEntity = ephemeralEntity;
-        if (ephemeralEntity) {
-            EntityUtils.forEachDescendant(this, e -> {
-                if (e instanceof Entity entity)
-                    entity.ephemeralEntity = true;
-            });
-        }
-    }
-
-    @NoProxy
-    public boolean isStrictEphemeral() {
-        return strictEphemeral;
-    }
-
-    public void setStrictEphemeral(boolean strictEphemeral) {
-        assert !strictEphemeral || !(this instanceof Value) : "can not set a value object to ephemeral";
-        this.strictEphemeral = strictEphemeral;
-        if(strictEphemeral) {
-            this.ephemeralEntity = true;
-            EntityUtils.forEachDescendant(this, e -> {
-                if(e instanceof Entity entity)
-                    entity.ephemeralEntity = entity.strictEphemeral = true;
-            });
-        }
-    }
-
-//    @NoProxy
-//    public final long getId() {
-//        if (id != null)
-//            return id;
-//        else
-//            throw new InternalException("Entity id not initialized yet: " + this);
-//    }
 
     public Id getEntityId() {
-//        var type = ModelDefRegistry.getType(this.getClass());
-//        return PhysicalId.of(getId(), type.getCategory(), type.getEntityId().getPhysicalId());
-        return id;
+        return state.id;
     }
 
     @Nullable
     @Override
     @NoProxy
     public Id tryGetId() {
-        return id;
+        return state.id;
     }
 
     public String getStringId() {
-        return NncUtils.get(getEntityId(), Id::toString);
+        return Utils.safeCall(getEntityId(), Id::toString);
     }
 
     @NoProxy
     public final EntityKey key() {
-        if (id == null) {
+        if (state.id == null) {
             return null;
         }
-        return EntityKey.create(this.getEntityType(), id);
+        return EntityKey.create(this.getClass(), state.id);
     }
 
-    public final boolean isRemoved() {
-        return removed;
-    }
-
-    public final void ensureNotRemoved() {
-        if (removed)
-            throw new InternalException(String.format("'%s' is already removed", this));
-    }
-
-    final void setRemoved() {
-        ensureNotRemoved();
-        this.removed = true;
-    }
-
-    @Nullable
-    public Entity getParentEntity() {
-        return parentEntity;
-    }
+    public abstract @Nullable Entity getParentEntity();
 
     public Entity getRootEntity() {
         Entity root = this;
-        while (root.parentEntity != null)
-            root = root.parentEntity;
+        while (root.getParentEntity() != null)
+            root = root.getParentEntity();
         return root;
     }
 
-    public <T extends Entity> T addEphemeralChild(T child, String fieldName) {
-        addChild(child, fieldName);
-        child.setEphemeralEntity(true);
-        return child;
+    @Override
+    public boolean isEphemeral() {
+        return state().isEphemeral();
     }
 
-    public <T extends Entity> T addChild(T child, @Nullable String fieldName) {
-        NncUtils.requireNonNull(child, "Child object can not be null");
-        var field = fieldName != null ?
-                ReflectionUtils.getDeclaredFieldRecursively(this.getClass(), fieldName) : null;
-        child.setParent(this, field);
-        return child;
-    }
 
-    void setParent(Entity parent, @Nullable Field parentField) {
-        if (this.parentEntity != null) {
-            if (!Objects.equals(parent, parentEntity) || !Objects.equals(this.parentEntityField, parentField))
-                throw new InternalException(
-                        String.format("Can not change parent. entity: %s, currentParent: %s, newParent: %s",
-                                EntityUtils.getEntityDesc(this),
-                                EntityUtils.getEntityPath(this.parentEntity),
-                                EntityUtils.getEntityPath(parent)));
-        } else {
-            this.parentEntity = parent;
-            this.parentEntityField = parentField;
-            if (parent != null) {
-                if(parent.isStrictEphemeral() && !strictEphemeral)
-                    forEachDescendant(e -> e.strictEphemeral = e.ephemeralEntity = true);
-                else if(parent.isEphemeralEntity() && !ephemeralEntity)
-                    forEachDescendant(e -> e.ephemeralEntity = true);
-                else if(!parent.isEphemeralEntity() && strictEphemeral) {
-                    throw new InternalException("Can not add a strict ephemeral child to a non-ephemeral entity. parent: " + EntityUtils.getEntityPath(parent)
-                            + ", child: " + EntityUtils.getEntityDesc(this));
-                }
-            }
-        }
-    }
-
-    public void forEachReference(Consumer<Object> action) {
-        var desc = DescStore.get(EntityUtils.getRealType(this));
-        for (var prop : desc.getNonTransientProps()) {
-            var ref = prop.get(this);
-            if (ref != null && !ValueUtils.isPrimitive(ref)) {
-                if(DebugEnv.recordPath) {
-                    EntityUtils.enterPathItem(prop.getName());
-                    action.accept(ref);
-                    EntityUtils.exitPathItem();
-                }
-                else
-                    action.accept(ref);
-            }
-        }
-    }
-
-    public void forEachDescendant(Consumer<Entity> action) {
-        forEachDescendant(action, false);
-    }
-
-    public void forEachDescendant(Consumer<Entity> action, boolean skipCopyIgnore) {
-        action.accept(this);
-        var desc = DescStore.get(EntityUtils.getRealType(this));
-        desc.forEachNonTransientProp(prop -> {
-            if (prop.isChildEntity()) {
-                if(skipCopyIgnore && prop.isCopyIgnore())
-                    return;
-                var child = (Entity) prop.get(this);
-                if (child != null)
-                    child.forEachDescendant(action, skipCopyIgnore);
-            }
-        });
-    }
-
-    public Map<Field, Object> getChildMap() {
-        var desc = DescStore.get(EntityUtils.getRealType(this));
-        Map<Field, Object> childMap = new HashMap<>();
-        desc.forEachNonTransientProp(prop -> {
-            if (prop.isChildEntity()) {
-                var child = (Entity) prop.get(this);
-                if (child != null)
-                    childMap.put(prop.getField(), child);
-            }
-        });
-        return childMap;
-    }
-
-    @Nullable
-    public Field getParentEntityField() {
-        return parentEntityField;
-    }
-
-    @JsonIgnore
     @NoProxy
     public final boolean isIdNull() {
-        return id == null;
-    }
-
-    @NoProxy
-    public final boolean hasPhysicalId() {
-        return id instanceof PhysicalId;
+        return state.id == null;
     }
 
     @Override
     public final void initId(Id id) {
-        if (tryGetPhysicalId() != null) {
+        if (tryGetPhysicalId() != null)
             throw new IllegalStateException("objectId is already initialized");
-        }
-//        if(StandardTypes.containsModel(this)) {
-//            throw new InternalException("Initializing id for standard entity is not allowed");
-//        }
-        this.id = id;
+        this.state.id = id;
     }
-
-    public List<Object> getDescendants() {
-        var children = new ArrayList<>();
-        getDescendants(children, new IdentitySet<>());
-        return children;
-    }
-
-    protected void getDescendants(List<Object> descendants, IdentitySet<Object> visited) {
-        if (visited.contains(this))
-            throw new InternalException("Circular reference in entity structure");
-        descendants.add(this);
-        visited.add(this);
-        var desc = DescStore.get(EntityUtils.getRealType(getClass()));
-        for (EntityProp prop : desc.getPropsWithAnnotation(ChildEntity.class)) {
-            var child = prop.get(this);
-            if (child != null) {
-                if (child instanceof Entity childEntity)
-                    childEntity.getDescendants(descendants, visited);
-                else
-                    descendants.add(child);
-            }
-        }
-    }
-
-//    @NoProxy
-//    public Long getTmpId() {
-//        return tmpId;
-//    }
-
-//    public void setTmpId(Long tmpId) {
-//        this.tmpId = tmpId;
-//    }
 
     @Override
     public void clearId() {
-        this.id = null;
-    }
-
-    @JsonIgnore
-    public long getEntityVersion() {
-        return version;
-    }
-
-    @JsonIgnore
-    public long getSyncVersion() {
-        return syncVersion;
-    }
-
-    @JsonIgnore
-    @NoProxy
-    public Class<? extends Entity> getEntityType() {
-        return EntityUtils.getEntityType(this).asSubclass(Entity.class);
+        this.state.id = null;
     }
 
     @Override
-    public List<Object> beforeRemove(IEntityContext context) {
+    public List<Instance> beforeRemove(IEntityContext context) {
         return List.of();
     }
 
@@ -361,34 +104,12 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
     }
 
     @Override
-    @NoProxy
-    public boolean equals(Object obj) {
-        return super.equals(obj);
+    public String toString() {
+        return String.format("%s, id: %s", getClass().getSimpleName(), state.id);
     }
 
-    @Override
-    @NoProxy
-    public int hashCode() {
-        return super.hashCode();
-    }
-
-    @Override
-    @NoProxy
-    public final String toString() {
-        if (EntityUtils.isModelInitialized(this))
-            return toString0();
-        else
-            return String.format("Uninitialized entity, id: %s", id);
-    }
-
-    protected String toString0() {
-        return String.format("%s, id: %s",
-                EntityUtils.getRealType(this).getSimpleName(), id);
-    }
-
-    @NoProxy
     public Long getTmpId() {
-        if (id instanceof TmpId tmpId)
+        if (state.id instanceof TmpId tmpId)
             return tmpId.tmpId();
         else
             return null;
@@ -398,16 +119,84 @@ public abstract class Entity implements Model, Identifiable, IdInitializing, Rem
         initId(tmpId != null ? TmpId.of(tmpId) : null);
     }
 
-    public @Nullable <T extends Entity> T findAncestorEntity(Class<T> ancestorClass) {
-        var e = parentEntity;
-        while (e != null && !ancestorClass.isInstance(e)) {
-            e = e.parentEntity;
-        }
-        return ancestorClass.cast(e);
+    @Override
+    public final void write(MvOutput output) {
+        output.writeId(getId());
+        writeBody(output);
     }
 
-    public String getSimpleClassName() {
-        return EntityUtils.getRealType(this).getSimpleName();
+    public final void read(MvInput input, Entity parent) {
+        initState(input.readId(), 0, 0, false);
+        readHeadAndBody(input, parent);
     }
+
+    public final void readHeadAndBody(MvInput input, Entity parent) {
+        readBody(input, parent);
+    }
+
+    protected abstract void writeBody(MvOutput output);
+
+    protected abstract void readBody(MvInput input, Entity parent);
+
+    public abstract int getEntityTag();
+
+    @Override
+    public String getTitle() {
+        return getClass().getSimpleName() + " " + getStringId();
+    }
+
+    @Override
+    public void writeTo(MvOutput output) {
+        output.write(TreeTags.ENTITY);
+        output.writeLong(state.id.getTreeId());
+        output.writeLong(getNextNodeId());
+        output.writeEntity(this);
+    }
+
+    @Override
+    public void forEachValue(Consumer<? super Instance> action) {
+    }
+
+    @Override
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitEntity(this);
+    }
+
+    @Nullable
+    @Override
+    public Instance getParent() {
+        return getParentEntity();
+    }
+
+    @Override
+    public boolean isRoot() {
+        return getParentEntity() == null;
+    }
+
+    @Override
+    public Entity getRoot() {
+        var parent = getParentEntity();
+        if (parent == null)
+            return this;
+        if (root == null)
+            root = parent;
+        return root = root.getRoot();
+    }
+
+    public Map<String, Object> toJson() {
+        var map = new HashMap<String, Object>();
+        buildJson(map);
+        return map;
+    }
+
+    protected abstract void buildJson(Map<String, Object> map);
+
+    public Map<String, Value> buildSource() {
+        var source = new HashMap<String, Value>();
+        buildSource(source);
+        return source;
+    }
+
+    protected abstract void buildSource(Map<String, Value> source);
 
 }

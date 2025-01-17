@@ -1,17 +1,36 @@
 package org.metavm.task;
 
+import org.metavm.annotation.NativeEntity;
+import org.metavm.api.Generated;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.TreeNotFoundException;
-import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.InstanceVisitor;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
+@NativeEntity(23)
 public class ReferenceRedirector extends ReferenceScanner {
 
-    protected ReferenceRedirector(String id) {
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
+
+    protected ReferenceRedirector(Id id) {
         super("ReferenceRedirector-" + id, id);
+    }
+
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        ReferenceScanner.visitBody(visitor);
     }
 
     @Override
@@ -19,17 +38,18 @@ public class ReferenceRedirector extends ReferenceScanner {
         var id = getTargetId();
         if(!referring.isEmpty()) {
             for (Instance root : referring) {
-                root.accept(new InstanceVisitor() {
+                root.accept(new VoidInstanceVisitor() {
+
                     @Override
-                    public void visitInstance(Instance instance) {
-                        instance.transformReference((ref, isChild) -> {
+                    public Void visitInstance(Instance instance) {
+                        instance.transformReference(ref -> {
                             if (id.equals(ref.tryGetId())) {
                                 ref = ref.forward();
                             }
-                            if (isChild)
-                                ref.resolve().accept(this);
                             return ref;
                         });
+                        instance.forEachChild(child -> child.accept(this));
+                        return null;
                     }
                 });
             }
@@ -39,9 +59,76 @@ public class ReferenceRedirector extends ReferenceScanner {
     @Override
     protected void onTaskDone(IEntityContext context, Id id) {
         try {
-            var target = context.getInstanceContext().get(id);
-            context.getInstanceContext().removeForwardingPointer(target, true);
+            var target = context.get(id);
+            context.removeForwardingPointer((MvInstance) target, true);
         }
         catch (TreeNotFoundException ignored) {}
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("targetId", this.getTargetId());
+        var group = this.getGroup();
+        if (group != null) map.put("group", group.getStringId());
+        map.put("runCount", this.getRunCount());
+        map.put("state", this.getState().name());
+        map.put("runnable", this.isRunnable());
+        map.put("running", this.isRunning());
+        map.put("completed", this.isCompleted());
+        map.put("failed", this.isFailed());
+        map.put("terminated", this.isTerminated());
+        map.put("lastRunTimestamp", this.getLastRunTimestamp());
+        map.put("startAt", this.getStartAt());
+        map.put("timeout", this.getTimeout());
+        var wAL = this.getWAL();
+        if (wAL != null) map.put("wAL", wAL.getStringId());
+        var metaWAL = this.getMetaWAL();
+        if (metaWAL != null) map.put("metaWAL", metaWAL.getStringId());
+        var defWalId = this.getDefWalId();
+        if (defWalId != null) map.put("defWalId", defWalId);
+        map.put("extraStdKlassIds", this.getExtraStdKlassIds());
+        map.put("relocationEnabled", this.isRelocationEnabled());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+        super.forEachChild(action);
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_ReferenceRedirector;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        super.readBody(input, parent);
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        super.writeBody(output);
+    }
+
+    @Override
+    protected void buildSource(Map<String, Value> source) {
+        super.buildSource(source);
     }
 }

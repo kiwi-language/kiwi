@@ -1,14 +1,17 @@
 package org.metavm.flow;
 
 import org.metavm.api.Entity;
-import org.metavm.object.type.ConstantPool;
-import org.metavm.object.type.FunctionType;
-import org.metavm.object.type.Type;
+import org.metavm.api.Generated;
+import org.metavm.object.instance.core.Value;
+import org.metavm.object.type.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import java.util.List;
 
 @Entity(ephemeral = true)
-public class DummyCallable implements Callable {
+public class DummyCallable implements Callable, ConstantScope {
 
     public static final DummyCallable INSTANCE = new DummyCallable();
 
@@ -62,9 +65,44 @@ public class DummyCallable implements Callable {
 
     @Override
     public ConstantPool getConstantPool() {
-        return new ConstantPool() {
+        return new ConstantPool(this) {
+
+            public int getEntityTag() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Generated
+            public static void visitBody(StreamVisitor visitor) {
+                ConstantPool.visitBody(visitor);
+            }
+
+            @Generated
             @Override
-            public int addValue(Object value) {
+            public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+                super.readBody(input, parent);
+            }
+
+            @Generated
+            @Override
+            public void writeBody(MvOutput output) {
+                super.writeBody(output);
+            }
+
+            @Override
+            public Klass getInstanceKlass() {
+                return __klass__;
+            }
+
+            @Override
+            public ClassType getInstanceType() {
+                return __klass__.getType();
+            }
+
+            @SuppressWarnings("unused")
+            private static org.metavm.object.type.Klass __klass__;
+
+            @Override
+            public int addValue(Value value) {
                 return 0;
             }
         };

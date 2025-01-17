@@ -20,7 +20,7 @@ public interface InstanceRepository extends InstanceProvider {
 
     boolean contains(Id id);
 
-    void bind(Instance instance);
+    <T extends Instance> T bind(T instance);
 
     boolean remove(Instance instance);
 

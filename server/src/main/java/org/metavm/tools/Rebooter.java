@@ -33,8 +33,7 @@ public class Rebooter {
         var bootstrap = new Bootstrap(entityContextFactory,
                 stdAllocators,
                 new FileColumnStore(saveDir),
-                new FileTypeTagStore(saveDir),
-                new MemoryStdIdStore());
+                new FileTypeTagStore(saveDir));
         MockTransactionUtils.doInTransactionWithoutResult(bootstrap::bootAndSave);
     }
 

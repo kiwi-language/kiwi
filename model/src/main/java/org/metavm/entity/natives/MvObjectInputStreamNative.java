@@ -14,7 +14,7 @@ public class MvObjectInputStreamNative extends NativeBase {
     private final InstanceInput input;
 
     public MvObjectInputStreamNative(ClassInstance instance) {
-        input = ((MvObjectInputStream) instance.getMappedEntity()).getInput();
+        input = ((MvObjectInputStream) instance).getInput();
     }
 
     public Value readObject(CallContext callContext) {

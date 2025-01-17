@@ -1,11 +1,10 @@
 package org.metavm.object.type;
 
 import org.metavm.entity.ModelIdentity;
-import org.metavm.entity.ReadonlyArray;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TypeId;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +64,7 @@ public class StdAllocators {
     }
 
     public StdAllocator getAllocatorById(Id id) {
-        return NncUtils.find(allocatorMap.values(), a -> a.contains(id));
+        return Utils.find(allocatorMap.values(), a -> a.contains(id));
     }
 
     private Id getId0(Type javaType, String entityCode) {
@@ -78,34 +77,19 @@ public class StdAllocators {
 
     public TypeId getTypeId(Id id) {
         StdAllocator classTypeAllocator = allocatorMap.get(Klass.class);
-        StdAllocator arrayTypeAllocator = allocatorMap.get(ArrayType.class);
         for (StdAllocator allocator : allocatorMap.values()) {
-            if (allocator.contains(id)) {
-                if (isMetaArray(allocator.getJavaType())) {
-                    return TypeId.ofArray(arrayTypeAllocator.getId(allocator.getJavaType().getTypeName()).getTreeId());
-                } else {
-                    return TypeId.ofClass(classTypeAllocator.getId(allocator.getJavaType().getTypeName()).getTreeId());
-                }
-            }
+            if (allocator.contains(id))
+                return TypeId.ofClass(classTypeAllocator.getId(allocator.getJavaType().getTypeName()).getTreeId());
         }
         throw new InternalException("Can not found typeId for id: " + id);
     }
 
-    private boolean isMetaArray(Type javaType) {
-        return ReadonlyArray.class.isAssignableFrom(ReflectionUtils.getRawClass(javaType));
-    }
-
-    public Map<Type, List<Long>> allocate(Map<? extends Type, Integer> typeId2count) {
-        Map<Type, List<Long>> result = new HashMap<>();
-        typeId2count.forEach((javaType, count) -> {
-//            Class<?> javaType = ModelDefRegistry.getJavaType(type);
-            var ids = new ArrayList<Long>();
-            for (var i = 0; i < count; i++) {
-                ids.add(nextId());
-            }
-            result.put(javaType, ids);
-        });
-        return result;
+    public List<Long> allocate(int count) {
+        var ids = new ArrayList<Long>();
+        for (var i = 0; i < count; i++) {
+            ids.add(nextId());
+        }
+        return ids;
     }
 
     private long nextId() {
@@ -131,7 +115,7 @@ public class StdAllocators {
         }
         if (type instanceof ParameterizedType pType) {
             return getTypeCode(pType.getRawType()) + "<" +
-                    NncUtils.join(pType.getActualTypeArguments(), this::getTypeCode) + ">";
+                    Utils.join(pType.getActualTypeArguments(), this::getTypeCode) + ">";
         }
         if (type instanceof WildcardType wildcardType) {
             if (ReflectionUtils.isAllWildCardType(wildcardType)) {
@@ -143,7 +127,7 @@ public class StdAllocators {
 
     public void save() {
         store.saveNextId(nextId);
-        store.saveFileNames(NncUtils.map(allocatorMap.values(), StdAllocator::getFileName));
+        store.saveFileNames(Utils.map(allocatorMap.values(), StdAllocator::getFileName));
         allocatorMap.values().forEach(StdAllocator::save);
     }
 

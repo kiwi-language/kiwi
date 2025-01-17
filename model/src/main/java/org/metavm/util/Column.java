@@ -3,22 +3,29 @@ package org.metavm.util;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
+import org.metavm.api.Generated;
+import org.metavm.api.ValueObject;
 import org.metavm.entity.BuildKeyContext;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.GlobalKey;
-import org.metavm.flow.KlassOutput;
 import org.metavm.object.instance.ColumnKind;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Consumer;
 
 @Entity
 public record Column(
         ColumnKind kind,
         @EntityField(asTitle = true) String name,
         int tag
-) implements GlobalKey {
+) implements GlobalKey, ValueObject {
 
     public static final Column ID = new Column(ColumnKind.INT, "id", 0);
 
@@ -26,7 +33,7 @@ public record Column(
         return new Column(
                 columnKind,
                 String.format("%s%d", columnKind.prefix(), index),
-                index << 3 | columnKind.tagSuffix()
+                index << 3 | columnKind.code()
         );
     }
 
@@ -45,6 +52,18 @@ public record Column(
             throw BusinessException.tooManyFields();
         }
         return columns.poll();/*.copy();*/
+    }
+
+    @Generated
+    public static Column read(MvInput input) {
+        return new Column(ColumnKind.fromCode(input.read()), input.readUTF(), input.readInt());
+    }
+
+    @Generated
+    public static void visit(StreamVisitor visitor) {
+        visitor.visitByte();
+        visitor.visitUTF();
+        visitor.visitInt();
     }
 
     public String fuzzyName() {
@@ -79,9 +98,25 @@ public record Column(
         return name;
     }
 
+    public void forEachReference(Consumer<Reference> action) {
+    }
+
+    public void buildJson(Map<String, Object> map) {
+        map.put("kind", this.kind().name());
+        map.put("name", this.name());
+        map.put("tag", this.tag());
+    }
+
+    @Generated
     public void write(MvOutput output) {
-        output.write(kind.tagSuffix());
+        output.write(kind.code());
         output.writeUTF(name);
         output.writeInt(tag);
+    }
+
+    public Map<String, Object> toJson() {
+        var map = new java.util.HashMap<String, Object>();
+        buildJson(map);
+        return map;
     }
 }

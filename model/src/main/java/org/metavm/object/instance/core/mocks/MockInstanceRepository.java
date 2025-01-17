@@ -6,7 +6,7 @@ import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceRepository;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.util.IdentitySet;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,10 +48,11 @@ public class MockInstanceRepository implements InstanceRepository {
     }
 
     @Override
-    public void bind(Instance instance) {
+    public <T extends Instance> T bind(T instance) {
         var id = instance.tryGetId();
         if (id != null)
             instanceMap.put(id, instance);
+        return instance;
     }
 
     @Override
@@ -68,7 +69,7 @@ public class MockInstanceRepository implements InstanceRepository {
 
     @Override
     public List<Id> filterAlive(List<Id> ids) {
-        return NncUtils.filter(ids, instanceMap::containsKey);
+        return Utils.filter(ids, instanceMap::containsKey);
     }
 
 }

@@ -1,7 +1,7 @@
 package org.metavm.object.instance;
 
 import org.metavm.api.Entity;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 @Entity
 public enum ChangeType {
@@ -20,7 +20,7 @@ public enum ChangeType {
     }
 
     public static ChangeType fromCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code);
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 
 }

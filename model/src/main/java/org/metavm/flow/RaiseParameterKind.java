@@ -1,6 +1,6 @@
 package org.metavm.flow;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 public enum RaiseParameterKind {
 
@@ -15,7 +15,7 @@ public enum RaiseParameterKind {
     }
 
     public static RaiseParameterKind getByCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code);
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 
     public int getCode() {

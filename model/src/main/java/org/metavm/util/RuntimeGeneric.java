@@ -5,6 +5,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public interface RuntimeGeneric {
 
@@ -14,9 +15,9 @@ public interface RuntimeGeneric {
             return klass;
         }
         Map<TypeVariable<?>, Type> typeVariableTypeMap = getTypeVariableMap();
-        List<Type> typeArgs = NncUtils.map(
+        List<Type> typeArgs = Utils.map(
                 klass.getTypeParameters(),
-                p -> NncUtils.requireNonNull(typeVariableTypeMap.get(p), "Can not resolve " + p)
+                p -> Objects.requireNonNull(typeVariableTypeMap.get(p), "Can not resolve " + p)
         );
         return ParameterizedTypeImpl.create(klass, typeArgs);
     }

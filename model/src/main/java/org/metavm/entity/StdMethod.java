@@ -8,7 +8,7 @@ import org.metavm.entity.natives.ValueHolder;
 import org.metavm.entity.natives.ValueHolderOwner;
 import org.metavm.flow.Method;
 import org.metavm.util.BiUnion;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -64,7 +64,7 @@ public enum StdMethod implements ValueHolderOwner<Method> {
         var klass = defContext.getKlass(javaClass);
         var method = klass.getMethodByNameAndParamTypes(
                 methodName,
-                NncUtils.map(parameterTypes, defContext::getNullableType)
+                Utils.map(parameterTypes, defContext::getNullableType)
         );
         if(local)
             setLocal(method);

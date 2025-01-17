@@ -63,13 +63,16 @@ public class SchedulerTest extends TestCase {
         }
         worker.sendHeartbeat();
         try(var context = newPlatformContext()) {
-            var executorData = context.selectFirstByKey(ExecutorData.IDX_IP, NetworkUtils.localIP);
+            var executorData = context.selectFirstByKey(ExecutorData.IDX_IP,
+                    Instances.stringInstance(NetworkUtils.localIP));
             Assert.assertNotNull("Executor not registered", executorData);
             Assert.assertTrue(executorData.isAvailable());
         }
         scheduler.schedule();
         try(var context = newPlatformContext()) {
-            var tasks = context.selectByKey(ShadowTask.IDX_EXECUTOR_IP_START_AT, NetworkUtils.localIP, 0L);
+            var tasks = context.selectByKey(ShadowTask.IDX_EXECUTOR_IP_START_AT,
+                    Instances.stringInstance(NetworkUtils.localIP),
+                    Instances.longInstance(0L));
             Assert.assertEquals(1, tasks.size());
         }
         Assert.assertTrue(worker.waitFor(t -> t.idEquals(ref.task.getId()), 10, 0));

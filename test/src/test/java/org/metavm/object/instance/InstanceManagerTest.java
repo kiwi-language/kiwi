@@ -1,20 +1,17 @@
 package org.metavm.object.instance;
 
 import junit.framework.TestCase;
-import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.IEntityContext;
-import org.metavm.entity.ModelDefRegistry;
 import org.metavm.flow.FlowSavingContext;
-import org.metavm.mocks.*;
+import org.metavm.mocks.FooState;
+import org.metavm.mocks.IndexFoo;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.ClassInstanceBuilder;
 import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.rest.LoadInstancesByPathsRequest;
-import org.metavm.object.instance.rest.SelectRequest;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.object.type.TypeManager;
@@ -30,7 +27,6 @@ public class InstanceManagerTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceManagerTest.class);
 
-    private InstanceManager instanceManager;
     private EntityContextFactory entityContextFactory;
     private SchedulerAndWorker schedulerAndWorker;
     private TypeManager typeManager;
@@ -42,7 +38,6 @@ public class InstanceManagerTest extends TestCase {
         var managers = TestUtils.createCommonManagers(bootResult);
         schedulerAndWorker = bootResult.schedulerAndWorker();
         entityContextFactory = bootResult.entityContextFactory();
-        instanceManager = managers.instanceManager();
         typeManager = managers.typeManager();
         apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache(),
                 new InstanceQueryService(bootResult.instanceSearchService())));
@@ -52,7 +47,6 @@ public class InstanceManagerTest extends TestCase {
 
     @Override
     protected void tearDown() throws Exception {
-        instanceManager = null;
         entityContextFactory = null;
         schedulerAndWorker = null;
         typeManager = null;
@@ -62,87 +56,6 @@ public class InstanceManagerTest extends TestCase {
 
     private IEntityContext newContext() {
         return entityContextFactory.newContext(TestConstants.APP_ID);
-    }
-
-    private Foo saveFoo() {
-        return TestUtils.doInTransaction(() -> {
-            try (var context = newContext()) {
-                var foo = new Foo("Big Foo", new Bar("Bar001"));
-                foo.setBazList(List.of(
-                        new Baz(
-                                List.of(
-                                        new Bar("Bar002"),
-                                        new Bar("Bar003")
-                                )
-                        ),
-                        new Baz(
-                                List.of(
-                                        new Bar("Bar004"),
-                                        new Bar("Bar005")
-                                )
-                        )
-                ));
-                foo.setQux(new Qux(100));
-                context.bind(foo);
-                context.finish();
-                return foo;
-            }
-        });
-    }
-
-    public void testLoadByPaths() {
-        var foo = saveFoo();
-        var id = foo.getId();
-        var result = instanceManager.loadByPaths(
-                new LoadInstancesByPathsRequest(
-                        null,
-                        List.of(
-                                Constants.ID_PREFIX + id + ".bar",
-                                Constants.ID_PREFIX + id + ".bar.code",
-                                Constants.ID_PREFIX + id + ".bazList.*.bars.0.code",
-                                Constants.ID_PREFIX + id + ".bazList.*.bars.1.code"
-                        )
-                )
-        );
-
-        try (var context = newContext()) {
-            foo = context.getEntity(Foo.class, foo.getId());
-            Assert.assertEquals(
-                    List.of(
-                            context.getInstance(foo.getBar()).getReference().toDTO(),
-                            Instances.createString("Bar001").toDTO(),
-                            Instances.createString("Bar002").toDTO(),
-                            Instances.createString("Bar004").toDTO(),
-                            Instances.createString("Bar003").toDTO(),
-                            Instances.createString("Bar005").toDTO()
-                    ),
-                    result
-            );
-        }
-    }
-
-    public void testSelect() {
-        var foo = saveFoo();
-        var fooType = ModelDefRegistry.getClassType(Foo.class);
-        TestUtils.waitForAllTasksDone(schedulerAndWorker);
-        var page = instanceManager.select(new SelectRequest(
-                fooType.toExpression(),
-                List.of(
-                        "bar.code",
-                        "qux"
-                ),
-                "name = \"Big Foo\"",
-                1,
-                20
-        ));
-        Assert.assertEquals(1, page.total());
-        try (var context = newContext()) {
-            foo = context.getEntity(Foo.class, foo.getId());
-            MatcherAssert.assertThat(page.data().get(0)[0],
-                    InstanceDTOMatcher.of(Instances.createString("Bar001").toDTO()));
-            MatcherAssert.assertThat(page.data().get(0)[1],
-                    InstanceDTOMatcher.of(context.getInstance(foo.getQux()).toDTO()));
-        }
     }
 
     public void testShopping() {
@@ -241,10 +154,11 @@ public class InstanceManagerTest extends TestCase {
         var inventoryKlassId = klassIds[1];
         var ids = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
+                context.loadKlasses();
                 var productKlass = context.getKlass(productKlassId);
                 var inventoryKlass = context.getKlass(inventoryKlassId);
                 var product = ClassInstance.create(Map.of(), productKlass.getType());
-                context.getInstanceContext().bind(product);
+                context.bind(product);
                 var inventory = ClassInstance.create(
                         Map.of(
                                 inventoryKlass.getFieldByName("quantity"),
@@ -252,7 +166,7 @@ public class InstanceManagerTest extends TestCase {
                         ),
                         inventoryKlass.getType()
                 );
-                context.getInstanceContext().bind(inventory);
+                context.bind(inventory);
                 context.finish();
                 return new Id[]{product.getId(), inventory.getId()};
             }
@@ -261,10 +175,11 @@ public class InstanceManagerTest extends TestCase {
         var inventoryId = ids[1];
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
-                var product = (ClassInstance) context.getInstanceContext().get(productId);
-                var inventory = context.getInstanceContext().get(inventoryId);
-//                context.getInstanceContext().remove(product);
-                product.setField(product.getKlass().getFieldByName("inventory"), inventory.getReference());
+                context.loadKlasses();
+                var product = (ClassInstance) context.get(productId);
+                var inventory = context.get(inventoryId);
+//                context.remove(product);
+                product.setField(product.getInstanceKlass().getFieldByName("inventory"), inventory.getReference());
                 context.finish();
                 Assert.assertEquals(inventory, inventory.getRoot());
                 Assert.assertEquals(inventory.getTreeId(), inventory.getTreeId());
@@ -272,16 +187,17 @@ public class InstanceManagerTest extends TestCase {
         });
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.relocationEnabled(true))) {
-                var product = (ClassInstance) context.getInstanceContext().get(productId);
-                var inventory = context.getInstanceContext().get(inventoryId);
-//                context.getInstanceContext().remove(product);
+                context.loadKlasses();
+                var product = (ClassInstance) context.get(productId);
+                var inventory = context.get(inventoryId);
+//                context.remove(product);
                 context.finish();
                 Assert.assertEquals(product, inventory.getRoot());
                 Assert.assertEquals(inventoryId, inventory.getId());
             }
         });
 //        try (var context = newContext()) {
-//            var inventory = context.getInstanceContext().get(inventoryId);
+//            var inventory = context.get(inventoryId);
 //            try {
 //                inventory.ensureLoaded();
 //                Assert.fail();
@@ -301,7 +217,7 @@ public class InstanceManagerTest extends TestCase {
         });
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
-                var fooByState = context.selectFirstByKey(IndexFoo.IDX_STATE, FooState.STATE1);
+                var fooByState = context.selectFirstByKey(IndexFoo.IDX_STATE, Instances.intInstance(FooState.STATE1.code()));
                 Assert.assertNotNull(fooByState);
             }
         });
@@ -319,14 +235,14 @@ public class InstanceManagerTest extends TestCase {
         });
         var instId = TestUtils.doInTransaction(() -> {
             try(var context = newContext()) {
+                context.loadKlasses();
                 var klass = context.getKlass(klassId);
-                var instCtx = context.getInstanceContext();
                 var inst = ClassInstanceBuilder.newBuilder(klass.getType())
                         .data(Map.of(
                                 klass.getFieldByName("name"),
                                 Instances.stringInstance("Leen")
                         )).build();
-                instCtx.bind(inst);
+                context.bind(inst);
                 context.finish();
                 return inst.getId();
             }
@@ -341,28 +257,28 @@ public class InstanceManagerTest extends TestCase {
         });
         var instId2 = TestUtils.doInTransaction(() -> {
             try(var context = newContext()) {
+                context.loadKlasses();
                 var klass = context.getKlass(klassId);
                 var nameField = klass.getFieldByName("name");
                 Assert.assertTrue(nameField.isMetadataRemoved());
-                var instCtx = context.getInstanceContext();
-                var inst = (ClassInstance) instCtx.get(instId);
+                var inst = (ClassInstance) context.get(instId);
                 Assert.assertTrue(inst.isFieldInitialized(nameField));
                 inst.setField(nameField, Instances.stringInstance("Leen2"));
                 var inst2 = ClassInstanceBuilder.newBuilder(klass.getType())
                         .data(Map.of())
                         .build();
-                instCtx.bind(inst2);
+                context.bind(inst2);
                 context.finish();
                 return inst2.getId();
             }
         });
         try(var context = newContext()) {
+            context.loadKlasses();
             var klass = context.getKlass(klassId);
             var nameField = klass.getFieldByName("name");
-            var instCtx = context.getInstanceContext();
-            var inst = (ClassInstance) instCtx.get(instId);
+            var inst = (ClassInstance) context.get(instId);
             Assert.assertEquals(Instances.stringInstance("Leen2"), inst.getField(nameField));
-            var inst2 = (ClassInstance) instCtx.get(instId2);
+            var inst2 = (ClassInstance) context.get(instId2);
             Assert.assertEquals(Instances.nullInstance(), inst2.getField(nameField));
         }
     }

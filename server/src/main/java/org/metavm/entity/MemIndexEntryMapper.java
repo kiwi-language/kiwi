@@ -7,7 +7,7 @@ import org.metavm.object.instance.persistence.IndexQueryPO;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,25 +80,25 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
     public List<IndexEntryPO> selectByInstanceIdsOrKeys(long appId,
                                                         Collection<byte[]> instanceIds,
                                                         Collection<IndexKeyPO> keys) {
-        var globalKeys = NncUtils.map(keys, k -> new GlobalKey(appId, k));
-        return NncUtils.union(
-                NncUtils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id))),
-                NncUtils.flatMap(globalKeys, this::getItems)
+        var globalKeys = Utils.map(keys, k -> new GlobalKey(appId, k));
+        return Utils.union(
+                Utils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id))),
+                Utils.flatMap(globalKeys, this::getItems)
         );
     }
 
     @Override
     public List<IndexEntryPO> selectByInstanceIds(long appId, Collection<byte[]> instanceIds) {
         try (var ignored = ContextUtil.getProfiler().enter("MemIndexEntryMapper.selectByInstanceIds")) {
-            return NncUtils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id)));
+            return Utils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id)));
         }
     }
 
     @Override
     public List<IndexEntryPO> selectByKeys(long appId, Collection<IndexKeyPO> keys) {
         try (var ignored = ContextUtil.getProfiler().enter("MemIndexEntryMapper.selectByKeys")) {
-            var globalKeys = NncUtils.map(keys, k -> new GlobalKey(appId, k));
-            return NncUtils.flatMap(globalKeys, this::getItems);
+            var globalKeys = Utils.map(keys, k -> new GlobalKey(appId, k));
+            return Utils.flatMap(globalKeys, this::getItems);
         }
     }
 
@@ -139,7 +139,7 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
 
     public MemIndexEntryMapper copy() {
         var copy = new MemIndexEntryMapper();
-        copy.batchInsert(NncUtils.map(entries, IndexEntryPO::copy));
+        copy.batchInsert(Utils.map(entries, IndexEntryPO::copy));
         return copy;
     }
 

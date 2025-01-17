@@ -10,7 +10,7 @@ public class MockId extends Id {
     private final long id;
 
     public MockId(long id) {
-        super(false);
+        super();
         this.id = id;
     }
 

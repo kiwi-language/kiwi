@@ -4,7 +4,7 @@ public interface TypeVisitor<R,S> {
 
     R visitType(Type type, S s);
 
-    R visitClassType(ClassType type, S s);
+    R visitKlassType(KlassType type, S s);
 
     R visitArrayType(ArrayType type, S s);
 
@@ -27,4 +27,5 @@ public interface TypeVisitor<R,S> {
     R visitAnyType(AnyType type, S s);
 
     R visitNullType(NullType type, S s);
+
 }

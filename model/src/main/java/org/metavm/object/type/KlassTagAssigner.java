@@ -1,25 +1,44 @@
 package org.metavm.object.type;
 
+import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
+import org.metavm.api.Generated;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
+import org.metavm.util.Instances;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
+@NativeEntity(64)
 @Entity
 public class KlassTagAssigner extends org.metavm.entity.Entity {
 
-    public static final IndexDef<KlassTagAssigner> IDX_ALL_FLAGS = IndexDef.create(KlassTagAssigner.class, "allFlags");
+    public static final IndexDef<KlassTagAssigner> IDX_ALL_FLAGS = IndexDef.create(KlassTagAssigner.class, 1,
+            e -> List.of(Instances.booleanInstance(e.allFlags)));
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     public static KlassTagAssigner getInstance(IEntityContext context) {
         return Objects.requireNonNull(
-                context.selectFirstByKey(IDX_ALL_FLAGS, true),
+                context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()),
                 () -> "ClassTagAssigner instance not found for application: " + context.getAppId()
         );
     }
 
     @SuppressWarnings("unused")
-    private final boolean allFlags = true;
+    private boolean allFlags = true;
 
     private long start;
     private long next;
@@ -31,11 +50,19 @@ public class KlassTagAssigner extends org.metavm.entity.Entity {
     }
 
     public static void initialize(IEntityContext context, GlobalKlassTagAssigner globalKlassTagAssigner) {
-        var existing = context.selectFirstByKey(IDX_ALL_FLAGS, true);
+        var existing = context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance());
         if(existing != null)
             throw new IllegalStateException("ClassTagAssigner already exists");
         var range = globalKlassTagAssigner.allocate(1000000);
         context.bind(new KlassTagAssigner(range[0], range[1]));
+    }
+
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        visitor.visitBoolean();
+        visitor.visitLong();
+        visitor.visitLong();
+        visitor.visitLong();
     }
 
     public long next() {
@@ -53,11 +80,69 @@ public class KlassTagAssigner extends org.metavm.entity.Entity {
         return start;
     }
 
-    public long getNext() {
+    public long getNextTag() {
         return next;
     }
 
     public long getMax() {
         return max;
+    }
+
+    @Nullable
+    @Override
+    public org.metavm.entity.Entity getParentEntity() {
+        return null;
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("start", this.getStart());
+        map.put("nextTag", this.getNextTag());
+        map.put("max", this.getMax());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_KlassTagAssigner;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        this.allFlags = input.readBoolean();
+        this.start = input.readLong();
+        this.next = input.readLong();
+        this.max = input.readLong();
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        output.writeBoolean(allFlags);
+        output.writeLong(start);
+        output.writeLong(next);
+        output.writeLong(max);
+    }
+
+    @Override
+    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
     }
 }

@@ -1,15 +1,17 @@
 package org.metavm.object.type;
 
 import org.metavm.api.Entity;
-import org.metavm.entity.IEntityContext;
-import org.metavm.entity.NoProxy;
-import org.metavm.entity.SerializeContext;
-import org.metavm.entity.Writable;
+import org.metavm.api.ValueObject;
+import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.metavm.util.*;
+import org.metavm.util.IdentitySet;
+import org.metavm.util.InternalException;
+import org.metavm.util.MvOutput;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
@@ -19,7 +21,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Entity
-public abstract class Type extends ElementValue implements TypeOrTypeKey, Writable {
+public abstract class Type implements TypeOrTypeKey, Writable, ValueObject, Element, NativeValue {
+
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     public abstract String getName();
 
@@ -100,15 +105,6 @@ public abstract class Type extends ElementValue implements TypeOrTypeKey, Writab
         return List.of();
     }
 
-    @Override
-    public final boolean afterContextInitIds() {
-        return afterContextInitIdsInternal();
-    }
-
-    protected boolean afterContextInitIdsInternal() {
-        return false;
-    }
-
     public boolean isAssignableFrom(Type that) {
         if (that instanceof NeverType)
             return true;
@@ -117,9 +113,9 @@ public abstract class Type extends ElementValue implements TypeOrTypeKey, Writab
 
     private boolean isAssignableFrom1(Type that) {
         return switch (that) {
-            case UnionType unionType -> NncUtils.allMatch(unionType.getMembers(), this::isAssignableFrom);
+            case UnionType unionType -> Utils.allMatch(unionType.getMembers(), this::isAssignableFrom);
             case IntersectionType intersectionType ->
-                    NncUtils.anyMatch(intersectionType.getTypes(), this::isAssignableFrom);
+                    Utils.anyMatch(intersectionType.getTypes(), this::isAssignableFrom);
             default -> isAssignableFrom0(that);
         };
     }
@@ -153,7 +149,7 @@ public abstract class Type extends ElementValue implements TypeOrTypeKey, Writab
     }
 
     public boolean isInstance(Value value) {
-        return isAssignableFrom(value.getType());
+        return isAssignableFrom(value.getValueType());
     }
 
     public boolean isInt() {
@@ -218,7 +214,7 @@ public abstract class Type extends ElementValue implements TypeOrTypeKey, Writab
         return false;
     }
 
-    public boolean isValue() {
+    public boolean isValueType() {
         return false;
     }
 
@@ -266,7 +262,7 @@ public abstract class Type extends ElementValue implements TypeOrTypeKey, Writab
     }
 
     @Override
-    protected String toString0() {
+    public String toString() {
         return getTypeDesc();
     }
 
@@ -317,11 +313,6 @@ public abstract class Type extends ElementValue implements TypeOrTypeKey, Writab
     }
 
     @Override
-    public String getTitle() {
-        return getTypeDesc();
-    }
-
-    @Override
     public <R> R accept(ValueVisitor<R> visitor) {
         return visitor.visitType(this);
     }
@@ -332,13 +323,19 @@ public abstract class Type extends ElementValue implements TypeOrTypeKey, Writab
     }
 
     @Override
-    public void writeInstance(InstanceOutput output) {
+    public void writeInstance(MvOutput output) {
         write(output);
     }
 
     @Override
-    public Object toJson(IEntityContext context) {
+    public Object toJson() {
         return getTypeDesc();
     }
 
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+    }
 }

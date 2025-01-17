@@ -10,10 +10,11 @@ import org.metavm.entity.IEntityContext;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.MvClassInstance;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 
@@ -179,20 +180,20 @@ public class SaveTypeBatch implements TypeDefProvider {
         }
         return new Commit(
                 wal,
-                NncUtils.map(newFields, Entity::getStringId),
-                NncUtils.map(typeChangedFields, Entity::getStringId),
-                NncUtils.map(toChildFields, Entity::getStringId),
-                NncUtils.map(toNonChildFields, Entity::getStringId),
-                NncUtils.map(removedChildFields, Entity::getStringId),
-                NncUtils.map(changingSuperKlasses, Entity::getStringId),
-                NncUtils.map(entityToValueKlasses, Entity::getStringId),
-                NncUtils.map(valueToEntityKlasses, Entity::getStringId),
-                NncUtils.map(toEnumKlasses, Entity::getStringId),
-                NncUtils.map(fromEnumKlasses, Entity::getStringId),
-                NncUtils.map(runMethods, Entity::getStringId),
-                NncUtils.filterAndMap(newIndexes, i -> !context.isNewEntity(i.getDeclaringType()), Entity::getStringId),
-                NncUtils.map(searchEnabledClasses, Entity::getStringId),
-                NncUtils.map(modifiedEnumConstants, Entity::getStringId),
+                Utils.map(newFields, Entity::getStringId),
+                Utils.map(typeChangedFields, Entity::getStringId),
+                Utils.map(toChildFields, Entity::getStringId),
+                Utils.map(toNonChildFields, Entity::getStringId),
+                Utils.map(removedChildFields, Entity::getStringId),
+                Utils.map(changingSuperKlasses, Entity::getStringId),
+                Utils.map(entityToValueKlasses, Entity::getStringId),
+                Utils.map(valueToEntityKlasses, Entity::getStringId),
+                Utils.map(toEnumKlasses, Entity::getStringId),
+                Utils.map(fromEnumKlasses, Entity::getStringId),
+                Utils.map(runMethods, Entity::getStringId),
+                Utils.filterAndMap(newIndexes, i -> i.getDeclaringType().isPersisted(), Entity::getStringId),
+                Utils.map(searchEnabledClasses, Entity::getStringId),
+                Utils.map(modifiedEnumConstants, Entity::getStringId),
                 fieldChanges
         );
     }
@@ -219,7 +220,7 @@ public class SaveTypeBatch implements TypeDefProvider {
     }
 
     public void applyDDLToEnumConstants() {
-        var instCtx = context.getInstanceContext();
+        var instCtx = context;
         removedEnumConstants.forEach(ec -> instCtx.remove(ec.getStatic(context).resolveObject()));
         var enumConstants = new ArrayList<ClassInstance>();
         for (Klass klass : klasses) {
@@ -232,7 +233,7 @@ public class SaveTypeBatch implements TypeDefProvider {
         }
         for (ClassInstance enumConstant : enumConstants) {
             Instances.applyDDL(
-                    enumConstant,
+                    (MvClassInstance) enumConstant,
                     newFields,
                     typeChangedFields,
                     toChildFields,
@@ -252,7 +253,7 @@ public class SaveTypeBatch implements TypeDefProvider {
 
     public void addKlass(Klass klass) {
         klasses.add(klass);
-        if(context.isNewEntity(klass))
+        if(klass.isNew())
             newKlasses.add(klass);
     }
 

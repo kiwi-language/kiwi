@@ -1,5 +1,6 @@
 package org.metavm.object.instance.search;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.CopyVisitor;
 import org.metavm.entity.Element;
 import org.metavm.expression.ConstantExpression;
@@ -11,11 +12,11 @@ import org.metavm.object.instance.core.NumberValue;
 
 public class ExpressionSimplifier extends CopyVisitor {
 
-    public static Expression simplify(Expression expression) {
+    public static Expression simplify(@NotNull Expression expression) {
         return (Expression) expression.accept(new ExpressionSimplifier(expression));
     }
 
-    public ExpressionSimplifier(Expression root) {
+    public ExpressionSimplifier(@NotNull Expression root) {
         super(root, false);
     }
 

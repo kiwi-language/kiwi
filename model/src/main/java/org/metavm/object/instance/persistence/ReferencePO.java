@@ -17,6 +17,7 @@ public class ReferencePO {
                        long sourceTreeId,
                        byte[] targetId,
                        int kind) {
+        assert sourceTreeId > 0;
         this.appId = appId;
         this.sourceTreeId = sourceTreeId;
         this.targetId = targetId;
@@ -95,6 +96,10 @@ public class ReferencePO {
     @JsonIgnore
     public String targetKeyWithField() {
         return appId + "-" + EncodingUtils.bytesToHex(targetId);
+    }
+
+    public ReferencePO copy() {
+        return new ReferencePO(appId, sourceTreeId, Arrays.copyOf(targetId, targetId.length), kind);
     }
 
 }

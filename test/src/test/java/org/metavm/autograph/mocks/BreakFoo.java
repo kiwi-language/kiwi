@@ -15,7 +15,7 @@ public class BreakFoo {
                 if (coupon.state == AstCouponState.USED) {
                     break out;
                 }
-                if (coupon.product == product) {
+                if (coupon.product.get() == product) {
                     totalDiscount += coupon.discount;
                 }
             }
@@ -48,7 +48,7 @@ public class BreakFoo {
                 if (coupons[j].discount > maxDiscountPerCoupon) {
                     break;
                 }
-                if (coupons[j].product == products[i]) {
+                if (coupons[j].product.get() == products[i]) {
                     totalDiscount += coupons[j].discount;
                 }
             }

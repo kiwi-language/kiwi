@@ -3,7 +3,7 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import static java.util.Objects.requireNonNull;
 
@@ -16,7 +16,7 @@ public class FieldInitializerMover extends VisitorBase {
         var initializer = field.getInitializer();
         var klass = requireNonNull(field.getContainingClass());
         var methodName = "__init_" + field.getName() + "__";
-        var method = NncUtils.find(klass.getMethods(),
+        var method = Utils.find(klass.getMethods(),
                 m -> m.getName().equals(methodName) && m.getParameterList().isEmpty());
         if(method == null && initializer != null) {
             var isStatic = TranspileUtils.isStatic(field);

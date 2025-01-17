@@ -1,33 +1,35 @@
 package org.metavm.expression;
 
 import org.metavm.api.Entity;
+import org.metavm.api.Generated;
 import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.ValueArray;
 import org.metavm.object.instance.core.ArrayInstance;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.Types;
-import org.metavm.util.NncUtils;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.Utils;
+import org.metavm.util.StreamVisitor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Consumer;
 
 @Entity
 public class ArrayExpression extends Expression {
 
     public static ArrayExpression create(List<Expression> expressions) {
-        var type = new ArrayType(Types.getLeastUpperBound(NncUtils.map(expressions, Expression::getType)), ArrayKind.READ_ONLY);
+        var type = new ArrayType(Types.getLeastUpperBound(Utils.map(expressions, Expression::getType)), ArrayKind.READ_ONLY);
         return new ArrayExpression(expressions, type);
     }
 
-    private final ValueArray<Expression> expressions;
+    private final List<Expression> expressions;
     private final ArrayType type;
 
     public ArrayExpression(Collection<Expression> expressions, ArrayType type) {
-        this.expressions = new ValueArray<>(Expression.class, expressions);
+        this.expressions = new ArrayList<>(expressions);
         this.type = type;
     }
 
@@ -35,7 +37,7 @@ public class ArrayExpression extends Expression {
         if (first instanceof ArrayExpression listExpression) {
             var rest = listExpression.expressions;
             List<Expression> expressions = new ArrayList<>(rest.size() + 1);
-            expressions.addAll(rest.toList());
+            expressions.addAll(rest);
             expressions.add(second);
             return create(expressions);
         } else {
@@ -43,13 +45,24 @@ public class ArrayExpression extends Expression {
         }
     }
 
+    @Generated
+    public static ArrayExpression read(MvInput input) {
+        return new ArrayExpression(input.readList(() -> Expression.read(input)), (ArrayType) input.readType());
+    }
+
+    @Generated
+    public static void visit(StreamVisitor visitor) {
+        visitor.visitList(() -> Expression.visit(visitor));
+        visitor.visitValue();
+    }
+
     public List<Expression> getExpressions() {
-        return expressions.toList();
+        return Collections.unmodifiableList(expressions);
     }
 
     @Override
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
-        return "[" + NncUtils.join(expressions, expr -> expr.buildSelf(symbolType, relaxedCheck), ", ") + "]";
+        return "[" + Utils.join(expressions, expr -> expr.buildSelf(symbolType, relaxedCheck), ", ") + "]";
     }
 
     @Override
@@ -63,18 +76,18 @@ public class ArrayExpression extends Expression {
     }
 
     @Override
-    public List<Expression> getChildren() {
-        return NncUtils.listOf(expressions);
+    public List<Expression> getComponents() {
+        return Utils.listOf(expressions);
     }
 
     @Override
     protected Value evaluateSelf(EvaluationContext context) {
-        return new ArrayInstance(type, NncUtils.map(expressions, e -> e.evaluate(context))).getReference();
+        return new ArrayInstance(type, Utils.map(expressions, e -> e.evaluate(context))).getReference();
     }
 
     @Override
     protected <T extends Expression> List<T> extractExpressionsRecursively(Class<T> klass) {
-        return NncUtils.flatMap(expressions, expr -> expr.extractExpressions(klass));
+        return Utils.flatMap(expressions, expr -> expr.extractExpressions(klass));
     }
 
     @Override
@@ -92,5 +105,36 @@ public class ArrayExpression extends Expression {
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitArrayExpression(this);
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        expressions.forEach(arg -> arg.accept(visitor));
+        type.accept(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        expressions.forEach(arg -> arg.forEachReference(action));
+        type.forEachReference(action);
+    }
+
+    public void buildJson(Map<String, Object> map) {
+        map.put("expressions", this.getExpressions().stream().map(Expression::toJson).toList());
+        map.put("type", this.getType().toJson());
+        map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
+        map.put("variableComponent", this.getVariableComponent().toJson());
+        map.put("constantComponent", this.getConstantComponent().toJson());
+        map.put("fieldComponent", this.getFieldComponent().toJson());
+        map.put("arrayComponent", this.getArrayComponent().toJson());
+    }
+
+    @Generated
+    public void write(MvOutput output) {
+        output.write(TYPE_ArrayExpression);
+        super.write(output);
+        output.writeList(expressions, arg0 -> arg0.write(output));
+        output.writeValue(type);
     }
 }

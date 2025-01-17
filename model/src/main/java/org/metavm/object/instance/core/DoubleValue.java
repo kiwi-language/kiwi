@@ -23,7 +23,7 @@ public class DoubleValue extends NumberValue {
     }
 
     @Override
-    public PrimitiveType getType() {
+    public PrimitiveType getValueType() {
         return PrimitiveType.doubleType;
     }
 

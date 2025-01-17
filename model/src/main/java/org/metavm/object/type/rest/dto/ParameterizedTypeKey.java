@@ -4,7 +4,7 @@ import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.*;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
@@ -14,7 +14,7 @@ public record ParameterizedTypeKey(GenericDeclarationRefKey owner, Id templateId
 
     public static ParameterizedTypeKey create(@Nullable GenericDeclarationRef owner, Klass template, List<Type> typeArguments) {
         return new ParameterizedTypeKey(owner != null ? owner.toGenericDeclarationKey() : null,
-                template.getId(), NncUtils.map(typeArguments, Type::toTypeKey));
+                template.getId(), Utils.map(typeArguments, Type::toTypeKey));
     }
 
     @Override
@@ -36,14 +36,14 @@ public record ParameterizedTypeKey(GenericDeclarationRefKey owner, Id templateId
 
     @Override
     public String toTypeExpression() {
-        return "$$" + templateId + "<" + NncUtils.join(typeArgumentKeys, TypeKey::toTypeExpression) + ">";
+        return "$$" + templateId + "<" + Utils.join(typeArgumentKeys, TypeKey::toTypeExpression) + ">";
     }
 
     @Override
     public ClassType toType(TypeDefProvider typeDefProvider) {
         return new KlassType(
                 owner != null ? owner.toGenericDeclarationRef(typeDefProvider) : null,
-                typeDefProvider.getKlass(templateId), NncUtils.map(typeArgumentKeys, k -> k.toType(typeDefProvider)));
+                typeDefProvider.getKlass(templateId), Utils.map(typeArgumentKeys, k -> k.toType(typeDefProvider)));
     }
 
     @Override

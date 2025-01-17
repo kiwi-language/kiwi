@@ -4,6 +4,7 @@ import org.metavm.api.Entity;
 import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.MvInstance;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.StaticFieldTable;
@@ -13,7 +14,7 @@ import org.metavm.task.Task;
 import org.metavm.task.Tasks;
 import org.metavm.util.Constants;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +22,7 @@ import static org.metavm.task.DDLTask.DISABLE_DELAY;
 
 @Entity
 public enum CommitState {
-    PREPARING0 {
+    PREPARING0(0) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
             Instances.applyDDL(instances, commit, context);
@@ -47,7 +48,7 @@ public enum CommitState {
             return Constants.DDL_SESSION_TIMEOUT;
         }
     },
-    SUBMITTING {
+    SUBMITTING(1) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
         }
@@ -73,7 +74,7 @@ public enum CommitState {
             return Constants.DDL_SESSION_TIMEOUT;
         }
     },
-    RELOCATING {
+    RELOCATING(2) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
         }
@@ -89,32 +90,34 @@ public enum CommitState {
             return true;
         }
     },
-    SETTING_REFERENCE_FLAGS {
+    SETTING_REFERENCE_FLAGS(3) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
-            var valueToEntityKlasses = NncUtils.map(commit.getValueToEntityKlassIds(), context::getKlass);
+            var valueToEntityKlasses = Utils.map(commit.getValueToEntityKlassIds(), context::getKlass);
             for (var instance : instances) {
                 instance.forEachReference(r -> {
                     if(!r.isResolved())
-                        context.getInstanceContext().buffer(r.getId());
+                        context.buffer(r.getId());
                 });
             }
             for (var instance : instances) {
-                instance.transformReference((ref, isChild) -> {
-                    var referent = ref.resolve();
-                    if(referent.tryGetOldId() != null && referent.isUseOldId())
-                        ref.setForwarded();
-                    return ref;
-                });
-                for (Klass klass : valueToEntityKlasses) {
-                    instance.forEachReference(ref -> {
-                        var referent = ref.resolve();
-                        if (referent instanceof ClassInstance object) {
-                            var k = object.getType().findAncestorByKlass(klass);
-                            if (k != null)
-                                ref.clearEager();
-                        }
+                if (instance instanceof MvInstance mvInst) {
+                    mvInst.transformReference((ref, isChild) -> {
+                        var referent = ref.resolveDurable();
+                        if (referent instanceof MvInstance i && i.tryGetOldId() != null && i.isUseOldId())
+                            ref.setForwarded();
+                        return ref;
                     });
+                    for (Klass klass : valueToEntityKlasses) {
+                        instance.forEachReference(ref -> {
+                            var referent = ref.get();
+                            if (referent instanceof ClassInstance object) {
+                                var k = object.getInstanceType().asSuper(klass);
+                                if (k != null)
+                                    ref.clearEager();
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -125,12 +128,12 @@ public enum CommitState {
                     && commit.getValueToEntityKlassIds().isEmpty();
         }
     },
-    SWITCHING_ID {
+    SWITCHING_ID(4) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
             for (var instance : instances) {
-                if(instance.tryGetOldId() != null && instance.isUseOldId())
-                    instance.switchId();
+                if(instance.tryGetOldId() != null && instance instanceof MvInstance mvInst && mvInst.isUseOldId())
+                    mvInst.switchId();
             }
         }
 
@@ -139,23 +142,25 @@ public enum CommitState {
             return commit.getToChildFieldIds().isEmpty() && commit.getToNonChildFieldIds().isEmpty();
         }
     },
-    UPDATING_REFERENCE {
+    UPDATING_REFERENCE(5) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
             for (var instance : instances) {
                 instance.forEachReference(r -> {
                     if(r.isForwarded())
-                        context.getInstanceContext().buffer(r.getId());
+                        context.buffer(r.getId());
                 });
             }
             for (var instance : instances) {
-                instance.transformReference((r, isChild) -> {
-                    if(isChild && r.resolve().isValue())
-                        return r.resolve().copy().getReference();
-                    if(r.isForwarded())
-                        return r.forward();
-                    return r;
-                });
+                if (instance instanceof MvInstance mvInst) {
+                    mvInst.transformReference((r, isChild) -> {
+                        if (isChild && r.get() instanceof MvInstance i && i.isValue())
+                            return i.copy().getReference();
+                        if (r.isForwarded())
+                            return r.forward();
+                        return r;
+                    });
+                }
             }
         }
 
@@ -166,33 +171,32 @@ public enum CommitState {
 
         }
     },
-    CLEANING_UP {
+    CLEANING_UP(6) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
-            var instCtx = context.getInstanceContext();
-            var toEnumKlasses = NncUtils.map(commit.getToEnumKlassIds(), context::getKlass);
-            var fromEnumKlasses = NncUtils.mapUnique(commit.getFromEnumKlassIds(), context::getKlass);
-            var removedChildFields = NncUtils.map(commit.getRemovedChildFieldIds(), context::getField);
+            var toEnumKlasses = Utils.map(commit.getToEnumKlassIds(), context::getKlass);
+            var fromEnumKlasses = Utils.mapToSet(commit.getFromEnumKlassIds(), context::getKlass);
+            var removedChildFields = Utils.map(commit.getRemovedChildFieldIds(), context::getField);
             for (Instance instance : instances) {
-                if(instance.tryGetOldId() != null && !instance.isUseOldId())
-                    instCtx.buffer(instance.getOldId());
+                if(instance instanceof MvInstance mvInst && instance.tryGetOldId() != null && !mvInst.isUseOldId())
+                    context.buffer(instance.getOldId());
             }
             for (var instance : instances) {
-                if(instance.tryGetOldId() != null && !instance.isUseOldId()) {
-                    instCtx.loadTree(instance.getOldId().getTreeId());
-                    instCtx.removeForwardingPointer(instance, true);
+                if(instance instanceof MvInstance mvInst && instance.tryGetOldId() != null && !mvInst.isUseOldId()) {
+                    context.loadTree(instance.getOldId().getTreeId());
+                    context.removeForwardingPointer(mvInst, true);
                 }
                 if(instance instanceof ClassInstance object) {
                     for (Klass k : toEnumKlasses) {
                         var staticFieldTable = StaticFieldTable.getInstance(k.getType(), context);
-                        if (object.getKlass() == k && !staticFieldTable.isEnumConstant(object.getReference())) {
-                            instCtx.remove(instance);
+                        if (object.getInstanceKlass() == k && !staticFieldTable.isEnumConstant(object.getReference())) {
+                            context.remove(instance);
                         }
                     }
-                    if (fromEnumKlasses.contains(object.getKlass()) && !instCtx.isReferenced(object))
-                        instCtx.remove(instance);
+                    if (fromEnumKlasses.contains(object.getInstanceKlass()) && !context.isReferenced(object))
+                        context.remove(instance);
                     for (Field removedChildField : removedChildFields) {
-                        var k = object.getType().findAncestorByKlass(removedChildField.getDeclaringType());
+                        var k = object.getInstanceType().asSuper(removedChildField.getDeclaringType());
                         if(k != null) {
                             var f = k.getField(removedChildField);
                             object.setField(f.getRawField(), Instances.nullInstance());
@@ -209,7 +213,7 @@ public enum CommitState {
                     && commit.getRemovedChildFieldIds().isEmpty();
         }
     },
-    COMPLETED {
+    COMPLETED(7) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
             throw new UnsupportedOperationException();
@@ -220,7 +224,7 @@ public enum CommitState {
             return true;
         }
     },
-    ABORTING {
+    ABORTING(8) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
             Instances.rollbackDDL(instances, commit, context);
@@ -231,7 +235,7 @@ public enum CommitState {
             return true;
         }
     },
-    ABORTED {
+    ABORTED(9) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IEntityContext context) {
             throw new UnsupportedOperationException();
@@ -245,6 +249,12 @@ public enum CommitState {
     ;
 
     public static final Logger logger = LoggerFactory.getLogger(CommitState.class);
+
+    private final int code;
+
+    CommitState(int code) {
+        this.code = code;
+    }
 
     public abstract void process(Iterable<Instance> instances, Commit commit, IEntityContext context);
 
@@ -274,6 +284,14 @@ public enum CommitState {
 
     public boolean isTerminal() {
         return false;
+    }
+
+    public int code() {
+        return code;
+    }
+
+    public static CommitState fromCode(int code) {
+        return Utils.findRequired(values(), s -> s.code == code);
     }
 
     public Task createTask(Commit commit) {

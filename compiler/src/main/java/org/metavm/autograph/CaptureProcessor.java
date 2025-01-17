@@ -131,11 +131,11 @@ public class CaptureProcessor {
                         else if (genDecl instanceof Klass klass) {
                             if (klass.isInner()) {
                                 methodGenerator.createLoadOwnerType();
-                                genDecl = Objects.requireNonNull(klass.getDeclaringKlass());
+                                genDecl = Objects.requireNonNull(klass.getScope());
                             }
                             else if (klass.isLocal()) {
                                 methodGenerator.createLoadOwnerType();
-                                genDecl = Objects.requireNonNull(klass.getEnclosingFlow());
+                                genDecl = Objects.requireNonNull(klass.getScope());
                             }
                             else {
                                 throw new IllegalStateException("Cannot find generic declaration for type variable: " + contextTypeVar.getTypeDesc());

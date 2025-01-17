@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ public class TypeExpressionBuilder {
     }
 
     public TypeExpressionBuilder parameterize(List<String> typeArguments) {
-        NncUtils.requireNotEmpty(typeArguments);
+        Utils.requireNotEmpty(typeArguments);
         expression += "<" + String.join(",", typeArguments) + ">";
         return this;
     }

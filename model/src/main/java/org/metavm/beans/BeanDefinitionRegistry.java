@@ -1,78 +1,106 @@
 package org.metavm.beans;
 
-import org.metavm.api.ChildEntity;
+import lombok.extern.slf4j.Slf4j;
+import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
+import org.metavm.api.Generated;
 import org.metavm.entity.*;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Parameter;
-import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.KlassType;
-import org.metavm.util.Instances;
-import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
+@NativeEntity(53)
 @Entity
-public class BeanDefinitionRegistry extends org.metavm.entity.Entity {
-    public static final IndexDef<BeanDefinitionRegistry> IDX_ALL_FLAGS = IndexDef.create(BeanDefinitionRegistry.class, "allFlags");
+@Slf4j
+public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements Message {
+    public static final IndexDef<BeanDefinitionRegistry> IDX_ALL_FLAGS = IndexDef.create(BeanDefinitionRegistry.class,
+            1, bdr -> List.of(Instances.booleanInstance(bdr.allFlags))
+            );
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     @SuppressWarnings("unused")
-    private final boolean allFlags = true;
+    private boolean allFlags = true;
 
-    @ChildEntity
-    private final ReadWriteArray<BeanDefinition> interceptorDefinitions = addChild(new ReadWriteArray<>(BeanDefinition.class), "interceptorDefinitions");
+    private transient List<BeanDefinition> interceptorDefinitions = new ArrayList<>();
 
-    @ChildEntity
-    private final ChildArray<BeanDefinition> beanDefinitions = addChild(new ChildArray<>(BeanDefinition.class), "beanDefinitions");
+    private List<BeanDefinition> beanDefinitions = new ArrayList<>();
 
     public static BeanDefinitionRegistry getInstance(IEntityContext context) {
-        return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAGS, true), "BeanDefinitionRegistry not found");
+        return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()), "BeanDefinitionRegistry not found");
     }
 
     public static void initialize(IEntityContext context) {
-        var existing = context.selectFirstByKey(IDX_ALL_FLAGS, true);
+        var existing = context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance());
         if(existing != null)
             throw new IllegalStateException("BeanDefinitionRegistry already exists");
         context.bind(new BeanDefinitionRegistry());
     }
 
-    private BeanDefinitionRegistry() {}
+    private BeanDefinitionRegistry() {
+    }
+
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        visitor.visitBoolean();
+        visitor.visitList(visitor::visitEntity);
+    }
+
+    @Nullable
+    @Override
+    public org.metavm.entity.Entity getParentEntity() {
+        return null;
+    }
 
     public void registerBeanDefinition(BeanDefinition beanDefinition) {
-        if(NncUtils.exists(beanDefinitions, b -> b.getName().equals(beanDefinition.getName())))
+        if(Utils.exists(beanDefinitions, b -> b.getName().equals(beanDefinition.getName())))
             throw new IllegalStateException("BeanDefinition with name " + beanDefinition.getName() + " already exists");
-        beanDefinitions.addChild(beanDefinition);
+        addBeanDefinition(beanDefinition);
+    }
+
+    private void addBeanDefinition(BeanDefinition beanDefinition) {
+        beanDefinitions.add(beanDefinition);
         if(StdKlass.interceptor.type().isAssignableFrom(beanDefinition.getBeanType()))
             interceptorDefinitions.add(beanDefinition);
     }
 
     public @Nullable BeanDefinition tryGetBeanDefinition(String name) {
-        return NncUtils.find(beanDefinitions, b -> b.getName().equals(name));
+        return Utils.find(beanDefinitions, b -> b.getName().equals(name));
     }
 
     public BeanDefinition getBeanDefinition(String name) {
-        return NncUtils.findRequired(beanDefinitions, b -> b.getName().equals(name),
+        return Utils.findRequired(beanDefinitions, b -> b.getName().equals(name),
                 "BeanDefinition with name " + name + " not found");
     }
 
     public ClassInstance getBean(String name) {
-        return getBeanDefinition(name).getBean();
+        return getBeanDefinition(name).resolveBean();
     }
 
     public @Nullable ClassInstance tryGetBean(String name) {
         var def = tryGetBeanDefinition(name);
-        return def != null ? def.getBean() : null;
+        return def != null ? def.resolveBean() : null;
     }
 
     public void removeBeanDefinition(String name) {
-        var beanDef = NncUtils.findRequired(beanDefinitions, bean -> bean.getName().equals(name),
+        var beanDef = Utils.findRequired(beanDefinitions, bean -> bean.getName().equals(name),
                 "BeanDefinition with name " + name + " not found");
         beanDefinitions.remove(beanDef);
         if(StdKlass.interceptor.type().isAssignableFrom(beanDef.getBeanType()))
@@ -80,11 +108,11 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity {
     }
 
     public List<BeanDefinition> getBeanDefinitionsByType(ClassType type) {
-        return NncUtils.filter(beanDefinitions, b -> type.isAssignableFrom(b.getBeanType()));
+        return Utils.filter(beanDefinitions, b -> type.isAssignableFrom(b.getBeanType()));
     }
 
     public List<ClassInstance> getBeansOfType(ClassType type) {
-        return NncUtils.filterAndMap(beanDefinitions, b -> type.isAssignableFrom(b.getBeanType()), BeanDefinition::getBean);
+        return Utils.filterAndMap(beanDefinitions, b -> type.isAssignableFrom(b.getBeanType()), BeanDefinition::resolveBean);
     }
 
     public List<Value> getFlowArguments(Flow method) {
@@ -102,7 +130,7 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity {
             if (parameter.getType().getUnderlyingType() instanceof KlassType paramType) {
                 if (paramType.isList()) {
                     if(paramType.getFirstTypeArgument() instanceof KlassType beanType)
-                        arguments.add(Instances.createList(paramType, NncUtils.map(getBeansOfType(beanType), Instance::getReference)).getReference());
+                        arguments.add(Instances.createList(paramType, Utils.map(getBeansOfType(beanType), Instance::getReference)).getReference());
                     else
                         throw new InternalException("Unsupported list element type " + paramType.getFirstTypeArgument() + " in bean factory method " + method.getName());
                 } else {
@@ -111,7 +139,7 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity {
                         throw new InternalException("No beans of type " + paramType + " found");
                     if (beans.size() > 1)
                         throw new InternalException("Multiple beans of type " + paramType + " found");
-                    arguments.add(beans.get(0).getReference());
+                    arguments.add(beans.getFirst().getReference());
                 }
             } else {
                 throw new InternalException("Unsupported parameter type " + parameter.getType() + " in bean factory method " + method.getName());
@@ -121,11 +149,11 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity {
     }
 
     public List<ClassInstance> getInterceptors() {
-        return NncUtils.map(interceptorDefinitions, BeanDefinition::getBean);
+        return Utils.map(interceptorDefinitions, BeanDefinition::resolveBean);
     }
 
     public List<BeanDefinition> getFlowDependencies(Flow flow) {
-        return NncUtils.flatMap(flow.getParameters(), parameter -> {
+        return Utils.flatMap(flow.getParameters(), parameter -> {
             var beanName = parameter.getAttribute(AttributeNames.BEAN_NAME);
             if (beanName != null)
                 return List.of(getBeanDefinition(beanName));
@@ -145,4 +173,60 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity {
 
     }
 
+    private void onRead() {
+        interceptorDefinitions = new ArrayList<>();
+        for (var beanDefinition : beanDefinitions) {
+            if(StdKlass.interceptor.type().isAssignableFrom(beanDefinition.getBeanType()))
+                interceptorDefinitions.add(beanDefinition);
+        }
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        beanDefinitions.forEach(arg -> action.accept(arg.getReference()));
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("interceptors", this.getInterceptors());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+        beanDefinitions.forEach(action);
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_BeanDefinitionRegistry;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        this.allFlags = input.readBoolean();
+        this.beanDefinitions = input.readList(() -> input.readEntity(BeanDefinition.class, this));
+        this.onRead();
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        output.writeBoolean(allFlags);
+        output.writeList(beanDefinitions, output::writeEntity);
+    }
+
+    @Override
+    protected void buildSource(Map<String, Value> source) {
+    }
 }

@@ -3,8 +3,7 @@ package org.metavm.object.instance.persistence.mappers;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.instance.persistence.TargetPO;
-import org.metavm.util.DiffUtils;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -18,21 +17,21 @@ public class MemReferenceMapper implements ReferenceMapper {
 
     @Override
     public List<ReferencePO> selectByTargetsWithKind(Collection<TargetPO> targets) {
-        return NncUtils.flatMap(targets, t -> targetWithKindMap.get(t.keyWithKind()));
+        return Utils.flatMap(targets, t -> targetWithKindMap.get(t.keyWithKind()));
     }
 
     @Override
     public List<ReferencePO> selectByTargetsWithField(Collection<TargetPO> targets) {
-        return NncUtils.flatMap(targets, t -> targetWithFieldMap.get(t.keyWithField()));
+        return Utils.flatMap(targets, t -> targetWithFieldMap.get(t.keyWithField()));
     }
 
     @Override
     public List<ReferencePO> selectByTargetId(long appId, byte[] targetId, long startIdExclusive, long limit) {
         List<ReferencePO> refs = targetMap.get(Id.fromBytes(targetId));
-        if (NncUtils.isEmpty(refs)) {
+        if (Utils.isEmpty(refs)) {
             return List.of();
         }
-        return NncUtils.filterAndSortAndLimit(
+        return Utils.filterAndSortAndLimit(
                 refs,
                 ref -> ref.getSourceTreeId() > startIdExclusive,
                 Comparator.comparingLong(ReferencePO::getSourceTreeId),
@@ -45,9 +44,9 @@ public class MemReferenceMapper implements ReferenceMapper {
                                                             Collection<byte[]> targetIds,
                                                             Collection<Long> excludedSourceIds) {
         var excludedSourceIdSet = new HashSet<>(excludedSourceIds);
-        List<String> keys = NncUtils.map(targetIds, id -> appId + "-" + Id.fromBytes(id) + "-1");
+        List<String> keys = Utils.map(targetIds, id -> appId + "-" + Id.fromBytes(id) + "-1");
         return keys.stream()
-                .map(key -> NncUtils.find(
+                .map(key -> Utils.find(
                         targetWithKindMap.get(key),
                         ref -> !excludedSourceIdSet.contains(ref.getSourceTreeId())
                 ))
@@ -58,10 +57,10 @@ public class MemReferenceMapper implements ReferenceMapper {
     @Override
     public List<ReferencePO> selectAllStrongReferences(long appId, Collection<byte[]> ids, Collection<Long> excludedSourceIds) {
         var excludedSourceIdSet = new HashSet<>(excludedSourceIds);
-        List<String> keys = NncUtils.map(ids, id -> appId + "-" + Id.fromBytes(id) + "-1");
-        return NncUtils.flatMapAndFilter(
+        List<String> keys = Utils.map(ids, id -> appId + "-" + Id.fromBytes(id) + "-1");
+        return Utils.flatMapAndFilter(
                 keys,
-                key -> NncUtils.filter(
+                key -> Utils.filter(
                         targetWithKindMap.get(key),
                         ref -> !excludedSourceIdSet.contains(ref.getSourceTreeId())
                 ),
@@ -86,7 +85,7 @@ public class MemReferenceMapper implements ReferenceMapper {
     }
 
     private void add(ReferencePO ref) {
-        ref = DiffUtils.copyPojo(ref);
+        ref = ref.copy();
         if (!references.add(ref)) {
             throw new RuntimeException(ref + " already exists");
         }

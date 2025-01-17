@@ -4,7 +4,7 @@ import org.metavm.entity.Tree;
 import org.metavm.object.instance.TreeSource;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.rest.GetTreesRequest;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +30,7 @@ public class ServerTreeSource implements TreeSource {
     @Override
     public List<Tree> load(Collection<Long> ids, IInstanceContext context) {
         var trees = typeClient.getTrees(new GetTreesRequest(new ArrayList<>(ids)));
-        return NncUtils.map(trees, t -> new Tree(t.id(), t.version(), t.nextNodeId(), t.bytes()));
+        return Utils.map(trees, t -> new Tree(t.id(), t.version(), t.nextNodeId(), t.bytes()));
     }
 
     @Override

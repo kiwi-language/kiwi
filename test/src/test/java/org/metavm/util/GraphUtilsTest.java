@@ -16,7 +16,7 @@ public class GraphUtilsTest extends TestCase {
 
         var sccs = GraphUtils.tarjan(List.of(a,b,c,d));
         Assert.assertEquals(2, sccs.size());
-        System.out.println(sccs.get(0));
+        System.out.println(sccs.getFirst());
         System.out.println(sccs.get(1));
     }
 

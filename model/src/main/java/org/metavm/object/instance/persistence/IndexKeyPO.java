@@ -6,7 +6,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.BytesUtils;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -75,12 +75,12 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
     @Override
     public String toString() {
         var indexIdStr = Id.fromBytes(indexId);
-        var fields = NncUtils.map(getColumns(), BytesUtils::readIndexBytes);
-        return "{\"indexId: \"" + indexIdStr + "\", \"fields\": [" + NncUtils.join(fields, Objects::toString) + "]}";
+        var fields = Utils.map(getColumns(), BytesUtils::readIndexBytes);
+        return "{\"indexId: \"" + indexIdStr + "\", \"fields\": [" + Utils.join(fields, Objects::toString) + "]}";
     }
 
     public List<Value> getColumnValues(Function<Id, Instance> resolver) {
-        return NncUtils.map(getColumns(), b -> BytesUtils.readIndexValue(b, resolver));
+        return Utils.map(getColumns(), b -> BytesUtils.readIndexValue(b, resolver));
     }
 
     List<byte[]> getColumns() {

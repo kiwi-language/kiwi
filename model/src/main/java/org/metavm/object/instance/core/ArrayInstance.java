@@ -19,7 +19,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public class ArrayInstance extends Instance implements Iterable<Value> {
+public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
     public static ArrayInstance allocate(ArrayType type) {
         return new ArrayInstance(type);
@@ -65,8 +65,6 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
         clearInternal();
         for (Value element : elements)
             addInternally(element);
-        if (!isNew() && !isLoaded())
-            setLoaded(false);
     }
 
     private void clearInternal() {
@@ -77,21 +75,19 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
 
     @NoProxy
     public boolean isChildArray() {
-        return getType().getKind() == ArrayKind.CHILD;
+        return getInstanceType().getKind() == ArrayKind.CHILD;
     }
 
     public Set<Instance> getChildren() {
-        ensureLoaded();
-        if (getType().getKind() == ArrayKind.CHILD) {
-            return NncUtils.filterAndMapUnique(elements, Value::isNotNull, Value::resolveDurable);
+        if (getInstanceType().getKind() == ArrayKind.CHILD) {
+            return Utils.filterAndMapUnique(elements, Value::isNotNull, Value::resolveDurable);
         } else {
             return Set.of();
         }
     }
 
     @Override
-    protected void writeBody(InstanceOutput output) {
-        ensureLoaded();
+    protected void writeBody(MvOutput output) {
         var elements = this.elements;
         int size = 0;
         for (Value element : elements) {
@@ -128,50 +124,41 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     public Value get(int index) {
-        ensureLoaded();
         checkIndex(index);
         return elements.get(index);
     }
 
     public Value getInstance(int i) {
-        ensureLoaded();
         return elements.get(i);
     }
 
     public int size() {
-        ensureLoaded();
         return elements.size();
     }
 
     public boolean isEmpty() {
-        ensureLoaded();
         return elements.isEmpty();
     }
 
     public boolean contains(Object o) {
-        ensureLoaded();
         //noinspection SuspiciousMethodCalls
         return elements.contains(o);
     }
 
     public BooleanValue instanceContains(Value instance) {
-        ensureLoaded();
         return Instances.createBoolean(contains(instance));
     }
 
     @NotNull
     public Iterator<Value> iterator() {
-        ensureLoaded();
         return elements.iterator();
     }
 
     public ListIterator<Value> listIterator() {
-        ensureLoaded();
         return elements.listIterator();
     }
 
     public boolean addElement(Value element) {
-        ensureLoaded();
         return addInternally(element);
     }
 
@@ -183,12 +170,10 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     void removeChild(Value element) {
-        ensureLoaded();
         removeInternally(element);
     }
 
     public Value removeElement(int index) {
-        ensureLoaded();
         checkIndex(index);
         var removed = elements.remove(index);
         onRemove(removed);
@@ -196,7 +181,6 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     public Value setElement(int index, Value element) {
-        ensureLoaded();
         checkIndex(index);
         checkElement(element);
         if (isChildArray() && element.isNotNull())
@@ -209,8 +193,8 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     private void checkElement(Value element) {
-        if (!getType().getElementType().isAssignableFrom(element.getType()))
-            throw new BusinessException(ErrorCode.INCORRECT_ARRAY_ELEMENT, element, getType());
+        if (!getInstanceType().getElementType().isAssignableFrom(element.getValueType()))
+            throw new BusinessException(ErrorCode.INCORRECT_ARRAY_ELEMENT, element, getInstanceType());
     }
 
     private void checkIndex(int index) {
@@ -227,14 +211,12 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     public void setElements(List<Value> elements) {
-        ensureLoaded();
         for (Value element : new ArrayList<>(this.elements))
             removeElement(element);
         this.addAll(elements);
     }
 
     public boolean removeElement(Object element) {
-        ensureLoaded();
         return removeInternally(element);
     }
 
@@ -265,35 +247,23 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     public boolean addAll(Iterable<? extends Value> c) {
-        ensureLoaded();
         c.forEach(this::addElement);
         return true;
     }
 
     public int length() {
-        ensureLoaded();
         return elements.size();
     }
 
     public List<Value> getElements() {
-        ensureLoaded();
         return elements;
     }
 
     public Value getElement(int index) {
-        ensureLoaded();
         return elements.get(index);
     }
 
-    @Override
-    public Set<Instance> getRefInstances() {
-        ensureLoaded();
-        return new IdentitySet<>(
-                NncUtils.filterByType(elements, Instance.class)
-        );
-    }
-
-//    @Override
+    //    @Override
     @NoProxy
     public boolean isReference() {
         return true;
@@ -301,35 +271,26 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
 
     @Override
     public String getTitle() {
-        ensureLoaded();
         List<Value> first = elements.subList(0, Math.min(3, elements.size()));
-        return NncUtils.join(first, Value::getTitle, ",") + (elements.size() > 3 ? "..." : "");
+        return Utils.join(first, Value::getTitle, ",") + (elements.size() > 3 ? "..." : "");
     }
 
     @Override
-    public void forEachChild(Consumer<Instance> action) {
+    public void forEachChild(Consumer<? super Instance> action) {
         if(isChildArray()) {
             elements.forEach(e -> {
                 if (e instanceof Reference r)
-                    action.accept(r.resolve());
+                    action.accept(r.get());
             });
         }
     }
 
     @Override
-    public void forEachMember(Consumer<Instance> action) {
-        if(isChildArray()) {
-            elements.forEach(e -> {
-                if (e instanceof Reference r)
-                    action.accept(r.resolve());
-            });
-        }
-        else {
-            elements.forEach(e -> {
-                if(e instanceof Reference r && r.isValueReference())
-                    action.accept(r.resolve());
-            });
-        }
+    public void forEachValue(Consumer<? super Instance> action) {
+        elements.forEach(e -> {
+            if(e instanceof Reference r && r.isValueReference())
+                action.accept(r.get());
+        });
     }
 
     @Override
@@ -352,7 +313,7 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     @Override
     public void forEachReference(TriConsumer<Reference, Boolean, Type> action) {
         var isChild = isChildArray();
-        var elementType = getType().getElementType();
+        var elementType = getInstanceType().getElementType();
         elements.forEach(e -> {
             if(e instanceof Reference r)
                 action.accept(r, isChild, elementType);
@@ -362,7 +323,7 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     @Override
     public void transformReference(TriFunction<Reference, Boolean, Type, Reference> function) {
         var isChild = isChildArray();
-        var elementType = getType().getElementType();
+        var elementType = getInstanceType().getElementType();
         var it = elements.listIterator();
         while (it.hasNext()) {
             var v = it.next();
@@ -375,12 +336,11 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     //    @Override
-    protected ArrayInstanceParam getParam() {
-        ensureLoaded();
+    public ArrayInstanceParam getParam() {
         if (isChildArray()) {
             return new ArrayInstanceParam(
                     true,
-                    NncUtils.map(elements, e ->
+                    Utils.map(elements, e ->
                             new InstanceFieldValue(
                                     e.getTitle(), e.toDTO()
                             )
@@ -389,7 +349,7 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
         } else {
             return new ArrayInstanceParam(
                     false,
-                    NncUtils.map(elements, Value::toFieldValueDTO)
+                    Utils.map(elements, Value::toFieldValueDTO)
             );
         }
     }
@@ -402,13 +362,11 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
 
 //    @Override
     public <R> void acceptReferences(ValueVisitor<R> visitor) {
-        ensureLoaded();
         elements.forEach(visitor::visit);
     }
 
 //    @Override
     public <R> void acceptChildren(ValueVisitor<R> visitor) {
-        ensureLoaded();
         if (isChildArray())
             elements.forEach(visitor::visit);
     }
@@ -462,19 +420,16 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     @Override
-    public ArrayType getType() {
-        ensureLoaded();
-        return (ArrayType) super.getType();
+    public ArrayType getInstanceType() {
+        return (ArrayType) super.getInstanceType();
     }
 
 //    @Override
     public InstanceFieldValue toFieldValueDTO() {
-        ensureLoaded();
         return new InstanceFieldValue(getTitle(), toDTO());
     }
 
     public void clear() {
-        ensureLoaded();
         clearInternal();
     }
 
@@ -483,19 +438,17 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     public boolean removeIf(Predicate<Value> filter) {
-        ensureLoaded();
         return elements.removeIf(filter);
     }
 
 //    @Override
-    protected void writeTree(TreeWriter treeWriter) {
-        ensureLoaded();
-        treeWriter.writeLine(getType().getName());
+    public void writeTree(TreeWriter treeWriter) {
+        treeWriter.writeLine(getInstanceType().getName());
         treeWriter.indent();
         if(isChildArray()) {
             for (Value element : elements) {
                 if(element instanceof Reference r)
-                    r.resolve().writeTree(treeWriter);
+                    r.get().writeTree(treeWriter);
                 else
                     treeWriter.writeLine(element.getTitle());
             }
@@ -503,7 +456,7 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
         else {
             for (Value element : elements) {
                 if(element instanceof Reference r && r.isValueReference())
-                    r.resolve().writeTree(treeWriter);
+                    r.get().writeTree(treeWriter);
                 else
                     treeWriter.writeLine(element.getTitle());
             }
@@ -512,19 +465,19 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     @Override
-    public void accept(InstanceVisitor visitor) {
-        visitor.visitArrayInstance(this);
+    public <R> R accept(InstanceVisitor<R> visitor) {
+        return visitor.visitArrayInstance(this);
     }
 
     public List<Object> toJson(IEntityContext context) {
         var list = new ArrayList<>();
-        forEach(e -> list.add(e.toJson(context)));
+        forEach(e -> list.add(e.toJson()));
         return list;
     }
 
 //    @Override
     public boolean isMutable() {
-        return getType().getKind() != ArrayKind.VALUE;
+        return getInstanceType().getKind() != ArrayKind.VALUE;
     }
 
     @Override
@@ -542,12 +495,12 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
 
     @Override
     public ArrayInstance copy() {
-        var copy = new ArrayInstance(getType());
+        var copy = new ArrayInstance(getInstanceType());
         if(isChildArray()) {
             var copyElements = copy.elements;
             elements.forEach(e -> {
                 if (e instanceof Reference r)
-                    e = r.resolve().copy().getReference();
+                    e = r.get().copy().getReference();
                 copyElements.add(e);
             });
         }
@@ -561,7 +514,7 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     public ArrayInstance copyOfRange(int from, int to) {
-        return copyOfRange(from, to, getType());
+        return copyOfRange(from, to, getInstanceType());
     }
 
     public ArrayInstance copyOfRange(int from, int to, ArrayType type) {
@@ -569,7 +522,7 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
     }
 
     public ArrayInstance copyOf(int newLength) {
-        return copyOf(newLength, getType());
+        return copyOf(newLength, getInstanceType());
     }
 
     public ArrayInstance copyOf(int newLength, ArrayType type) {
@@ -582,4 +535,11 @@ public class ArrayInstance extends Instance implements Iterable<Value> {
         return copy;
     }
 
+    public Value getFirst() {
+        return get(0);
+    }
+
+    public Value getLast() {
+        return get(size() - 1);
+    }
 }

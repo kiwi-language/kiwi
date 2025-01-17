@@ -52,14 +52,14 @@ public class Assembler {
 
     @SuppressWarnings("UnusedReturnValue")
     public void assemble(List<String> sourcePaths) {
-        var units = NncUtils.map(sourcePaths, path -> parse(getSource(path)));
+        var units = Utils.map(sourcePaths, path -> parse(getSource(path)));
         assemble0(units);
     }
 
     public void generateClasses(String targetDir) {
         try (var serContext = SerializeContext.enter();
              var ignored = ContextUtil.getProfiler().enter("deploy")) {
-            NncUtils.clearDirectory(targetDir);
+            Utils.clearDirectory(targetDir);
             serContext.includingCode(true)
                     .includeNodeOutputType(false)
                     .includingValueType(false);
@@ -76,8 +76,8 @@ public class Assembler {
         var path = targetDir + '/' + requireNonNull(klass.getQualifiedName()).replace('.', '/') + ".mvclass";
         var bout = new ByteArrayOutputStream();
         var output = new KlassOutput(bout, serializeContext);
-        klass.write(output);
-        NncUtils.writeFile(path, bout.toByteArray());
+        output.writeEntity(klass);
+        Utils.writeFile(path, bout.toByteArray());
     }
 
     private void createArchive(String target) {
@@ -128,7 +128,7 @@ public class Assembler {
                                                Callable callable, AsmScope scope, AsmCompilationUnit compilationUnit) {
         if (parameterList == null)
             return List.of();
-        return NncUtils.map(parameterList.formalParameter(), p -> parseParameter(p, callable, scope, compilationUnit));
+        return Utils.map(parameterList.formalParameter(), p -> parseParameter(p, callable, scope, compilationUnit));
     }
 
     private Parameter parseParameter(AssemblyParser.FormalParameterContext parameter, Callable callable, AsmScope scope, AsmCompilationUnit compilationUnit) {
@@ -140,7 +140,7 @@ public class Assembler {
             return existing;
         }
         return new Parameter(
-                NncUtils.randomNonNegative(),
+                Utils.randomNonNegative(),
                 name,
                 type,
                 callable
@@ -179,13 +179,13 @@ public class Assembler {
             var className = scope.getCompilationUnit().getReferenceName(classType.qualifiedName().getText());
             var typeArgs = classType.typeArguments();
             if (typeArgs != null)
-                return className + "<" + NncUtils.join(typeArgs.typeType(), t -> getInternalName(t, typeParameters, scope)) + ">";
+                return className + "<" + Utils.join(typeArgs.typeType(), t -> getInternalName(t, typeParameters, scope)) + ">";
             else {
                 if (typeParameters.contains(className))
                     return "this." + className;
                 var s = scope;
                 while (s != null) {
-                    if (NncUtils.anyMatch(s.getTypeParameters(), tv -> tv.getName().equals(className)))
+                    if (Utils.anyMatch(s.getTypeParameters(), tv -> tv.getName().equals(className)))
                         return s.getGenericDeclaration().getQualifiedName() + "." + className;
                     s = scope.parent();
                 }
@@ -205,7 +205,7 @@ public class Assembler {
                     .sorted(String::compareTo)
                     .collect(Collectors.joining("&"));
         } else if (typeType.ARROW() != null) {
-            return "(" + NncUtils.join(typeType.typeType(), t -> getInternalName(t, typeParameters, scope)) + ")"
+            return "(" + Utils.join(typeType.typeType(), t -> getInternalName(t, typeParameters, scope)) + ")"
                     + "->" + getInternalName(typeType.typeType(typeType.typeType().size() - 1), typeParameters, scope);
         } else if (typeType.LBRACK() != null) {
             return "[" + getInternalName(typeType.typeType(0), typeParameters, scope) + ","
@@ -414,7 +414,7 @@ public class Assembler {
                     scope,
                     getCompilationUnit(), klass,
                     typeParameters != null ?
-                            NncUtils.map(typeParameters.typeParameter(), tv -> tv.IDENTIFIER().getText())
+                            Utils.map(typeParameters.typeParameter(), tv -> tv.IDENTIFIER().getText())
                             : List.of(),
                     typeCategory == TypeCategory.ENUM
             );
@@ -434,7 +434,7 @@ public class Assembler {
 
         @Override
         public Void visitTypeDeclaration(AssemblyParser.TypeDeclarationContext ctx) {
-            modsStack.push(NncUtils.mapUnique(ctx.classOrInterfaceModifier(), RuleContext::getText));
+            modsStack.push(Utils.mapToSet(ctx.classOrInterfaceModifier(), RuleContext::getText));
             super.visitTypeDeclaration(ctx);
             modsStack.pop();
             return null;
@@ -442,7 +442,7 @@ public class Assembler {
 
         @Override
         public Void visitInterfaceMethodDeclaration(AssemblyParser.InterfaceMethodDeclarationContext ctx) {
-            modsStack.push(NncUtils.mapUnique(ctx.interfaceMethodModifier(), RuleContext::getText));
+            modsStack.push(Utils.mapToSet(ctx.interfaceMethodModifier(), RuleContext::getText));
             super.visitInterfaceMethodDeclaration(ctx);
             modsStack.pop();
             return null;
@@ -450,7 +450,7 @@ public class Assembler {
 
         @Override
         public Void visitClassBodyDeclaration(AssemblyParser.ClassBodyDeclarationContext ctx) {
-            modsStack.push(NncUtils.mapUnique(ctx.modifier(), RuleContext::getText));
+            modsStack.push(Utils.mapToSet(ctx.modifier(), RuleContext::getText));
             super.visitClassBodyDeclaration(ctx);
             modsStack.pop();
             return null;
@@ -471,18 +471,18 @@ public class Assembler {
             else if(!klass.isEnum())
                 klass.setSuperType(null);
             if (interfaces != null)
-                klass.setInterfaces(NncUtils.map(interfaces.typeType(), t -> (ClassType) parseType(t, scope, getCompilationUnit())));
+                klass.setInterfaces(Utils.map(interfaces.typeType(), t -> (ClassType) parseType(t, scope, getCompilationUnit())));
             processBody.run();
             if(klass.isEnum())
                 classInfo.visitedMethods.add(Flows.saveValuesMethod(klass));
-            var removedMethods = NncUtils.exclude(klass.getMethods(), classInfo.visitedMethods::contains);
+            var removedMethods = Utils.exclude(klass.getMethods(), classInfo.visitedMethods::contains);
             removedMethods.forEach(klass::removeMethod);
-            var removedFields = NncUtils.exclude(klass.getFields(), classInfo.visitedFields::contains);
+            var removedFields = Utils.exclude(klass.getFields(), classInfo.visitedFields::contains);
             removedFields.forEach(f -> {
                 f.setMetadataRemoved();
                 f.resetTypeIndex();
             });
-            NncUtils.exclude(klass.getStaticFields(), classInfo.visitedFields::contains).forEach(klass::removeField);
+            Utils.exclude(klass.getStaticFields(), classInfo.visitedFields::contains).forEach(klass::removeField);
             klass.rebuildMethodTable();
             exitScope();
         }
@@ -498,7 +498,7 @@ public class Assembler {
             var field = isStatic ? klass.findSelfStaticFieldByName(name) : klass.findSelfFieldByName(name);
             if (field == null) {
                 field = FieldBuilder.newBuilder(name, klass, type)
-                        .tmpId(NncUtils.randomNonNegative())
+                        .tmpId(Utils.randomNonNegative())
                         .isChild(mods.contains(Modifiers.CHILD))
                         .isStatic(isStatic)
                         .build();
@@ -530,7 +530,7 @@ public class Assembler {
             var ordinal = classInfo.nextEnumConstantOrdinal();
             if (field == null) {
                 field = FieldBuilder.newBuilder(name, klass, klass.getType())
-                        .tmpId(NncUtils.randomNonNegative())
+                        .tmpId(Utils.randomNonNegative())
                         .isStatic(true)
                         .isEnumConstant(true)
                         .ordinal(ordinal)
@@ -565,7 +565,7 @@ public class Assembler {
             var klass = classInfo.getKlass();
             List<AssemblyParser.FormalParameterContext> params = formalParameterList != null ? formalParameterList.formalParameter() : List.of();
             Set<String> typeParamNames = typeParameters != null ?
-                    NncUtils.mapUnique(typeParameters.typeParameter(), tv -> tv.IDENTIFIER().getText()) : Set.of();
+                    Utils.mapToSet(typeParameters.typeParameter(), tv -> tv.IDENTIFIER().getText()) : Set.of();
             var paramTypeNames = new ArrayList<String>();
             if(klass.isEnum() && isConstructor) {
                 paramTypeNames.add("String");
@@ -578,7 +578,7 @@ public class Assembler {
                 method.clearContent();
             else {
                 method = MethodBuilder.newBuilder(klass, name)
-                        .tmpId(NncUtils.randomNonNegative())
+                        .tmpId(Utils.randomNonNegative())
                         .isConstructor(isConstructor)
                         .build();
             }
@@ -592,7 +592,7 @@ public class Assembler {
                 var nameParam = method.findParameter(p -> p.getName().equals("_name"));
                 if (nameParam == null) {
                     nameParam = new Parameter(
-                            NncUtils.randomNonNegative(),
+                            Utils.randomNonNegative(),
                             "_name",
                             PrimitiveType.stringType,
                             method
@@ -604,7 +604,7 @@ public class Assembler {
                 var ordinalParam = method.findParameter(p -> p.getName().equals("_ordinal"));
                 if (ordinalParam == null) {
                     ordinalParam = new Parameter(
-                            NncUtils.randomNonNegative(),
+                            Utils.randomNonNegative(),
                             "_ordinal",
                             PrimitiveType.intType,
                             method
@@ -628,9 +628,9 @@ public class Assembler {
         public Void visitTypeParameter(AssemblyParser.TypeParameterContext ctx) {
             var genericDecl = scope.getGenericDeclaration();
             var name = ctx.IDENTIFIER().getText();
-            var type = NncUtils.find(genericDecl.getTypeParameters(), tv -> tv.getName().equals(name));
+            var type = Utils.find(genericDecl.getTypeParameters(), tv -> tv.getName().equals(name));
             if(type == null)
-                type = new TypeVariable(NncUtils.randomNonNegative(), name, genericDecl);
+                type = new TypeVariable(Utils.randomNonNegative(), name, genericDecl);
             setAttribute(ctx, AsmAttributeKey.typeVariable, type);
             return super.visitTypeParameter(ctx);
         }
@@ -670,7 +670,7 @@ public class Assembler {
             super.visitTypeDef(name, typeCategory, isStruct, superType, interfaces, typeParameters, annotations, ctx, processBody);
             var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
             var klass = classInfo.getKlass();
-            var removedIndices = NncUtils.exclude(klass.getAllIndices(), classInfo.visitedIndices::contains);
+            var removedIndices = Utils.exclude(klass.getAllIndices(), classInfo.visitedIndices::contains);
             removedIndices.forEach(klass::removeConstraint);
         }
 
@@ -686,7 +686,7 @@ public class Assembler {
                     && method.getParameters().isEmpty()
                     && !method.getReturnType().isVoid()
                     && !method.isStatic()) {
-                Index index = NncUtils.find(klass.getAllIndices(), idx -> Objects.equals(idx.getName(), name));
+                Index index = Utils.find(klass.getAllIndices(), idx -> Objects.equals(idx.getName(), name));
                 if (index == null) {
                     index = new Index(
                             klass,
@@ -702,10 +702,10 @@ public class Assembler {
                 classInfo.visitedIndices.add(index);
                 var indexF = index;
                 var keyType = method.getReturnType();
-                if(keyType instanceof KlassType ct && ct.isValue()) {
+                if(keyType instanceof KlassType ct && ct.isValueType()) {
                     ct.forEachField(field -> {
                         if (!field.isStatic() && !field.isTransient()) {
-                            var indexField = NncUtils.find(indexF.getFields(), f -> Objects.equals(f.getName(), field.getName()));
+                            var indexField = Utils.find(indexF.getFields(), f -> Objects.equals(f.getName(), field.getName()));
                             if (indexField == null)
                                 new IndexField(indexF, field.getName(), field.getPropertyType(), Values.nullValue());
                             else
@@ -713,7 +713,7 @@ public class Assembler {
                         }
                     });
                 } else {
-                    var indexField = NncUtils.find(index.getFields(), f -> Objects.equals(f.getName(), "value"));
+                    var indexField = Utils.find(index.getFields(), f -> Objects.equals(f.getName(), "value"));
                     if (indexField == null)
                         new IndexField(index, "value", keyType, Values.nullValue());
                     else
@@ -796,7 +796,7 @@ public class Assembler {
             else {
                 cinit = MethodBuilder.newBuilder(klass, "__cinit__")
                         .isStatic(true)
-                        .tmpId(NncUtils.randomNonNegative())
+                        .tmpId(Utils.randomNonNegative())
                         .access(Access.PRIVATE)
                         .returnType(PrimitiveType.voidType)
                         .build();
@@ -855,7 +855,7 @@ public class Assembler {
                                     return m.getParameterTypes().equals(method.getParameterTypes());
                                 else {
                                     var subst = new TypeSubstitutor(method.getDefaultTypeArguments(), m.getTypeArguments());
-                                    var paramTypesSubst = NncUtils.map(method.getParameterTypes(), t -> t.accept(subst));
+                                    var paramTypesSubst = Utils.map(method.getParameterTypes(), t -> t.accept(subst));
                                     return paramTypesSubst.equals(m.getParameterTypes());
                                 }
                             } else
@@ -885,7 +885,7 @@ public class Assembler {
                 }
                 if (typeParameters != null)
                     typeParameters.accept(this);
-//                if(method.getName().equals("decQuantity")) {
+//                if(method.getName().equals("__run__")) {
 //                    logger.debug("{}", method.getText());
 //                }
             } finally {
@@ -918,9 +918,9 @@ public class Assembler {
             Nodes.newObject(code, klass.getType(), false, false);
             Nodes.loadConstant(Instances.stringInstance(name), code);
             Nodes.loadConstant(Instances.intInstance(enumConstant.getOrdinal()), code);
-            var types = NncUtils.merge(
+            var types = Utils.merge(
                     List.of(Types.getStringType(), Types.getIntType()),
-                    NncUtils.map(argCtx, this::parseExpression)
+                    Utils.map(argCtx, this::parseExpression)
             );
             var constructor = klass.getType().resolveMethod(klass.getName(), types, List.of(), false);
             Nodes.invokeMethod(constructor, code);
@@ -1021,7 +1021,7 @@ public class Assembler {
         private List<Type> parseExpressionList(@Nullable AssemblyParser.ExpressionListContext expressionList) {
             if (expressionList == null)
                 return List.of();
-            return NncUtils.map(expressionList.expression(), this::parseExpression);
+            return Utils.map(expressionList.expression(), this::parseExpression);
         }
 
     }
@@ -1077,14 +1077,14 @@ public class Assembler {
             return new ArrayType(elementType, parseArrayKind(arrayKind));
         }
         if (!typeType.BITOR().isEmpty()) {
-            var members = NncUtils.map(
+            var members = Utils.map(
                     typeType.typeType(),
                     typeType1 -> parseType(typeType1, scope, compilationUnit)
             );
             return new UnionType(new HashSet<>(members));
         }
         if (!typeType.BITAND().isEmpty()) {
-            var types = NncUtils.map(
+            var types = Utils.map(
                     typeType.typeType(),
                     typeType1 -> parseType(typeType1, scope, compilationUnit)
             );
@@ -1092,7 +1092,7 @@ public class Assembler {
         }
         if (typeType.ARROW() != null) {
             int numParams = typeType.typeType().size() - 1;
-            var parameterTypes = NncUtils.map(
+            var parameterTypes = Utils.map(
                     typeType.typeType().subList(0, numParams),
                     typeType1 -> parseType(typeType1, scope, compilationUnit)
             );
@@ -1159,7 +1159,7 @@ public class Assembler {
                 k = k.parent();
             }
         }
-        List<Type> typeArguments = classOrInterfaceType.typeArguments() != null ? NncUtils.map(
+        List<Type> typeArguments = classOrInterfaceType.typeArguments() != null ? Utils.map(
                 classOrInterfaceType.typeArguments().typeType(),
                 typeType1 -> parseType(typeType1, scope, compilationUnit)
         ) : List.of();
@@ -1171,11 +1171,15 @@ public class Assembler {
     }
 
     private @Nullable Klass findKlass(String name) {
-        return name2klass.computeIfAbsent(name, klassProvider);
+        return name2klass.computeIfAbsent(name, this::loadKlass);
+    }
+
+    private @Nullable Klass loadKlass(String name) {
+        return klassProvider.apply(name);
     }
 
     private Klass createKlass(String name, String qualifiedName, ClassKind kind) {
-        var klass = KlassBuilder.newBuilder(name, qualifiedName).kind(kind).tmpId(NncUtils.randomNonNegative()).build();
+        var klass = KlassBuilder.newBuilder(name, qualifiedName).kind(kind).tmpId(Utils.randomNonNegative()).build();
         name2klass.put(qualifiedName, klass);
         return klass;
     }

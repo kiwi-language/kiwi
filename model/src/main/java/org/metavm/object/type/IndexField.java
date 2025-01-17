@@ -1,20 +1,39 @@
 package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
-import org.metavm.entity.*;
+import org.metavm.api.Generated;
+import org.metavm.entity.BuildKeyContext;
+import org.metavm.entity.Element;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.EntityRegistry;
+import org.metavm.entity.LocalKey;
 import org.metavm.expression.Expression;
 import org.metavm.expression.PropertyExpression;
 import org.metavm.expression.ThisExpression;
-import org.metavm.flow.KlassInput;
+import org.metavm.flow.Value;
 import org.metavm.flow.Values;
-import org.metavm.object.instance.core.Value;
-import org.metavm.util.Instances;
-import org.metavm.util.InternalException;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.InstanceVisitor;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
+import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
+import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
+
+@NativeEntity(0)
 @Entity
-public class IndexField extends Element implements LocalKey, ITypeDef {
+public class IndexField extends org.metavm.entity.Entity implements LocalKey, ITypeDef, Element {
+
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     public static IndexField createFieldItem(Index constraint, Field field) {
         return new IndexField(
@@ -28,14 +47,22 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
     private Index index;
     private String name;
     private int typeIndex;
-    private org.metavm.flow.Value value;
+    @Nullable
+    private Value value;
 
-    public IndexField(Index index, String name, Type type, org.metavm.flow.Value value) {
+    public IndexField(Index index, String name, Type type, @Nullable Value value) {
         setName(name);
         typeIndex = index.getDeclaringType().addConstant(type);
         this.index = index;
         this.value = value;
         index.addField(this);
+    }
+
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        visitor.visitUTF();
+        visitor.visitInt();
+        visitor.visitNullable(() -> Value.visit(visitor));
     }
 
     public String getName() {
@@ -50,6 +77,7 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
         return index.getDeclaringType().getName() + "." + index.getName() + "." + name;
     }
 
+    @Nullable
     public org.metavm.flow.Value getValue() {
         return value;
     }
@@ -58,7 +86,7 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
         this.name = name;
     }
 
-    public void setValue(org.metavm.flow.Value value) {
+    public void setValue(@Nullable org.metavm.flow.Value value) {
         this.value = value;
     }
 
@@ -67,7 +95,7 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
     }
 
     public Field getField() {
-        return extractField(value.getExpression());
+        return extractField(Objects.requireNonNull(value).getExpression());
     }
 
     private Field extractField(Expression expression) {
@@ -83,14 +111,6 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
         return index.getFieldIndex(this);
     }
 
-    public Value convertEntityToInstance(Object entity, IEntityContext context) {
-        if (Instances.isPrimitive(entity) || context.containsEntity(entity))
-            return context.getObjectInstanceMap().getInstance(entity);
-        else
-            throw new InternalException("Entity " + entity.getClass().getName() + " " + entity + " not found in the context");
-
-    }
-
     @Override
     public boolean isValidLocalKey() {
         return true;
@@ -101,20 +121,18 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
         return name;
     }
 
-    public void write(MvOutput output) {
-        output.writeEntityId(this);
-        output.writeUTF(name);
-        output.writeShort(typeIndex);
-    }
-
-    public void read(KlassInput input) {
-        name = input.readUTF();
-        value = Values.nullValue();
-        typeIndex = input.readShort();
+    @Nullable
+    @Override
+    public org.metavm.entity.Entity getParentEntity() {
+        return index;
     }
 
     public void setIndex(Index index) {
         this.index = index;
+    }
+
+    public void setType(Type type) {
+        typeIndex = getIndex().getDeclaringType().addConstant(type);
     }
 
     @Override
@@ -122,7 +140,61 @@ public class IndexField extends Element implements LocalKey, ITypeDef {
         return visitor.visitIndexField(this);
     }
 
-    public void setType(Type type) {
-        typeIndex = getIndex().getDeclaringType().addConstant(type);
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        if (value != null) value.forEachReference(action);
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("name", this.getName());
+        map.put("qualifiedName", this.getQualifiedName());
+        map.put("index", this.getIndex().getStringId());
+        map.put("field", this.getField().getStringId());
+        map.put("fieldIndex", this.getFieldIndex());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_IndexField;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        this.index = (Index) parent;
+        this.name = input.readUTF();
+        this.typeIndex = input.readInt();
+        this.value = input.readNullable(() -> Value.read(input));
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        output.writeUTF(name);
+        output.writeInt(typeIndex);
+        output.writeNullable(value, arg0 -> arg0.write(output));
+    }
+
+    @Override
+    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
     }
 }

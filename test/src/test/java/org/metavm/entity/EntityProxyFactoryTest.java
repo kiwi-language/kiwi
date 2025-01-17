@@ -17,7 +17,7 @@ public class EntityProxyFactoryTest extends TestCase {
         Foo recursiveFooProxy = EntityProxyFactory.getProxy(Foo.class, foo -> {
             if(foo.tryGetId() == null) {
                 foo.setName("Big Foo");
-                foo.setBar(new Bar("Bar001"));
+                foo.setBar(new Bar(foo, "Bar001"));
             }
         }) ;
         Assert.assertEquals("Big Foo", recursiveFooProxy.getName());

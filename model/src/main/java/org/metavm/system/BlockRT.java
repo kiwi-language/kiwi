@@ -4,7 +4,7 @@ import com.sun.jdi.InternalException;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.TypeId;
 import org.metavm.system.rest.dto.BlockDTO;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 import java.util.Objects;
@@ -32,7 +32,7 @@ public class BlockRT implements Comparable<BlockRT> {
         if(count > available()) {
             throw new InternalException("Not enough ids available in the block");
         }
-        List<Long> results = NncUtils.range(next, next + count);
+        List<Long> results = Utils.range(next, next + count);
         next += count;
         if(available() == 0) {
             active = false;

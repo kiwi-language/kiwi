@@ -1,8 +1,10 @@
 package org.metavm.entity;
 
-public record EntityQueryField(
-        String fieldName,
-        Object value
+import org.metavm.object.instance.core.Value;
+
+public record EntityQueryField<T>(
+        SearchField<T> searchField,
+        Value value
 ) {
 
 }

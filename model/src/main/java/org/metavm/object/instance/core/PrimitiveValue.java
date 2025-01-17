@@ -1,11 +1,10 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.rest.PrimitiveFieldValue;
 import org.metavm.object.instance.rest.PrimitiveInstanceParam;
 import org.metavm.object.type.PrimitiveType;
-import org.metavm.util.InstanceOutput;
+import org.metavm.util.MvOutput;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -19,11 +18,6 @@ public abstract class PrimitiveValue implements Value, Comparable<PrimitiveValue
     public abstract Object getValue();
 
     @Override
-    public boolean isReference() {
-        return false;
-    }
-
-    @Override
     public boolean isPrimitive() {
         return true;
     }
@@ -31,17 +25,9 @@ public abstract class PrimitiveValue implements Value, Comparable<PrimitiveValue
     @Override
     public PrimitiveInstanceParam getParam() {
         return new PrimitiveInstanceParam(
-                getType().getKind().code(),
+                getValueType().getKind().code(),
                 getValue()
         );
-    }
-
-    @Override
-    public <R> void acceptReferences(ValueVisitor<R> visitor) {
-    }
-
-    @Override
-    public <R> void acceptChildren(ValueVisitor<R> visitor) {
     }
 
     @Override
@@ -60,34 +46,34 @@ public abstract class PrimitiveValue implements Value, Comparable<PrimitiveValue
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PrimitiveValue that = (PrimitiveValue) o;
-        return Objects.equals(getValue(), that.getValue()) && Objects.equals(getType(), that.getType());
+        return Objects.equals(getValue(), that.getValue()) && Objects.equals(getValueType(), that.getValueType());
     }
 
     @Override
-    public abstract PrimitiveType getType();
+    public abstract PrimitiveType getValueType();
 
     @Override
     public int hashCode() {
-        return Objects.hash(getValue(), getType());
+        return Objects.hash(getValue(), getValueType());
     }
 
     @Override
     public PrimitiveFieldValue toFieldValueDTO() {
         return new PrimitiveFieldValue(
                 getTitle(),
-                getType().getKind().code(),
+                getValueType().getKind().code(),
                 getValue()
         );
     }
 
     @Override
-    public void writeInstance(InstanceOutput output) {
+    public void writeInstance(MvOutput output) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public int compareTo(@NotNull PrimitiveValue o) {
-        int cmp = Integer.compare(getType().getKind().code(), o.getType().getKind().code());
+        int cmp = Integer.compare(getValueType().getKind().code(), o.getValueType().getKind().code());
         if(cmp != 0)
             return cmp;
         //noinspection rawtypes
@@ -110,13 +96,8 @@ public abstract class PrimitiveValue implements Value, Comparable<PrimitiveValue
     }
 
     @Override
-    public Object toJson(IEntityContext context) {
+    public Object toJson() {
         return getValue();
-    }
-
-    @Override
-    public boolean isMutable() {
-        return false;
     }
 
     @Override

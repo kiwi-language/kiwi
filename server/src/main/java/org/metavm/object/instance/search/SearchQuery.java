@@ -1,17 +1,13 @@
 package org.metavm.object.instance.search;
 
 
-import org.metavm.expression.Expression;
-import org.metavm.expression.InstanceEvaluationContext;
-import org.metavm.object.instance.core.BooleanValue;
-import org.metavm.object.instance.core.ClassInstance;
-
+import javax.annotation.Nullable;
 import java.util.Set;
 
 public record SearchQuery(
         long appId,
         Set<String> types,
-        Expression condition,
+        @Nullable SearchCondition condition,
         boolean includeBuiltin,
         int page,
         int pageSize,
@@ -33,11 +29,6 @@ public record SearchQuery(
 
     public int end() {
         return from() + size();
-    }
-
-    public boolean match(ClassInstance instance) {
-        return types.contains(instance.getType().toExpression()) &&
-                (condition == null || ((BooleanValue) condition.evaluate(new InstanceEvaluationContext(instance))).isTrue());
     }
 
 }

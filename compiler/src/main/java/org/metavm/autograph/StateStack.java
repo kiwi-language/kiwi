@@ -1,11 +1,11 @@
 package org.metavm.autograph;
 
-import org.metavm.util.NncUtils;
 import org.metavm.util.ReflectionUtils;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Objects;
 
 public class StateStack {
 
@@ -20,7 +20,7 @@ public class StateStack {
     }
 
     public <T extends State> T get(Class<T> klass) {
-        return NncUtils.requireNonNull(stack(klass).peek());
+        return Objects.requireNonNull(stack(klass).peek());
     }
 
     public boolean has(Class<?> klass) {

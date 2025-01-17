@@ -4,7 +4,7 @@ import org.metavm.object.type.AllocatorStore;
 import org.metavm.object.type.ColumnStore;
 import org.metavm.object.type.TypeTagStore;
 import org.metavm.util.MetaVersionStore;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.io.File;
 
@@ -18,7 +18,7 @@ public class CompilerContext {
     private final CompilerBootstrap bootstrap;
 
     public CompilerContext(String home, TypeClient typeClient, AllocatorStore allocatorStore, ColumnStore columnStore, TypeTagStore typeTagStore) {
-        NncUtils.ensureDirectoryExists(home);
+        Utils.ensureDirectoryExists(home);
         diskTreeStore = new DiskTreeStore(home + File.separator + "trees");
         localIndexSource = new LocalIndexSource(typeClient.getAppId(), diskTreeStore, home);
         contextFactory = new CompilerInstanceContextFactory(diskTreeStore, localIndexSource, typeClient);

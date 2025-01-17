@@ -45,7 +45,7 @@
 //        cache.add(3L, "Lyq".getBytes(StandardCharsets.UTF_8));
 //        var values = cache.batchGet(List.of(1L, 2L, 3L));
 //        Assert.assertEquals(3, values.size());
-//        Assert.assertEquals("Leen", new String(values.get(0), StandardCharsets.UTF_8));
+//        Assert.assertEquals("Leen", new String(values.getFirst(), StandardCharsets.UTF_8));
 //        Assert.assertNull(values.get(1));
 //        Assert.assertEquals("Lyq", new String(values.get(2), StandardCharsets.UTF_8));
 //    }

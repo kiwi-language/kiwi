@@ -14,7 +14,7 @@ import org.metavm.common.Page;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.Hooks;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -70,8 +70,8 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
     public void bulk(long appId, List<ClassInstance> toIndex, List<Id> toDelete) {
         BulkRequest bulkRequest = new BulkRequest();
         bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
-        List<IndexRequest> indexRequests = NncUtils.map(toIndex, instance -> buildIndexRequest(appId, instance));
-        List<DeleteRequest> deleteRequests = NncUtils.map(toDelete, id -> buildDeleteRequest(appId, id));
+        List<IndexRequest> indexRequests = Utils.map(toIndex, instance -> buildIndexRequest(appId, instance));
+        List<DeleteRequest> deleteRequests = Utils.map(toDelete, id -> buildDeleteRequest(appId, id));
         indexRequests.forEach(bulkRequest::add);
         deleteRequests.forEach(bulkRequest::add);
         try {

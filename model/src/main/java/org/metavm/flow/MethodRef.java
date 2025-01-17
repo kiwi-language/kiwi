@@ -6,10 +6,12 @@ import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
 import org.metavm.flow.rest.MethodRefKey;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.object.type.rest.dto.GenericDeclarationRefKey;
 import org.metavm.util.*;
@@ -18,11 +20,15 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Entity
 @Slf4j
 public class MethodRef extends FlowRef implements PropertyRef {
+
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     public static MethodRef create(ClassType declaringType, Method method, List<? extends Type> typeArguments) {
         if(typeArguments.equals(method.getDefaultTypeArguments()))
@@ -34,7 +40,11 @@ public class MethodRef extends FlowRef implements PropertyRef {
 
     public MethodRef(ClassType declaringType, @NotNull Method rawFlow, List<? extends Type> typeArguments) {
         super(rawFlow, typeArguments);
-        assert declaringType.getKlass() != DummyKlass.INSTANCE;
+        this.declaringType = declaringType;
+    }
+
+    public MethodRef(ClassType declaringType, @NotNull Reference methodReference, List<? extends Type> typeArguments) {
+        super(methodReference, typeArguments);
         this.declaringType = declaringType;
     }
 
@@ -59,10 +69,10 @@ public class MethodRef extends FlowRef implements PropertyRef {
     }
 
     @Override
-    protected boolean equals0(Object obj) {
+    public boolean equals(Object obj) {
         if (this == obj) return true;
         if (!(obj instanceof MethodRef methodRef)) return false;
-        if (!super.equals0(obj)) return false;
+        if (!super.equals(obj)) return false;
         return Objects.equals(declaringType, methodRef.declaringType);
     }
 
@@ -71,45 +81,35 @@ public class MethodRef extends FlowRef implements PropertyRef {
         return Objects.hash(super.hashCode(), declaringType);
     }
 
-    @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitMethodRef(this);
-    }
-
     public MethodRefKey toDTO(SerializeContext serializeContext, Function<ITypeDef, String> getTypeDefId) {
         return new MethodRefKey(
                 declaringType.toExpression(serializeContext, getTypeDefId),
                 serializeContext.getStringId(getRawFlow()),
-                NncUtils.map(typeArguments, t -> t.toExpression(serializeContext, getTypeDefId))
+                Utils.map(typeArguments, t -> t.toExpression(serializeContext, getTypeDefId))
         );
     }
 
     @Override
-    protected String toString0() {
+    public String toString() {
         return getTypeDesc();
     }
 
     public static MethodRef read(MvInput input) {
        var classType = (ClassType) input.readType();
-       var rawMethod = input.getMethod(input.readId());
+       var flowReference = input.readReference();
        var typeArgsCount = input.readInt();
        var typeArgs = new ArrayList<Type>(typeArgsCount);
        for (int i = 0; i < typeArgsCount; i++) {
            typeArgs.add(input.readType());
        }
-       return new MethodRef(classType, rawMethod, typeArgs);
-    }
-
-    @Override
-    public Type getType() {
-        return StdKlass.methodRef.type();
+       return new MethodRef(classType, flowReference, typeArgs);
     }
 
     @Override
     public void write(MvOutput output) {
         output.write(WireTypes.METHOD_REF);
         declaringType.write(output);
-        output.writeEntityId(getRawFlow());
+        output.writeReference(flowReference);
         output.writeInt(typeArguments.size());
         for (Type typeArgument : typeArguments) {
             typeArgument.write(output);
@@ -132,7 +132,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
                 )
                 + (
                         typeArguments.isEmpty() ? "" :
-                                "<" + NncUtils.join(
+                                "<" + Utils.join(
                                         typeArguments,
                                         t -> t.toExpression(serializeContext, getTypeDefExpr),
                                         ","
@@ -147,8 +147,8 @@ public class MethodRef extends FlowRef implements PropertyRef {
     public String getTypeDesc() {
         return declaringType + "."
                 + getRawFlow().getName()
-                + (typeArguments.isEmpty() ? "" : "<" + NncUtils.join(typeArguments, Type::getTypeDesc) + ">")
-                + "(" + NncUtils.join(getRawFlow().getParameterTypes(), Type::getTypeDesc) + ")";
+                + (typeArguments.isEmpty() ? "" : "<" + Utils.join(typeArguments, Type::getTypeDesc) + ">")
+                + "(" + Utils.join(getRawFlow().getParameterTypes(), Type::getTypeDesc) + ")";
     }
 
     public boolean isHiddenBy(MethodRef that) {
@@ -160,7 +160,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
             if (declaringType.equals(that.getDeclaringType()))
                 throw new InternalException(
                         String.format("Methods with the same signature defined in the same type: %s(%s)",
-                                getName(), NncUtils.join(paramTypes, Type::getTypeDesc)));
+                                getName(), Utils.join(paramTypes, Type::getTypeDesc)));
             return declaringType.isAssignableFrom(that.getDeclaringType());
         }
         for (int i = 0; i < paramTypes.size(); i++) {
@@ -187,10 +187,10 @@ public class MethodRef extends FlowRef implements PropertyRef {
             var k2 = methodRef.getDeclaringType();
             if(!k1.equals(k2) && (k2.isInterface() || k2.isAssignableFrom(k1))) {
                 var subst = new TypeSubstitutor(
-                        NncUtils.map(m1.getTypeParameters(), TypeVariable::getType),
-                        NncUtils.map(m2.getTypeParameters(), TypeVariable::getType)
+                        Utils.map(m1.getTypeParameters(), TypeVariable::getType),
+                        Utils.map(m2.getTypeParameters(), TypeVariable::getType)
                 );
-                if (NncUtils.biAllMatch(getParameterTypes(), methodRef.getParameterTypes(),
+                if (Utils.biAllMatch(getParameterTypes(), methodRef.getParameterTypes(),
                         (t1, t2) -> t1.accept(subst).equals(t2))) {
 //                    NncUtils.requireTrue(method.getReturnType().isAssignableFrom(getReturnType()),
 //                            () -> "Return type of the overriding method " + getQualifiedSignature()
@@ -256,7 +256,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
     }
 
     public List<ParameterRef> getParameters() {
-        return NncUtils.map(getRawFlow().getParameters(), p -> new ParameterRef(this, p));
+        return Utils.map(getRawFlow().getParameters(), p -> new ParameterRef(this, p));
     }
 
     @Override
@@ -286,5 +286,26 @@ public class MethodRef extends FlowRef implements PropertyRef {
 
     public boolean isPrivate() {
         return getRawFlow().isPrivate();
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitMethodRef(this);
+    }
+
+    @Override
+    public ClassType getValueType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        declaringType.accept(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        declaringType.forEachReference(action);
     }
 }

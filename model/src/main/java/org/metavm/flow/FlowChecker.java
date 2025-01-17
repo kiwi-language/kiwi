@@ -2,6 +2,7 @@ package org.metavm.flow;
 
 import org.metavm.entity.Element;
 import org.metavm.entity.StructuralVisitor;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.MetadataState;
 import org.metavm.util.DebugEnv;
@@ -52,7 +53,7 @@ public class FlowChecker extends StructuralVisitor<Boolean> {
         if (node.getError() != null) {
             flow.setState(MetadataState.ERROR);
             if(DebugEnv.debugging)
-                logger.debug("Error in node {}: {}",
+                logger.info("Error in node {}: {}",
                         node.getFlow().getQualifiedName() + "." + node.getName(),
                         node.getError());
         }

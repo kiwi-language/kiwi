@@ -3,29 +3,33 @@ package org.metavm.entity;
 import org.metavm.ddl.Commit;
 import org.metavm.event.EventQueue;
 import org.metavm.flow.*;
-import org.metavm.object.instance.ObjectInstanceMap;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
 import org.metavm.util.ParameterizedMap;
 import org.metavm.util.TypeReference;
 import org.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
-public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, TypeDefProvider, RedirectStatusProvider {
+public interface IEntityContext extends Closeable, EntityRepository, TypeProvider, TypeDefProvider, RedirectStatusProvider, IInstanceContext {
 
-    boolean containsEntity(Object entity);
+    default void loadKlasses() {
+        Klasses.loadKlasses(this);
+    }
 
-//    default <T extends Entity> T getEntity(TypeReference<T> typeReference, long id) {
-//        return getEntity(typeReference.getType(), id);
-//    }
+    @Override
+    default <T extends Instance> T bind(T entity) {
+        batchBind(List.of(entity));
+        return entity;
+    }
 
     default <T extends Entity> T getEntity(TypeReference<T> typeReference, Id id) {
         return getEntity(typeReference.getType(), id);
@@ -36,43 +40,16 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     }
 
     default <T> T getEntity(Class<T> klass, Instance instance) {
-        return getEntity(klass, instance, null);
+        return klass.cast(instance);
     }
-
-    ObjectInstanceMap getObjectInstanceMap();
-
-    <T> T getEntity(Class<T> klass, Instance instance, @Nullable Mapper<T, ?> mapper);
-
-    Instance getInstance(Object object);
-
-    void invalidateCache(Id id);
 
     Profiler getProfiler();
 
     DefContext getDefContext();
 
-//    default <T> void getAllByType(Class<T> klass, List<? super T> result) {
-//        T start = null;
-//        List<T> batch;
-//        do {
-//            batch = getByType(klass, start, Constants.BATCH_SIZE);
-//            result.addAll(batch);
-//            if (!batch.isEmpty())
-//                start = batch.get(batch.size() - 1);
-//        } while (batch.size() == Constants.BATCH_SIZE);
-//    }
-
-//    <T> List<T> getByType(Class<? extends T> type, @Nullable T startExclusive, long limit);
-
     <T> List<T> getAllBufferedEntities(Class<T> entityClass);
 
     void close();
-
-//    boolean existsInstances(Class<?> type);
-
-    boolean containsEntity(Class<?> entityType, Id id);
-
-    //    <T> T getEntity(Class<T> entityType, long id);
 
     <T> T getBufferedEntity(Class<T> entityType, Id id);
 
@@ -88,28 +65,11 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
         return getEntity(Type.class, id);
     }
 
-    @Nullable
-    IEntityContext getParent();
-
-    <T> T createEntity(Instance instance, Mapper<T, ?> mapper);
-
-    boolean isNewEntity(Object entity);
-
     <T> T getRemoved(Class<T> entityClass, Id id);
-
-    boolean isPersisted(Object entity);
-
-//    default Type getType(long id) {
-//        return getEntity(Type.class, id);
-//    }
 
     default Type getType(Id id) {
         return getEntity(Type.class, id);
     }
-
-//    default ClassType getClassType(long id) {
-//        return getEntity(ClassType.class, id);
-//    }
 
     default ITypeDef getTypeDef(Id id) {
         return getEntity(ITypeDef.class, id);
@@ -130,15 +90,7 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
     @Nullable
     EventQueue getEventQueue();
 
-    long getAppId(Object model);
-
-    Value resolveInstance(Object value);
-
     long getAppId();
-
-//    default Field getField(long id) {
-//        return getEntity(Field.class, id);
-//    }
 
     default Field getField(Id id) {
         return getEntity(Field.class, id);
@@ -217,72 +169,32 @@ public interface IEntityContext extends Closeable, EntityRepository, TypeProvide
 
     void finish();
 
-    IInstanceContext getInstanceContext();
-
-    <T> List<T> query(EntityIndexQuery<T> query);
+    <T extends Entity> List<T> query(EntityIndexQuery<T> query);
 
     long count(EntityIndexQuery<?> query);
 
-    void updateInstances();
+    void flush();
 
-    void update(Object object);
-
-    void updateEntity(Object object);
-
-    <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Object... refValues);
-
-    boolean remove(Object model);
-
-    void batchRemove(List<?> entities);
+    <T extends Entity> List<T> selectByKey(IndexDef<T> indexDef, Value... refValues);
 
     @Nullable
-    default <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Object... values) {
-        return NncUtils.first(selectByKey(indexDef, values));
+    default <T extends Entity> T selectFirstByKey(IndexDef<T> indexDef, Value... values) {
+        return Utils.first(selectByKey(indexDef, values));
     }
 
     default @Nullable Klass findKlassByQualifiedName(String qualifiedName) {
-        return selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, qualifiedName);
+        return selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(qualifiedName));
     }
 
     default Klass getKlassByQualifiedName(String qualifiedName) {
         return Objects.requireNonNull(findKlassByQualifiedName(qualifiedName));
     }
 
-    boolean containsUniqueKey(IndexDef<?> indexDef, Object...values);
-
-    void initIds();
-
-    default boolean tryBind(Object entity) {
-        if (isBindSupported() && isNewEntity(entity)) {
-            bind(entity);
-            return true;
-        } else
-            return false;
-    }
-
-    <T> T bind(T entity);
-
-    default boolean isBindSupported() {
-        return true;
-    }
-
-    void initIdManually(Object model, Id id);
-
-    boolean isRemoved(Object entity);
+    boolean containsUniqueKey(IndexDef<?> indexDef, Value... values);
 
     IEntityContext createSame(long appId);
 
-    List<Object> scan(long start, long limit);
-
-    void setFlag(ContextFlag flag);
-
-    boolean isFlagSet(ContextFlag flag);
-
-    void clearFlag(ContextFlag flag);
-
-    boolean isEntityCreationDisabled();
-
-    void setEntityCreationDisabled(boolean entityCreationDisabled);
+    ScanResult scan(long start, long limit);
 
     ParameterizedMap getParameterizedMap();
 

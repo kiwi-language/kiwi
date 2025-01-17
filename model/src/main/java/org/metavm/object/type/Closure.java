@@ -1,7 +1,7 @@
 package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -47,11 +47,11 @@ public class Closure {
     }
 
     public Klass get(Predicate<Klass> predicate) {
-        return NncUtils.requireNonNull(find(predicate));
+        return Objects.requireNonNull(find(predicate));
     }
 
     public @Nullable Klass find(Predicate<Klass> predicate) {
-        return NncUtils.find(classes, predicate);
+        return Utils.find(classes, predicate);
     }
 
     public Closure getMin() {
@@ -62,12 +62,12 @@ public class Closure {
                     skips.add(klass);
             }
         }
-        var types = NncUtils.exclude(this.classes, skips::contains);
+        var types = Utils.exclude(this.classes, skips::contains);
         return new Closure(types, new HashSet<>(types));
     }
 
     public static Closure merge(List<Closure> closures) {
-        NncUtils.requireNotEmpty(closures);
+        Utils.requireNotEmpty(closures);
         List<Klass> types = new ArrayList<>();
         Set<Klass> set = new HashSet<>();
         for (Closure closure : closures) {

@@ -64,7 +64,7 @@ package org.metavm.object.instance.persistence.mappers;//package org.metavm.obje
 //            List<InstancePO> instancePOsByTypeId =
 //                    instanceMapper.selectByTypeIds(APP_ID, List.of(instancePO.getTypeId()), 0, 1);
 //            Assert.assertEquals(1, instancePOsByTypeId.size());
-//            MatcherAssert.assertThat(instancePOsByTypeId.get(0), PojoMatcher.of(instancePO));
+//            MatcherAssert.assertThat(instancePOsByTypeId.getFirst(), PojoMatcher.of(instancePO));
 //
 //            instancePO.setTitle("Little Foo");
 //            instancePO.setData(Map.of("s0", "Little Foo"));
@@ -77,7 +77,7 @@ package org.metavm.object.instance.persistence.mappers;//package org.metavm.obje
 //
 //            List<InstanceTitlePO> titlePOs = instanceMapper.selectTitleByIds(APP_ID, List.of(instancePO.getId()));
 //            Assert.assertEquals(1, titlePOs.size());
-//            InstanceTitlePO titlePO = titlePOs.get(0);
+//            InstanceTitlePO titlePO = titlePOs.getFirst();
 //            Assert.assertEquals((long) instancePO.getId(), titlePO.id());
 //            Assert.assertEquals(instancePO.getTitle(), titlePO.title());
 //

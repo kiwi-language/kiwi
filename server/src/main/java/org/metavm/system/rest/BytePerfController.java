@@ -30,7 +30,7 @@ public class BytePerfController extends EntityContextFactoryAware {
         try (var context = newContext()) {
             long start = System.currentTimeMillis();
             for (int i = 0; i < runs; i++) {
-                var input = InstanceInput.create(bytes, context.getInstanceContext());
+                var input = InstanceInput.create(bytes, context);
                 try (var ignored = ContextUtil.getProfiler().enter("readCacheBytes")) {
                     input.readSingleMessageGrove();
                 }

@@ -15,7 +15,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -63,7 +62,7 @@ public class BytesUtils {
             throw new InternalException("Can not convert instance: " + instance);
     }
 
-    private static class MockInstance extends Instance {
+    private static class MockInstance extends MvInstance {
 
         private final Id id;
 
@@ -80,11 +79,6 @@ public class BytesUtils {
         @Override
         protected void readFrom(InstanceInput input) {
 
-        }
-
-        @Override
-        public Set<Instance> getRefInstances() {
-            return null;
         }
 
         @Override
@@ -106,12 +100,17 @@ public class BytesUtils {
         }
 
         @Override
-        public void forEachChild(Consumer<Instance> action) {
+        public void forEachChild(Consumer<? super Instance> action) {
 
         }
 
         @Override
-        public void forEachMember(Consumer<Instance> action) {
+        public void forEachMember(Consumer<? super Instance> action) {
+
+        }
+
+        @Override
+        public void forEachValue(Consumer<? super Instance> action) {
 
         }
 
@@ -119,6 +118,7 @@ public class BytesUtils {
         public void forEachReference(Consumer<Reference> action) {
 
         }
+
 
         @Override
         public void forEachReference(BiConsumer<Reference, Boolean> action) {
@@ -136,12 +136,12 @@ public class BytesUtils {
         }
 
         @Override
-        protected void writeBody(InstanceOutput output) {
+        public void writeBody(MvOutput output) {
 
         }
 
         @Override
-        protected InstanceParam getParam() {
+        public InstanceParam getParam() {
             return null;
         }
 
@@ -162,13 +162,13 @@ public class BytesUtils {
 
         }
 
-        protected void writeTree(TreeWriter treeWriter) {
+        public void writeTree(TreeWriter treeWriter) {
 
         }
 
         @Override
-        public void accept(InstanceVisitor visitor) {
-
+        public <R> R accept(InstanceVisitor<R> visitor) {
+            return visitor.visitInstance(this);
         }
 
         public boolean isMutable() {
@@ -276,7 +276,7 @@ public class BytesUtils {
                     var fields = new ArrayList<>(numFields);
                     klass.put("fields", fields);
                     for (int j = 0; j < numFields; j++)
-                        fields.add(Map.of("tag", readLong(), "value", NncUtils.orElse(readJson(), "null")));
+                        fields.add(Map.of("tag", readLong(), "value", Utils.orElse(readJson(), "null")));
                 }
             }
         }
@@ -285,7 +285,7 @@ public class BytesUtils {
 
     public static void saveCacheBytes(String name, byte[] bytes) {
         var path = SAVE_DIR + "/" + name;
-        NncUtils.writeFile(path, bytes);
+        Utils.writeFile(path, bytes);
     }
 
     public static int compareBytes(byte[] bytes1, byte[] bytes2) {

@@ -10,7 +10,7 @@ import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.ActiveCommitProvider;
 import org.metavm.object.type.RedirectStatusProvider;
 import org.metavm.object.type.TypeDefProvider;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -173,7 +173,7 @@ public class InstanceContextBuilder {
         if (executor == null)
             executor = Executors.newSingleThreadExecutor();
         if(changeLogDisabled)
-            plugins = NncUtils.exclude(plugins, p -> p instanceof ChangeLogPlugin);
+            plugins = Utils.exclude(plugins, p -> p instanceof ChangeLogPlugin);
         var idInitializer = this.idInitializer;
         return new InstanceContext(
                 appId, instanceStore, idInitializer, executor,

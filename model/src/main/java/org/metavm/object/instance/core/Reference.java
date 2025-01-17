@@ -2,16 +2,13 @@ package org.metavm.object.instance.core;
 
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.IEntityContext;
 import org.metavm.flow.ClosureContext;
 import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.Type;
-import org.metavm.util.InstanceOutput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +34,7 @@ public class Reference implements Value {
 
     public static final Logger logger = LoggerFactory.getLogger(Reference.class);
 
-    private final @Nullable Id id;
+    private @Nullable Id id;
     private @Nullable Instance target;
     private final Supplier<Instance> resolver;
     private int flags = 0;
@@ -50,21 +47,27 @@ public class Reference implements Value {
         };
     }
 
-    public Reference(@Nullable Id id, Supplier<Instance> resolver) {
+    public Reference(@NotNull Id id, Supplier<Instance> resolver) {
         super();
         this.id = id;
         this.resolver = resolver;
     }
 
-    public Instance resolve() {
-        if (target == null)
-            target = resolver.get();
+    public Instance get() {
+        if (target == null) {
+            try {
+                target = resolver.get();
+            }
+            catch (Exception e) {
+                throw new RuntimeException("Failed to resolve reference with ID " + id, e);
+            }
+        }
         return target;
     }
 
     @Override
-    public Type getType() {
-        return resolve().getType();
+    public Type getValueType() {
+        return get().getInstanceType();
     }
 
     @Override
@@ -75,7 +78,7 @@ public class Reference implements Value {
     @Nullable
     @Override
     public String getStringId() {
-        return NncUtils.get(tryGetId(), Id::toString);
+        return Utils.safeCall(tryGetId(), Id::toString);
     }
 
     public void setTarget(@NotNull Instance target) {
@@ -86,28 +89,23 @@ public class Reference implements Value {
         return (flags & FLAG_FORWARDED) != 0;
     }
 
-    @Override
-    public boolean isReference() {
-        return true;
-    }
-
     @Nullable
     @Override
     public Id tryGetId() {
-        return id instanceof PhysicalId physicalId ? physicalId : resolve().tryGetId();
+        return id instanceof PhysicalId physicalId ? physicalId : get().tryGetId();
     }
 
     @Override
     public FieldValue toFieldValueDTO() {
-        var target = resolve();
-        if(target.isInlineValue() || target.isArray() || (target instanceof ClassInstance clsInst && clsInst.isList()))
-            return new InstanceFieldValue(resolve().getTitle(), resolve().toDTO());
-        else {
+        var target = get();
+//        if(target.isInlineValue() || target.isArray() || (target instanceof ClassInstance clsInst && clsInst.isList()))
+//            return new InstanceFieldValue(resolve().getTitle(), resolve().toDTO());
+//        else {
             return new ReferenceFieldValue(
                     getTitle(),
                     Objects.requireNonNull(this.getStringIdForDTO(), "Id required"),
-                    getType().toExpression());
-        }
+                    getValueType().toExpression());
+//        }
     }
 
     @Override
@@ -116,14 +114,14 @@ public class Reference implements Value {
     }
 
     @Override
-    public void writeInstance(InstanceOutput output) {
-        resolve().writeRecord(output);
+    public void writeInstance(MvOutput output) {
+        resolveDurable().write(output);
     }
 
     @Override
     public void write(MvOutput output) {
         if (isInlineValueReference())
-            writeInstance((InstanceOutput) output);
+            writeInstance(output);
         else {
             if(flags != 0) {
                 output.write(WireTypes.FLAGGED_REFERENCE);
@@ -131,7 +129,7 @@ public class Reference implements Value {
             }
             else
                 output.write(WireTypes.REFERENCE);
-            output.writeId(id instanceof PhysicalId ? id : resolve().getId());
+            output.writeId(id instanceof PhysicalId ? id : get().getId());
         }
     }
 
@@ -142,7 +140,7 @@ public class Reference implements Value {
 
     @Override
     public InstanceParam getParam() {
-        return resolve().getParam();
+        return get().getParam();
     }
 
     @Override
@@ -151,31 +149,17 @@ public class Reference implements Value {
     }
 
     @Override
-    public <R> void acceptReferences(ValueVisitor<R> visitor) {
-        this.accept(visitor);
-    }
-
-    @Override
-    public <R> void acceptChildren(ValueVisitor<R> visitor) {
-    }
-
-    @Override
     public void writeTree(TreeWriter treeWriter) {
-        treeWriter.write(resolve().toString());
+        treeWriter.write(get().toString());
     }
 
     @Override
-    public boolean isMutable() {
-        return false;
-    }
-
-    @Override
-    public Object toJson(IEntityContext context) {
+    public Object toJson() {
         return getStringId();
     }
 
     public boolean isRemoved() {
-        return isLoaded() && resolve().isRemoved();
+        return isLoaded() && get().isRemoved();
     }
 
     public Long tryGetTreeId() {
@@ -212,7 +196,7 @@ public class Reference implements Value {
 
     public Reference forward() {
         assert isForwarded();
-        var r = resolve().getReference();
+        var r = get().getReference();
         r.setFlags(flags & ~FLAG_FORWARDED);
         return r;
     }
@@ -241,7 +225,7 @@ public class Reference implements Value {
     }
 
     public boolean isNew() {
-        return (id == null || isInitialized()) && resolve().isNew();
+        return (id == null || isInitialized()) && get().isNew();
     }
 
     public boolean isInitialized() {
@@ -250,25 +234,25 @@ public class Reference implements Value {
 
     public void ensureLoaded() {
         if (!isLoaded())
-            resolve();
+            get();
     }
 
     public int getSeq() {
-        return resolve().getSeq();
+        return get().getSeq();
     }
 
     public boolean isIdInitialized() {
-        return id instanceof PhysicalId || resolve().tryGetId() instanceof PhysicalId;
+        return id instanceof PhysicalId || get().tryGetId() instanceof PhysicalId;
     }
 
     @Override
     public boolean isArray() {
-        return resolve() instanceof ArrayInstance;
+        return get() instanceof ArrayInstance;
     }
 
     @Override
     public boolean isObject() {
-        return resolve() instanceof ClassInstance;
+        return get() instanceof ClassInstance;
     }
 
     @Override
@@ -283,7 +267,7 @@ public class Reference implements Value {
             if (id != null && id.equals(that.id))
                 return true;
             if (id == null || that.id == null || isForwarded() || that.isForwarded())
-                return resolve() == that.resolve();
+                return get() == that.get();
         }
         return false;
     }
@@ -294,7 +278,7 @@ public class Reference implements Value {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id);
+        return id != null ? id.hashCode() : get().hashCode();
     }
 
     @Override
@@ -303,11 +287,11 @@ public class Reference implements Value {
     }
 
     public boolean isValueReference() {
-        return (id == null || target != null) && resolve().isValue();
+        return (id == null || target != null) && get().isValue();
     }
 
     public boolean isInlineValueReference() {
-        return id == null && resolve().isInlineValue();
+        return id == null && get().isInlineValue();
     }
 
     public boolean isResolved() {
@@ -324,7 +308,13 @@ public class Reference implements Value {
 
     @Override
     public ClosureContext getClosureContext() {
-        var r = resolve();
+        var r = get();
         return r instanceof ClassInstance obj ? obj.getClosureContext() : null;
     }
+
+    public void refreshId() {
+        if (!(id instanceof PhysicalId))
+            id = get().tryGetId();
+    }
+
 }

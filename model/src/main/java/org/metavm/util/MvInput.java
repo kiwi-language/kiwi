@@ -1,16 +1,23 @@
 package org.metavm.util;
 
-import org.metavm.flow.*;
-import org.metavm.object.instance.core.Value;
+import org.metavm.entity.Entity;
+import org.metavm.flow.FunctionRef;
+import org.metavm.flow.LambdaRef;
+import org.metavm.flow.MethodRef;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 
+import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 public abstract class MvInput implements Closeable {
@@ -23,6 +30,12 @@ public abstract class MvInput implements Closeable {
 
     public Type readType() {
         return (Type) readValue();
+    }
+
+    public byte[] readBytes() {
+        var buf = new byte[readInt()];
+        read(buf);
+        return buf;
     }
 
     public int read(byte[] buf) {
@@ -79,6 +92,10 @@ public abstract class MvInput implements Closeable {
         return (int) readLong();
     }
 
+    public int readFixedInt() {
+        return (read() & 0xff) << 24 | (read() & 0xff) << 16 | (read() & 0xff) << 8 | read() & 0xff;
+    }
+
     public long readLong() {
         int b = read();
         boolean negative = (b & 1) == 1;
@@ -91,12 +108,12 @@ public abstract class MvInput implements Closeable {
         return negative ? -v : v;
     }
 
-    public float readFloat() {
-        return Float.intBitsToFloat(readInt());
+    public Date readDate() {
+        return new Date(readLong());
     }
 
-    public TypeTag readTypeTag() {
-        return TypeTag.fromCode(read());
+    public float readFloat() {
+        return Float.intBitsToFloat(readInt());
     }
 
     public double readDouble() {
@@ -140,6 +157,19 @@ public abstract class MvInput implements Closeable {
         return list;
     }
 
+    public <T> T[] readArray(Supplier<T> read, IntFunction<T[]> newArray) {
+        var size = readInt();
+        var array = newArray.apply(size);
+        for (int i = 0; i < size; i++) {
+            array[i] = read.get();
+        }
+        return array;
+    }
+
+    public <T> @Nullable T readNullable(Supplier<T> read) {
+        return readBoolean() ? read.get() : null;
+    }
+
     public Value readValue() {
         var wireType = read();
         return switch (wireType) {
@@ -164,7 +194,6 @@ public abstract class MvInput implements Closeable {
             case WireTypes.VALUE_INSTANCE -> readValueInstance();
             case WireTypes.REMOVING_INSTANCE ->  readRemovingInstance();
             case WireTypes.CLASS_TYPE -> KlassType.read(this);
-            case WireTypes.TAGGED_CLASS_TYPE -> KlassType.readTagged(this);
             case WireTypes.PARAMETERIZED_TYPE -> KlassType.readParameterized(this);
             case WireTypes.VARIABLE_TYPE -> VariableType.read(this);
             case WireTypes.CAPTURED_TYPE -> CapturedType.read(this);
@@ -200,6 +229,8 @@ public abstract class MvInput implements Closeable {
         };
     }
 
+    public abstract Message readTree();
+
     public abstract Value readRemovingInstance();
 
     public abstract Value readValueInstance();
@@ -208,30 +239,26 @@ public abstract class MvInput implements Closeable {
 
     public abstract Value readInstance();
 
+    public <T extends Entity> T readEntity(Class<T> klass, Entity parent) {
+        var entity = getEntity(klass, readId());
+        entity.readHeadAndBody(this, parent);
+        return entity;
+    }
+
     public abstract Value readRedirectingInstance();
 
     public abstract Value readRedirectingReference();
 
-    public abstract Value readReference();
+    public abstract Reference readReference();
 
     public abstract Value readFlaggedReference();
 
-    public abstract Klass getKlass(Id id);
+    protected <T extends Entity> T getEntity(Class<T> klass, Id id) {
+        var entity = ReflectionUtils.allocateInstance(klass);
+        entity.initState(id, 0, 0, false);
+        return entity;
+    }
 
-    public abstract Method getMethod(Id id);
-
-    public abstract Field getField(Id id);
-
-    public abstract TypeVariable getTypeVariable(Id id);
-
-    public abstract Function getFunction(Id id);
-
-    public abstract CapturedTypeVariable getCapturedTypeVariable(Id id);
-
-    public abstract Lambda getLambda(Id id);
-
-    public abstract Index getIndex(Id id);
-
-    public abstract IndexField getIndexField(Id id);
+    public abstract Entity readEntityMessage();
 
 }

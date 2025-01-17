@@ -10,7 +10,7 @@ import org.metavm.flow.*;
 import org.metavm.object.type.*;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -97,7 +97,7 @@ class AsmExpressionResolver {
         var indexName = ctx.IDENTIFIER().getText();
         var index = requireNonNull(klass.findSelfIndex(i -> i.getName().equals(indexName)),
                 () -> "Cannot find index with name " + indexName + " class " + klass.getTypeDesc());
-        NncUtils.map(ctx.expression(), this::resolve0);
+        Utils.map(ctx.expression(), this::resolve0);
         if (ctx.SELECT() != null) {
             Nodes.select(index, code);
             return new KlassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType().getType()));
@@ -265,14 +265,14 @@ class AsmExpressionResolver {
             var type = (ClassType) parseClassType(creator.classOrInterfaceType());
             Nodes.newObject(code, type, ctx.UNEW() != null, ctx.ENEW() != null);
             List<AssemblyParser.ExpressionContext> arguments =
-                    NncUtils.getOrElse(
+                    Utils.getOrElse(
                             creator.arguments().expressionList(),
                             AssemblyParser.ExpressionListContext::expression,
                             List.of()
                     );
             List<Type> typeArgs = creator.typeArguments() != null ?
-                    NncUtils.map(creator.typeArguments().typeType(), this::parseType) : List.of();
-            var argTypes = NncUtils.map(arguments, this::resolve0);
+                    Utils.map(creator.typeArguments().typeType(), this::parseType) : List.of();
+            var argTypes = Utils.map(arguments, this::resolve0);
             var constructor = type.resolveMethod(
                     type.getKlass().getName(), argTypes, typeArgs, false
             );
@@ -346,7 +346,7 @@ class AsmExpressionResolver {
         else
             throw new IllegalStateException("Unrecognized literal: " + text);
         Nodes.loadConstant(value, code);
-        return value.getType();
+        return value.getValueType();
     }
 
     private Type resolveBop(AssemblyParser.ExpressionContext ctx) {
@@ -494,9 +494,9 @@ class AsmExpressionResolver {
             type = (ClassType) resolve0(qualifier);
         }
         List<Type> typeArgs = methodCall.typeArguments() != null ?
-                NncUtils.map(methodCall.typeArguments().typeType(), this::parseType) : List.of();
+                Utils.map(methodCall.typeArguments().typeType(), this::parseType) : List.of();
         List<Type> argTypes = methodCall.expressionList() != null ?
-                NncUtils.map(methodCall.expressionList().expression(), this::resolve0) : List.of();
+                Utils.map(methodCall.expressionList().expression(), this::resolve0) : List.of();
         var method = type.resolveMethod(methodName, argTypes, typeArgs, false);
         Nodes.invokeMethod(method, code);
         return method.getReturnType();
@@ -506,7 +506,7 @@ class AsmExpressionResolver {
         var methodName = currentKlass().getName();
         var type = getThis();
         List<Type> argTypes = expressionList != null ?
-                NncUtils.map(expressionList.expression(), this::resolve0) : List.of();
+                Utils.map(expressionList.expression(), this::resolve0) : List.of();
         var method = type.resolveMethod(methodName, argTypes, List.of(), false);
         Nodes.invokeMethod(method, code);
         return null;
@@ -516,7 +516,7 @@ class AsmExpressionResolver {
         var methodName = requireNonNull(currentKlass().getSuperType()).getKlass().getName();
         var type = getThis();
         List<Type> argTypes = expressionList != null ?
-                NncUtils.map(expressionList.expression(), this::resolve0) : List.of();
+                Utils.map(expressionList.expression(), this::resolve0) : List.of();
         var method = type.resolveMethod(methodName, argTypes, List.of(), false);
         Nodes.invokeMethod(method, code);
         return null;
@@ -599,14 +599,14 @@ class AsmExpressionResolver {
         if(v != null && v.type() instanceof FunctionType) {
             var funcType = (FunctionType) loadVariable(v);
             if(exprListCtx != null)
-                NncUtils.map(exprListCtx.expression(), this::resolve0);
+                Utils.map(exprListCtx.expression(), this::resolve0);
             Nodes.function(code, funcType);
             return funcType.getReturnType();
         }
         else {
             var func = StdFunction.valueOf(name).get();
             if(exprListCtx != null)
-                NncUtils.map(exprListCtx.expression(), this::resolve0);
+                Utils.map(exprListCtx.expression(), this::resolve0);
             Nodes.invokeFunction(code, func);
             return func.getReturnType();
         }
@@ -646,7 +646,7 @@ class AsmExpressionResolver {
                                                Callable callable) {
         if (parameterList == null)
             return List.of();
-        return NncUtils.map(parameterList.formalParameter(), p -> parseParameter(p, callable));
+        return Utils.map(parameterList.formalParameter(), p -> parseParameter(p, callable));
     }
 
     private Parameter parseParameter(AssemblyParser.FormalParameterContext parameter, Callable callable) {
@@ -658,7 +658,7 @@ class AsmExpressionResolver {
             return existing;
         } else {
             return new Parameter(
-                    NncUtils.randomNonNegative(),
+                    Utils.randomNonNegative(),
                     name,
                     type,
                     callable

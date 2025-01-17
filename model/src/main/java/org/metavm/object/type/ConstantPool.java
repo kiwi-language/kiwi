@@ -1,80 +1,87 @@
 package org.metavm.object.type;
 
-import org.metavm.api.ChildEntity;
+import org.jetbrains.annotations.NotNull;
+import org.metavm.annotation.NativeEntity;
+import org.metavm.api.Generated;
+import org.metavm.api.JsonIgnore;
 import org.metavm.entity.*;
-import org.metavm.flow.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.EntityRegistry;
+import org.metavm.flow.MethodRef;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
+import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import javax.annotation.Nullable;
+import java.util.*;
 import java.util.Map;
+import java.util.function.Consumer;
 
-public class ConstantPool extends Element implements LoadAware, TypeMetadata {
+@NativeEntity(14)
+public class ConstantPool extends Entity implements LoadAware, TypeMetadata, Element, LocalKey {
 
-    @ChildEntity
-    private final ReadWriteArray<CpEntry> entries = addChild(new ReadWriteArray<>(CpEntry.class), "entries");
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
+    private ConstantScope scope;
+    private List<Value> entries = new ArrayList<>();
     @CopyIgnore
-    private transient Map<Object, CpEntry> value2entry = new HashMap<>();
+    private transient Map<Object, Integer> value2entry = new HashMap<>();
     @CopyIgnore
     private transient Object[] values = new Object[1];
 
     public transient ReadWriteArray<Type> typeArguments;
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
-    public ConstantPool() {
+    public ConstantPool(ConstantScope scope) {
+        this.scope = scope;
     }
 
-    @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitConstantPool(this);
-    }
-
-    public ConstantPool(List<? extends Type> typeArguments) {
+    public ConstantPool(ConstantScope scope, List<? extends Type> typeArguments) {
+        this(scope);
         this.typeArguments = new ReadWriteArray<>(Type.class);
         this.typeArguments.addAll(typeArguments);
     }
 
-    public void addEntry(CpEntry entry) {
-        entries.add(entry);
-        var value = entry.getValue();
-        value2entry.put(value, entry);
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        visitor.visitList(visitor::visitValue);
+    }
+
+    public int addValue(Value value) {
+        var idx = value2entry.get(value);
+        if(idx != null)
+            return idx;
+        return addEntry(value);
+    }
+
+    public int addEntry(Value value) {
+        int i = entries.size();
+        entries.add(value);
+        value2entry.put(value, i);
         while (values.length < entries.size())
             values = Arrays.copyOf(values, values.length << 1);
-        values[entries.size() - 1] = value;
-    }
-
-    public int addValue(Object value) {
-        var entry = value2entry.get(value);
-        if(entry != null)
-            return entry.getIndex();
-        return addEntry(value).getIndex();
-    }
-
-    private CpEntry addEntry(Object value) {
-        int i = entries.size();
-        var entry = switch (value) {
-            case Element element -> new ElementCpEntry(i, element);
-            case Value v -> new ValueCpEntry(i, v);
-            default -> throw new IllegalStateException("Unexpected value: " + value);
-        };
-        addEntry(entry);
-        return entry;
+        values[i] = value;
+        return i;
     }
 
     public void clear() {
-        entries.clear();
-        value2entry.clear();
+        entries = new ArrayList<>();
+        value2entry = new HashMap<>();
         values = new Object[1];
     }
 
+    @JsonIgnore
     public Object[] getValues() {
         return values;
     }
 
-    public List<CpEntry> getEntries() {
-        return entries.toList();
+    public List<Value> getEntries() {
+        return Collections.unmodifiableList(entries);
     }
 
     @Override
@@ -87,26 +94,9 @@ public class ConstantPool extends Element implements LoadAware, TypeMetadata {
     public void onLoad() {
         values = new Object[Math.max(1, entries.size())];
         int i = 0;
-        for (CpEntry entry : entries) {
-            var value = entry.getValue();
-            value2entry.put(value, entry);
-            values[i++] = value;
-        }
-    }
-
-    public void write(MvOutput output) {
-        output.writeInt(entries.size());
-        for (CpEntry entry : entries) {
-            entry.write(output);
-        }
-    }
-
-    public void read(KlassInput input) {
-        clear();
-        int entryCount = input.readInt();
-        for (int i = 0; i < entryCount; i++) {
-            var value = input.readValue();
-            addValue(value);
+        for (var entry : entries) {
+            value2entry.put(entry, i);
+            values[i++] = entry;
         }
     }
 
@@ -128,6 +118,10 @@ public class ConstantPool extends Element implements LoadAware, TypeMetadata {
         return (ClassType) values[index];
     }
 
+    public KlassType getKlassType(int index) {
+        return (KlassType) values[index];
+    }
+
     public ResolutionStage getStage() {
         return stage;
     }
@@ -136,16 +130,102 @@ public class ConstantPool extends Element implements LoadAware, TypeMetadata {
         this.stage = stage;
     }
 
+    @Nullable
     @Override
-    protected String toString0() {
+    public Entity getParentEntity() {
+        return (Entity) scope;
+    }
+
+    @Override
+    public String toString() {
         return Arrays.toString(getValues());
     }
 
     public ConstantPool copy() {
-        var copy = new ConstantPool();
-        for (CpEntry entry : entries) {
-            copy.addValue(entry.getValue());
+        var copy = new ConstantPool(scope);
+        for (var entry : entries) {
+            copy.addValue(entry);
         }
         return copy;
+    }
+
+    @Override
+    public boolean isValidLocalKey() {
+        return true;
+    }
+
+    @Override
+    public String getLocalKey(@NotNull BuildKeyContext context) {
+        return "constantPool";
+    }
+
+    private void onRead() {
+        values = new Object[Math.max(1, entries.size())];
+        value2entry = new HashMap<>();
+        int i = 0;
+        for (var entry : entries) {
+            value2entry.put(entry, i);
+            values[i++] = entry;
+        }
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitConstantPool(this);
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        entries.forEach(v -> {
+            if (v instanceof Reference r) action.accept(r);
+            else if (v instanceof org.metavm.object.instance.core.NativeValue t) t.forEachReference(action);
+        });
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("entries", this.getEntries().stream().map(Value::toJson).toList());
+        map.put("stage", this.getStage().name());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_ConstantPool;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, Entity parent) {
+        this.scope = (ConstantScope) parent;
+        this.entries = input.readList(input::readValue);
+        this.onRead();
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        output.writeList(entries, output::writeValue);
+    }
+
+    @Override
+    protected void buildSource(Map<String, Value> source) {
     }
 }

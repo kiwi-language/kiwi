@@ -6,7 +6,7 @@ import org.metavm.object.type.TypeDef;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.Instances;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,18 +27,16 @@ public class DefaultIdInitializer implements IdInitializer {
 
     @Override
     public void initializeIds(long appId, Collection<? extends Instance> instancesToInitId) {
-        var klassType = StdKlass.entity.type();
-        var countMap = Map.of(klassType, (int) NncUtils.count(instancesToInitId, Instance::isRoot));
-        var ids = new LinkedList<>(idProvider.allocate(appId, countMap).get(klassType));
-        var roots = NncUtils.filterUnique(instancesToInitId, Instance::isRoot);
+        var count = (int) Utils.count(instancesToInitId, Instance::isRoot);
+        var ids = new LinkedList<>(idProvider.allocate(appId, count));
         var typeDefInstance = new HashMap<TypeDef, Instance>();
         for (Instance instance : instancesToInitId) {
-            if (instance.getMappedEntity() instanceof TypeDef typeDef)
+            if (instance instanceof TypeDef typeDef)
                 typeDefInstance.put(typeDef, instance);
         }
         var sortedInstances = sort(instancesToInitId, typeDefInstance);
         for (Instance inst : sortedInstances) {
-            var type = inst.getType();
+            var type = inst.getInstanceType();
             long treeId, nodeId;
             if (inst.isRoot()) {
                 treeId = requireNonNull(ids.poll());
@@ -48,7 +46,7 @@ public class DefaultIdInitializer implements IdInitializer {
                 treeId = root.getTreeId();
                 nodeId = root.nextNodeId();
             }
-            inst.initId(PhysicalId.of(treeId, nodeId, type));
+            inst.initId(PhysicalId.of(treeId, nodeId));
         }
     }
 
@@ -66,11 +64,11 @@ public class DefaultIdInitializer implements IdInitializer {
         if (visited.contains(instance))
             return;
         if (visiting.contains(instance))
-            throw new IllegalArgumentException("Cycle detected, path: " + (path != null ? NncUtils.join(path, Instances::getInstanceDesc, "->") : "null"));
+            throw new IllegalArgumentException("Cycle detected, path: " + (path != null ? Utils.join(path, Instances::getInstanceDesc, "->") : "null"));
         if (path != null)
             path.add(instance);
         visiting.add(instance);
-        instance.getType().forEachTypeDef(typeDef -> {
+        instance.getInstanceType().forEachTypeDef(typeDef -> {
             var typeInst = typeDef2instance.get(typeDef);
             if (typeInst != null && typeInst != instance)
                 visit(typeInst, result, visited, visiting, typeDef2instance, path);

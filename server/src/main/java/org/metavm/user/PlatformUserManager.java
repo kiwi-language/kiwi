@@ -66,13 +66,13 @@ public class PlatformUserManager extends EntityContextFactoryAware {
     public Page<UserDTO> list(int page, int pageSize, String searchText) {
         try (var context = newPlatformContext()) {
             var query = EntityQueryBuilder.newBuilder(User.class)
-                    .searchText(searchText)
+                    .addFieldIfNotNull(User.esName, Utils.safeCall(searchText, Instances::stringInstance))
                     .page(page)
                     .pageSize(pageSize)
                     .build();
             Page<User> dataPage = entityQueryService.query(query, context);
             return new Page<>(
-                    NncUtils.map(dataPage.data(), User::toDTO),
+                    Utils.map(dataPage.data(), User::toDTO),
                     dataPage.total()
             );
         }
@@ -94,7 +94,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
                     userDTO.loginName(),
                     userDTO.password(),
                     userDTO.name(),
-                    NncUtils.map(userDTO.roleIds(), ref -> platformContext.getEntity(Role.class, ref))
+                    Utils.map(userDTO.roleIds(), ref -> platformContext.getEntity(Role.class, ref))
             );
             platformContext.bind(user);
         } else {
@@ -104,7 +104,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
             if (userDTO.password() != null)
                 user.setPassword(userDTO.password());
             if (userDTO.roleIds() != null)
-                user.setRoles(NncUtils.map(userDTO.roleIds(), ref -> platformContext.getEntity(Role.class, ref)));
+                user.setRoles(Utils.map(userDTO.roleIds(), ref -> platformContext.getEntity(Role.class, ref)));
         }
         return user;
     }
@@ -125,7 +125,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
     public List<ApplicationDTO> getApplications(String userId) {
         try (var context = newPlatformContext()) {
             var user = context.getEntity(PlatformUser.class, userId);
-            return NncUtils.filterAndMap(user.getApplications(), Application::isActive, Application::toDTO);
+            return Utils.filterAndMap(user.getApplications(), Application::isActive, Application::toDTO);
         }
     }
 
@@ -137,7 +137,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
             if (user.hasJoinedApplication(app)) {
                 ContextUtil.enterApp(id, null);
                 try (var ctx = newContext(app.getTreeId())) {
-                    var appUser = ctx.selectFirstByKey(User.IDX_PLATFORM_USER_ID, user.getStringId());
+                    var appUser = ctx.selectFirstByKey(User.IDX_PLATFORM_USER_ID, Instances.stringInstance(user.getStringId()));
                     var token = loginService.directLogin(id, appUser, ctx);
                     ctx.finish();
                     return new LoginResult(token, user.getStringId());
@@ -164,10 +164,10 @@ public class PlatformUserManager extends EntityContextFactoryAware {
                 platformContext.initIds();
             ContextUtil.enterApp(app.getTreeId(), null);
             try (var context = newContext(app.getTreeId())) {
-                var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, platformUser.getStringId());
+                var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, Instances.stringInstance(platformUser.getStringId()));
                 if (user == null) {
                     user = new User(generateLoginName(platformUser.getLoginName(), context),
-                            NncUtils.randomPassword(), platformUser.getName(), List.of());
+                            Utils.randomPassword(), platformUser.getName(), List.of());
                     user.setPlatformUserId(platformUser.getStringId());
                     context.bind(user);
                 } else {
@@ -195,7 +195,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
         int num = 1;
         boolean exists;
         do {
-            exists = context.selectFirstByKey(User.IDX_LOGIN_NAME, loginName) != null;
+            exists = context.selectFirstByKey(User.IDX_LOGIN_NAME, Instances.stringInstance(loginName)) != null;
             loginName = prefix + num++;
         } while (exists);
         return loginName;
@@ -205,7 +205,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
     public void leaveApplication(List<String> userIds, String appId) {
         try (var platformCtx = newPlatformContext()) {
             PlatformUsers.leaveApp(
-                    NncUtils.map(userIds, userId -> platformCtx.getEntity(PlatformUser.class, userId)),
+                    Utils.map(userIds, userId -> platformCtx.getEntity(PlatformUser.class, userId)),
                     platformCtx.getEntity(Application.class, appId),
                     platformCtx
             );
@@ -217,7 +217,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
     public void changePassword(ChangePasswordRequest request) {
         try (var context = newPlatformContext()) {
             verificationCodeService.checkVerificationCode(request.loginName(), request.verificationCode(), context);
-            var user = context.selectFirstByKey(User.IDX_LOGIN_NAME, request.loginName());
+            var user = context.selectFirstByKey(User.IDX_LOGIN_NAME, Instances.stringInstance(request.loginName()));
             if (user == null)
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             user.setPassword(request.password());
@@ -226,12 +226,11 @@ public class PlatformUserManager extends EntityContextFactoryAware {
     }
 
     public Page<PlatformUser> query(PlatformUserQuery query, IEntityContext context) {
-        var app = NncUtils.get(query.appId(), appId -> context.getEntity(Application.class, appId));
+        var app = Utils.safeCall(query.appId(), appId -> context.getEntity(Application.class, appId));
         return entityQueryService.query(
                 EntityQueryBuilder.newBuilder(PlatformUser.class)
-                        .searchText(query.searchText())
-                        .addFieldIfNotNull("applications", app)
-                        .addFieldIfNotNull("loginName", query.loginName())
+                        .addFieldIfNotNull(User.esName, Utils.safeCall(query.searchText(), Instances::stringInstance))
+                        .addFieldIfNotNull(User.esLoginName, Instances.stringInstance(query.loginName()))
                         .page(query.page())
                         .excluded(query.excluded())
                         .pageSize(query.pageSize())
@@ -243,13 +242,13 @@ public class PlatformUserManager extends EntityContextFactoryAware {
     @Transactional(readOnly = true)
     public UserDTO get(String id) {
         try (var context = newPlatformContext()) {
-            return NncUtils.get(context.getEntity(User.class, id), User::toDTO);
+            return Utils.safeCall(context.getEntity(User.class, id), User::toDTO);
         }
     }
 
     public boolean checkLoginName(String loginName) {
         try (var platformCtx = newPlatformContext()) {
-            var existing = platformCtx.selectFirstByKey(User.IDX_LOGIN_NAME, loginName);
+            var existing = platformCtx.selectFirstByKey(User.IDX_LOGIN_NAME, Instances.stringInstance(loginName));
             return existing != null;
         }
     }

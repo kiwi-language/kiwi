@@ -11,9 +11,9 @@ public class ReferenceTest extends TestCase {
     public void testWrite() {
         var fooKlass = TestUtils.newKlassBuilder("Foo").build();
         var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType()).build();
-        foo.initId(PhysicalId.of(1L, 0L, foo.getType()));
+        foo.initId(PhysicalId.of(1L, 0L));
         var ref1 = foo.getReference();
-        var ref2 = new Reference(null, () -> foo);
+        var ref2 = new Reference(foo.getId(), () -> foo);
         Assert.assertEquals(ref1, ref2);
         var bytes1 = toIndexBytes(ref1);
         var bytes2 = toIndexBytes(ref2);

@@ -27,35 +27,10 @@ import static org.metavm.util.ReflectionUtils.ENUM_ORDINAL_FIELD;
 @Slf4j
 public class StandardDefBuilder {
 
-    private ValueDef<Enum<?>> enumDef;
-
-    private FieldDef enumNameDef;
-
-    private FieldDef enumOrdinalDef;
-
-    private final SystemDefContext defContext;
-
-    private Klass iteratorKlass;
-
-    private Klass iteratorImplKlass;
-
-    private Klass iterableKlass;
-
+    private Klass enumKlass;
     private Klass throwableKlass;
 
-    private Klass collectionKlass;
-
-    private Klass listKlass;
-
-    public Klass setKlass;
-
-    public Klass mapKlass;
-
-    private Klass consumerKlass;
-
-    private Klass predicateKlass;
-
-    private Klass comparatorKlass;
+    private final SystemDefContext defContext;
 
     private final PrimTypeFactory primTypeFactory = new PrimTypeFactory();
 
@@ -64,77 +39,55 @@ public class StandardDefBuilder {
     }
 
     public void initRootTypes() {
-        ValueDef<Record> recordDef = createValueDef(
-                Record.class,
+        var recordDef = createKlassDef(
                 Record.class,
                 newKlassBuilder(Record.class)
                         .source(ClassSource.BUILTIN)
-                        .kind(ClassKind.VALUE).build(),
-                defContext
+                        .kind(ClassKind.VALUE).build()
         );
         defContext.addDef(recordDef);
 
         var entityKlass = newKlassBuilder(Entity.class)
                 .source(ClassSource.BUILTIN)
                 .build();
-        EntityDef<Entity> entityDef = createEntityDef(
+        var entityDef = createKlassDef(
                 Entity.class,
-                Entity.class,
-                entityKlass,
-                defContext
+                entityKlass
         );
 
         defContext.addDef(entityDef);
 
         var enumTypeParam = new TypeVariable(null, "EnumType",
                 DummyGenericDeclaration.INSTANCE);
-        var enumKlass = newKlassBuilder(Enum.class)
+        enumKlass = newKlassBuilder(Enum.class)
                 .source(ClassSource.BUILTIN)
                 .typeParameters(enumTypeParam)
                 .build();
 
         enumTypeParam.setBounds(List.of(enumKlass.getType()));
 
-        enumDef = createValueDef(
-                Enum.class,// Enum is not a RuntimeGeneric, use the raw class
-                new TypeReference<Enum<?>>() {
-                }.getType(),
-                enumKlass,
-                defContext
+        var enumDef = createKlassDef(
+                new TypeReference<Enum<?>> () {}.getType(),
+                enumKlass
         );
-
-        enumNameDef = createFieldDef(
-                ENUM_NAME_FIELD,
-                createField(ENUM_NAME_FIELD, true, Types.getStringType(), Access.PUBLIC,
-                        ColumnKind.STRING.getColumn(0), 0, enumKlass),
-                enumDef
-        );
-
-        enumOrdinalDef = createFieldDef(
-                ENUM_ORDINAL_FIELD,
-                createField(ENUM_ORDINAL_FIELD, false, Types.getIntType(), Access.PRIVATE,
-                        ColumnKind.INT.getColumn(0), 1, enumKlass),
-                enumDef
-        );
-        enumKlass.setTitleField(enumNameDef.getField());
+        var enumNameField = createField(ENUM_NAME_FIELD, true, Types.getStringType(), Access.PUBLIC,
+                ColumnKind.STRING.getColumn(0), 0, enumKlass);
+        createField(ENUM_ORDINAL_FIELD, false, Types.getIntType(), Access.PRIVATE,
+                ColumnKind.INT.getColumn(0), 1, enumKlass);
+        enumKlass.setTitleField(enumNameField);
         createEnumMethods(enumKlass);
         enumKlass.setStage(ResolutionStage.DEFINITION);
 
-        var enumTypeParamDef = new TypeVariableDef(Enum.class.getTypeParameters()[0], enumTypeParam);
-        defContext.preAddDef(enumTypeParamDef);
         defContext.addDef(enumDef);
-        defContext.afterDefInitialized(enumTypeParamDef);
 
         initSystemFunctions();
 
         throwableKlass = newKlassBuilder(Throwable.class)
                 .source(ClassSource.BUILTIN).build();
         createThrowableFlows(throwableKlass);
-        var throwableDef = createValueDef(
+        var throwableDef = createKlassDef(
                 Throwable.class,
-                Throwable.class,
-                throwableKlass,
-                defContext
+                throwableKlass
         );
         defContext.preAddDef(throwableDef);
         var javaMessageField = ReflectionUtils.getField(Throwable.class, "detailMessage");
@@ -142,22 +95,14 @@ public class StandardDefBuilder {
          Predefine composite types because the 'cause' field depends on Throwable | Null
          Do not call createCompositeTypes, it will initialize the throwable type without fields!
          */
-        createFieldDef(
-                javaMessageField,
-                createField(javaMessageField, false,
-                        Types.getNullableType(Types.getStringType()), Access.PUBLIC,
-                        ColumnKind.STRING.getColumn(0), 0, throwableKlass),
-                throwableDef
-        );
+        createField(javaMessageField, false,
+                Types.getNullableType(Types.getStringType()), Access.PUBLIC,
+                ColumnKind.STRING.getColumn(0), 0, throwableKlass);
 
         var javaCauseField = ReflectionUtils.getField(Throwable.class, "cause");
-        createFieldDef(
-                javaCauseField,
-                createField(javaCauseField, false,
-                        Types.getNullableType(throwableKlass.getType()), Access.PUBLIC,
-                        ColumnKind.REFERENCE.getColumn(0), 1, throwableKlass),
-                throwableDef
-        );
+        createField(javaCauseField, false,
+                Types.getNullableType(throwableKlass.getType()), Access.PUBLIC,
+                ColumnKind.REFERENCE.getColumn(0), 1, throwableKlass);
         defContext.afterDefInitialized(throwableDef);
         var exceptionKlass = createExceptionKlass(Exception.class, throwableKlass);
         var ioExceptionKlass = createExceptionKlass(IOException.class, exceptionKlass);
@@ -185,17 +130,17 @@ public class StandardDefBuilder {
         createExceptionKlass(OutOfMemoryError.class, vmErrorKlass);
         createMvObjectKlass();
 
-        consumerKlass = createConsumerKlass();
-        predicateKlass = createPredicateKlass();
-        iteratorKlass = createIteratorKlass();
-        iterableKlass = createIterableKlass();
-        comparatorKlass = createComparatorKlass();
+        createConsumerKlass();
+        createPredicateKlass();
+        createIteratorKlass();
+        createIterableKlass();
+        createComparatorKlass();
         createComparableKlass();
-        collectionKlass = createCollectionKlass();
-        iteratorImplKlass = createIteratorImplKlass();
-        setKlass = createSetKlass();
-        listKlass = createListKlass();
-        mapKlass = createMapKlass();
+        createCollectionKlass();
+        createIteratorImplKlass();
+        createSetKlass();
+        createListKlass();
+        createMapKlass();
         createReadWriteListKlass();
         createChildListKlass();
         createValueListKlass();
@@ -223,7 +168,7 @@ public class StandardDefBuilder {
                 .source(ClassSource.BUILTIN)
                 .build();
         createExceptionFlows(klass);
-        defContext.addDef(new DirectDef<>(javaClass, klass));
+        defContext.addDef(new KlassDef<>(javaClass, klass));
         return klass;
     }
 
@@ -279,32 +224,8 @@ public class StandardDefBuilder {
         StdFunction.defineUserFunctions(defContext).forEach(defContext::writeEntity);
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private <T extends Entity> EntityDef<T> createEntityDef(java.lang.reflect.Type javaType,
-                                                            Class<T> javaClass,
-                                                            Klass type,
-                                                            SystemDefContext defContext) {
-        return new EntityDef<>(
-                javaClass,
-                javaType,
-                null,
-                type,
-                defContext
-        );
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private <T> ValueDef<T> createValueDef(java.lang.reflect.Type javaType,
-                                           Class<T> javaClass,
-                                           Klass type,
-                                           SystemDefContext defContext) {
-        return new ValueDef<>(
-                javaClass,
-                javaType,
-                null,
-                type,
-                defContext
-        );
+    private <T> KlassDef<T> createKlassDef(Class<T> javaClass, Klass type) {
+        return new KlassDef<>(javaClass, type);
     }
 
     private org.metavm.object.type.Field createField(Field javaField,
@@ -324,35 +245,6 @@ public class StandardDefBuilder {
                 .defaultValue(new NullValue())
                 .staticValue(new NullValue())
                 .build();
-    }
-
-    public ValueDef<Enum<?>> getEnumDef() {
-        return enumDef;
-    }
-
-    private FieldDef createFieldDef(Field reflectField,
-                                    org.metavm.object.type.Field field,
-                                    PojoDef<?> declaringTypeDef
-    ) {
-        return new FieldDef(
-                field,
-                false,
-                reflectField,
-                declaringTypeDef,
-                null
-        );
-    }
-
-    public Klass getEnumType() {
-        return enumDef.getTypeDef();
-    }
-
-    public org.metavm.object.type.Field getEnumNameField() {
-        return enumNameDef.getField();
-    }
-
-    public org.metavm.object.type.Field getEnumOrdinalField() {
-        return enumOrdinalDef.getField();
     }
 
     public Klass createIteratorKlass() {
@@ -403,7 +295,7 @@ public class StandardDefBuilder {
 
     public Klass createListImplKlass(Class<?> javaClass, ClassKind kind, ArrayKind arrayKind) {
         var listImplType = parseKlass(javaClass);
-        var elementType = listImplType.getTypeParameters().get(0);
+        var elementType = listImplType.getTypeParameters().getFirst();
         FieldBuilder.newBuilder("array", listImplType,
                         new ArrayType(Types.getNullableType(elementType.getType()), arrayKind))
                 .access(Access.PRIVATE)
@@ -414,7 +306,7 @@ public class StandardDefBuilder {
 
     public Klass createHashSetKlass() {
         var klass = parseKlass(HashSet.class);
-        var elementType = klass.getTypeParameters().get(0);
+        var elementType = klass.getTypeParameters().getFirst();
         FieldBuilder.newBuilder("array", klass,
                         new ArrayType(Types.getNullableType(elementType.getType()), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
@@ -425,7 +317,7 @@ public class StandardDefBuilder {
 
     private Klass createTreeSetKlass() {
         var klass = parseKlass(TreeSet.class);
-        var elementType = klass.getTypeParameters().get(0);
+        var elementType = klass.getTypeParameters().getFirst();
         FieldBuilder.newBuilder("array", klass,
                         new ArrayType(elementType.getType(), ArrayKind.READ_WRITE))
                 .access(Access.PRIVATE)
@@ -448,7 +340,7 @@ public class StandardDefBuilder {
 
     private Klass createMapImplKlass(Class<?> javaClass, ClassKind kind, ArrayKind valueArrayKind) {
         var mapImplKlass = parseKlass(javaClass);
-        var keyTypeVar = mapImplKlass.getTypeParameters().get(0);
+        var keyTypeVar = mapImplKlass.getTypeParameters().getFirst();
         var valueTypeVar = mapImplKlass.getTypeParameters().get(1);
 
         FieldBuilder.newBuilder("keyArray", mapImplKlass,
@@ -474,7 +366,7 @@ public class StandardDefBuilder {
         var code = c.getCode();
         Nodes.this_(code);
         Nodes.ret(code);
-        defContext.addDef(new DirectDef<>(MvObject.class, klass));
+        defContext.addDef(new KlassDef<>(MvObject.class, klass));
         klass.emitCode();
         return klass;
     }
@@ -568,7 +460,7 @@ public class StandardDefBuilder {
 
     Klass parseKlass(Class<?> javaClass) {
         if(javaClass == Enum.class)
-            return enumDef.getKlass();
+            return enumKlass;
         if(javaClass == Throwable.class)
             return throwableKlass;
         if(javaClass == Class.class)
@@ -578,9 +470,6 @@ public class StandardDefBuilder {
             var r = new ReflectDefiner(javaClass, defContext.getTypeTag(javaClass), this::parseKlass,
                     primTypeFactory::putType).defineClass();
             klass = r.klass();
-            for (int i = 0; i < javaClass.getTypeParameters().length; i++) {
-                primTypeFactory.putType(javaClass.getTypeParameters()[i], klass.getTypeParameters().get(i));
-            }
             if(r.staticFieldTable() != null)
                 primTypeFactory.putStaticFieldTable(klass, r.staticFieldTable());
         }
@@ -590,15 +479,15 @@ public class StandardDefBuilder {
     private static class PrimTypeFactory extends TypeFactory {
 
         private final Map<java.lang.reflect.Type, TypeDef> javaType2TypeDef = new HashMap<>();
-        private final Map<TypeDef, java.lang.reflect.Type> typeDef2JavaType = new IdentityHashMap<>();
+        private final Map<TypeDef, Class<?>> typeDef2JavaType = new IdentityHashMap<>();
         private final Map<TypeDef, StaticFieldTable> staticFieldTableMap = new HashMap<>();
 
         @Override
-        public void putType(java.lang.reflect.Type javaType, TypeDef typeDef) {
-            NncUtils.requireFalse(javaType2TypeDef.containsKey(javaType));
-            NncUtils.requireFalse(typeDef2JavaType.containsKey(typeDef));
-            javaType2TypeDef.put(javaType, typeDef);
-            typeDef2JavaType.put(typeDef, javaType);
+        public void putType(Class<?> javaClass, TypeDef typeDef) {
+            Utils.require(!javaType2TypeDef.containsKey(javaClass));
+            Utils.require(!typeDef2JavaType.containsKey(typeDef));
+            javaType2TypeDef.put(javaClass, typeDef);
+            typeDef2JavaType.put(typeDef, javaClass);
         }
 
         public void putStaticFieldTable(TypeDef typeDef, StaticFieldTable staticFieldTable) {
@@ -610,7 +499,7 @@ public class StandardDefBuilder {
         }
 
         public void saveDefs(SystemDefContext defContext) {
-            var newTypeDefs = NncUtils.exclude(javaType2TypeDef.values(), defContext::containsDef);
+            var newTypeDefs = Utils.exclude(javaType2TypeDef.values(), defContext::containsDef);
             for (var typeDef : newTypeDefs) {
                 createDefIfAbsent(typeDef, defContext);
             }
@@ -619,15 +508,11 @@ public class StandardDefBuilder {
             }
         }
 
-        private ModelDef<?> createDefIfAbsent(TypeDef typeDef, SystemDefContext defContext) {
-            var javaType = NncUtils.requireNonNull(typeDef2JavaType.get(typeDef));
+        private KlassDef<?> createDefIfAbsent(TypeDef typeDef, SystemDefContext defContext) {
+            var javaType = Objects.requireNonNull(typeDef2JavaType.get(typeDef));
             var sft = staticFieldTableMap.get(typeDef);
-            var def = switch (typeDef) {
-                case TypeVariable typeVariable -> new TypeVariableDef(
-                        (java.lang.reflect.TypeVariable<?>) javaType, typeVariable
-                );
-                default -> new DirectDef<>(javaType, typeDef, sft);
-            };
+            var def = new KlassDef<>(javaType, (Klass) typeDef);
+            def.setStaticFieldTable(sft);
             defContext.preAddDef(def);
             return def;
         }

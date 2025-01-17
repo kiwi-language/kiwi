@@ -4,13 +4,11 @@ import java.util.List;
 
 public record EntityQuery<T extends Entity>(
         Class<T> entityType,
-        String searchText,
-        String expression,
-        List<String> searchFields,
+        List<SearchField<? super T>> searchFields,
         boolean includeBuiltin,
         int page,
         int pageSize,
-        List<EntityQueryField> fields,
+        List<EntityQueryField<? super T>> fields,
         List<String> newlyCreated,
         List<String> excluded
 ) {

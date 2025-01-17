@@ -9,7 +9,7 @@ public class KeyValueList<K, V> {
     private final LinkedHashMap<K, V> map = new LinkedHashMap<>();
 
     public List<KeyValue<K, V>> values() {
-        return NncUtils.map(map.entrySet(), entry -> new KeyValue<>(entry.getKey(), entry.getValue()));
+        return Utils.map(map.entrySet(), entry -> new KeyValue<>(entry.getKey(), entry.getValue()));
     }
 
     public void add(K key, V value) {

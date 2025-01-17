@@ -6,7 +6,7 @@ import org.metavm.object.instance.core.Id;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public record DiffId(Id id, @Nullable Id oldId, boolean useOldId) implements Comparable<DiffId> {
+public record DiffId(Id id, @Nullable Id oldId, boolean useOldId, int entityTag) implements Comparable<DiffId> {
 
     @Override
     public Id id() {

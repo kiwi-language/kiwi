@@ -3,6 +3,7 @@ package org.metavm.entity;
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 import javassist.util.proxy.ProxyObject;
+import org.metavm.object.instance.core.BaseInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.InternalException;
 import org.metavm.util.ReflectionUtils;
@@ -22,9 +23,6 @@ public class EntityProxyFactory {
     private EntityProxyFactory() {}
 
     private static final Map<Class<?>, Class<?>> PROXY_CLASS_MAP = new ConcurrentHashMap<>();
-    private static final Field FIELD_PERSISTED = ReflectionUtils.getField(Entity.class, "persisted");
-    private static final Field FIELD_ID = ReflectionUtils.getField(Entity.class, "id");
-    private static final Method HASHCODE_METHOD = ReflectionUtils.getMethod(Object.class, "hashCode");
 
     public static <T> T getProxy(TypeReference<T> typeRef, Consumer<T> modelSupplier) {
         return getProxy(typeRef.getType(), null, modelSupplier);
@@ -55,6 +53,8 @@ public class EntityProxyFactory {
         try {
             ProxyObject proxyInstance =  (ProxyObject) constructor.apply(proxyClass);
             proxyInstance.setHandler(new EntityMethodHandler<>(type, initializer));
+            if (proxyInstance instanceof BaseInstance inst)
+                inst.initState(id, 0, 0, false);
             if(id != null && (proxyInstance instanceof IdInitializing idInitializing)) {
                 idInitializing.initId(id);
             }
@@ -95,8 +95,6 @@ public class EntityProxyFactory {
     public static <T extends Entity> T makeEntityDummy(Class<T> type, Id id) {
         try {
             ProxyObject proxyInstance = (ProxyObject) makeDummy(type, id);
-            FIELD_ID.set(proxyInstance, id);
-            FIELD_PERSISTED.set(proxyInstance, true);
             return type.cast(proxyInstance);
         }
         catch (Exception e) {

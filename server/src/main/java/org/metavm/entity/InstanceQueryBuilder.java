@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -79,12 +79,12 @@ public class InstanceQueryBuilder {
     }
 
     public InstanceQueryBuilder newlyCreated(@Nullable List<Id> newlyCreated) {
-        this.createdIds = NncUtils.orElse(newlyCreated, List.of());
+        this.createdIds = Utils.orElse(newlyCreated, List.of());
         return this;
     }
 
     public InstanceQueryBuilder excluded(List<Id> excluded) {
-        this.excludedIds = NncUtils.orElse(excluded, List.of());
+        this.excludedIds = Utils.orElse(excluded, List.of());
         return this;
     }
 

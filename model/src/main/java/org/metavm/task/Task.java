@@ -1,25 +1,43 @@
 package org.metavm.task;
 
+import lombok.extern.slf4j.Slf4j;
+import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
+import org.metavm.api.Generated;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IEntityContext;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.WAL;
-import org.metavm.object.instance.log.Identifier;
-import org.metavm.util.Constants;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
+import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
+@NativeEntity(33)
 @Entity
+@Slf4j
 public abstract class Task extends org.metavm.entity.Entity {
 
-    public static final IndexDef<Task> IDX_STATE_LAST_RUN_AT = new IndexDef<>(
-            Task.class,false, "state", "lastRunTimestamp"
-    );
+    public static final IndexDef<Task> IDX_STATE_LAST_RUN_AT = IndexDef.create(Task.class,
+            2, task -> List.of(
+                    Instances.intInstance(task.state.code()),
+                    Instances.longInstance(task.lastRunTimestamp)));
 
     protected static final int BATCH_SIZE = 1000;
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
-    private final String title;
+    private String title;
     private TaskState state = TaskState.RUNNABLE;
     private long lastRunTimestamp;
     private long runCount;
@@ -29,6 +47,15 @@ public abstract class Task extends org.metavm.entity.Entity {
 
     protected Task(String title) {
         this.title = title;
+    }
+
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        visitor.visitUTF();
+        visitor.visitByte();
+        visitor.visitLong();
+        visitor.visitLong();
+        visitor.visitLong();
     }
 
     protected abstract boolean run0(IEntityContext context, IEntityContext taskContext);
@@ -46,12 +73,12 @@ public abstract class Task extends org.metavm.entity.Entity {
             }
         }
         catch (Exception e) {
-            logger.error("Failed to run task {}-{}", getTitle(), getStringId(), e);
+            log.error("Failed to run task {}-{}", getTitle(), getStringId(), e);
             try {
                 onFailure(executionContext, taskContext);
             }
             catch (Exception e1) {
-                logger.error("Failed to execute onFailure for task {}-{}", getTitle(), getStringId(), e1);
+                log.error("Failed to execute onFailure for task {}-{}", getTitle(), getStringId(), e1);
             }
             state = TaskState.FAILED;
             if(group != null)
@@ -136,11 +163,11 @@ public abstract class Task extends org.metavm.entity.Entity {
         return null;
     }
 
-    public @Nullable Identifier getDefWalId() {
+    public @Nullable Id getDefWalId() {
         return null;
     }
 
-    public List<String> getExtraStdKlassIds() {
+    public List<Id> getExtraStdKlassIds() {
         return List.of();
     }
 
@@ -148,4 +175,81 @@ public abstract class Task extends org.metavm.entity.Entity {
         return false;
     }
 
+    @Nullable
+    @Override
+    public org.metavm.entity.Entity getParentEntity() {
+        return group;
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        var group = this.getGroup();
+        if (group != null) map.put("group", group.getStringId());
+        map.put("runCount", this.getRunCount());
+        map.put("state", this.getState().name());
+        map.put("runnable", this.isRunnable());
+        map.put("running", this.isRunning());
+        map.put("completed", this.isCompleted());
+        map.put("failed", this.isFailed());
+        map.put("terminated", this.isTerminated());
+        map.put("lastRunTimestamp", this.getLastRunTimestamp());
+        map.put("startAt", this.getStartAt());
+        map.put("timeout", this.getTimeout());
+        var wAL = this.getWAL();
+        if (wAL != null) map.put("wAL", wAL.getStringId());
+        var metaWAL = this.getMetaWAL();
+        if (metaWAL != null) map.put("metaWAL", metaWAL.getStringId());
+        var defWalId = this.getDefWalId();
+        if (defWalId != null) map.put("defWalId", defWalId);
+        map.put("extraStdKlassIds", this.getExtraStdKlassIds());
+        map.put("relocationEnabled", this.isRelocationEnabled());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_Task;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        this.group = (TaskGroup) parent;
+        this.title = input.readUTF();
+        this.state = TaskState.fromCode(input.read());
+        this.lastRunTimestamp = input.readLong();
+        this.runCount = input.readLong();
+        this.startAt = input.readLong();
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        output.writeUTF(title);
+        output.write(state.code());
+        output.writeLong(lastRunTimestamp);
+        output.writeLong(runCount);
+        output.writeLong(startAt);
+    }
+
+    @Override
+    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
+    }
 }

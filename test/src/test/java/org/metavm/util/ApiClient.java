@@ -12,7 +12,6 @@ import org.metavm.object.instance.rest.SearchResult;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -86,7 +85,7 @@ public class ApiClient {
                 method,
                 uri,
                 List.of(),
-                Collections.unmodifiableList(cookies)
+                cookies
         );
     }
 

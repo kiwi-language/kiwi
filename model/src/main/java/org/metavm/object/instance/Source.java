@@ -1,11 +1,13 @@
 package org.metavm.object.instance;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.rest.FieldValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.rest.dto.TypeKey;
 
 import java.util.Map;
 
-public record Source(Id id, TypeKey typeKey, Map<Id, FieldValue> fields) {
+@Slf4j
+public record Source(Id id, TypeKey typeKey, Map<String, Value> fields) {
 
 }

@@ -6,7 +6,7 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.rest.InstanceQueryFieldDTO;
 import org.metavm.object.type.Field;
 import org.metavm.util.BusinessException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 
@@ -34,11 +34,11 @@ public record InstanceQueryField(
         var field = context.getField(queryFieldDTO.fieldId());
         return new InstanceQueryField(
                 field,
-                NncUtils.get(queryFieldDTO.value(), v ->
+                Utils.safeCall(queryFieldDTO.value(), v ->
                         InstanceFactory.resolveValue(v, field.getType(), context)),
-                NncUtils.get(queryFieldDTO.min(), v ->
+                Utils.safeCall(queryFieldDTO.min(), v ->
                         InstanceFactory.resolveValue(v, field.getType(), context)),
-                NncUtils.get(queryFieldDTO.max(), v ->
+                Utils.safeCall(queryFieldDTO.max(), v ->
                         InstanceFactory.resolveValue(v, field.getType(), context))
         );
     }

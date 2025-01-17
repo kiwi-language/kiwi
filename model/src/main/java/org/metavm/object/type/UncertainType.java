@@ -3,9 +3,12 @@ package org.metavm.object.type;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.InstanceVisitor;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.rest.dto.UncertainTypeKey;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -14,12 +17,15 @@ import org.metavm.util.WireTypes;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Entity
 public class UncertainType extends CompositeType {
 
     public static final UncertainType asterisk = new UncertainType(NeverType.instance, UnionType.nullableAnyType);
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     public static UncertainType createLowerBounded(Type lowerBound) {
         return new UncertainType(lowerBound, UnionType.nullableAnyType);
@@ -46,11 +52,6 @@ public class UncertainType extends CompositeType {
     @Override
     protected boolean isAssignableFrom0(Type that) {
         return getLowerBound().isAssignableFrom0(that);
-    }
-
-    @Override
-    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
-        return visitor.visitUncertainType(this, s);
     }
 
     @Override
@@ -99,11 +100,6 @@ public class UncertainType extends CompositeType {
     }
 
     @Override
-    public Type getType() {
-        return StdKlass.uncertainType.type();
-    }
-
-    @Override
     public boolean isEphemeral() {
         return false;
     }
@@ -111,11 +107,6 @@ public class UncertainType extends CompositeType {
     @Override
     public List<Type> getComponentTypes() {
         return List.of(lowerBound, upperBound);
-    }
-
-    @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitUncertainType(this);
     }
 
     @Override
@@ -145,7 +136,7 @@ public class UncertainType extends CompositeType {
     }
 
     @Override
-    protected boolean equals0(Object obj) {
+    public boolean equals(Object obj) {
         return obj instanceof UncertainType that && lowerBound.equals(that.lowerBound) && upperBound.equals(that.upperBound);
     }
 
@@ -157,5 +148,33 @@ public class UncertainType extends CompositeType {
     @Override
     public Type getUpperBound2() {
         return upperBound;
+    }
+
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitUncertainType(this);
+    }
+
+    @Override
+    public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
+        return visitor.visitUncertainType(this, s);
+    }
+
+    @Override
+    public ClassType getValueType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+        upperBound.accept(visitor);
+        lowerBound.accept(visitor);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        upperBound.forEachReference(action);
+        lowerBound.forEachReference(action);
     }
 }

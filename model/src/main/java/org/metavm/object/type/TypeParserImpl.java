@@ -13,7 +13,7 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.antlr.TypeLexer;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -107,12 +107,12 @@ public class TypeParserImpl implements TypeParser {
         var func =  FunctionBuilder.newBuilder(name)
                 .typeParameters(
                         ctx.typeParameterList() != null ?
-                                NncUtils.map(ctx.typeParameterList().typeParameter(), this::parseTypeParameter) : List.of()
+                                Utils.map(ctx.typeParameterList().typeParameter(), this::parseTypeParameter) : List.of()
                 )
                 .build();
         func.setParameters(
                         ctx.parameterList() != null ?
-                                NncUtils.map(ctx.parameterList().parameter(), p -> parseParameter(p, func)) : List.of()
+                                Utils.map(ctx.parameterList().parameter(), p -> parseParameter(p, func)) : List.of()
                 );
         func.setReturnType(parseType(ctx.type()));
         return func;
@@ -181,7 +181,7 @@ public class TypeParserImpl implements TypeParser {
     private SimpleMethodRef parseSimpleMethodRef(org.metavm.object.type.antlr.TypeParser.SimpleMethodRefContext ctx) {
         return new SimpleMethodRef(
                 ctx.IDENTIFIER().getText(),
-                ctx.typeArguments() != null ? NncUtils.map(ctx.typeArguments().typeList().type(), this::parseType) : List.of()
+                ctx.typeArguments() != null ? Utils.map(ctx.typeArguments().typeList().type(), this::parseType) : List.of()
         );
     }
 
@@ -239,11 +239,11 @@ public class TypeParserImpl implements TypeParser {
     }
 
     private UnionType parseUnionType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new UnionType(NncUtils.mapUnique(ctx.type(), this::parseType)).flatten();
+        return new UnionType(Utils.mapToSet(ctx.type(), this::parseType)).flatten();
     }
 
     private IntersectionType parseIntersectionType(org.metavm.object.type.antlr.TypeParser.TypeContext ctx) {
-        return new IntersectionType(NncUtils.mapUnique(ctx.type(), this::parseType)).flatten();
+        return new IntersectionType(Utils.mapToSet(ctx.type(), this::parseType)).flatten();
     }
 
     private Type parseClassType(org.metavm.object.type.antlr.TypeParser.ClassTypeContext ctx) {
@@ -253,8 +253,8 @@ public class TypeParserImpl implements TypeParser {
             return typeVar.getType();
         var klass = (Klass) getTypeDef(name);
         if (ctx.typeArguments() != null) {
-            return new KlassType(NncUtils.get(klass.getOwner(), GenericDeclaration::getRef),
-                    klass, NncUtils.map(ctx.typeArguments().typeList().type(), this::parseType));
+            return new KlassType(Utils.safeCall(klass.getScope(), GenericDeclaration::getRef),
+                    klass, Utils.map(ctx.typeArguments().typeList().type(), this::parseType));
         } else
             return klass.getType();
     }
@@ -287,6 +287,6 @@ public class TypeParserImpl implements TypeParser {
     private List<Type> parseTypeList(@Nullable org.metavm.object.type.antlr.TypeParser.TypeListContext ctx) {
         if (ctx == null)
             return List.of();
-        return NncUtils.map(ctx.type(), this::parseType);
+        return Utils.map(ctx.type(), this::parseType);
     }
 }

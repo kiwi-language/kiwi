@@ -11,7 +11,7 @@ import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.task.ShadowTask;
 import org.metavm.task.Task;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,17 +59,16 @@ public class ChangeLogPlugin implements ContextPlugin {
     @Override
     public void postProcess(IInstanceContext context) {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
-        if (NncUtils.isNotEmpty(logs) || !context.getSearchReindexSet().isEmpty()) {
+        if (Utils.isNotEmpty(logs) || !context.getSearchReindexSet().isEmpty()) {
             instanceLogService.process(context.getAppId(), logs,
-                    instanceStore, NncUtils.map(context.getRelocated(), Instance::getId), context.getClientId(), defContextProvider.getDefContext());
+                    instanceStore, Utils.map(context.getRelocated(), Instance::getId), context.getClientId(), defContextProvider.getDefContext());
             var tasks = new ArrayList<Task>();
-            var idsToIndex = new HashSet<>(NncUtils.filterAndMap(context.getSearchReindexSet(), i -> !i.isRemoved(), Instance::getId));
+            var idsToIndex = new HashSet<>(Utils.filterAndMap(context.getSearchReindexSet(), i -> !i.isRemoved(), Instance::getId));
             var idsToRemove = new ArrayList<Id>();
             for (var log : logs) {
                 var inst = context.internalGet(log.getId());
                 if(log.isInsert()) {
-                    var entity = inst.getMappedEntity();
-                    if (entity instanceof Task task) {
+                    if (inst instanceof Task task) {
                         tasks.add(task);
                     }
                 }

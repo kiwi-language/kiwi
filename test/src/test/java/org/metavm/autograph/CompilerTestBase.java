@@ -60,7 +60,7 @@ public abstract class CompilerTestBase extends TestCase  {
     @Override
     protected void setUp() throws ExecutionException, InterruptedException {
         AUTH_CONFIG = AuthConfig.fromFile("/Users/leen/workspace/object/test/src/test/resources/auth");
-        SystemConfig.setThreadLocalMode();
+//        SystemConfig.setThreadLocalMode();
         TestUtils.clearDirectory(new File(HOME));
         executor = Executors.newSingleThreadExecutor();
         var bootResult = submit(() -> {
@@ -82,7 +82,7 @@ public abstract class CompilerTestBase extends TestCase  {
         typeClient = new MockTypeClient(typeManager, blockManager, instanceManager, executor, new MockTransactionOperations());
         FlowSavingContext.initConfig();
         typeManager.setVersionManager(new VersionManager(entityContextFactory));
-        var entityQueryService = new EntityQueryService(instanceQueryService);
+        var entityQueryService = new EntityQueryService(bootResult.instanceSearchService());
         var roleManager = new RoleManager(entityContextFactory, entityQueryService);
         loginService = new LoginService(bootResult.entityContextFactory());
         var verificationCodeService = new VerificationCodeService(entityContextFactory, new MockEmailService());
@@ -112,7 +112,7 @@ public abstract class CompilerTestBase extends TestCase  {
         platformUserManager = null;
         apiClient = null;
         metaContextCache = null;
-        SystemConfig.setHybridMode();
+//        SystemConfig.setHybridMode();
     }
 
     protected void submit(Runnable task) {
@@ -151,7 +151,7 @@ public abstract class CompilerTestBase extends TestCase  {
     }
 
     protected void clearHome() {
-        NncUtils.clearDirectory(HOME);
+        Utils.clearDirectory(HOME);
     }
 
     protected void waitForAllTasksDone() {

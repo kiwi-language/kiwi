@@ -1,19 +1,18 @@
 package org.metavm.entity;
 
-//import org.metavm.object.instance.MetaVersionPlugin;
-import org.metavm.object.instance.core.EntityInstanceContextBridge;
-import org.metavm.object.instance.core.InstanceContext;
-import org.metavm.object.type.*;
+import org.metavm.object.type.ColumnStore;
+import org.metavm.object.type.GlobalKlassTagAssigner;
+import org.metavm.object.type.StdAllocators;
+import org.metavm.object.type.TypeTagStore;
 import org.metavm.task.SchedulerRegistry;
-import org.metavm.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.metavm.util.InternalException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Field;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.metavm.util.Constants.ROOT_APP_ID;
@@ -21,69 +20,23 @@ import static org.metavm.util.Constants.ROOT_APP_ID;
 @Component
 public class Bootstrap extends EntityContextFactoryAware implements InitializingBean {
 
-    private static final Logger logger = LoggerFactory.getLogger(Bootstrap.class);
-    private static final Logger assignableLogger = LoggerFactory.getLogger("Assignable");
-
     private final StdAllocators stdAllocators;
     private final ColumnStore columnStore;
     private final TypeTagStore typeTagStore;
-    private final StdIdStore stdIdStore;
     private Set<Field> fieldBlacklist = Set.of();
     private Set<Class<?>> classBlackList= Set.of();
 
-    public Bootstrap(EntityContextFactory entityContextFactory, StdAllocators stdAllocators, ColumnStore columnStore, TypeTagStore typeTagStore, StdIdStore stdIdStore) {
+    public Bootstrap(EntityContextFactory entityContextFactory, StdAllocators stdAllocators, ColumnStore columnStore, TypeTagStore typeTagStore) {
         super(entityContextFactory);
         this.stdAllocators = stdAllocators;
         this.columnStore = columnStore;
-        this.stdIdStore = stdIdStore;
         this.typeTagStore = typeTagStore;
     }
 
     public BootstrapResult boot() {
-        try (var ignoredEntry = ContextUtil.getProfiler().enter("Bootstrap.boot")) {
-            ThreadConfigs.sharedParameterizedElements(true);
-            ContextUtil.setAppId(ROOT_APP_ID);
-            var identityContext = new IdentityContext();
-            var idInitializer = new BootIdInitializer(new BootIdProvider(stdAllocators), identityContext);
-            var bridge = new EntityInstanceContextBridge();
-            var standardInstanceContext = (InstanceContext) entityContextFactory.newBridgedInstanceContext(
-                    ROOT_APP_ID, false, null,
-                    idInitializer, bridge, null, null, null, false,
-                    builder -> builder.timeout(0L)
-                    );
-            var defContext = new SystemDefContext(
-                    new StdIdProvider(stdIdStore),
-                    standardInstanceContext, columnStore, typeTagStore, identityContext);
-            defContext.setFieldBlacklist(fieldBlacklist);
-            bridge.setEntityContext(defContext);
-            ModelDefRegistry.setDefContext(defContext);
-            entityContextFactory.setDefContext(defContext);
-            var entityClasses = EntityUtils.getModelClasses();
-            for (ResolutionStage stage : ResolutionStage.values()) {
-                for (Class<?> entityClass : entityClasses) {
-                    if (!ReadonlyArray.class.isAssignableFrom(entityClass) && !entityClass.isAnonymousClass() && !classBlackList.contains(entityClass))
-                        defContext.getDef(entityClass, stage);
-                }
-            }
-            defContext.postProcess();
-            defContext.flushAndWriteInstances();
-            ModelDefRegistry.setDefContext(defContext);
-            var idNullInstances = NncUtils.filter(defContext.instances(), inst -> inst.isDurable() && !inst.isValue() && inst.tryGetTreeId() == null);
-            if (!idNullInstances.isEmpty()) {
-                logger.warn(idNullInstances.size() + " instances have null ids. Save is required");
-                if (DebugEnv.bootstrapVerbose) {
-                    for (int i = 0; i < 10; i++) {
-                        var inst = idNullInstances.get(i);
-                        logger.warn("instance with null id: {}, identity: {}", Instances.getInstancePath(inst),
-                                identityContext.getModelId(inst.getMappedEntity()));
-                    }
-                }
-            }
-            ContextUtil.clearContextInfo();
-            return new BootstrapResult(idNullInstances.size());
-        } finally {
-            ThreadConfigs.sharedParameterizedElements(false);
-        }
+        var result = Bootstraps.boot(stdAllocators, columnStore, typeTagStore, classBlackList, fieldBlacklist, true);
+        entityContextFactory.setDefContext(result.defContext());
+        return result;
     }
 
     @Transactional
@@ -99,22 +52,14 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
             if (defContext.isFinished())
                 return;
             try (var tempContext = entityContextFactory.newContext(ROOT_APP_ID, builder -> builder.timeout(0))) {
-//                var klass = defContext.getKlass(Constraint.class);
-//                DebugEnv.instance = defContext.getInstance(klass.getDefaultMapping());
-                var stdInstanceContext = (InstanceContext) defContext.getInstanceContext();
-//                var metaVersionPlugin = stdInstanceContext.getPlugin(MetaVersionPlugin.class);
-                var bridge = new EntityInstanceContextBridge();
-                bridge.setEntityContext(tempContext);
-//                metaVersionPlugin.setVersionRepository(bridge);
-                NncUtils.requireNonNull(defContext.getInstanceContext()).increaseVersionsForAll();
+                Objects.requireNonNull(defContext).increaseVersionsForAll();
                 defContext.finish();
                 defContext.getIdentityMap().forEach((object, javaConstruct) -> {
-                    if (EntityUtils.isDurable(object)) {
-                        var instance = defContext.getInstance(object);
-                        if (instance.isRoot())
-                            stdAllocators.putId(javaConstruct, instance.getId(), instance.getNextNodeId());
+                    if (object.isDurable()) {
+                        if (object.isRoot())
+                            stdAllocators.putId(javaConstruct, object.getId(), object.getNextNodeId());
                         else
-                            stdAllocators.putId(javaConstruct, instance.getId());
+                            stdAllocators.putId(javaConstruct, object.getId());
                     }
                 });
                 if (saveIds) {
@@ -122,11 +67,6 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
                     columnStore.save();
                     typeTagStore.save();
                 }
-                stdIdStore.save(defContext.getStdIdMap());
-//                assignableLogger.debug("Std id map");
-//                defContext.getStdIdMap().forEach((name, id) -> {
-//                    assignableLogger.debug("{}: {}", name, id);
-//                });
                 ensureIdInitialized();
                 tempContext.finish();
             }
@@ -144,7 +84,7 @@ public class Bootstrap extends EntityContextFactoryAware implements Initializing
 
     private void ensureIdInitialized() {
         var defContext = ModelDefRegistry.getDefContext();
-        for (var instance : defContext.instances()) {
+        for (var instance : defContext.entities()) {
             if (instance.isDurable() && !instance.isInlineValue() && instance.tryGetTreeId() == null)
                 throw new InternalException("Detected a durable instance with uninitialized id. instance: " + instance);
         }

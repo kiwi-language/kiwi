@@ -52,26 +52,21 @@ public abstract class Id implements Comparable<Id> {
     public static Id readId(MvInput input) {
         var maskedTagCode = input.read();
         var tag = IdTag.fromCode(maskedTagCode & 0x7F);
-        var isArray = (maskedTagCode & 0x80) != 0;
         return switch (tag) {
             case NULL -> new NullId();
-            case PHYSICAL -> new PhysicalId(isArray, input.readLong(), input.readLong());
-            case TAGGED_PHYSICAL -> new TaggedPhysicalId(input.readLong(), input.readLong(), input.readInt());
+            case PHYSICAL -> new PhysicalId(input.readLong(), input.readLong());
             case TMP -> new TmpId(input.readLong());
             case MOCK -> new MockId(input.readLong());
         };
     }
 
-    private final boolean isArray;
-
-    protected Id(boolean isArray) {
-        this.isArray = isArray;
+    protected Id() {
     }
 
     public abstract Long tryGetTreeId();
 
     public long getTreeId() {
-        return Objects.requireNonNull(tryGetTreeId());
+        return Objects.requireNonNull(tryGetTreeId(), () -> "Id " + this + " doesn't contain a tree ID");
     }
 
     public long getNodeId() {
@@ -79,10 +74,6 @@ public abstract class Id implements Comparable<Id> {
     }
 
     public abstract boolean isTemporary();
-
-    public boolean isArray() {
-        return isArray;
-    }
 
     public abstract int getTypeTag(TypeDefProvider typeDefProvider);
 

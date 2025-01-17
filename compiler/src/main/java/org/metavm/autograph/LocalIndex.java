@@ -6,7 +6,7 @@ import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +92,7 @@ public class LocalIndex {
                 .map(IndexEntryPO::getId)
                 .sorted(query.desc ? Collections.reverseOrder() : Comparator.naturalOrder())
                 .distinct()
-                .limit(NncUtils.orElse(query.limit, Long.MAX_VALUE))
+                .limit(Utils.orElse(query.limit, Long.MAX_VALUE))
                 .map(Id::toString)
                 .collect(Collectors.toList());
         return new QueryResult(pageIds, total);

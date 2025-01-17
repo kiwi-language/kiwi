@@ -18,7 +18,7 @@ import org.metavm.entity.StdKlass;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
 import org.metavm.object.type.*;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 import org.metavm.util.TestUtils;
 
@@ -45,13 +45,13 @@ public class TranspileUtilsTest extends TestCase {
     public void testMatchMethod() {
         var method = ReflectionUtils.getMethod(List.class, "get", int.class);
         var psiClass = TranspileTestTools.getPsiClass(TypeFoo.class);
-        var psiMethod = NncUtils.findRequired(psiClass.getMethods(), m -> m.getName().equals("get"));
-        NncUtils.requireTrue(TranspileUtils.matchMethod(psiMethod, method));
+        var psiMethod = Utils.findRequired(psiClass.getMethods(), m -> m.getName().equals("get"));
+        Utils.require(TranspileUtils.matchMethod(psiMethod, method));
     }
 
     public void testGetSignature() {
         var listClass = Objects.requireNonNull(TranspileUtils.createClassType(List.class).resolve());
-        var getMethod = NncUtils.findRequired(listClass.getMethods(), method -> method.getName().equals("get"));
+        var getMethod = Utils.findRequired(listClass.getMethods(), method -> method.getName().equals("get"));
         var signature = TranspileUtils.getSignature(getMethod, null);
         Assert.assertEquals(
                 new MethodSignature(
@@ -63,7 +63,7 @@ public class TranspileUtilsTest extends TestCase {
 
     public void testGetInternalName() {
         var listClass = Objects.requireNonNull(TranspileUtils.createClassType(SignatureFoo.class).resolve());
-        var getMethod = NncUtils.findRequired(listClass.getMethods(), method -> method.getName().equals("add"));
+        var getMethod = Utils.findRequired(listClass.getMethods(), method -> method.getName().equals("add"));
         var sig = TranspileUtils.getInternalName(getMethod);
 
         var fooType = TestUtils.newKlassBuilder(SignatureFoo.class).build();
@@ -88,7 +88,7 @@ public class TranspileUtilsTest extends TestCase {
 
     public void testGetInternalNameWithImplicitTypes() {
         var klass = Objects.requireNonNull(TranspileUtils.createClassType(SignatureFoo.class).resolve());
-        var testMethod = NncUtils.findRequired(klass.getMethods(), method -> method.getName().equals("test"));
+        var testMethod = Utils.findRequired(klass.getMethods(), method -> method.getName().equals("test"));
         var internalName = TranspileUtils.getInternalName(testMethod);
         Assert.assertEquals("org.metavm.autograph.mocks.SignatureFoo.test(Any|Null)", internalName);
     }

@@ -63,10 +63,10 @@ public class TaskManager extends EntityContextFactoryAware {
     public void createShadowTasks(long appId, List<Task> created) {
         try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID, builder -> builder.skipPostProcessing(true));
         var ignored = ContextUtil.getProfiler().enter("createShadowTasks")) {
-            platformContext.getInstanceContext().setDescription("ShadowTask");
+            platformContext.setDescription("ShadowTask");
             for (Task task : created) {
-                var defWal = task.getDefWalId() != null ? platformContext.getEntity(WAL.class, task.getDefWalId().toId()) : null;
-                platformContext.bind(new ShadowTask(appId, task.getStringId(), task.getStartAt(), defWal));
+                var defWal = task.getDefWalId() != null ? platformContext.getEntity(WAL.class, task.getDefWalId()) : null;
+                platformContext.bind(new ShadowTask(appId, task.getId(), task.getStartAt(), defWal));
             }
             platformContext.finish();
         }

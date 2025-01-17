@@ -2,6 +2,7 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.entity.Entity;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
@@ -13,10 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ClassInstanceTest extends TestCase {
 
@@ -27,15 +25,15 @@ public class ClassInstanceTest extends TestCase {
         MockStandardTypesInitializer.init();
     }
 
-    public void testToDTO() {
-        var fooType = MockUtils.createFooTypes(true);
-        var foo = MockUtils.createFoo(fooType, true);
-        InstanceDTO instanceDTO = foo.toDTO();
-        Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
-        ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
-        Assert.assertEquals(foo.getKlass().getReadyFields().size(), paramDTO.fields().size());
-        TestUtils.logJSON(logger, instanceDTO);
-    }
+//    public void testToDTO() {
+//        var fooType = MockUtils.createFooTypes(true);
+//        var foo = MockUtils.createFoo(fooType, true);
+//        InstanceDTO instanceDTO = foo.toDTO();
+//        Assert.assertTrue(instanceDTO.param() instanceof ClassInstanceParam);
+//        ClassInstanceParam paramDTO = (ClassInstanceParam) instanceDTO.param();
+//        Assert.assertEquals(foo.getInstanceKlass().getReadyFields().size(), paramDTO.fields().size());
+//        TestUtils.logJSON(logger, instanceDTO);
+//    }
 
     public void testIsChild() {
         var fooTypes = MockUtils.createFooTypes(true);
@@ -71,7 +69,7 @@ public class ClassInstanceTest extends TestCase {
                 ),
                 type.getType()
         );
-        instance.initId(PhysicalId.of(10001L, 0L, TestUtils.mockClassType()));
+        instance.initId(PhysicalId.of(10001L, 0L));
         Assert.assertEquals(statusField.getDefaultValue(), instance.getField(statusField));
     }
 
@@ -79,8 +77,8 @@ public class ClassInstanceTest extends TestCase {
         var type = MockUtils.createFooTypes(true);
         var foo = MockUtils.createFoo(type, true);
         Assert.assertEquals("foo", foo.getTitle());
-        var dto = foo.toDTO();
-        Assert.assertEquals("foo", dto.title());
+//        var dto = foo.toDTO();
+//        Assert.assertEquals("foo", dto.title());
     }
 
     public void testEphemeral() {
@@ -91,7 +89,18 @@ public class ClassInstanceTest extends TestCase {
                 .isChild(true)
                 .build();
 
+        flowKlass.resetHierarchy();
+        Assert.assertEquals(1, flowKlass.getSortedKlasses().size());
+        Assert.assertEquals(1, flowKlass.getSortedFields().size());
         TestUtils.initEntityIds(flowKlass);
+
+        Assert.assertNotNull(codeKlass.tryGetId());
+
+
+        var instanceMap = new HashMap<Id, Instance>();
+        flowKlass.forEachDescendant(i -> instanceMap.put(i.getId(), i));
+        codeKlass.forEachDescendant(i -> instanceMap.put(i.getId(), i));
+
         var flow = ClassInstanceBuilder.newBuilder(flowKlass.getType())
                 .data(Map.of(
                         codeField,
@@ -102,24 +111,18 @@ public class ClassInstanceTest extends TestCase {
                 .build();
 
         TestUtils.initInstanceIds(flow);
-        Map<Id, Instance> id2instance = new HashMap<>();
-        flow.forEachDescendant(instance -> id2instance.put(instance.tryGetId(), instance));
+        flow.forEachDescendant(instance -> instanceMap.put(instance.tryGetId(), instance));
         var bin = new ByteArrayInputStream(InstanceOutput.toBytes(flow));
         var input = new InstanceInput(bin, id -> {
-            var inst = id2instance.get(id);
-            if (inst instanceof ClassInstance)
+            var inst = instanceMap.get(id);
+            if (inst instanceof Entity entity) return entity;
+            else if (inst instanceof ClassInstance)
                 return ClassInstance.allocateUninitialized(id);
             else
                 throw new RuntimeException("Unexpected instance: " + inst);
         },
                 i -> {},
-                id -> {
-                    if (flowKlass.idEquals(id))
-                        return flowKlass;
-                    if (codeKlass.idEquals(id))
-                        return codeKlass;
-                    throw new NullPointerException("Can not find type def for id: " + id);
-                }, id -> null);
+                id -> null);
         var loadedFlow = (ClassInstance) input.readSingleMessageGrove();
         loadedFlow.logFields();
         Assert.assertTrue(loadedFlow.getField(codeField).isNull());
@@ -154,7 +157,7 @@ public class ClassInstanceTest extends TestCase {
         Assert.assertEquals(0, f1.getOffset());
         Assert.assertEquals(2, f2.getOffset());
         Assert.assertEquals(1, f3.getOffset());
-        var inst = new ClassInstance(
+        var inst = new MvClassInstance(
                 null,
                 Map.of(
                         f1, Instances.longInstance(1),

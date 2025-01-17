@@ -1,6 +1,7 @@
 package org.metavm.message;
 
 import org.metavm.api.Entity;
+import org.metavm.util.Utils;
 
 @Entity
 public enum MessageKind {
@@ -17,6 +18,10 @@ public enum MessageKind {
 
     public int code() {
         return code;
+    }
+
+    public static MessageKind fromCode(int code) {
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 
 }

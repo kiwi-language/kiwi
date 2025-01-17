@@ -1,7 +1,7 @@
 package org.metavm.object.instance;
 
 import org.metavm.constant.ColumnNames;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,20 +24,20 @@ public class InsertSQLBuilder {
         allColumns.add(ColumnNames.APPLICATION_ID);
         allColumns.add(ColumnNames.TYPE_ID);
 
-        List<String> escapedColumns = NncUtils.map(allColumns, col -> "`" + col + "`");
-        List<String> placeHolders = NncUtils.map(allColumns, col -> "?");
+        List<String> escapedColumns = Utils.map(allColumns, col -> "`" + col + "`");
+        List<String> placeHolders = Utils.map(allColumns, col -> "?");
         return  "INSERT INTO `" + table +
                 "` (id, " +
-                NncUtils.join(escapedColumns) +
+                Utils.join(escapedColumns) +
                 ") VALUES (?, " +
-                NncUtils.join(placeHolders) +
+                Utils.join(placeHolders) +
                 ")";
     }
 
     public String buildUpdate() {
-        List<String> setItems = NncUtils.map(columns, col -> "`" + col + "` = ?");
+        List<String> setItems = Utils.map(columns, col -> "`" + col + "` = ?");
         return "UPDATE `" + table
-                + "` SET " + NncUtils.join(setItems)
+                + "` SET " + Utils.join(setItems)
                 + " WHERE app_id = ? and id = ? and deleted_at = 0";
     }
 

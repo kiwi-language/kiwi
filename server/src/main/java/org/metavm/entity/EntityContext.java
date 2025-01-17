@@ -2,27 +2,19 @@ package org.metavm.entity;
 
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.type.CompositeTypeFactory;
-import org.metavm.object.type.DefaultTypeFactory;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.TypeFactory;
 
 public class EntityContext extends BaseEntityContext implements CompositeTypeFactory, IEntityContext {
 
     private final DefContext defContext;
 
-    public EntityContext(IInstanceContext instanceContext, IEntityContext parent) {
-        this(instanceContext, parent, ModelDefRegistry.getDefContext());
+    public EntityContext(IInstanceContext instanceContext) {
+        this(instanceContext, ModelDefRegistry.getDefContext());
     }
 
-    public EntityContext(IInstanceContext instanceContext, IEntityContext parent,
-                         DefContext defContext) {
-        super(instanceContext, parent);
+    public EntityContext(IInstanceContext instanceContext, DefContext defContext) {
+        super(instanceContext);
         this.defContext = defContext;
-    }
-
-    @Override
-    protected TypeFactory getTypeFactory() {
-        return new DefaultTypeFactory(ModelDefRegistry::getType);
     }
 
     @Override
@@ -37,7 +29,6 @@ public class EntityContext extends BaseEntityContext implements CompositeTypeFac
 
     @Override
     public IEntityContext createSame(long appId) {
-        return new EntityContext(getInstanceContext().createSame(appId), getParent());
+        return new EntityContext(getInstanceContext().createSame(appId));
     }
-
 }

@@ -4,7 +4,8 @@ import com.intellij.psi.PsiConditionalExpression;
 import com.intellij.psi.PsiDeclarationStatement;
 import com.intellij.psi.PsiStatement;
 
-import static org.metavm.util.NncUtils.requireNonNull;
+import static java.util.Objects.requireNonNull;
+
 
 public class ConditionalExpressionTransformer extends VisitorBase {
 

@@ -2,9 +2,9 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import org.metavm.util.LinkedList;
-import org.metavm.util.NncUtils;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -23,9 +23,9 @@ public class SwitchExpressionTransformer extends VisitorBase {
         String switchText = "switch (" + requireNonNull(expression.getExpression()).getText() + "){}";
         var switchStmt = (PsiSwitchStatement) TranspileUtils.createStatementFromText(switchText);
         switchStmt = (PsiSwitchStatement) insertBefore(switchStmt, enclosingStmt);
-        var newBody = NncUtils.requireNonNull(switchStmt.getBody());
+        var newBody = Objects.requireNonNull(switchStmt.getBody());
         currentSwitchExpr().newBody = newBody;
-        var body = NncUtils.requireNonNull(expression.getBody());
+        var body = Objects.requireNonNull(expression.getBody());
         currentSwitchExpr().oldBody = body;
         if (body.getStatementCount() > 0) {
             var element = body.getFirstBodyElement();
@@ -79,7 +79,7 @@ public class SwitchExpressionTransformer extends VisitorBase {
     }
 
     private SwitchInfo currentSwitchExpr() {
-        return NncUtils.requireNonNull(switches.peek());
+        return Objects.requireNonNull(switches.peek());
     }
 
     @Override
@@ -87,7 +87,7 @@ public class SwitchExpressionTransformer extends VisitorBase {
         super.visitYieldStatement(statement);
         var switchElement = TranspileUtils.findParent(statement, Set.of(PsiSwitchStatement.class, PsiSwitchExpression.class));
         if (switchElement instanceof PsiSwitchExpression switchExpr) {
-            var expr = NncUtils.requireNonNull(statement.getExpression());
+            var expr = Objects.requireNonNull(statement.getExpression());
             var replacement = (PsiStatement) replace(statement,
                     createStatementFromText(currentSwitchExpr().resultVar + " = " + expr.getText() + ";"));
             if (TranspileUtils.isColonSwitch(switchExpr)) {

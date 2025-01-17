@@ -1,6 +1,7 @@
 package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.api.NativeApi;
 import org.metavm.entity.DefContext;
 import org.metavm.entity.natives.HybridValueHolder;
 import org.metavm.entity.natives.ValueHolder;
@@ -26,26 +27,31 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return Instances.longInstance(0L);
         }
 
+        @NativeApi
         public static Value compareTo(Value self, Value that) {
             var s1 = (LongValue) self;
             var s2 = (LongValue) that;
             return Instances.intInstance(s1.compareTo(s2));
         }
 
+        @NativeApi
         public static Value intValue(Value self) {
             var v = ((LongValue) self).value;
             return Instances.intInstance((int) v);
         }
 
+        @NativeApi
         public static Value longValue(Value self) {
             return self;
         }
 
+        @NativeApi
         public static Value floatValue(Value self) {
             var v = ((LongValue) self).value;
             return Instances.floatInstance((float) v);
         }
 
+        @NativeApi
         public static Value doubleValue(Value self) {
             var v = ((LongValue) self).value;
             return Instances.doubleInstance(v);
@@ -58,27 +64,32 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return Instances.doubleInstance(0.0);
         }
 
+        @NativeApi
         public static Value compareTo(Value self, Value that) {
             var s1 = (DoubleValue) self;
             var s2 = (DoubleValue) that;
             return Instances.intInstance(s1.compareTo(s2));
         }
 
+        @NativeApi
         public static Value intValue(Value self) {
             var v = ((DoubleValue) self).value;
             return Instances.intInstance((int) v);
         }
 
+        @NativeApi
         public static Value longValue(Value self) {
             var v = ((DoubleValue) self).value;
             return Instances.longInstance((long) v);
         }
 
+        @NativeApi
         public static Value floatValue(Value self) {
             var v = ((DoubleValue) self).value;
             return Instances.floatInstance((float) v);
         }
 
+        @NativeApi
         public static Value doubleValue(Value self) {
             return self;
         }
@@ -86,23 +97,27 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
     },
     STRING(3, "string", String.class, StringValue.class, TypeCategory.STRING) {
 
+        @NativeApi
         public static Value compareTo(Value self, Value that) {
             var s1 = (StringValue) self;
             var s2 = (StringValue) that;
             return Instances.intInstance(s1.compareTo(s2));
         }
 
+        @NativeApi
         public static Value length(Value self) {
             var s = (StringValue) self;
             return Instances.intInstance(s.value.length());
         }
 
+        @NativeApi
         public static Value charAt(Value self, Value index) {
             var s = (StringValue) self;
             var idx = ((IntValue) index).value;
             return Instances.intInstance(s.value.charAt(idx));
         }
 
+        @NativeApi
         public static Value subSequence(Value self, Value start, Value end) {
             var s1 = ((StringValue) self).value;
             var i1 = ((IntValue) start).value;
@@ -110,6 +125,7 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return Instances.stringInstance(s1.substring(i1, i2));
         }
 
+        @NativeApi
         public static Value toString(Value v) {
             return v;
         }
@@ -134,6 +150,7 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
     },
     TIME(5, "time", Date.class, TimeValue.class, TypeCategory.TIME) {
 
+        @NativeApi
         public static Value compareTo(Value self, Value that) {
             var s1 = (TimeValue) self;
             var s2 = (TimeValue) that;
@@ -161,26 +178,31 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return Instances.intInstance(0);
         }
 
+        @NativeApi
         public static Value compareTo(Value self, Value that) {
             var s1 = (IntValue) self;
             var s2 = (IntValue) that;
             return Instances.intInstance(s1.compareTo(s2));
         }
 
+        @NativeApi
         public static Value intValue(Value self) {
             return self;
         }
 
+        @NativeApi
         public static Value longValue(Value self) {
             var v = ((IntValue) self).value;
             return Instances.longInstance(v);
         }
 
+        @NativeApi
         public static Value floatValue(Value self) {
             var v = ((IntValue) self).value;
             return Instances.floatInstance((float) v);
         }
 
+        @NativeApi
         public static Value doubleValue(Value self) {
             var v = ((IntValue) self).value;
             return Instances.doubleInstance(v);
@@ -193,26 +215,31 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return Instances.floatInstance(0);
         }
 
+        @NativeApi
         public static Value compareTo(Value self, Value that) {
             var s1 = (FloatValue) self;
             var s2 = (FloatValue) that;
             return Instances.intInstance(s1.compareTo(s2));
         }
 
+        @NativeApi
         public static Value intValue(Value self) {
             var v = ((FloatValue) self).value;
             return Instances.intInstance((int) v);
         }
 
+        @NativeApi
         public static Value longValue(Value self) {
             var v = ((FloatValue) self).value;
             return Instances.longInstance((long) v);
         }
 
+        @NativeApi
         public static Value floatValue(Value self) {
             return self;
         }
 
+        @NativeApi
         public static Value doubleValue(Value self) {
             var v = ((FloatValue) self).value;
             return Instances.doubleInstance(v);
@@ -293,7 +320,7 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
     }
 
     public static PrimitiveKind fromJavaClass(Class<?> javaClass) {
-        return NncUtils.findRequired(values(), v -> v.javaClass == javaClass);
+        return Utils.findRequired(values(), v -> v.javaClass == javaClass);
     }
 
     public String getTypeCode() {
@@ -305,7 +332,7 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
     }
 
     public static PrimitiveKind fromCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code);
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 
     public PrimitiveType getType() {
@@ -386,7 +413,7 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
     private static void definePrimitiveMethod(PrimitiveType primitiveType, MethodRef interfaceMethod) {
         var method = MethodBuilder.newBuilder(primitiveType.getKind().getKlass(), interfaceMethod.getName())
                 .parameters(
-                        NncUtils.map(
+                        Utils.map(
                                 interfaceMethod.getParameters(),
                                 p -> new NameAndType(p.getName(), p.getType())
                         )

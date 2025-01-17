@@ -6,7 +6,7 @@ import org.metavm.flow.Node;
 import org.metavm.object.type.NeverType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.UnionType;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.metavm.util.Null;
 
 import java.util.HashMap;
@@ -200,11 +200,11 @@ public class TypeNarrower {
     }
 
     private Type typeDiff(Type type1, Type type2) {
-        return createTypeFromSet(NncUtils.diffSet(getTypeSets(type1), getTypeSets(type2)));
+        return createTypeFromSet(Utils.diffSet(getTypeSets(type1), getTypeSets(type2)));
     }
 
     private static Type typeUnion(Type type1, Type type2) {
-        var set = NncUtils.unionSet(getTypeSets(type1), getTypeSets(type2));
+        var set = Utils.unionSet(getTypeSets(type1), getTypeSets(type2));
         var toRemove = new HashSet<Type>();
         for (Type t1 : set) {
             for (Type t2 : set) {
@@ -213,7 +213,7 @@ public class TypeNarrower {
                 }
             }
         }
-        return createTypeFromSet(NncUtils.diffSet(set, toRemove));
+        return createTypeFromSet(Utils.diffSet(set, toRemove));
     }
 
     private static Set<Type> getTypeSets(Type type) {

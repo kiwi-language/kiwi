@@ -7,7 +7,7 @@ import org.metavm.autograph.env.IrCoreApplicationEnvironment;
 import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
 import org.metavm.util.InternalException;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +51,7 @@ public class TranspileTestTools {
     }
 
     public static PsiJavaFile findFile(PsiDirectory directory, Class<?> klass) {
-        return (PsiJavaFile) NncUtils.requireNonNull(directory.findFile(klass.getSimpleName() + ".java"));
+        return (PsiJavaFile) Objects.requireNonNull(directory.findFile(klass.getSimpleName() + ".java"));
     }
 
     public static PsiDirectory getDirectory(Package pkg) {
@@ -59,7 +59,7 @@ public class TranspileTestTools {
     }
 
     public static PsiDirectory getDirectory(String dir) {
-        var file = NncUtils.requireNonNull(APP_ENV.getLocalFileSystem().findFileByPath(dir));
+        var file = Objects.requireNonNull(APP_ENV.getLocalFileSystem().findFileByPath(dir));
         return PsiManager.getInstance(PROJECT).findDirectory(file);
     }
 
@@ -69,7 +69,7 @@ public class TranspileTestTools {
 
     public static PsiClass getPsiClass(Class<?> klass) {
         var file = getPsiJavaFile(klass);
-        return NncUtils.findRequired(
+        return Utils.findRequired(
                 file.getClasses(),
                 k -> Objects.equals(k.getQualifiedName(), klass.getName())
         );
@@ -116,7 +116,7 @@ public class TranspileTestTools {
     }
 
     public static PsiJavaFile getPsiJavaFile(String path, boolean writable) {
-        var file = NncUtils.requireNonNull(FILE_SYSTEM.findFileByPath(path));
+        var file = Objects.requireNonNull(FILE_SYSTEM.findFileByPath(path));
         try {
             if (writable) file.setWritable(true);
             return (PsiJavaFile) PsiManager.getInstance(PROJECT).findFile(file);

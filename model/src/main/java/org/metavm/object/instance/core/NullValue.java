@@ -1,10 +1,8 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.entity.IEntityContext;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.instance.rest.NullFieldValue;
 import org.metavm.object.type.NullType;
-import org.metavm.util.InstanceOutput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
@@ -18,7 +16,7 @@ public class NullValue implements Value {
     }
 
     @Override
-    public NullType getType() {
+    public NullType getValueType() {
         return NullType.instance;
     }
 
@@ -43,7 +41,7 @@ public class NullValue implements Value {
     }
 
     @Override
-    public void writeInstance(InstanceOutput output) {
+    public void writeInstance(MvOutput output) {
 
     }
 
@@ -53,38 +51,18 @@ public class NullValue implements Value {
     }
 
     @Override
-    public <R> void acceptReferences(ValueVisitor<R> visitor) {
-
-    }
-
-    @Override
-    public <R> void acceptChildren(ValueVisitor<R> visitor) {
-
-    }
-
-    @Override
     public void writeTree(TreeWriter treeWriter) {
 
     }
 
     @Override
-    public boolean isMutable() {
-        return false;
-    }
-
-    @Override
-    public Object toJson(IEntityContext context) {
+    public Object toJson() {
         return null;
     }
 
     @Override
     public boolean isNull() {
         return true;
-    }
-
-    @Override
-    public boolean isReference() {
-        return false;
     }
 
     @Override

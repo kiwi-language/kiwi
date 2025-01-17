@@ -5,7 +5,6 @@ import org.junit.Assert;
 import org.metavm.common.MockEmailService;
 import org.metavm.entity.EntityQueryService;
 import org.metavm.event.MockEventQueue;
-import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.user.rest.dto.RoleDTO;
 import org.metavm.user.rest.dto.UserDTO;
 import org.metavm.util.BootstrapUtils;
@@ -26,9 +25,8 @@ public class PlatformUserManagerTest extends TestCase {
         var bootResult = BootstrapUtils.bootstrap();
         var entityContextFactory = bootResult.entityContextFactory();
         var loginService = new LoginService(entityContextFactory);
-        var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
-        var entityQueryService = new EntityQueryService(instanceQueryService);
-        platformUserManager = new PlatformUserManager(entityContextFactory,  loginService, new EntityQueryService(instanceQueryService), new MockEventQueue(),
+        var entityQueryService = new EntityQueryService(bootResult.instanceSearchService());
+        platformUserManager = new PlatformUserManager(entityContextFactory,  loginService, entityQueryService, new MockEventQueue(),
                 new VerificationCodeService(entityContextFactory, new MockEmailService()));
         roleManager = new RoleManager(entityContextFactory, entityQueryService);
         ContextUtil.setAppId(Constants.PLATFORM_APP_ID);

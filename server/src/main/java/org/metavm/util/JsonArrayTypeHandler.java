@@ -14,7 +14,7 @@ public class JsonArrayTypeHandler extends BaseTypeHandler<List<Object>> {
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, List<Object> parameter, JdbcType jdbcType) throws SQLException {
-        ps.setString(i, NncUtils.toJSONString(parameter));
+        ps.setString(i, Utils.toJSONString(parameter));
     }
 
     @Override
@@ -33,6 +33,6 @@ public class JsonArrayTypeHandler extends BaseTypeHandler<List<Object>> {
     }
 
     private List<Object> getArray(String idString) {
-        return NncUtils.readJSONString(idString, new TypeReference<>() {});
+        return Utils.readJSONString(idString, new TypeReference<>() {});
     }
 }

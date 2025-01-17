@@ -1,17 +1,29 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
+import org.metavm.api.Generated;
+import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
+import org.metavm.entity.ElementVisitor;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.NativeMethods;
 import org.metavm.entity.natives.RuntimeExceptionNative;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,10 +31,12 @@ import javax.annotation.Nullable;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+@NativeEntity(1)
 @Entity
 public class Method extends Flow implements Property {
 
@@ -30,6 +44,8 @@ public class Method extends Flow implements Property {
 
     private static final Pattern GETTER_PTN = Pattern.compile("(get|is)([A-Z][a-zA-Z0-9]*)");
     private static final Pattern SETTER_PTN = Pattern.compile("set([A-Z][a-zA-Z0-9]*)");
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
 
     private @NotNull Klass declaringType;
     private boolean _static;
@@ -58,7 +74,7 @@ public class Method extends Flow implements Property {
                   @Nullable CodeSource codeSource,
                   boolean hidden,
                   MetadataState state) {
-        super(tmpId, name, isNative, isSynthetic, parameters, returnType, List.of(), codeSource, state);
+        super(tmpId, name, isNative, isSynthetic, parameters, returnType, List.of(), state);
         if (isStatic && isAbstract)
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.declaringType = declaringType;
@@ -67,7 +83,7 @@ public class Method extends Flow implements Property {
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
         staticTypeIndex = isStatic ? -1 : getConstantPool().addValue(new FunctionType(
-                NncUtils.prepend(declaringType.getType(), NncUtils.map(parameters, NameAndType::type)),
+                Utils.prepend(declaringType.getType(), Utils.map(parameters, NameAndType::type)),
                 returnType
         ));
         this.access = access;
@@ -75,6 +91,17 @@ public class Method extends Flow implements Property {
         declaringType.addMethod(this);
         checkTypes(getParameters(), returnType);
         resetBody();
+    }
+
+    @Generated
+    public static void visitBody(StreamVisitor visitor) {
+        Flow.visitBody(visitor);
+        visitor.visitBoolean();
+        visitor.visitByte();
+        visitor.visitBoolean();
+        visitor.visitBoolean();
+        visitor.visitInt();
+        visitor.visitBoolean();
     }
 
     public boolean isConstructor() {
@@ -88,8 +115,8 @@ public class Method extends Flow implements Property {
     @Override
     public String getLocalKey(@NotNull BuildKeyContext context) {
         return getName() + "("
-                + NncUtils.join(getParameterTypes(),
-                t -> t.toExpression(typeDef -> context.getModelName(typeDef, this)))
+                + Utils.join(getParameterTypes(),
+                t -> t.toExpression(typeDef -> context.getModelName((org.metavm.entity.Entity) typeDef, this)))
                 + ")";
     }
 
@@ -118,6 +145,7 @@ public class Method extends Flow implements Property {
         return _static;
     }
 
+    @JsonIgnore
     public boolean isVirtual() {
         return !_static && !isConstructor && access != Access.PRIVATE;
     }
@@ -127,13 +155,20 @@ public class Method extends Flow implements Property {
         this._static = _static;
     }
 
+    @Nullable
     @Override
-    public List<Object> beforeRemove(IEntityContext context) {
+    public org.metavm.entity.Entity getParentEntity() {
+        return declaringType;
+    }
+
+    @Override
+    public List<Instance> beforeRemove(IEntityContext context) {
         declaringType.rebuildMethodTable();
         declaringType.removeErrors(this);
         return super.beforeRemove(context);
     }
 
+    @JsonIgnore
     public boolean isInstanceMethod() {
         return !isStatic();
     }
@@ -151,6 +186,7 @@ public class Method extends Flow implements Property {
         return hidden;
     }
 
+    @JsonIgnore
     public String getQualifiedSignature() {
         return declaringType.getTypeDesc() + "." + getSignatureString();
     }
@@ -164,27 +200,27 @@ public class Method extends Flow implements Property {
     }
 
     @Override
-    protected String toString0() {
-        return getQualifiedSignature();
+    public String toString() {
+        return "Method " + getQualifiedSignature();
     }
 
     private void checkTypes(List<Parameter> parameters, Type returnType) {
-        var paramTypes = NncUtils.map(parameters, Parameter::getType);
+        var paramTypes = Utils.map(parameters, Parameter::getType);
         var staticType = getStaticType();
         if (isInstanceMethod()) {
             AssertUtils.assertNonNull(staticType, ErrorCode.INSTANCE_METHOD_MISSING_STATIC_TYPE);
-            if (!staticType.getParameterTypes().equals(NncUtils.prepend(declaringType.getType(), paramTypes))
+            if (!staticType.getParameterTypes().equals(Utils.prepend(declaringType.getType(), paramTypes))
                     || !staticType.getReturnType().equals(returnType))
                 throw new InternalException("Incorrect static function type: " + staticType);
         } else
-            NncUtils.requireNull(staticType);
+            Utils.require(staticType == null);
     }
 
     @Override
     protected void resetType() {
         super.resetType();
         staticTypeIndex = isStatic() ? - 1 : getConstantPool().addValue(new FunctionType(
-                NncUtils.prepend(declaringType.getType(), getParameterTypes()),
+                Utils.prepend(declaringType.getType(), getParameterTypes()),
                 getReturnType()
         ));
     }
@@ -195,13 +231,13 @@ public class Method extends Flow implements Property {
 //                getQualifiedSignature(), self, arguments);
         try (var ignored = ContextUtil.getProfiler().enter("Method.execute: " + getDeclaringType().getName() + "." + getName())) {
             if (DebugEnv.debugging) {
-                logger.debug("Method.execute: {}", this);
-                logger.debug("Arguments: ");
+                logger.info("Method.execute: {}", this);
+                logger.info("Arguments: ");
                 arguments.forEach(arg -> debugLogger.info(arg.getText()));
-                logger.debug(getText());
+                logger.info(getText());
             }
             if (_static)
-                NncUtils.requireNull(self);
+                Utils.require(self == null);
             else
                 Objects.requireNonNull(self);
             checkArguments(arguments, flowRef.getTypeMetadata());
@@ -233,9 +269,9 @@ public class Method extends Flow implements Property {
                             new DefaultCallContext(callContext.instanceRepository())
                     );
                 } catch (Exception e) {
-                    logger.info("Fail to execute method {}", getQualifiedName());
+                    logger.info("Failed to execute method {}", getQualifiedName());
 //                    logger.info(getText());
-                    throw new InternalException("fail to execute method " + getQualifiedName(), e);
+                    throw new InternalException("Failed to execute method " + getQualifiedName(), e);
                 }
             }
             if (isConstructor && result.ret() != null) {
@@ -245,7 +281,7 @@ public class Method extends Flow implements Property {
                     var exception = ClassInstance.allocate(StdKlass.runtimeException.get().getType());
                     var exceptionNative = new RuntimeExceptionNative(exception);
                     exceptionNative.RuntimeException(Instances.stringInstance(
-                                    "Failed to instantiate " + instance.getType().getTypeDesc() + "，" +
+                                    "Failed to instantiate " + instance.getInstanceType().getTypeDesc() + "，" +
                                             "field " + uninitializedField.getName() + " was not initialized"),
                             callContext);
                     return new FlowExecResult(null, exception);
@@ -261,16 +297,11 @@ public class Method extends Flow implements Property {
     }
 
     @Override
-    public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitMethod(this);
-    }
-
-    @Override
     public String getInternalName(@Nullable Flow current) {
         if (current == this)
             return "this";
         return declaringType.getInternalName(null) + "." + getName() + "(" +
-                NncUtils.join(getParameterTypes(getConstantPool()), type -> type.getInternalName(this)) + ")";
+                Utils.join(getParameterTypes(getConstantPool()), type -> type.getInternalName(this)) + ")";
     }
 
     @Override
@@ -283,6 +314,7 @@ public class Method extends Flow implements Property {
         return isStatic() ? getParameters().size() : getParameters().size() + 1;
     }
 
+    @JsonIgnore
     public boolean isGetter() {
         if (!isPublic())
             return false;
@@ -290,6 +322,7 @@ public class Method extends Flow implements Property {
         return GETTER_PTN.matcher(name).matches() && getParameters().isEmpty() && !getReturnType().isVoid();
     }
 
+    @JsonIgnore
     public String getPropertyName() {
         var name = getName();
         var matcher = GETTER_PTN.matcher(name);
@@ -301,6 +334,7 @@ public class Method extends Flow implements Property {
         throw new IllegalStateException("Method " + getQualifiedName() + " is not a getter or setter");
     }
 
+    @JsonIgnore
     public boolean isSetter() {
         if (!isPublic())
             return false;
@@ -364,18 +398,6 @@ public class Method extends Flow implements Property {
         hidden = (flags & FLAG_HIDDEN) != 0;
     }
 
-    public void write(MvOutput output) {
-        super.write(output);
-        output.write(access.code());
-        output.writeShort(staticTypeIndex);
-    }
-
-    public void read(KlassInput input) {
-        super.read(input);
-        access = Access.fromCode(input.read());
-        staticTypeIndex = (short) input.readShort();
-    }
-
     @Override
     public List<TypeVariable> getAllTypeParameters() {
         var typeParams = new ArrayList<>(declaringType.getAllTypeParameters());
@@ -395,17 +417,19 @@ public class Method extends Flow implements Property {
     }
 
 
+    @JsonIgnore
     public String getNativeName() {
         if (nativeName == null) {
-            if (!getParameters().isEmpty() && NncUtils.count(declaringType.getMethods(),
+            if (!getParameters().isEmpty() && Utils.count(declaringType.getMethods(),
                             m -> m.getName().equals(getName()) && m.getParameters().size() == getParameters().size()) > 1)
-                nativeName = getName() + "__" + NncUtils.join(getParameterTypes(), t -> t.getUnderlyingType().getName(), "_");
+                nativeName = getName() + "__" + Utils.join(getParameterTypes(), t -> t.getUnderlyingType().getName(), "_");
             else
                 nativeName = getName();
         }
         return nativeName;
     }
 
+    @JsonIgnore
     public MethodHandle getNativeHandle() {
         return nativeHandle;
     }
@@ -414,4 +438,100 @@ public class Method extends Flow implements Property {
         this.nativeHandle = nativeHandle;
     }
 
+    @Override
+    public <R> R accept(ElementVisitor<R> visitor) {
+        return visitor.visitMethod(this);
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        super.acceptChildren(visitor);
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("constructor", this.isConstructor());
+        map.put("abstract", this.isAbstract());
+        map.put("declaringType", this.getDeclaringType().getStringId());
+        map.put("access", this.getAccess().name());
+        map.put("static", this.isStatic());
+        map.put("hidden", this.isHidden());
+        var staticType = this.getStaticType();
+        if (staticType != null) map.put("staticType", staticType.toJson());
+        map.put("staticTypeIndex", this.getStaticTypeIndex());
+        map.put("minLocals", this.getMinLocals());
+        map.put("flags", this.getFlags());
+        map.put("parameterTypes", this.getParameterTypes().stream().map(Type::toJson).toList());
+        map.put("returnType", this.getReturnType().toJson());
+        map.put("code", this.getCode().getStringId());
+        map.put("synthetic", this.isSynthetic());
+        map.put("name", this.getName());
+        map.put("state", this.getState().name());
+        map.put("functionType", this.getFunctionType().toJson());
+        map.put("native", this.isNative());
+        map.put("typeParameters", this.getTypeParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("typeIndex", this.getTypeIndex());
+        map.put("parameters", this.getParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("type", this.getType().toJson());
+        map.put("capturedTypeVariables", this.getCapturedTypeVariables().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("lambdas", this.getLambdas().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("constantPool", this.getConstantPool().getStringId());
+        map.put("klasses", this.getKlasses().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("attributes", this.getAttributes().stream().map(Attribute::toJson).toList());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+        super.forEachChild(action);
+    }
+
+    @Override
+    public int getEntityTag() {
+        return EntityRegistry.TAG_Method;
+    }
+
+    @Generated
+    @Override
+    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        super.readBody(input, parent);
+        this.declaringType = (Klass) parent;
+        this._static = input.readBoolean();
+        this.access = Access.fromCode(input.read());
+        this.isConstructor = input.readBoolean();
+        this.isAbstract = input.readBoolean();
+        this.staticTypeIndex = input.readInt();
+        this.hidden = input.readBoolean();
+    }
+
+    @Generated
+    @Override
+    public void writeBody(MvOutput output) {
+        super.writeBody(output);
+        output.writeBoolean(_static);
+        output.write(access.code());
+        output.writeBoolean(isConstructor);
+        output.writeBoolean(isAbstract);
+        output.writeInt(staticTypeIndex);
+        output.writeBoolean(hidden);
+    }
+
+    @Override
+    protected void buildSource(Map<String, Value> source) {
+        super.buildSource(source);
+    }
 }

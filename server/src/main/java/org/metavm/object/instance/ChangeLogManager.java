@@ -23,7 +23,7 @@ public class ChangeLogManager extends EntityContextFactoryAware {
                 .changeLogDisabled(true)
                 .activeCommitProvider(() -> null)
         )) {
-            context.getInstanceContext().setDescription("ChangeLog");
+            context.setDescription("ChangeLog");
             context.bind(changeLog);
             context.finish();
         }

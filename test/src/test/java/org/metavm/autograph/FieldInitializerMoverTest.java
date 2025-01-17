@@ -1,7 +1,7 @@
 package org.metavm.autograph;
 
 import junit.framework.TestCase;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 public class FieldInitializerMoverTest extends TestCase {
 
@@ -14,7 +14,7 @@ public class FieldInitializerMoverTest extends TestCase {
             file.accept(new FieldInitializerMover());
         });
         var dest = "/Users/leen/workspace/object/lab/src/main/tmp2/fieldinitializer2/MoveFieldInitializerFoo.java";
-        NncUtils.writeFile(
+        Utils.writeFile(
                 dest,
                 file.getText().replace("fieldinitializer", "fieldinitializer2")
         );

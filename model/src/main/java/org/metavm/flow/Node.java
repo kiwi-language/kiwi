@@ -3,36 +3,48 @@ package org.metavm.flow;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.EntityField;
+import org.metavm.annotation.Ref;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityField;
 import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.Element;
-import org.metavm.entity.IEntityContext;
+import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.LocalKey;
 import org.metavm.expression.ExpressionTypeMap;
+import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 @Slf4j
 @Entity
-public abstract class Node extends Element implements LocalKey {
+public abstract class Node implements LocalKey, Element, NativeEphemeralObject {
 
+    @SuppressWarnings("unused")
+    private static Klass __klass__;
     @EntityField(asTitle = true)
     private final String name;
     private @Nullable Type outputType;
+    @Ref
     private final @NotNull Code code;
+    @Ref
     @Nullable
     private Node predecessor;
+    @Ref
     @Nullable
     private Node successor;
     @Nullable
     private String error;
     private transient ExpressionTypeMap expressionTypes;
     private transient int offset;
+    private final transient InstanceState state = InstanceState.ephemeral(this);
 
     protected Node(
             @NotNull String name,
@@ -103,25 +115,6 @@ public abstract class Node extends Element implements LocalKey {
         return name;
     }
 
-    @Override
-    public final List<Object> beforeRemove(IEntityContext context) {
-        var cascade = new ArrayList<>(nodeBeforeRemove());
-        if (this.predecessor != null) {
-            this.predecessor.setSuccessor(this.successor);
-        }
-        if (this.successor != null) {
-            this.successor.setPredecessor(this.predecessor);
-        }
-        this.predecessor = null;
-        this.successor = null;
-        code.removeNode(this);
-        return cascade;
-    }
-
-    protected List<Object> nodeBeforeRemove() {
-        return List.of();
-    }
-
     protected void setOutputType(@Nullable Type outputType) {
         this.outputType = outputType;
     }
@@ -166,7 +159,7 @@ public abstract class Node extends Element implements LocalKey {
     public abstract boolean hasOutput();
 
     public ExpressionTypeMap getExpressionTypes() {
-        return NncUtils.orElse(expressionTypes, () -> ExpressionTypeMap.EMPTY);
+        return Utils.orElse(expressionTypes, () -> ExpressionTypeMap.EMPTY);
     }
 
     public void setExpressionTypes(ExpressionTypeMap expressionTypes) {
@@ -174,15 +167,20 @@ public abstract class Node extends Element implements LocalKey {
     }
 
     @Override
-    protected String toString0() {
+    public String toString() {
         return name;
     }
 
     public abstract void writeContent(CodeWriter writer);
 
     public void write(CodeWriter writer) {
-        writer.writeNewLine(name + ": ");
-        writeContent(writer);
+        try {
+            writer.writeNewLine(name + ": ");
+            writeContent(writer);
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Failed to write content of node " + name, e);
+        }
     }
 
     public String getText() {
@@ -207,5 +205,65 @@ public abstract class Node extends Element implements LocalKey {
 
     public void setOffset(int offset) {
         this.offset = offset;
+    }
+
+    @Override
+    public String getTitle() {
+        return getName();
+    }
+
+    @Override
+    public InstanceState state() {
+        return state;
+    }
+
+    @Override
+    public void acceptChildren(ElementVisitor<?> visitor) {
+        if (outputType != null) outputType.accept(visitor);
+    }
+
+    @Override
+    public void forEachReference(Consumer<Reference> action) {
+        if (outputType != null) outputType.forEachReference(action);
+        action.accept(code.getReference());
+    }
+
+    @Override
+    public void buildJson(Map<String, Object> map) {
+        map.put("flow", this.getFlow().getStringId());
+        map.put("name", this.getName());
+        var successor = this.getSuccessor();
+        if (successor != null) map.put("successor", successor.getStringId());
+        var predecessor = this.getPredecessor();
+        if (predecessor != null) map.put("predecessor", predecessor.getStringId());
+        map.put("code", this.getCode().getStringId());
+        map.put("exit", this.isExit());
+        map.put("unconditionalJump", this.isUnconditionalJump());
+        map.put("sequential", this.isSequential());
+        var error = this.getError();
+        if (error != null) map.put("error", error);
+        var type = this.getType();
+        if (type != null) map.put("type", type.toJson());
+        map.put("expressionTypes", this.getExpressionTypes());
+        map.put("text", this.getText());
+        map.put("nextExpressionTypes", this.getNextExpressionTypes());
+        map.put("stackChange", this.getStackChange());
+        map.put("length", this.getLength());
+        map.put("offset", this.getOffset());
+    }
+
+    @Override
+    public Klass getInstanceKlass() {
+        return __klass__;
+    }
+
+    @Override
+    public ClassType getInstanceType() {
+        return __klass__.getType();
+    }
+
+    @Override
+    public void forEachChild(Consumer<? super Instance> action) {
+        action.accept(code);
     }
 }

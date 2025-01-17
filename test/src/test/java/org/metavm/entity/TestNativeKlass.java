@@ -4,8 +4,10 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.flow.Flows;
+import org.metavm.http.HttpCookieImpl;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.util.BootstrapUtils;
 import org.metavm.util.TestConstants;
 
@@ -37,14 +39,13 @@ public class TestNativeKlass extends TestCase {
                     "/",
                     List.of(),
                     List.of(
-                            new HttpCookie("token", "__token__")
+                            new HttpCookieImpl("token", "__token__")
                     )
             );
             context.bind(request);
-            var inst = (ClassInstance) context.getInstance(request);
-            var httpMethod = Flows.invokeVirtual(httpRequestGetMethod.get().getRef(), inst, List.of(), context);
+            var httpMethod = Flows.invokeVirtual(httpRequestGetMethod.get().getRef(), request, List.of(), context);
             Assert.assertEquals(stringInstance("GET"), httpMethod);
-            var token = Flows.invokeVirtual(httpRequestGetCookie.get().getRef(), inst, List.of(stringInstance("token")), context);
+            var token = Flows.invokeVirtual(httpRequestGetCookie.get().getRef(), request, List.of(stringInstance("token")), context);
             Assert.assertEquals(stringInstance("__token__"), token);
         }
     }

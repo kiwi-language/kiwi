@@ -2,8 +2,10 @@ package org.metavm.object.version;
 
 import org.metavm.entity.*;
 import org.metavm.flow.Function;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.TypeDef;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -18,7 +20,7 @@ public class VersionManager extends EntityContextFactoryAware {
 
     public InternalMetaPatch pullInternal(long baseVersion, IEntityContext context) {
         List<Version> versions = context.query(Version.IDX_VERSION.newQueryBuilder()
-                .from(new EntityIndexKey(List.of(baseVersion + 1)))
+                .from(new EntityIndexKey(List.of(Instances.longInstance(baseVersion + 1))))
                 .limit(100)
                 .build()
         );
@@ -26,15 +28,15 @@ public class VersionManager extends EntityContextFactoryAware {
             return new InternalMetaPatch(baseVersion, baseVersion,
                     List.of(), List.of(), List.of(), List.of());
         }
-        var typeIds = NncUtils.flatMapUnique(versions, Version::getChangedTypeIds);
-        var removedTypeIds = NncUtils.flatMapUnique(versions, Version::getRemovedTypeIds);
-        var functionIds = NncUtils.flatMapUnique(versions, Version::getChangedFunctionIds);
-        var removedFunctionIds = NncUtils.flatMapUnique(versions, Version::getRemovedFunctionIds);
+        var typeIds = Utils.flatMapUnique(versions, Version::getChangedTypeIds);
+        var removedTypeIds = Utils.flatMapUnique(versions, Version::getRemovedTypeIds);
+        var functionIds = Utils.flatMapUnique(versions, Version::getChangedFunctionIds);
+        var removedFunctionIds = Utils.flatMapUnique(versions, Version::getRemovedFunctionIds);
 
-        typeIds = NncUtils.diffSet(typeIds, removedTypeIds);
-        functionIds = NncUtils.diffSet(functionIds, removedFunctionIds);
+        typeIds = Utils.diffSet(typeIds, removedTypeIds);
+        functionIds = Utils.diffSet(functionIds, removedFunctionIds);
 
-        return new InternalMetaPatch(baseVersion, versions.get(versions.size() - 1).getVersion(),
+        return new InternalMetaPatch(baseVersion, versions.getLast().getVersion(),
                 new ArrayList<>(typeIds),
                 new ArrayList<>(removedTypeIds),
                 new ArrayList<>(functionIds),
@@ -42,19 +44,17 @@ public class VersionManager extends EntityContextFactoryAware {
         );
     }
 
-    public List<TypeDef> getAllTypes(IEntityContext context) {
+    public List<Klass> getAllKlasses(IEntityContext context) {
         var defContext = context.getDefContext();
-        var typeDefs = new ArrayList<>(
-                NncUtils.exclude(defContext.getAllBufferedEntities(TypeDef.class), Entity::isEphemeralEntity)
-        );
-        typeDefs.addAll(context.selectByKey(TypeDef.IDX_ALL_FLAG, true));
-        return typeDefs;
+        //                Utils.exclude(defContext.getAllBufferedEntities(TypeDef.class), Entity::isEphemeral)
+        //                Utils.exclude(defContext.getAllBufferedEntities(TypeDef.class), Entity::isEphemeral)
+        return new ArrayList<>(context.selectByKey(Klass.IDX_ALL_FLAG, Instances.trueInstance()));
     }
 
     private List<Function> getAllFunctions(IEntityContext context) {
         var defContext = context.getDefContext();
         var functions = new ArrayList<>(defContext.getAllBufferedEntities(Function.class));
-        functions.addAll(context.selectByKey(Function.IDX_ALL_FLAG, true));
+        functions.addAll(context.selectByKey(Function.IDX_ALL_FLAG, Instances.trueInstance()));
         return functions;
     }
 

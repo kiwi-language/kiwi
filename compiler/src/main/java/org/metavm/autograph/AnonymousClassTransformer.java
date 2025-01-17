@@ -2,7 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.*;
 
@@ -37,7 +37,7 @@ public class AnonymousClassTransformer extends VisitorBase {
                 replace(
                         expression,
                         TranspileUtils.createExpressionFromText("new " + replacementName +
-                                 "(" + NncUtils.join(args) + ")"
+                                 "(" + Utils.join(args) + ")"
                         )
                 );
             }

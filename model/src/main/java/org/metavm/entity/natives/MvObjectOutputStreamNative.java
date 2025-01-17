@@ -12,7 +12,7 @@ public class MvObjectOutputStreamNative extends NativeBase {
     private final MarkingInstanceOutput out;
 
     public MvObjectOutputStreamNative(ClassInstance instance) {
-        out = ((MvObjectOutputStream) instance.getMappedEntity()).getOut();
+        out = ((MvObjectOutputStream) instance).getOut();
     }
 
     public Value writeObject(Value obj, CallContext callContext) {

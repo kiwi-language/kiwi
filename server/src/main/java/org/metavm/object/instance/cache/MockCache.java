@@ -1,7 +1,7 @@
 package org.metavm.object.instance.cache;
 
 import org.metavm.util.KeyValue;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,7 +14,7 @@ public class MockCache implements Cache {
 
     @Override
     public List<byte[]> batchGet(Collection<Long> ids) {
-        return NncUtils.map(ids, map::get);
+        return Utils.map(ids, map::get);
     }
 
     @Override

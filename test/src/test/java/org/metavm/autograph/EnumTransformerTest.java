@@ -3,7 +3,7 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiJavaFile;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -52,8 +52,8 @@ public class EnumTransformerTest extends TestCase {
 //                    file.accept(new TypePrinter());
                 }
         );
-        log.debug("Emitting to file {}", dest);
-        NncUtils.writeFile(
+        log.info("Emitting to file {}", dest);
+        Utils.writeFile(
                 new File(dest),
                 file.getText().replace("enum_", "enum_2")
         );

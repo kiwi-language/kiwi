@@ -14,7 +14,7 @@ public class JsonObjectTypeHandler extends BaseTypeHandler<Map<String, Object>> 
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, Map<String, Object> parameter, JdbcType jdbcType) throws SQLException {
-        ps.setString(i, NncUtils.toJSONString(parameter));
+        ps.setString(i, Utils.toJSONString(parameter));
     }
 
     @Override
@@ -33,7 +33,7 @@ public class JsonObjectTypeHandler extends BaseTypeHandler<Map<String, Object>> 
     }
 
     private Map<String, Object> getMap(String jsonString) {
-        return NncUtils.readJSONString(jsonString, new TypeReference<>() {});
+        return Utils.readJSONString(jsonString, new TypeReference<>() {});
     }
 
 }

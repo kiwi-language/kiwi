@@ -11,9 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
-import static org.metavm.util.NncUtils.requireNonNull;
+import static java.util.Objects.requireNonNull;
 import static org.metavm.util.TestUtils.doInTransaction;
 
 public class UserCompilingTest extends CompilerTestBase {
@@ -72,7 +71,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 ));
                 waitForAllTasksDone();
                 var platformUser = getObject(platformUserId);
-                logger.debug("{}", NncUtils.toPrettyJsonString(platformUser));
+                logger.info("{}", Utils.toPrettyJsonString(platformUser));
                 Assert.assertEquals(email, platformUser.getString("loginName"));
                 Assert.assertEquals("lyq", platformUser.getString("name"));
                 var platformUserApplications = platformUser.getArray("applications");
@@ -94,7 +93,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 ).page().data();
                 Assert.assertEquals(1, platformUserList.size());
                 // test platform user view update
-//                var platformUser1 = platformUserList.get(0);
+//                var platformUser1 = platformUserList.getFirst();
                 // reload platform user view and check its roles field
 //                var platformUser2 = getObject(platformUser1.id());
 //                Assert.assertEquals(1, platformUser2.getArray("roles").size());
@@ -107,7 +106,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 var reloadedPlatformUser = getObject(platformUserId);
                 var joinedApplications = reloadedPlatformUser.getArray("applications");
                 Assert.assertEquals(1, joinedApplications.size());
-                Assert.assertEquals(applicationId, joinedApplications.get(0));
+                Assert.assertEquals(applicationId, joinedApplications.getFirst());
 
                 // get PlatformApplication
                 var platformApplicationId = (String) doInTransaction(() -> apiClient.callMethod(
@@ -136,7 +135,7 @@ public class UserCompilingTest extends CompilerTestBase {
                     );
                     Assert.fail("Owner can leave the application");
                 } catch (Exception e) {
-                    Assert.assertEquals("The owner of the application cannot exit the application", NncUtils.getRootCause(e).getMessage());
+                    Assert.assertEquals("The owner of the application cannot exit the application", Utils.getRootCause(e).getMessage());
                 }
 
                 // create a platform user to join the application and then leave
@@ -176,7 +175,7 @@ public class UserCompilingTest extends CompilerTestBase {
                         )
                 ).page().data();
                 Assert.assertEquals(1, messageList.size());
-                var messageId = Objects.requireNonNull(messageList.get(0));
+                var messageId = requireNonNull(messageList.getFirst());
                 var message = getObject(messageId);
                 // check that the message is not read
                 Assert.assertFalse(message.getBoolean("read"));
@@ -217,7 +216,7 @@ public class UserCompilingTest extends CompilerTestBase {
                     ));
                     Assert.fail("Users that are not member of the application should not be able to enter it");
                 } catch (Exception e) {
-                    Assert.assertEquals("User not joined in the application cannot enter", NncUtils.getRootCause(e).getMessage());
+                    Assert.assertEquals("User not joined in the application cannot enter", Utils.getRootCause(e).getMessage());
                 }
 
                 // test application view list
@@ -247,7 +246,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 Assert.assertEquals("leen", user.getString("name"));
                 var userRoles = user.getArray("roles");
                 Assert.assertEquals(1, userRoles.size());
-                Assert.assertEquals(roleId, userRoles.get(0));
+                Assert.assertEquals(roleId, userRoles.getFirst());
 
                 // test login
                 token = login(application.id(), "leen", "123456");
@@ -260,7 +259,7 @@ public class UserCompilingTest extends CompilerTestBase {
                             Assert.fail("Exception should be raised when there are too many failed login attempts");
                         }
                     } catch (Exception e) {
-                        Assert.assertEquals("Too many login attempts, please try again later", NncUtils.getRootCause(e).getMessage());
+                        Assert.assertEquals("Too many login attempts, please try again later", Utils.getRootCause(e).getMessage());
                     }
                 }
 
@@ -317,7 +316,7 @@ public class UserCompilingTest extends CompilerTestBase {
     }
 
     private String getLastSentEmailContent() {
-        return Objects.requireNonNull(MockEmailSender.INSTANCE.getLastSentEmail()).content();
+        return requireNonNull(MockEmailSender.INSTANCE.getLastSentEmail()).content();
     }
 
     private void logout() {

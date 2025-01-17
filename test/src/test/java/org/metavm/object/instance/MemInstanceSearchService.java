@@ -112,7 +112,7 @@
 //    @Override
 //    public void bulk(long appId, List<ClassInstance> toIndex, List<Long> toDelete) {
 //        for (ClassInstance instance : toIndex) {
-//            NncUtils.requireNonNull(instance.tryGetPhysicalId());
+//            Objects.requireNonNull(instance.tryGetPhysicalId());
 //            sourceMap.put(
 //                    getAppId(),
 //                    instance.tryGetPhysicalId(),

@@ -1,6 +1,6 @@
 package org.metavm.flow;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 public enum ArrayValueKind {
 
@@ -21,6 +21,6 @@ public enum ArrayValueKind {
     }
 
     public static ArrayValueKind getByCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code);
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 }

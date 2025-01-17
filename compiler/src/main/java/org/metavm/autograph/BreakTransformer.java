@@ -2,12 +2,12 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
-import static org.metavm.util.NncUtils.requireNonNull;
+import static java.util.Objects.requireNonNull;
 
 @Slf4j
 public class BreakTransformer extends SkipDiscardedVisitor {
@@ -83,7 +83,7 @@ public class BreakTransformer extends SkipDiscardedVisitor {
 
     @Override
     public void visitBreakStatement(PsiBreakStatement statement) {
-        String label = NncUtils.get(statement.getLabelIdentifier(), PsiElement::getText);
+        String label = Utils.safeCall(statement.getLabelIdentifier(), PsiElement::getText);
         var loop = currentLoopInfo();
         do {
             loop.breakUsed = true;
@@ -147,13 +147,7 @@ public class BreakTransformer extends SkipDiscardedVisitor {
                 dest = ((PsiBlockStatement) requireNonNull(ifStmt.getThenBranch())).getCodeBlock();
                 dest.add(stmt.copy());
             } else {
-                try {
-                    dest.add(stmt);
-                }
-                catch (Exception e) {
-                    log.debug("Target element: {}, parent: {}", stmt.getText(), stmt.getParent());
-                    throw e;
-                }
+                dest.add(stmt);
             }
         }
         return result;
@@ -209,7 +203,7 @@ public class BreakTransformer extends SkipDiscardedVisitor {
         }
 
         String getBreakVar() {
-            return Objects.requireNonNull(breakVar, () -> "Element " + element.getText() + " is not breakable");
+            return requireNonNull(breakVar, () -> "Element " + element.getText() + " is not breakable");
         }
 
         boolean isBreakUsed() {
@@ -221,12 +215,12 @@ public class BreakTransformer extends SkipDiscardedVisitor {
         }
 
         String getConditionTextForUsedBreaks() {
-            return NncUtils.join(usedBreaks, v -> "!" + v, " && ");
+            return Utils.join(usedBreaks, v -> "!" + v, " && ");
         }
 
         String getConditionText() {
             var loops = allEnclosingLoops();
-            return NncUtils.join(loops, l -> "!" + l.getBreakVar(), " && ");
+            return Utils.join(loops, l -> "!" + l.getBreakVar(), " && ");
         }
 
         boolean isBreakable() {

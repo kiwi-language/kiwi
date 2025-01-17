@@ -1,6 +1,6 @@
 package org.metavm.object.instance;
 
-import org.metavm.util.NncUtils;
+import org.metavm.util.Utils;
 
 public enum ChangeLogStatus {
     PENDING(0),
@@ -17,7 +17,7 @@ public enum ChangeLogStatus {
     }
 
     public static ChangeLogStatus fromCode(int code) {
-        return NncUtils.findRequired(values(), v -> v.code == code);
+        return Utils.findRequired(values(), v -> v.code == code);
     }
 
 }

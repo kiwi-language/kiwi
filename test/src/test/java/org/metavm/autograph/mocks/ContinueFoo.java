@@ -15,7 +15,7 @@ public class ContinueFoo {
                     continue out;
                 }
                 result = "pass";
-                if (coupon.product == product) {
+                if (coupon.product.get() == product) {
                     discount += coupon.discount;
                 }
                 System.out.println(result);
