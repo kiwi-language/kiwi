@@ -204,10 +204,7 @@ public class CompilerHttpUtils {
 
     private static void testAccess() {
         var typeClient = new HttpTypeClient();
-        var id = "02b2fafab9070028";
-        var treeId = Id.parse(id).getTreeId();
-        var trees = typeClient.getTrees(new GetTreesRequest(List.of(treeId)));
-        System.out.println(Utils.toPrettyJsonString(trees));
+        System.out.println(typeClient.ping());
     }
 
 }

@@ -25,6 +25,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 
 public class MvClassInstance extends MvInstance implements ClassInstance {
 
@@ -293,6 +294,8 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     @Override
     @NoProxy
     protected void readFrom(InstanceInput input) {
+        var tracing = DebugEnv.traceInstanceIO;
+        if (tracing) log.trace("Reading instance {}", getId());
         var sortedKlasses = klass.getSortedKlasses();
         int numKlasses = input.readInt();
         var fieldTable = this.fieldTable;
@@ -305,6 +308,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         var slots = new InstanceInput[sortedKlasses.size()];
         for (int i = 0; i < numKlasses; i++) {
             var klassTag = input.readLong();
+            if (tracing) log.trace("Reading klass part {}", klassTag);
             var lev = tag2lev.get(klassTag);
             FieldSubTable st;
             if(lev != null) {

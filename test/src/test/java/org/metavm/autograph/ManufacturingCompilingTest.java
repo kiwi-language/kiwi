@@ -26,7 +26,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
     public static final String inventoryKlass = "org.metavm.manufacturing.storage.Inventory";
 
     @Override
-    protected void setUp() throws ExecutionException, InterruptedException {
+    protected void setUp() {
         super.setUp();
         Constants.SESSION_TIMEOUT = 3000;
     }

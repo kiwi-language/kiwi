@@ -15,8 +15,6 @@ import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.*;
 import org.metavm.object.version.VersionManager;
-import org.metavm.system.BlockManager;
-import org.metavm.system.IdService;
 import org.metavm.user.LoginService;
 import org.metavm.user.PlatformUserManager;
 import org.metavm.user.RoleManager;
@@ -58,9 +56,12 @@ public abstract class CompilerTestBase extends TestCase  {
     protected MetaContextCache metaContextCache;
 
     @Override
-    protected void setUp() throws ExecutionException, InterruptedException {
+    protected void setUp() {
+        setUp0();
+    }
+
+    protected void setUp0() {
         AUTH_CONFIG = AuthConfig.fromFile("/Users/leen/workspace/object/test/src/test/resources/auth");
-//        SystemConfig.setThreadLocalMode();
         TestUtils.clearDirectory(new File(HOME));
         executor = Executors.newSingleThreadExecutor();
         var bootResult = submit(() -> {
@@ -78,8 +79,7 @@ public abstract class CompilerTestBase extends TestCase  {
         typeManager = new TypeManager(bootResult.entityContextFactory(), new BeanManager());
         instanceManager = new InstanceManager(entityContextFactory,
                 bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
-        var blockManager = new BlockManager(bootResult.blockMapper());
-        typeClient = new MockTypeClient(typeManager, blockManager, instanceManager, executor, new MockTransactionOperations());
+        typeClient = new MockTypeClient(typeManager, executor, new MockTransactionOperations());
         FlowSavingContext.initConfig();
         typeManager.setVersionManager(new VersionManager(entityContextFactory));
         var entityQueryService = new EntityQueryService(bootResult.instanceSearchService());
@@ -89,10 +89,20 @@ public abstract class CompilerTestBase extends TestCase  {
         platformUserManager = new PlatformUserManager(entityContextFactory,
                 loginService, entityQueryService, new MockEventQueue(), verificationCodeService);
         applicationManager = new ApplicationManager(entityContextFactory, roleManager, platformUserManager,
-                verificationCodeService, (IdService) bootResult.idProvider(), entityQueryService);
+                verificationCodeService, bootResult.idProvider(), entityQueryService);
         var apiService = new ApiService(entityContextFactory, bootResult.metaContextCache(), instanceQueryService);
         apiClient = new ApiClient(apiService);
         ContextUtil.resetProfiler();
+    }
+
+    @SuppressWarnings("unused")
+    protected void repeatUntilFailure(Runnable action) {
+        //noinspection InfiniteLoopStatement
+        for (;;) {
+            action.run();
+            BootstrapUtils.clearState();
+            setUp0();
+        }
     }
 
     @Override

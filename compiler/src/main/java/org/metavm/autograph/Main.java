@@ -33,12 +33,11 @@ public class Main {
 
     public Main(String home, String sourceRoot, String targetDir, long appId, String token, TypeClient typeClient, AllocatorStore allocatorStore, ColumnStore columnStore, TypeTagStore typeTagStore) {
         this.sourceRoot = sourceRoot;
-        CompilerContext compilerContext = new CompilerContext(home, typeClient, allocatorStore, columnStore, typeTagStore);
+        CompilerContext compilerContext = new CompilerContext(home, allocatorStore, columnStore, typeTagStore);
         typeClient.setAppId(appId);
         CompilerHttpUtils.setToken(appId, token);
         compilerContext.getBootstrap().boot();
-        compilerContext.getTreeLoader().load();
-        compiler = new Compiler(sourceRoot, targetDir, compilerContext.getContextFactory(), typeClient);
+        compiler = new Compiler(sourceRoot, targetDir, typeClient);
     }
 
     public List<String> run() {

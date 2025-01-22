@@ -10,6 +10,7 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.*;
 import org.metavm.util.BusinessException;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.Instances;
 import org.metavm.util.Utils;
 
@@ -217,7 +218,8 @@ public class SaveTypeBatch implements TypeDefProvider {
     }
 
     public void applyDDLToEnumConstants() {
-        removedEnumConstants.forEach(ec -> context.remove(ec.getStatic(context).resolveObject()));
+        var tracing = DebugEnv.traceDeployment;
+         removedEnumConstants.forEach(ec -> context.remove(ec.getStatic(context).resolveObject()));
         var enumConstants = new ArrayList<ClassInstance>();
         for (Klass klass : klasses) {
             if (klass.isEnum()) {
@@ -228,6 +230,10 @@ public class SaveTypeBatch implements TypeDefProvider {
             }
         }
         for (ClassInstance enumConstant : enumConstants) {
+            if (tracing) {
+                log.trace("Applying DDL to enum constant: {}-{}",
+                        enumConstant.getInstanceKlass().getName(), enumConstant.getField("name"));
+            }
             Instances.applyDDL(
                     (MvClassInstance) enumConstant,
                     newFields,
@@ -270,6 +276,8 @@ public class SaveTypeBatch implements TypeDefProvider {
     }
 
     public void addRemovedEnumConstant(Field enumConstant) {
+        if (DebugEnv.traceDeployment)
+            log.trace("Adding removed enum constant {}", enumConstant.getQualifiedName(), new Exception());
         removedEnumConstants.add(enumConstant);
     }
 }

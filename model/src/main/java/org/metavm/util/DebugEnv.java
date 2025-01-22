@@ -95,6 +95,14 @@ public class DebugEnv {
 
     public static volatile boolean traceDifference = false;
 
+    public static volatile boolean traceStaticFieldTableCreation = false;
+
+    public static volatile boolean traceInstanceIO = false;
+
+    public static volatile boolean traceDeployment = false;
+
+    public static volatile boolean traceDDL = false;
+
     public static void exitPathItem() {
         path.removeLast();
     }

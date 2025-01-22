@@ -6,7 +6,6 @@ import org.metavm.api.ChildList;
 import org.metavm.autograph.env.IrCoreApplicationEnvironment;
 import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.KlassOutput;
 import org.metavm.object.type.Klass;
@@ -100,7 +99,6 @@ public class Compiler {
     private final IrCoreApplicationEnvironment appEnv;
     private final IrCoreProjectEnvironment projectEnv;
     private final Project project;
-    private final CompilerInstanceContextFactory contextFactory;
     private final TypeClient typeClient;
     private final List<String> classNames = new ArrayList<>();
 
@@ -108,9 +106,8 @@ public class Compiler {
         Utils.ensureDirectoryExists(REQUEST_DIR);
     }
 
-    public Compiler(String sourceRoot, String targetDir, CompilerInstanceContextFactory contextFactory, TypeClient typeClient) {
+    public Compiler(String sourceRoot, String targetDir, TypeClient typeClient) {
         this.targetDir = targetDir;
-        this.contextFactory = contextFactory;
         this.typeClient = typeClient;
         var javaHome = System.getProperty("java.home");
         this.baseMod = javaHome + "/jmods/java.base.jmod";
@@ -151,45 +148,42 @@ public class Compiler {
 
     public boolean compile(List<String> sources) {
         var profiler = ContextUtil.getProfiler();
-        try (var context = newContext(); var ignored = profiler.enter("compile")) {
-            Constants.disableMaintenance();
-            long start = System.currentTimeMillis();
-            var typeResolver = new TypeResolverImpl(context);
-            var files = Utils.map(sources, this::getPsiJavaFile);
-            for (int i = 0; i < prepareStages.size(); i++) {
-                executeStage(prepareStages.get(i), i, files);
-            }
-            var psiClasses = Utils.flatMap(files, TranspileUtils::getAllClasses);
-            psiClasses.forEach(k -> classNames.add(k.getQualifiedName()));
-            for (var stage : stages) {
-//                logger.debug("Stage {}", stage.stage.name());
-                try (var ignored1 = profiler.enter("stage: " + stage)) {
-                    var sortedKlasses = stage.sort(psiClasses, typeResolver);
-                    var psiClassTypes = Utils.map(
-                            sortedKlasses,
-                            TranspileUtils.getElementFactory()::createType
-                    );
-                    psiClassTypes.forEach(t -> {
-                         typeResolver.resolve(t, stage.stage);
-                        if (stage.stage == ResolutionStage.DECLARATION) {
-                            var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS),
-                                    () -> "Cannot find MvClass for " + TranspileUtils.getQualifiedName(Objects.requireNonNull(t.resolve())));
-                            if (klass.isTemplate())
-                                klass.updateParameterized();
-                        }
-                    });
-                }
-            }
-            var klasses = typeResolver.getGeneratedKlasses();
-            long elapsed = System.currentTimeMillis() - start;
-            logger.info("Compilation done in {} ms. {} types generated", elapsed, klasses.size());
-            deploy(klasses, typeResolver);
-            logger.info("Deploy done");
-            return true;
-        } finally {
-            Constants.enableMaintenance();
-            logger.info(profiler.finish(false, true).output());
+        Constants.disableMaintenance();
+        long start = System.currentTimeMillis();
+        var typeResolver = new TypeResolverImpl();
+        var files = Utils.map(sources, this::getPsiJavaFile);
+        for (int i = 0; i < prepareStages.size(); i++) {
+            executeStage(prepareStages.get(i), i, files);
         }
+        var psiClasses = Utils.flatMap(files, TranspileUtils::getAllClasses);
+        psiClasses.forEach(k -> classNames.add(k.getQualifiedName()));
+        for (var stage : stages) {
+//                logger.debug("Stage {}", stage.stage.name());
+            try (var ignored1 = profiler.enter("stage: " + stage)) {
+                var sortedKlasses = stage.sort(psiClasses, typeResolver);
+                var psiClassTypes = Utils.map(
+                        sortedKlasses,
+                        TranspileUtils.getElementFactory()::createType
+                );
+                psiClassTypes.forEach(t -> {
+                     typeResolver.resolve(t, stage.stage);
+                    if (stage.stage == ResolutionStage.DECLARATION) {
+                        var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS),
+                                () -> "Cannot find MvClass for " + TranspileUtils.getQualifiedName(Objects.requireNonNull(t.resolve())));
+                        if (klass.isTemplate())
+                            klass.updateParameterized();
+                    }
+                });
+            }
+        }
+        var klasses = typeResolver.getGeneratedKlasses();
+        long elapsed = System.currentTimeMillis() - start;
+        logger.info("Compilation done in {} ms. {} types generated", elapsed, klasses.size());
+        deploy(klasses, typeResolver);
+        logger.info("Deploy done");
+        Constants.enableMaintenance();
+        logger.info(profiler.finish(false, true).output());
+        return true;
     }
 
     private static final List<Stage> stages = List.of(
@@ -341,10 +335,6 @@ public class Compiler {
     public PsiJavaFile getPsiJavaFile(String path) {
         var file = Objects.requireNonNull(fileSystem.findFileByPath(path));
         return (PsiJavaFile) PsiManager.getInstance(project).findFile(file);
-    }
-
-    private IInstanceContext newContext() {
-        return contextFactory.newEntityContext(typeClient.getAppId());
     }
 
     private static void resolveQnAndActivity(PsiJavaFile file) {

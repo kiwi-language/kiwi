@@ -16,7 +16,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
@@ -171,7 +170,10 @@ public abstract class MvInput implements Closeable {
     }
 
     public Value readValue() {
-        var wireType = read();
+        return readValue(read());
+    }
+
+    protected Value readValue(int wireType) {
         return switch (wireType) {
             case WireTypes.NULL -> new NullValue();
             case WireTypes.DOUBLE -> new DoubleValue(readDouble());

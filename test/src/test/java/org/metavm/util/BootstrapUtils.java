@@ -216,4 +216,8 @@ public class BootstrapUtils {
         return sysDefContext;
     }
 
+    public static void clearState() {
+        state = null;
+    }
+
 }

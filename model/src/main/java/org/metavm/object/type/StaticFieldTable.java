@@ -42,6 +42,8 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
         var klass = type.getKlass();
         var sft = context.selectFirstByKey(IDX_KLASS, klass.getReference());
         if(sft == null) {
+            if (DebugEnv.traceStaticFieldTableCreation)
+                log.trace("Creating static field table for klass {}", klass.getQualifiedName());
             sft = new StaticFieldTable(klass);
             context.bind(sft);
         }

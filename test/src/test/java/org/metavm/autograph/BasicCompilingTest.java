@@ -128,6 +128,7 @@ public class BasicCompilingTest extends CompilerTestBase {
             processVariableInitializerTypeWidening();
             processInnerClassTypeCapture();
             processLocalClassTypeCapture();
+            processEnumField();
         });
     }
 
@@ -1260,6 +1261,11 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processLocalClassTypeCapture() {
         var className = "wildcard_capture.LocalClassTypeCapture";
         Assert.assertEquals("MetaVM", callMethod(className, "test", List.of("MetaVM")));
+    }
+
+    private void processEnumField() {
+        var className = "enums.EnumFieldFoo";
+        Assert.assertEquals("op1", callMethod(className, "getOp1Message", List.of()));
     }
 
 }

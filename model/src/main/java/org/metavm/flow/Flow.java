@@ -351,7 +351,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     @Override
-    public Collection<CapturedTypeVariable> getCapturedTypeVariables() {
+    public List<CapturedTypeVariable> getCapturedTypeVariables() {
         return Collections.unmodifiableList(capturedTypeVariables);
     }
 

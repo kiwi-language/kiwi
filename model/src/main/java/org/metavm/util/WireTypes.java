@@ -60,9 +60,6 @@ public class WireTypes {
     public static final int INDEX_REF = 73;
     public static final int LAMBDA_REF = 74;
 
-
-    public static final int ENTITY = 80;
-
 //    LONG(1),
 //    DOUBLE(2),
 //    STRING(3),

@@ -22,7 +22,6 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     public BufferingInstanceContext(long appId,
                                     List<TreeSource> treeSources,
-                                    VersionSource versionSource,
                                     IndexSource indexSource,
                                     IdInitializer idInitializer,
                                     @Nullable IInstanceContext parent,

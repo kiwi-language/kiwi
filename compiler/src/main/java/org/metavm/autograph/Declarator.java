@@ -10,7 +10,6 @@ import org.metavm.entity.BeanKinds;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.type.*;
 import org.metavm.util.CompilerConfig;
 import org.metavm.util.NamingUtils;
@@ -18,7 +17,6 @@ import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.util.*;
 
 import static java.util.Objects.requireNonNull;
@@ -32,16 +30,11 @@ public class Declarator extends VisitorBase {
 
     private final TypeResolver typeResolver;
 
-    private final IInstanceContext context;
-
     private final LinkedList<ClassInfo> classStack = new LinkedList<>();
 
-    private @Nullable Index currentIndex;
-
-    public Declarator(PsiClass psiClass, TypeResolver typeResolver, IInstanceContext context) {
+    public Declarator(PsiClass psiClass, TypeResolver typeResolver) {
         this.psiClass = psiClass;
         this.typeResolver = typeResolver;
-        this.context = context;
     }
 
     @Override
@@ -233,7 +226,7 @@ public class Declarator extends VisitorBase {
         Field field;
         if(fieldTag == -1) {
             field = isStatic ? klass.findSelfStaticFieldByName(psiField.getName())
-                    :klass.findSelfFieldByName(psiField.getName());
+                    :klass.findSelfInstanceFieldByName(psiField.getName());
         }
         else {
             field = isStatic ? klass.findSelfStaticField(f -> Objects.equals(f.getSourceTag(), fieldTag))

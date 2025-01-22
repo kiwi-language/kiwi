@@ -4,7 +4,6 @@ import org.metavm.api.Entity;
 import org.metavm.flow.Flow;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
 import java.util.List;
 
 @Entity
@@ -17,7 +16,7 @@ public enum DummyCapturedTypeScope implements CapturedTypeScope {
     }
 
     @Override
-    public Collection<CapturedTypeVariable> getCapturedTypeVariables() {
+    public List<CapturedTypeVariable> getCapturedTypeVariables() {
         return List.of();
     }
 

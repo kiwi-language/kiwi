@@ -43,7 +43,8 @@ public class NativeMethods {
                 }
             } else {
                 if (self instanceof PrimitiveValue primitiveValue) {
-                    var mh = Objects.requireNonNull(method.getNativeHandle());
+                    var mh = Objects.requireNonNull(method.getNativeHandle(),
+                            () -> "Cannot find native handle for method: " + method);
                     var args = new Value[arguments.size() + 1];
                     args[0] = primitiveValue;
                     for (int i = 1; i < args.length; i++) {

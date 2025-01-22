@@ -8,18 +8,12 @@ import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.flow.CodeWriter;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -34,6 +28,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
+    private @Nullable Integer sourceTag;
     @EntityField(asTitle = true)
     private String name;
     private Klass declaringType;
@@ -51,7 +46,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     private int originalTag = -1;
     private int tag;
     private int since;
-    private @Nullable Integer sourceTag;
     public transient int offset;
     private @Nullable Reference initializerReference;
     private boolean isEnumConstant;
@@ -115,6 +109,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {
+        visitor.visitNullable(visitor::visitInt);
         visitor.visitUTF();
         visitor.visitByte();
         visitor.visitBoolean();
@@ -130,7 +125,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         visitor.visitInt();
         visitor.visitInt();
         visitor.visitInt();
-        visitor.visitNullable(visitor::visitInt);
         visitor.visitNullable(visitor::visitValue);
         visitor.visitBoolean();
         visitor.visitInt();
@@ -420,6 +414,10 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     }
 
     public void setTag(int tag) {
+        this.tag = tag;
+    }
+
+    public void changeTag(int tag) {
         originalTag = this.tag;
         this.tag = tag;
     }
@@ -600,6 +598,17 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         type.accept(visitor);
     }
 
+    public void writeCode(CodeWriter writer) {
+        var modifiers = new ArrayList<String>();
+        if (isMetadataRemoved()) modifiers.add("<removed>");
+        if (access != Access.PACKAGE) modifiers.add(access.name().toLowerCase());
+        if (isStatic()) modifiers.add("static");
+        if (isReadonly()) modifiers.add("readonly");
+        if (isChild) modifiers.add("child");
+        if (isTransient) modifiers.add("transient");
+        writer.writeln(String.join(" ", modifiers) + " " + name);
+    }
+
     @Override
     public void forEachReference(Consumer<Reference> action) {
         if (defaultValue instanceof Reference r) action.accept(r);
@@ -662,6 +671,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     @Override
     public void readBody(MvInput input, org.metavm.entity.Entity parent) {
         this.declaringType = (Klass) parent;
+        this.sourceTag = input.readNullable(input::readInt);
         this.name = input.readUTF();
         this.access = Access.fromCode(input.read());
         this._static = input.readBoolean();
@@ -677,7 +687,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         this.originalTag = input.readInt();
         this.tag = input.readInt();
         this.since = input.readInt();
-        this.sourceTag = input.readNullable(input::readInt);
         this.initializerReference = input.readNullable(() -> (Reference) input.readValue());
         this.isEnumConstant = input.readBoolean();
         this.ordinal = input.readInt();
@@ -686,6 +695,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     @Generated
     @Override
     public void writeBody(MvOutput output) {
+        output.writeNullable(sourceTag, output::writeInt);
         output.writeUTF(name);
         output.write(access.code());
         output.writeBoolean(_static);
@@ -701,7 +711,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         output.writeInt(originalTag);
         output.writeInt(tag);
         output.writeInt(since);
-        output.writeNullable(sourceTag, output::writeInt);
         output.writeNullable(initializerReference, output::writeValue);
         output.writeBoolean(isEnumConstant);
         output.writeInt(ordinal);
@@ -709,16 +718,5 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
 
     @Override
     protected void buildSource(Map<String, Value> source) {
-    }
-
-    public void writeCode(CodeWriter writer) {
-        var modifiers = new ArrayList<String>();
-        if (isMetadataRemoved()) modifiers.add("<removed>");
-        if (access != Access.PACKAGE) modifiers.add(access.name().toLowerCase());
-        if (isStatic()) modifiers.add("static");
-        if (isReadonly()) modifiers.add("readonly");
-        if (isChild) modifiers.add("child");
-        if (isTransient) modifiers.add("transient");
-        writer.writeln(String.join(" ", modifiers) + " " + name);
     }
 }

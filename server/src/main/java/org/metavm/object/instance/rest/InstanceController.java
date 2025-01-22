@@ -33,6 +33,11 @@ public class InstanceController {
         return Result.success(instanceManager.getTrees(request.ids()));
     }
 
+    @GetMapping("/ping")
+    public Result<Boolean> ping() {
+        return Result.success(true);
+    }
+
     @PostMapping("/versions")
     public Result<List<TreeVersion>> getVersions(@RequestBody InstanceVersionsRequest request) {
         return Result.success(instanceManager.getVersions(request.ids()));

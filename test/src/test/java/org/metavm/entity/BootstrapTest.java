@@ -4,6 +4,7 @@
 //import org.junit.Assert;
 //import org.metavm.api.ValueObject;
 //import org.metavm.event.MockEventQueue;
+//import org.metavm.flow.Function;
 //import org.metavm.http.HttpRequestImpl;
 //import org.metavm.object.instance.InstanceStore;
 //import org.metavm.object.instance.MockInstanceLogService;
@@ -91,6 +92,9 @@
 //            Assert.assertTrue(result.numInstancesWithNullIds() > 0);
 //            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
 //            logger.info(profiler.finish(false, true).toString());
+//            Assert.assertNotNull(
+//                    result.defContext().selectFirstByKey(Function.UNIQUE_NAME, Instances.stringInstance("concat"))
+//            );
 //        }
 ////        allocatorStore.dump();
 ////        DebugEnv.bootstrapVerbose = true;

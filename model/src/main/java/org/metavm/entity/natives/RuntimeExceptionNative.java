@@ -1,8 +1,10 @@
 package org.metavm.entity.natives;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Value;
 
+@Slf4j
 public class RuntimeExceptionNative extends ExceptionNative {
 
     public RuntimeExceptionNative(ClassInstance instance) {

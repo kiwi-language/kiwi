@@ -1,20 +1,10 @@
 package org.metavm.autograph;
 
-import org.metavm.object.instance.core.TreeVersion;
-import org.metavm.object.instance.rest.GetTreesRequest;
-import org.metavm.object.instance.rest.InstanceVersionsRequest;
-import org.metavm.object.instance.rest.TreeDTO;
-import org.metavm.object.type.rest.dto.TreeResponse;
-import org.metavm.object.type.rest.dto.TypeTreeQuery;
-import org.metavm.system.rest.dto.BlockDTO;
-import org.metavm.system.rest.dto.GetActiveBlocksRequest;
 import org.metavm.user.rest.dto.LoginInfo;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.CompilerHttpUtils;
 import org.metavm.util.Constants;
 import org.metavm.util.TypeReference;
-
-import java.util.List;
 
 public class HttpTypeClient implements TypeClient {
 
@@ -45,37 +35,8 @@ public class HttpTypeClient implements TypeClient {
     }
 
     @Override
-    public BlockDTO getContainingBlock(long id) {
-        return CompilerHttpUtils.get("/block/containing/" + id, new TypeReference<>() {
-        });
-    }
-
-    @Override
-    public List<BlockDTO> getActive(List<Long> typeIds) {
-        return CompilerHttpUtils.post("/block/active",
-                new GetActiveBlocksRequest(typeIds), new TypeReference<>() {
-                });
-    }
-
-    @Override
-    public List<TreeVersion> getVersions(InstanceVersionsRequest request) {
-        return CompilerHttpUtils.post("/instance/versions", request, new TypeReference<>() {});
-    }
-
-    @Override
-    public List<TreeDTO> getTrees(GetTreesRequest request) {
-        return CompilerHttpUtils.post("/instance/trees",
-                request, new TypeReference<>() {});
-    }
-
-    @Override
-    public TreeResponse queryTrees(TypeTreeQuery query) {
-        return CompilerHttpUtils.post(
-                "/type/query-trees",
-                query,
-                new TypeReference<>() {
-                }
-        );
+    public boolean ping() {
+        return CompilerHttpUtils.get("/instance/ping", new TypeReference<>() {});
     }
 
 

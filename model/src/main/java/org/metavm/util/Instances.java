@@ -1,5 +1,6 @@
 package org.metavm.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.ReadonlyList;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.ddl.Commit;
@@ -26,6 +27,7 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
+@Slf4j
 public class Instances {
 
     private static final Logger logger = LoggerFactory.getLogger(Instances.class);
@@ -514,7 +516,6 @@ public class Instances {
                                 Collection<Klass> searchEnabledKlasses,
                                 @Nullable RedirectStatus redirectStatus,
                                 IInstanceContext context) {
-        var instCtx = context;
         if (instance instanceof ClassInstance clsInst) {
             for (Field field : newFields) {
                 var k = clsInst.getInstanceType().asSuper(field.getDeclaringType());
@@ -564,7 +565,7 @@ public class Instances {
                     });
                 });
                 if (!ref.referenced) {
-                    var referring = instCtx.getByReferenceTargetId(child.getId(), 0, 1);
+                    var referring = context.getByReferenceTargetId(child.getId(), 0, 1);
                     if (!referring.isEmpty())
                         ref.referenced = true;
                 }
@@ -714,6 +715,10 @@ public class Instances {
     }
 
     public static void convertField(ClassInstance instance, Field field, IInstanceContext context) {
+        if (DebugEnv.traceDDL) {
+            log.trace("Converting field {} for instance {}, original tag: {}, tag: {}, type: {}",
+                    field.getQualifiedName(), instance, field.getOriginalTag(), field.getTag(), field.getType().getTypeDesc());
+        }
         var convertedValue = computeConvertedFieldValue(instance, field, context);
         instance.setField(field, convertedValue);
     }

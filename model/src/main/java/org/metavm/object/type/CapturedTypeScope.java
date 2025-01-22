@@ -3,13 +3,13 @@ package org.metavm.object.type;
 import org.metavm.flow.Flow;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
+import java.util.List;
 
 public interface CapturedTypeScope {
 
     String getStringId();
 
-    Collection<CapturedTypeVariable> getCapturedTypeVariables();
+    List<CapturedTypeVariable> getCapturedTypeVariables();
 
     int getCapturedTypeVariableIndex(CapturedTypeVariable capturedTypeVariable);
 

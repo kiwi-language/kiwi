@@ -2,9 +2,11 @@ package org.metavm.autograph;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
+import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.StaticFieldTable;
+import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
 import org.metavm.util.TestConstants;
 
@@ -25,14 +27,18 @@ public class DDLCompilingTest extends CompilerTestBase {
           Id derivedInstanceId;
           String fooId;
           String productId;
+          Id krwCurrencyId;
         };
         submit(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                context.loadKlasses();
                 ref.stateKlassId = context.getKlassByQualifiedName("ProductState").getId();
                 var productKlass = context.getKlassByQualifiedName("Product");
                 ref.stateFieldId = productKlass.getFieldByName("state").getId();
                 ref.derivedInstanceId = Id.parse(saveInstance("swapsuper.Derived",
                         Map.of("value1", 1, "value2", 2, "value3", 3)));
+                var currencyKlass = context.getKlassByQualifiedName("Currency");
+                ref.krwCurrencyId = StaticFieldTable.getInstance(currencyKlass.getType(), context).getEnumConstantByName("KRW").getId();
                 var indexFooKlass = context.getKlassByQualifiedName("index.IndexFoo");
                 Assert.assertEquals(1, indexFooKlass.getIndices().size());
             }
@@ -82,6 +88,13 @@ public class DDLCompilingTest extends CompilerTestBase {
             var product = getObject(ref.productId);
             Assert.assertEquals("none", product.getString("tag"));
             Assert.assertEquals("USD", product.getObject("price").getString("currency"));
+            try {
+                getObject(ref.krwCurrencyId.toString());
+                Assert.fail("Enum constant should have been removed");
+            }
+            catch (BusinessException e) {
+                Assert.assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+            }
         });
     }
 

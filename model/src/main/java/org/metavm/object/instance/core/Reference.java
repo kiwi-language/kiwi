@@ -55,7 +55,7 @@ public class Reference implements Value {
 
     public Instance get() {
         if (target == null) {
-            target = resolver.get();
+            target = Objects.requireNonNull(resolver.get(), () -> "Failed to resolve reference " + id);
         }
         return target;
     }
@@ -124,7 +124,7 @@ public class Reference implements Value {
             }
             else
                 output.write(WireTypes.REFERENCE);
-            output.writeId(id instanceof PhysicalId ? id : get().getId());
+            output.writeReference(this);
         }
     }
 
@@ -257,11 +257,16 @@ public class Reference implements Value {
 
     @Override
     public boolean equals(Object obj) {
+        // TODO refactor this mess
         if (obj instanceof Reference that) {
             that = that.tryRedirect();
-            if (id != null && id.equals(that.id))
+            var id = this.tryGetId();
+            var thatId = that.tryGetId();
+            if (!(id instanceof PhysicalId) && !(thatId instanceof PhysicalId))
+                return get() == that.get();
+            if (id != null && id.equals(thatId))
                 return true;
-            if (id == null || that.id == null || isForwarded() || that.isForwarded())
+            if (id == null || thatId == null || isForwarded() || that.isForwarded())
                 return get() == that.get();
         }
         return false;

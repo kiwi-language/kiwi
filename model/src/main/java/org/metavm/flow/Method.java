@@ -14,6 +14,7 @@ import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.NativeMethods;
 import org.metavm.entity.natives.RuntimeExceptionNative;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
@@ -70,7 +71,6 @@ public class Method extends Flow implements Property {
                   List<TypeVariable> typeParameters,
                   boolean isStatic,
                   Access access,
-                  @Nullable CodeSource codeSource,
                   boolean hidden,
                   MetadataState state) {
         super(tmpId, name, isNative, isSynthetic, parameters, returnType, List.of(), state);
@@ -295,6 +295,10 @@ public class Method extends Flow implements Property {
         return declaringType.getTypeDesc() + "." + getName();
     }
 
+    public String getInternalName() {
+        return getInternalName(null);
+    }
+
     @Override
     public String getInternalName(@Nullable Flow current) {
         if (current == this)
@@ -463,6 +467,7 @@ public class Method extends Flow implements Property {
         var staticType = this.getStaticType();
         if (staticType != null) map.put("staticType", staticType.toJson());
         map.put("staticTypeIndex", this.getStaticTypeIndex());
+        map.put("internalName", this.getInternalName());
         map.put("minLocals", this.getMinLocals());
         map.put("flags", this.getFlags());
         map.put("parameterTypes", this.getParameterTypes().stream().map(Type::toJson).toList());

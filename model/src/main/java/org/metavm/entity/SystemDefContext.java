@@ -271,8 +271,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
                     idInitializing.initId(id);
                 }
             }
-            else if (DebugEnv.flag)
-                System.out.println("Caught");
         }
     }
 
@@ -403,6 +401,7 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     }
 
     public void postProcess() {
+        standardDefBuilder.initUserFunctions();
         buildMemoryIndex();
         standardDefBuilder.postProcess();
         freezeKlasses();
@@ -411,7 +410,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         StdMethod.initialize(this, false);
         StdField.initialize(this, false);
         StandardStaticMethods.initialize(this, false);
-        standardDefBuilder.initUserFunctions();
         for (TypeDef typeDef : typeDef2Def.keySet()) {
             if(typeDef instanceof Klass klass)
                 klass.rebuildMethodTable();

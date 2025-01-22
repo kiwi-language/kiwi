@@ -161,7 +161,7 @@ public class AssemblerTest extends TestCase {
         FlowSavingContext.initConfig();
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             context.loadKlasses();
-            var assembler = AssemblerFactory.createWithStandardTypes(context);
+            var assembler = AssemblerFactory.createWithStandardTypes();
             assemble(List.of(source), assembler);
             ContextUtil.setAppId(TestConstants.APP_ID);
             TestUtils.doInTransaction(() -> {

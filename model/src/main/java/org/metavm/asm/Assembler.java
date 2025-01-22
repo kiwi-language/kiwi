@@ -40,14 +40,11 @@ public class Assembler {
     private final List<Klass> generatedKlasses = new ArrayList<>();
     private final Map<String, Klass> name2klass = new HashMap<>();
     private final Map<ParserRuleContext, Map<AsmAttributeKey<?>, Object>> attributes = new HashMap<>();
-    private final Function<String, Klass> klassProvider;
-
-    public Assembler(Function<String, Klass> klassProvider) {
+    public Assembler() {
         for (StdKlass stdKlass : StdKlass.values()) {
             var klass = stdKlass.get();
             name2klass.put(klass.getQualifiedName(), klass);
         }
-        this.klassProvider = klassProvider;
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -495,7 +492,7 @@ public class Assembler {
             var classInfo = (AsmKlass) scope;
             var klass = classInfo.getKlass();
             var isStatic = mods.contains(Modifiers.STATIC);
-            var field = isStatic ? klass.findSelfStaticFieldByName(name) : klass.findSelfFieldByName(name);
+            var field = isStatic ? klass.findSelfStaticFieldByName(name) : klass.findSelfInstanceFieldByName(name);
             if (field == null) {
                 field = FieldBuilder.newBuilder(name, klass, type)
                         .tmpId(Utils.randomNonNegative())
@@ -1171,11 +1168,7 @@ public class Assembler {
     }
 
     private @Nullable Klass findKlass(String name) {
-        return name2klass.computeIfAbsent(name, this::loadKlass);
-    }
-
-    private @Nullable Klass loadKlass(String name) {
-        return klassProvider.apply(name);
+        return name2klass.get(name);
     }
 
     private Klass createKlass(String name, String qualifiedName, ClassKind kind) {

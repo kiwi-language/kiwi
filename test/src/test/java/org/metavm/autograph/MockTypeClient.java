@@ -1,15 +1,6 @@
 package org.metavm.autograph;
 
-import org.metavm.object.instance.InstanceManager;
-import org.metavm.object.instance.core.TreeVersion;
-import org.metavm.object.instance.rest.GetTreesRequest;
-import org.metavm.object.instance.rest.InstanceVersionsRequest;
-import org.metavm.object.instance.rest.TreeDTO;
 import org.metavm.object.type.TypeManager;
-import org.metavm.object.type.rest.dto.TreeResponse;
-import org.metavm.object.type.rest.dto.TypeTreeQuery;
-import org.metavm.system.BlockManager;
-import org.metavm.system.rest.dto.BlockDTO;
 import org.metavm.util.ContextUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +8,6 @@ import org.springframework.transaction.support.TransactionOperations;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -27,17 +17,13 @@ public class MockTypeClient implements TypeClient {
     public static final Logger logger = LoggerFactory.getLogger(MockTypeClient.class);
 
     private final TypeManager typeManager;
-    private final BlockManager blockManager;
-    private final InstanceManager instanceManager;
     private final ExecutorService executor;
     private final TransactionOperations transactionOperations;
 
-    public MockTypeClient(TypeManager typeManager, BlockManager blockManager,
-                          InstanceManager instanceManager, ExecutorService executor,
+    public MockTypeClient(TypeManager typeManager,
+                          ExecutorService executor,
                           TransactionOperations transactionOperations) {
         this.typeManager = typeManager;
-        this.blockManager = blockManager;
-        this.instanceManager = instanceManager;
         this.executor = executor;
         this.transactionOperations = transactionOperations;
     }
@@ -71,28 +57,8 @@ public class MockTypeClient implements TypeClient {
     }
 
     @Override
-    public BlockDTO getContainingBlock(long id) {
-        return submit(() -> blockManager.getContaining(id), "getContainingBlock");
-    }
-
-    @Override
-    public List<BlockDTO> getActive(List<Long> typeIds) {
-        return submit(() -> blockManager.getActive(typeIds), "getActiveBlocks");
-    }
-
-    @Override
-    public List<TreeVersion> getVersions(InstanceVersionsRequest request) {
-        return submit(() -> instanceManager.getVersions(request.ids()), "getVersions");
-    }
-
-    @Override
-    public List<TreeDTO> getTrees(GetTreesRequest request) {
-        return submit(() -> instanceManager.getTrees(request.ids()), "getTrees");
-    }
-
-    @Override
-    public TreeResponse queryTrees(TypeTreeQuery query) {
-        return submit(() -> typeManager.queryTrees(query), "queryTrees");
+    public boolean ping() {
+        return submit(() -> true, "ping");
     }
 
     private void submit(Runnable task) {

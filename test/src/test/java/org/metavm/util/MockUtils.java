@@ -263,7 +263,7 @@ public class MockUtils {
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             context.loadKlasses();
-            var assembler = AssemblerFactory.createWithStandardTypes(context);
+            var assembler = AssemblerFactory.createWithStandardTypes();
             assembler.assemble(List.of(source));
             assembler.generateClasses(TestConstants.TARGET);
             FlowSavingContext.initConfig();

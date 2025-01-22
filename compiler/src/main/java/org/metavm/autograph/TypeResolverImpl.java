@@ -7,11 +7,8 @@ import org.metavm.api.ValueList;
 import org.metavm.api.ValueStruct;
 import org.metavm.api.Value;
 import org.metavm.api.builtin.Password;
-import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
-import org.metavm.flow.Method;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -71,8 +68,6 @@ public class TypeResolverImpl implements TypeResolver {
 
     private final Map<CapturedType, PsiCapturedWildcardType> capturedTypeReverseMap = new HashMap<>();
 
-    private final IInstanceContext context;
-
     private static final Map<PsiClassType, Supplier<Klass>> STANDARD_CLASSES;
 
     static {
@@ -98,9 +93,8 @@ public class TypeResolverImpl implements TypeResolver {
             Collection.class
     );
 
-    public TypeResolverImpl(IInstanceContext context) {
-        this.context = context;
-        codeGenerator = new CodeGenerator(context);
+    public TypeResolverImpl() {
+        codeGenerator = new CodeGenerator();
     }
 
     @Override
@@ -449,40 +443,20 @@ public class TypeResolverImpl implements TypeResolver {
             boolean isTemplate = psiClass.getTypeParameterList() != null
                     && psiClass.getTypeParameterList().getTypeParameters().length > 0;
             var tag = (int) TranspileUtils.getEntityAnnotationAttr(psiClass, "tag", -1);
-            Klass klass;
-            if(tag >= 0)
-                klass = context.selectFirstByKey(Klass.UNIQUE_SOURCE_TAG, Instances.intInstance(tag));
-            else if(qualName != null)
-                klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(qualName));
-            else
-                klass = null;
             var parent = TranspileUtils.getProperParent(psiClass, Set.of(PsiMethod.class, PsiClass.class));
             Klass declaringKlass = null;
             if(parent instanceof PsiClass)
                 declaringKlass = requireNonNull(parent.getUserData(Keys.MV_CLASS));
-            if (klass != null) {
-                klass.getConstantPool().clear();
-                klass.setName(name);
-                klass.setQualifiedName(qualName);
-                if (klass.isTemplate() != isTemplate)
-                    throw new BusinessException(ErrorCode.CHANGING_IS_TEMPLATE);
-                if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)
-                    klass.clearEnumConstantDefs();
-                klass.setKind(kind);
-                klass.setSearchable(TranspileUtils.isSearchable(psiClass));
-            } else {
-                klass = KlassBuilder.newBuilder(name, qualName)
-                        .kind(kind)
-                        .ephemeral(TranspileUtils.isEphemeral(psiClass) || TranspileUtils.isLocalClass(psiClass))
-                        .struct(TranspileUtils.isStruct(psiClass))
-                        .searchable(TranspileUtils.isSearchable(psiClass))
-                        .isTemplate(isTemplate)
-                        .declaringKlass(declaringKlass)
-                        .isAbstract(psiClass.hasModifierProperty(PsiModifier.ABSTRACT))
-                        .sourceTag(tag != -1 ? tag : null)
-                        .build();
-                context.bind(klass);
-            }
+            var klass = KlassBuilder.newBuilder(name, qualName)
+                    .kind(kind)
+                    .ephemeral(TranspileUtils.isEphemeral(psiClass) || TranspileUtils.isLocalClass(psiClass))
+                    .struct(TranspileUtils.isStruct(psiClass))
+                    .searchable(TranspileUtils.isSearchable(psiClass))
+                    .isTemplate(isTemplate)
+                    .declaringKlass(declaringKlass)
+                    .isAbstract(psiClass.hasModifierProperty(PsiModifier.ABSTRACT))
+                    .sourceTag(tag != -1 ? tag : null)
+                    .build();
             psiClass.putUserData(Keys.MV_CLASS, klass);
             psiClassMap.put(klass, psiClass);
             addGeneratedKlass(klass);

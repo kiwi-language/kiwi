@@ -381,7 +381,7 @@ public class ExpressionResolver {
                         var type = (ClassType) typeResolver.resolveDeclaration(
                                 generics.getSubstitutor().substitute(createTemplateType(psiClass))
                         );
-                        var field = type.getKlass().getSelfFieldByName(psiField.getName());
+                        var field = type.getKlass().getSelfInstanceFieldByName(psiField.getName());
                         return methodGenerator.createGetField(new FieldRef(type, field));
                     }
                 }
@@ -786,7 +786,7 @@ public class ExpressionResolver {
                                         createTemplateType(requireNonNull(psiField.getContainingClass()))
                                 )
                         );
-                        var field = type.getKlass().getSelfFieldByName(psiField.getName());
+                        var field = type.getKlass().getSelfInstanceFieldByName(psiField.getName());
                         node = resolve(assignment, context);
                         methodGenerator.createDupX1();
                         methodGenerator.createSetField(new FieldRef(type, field));
@@ -850,7 +850,7 @@ public class ExpressionResolver {
                                         createTemplateType(requireNonNull(psiField.getContainingClass()))
                                 )
                         );
-                        var field = type.getKlass().getSelfFieldByName(psiField.getName());
+                        var field = type.getKlass().getSelfInstanceFieldByName(psiField.getName());
                         assignment = methodGenerator.createGetField(new FieldRef(type, field));
                         assignment = action1.apply(assignment);
                         methodGenerator.createDupX1();

@@ -8,21 +8,27 @@ import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.natives.NativeBase;
 import org.metavm.expression.Var;
 import org.metavm.flow.Error;
 import org.metavm.flow.*;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.*;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -53,6 +59,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
+    private @Nullable Integer sourceTag;
     @EntityField(asTitle = true)
     private String name;
     @Nullable
@@ -105,9 +112,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     private KlassFlags flags;
 
     private ClassTypeState state = ClassTypeState.INIT;
-
-    private @Nullable Integer sourceTag;
-
     private long tag;
 
     private int since;
@@ -223,6 +227,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     @Generated
     public static void visitBody(StreamVisitor visitor) {
         TypeDef.visitBody(visitor);
+        visitor.visitNullable(visitor::visitInt);
         visitor.visitUTF();
         visitor.visitNullable(visitor::visitUTF);
         visitor.visitByte();
@@ -251,7 +256,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         visitor.visitBoolean();
         visitor.visitNullable(visitor::visitEntity);
         visitor.visitByte();
-        visitor.visitNullable(visitor::visitInt);
         visitor.visitLong();
         visitor.visitInt();
         visitor.visitBoolean();
@@ -995,13 +999,23 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         return Utils.concatList(fields, methods);
     }
 
+    public @Nullable Field findSelfFieldByName(String name) {
+        var field = findSelfInstanceFieldByName(name);
+        return field != null ? field : findSelfStaticFieldByName(name);
+    }
+
     public Field getSelfFieldByName(String name) {
         return Objects.requireNonNull(findSelfFieldByName(name),
+                () -> "Cannot find field '" + name + "' in klass '" + name + "'");
+    }
+
+    public Field getSelfInstanceFieldByName(String name) {
+        return Objects.requireNonNull(findSelfInstanceFieldByName(name),
                 () -> "Cannot find field \"" + name + "\" in klass " + getTypeDesc());
     }
 
     @Nullable
-    public Field findSelfFieldByName(String name) {
+    public Field findSelfInstanceFieldByName(String name) {
         return Utils.find(fields, f -> f.getName().equals(name));
     }
 
@@ -1627,6 +1641,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         return nextFieldTag++;
     }
 
+    public int getNextFieldTag() {
+        return nextFieldTag;
+    }
+
+    public void setNextFieldTag(int nextFieldTag) {
+        this.nextFieldTag = nextFieldTag;
+    }
+
     @JsonIgnore
     public Class<? extends NativeBase> getNativeClass() {
         return nativeClass;
@@ -1920,19 +1942,49 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         constantPool.accept(visitor);
     }
 
+    public String getText() {
+        var writer = new CodeWriter();
+        writeCode(writer);
+        return writer.toString();
+    }
+
+    public void writeCode(CodeWriter writer) {
+        writer.write(kind.name().toLowerCase() + " " + name);
+        if (superType != null)
+            writer.write(" extends " + superType.getTypeDesc());
+        if (!interfaces.isEmpty())
+            writer.write(" implements " + Utils.join(interfaces, Type::getTypeDesc));
+        writer.writeln(" {");
+        writer.indent();
+        for (Field field : fields) {
+            field.writeCode(writer);
+        }
+        for (Field staticField : staticFields) {
+            staticField.writeCode(writer);
+        }
+        for (Index index : indices) {
+            index.writeCode(writer);
+        }
+        for (Method method : methods) {
+            method.writeCode(writer);
+        }
+        writer.unindent();
+        writer.writeln("}");
+    }
+
     @Override
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
         if (superType != null) superType.forEachReference(action);
-        interfaces.forEach(arg -> arg.forEachReference(action));
-        fields.forEach(arg -> action.accept(arg.getReference()));
+        for (var interfaces_ : interfaces) interfaces_.forEachReference(action);
+        for (var fields_ : fields) action.accept(fields_.getReference());
         if (titleField != null) action.accept(titleField);
-        methods.forEach(arg -> action.accept(arg.getReference()));
-        klasses.forEach(arg -> action.accept(arg.getReference()));
-        staticFields.forEach(arg -> action.accept(arg.getReference()));
-        indices.forEach(arg -> action.accept(arg.getReference()));
-        typeParameters.forEach(arg -> action.accept(arg.getReference()));
-        errors.forEach(arg -> arg.forEachReference(action));
+        for (var methods_ : methods) action.accept(methods_.getReference());
+        for (var klasses_ : klasses) action.accept(klasses_.getReference());
+        for (var staticFields_ : staticFields) action.accept(staticFields_.getReference());
+        for (var indices_ : indices) action.accept(indices_.getReference());
+        for (var typeParameters_ : typeParameters) action.accept(typeParameters_.getReference());
+        for (var errors_ : errors) errors_.forEachReference(action);
         if (flags != null) action.accept(flags.getReference());
         action.accept(constantPool.getReference());
     }
@@ -1942,15 +1994,15 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         map.put("tag2level", this.getTag2level());
         var desc = this.getDesc();
         if (desc != null) map.put("desc", desc);
-        map.put("fields", this.getFields().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("fields", this.getFields().stream().map(Entity::getStringId).toList());
         map.put("tag", this.getTag());
         var sourceTag = this.getSourceTag();
         if (sourceTag != null) map.put("sourceTag", sourceTag);
         map.put("errors", this.getErrors().stream().map(Error::toJson).toList());
         map.put("error", this.isError());
         map.put("state", this.getState().name());
-        map.put("methods", this.getMethods().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("klasses", this.getKlasses().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("methods", this.getMethods().stream().map(Entity::getStringId).toList());
+        map.put("klasses", this.getKlasses().stream().map(Entity::getStringId).toList());
         map.put("level", this.getLevel());
         map.put("abstract", this.isAbstract());
         map.put("source", this.getSource().name());
@@ -1962,7 +2014,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         if (superTypeIndex != null) map.put("superTypeIndex", superTypeIndex);
         map.put("interfaces", this.getInterfaces().stream().map(ClassType::toJson).toList());
         map.put("interfaceIndexes", this.getInterfaceIndexes());
-        map.put("typeParameters", this.getTypeParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("typeParameters", this.getTypeParameters().stream().map(Entity::getStringId).toList());
         map.put("name", this.getName());
         var qualifiedName = this.getQualifiedName();
         if (qualifiedName != null) map.put("qualifiedName", qualifiedName);
@@ -1970,13 +2022,13 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         map.put("kind", this.getKind().name());
         map.put("anonymous", this.isAnonymous());
         map.put("ephemeralKlass", this.isEphemeralKlass());
-        map.put("indices", this.getIndices().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("indices", this.getIndices().stream().map(Entity::getStringId).toList());
         map.put("local", this.isLocal());
         var titleField = this.getTitleField();
         if (titleField != null) map.put("titleField", titleField.getStringId());
-        map.put("staticFields", this.getStaticFields().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("staticFields", this.getStaticFields().stream().map(Entity::getStringId).toList());
         map.put("struct", this.isStruct());
-        map.put("enumConstants", this.getEnumConstants().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("enumConstants", this.getEnumConstants().stream().map(Entity::getStringId).toList());
         map.put("since", this.getSince());
         var flags = this.getFlags();
         if (flags != null) map.put("flags", flags.getStringId());
@@ -2002,12 +2054,12 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
-        fields.forEach(action);
-        methods.forEach(action);
-        klasses.forEach(action);
-        staticFields.forEach(action);
-        indices.forEach(action);
-        typeParameters.forEach(action);
+        for (var fields_ : fields) action.accept(fields_);
+        for (var methods_ : methods) action.accept(methods_);
+        for (var klasses_ : klasses) action.accept(klasses_);
+        for (var staticFields_ : staticFields) action.accept(staticFields_);
+        for (var indices_ : indices) action.accept(indices_);
+        for (var typeParameters_ : typeParameters) action.accept(typeParameters_);
         if (flags != null) action.accept(flags);
         action.accept(constantPool);
     }
@@ -2019,9 +2071,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     @Generated
     @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+    public void readBody(MvInput input, Entity parent) {
         super.readBody(input, parent);
         this.scope = (KlassDeclaration) parent;
+        this.sourceTag = input.readNullable(input::readInt);
         this.name = input.readUTF();
         this.qualifiedName = input.readNullable(input::readUTF);
         this.kind = ClassKind.fromCode(input.read());
@@ -2050,7 +2103,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         this.error = input.readBoolean();
         this.flags = input.readNullable(() -> input.readEntity(KlassFlags.class, this));
         this.state = ClassTypeState.fromCode(input.read());
-        this.sourceTag = input.readNullable(input::readInt);
         this.tag = input.readLong();
         this.since = input.readInt();
         this.templateFlag = input.readBoolean();
@@ -2066,6 +2118,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     @Override
     public void writeBody(MvOutput output) {
         super.writeBody(output);
+        output.writeNullable(sourceTag, output::writeInt);
         output.writeUTF(name);
         output.writeNullable(qualifiedName, output::writeUTF);
         output.write(kind.code());
@@ -2094,7 +2147,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         output.writeBoolean(error);
         output.writeNullable(flags, output::writeEntity);
         output.write(state.code());
-        output.writeNullable(sourceTag, output::writeInt);
         output.writeLong(tag);
         output.writeInt(since);
         output.writeBoolean(templateFlag);
@@ -2108,31 +2160,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     @Override
     protected void buildSource(Map<String, Value> source) {
         super.buildSource(source);
-    }
-
-    public String getText() {
-        var writer = new CodeWriter();
-        writeCode(writer);
-        return writer.toString();
-    }
-
-    public void writeCode(CodeWriter writer) {
-        writer.writeln(kind.name().toLowerCase() + " " + name + " {");
-        writer.indent();
-        for (Field field : fields) {
-            field.writeCode(writer);
-        }
-        for (Field staticField : staticFields) {
-            staticField.writeCode(writer);
-        }
-        for (Index index : indices) {
-            index.writeCode(writer);
-        }
-        for (Method method : methods) {
-            method.writeCode(writer);
-        }
-        writer.unindent();
-        writer.writeln("}");
     }
 
 }

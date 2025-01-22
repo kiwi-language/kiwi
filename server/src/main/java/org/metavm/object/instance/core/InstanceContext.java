@@ -1,6 +1,5 @@
 package org.metavm.object.instance.core;
 
-import com.sun.security.auth.NTNumericCredential;
 import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.*;
@@ -8,7 +7,6 @@ import org.metavm.event.EventQueue;
 import org.metavm.object.instance.ContextPlugin;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.StoreTreeSource;
-import org.metavm.object.instance.StoreVersionSource;
 import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.ReferencePO;
@@ -60,7 +58,6 @@ public class InstanceContext extends BufferingInstanceContext {
     ) {
         super(appId,
                 List.of(new StoreTreeSource(instanceStore)),
-                new StoreVersionSource(instanceStore),
                 new StoreIndexSource(instanceStore), idInitializer,
                 parent, readonly, timeout);
         headContext = new SubContext(appId);

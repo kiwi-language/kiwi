@@ -2,7 +2,9 @@ package org.metavm.object.type;
 
 import org.metavm.api.JsonIgnore;
 import org.metavm.entity.GenericDeclaration;
+import org.metavm.util.Utils;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 public interface KlassDeclaration extends GenericDeclaration {
@@ -14,4 +16,11 @@ public interface KlassDeclaration extends GenericDeclaration {
     boolean isConstantPoolParameterized();
 
     void foreachGenericDeclaration(Consumer<GenericDeclaration> action);
+
+    List<Klass> getKlasses();
+
+    default Klass getKlassByByName(String name) {
+        return Utils.findRequired(getKlasses(), k -> k.getName().equals(name));
+    }
+
 }

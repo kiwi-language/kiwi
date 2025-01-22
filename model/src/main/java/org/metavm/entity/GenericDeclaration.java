@@ -4,10 +4,10 @@ import org.metavm.api.JsonIgnore;
 import org.metavm.flow.Flow;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.util.InternalException;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Objects;
 
 public interface GenericDeclaration extends Identifiable {
 
@@ -20,6 +20,10 @@ public interface GenericDeclaration extends Identifiable {
                     String.format("Type parameter '%s' doesn't exist in generic declaration: %s",
                             typeVariable, this));
         return index;
+    }
+
+    default TypeVariable getTypeParameterByName(String name) {
+        return Utils.findRequired(getTypeParameters(), t -> t.getName().equals(name));
     }
 
     void addTypeParameter(TypeVariable typeParameter);
