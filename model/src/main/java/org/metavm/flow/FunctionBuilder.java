@@ -18,16 +18,14 @@ public class FunctionBuilder {
     }
 
     @Nullable
-    private Function existing;
-    @Nullable
     private Long tmpId;
     private @NotNull String name;
     private boolean isNative;
     private boolean isSynthetic;
     private List<NameAndType> parameters = new ArrayList<>();
     private @NotNull Type returnType = Types.getVoidType();
+    private int returnTypeIndex = -1;
     private List<TypeVariable> typeParameters = new ArrayList<>();
-    private CodeSource codeSource;
     private MetadataState state = MetadataState.READY;
 
     public FunctionBuilder(@NotNull String name) {
@@ -55,16 +53,6 @@ public class FunctionBuilder {
         return this;
     }
 
-    public FunctionBuilder existing(Function existing) {
-        this.existing = existing;
-        return this;
-    }
-
-    public FunctionBuilder codeSource(CodeSource codeSource) {
-        this.codeSource = codeSource;
-        return this;
-    }
-
     public FunctionBuilder name(String name) {
         this.name = name;
         return this;
@@ -72,6 +60,11 @@ public class FunctionBuilder {
 
     public FunctionBuilder returnType(Type returnType) {
         this.returnType = returnType;
+        return this;
+    }
+
+    public FunctionBuilder returnTypeIndex(int returnTypeIndex) {
+        this.returnTypeIndex = returnTypeIndex;
         return this;
     }
 
@@ -95,27 +88,19 @@ public class FunctionBuilder {
     }
 
     public Function build() {
-        if (existing == null) {
-             return new Function(
-                    tmpId,
-                    name,
-                    isNative,
-                    isSynthetic,
-                    parameters,
-                    returnType,
-                    typeParameters,
-                     codeSource,
-                    state
-            );
-        } else {
-            existing.setName(name);
-            existing.setTypeParameters(typeParameters);
-            existing.setNative(isNative);
-            existing.setReturnType(returnType);
-            existing.setState(state);
-            existing.setParameters(Utils.map(parameters, p -> new Parameter(null, p.name(), p.type(), existing)));
-            return existing;
-        }
+         var func = new Function(
+                tmpId,
+                name,
+                isNative,
+                isSynthetic,
+                parameters,
+                returnTypeIndex,
+                typeParameters,
+                 state
+        );
+         if (returnTypeIndex == -1)
+             func.setReturnTypeIndex(func.getConstantPool().addValue(returnType));
+         return func;
     }
 
 }

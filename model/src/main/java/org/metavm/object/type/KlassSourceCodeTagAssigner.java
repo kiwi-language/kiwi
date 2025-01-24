@@ -4,12 +4,11 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.entity.EntityRepository;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -30,7 +29,7 @@ public class KlassSourceCodeTagAssigner extends org.metavm.entity.Entity {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public static KlassSourceCodeTagAssigner getInstance(IInstanceContext context) {
+    public static KlassSourceCodeTagAssigner getInstance(EntityRepository context) {
         return Objects.requireNonNull(
                 context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()),
                 "ClassTagAssigner instance not found"

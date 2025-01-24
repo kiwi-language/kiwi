@@ -52,8 +52,6 @@ public class Method extends Flow implements Property {
     private Access access;
     private boolean isConstructor;
     private boolean isAbstract;
-    private int staticTypeIndex;
-
     private boolean hidden;
 
     private transient String nativeName;
@@ -67,13 +65,13 @@ public class Method extends Flow implements Property {
                   boolean isNative,
                   boolean isSynthetic,
                   List<NameAndType> parameters,
-                  Type returnType,
+                  int returnTypeIndex,
                   List<TypeVariable> typeParameters,
                   boolean isStatic,
                   Access access,
                   boolean hidden,
                   MetadataState state) {
-        super(tmpId, name, isNative, isSynthetic, parameters, returnType, List.of(), state);
+        super(tmpId, name, isNative, isSynthetic, parameters, returnTypeIndex, List.of(), state);
         if (isStatic && isAbstract)
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.declaringType = declaringType;
@@ -81,14 +79,9 @@ public class Method extends Flow implements Property {
         this._static = isStatic;
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
-        staticTypeIndex = isStatic ? -1 : getConstantPool().addValue(new FunctionType(
-                Utils.prepend(declaringType.getType(), Utils.map(parameters, NameAndType::type)),
-                returnType
-        ));
         this.access = access;
         this.hidden = hidden;
         declaringType.addMethod(this);
-        checkTypes(getParameters(), returnType);
         resetBody();
     }
 
@@ -99,7 +92,6 @@ public class Method extends Flow implements Property {
         visitor.visitByte();
         visitor.visitBoolean();
         visitor.visitBoolean();
-        visitor.visitInt();
         visitor.visitBoolean();
     }
 
@@ -191,37 +183,19 @@ public class Method extends Flow implements Property {
     }
 
     public @Nullable FunctionType getStaticType() {
-        return staticTypeIndex == -1 ? null : getConstantPool().getFunctionType(staticTypeIndex);
+        return getStaticType(getConstantPool());
     }
 
-    public int getStaticTypeIndex() {
-        return staticTypeIndex;
+    public @Nullable FunctionType getStaticType(TypeMetadata typeMetadata) {
+        return isStatic() ? null : new FunctionType(
+                Utils.prepend(declaringType.getType(), getParameterTypes(typeMetadata)),
+                getReturnType(typeMetadata)
+        );
     }
 
     @Override
     public String toString() {
         return "Method " + getQualifiedSignature();
-    }
-
-    private void checkTypes(List<Parameter> parameters, Type returnType) {
-        var paramTypes = Utils.map(parameters, Parameter::getType);
-        var staticType = getStaticType();
-        if (isInstanceMethod()) {
-            AssertUtils.assertNonNull(staticType, ErrorCode.INSTANCE_METHOD_MISSING_STATIC_TYPE);
-            if (!staticType.getParameterTypes().equals(Utils.prepend(declaringType.getType(), paramTypes))
-                    || !staticType.getReturnType().equals(returnType))
-                throw new InternalException("Incorrect static function type: " + staticType);
-        } else
-            Utils.require(staticType == null);
-    }
-
-    @Override
-    protected void resetType() {
-        super.resetType();
-        staticTypeIndex = isStatic() ? - 1 : getConstantPool().addValue(new FunctionType(
-                Utils.prepend(declaringType.getType(), getParameterTypes()),
-                getReturnType()
-        ));
     }
 
     @Override
@@ -295,10 +269,6 @@ public class Method extends Flow implements Property {
         return declaringType.getTypeDesc() + "." + getName();
     }
 
-    public String getInternalName() {
-        return getInternalName(null);
-    }
-
     @Override
     public String getInternalName(@Nullable Flow current) {
         if (current == this)
@@ -361,13 +331,7 @@ public class Method extends Flow implements Property {
     }
 
     public void setDeclaringType(@NotNull Klass klass) {
-        setDeclaringType(klass, true);
-    }
-
-    public void setDeclaringType(@NotNull Klass klass, boolean resetType) {
         this.declaringType = klass;
-        if(resetType)
-            resetType();
     }
 
     @Override
@@ -375,30 +339,27 @@ public class Method extends Flow implements Property {
         return super.hasBody() && !isAbstract;
     }
 
-    public static final int FLAG_CONSTRUCTOR = 4;
-    public static final int FLAG_ABSTRACT = 8;
-    public static final int FLAG_STATIC = 16;
-    public static final int FLAG_HIDDEN = 32;
+    public static final int FLAG_CONSTRUCTOR = 8;
+    public static final int FLAG_ABSTRACT = 16;
+    public static final int FLAG_STATIC = 32;
+    public static final int FLAG_HIDDEN = 64;
 
     public int getFlags() {
         int flags = super.getFlags();
-        if(isConstructor)
-            flags |= FLAG_CONSTRUCTOR;
-        if(isAbstract)
-            flags |= FLAG_ABSTRACT;
-        if(_static)
-            flags |= FLAG_STATIC;
-        if(hidden)
-            flags |= FLAG_HIDDEN;
+        if(isConstructor) flags |= FLAG_CONSTRUCTOR;
+        if(isAbstract) flags |= FLAG_ABSTRACT;
+        if(_static) flags |= FLAG_STATIC;
+        if(hidden) flags |= FLAG_HIDDEN;
         return flags;
     }
 
-    void setFlags(int flags) {
+    public void setFlags(int flags) {
         super.setFlags(flags);
         isConstructor = (flags & FLAG_CONSTRUCTOR) != 0;
         isAbstract = (flags & FLAG_ABSTRACT) != 0;
         _static = (flags & FLAG_STATIC) != 0;
         hidden = (flags & FLAG_HIDDEN) != 0;
+        resetBody();
     }
 
     @Override
@@ -466,7 +427,6 @@ public class Method extends Flow implements Property {
         map.put("hidden", this.isHidden());
         var staticType = this.getStaticType();
         if (staticType != null) map.put("staticType", staticType.toJson());
-        map.put("staticTypeIndex", this.getStaticTypeIndex());
         map.put("internalName", this.getInternalName());
         map.put("minLocals", this.getMinLocals());
         map.put("flags", this.getFlags());
@@ -479,7 +439,6 @@ public class Method extends Flow implements Property {
         map.put("functionType", this.getFunctionType().toJson());
         map.put("native", this.isNative());
         map.put("typeParameters", this.getTypeParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("typeIndex", this.getTypeIndex());
         map.put("parameters", this.getParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
         map.put("type", this.getType().toJson());
         map.put("capturedTypeVariables", this.getCapturedTypeVariables().stream().map(org.metavm.entity.Entity::getStringId).toList());
@@ -518,7 +477,6 @@ public class Method extends Flow implements Property {
         this.access = Access.fromCode(input.read());
         this.isConstructor = input.readBoolean();
         this.isAbstract = input.readBoolean();
-        this.staticTypeIndex = input.readInt();
         this.hidden = input.readBoolean();
     }
 
@@ -530,7 +488,6 @@ public class Method extends Flow implements Property {
         output.write(access.code());
         output.writeBoolean(isConstructor);
         output.writeBoolean(isAbstract);
-        output.writeInt(staticTypeIndex);
         output.writeBoolean(hidden);
     }
 

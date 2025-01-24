@@ -8,6 +8,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.GenericDeclarationRef;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
+import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.instance.core.Reference;
@@ -242,4 +243,10 @@ public class KlassType extends ClassType {
         action.accept(klassReference);
         if (typeArguments != null) typeArguments.forEach(arg -> arg.forEachReference(action));
     }
+
+    @Override
+    public ColumnKind getSQLType() {
+        return ColumnKind.REFERENCE;
+    }
+
 }

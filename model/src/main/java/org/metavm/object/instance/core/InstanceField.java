@@ -101,7 +101,8 @@ public class InstanceField implements IInstanceField {
 
     @Override
     public @NotNull Value getValue() {
-        return Objects.requireNonNull(value, "Field " + field.getQualifiedName() + " is not initialized");
+        return Objects.requireNonNull(value,
+                () -> "Field " + field.getQualifiedName() + " is not initialized");
     }
 
     @SuppressWarnings("unused")

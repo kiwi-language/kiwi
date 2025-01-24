@@ -88,7 +88,7 @@ public abstract class FlowRef implements GenericDeclarationRef, Writable, Callab
     }
 
     public FunctionType getPropertyType() {
-        return (FunctionType) getTypeMetadata().getType(getRawFlow().getTypeIndex());
+        return getRawFlow().getType(getTypeMetadata());
     }
 
     public FlowExecResult execute(Value boundSelf, List<? extends Value> arguments, CallContext callContext) {

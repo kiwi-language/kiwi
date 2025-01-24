@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.Column;
@@ -9,14 +10,18 @@ import javax.annotation.Nullable;
 
 public class FieldBuilder {
 
-
     public static FieldBuilder newBuilder(String name, Klass declaringType, Type type) {
         return new FieldBuilder(name, declaringType, type);
     }
 
+    public static FieldBuilder newBuilder(String name, Klass declaringType, int typeIndex) {
+        return new FieldBuilder(name, declaringType, typeIndex);
+    }
+
     private final String name;
     private final Klass declaringType;
-    private final Type type;
+    private final @Nullable Type type;
+    private final int typeIndex;
     private Column column;
     private Long tmpId;
     private Access access = Access.PUBLIC;
@@ -27,7 +32,6 @@ public class FieldBuilder {
     private Value staticValue;
     private MetadataState state;
     private boolean lazy;
-    private Field existing;
     private boolean readonly;
     private boolean isTransient;
     private boolean asTitle;
@@ -38,10 +42,19 @@ public class FieldBuilder {
     private int since;
     private @Nullable Method initializer;
 
-    private FieldBuilder(String name, Klass declaringType, Type type) {
+    private FieldBuilder(String name, Klass declaringType, @NotNull Type type) {
         this.name = name;
         this.declaringType = declaringType;
         this.type = type;
+        this.typeIndex = -1;
+    }
+
+    private FieldBuilder(String name, Klass declaringType, int typeIndex) {
+        this.name = name;
+        this.declaringType = declaringType;
+        this.type = null;
+        assert typeIndex >= 0;
+        this.typeIndex = typeIndex;
     }
 
     public FieldBuilder tmpId(Long tmpId) {
@@ -86,11 +99,6 @@ public class FieldBuilder {
 
     public FieldBuilder column(Column column) {
         this.column = column;
-        return this;
-    }
-
-    public FieldBuilder existing(Field existing) {
-        this.existing = existing;
         return this;
     }
 
@@ -151,52 +159,37 @@ public class FieldBuilder {
 
     public Field build() {
         Field field;
-        if (existing == null) {
-            if(defaultValue == null)
-                defaultValue = Instances.nullInstance();
-            if(staticValue == null)
-                staticValue = Instances.nullInstance();
-            if (state == null)
-                state = defaultValue.isNotNull() ? MetadataState.INITIALIZING : MetadataState.READY;
-            if(tag == -1)
-                tag = declaringType.nextFieldTag();
-            field = new Field(
-                    tmpId,
-                    name,
-                    declaringType,
-                    type,
-                    access,
-                    readonly,
-                    isTransient,
-                    unique,
-                    defaultValue,
-                    isChild,
-                    isStatic,
-                    lazy,
-                    isEnumConstant,
-                    ordinal,
-                    column,
-                    tag,
-                    sourceTag,
-                    since,
-                    initializer,
-                    state
-            );
-        } else {
-            field = existing;
-            existing.setTmpId(tmpId);
-            existing.setName(name);
-            existing.setType(type);
-            existing.setAccess(access);
-            existing.setUnique(unique);
-            existing.setLazy(lazy);
-            existing.setReadonly(readonly);
-            existing.setTransient(isTransient);
-            if(defaultValue != null)
-                existing.setDefaultValue(defaultValue);
-            if (state != null)
-                existing.setState(state);
-        }
+        if(defaultValue == null)
+            defaultValue = Instances.nullInstance();
+        if(staticValue == null)
+            staticValue = Instances.nullInstance();
+        if (state == null)
+            state = defaultValue.isNotNull() ? MetadataState.INITIALIZING : MetadataState.READY;
+        if(tag == -1)
+            tag = declaringType.nextFieldTag();
+        int typeIndex = type != null ? declaringType.getConstantPool().addValue(type) : this.typeIndex;
+        field = new Field(
+                tmpId,
+                name,
+                declaringType,
+                typeIndex,
+                access,
+                readonly,
+                isTransient,
+                unique,
+                defaultValue,
+                isChild,
+                isStatic,
+                lazy,
+                isEnumConstant,
+                ordinal,
+                column,
+                tag,
+                sourceTag,
+                since,
+                initializer,
+                state
+        );
         if(asTitle)
             declaringType.setTitleField(field);
         return field;

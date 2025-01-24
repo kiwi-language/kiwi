@@ -73,7 +73,7 @@ public class LambdaRef implements Writable, CallableRef {
     }
 
     public FunctionType getFunctionType() {
-        return flowRef.getTypeMetadata().getFunctionType(getRawLambda().getTypeIndex());
+        return getRawLambda().getType(flowRef.getTypeMetadata());
     }
 
     public FlowRef getFlowRef() {

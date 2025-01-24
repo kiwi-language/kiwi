@@ -16,7 +16,6 @@ public class Klasses {
         var visited = new HashSet<Klass>();
         for (Klass klass : klasses) Klasses.sortKlass(klass, sortedKlasses, visited);
         for (var klass : sortedKlasses) klass.resetHierarchy();
-
     }
 
     private static void sortKlass(Klass klass, List<Klass> result, Set<Klass> visited) {

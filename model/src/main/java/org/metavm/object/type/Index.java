@@ -10,19 +10,14 @@ import org.metavm.entity.LocalKey;
 import org.metavm.flow.CodeWriter;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
+import org.metavm.object.instance.core.Value;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -34,7 +29,6 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     private static Klass __klass__;
     private List<IndexField> fields = new ArrayList<>();
     private boolean unique;
-    private @Nullable Reference methodReference;
     private @Nullable Reference method;
     private transient IndexDef<?> indexDef;
 
@@ -59,7 +53,6 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         Constraint.visitBody(visitor);
         visitor.visitList(visitor::visitEntity);
         visitor.visitBoolean();
-        visitor.visitNullable(visitor::visitValue);
         visitor.visitNullable(visitor::visitValue);
     }
 
@@ -165,8 +158,16 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         this.method = Utils.safeCall(method, Instance::getReference);
     }
 
+    public void setMethod(@Nullable Reference method) {
+        this.method = method;
+    }
+
     public @Nullable Method getMethod() {
         return Utils.safeCall(method, m -> (Method) m.get());
+    }
+
+    public @Nullable Reference getMethodReference() {
+        return method;
     }
 
     @Override
@@ -180,11 +181,18 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         fields.forEach(arg -> arg.accept(visitor));
     }
 
+    public void writeCode(CodeWriter writer) {
+        writer.writeln((unique ? "unique index " : "index ") + getName());
+    }
+
+    public void setUnique(boolean unique) {
+        this.unique = unique;
+    }
+
     @Override
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-        fields.forEach(arg -> action.accept(arg.getReference()));
-        if (methodReference != null) action.accept(methodReference);
+        for (var fields_ : fields) action.accept(fields_.getReference());
         if (method != null) action.accept(method);
     }
 
@@ -200,6 +208,8 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         map.put("ref", this.getRef().toJson());
         var method = this.getMethod();
         if (method != null) map.put("method", method.getStringId());
+        var methodReference = this.getMethodReference();
+        if (methodReference != null) map.put("methodReference", methodReference.toJson());
         var message = this.getMessage();
         if (message != null) map.put("message", message);
         map.put("name", this.getName());
@@ -220,7 +230,7 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
-        fields.forEach(action);
+        for (var fields_ : fields) action.accept(fields_);
     }
 
     @Override
@@ -234,7 +244,6 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         super.readBody(input, parent);
         this.fields = input.readList(() -> input.readEntity(IndexField.class, this));
         this.unique = input.readBoolean();
-        this.methodReference = input.readNullable(() -> (Reference) input.readValue());
         this.method = input.readNullable(() -> (Reference) input.readValue());
     }
 
@@ -244,16 +253,11 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         super.writeBody(output);
         output.writeList(fields, output::writeEntity);
         output.writeBoolean(unique);
-        output.writeNullable(methodReference, output::writeValue);
         output.writeNullable(method, output::writeValue);
     }
 
     @Override
     protected void buildSource(Map<String, Value> source) {
         super.buildSource(source);
-    }
-
-    public void writeCode(CodeWriter writer) {
-        writer.writeln((unique ? "unique index " : "index ") + getName());
     }
 }

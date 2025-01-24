@@ -55,11 +55,10 @@ public class Function extends Flow implements GlobalKey {
                     boolean isNative,
                     boolean isSynthetic,
                     List<NameAndType> parameters,
-                    Type returnType,
+                    int returnTypeIndex,
                     List<TypeVariable> typeParameters,
-                    @Nullable CodeSource codeSource,
                     MetadataState state) {
-        super(tmpId, name, isNative, isSynthetic, parameters, returnType, typeParameters, state);
+        super(tmpId, name, isNative, isSynthetic, parameters, returnTypeIndex, typeParameters, state);
         resetBody();
     }
 
@@ -151,7 +150,6 @@ public class Function extends Flow implements GlobalKey {
         map.put("functionType", this.getFunctionType().toJson());
         map.put("native", this.isNative());
         map.put("typeParameters", this.getTypeParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("typeIndex", this.getTypeIndex());
         map.put("parameters", this.getParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
         map.put("type", this.getType().toJson());
         map.put("capturedTypeVariables", this.getCapturedTypeVariables().stream().map(org.metavm.entity.Entity::getStringId).toList());

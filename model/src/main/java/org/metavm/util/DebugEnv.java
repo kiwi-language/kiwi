@@ -103,6 +103,8 @@ public class DebugEnv {
 
     public static volatile boolean traceDDL = false;
 
+    public static volatile boolean traceClassFileIO = false;
+
     public static void exitPathItem() {
         path.removeLast();
     }

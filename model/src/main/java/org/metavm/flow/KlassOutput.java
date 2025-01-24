@@ -2,10 +2,9 @@ package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Entity;
-import org.metavm.entity.SerializeContext;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.util.MvOutput;
 
@@ -15,16 +14,9 @@ import java.util.Objects;
 @Slf4j
 public class KlassOutput extends MvOutput {
 
-    private final SerializeContext serializeContext;
 
-    public KlassOutput(OutputStream out, SerializeContext serializeContext) {
+    public KlassOutput(OutputStream out) {
         super(out);
-        this.serializeContext = serializeContext;
-    }
-
-    @Override
-    public void writeEntityId(Entity entity) {
-        writeId(serializeContext.getId(entity));
     }
 
     @Override
@@ -88,13 +80,8 @@ public class KlassOutput extends MvOutput {
 
     @Override
     public void writeEntity(Entity entity) {
-        if (entity.tryGetId() == null)
-            entity.initId(serializeContext.getId(entity));
+        entity.initId(TmpId.random());
         super.writeEntity(entity);
-    }
-
-    public Id getId(Entity entity) {
-        return serializeContext.getId(entity);
     }
 
 }

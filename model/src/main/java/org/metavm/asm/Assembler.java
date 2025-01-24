@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.RuleContext;
 import org.metavm.asm.antlr.AssemblyLexer;
 import org.metavm.asm.antlr.AssemblyParser;
 import org.metavm.asm.antlr.AssemblyParserBaseVisitor;
+import org.metavm.classfile.ClassFileWriter;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.flow.*;
@@ -23,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -62,18 +62,19 @@ public class Assembler {
                     .includingValueType(false);
             for (var klass : generatedKlasses) {
                 if(!klass.isInner() && !klass.isLocal())
-                    writeClassFile(klass, targetDir, serContext);
+                    writeClassFile(klass, targetDir);
             }
             logger.info("Compile successful");
             createArchive(targetDir);
         }
     }
 
-    private void writeClassFile(Klass klass, String targetDir, SerializeContext serializeContext) {
+    private void writeClassFile(Klass klass, String targetDir) {
         var path = targetDir + '/' + requireNonNull(klass.getQualifiedName()).replace('.', '/') + ".mvclass";
         var bout = new ByteArrayOutputStream();
-        var output = new KlassOutput(bout, serializeContext);
-        output.writeEntity(klass);
+        var output = new KlassOutput(bout);
+        var writer = new ClassFileWriter(output);
+        writer.write(klass);
         Utils.writeFile(path, bout.toByteArray());
     }
 

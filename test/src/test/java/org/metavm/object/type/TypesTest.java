@@ -77,7 +77,6 @@ public class TypesTest extends TestCase {
 
         var typeVar1 = new TypeVariable(null, "T1", DummyGenericDeclaration.INSTANCE);
         var typeVar2 = new TypeVariable(null, "T1", DummyGenericDeclaration.INSTANCE);
-        typeVar2.setBounds(List.of(Types.getNullableAnyType()));
         TestUtils.newKlassBuilder("Foo")
                         .typeParameters(typeVar1, typeVar2)
                         .build();

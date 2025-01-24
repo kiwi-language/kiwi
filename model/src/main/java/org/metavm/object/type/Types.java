@@ -266,14 +266,9 @@ public class Types {
                 .build();
         klass.setEphemeral();
         var sam = samInterface.getSingleAbstractMethod();
-        var methodStaticType = new FunctionType(
-                Utils.prepend(klass.getType(), sam.getParameterTypes()),
-                sam.getReturnType()
-        );
         var method = MethodBuilder.newBuilder(klass, sam.getName())
                 .parameters(Utils.map(sam.getParameters(), p -> new NameAndType(p.getName(), p.getType())))
                 .returnType(sam.getReturnType())
-                .staticType(methodStaticType)
                 .build();
         var code = method.getCode();
         Nodes.loadConstant(function, code);

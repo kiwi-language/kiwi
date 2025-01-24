@@ -33,7 +33,6 @@ public class SubstitutorV2Test extends TestCase {
                 .build();
         {
             var getValueFlow = MethodBuilder.newBuilder(foo, "getValue")
-                    .staticType(new FunctionType(List.of(foo.getType()), typeVar.getType()))
                     .returnType(typeVar.getType())
                     .build();
             var code = getValueFlow.getCode();
@@ -43,7 +42,6 @@ public class SubstitutorV2Test extends TestCase {
 
         {
             var flow = MethodBuilder.newBuilder(foo, "setValue")
-                    .staticType(new FunctionType(List.of(foo.getType(), typeVar.getType()), voidType))
                     .returnType(voidType)
                     .parameters(new NameAndType("value", typeVar.getType()))
                     .build();

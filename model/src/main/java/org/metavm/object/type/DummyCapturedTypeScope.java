@@ -38,4 +38,9 @@ public enum DummyCapturedTypeScope implements CapturedTypeScope {
     public String getScopeName() {
         return "Dummy";
     }
+
+    @Override
+    public ConstantPool getConstantPool() {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -1,6 +1,7 @@
 package org.metavm.object.type;
 
 import junit.framework.TestCase;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
@@ -17,6 +18,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 
+@Slf4j
 public class ClassTypeTest extends TestCase {
 
     @Override

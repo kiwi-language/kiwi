@@ -5,7 +5,6 @@ import org.metavm.entity.Attribute;
 import org.metavm.object.type.*;
 import org.metavm.util.Utils;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,13 +24,11 @@ public class MethodBuilder {
     private boolean isSynthetic;
     private Access access = Access.PUBLIC;
     private Type returnType;
+    private int returnTypeIndex = -1;
     private List<NameAndType> parameters = List.of();
     private List<TypeVariable> typeParameters = List.of();
     private boolean hidden;
-    private FunctionType staticType;
-    private Method existing;
     private boolean _static;
-    private @Nullable CodeSource codeSource;
     private final List<Attribute> attributes = new ArrayList<>();
     private MetadataState state;
 
@@ -55,11 +52,6 @@ public class MethodBuilder {
         return this;
     }
 
-    public MethodBuilder codeSource(CodeSource codeSource) {
-        this.codeSource = codeSource;
-        return this;
-    }
-
     public MethodBuilder access(Access access) {
         this.access = access;
         return this;
@@ -72,6 +64,11 @@ public class MethodBuilder {
 
     public MethodBuilder returnType(Type returnType) {
         this.returnType = returnType;
+        return this;
+    }
+
+    public MethodBuilder returnTypeIndex(int returnTypeIndex) {
+        this.returnTypeIndex = returnTypeIndex;
         return this;
     }
 
@@ -99,11 +96,6 @@ public class MethodBuilder {
         return this;
     }
 
-    public MethodBuilder staticType(FunctionType staticType) {
-        this.staticType = staticType;
-        return this;
-    }
-
     public MethodBuilder typeParameters(List<TypeVariable> typeParameters) {
         this.typeParameters = typeParameters;
         return this;
@@ -121,47 +113,36 @@ public class MethodBuilder {
     }
 
     public Method build() {
-        if (returnType == null) {
-            if (isConstructor)
-                returnType = declaringType.getType();
-            else
-                returnType = Utils.orElse(Types.getVoidType(), Types::getVoidType);
-        }
         Method method;
-        if (existing == null) {
-            if (state == null)
-                state = MetadataState.READY;
-            method = new Method(
-                    tmpId,
-                    declaringType,
-                    name,
-                    isConstructor,
-                    isAbstract,
-                    isNative,
-                    isSynthetic,
-                    parameters,
-                    returnType,
-                    typeParameters,
-                    _static,
-                    access,
-                    hidden,
-                    state
-            );
-        } else {
-            method = existing;
-            existing.setName(name);
-            existing.setReturnType(returnType);
-            existing.setTypeParameters(typeParameters);
-            existing.setParameters(Utils.map(parameters, p -> new Parameter(null, p.name(), p.type(), method)));
-            if (state != null)
-                existing.setState(state);
+        if (state == null)
+            state = MetadataState.READY;
+        method = new Method(
+                tmpId,
+                declaringType,
+                name,
+                isConstructor,
+                isAbstract,
+                isNative,
+                isSynthetic,
+                parameters,
+                returnTypeIndex,
+                typeParameters,
+                _static,
+                access,
+                hidden,
+                state
+        );
+        if (returnTypeIndex == -1) {
+            if (returnType == null) {
+                if (isConstructor)
+                    returnType = declaringType.getType();
+                else
+                    returnType = Utils.orElse(Types.getVoidType(), Types::getVoidType);
+            }
+            method.setReturnTypeIndex(method.getConstantPool().addValue(returnType));
         }
         method.setAttributes(attributes);
         return method;
     }
 
-    public MethodBuilder existing(Method existing) {
-        this.existing = existing;
-        return this;
-    }
 }

@@ -1,28 +1,25 @@
 package org.metavm.object.type;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.entity.*;
-import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.Map;
 import java.util.function.Consumer;
 
 @NativeEntity(14)
+@Slf4j
 public class ConstantPool extends Entity implements LoadAware, TypeMetadata, Element, LocalKey {
 
     @SuppressWarnings("unused")
@@ -228,4 +225,13 @@ public class ConstantPool extends Entity implements LoadAware, TypeMetadata, Ele
     @Override
     protected void buildSource(Map<String, Value> source) {
     }
+
+    @SuppressWarnings("unused")
+    public void printEntries() {
+        int i = 0;
+        for (Value entry : entries) {
+            log.debug("Entry {}: {}", i++ ,entry);
+        }
+    }
+
 }

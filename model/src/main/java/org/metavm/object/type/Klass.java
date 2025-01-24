@@ -705,14 +705,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     public void addField(Field field) {
         if (fields.contains(field))
             throw new RuntimeException("Field " + field.tryGetId() + " is already added");
-        if (findSelfField(f -> f.getName().equals(field.getName())) != null
+        if (findSelfInstanceField(f -> f.getName().equals(field.getName())) != null
                 || findSelfStaticField(f -> f.getName().equals(field.getName())) != null)
             throw BusinessException.invalidField(field, "Field name '" + field.getName() + "' is already used in class " + getName());
         if (field.isStatic())
             staticFields.add(field);
         else
             fields.add(field);
-        if(!Constants.maintenanceDisabled)
+        if(!Constants.maintenanceDisabled && !methodTableBuildDisabled)
             resetFieldTransients();
         field.setDeclaringType(this);
     }
@@ -832,6 +832,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     }
 
     public @Nullable Field findSelfField(Predicate<Field> predicate) {
+        var field = findSelfInstanceField(predicate);
+        return field != null ? field : findSelfStaticField(predicate);
+    }
+
+    public @Nullable Field findSelfInstanceField(Predicate<Field> predicate) {
         return Utils.find(fields, predicate);
     }
 
@@ -844,7 +849,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     }
 
     public Field getSelfField(Predicate<Field> predicate) {
-        return Objects.requireNonNull(findSelfField(predicate));
+        return Objects.requireNonNull(findSelfInstanceField(predicate));
     }
 
     public @Nullable Field findSelfStaticField(Predicate<Field> predicate) {
@@ -852,7 +857,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     }
 
     public @Nullable Field findField(Predicate<Field> predicate) {
-        var field = findSelfField(predicate);
+        var field = findSelfInstanceField(predicate);
         if (field != null)
             return field;
         var superKlass = getSuperKlass();
@@ -1006,7 +1011,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     public Field getSelfFieldByName(String name) {
         return Objects.requireNonNull(findSelfFieldByName(name),
-                () -> "Cannot find field '" + name + "' in klass '" + name + "'");
+                () -> "Cannot find field '" + name + "' in klass '" + this.name + "'");
     }
 
     public Field getSelfInstanceFieldByName(String name) {
@@ -1150,7 +1155,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     @Nullable
     public ClassType getSuperType() {
-        return superType;
+        return superTypeIndex != null ? constantPool.getClassType(superTypeIndex) : null;
     }
 
     @Nullable
@@ -1161,16 +1166,17 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     @Nullable
     @JsonIgnore
     public Klass getSuperKlass() {
+        var superType = getSuperType();
         return superType != null ? superType.getKlass() : null;
     }
 
     @JsonIgnore
     public List<Klass> getInterfaceKlasses() {
-        return Utils.map(interfaces, ClassType::getKlass);
+        return Utils.map(getInterfaces(), ClassType::getKlass);
     }
 
     public List<ClassType> getInterfaces() {
-        return Collections.unmodifiableList(interfaces);
+        return Utils.map(interfaceIndexes, constantPool::getClassType);
     }
 
     public List<Integer> getInterfaceIndexes() {
@@ -1404,6 +1410,10 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         setSuperType(superType, Constants.maintenanceDisabled);
     }
 
+    public void setSuperTypeIndex(@Nullable Integer superTypeIndex) {
+        this.superTypeIndex = superTypeIndex;
+    }
+
     public void setSuperType(@Nullable ClassType superType, boolean skipMaintenance) {
         if(skipMaintenance) {
             if (superType != null) {
@@ -1435,6 +1445,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     public void setInterfaces(List<ClassType> interfaces) {
         setInterfaces(interfaces, Constants.maintenanceDisabled);
+    }
+
+    public void setInterfaceIndexes(List<Integer> interfaceIndexes) {
+        this.interfaceIndexes = new ArrayList<>(interfaceIndexes);
+        this.interfaces = Utils.map(interfaceIndexes, constantPool::getClassType);
     }
 
     public void setInterfaces(List<ClassType> interfaces, boolean skipMaintenance) {
@@ -1478,7 +1493,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         fields.forEach(f -> f.setDeclaringType(this));
         this.fields.clear();
         this.fields.addAll(fields);
-        if(!Constants.maintenanceDisabled)
+        if(!Constants.maintenanceDisabled && !methodTableBuildDisabled)
             resetFieldTransients();
     }
 
@@ -1645,8 +1660,16 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         return nextFieldTag;
     }
 
+    public int getNextFieldSourceCodeTag() {
+        return nextFieldSourceCodeTag;
+    }
+
     public void setNextFieldTag(int nextFieldTag) {
         this.nextFieldTag = nextFieldTag;
+    }
+
+    public void setNextFieldSourceCodeTag(int nextFieldSourceCodeTag) {
+        this.nextFieldSourceCodeTag = nextFieldSourceCodeTag;
     }
 
     @JsonIgnore
@@ -1763,7 +1786,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         return flags;
     }
 
-    private void setClassFlags(int flags) {
+    public void setClassFlags(int flags) {
         isAbstract = (flags & FLAG_ABSTRACT) != 0;
         struct = (flags & FLAG_STRUCT) != 0;
         searchable = (flags & FLAG_SEARCHABLE) != 0;
@@ -1772,58 +1795,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         templateFlag = (flags & FLAG_TEMPLATE) != 0;
     }
 
-//    public void writeBody(MvOutput output) {
-//        output.writeEntity(constantPool);
-//        output.write(kind.code());
-//        output.writeUTF(name);
-//        output.writeUTF(qualifiedName != null ? qualifiedName : "");
-//        output.writeInt(getClassFlags());
-//        output.write(source.code());
-//        output.writeLong(tag);
-//        output.writeInt(sourceTag != null ? sourceTag : -1);
-//        output.writeInt(since);
-//        output.writeList(typeParameters, output::writeEntity);
-//        output.writeShort(Objects.requireNonNullElse(superTypeIndex, -1));
-//        output.writeList(interfaceIndexes, output::writeShort);
-//        output.writeList(fields, output::writeEntity);
-//        output.writeList(staticFields, output::writeEntity);
-//        output.writeList(methods, output::writeEntity);
-//        output.writeList(constraints, output::writeEntity);
-//        output.writeList(klasses, output::writeEntity);
-//        writeAttributes(output);
-//    }
-
-//    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-//        scope = (KlassDeclaration) parent;
-//        constantPool = input.readEntity(ConstantPool.class, this);
-//        kind = ClassKind.fromCode(input.read());
-//        name = input.readUTF();
-//        qualifiedName = input.readUTF();
-//        if(qualifiedName.isEmpty())
-//            qualifiedName = null;
-//        setClassFlags(input.readInt());
-//        source = ClassSource.fromCode(input.read());
-//        tag = input.readLong();
-//        sourceTag = input.readInt();
-//        if(sourceTag == -1)
-//            sourceTag = null;
-//        since = input.readInt();
-//        typeParameters = input.readList(() -> input.readTypeVariable(this));
-//        this.superTypeIndex = input.readShort();
-//        if(superTypeIndex == 65535) {
-//            superTypeIndex = null;
-//            superKlass = null;
-//        } else
-//            superKlass = constantPool.getClassType(superTypeIndex).getKlass();
-//        interfaceIndexes = input.readList(input::readShort);
-//        interfaces = NncUtils.map(interfaceIndexes, idx -> constantPool.getClassType(idx).getKlass());
-//        fields = input.readList(() -> input.readField(this));
-//        staticFields = input.readList(() -> input.readField(this));
-//        methods = input.readList(() -> input.readMethod(this));
-//        constraints = input.readList(() -> input.readEntity(Constraint.class, this));
-//        klasses = input.readList(() -> input.readKlass(this));
-//        readAttributes(input);
-//    }
+    public void setSince(int since) {
+        this.since = since;
+    }
 
     public boolean isInner() {
         return scope != null;

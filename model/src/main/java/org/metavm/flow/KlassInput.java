@@ -392,7 +392,7 @@ public class KlassInput extends MvInput {
                     map.put(Field.class, "tag:" + field.getSourceTag(), field);
             }
             for (Method method : klass.getMethods()) {
-                map.put(Method.class, method.getInternalName(), method);
+                map.put(Method.class, method.getInternalName(null), method);
             }
             for (Klass innerKlass : klass.getKlasses()) {
                 map.put(Klass.class, innerKlass.getName(), innerKlass);

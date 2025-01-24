@@ -6,6 +6,7 @@ import org.metavm.api.ChildList;
 import org.metavm.autograph.env.IrCoreApplicationEnvironment;
 import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
+import org.metavm.classfile.ClassFileWriter;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.KlassOutput;
 import org.metavm.object.type.Klass;
@@ -290,7 +291,7 @@ public class Compiler {
             }
             for (var klass : klasses) {
                 if(!klass.isInner() && !klass.isLocal())
-                    writeClassFile(klass, serContext);
+                    writeClassFile(klass);
             }
             logger.info("Compile successful");
             createArchive();
@@ -303,11 +304,12 @@ public class Compiler {
         return Collections.unmodifiableList(classNames);
     }
 
-    private void writeClassFile(Klass klass, SerializeContext serializeContext) {
+    private void writeClassFile(Klass klass) {
         var path = targetDir + '/' + Objects.requireNonNull(klass.getQualifiedName()).replace('.', '/') + ".mvclass";
         var bout = new ByteArrayOutputStream();
-        var output = new KlassOutput(bout, serializeContext);
-        output.writeEntity(klass);
+        var output = new KlassOutput(bout);
+        var writer = new ClassFileWriter(output);
+        writer.write(klass);
         Utils.writeFile(path, bout.toByteArray());
     }
 

@@ -217,14 +217,7 @@ public class MethodRef extends FlowRef implements PropertyRef {
     }
 
     public @Nullable FunctionType getStaticType() {
-        try {
-            var idx = getRawFlow().getStaticTypeIndex();
-            return idx == -1 ? null : (FunctionType) getTypeMetadata().getType(idx);
-        }
-        catch (ClassCastException e) {
-            throw new IllegalStateException("Failed to static type for method " + getRawFlow() + ". Static type index: " + getRawFlow().getStaticTypeIndex()
-                    + ", constants: " + getTypeMetadata() + ", template constants: " + getRawFlow().getConstantPool());
-        }
+        return getRawFlow().getStaticType(getTypeMetadata());
     }
 
     public Type getParameterType(int index) {

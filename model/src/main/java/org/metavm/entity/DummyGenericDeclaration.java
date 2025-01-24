@@ -3,6 +3,7 @@ package org.metavm.entity;
 import org.metavm.api.Entity;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.type.ConstantPool;
 import org.metavm.object.type.TypeVariable;
 
 import javax.annotation.Nullable;
@@ -52,6 +53,11 @@ public enum DummyGenericDeclaration implements GenericDeclaration {
     @Override
     public GenericDeclarationRef getRef() {
         throw new NullPointerException();
+    }
+
+    @Override
+    public ConstantPool getConstantPool() {
+        throw new UnsupportedOperationException();
     }
 
     @Nullable

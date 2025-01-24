@@ -29,11 +29,6 @@ public class DummyCallable implements Callable, ConstantScope {
     }
 
     @Override
-    public int getTypeIndex() {
-        return 0;
-    }
-
-    @Override
     public int getInputCount() {
         return 0;
     }

@@ -6,22 +6,13 @@ import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
 import org.metavm.entity.*;
-import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
-import org.metavm.util.InternalException;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
+import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -34,7 +25,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
     private static Klass __klass__;
     @EntityField(asTitle = true)
     private String name;
-    private List<Type> bounds = new ArrayList<>();
+    private List<Integer> boundIndexes = new ArrayList<>();
     private @NotNull GenericDeclaration genericDeclaration;
     private transient VariableType type;
     private transient Type bound;
@@ -51,7 +42,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
     public static void visitBody(StreamVisitor visitor) {
         TypeDef.visitBody(visitor);
         visitor.visitUTF();
-        visitor.visitList(visitor::visitValue);
+        visitor.visitList(visitor::visitInt);
     }
 
     @Override
@@ -86,8 +77,11 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
     }
 
     public void setBounds(List<Type> bounds) {
-        this.bounds.clear();
-        this.bounds.addAll(bounds);
+        this.boundIndexes = Utils.map(bounds, t -> genericDeclaration.getConstantPool().addValue(t));
+    }
+
+    public void setBoundIndexes(List<Integer> boundIndexes) {
+        this.boundIndexes = new ArrayList<>(boundIndexes);
     }
 
     @Override
@@ -96,21 +90,21 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
     }
 
     public Type getUpperBound() {
-        if (bounds.size() == 1)
-            return bounds.getFirst();
+        if (boundIndexes.size() == 1)
+            return getGenericDeclaration().getConstantPool().getType(boundIndexes.getFirst());
         if (bound != null)
             return bound;
-        return bound = bounds.isEmpty() ? AnyType.instance : new IntersectionType(new HashSet<>(bounds));
-    }
-
-    public List<? extends Type> getSuperTypes() {
-        return Collections.unmodifiableList(bounds);
+        return bound = boundIndexes.isEmpty() ? AnyType.instance :
+                new IntersectionType(Utils.mapToSet(boundIndexes, t -> genericDeclaration.getConstantPool().getType(t)));
     }
 
     public List<Type> getBounds() {
-        return Collections.unmodifiableList(bounds);
+        return Utils.map(boundIndexes, i -> genericDeclaration.getConstantPool().getType(i));
     }
 
+    public List<Integer> getBoundIndexes() {
+        return boundIndexes;
+    }
 
     @Override
     public String getGlobalKey(@NotNull BuildKeyContext context) {
@@ -185,13 +179,11 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
     @Override
     public void acceptChildren(ElementVisitor<?> visitor) {
         super.acceptChildren(visitor);
-        bounds.forEach(arg -> arg.accept(visitor));
     }
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-        bounds.forEach(arg -> arg.forEachReference(action));
     }
 
     @Override
@@ -200,7 +192,6 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
         map.put("name", this.getName());
         map.put("qualifiedName", this.getQualifiedName());
         map.put("upperBound", this.getUpperBound().toJson());
-        map.put("superTypes", this.getSuperTypes().stream().map(Type::toJson).toList());
         map.put("bounds", this.getBounds().stream().map(Type::toJson).toList());
         map.put("stage", this.getStage().name());
         map.put("typeDesc", this.getTypeDesc());
@@ -235,7 +226,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
         super.readBody(input, parent);
         this.genericDeclaration = (GenericDeclaration) parent;
         this.name = input.readUTF();
-        this.bounds = input.readList(input::readType);
+        this.boundIndexes = input.readList(input::readInt);
     }
 
     @Generated
@@ -243,7 +234,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
     public void writeBody(MvOutput output) {
         super.writeBody(output);
         output.writeUTF(name);
-        output.writeList(bounds, output::writeValue);
+        output.writeList(boundIndexes, output::writeInt);
     }
 
     @Override

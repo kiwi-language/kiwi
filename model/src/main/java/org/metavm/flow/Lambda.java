@@ -11,13 +11,10 @@ import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.Type;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
-import org.metavm.util.Utils;
 import org.metavm.util.StreamVisitor;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -33,15 +30,17 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     private static Klass __klass__;
     private List<Parameter> parameters = new ArrayList<>();
     private int returnTypeIndex;
-    private int typeIndex;
     private Code code;
     private Flow flow;
 
     public Lambda(Long tmpId, List<Parameter> parameters, @NotNull Type returnType, Flow flow) {
+        this(tmpId, parameters, flow.getConstantPool().addValue(returnType), flow);
+    }
+
+    public Lambda(Long tmpId, List<Parameter> parameters, int returnTypeIndex, Flow flow) {
         super(tmpId);
-        this.returnTypeIndex = flow.getConstantPool().addValue(returnType);
-        setParameters(parameters, false);
-        this.typeIndex = flow.getConstantPool().addValue(Types.getFunctionType(parameters, returnType));
+        this.returnTypeIndex = returnTypeIndex;
+        setParameters(parameters);
         this.code = new Code(this);
         this.flow = flow;
         flow.addLambda(this);
@@ -50,7 +49,6 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     @Generated
     public static void visitBody(StreamVisitor visitor) {
         visitor.visitList(visitor::visitEntity);
-        visitor.visitInt();
         visitor.visitInt();
         visitor.visitEntity();
     }
@@ -62,7 +60,14 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
 
     public void setReturnType(Type returnType) {
         this.returnTypeIndex = flow.getConstantPool().addValue(returnType);
-        resetType();
+    }
+
+    public void setReturnTypeIndex(int returnTypeIndex) {
+        this.returnTypeIndex = returnTypeIndex;
+    }
+
+    public int getReturnTypeIndex() {
+        return returnTypeIndex;
     }
 
     @Override
@@ -76,15 +81,9 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     }
 
     public void setParameters(List<Parameter> parameters) {
-        setParameters(parameters, true);
-    }
-
-    private void setParameters(List<Parameter> parameters, boolean resetType) {
         Utils.forEach(parameters, p -> p.setCallable(this));
         this.parameters.clear();
         this.parameters.addAll(parameters);
-        if (resetType)
-            resetType();
     }
 
     @Override
@@ -92,19 +91,9 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
         return Utils.findRequired(parameters, p -> p.getName().equals(name));
     }
 
-    private void resetType() {
-        typeIndex = flow.getConstantPool().addValue(new FunctionType(getParameterTypes(), getReturnType()));
-//        setOutputType(functionalInterface != null ? functionalInterface : functionType);
-    }
-
-    @Override
-    public int getTypeIndex() {
-        return typeIndex;
-    }
-
     @Override
     public FunctionType getFunctionType() {
-        return flow.getConstantPool().getFunctionType(typeIndex);
+        return getType(flow.getConstantPool());
     }
 
     @Override
@@ -172,9 +161,13 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
         code.accept(visitor);
     }
 
+    public FunctionType getType(TypeMetadata typeMetadata) {
+        return new FunctionType(getParameterTypes(typeMetadata), getReturnType());
+    }
+
     @Override
     public void forEachReference(Consumer<Reference> action) {
-        parameters.forEach(arg -> action.accept(arg.getReference()));
+        for (var parameters_ : parameters) action.accept(parameters_.getReference());
         action.accept(code.getReference());
     }
 
@@ -182,7 +175,6 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     public void buildJson(Map<String, Object> map) {
         map.put("returnType", this.getReturnType().toJson());
         map.put("parameters", this.getParameters().stream().map(Entity::getStringId).toList());
-        map.put("typeIndex", this.getTypeIndex());
         map.put("functionType", this.getFunctionType().toJson());
         map.put("ref", this.getRef().toJson());
         map.put("code", this.getCode().getStringId());
@@ -204,7 +196,7 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
 
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
-        parameters.forEach(action);
+        for (var parameters_ : parameters) action.accept(parameters_);
         action.accept(code);
     }
 
@@ -219,7 +211,6 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
         this.flow = (Flow) parent;
         this.parameters = input.readList(() -> input.readEntity(Parameter.class, this));
         this.returnTypeIndex = input.readInt();
-        this.typeIndex = input.readInt();
         this.code = input.readEntity(Code.class, this);
     }
 
@@ -228,7 +219,6 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     public void writeBody(MvOutput output) {
         output.writeList(parameters, output::writeEntity);
         output.writeInt(returnTypeIndex);
-        output.writeInt(typeIndex);
         output.writeEntity(code);
     }
 

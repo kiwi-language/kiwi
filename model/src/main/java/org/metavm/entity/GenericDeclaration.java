@@ -2,6 +2,7 @@ package org.metavm.entity;
 
 import org.metavm.api.JsonIgnore;
 import org.metavm.flow.Flow;
+import org.metavm.object.type.ConstantPool;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.util.InternalException;
 import org.metavm.util.Utils;
@@ -40,4 +41,7 @@ public interface GenericDeclaration extends Identifiable {
 
     @JsonIgnore
     GenericDeclarationRef getRef();
+
+    ConstantPool getConstantPool();
+
 }

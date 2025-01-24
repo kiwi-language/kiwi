@@ -39,10 +39,16 @@ public class Parameter extends AttributedElement implements LocalKey, ITypeDef {
                      String name,
                      Type type,
                      Callable callable) {
+        this(tmpId, name, callable.getConstantPool().addValue(type), callable);
+    }
+    public Parameter(Long tmpId,
+                      String name,
+                      int typeIndex,
+                      Callable callable) {
         setTmpId(tmpId);
         this.callable = callable;
         this.name = name;
-        typeIndex = callable.getConstantPool().addValue(type);
+        this.typeIndex =  typeIndex;
     }
 
     @Generated
@@ -68,6 +74,10 @@ public class Parameter extends AttributedElement implements LocalKey, ITypeDef {
 
     public void setType(Type type) {
         this.typeIndex = callable.getConstantPool().addValue(type);
+    }
+
+    public void setTypeIndex(int typeIndex) {
+        this.typeIndex = typeIndex;
     }
 
     public String getName() {

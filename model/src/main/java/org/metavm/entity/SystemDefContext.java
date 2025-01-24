@@ -404,6 +404,7 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         standardDefBuilder.initUserFunctions();
         buildMemoryIndex();
         standardDefBuilder.postProcess();
+        Klasses.loadKlasses(this);
         freezeKlasses();
         PrimitiveKind.initialize(this);
         StdKlass.initialize(this, false);

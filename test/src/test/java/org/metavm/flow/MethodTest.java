@@ -30,7 +30,7 @@ public class MethodTest extends TestCase {
                 testMethod
         );
         testMethod.setParameters(List.of(param));
-        Assert.assertEquals(testMethod.getInternalName(), testMethod.getInternalName(null));
+        Assert.assertEquals(testMethod.getInternalName(null), testMethod.getInternalName(null));
     }
 
 }

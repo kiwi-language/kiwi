@@ -205,7 +205,7 @@ public class TypeResolverImpl implements TypeResolver {
         var capturedTypeVar = new CapturedTypeVariable(
                 null,
                 resolveWildcardType(psiCapturedType.getWildcard(), stage),
-                resolveTypeVariable(psiCapturedType.getTypeParameter()).getVariable(),
+                resolveTypeVariable(psiCapturedType.getTypeParameter()).getVariable().getReference(),
                 method
         );
         var capturedType = capturedTypeVar.getType();

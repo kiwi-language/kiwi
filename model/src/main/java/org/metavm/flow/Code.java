@@ -293,7 +293,7 @@ public class Code extends org.metavm.entity.Entity implements Element, LocalKey 
     public void writeBody(MvOutput output) {
         output.writeInt(maxLocals);
         output.writeInt(maxStack);
-        output.writeBytes(code);
+        output.writeBytes(Objects.requireNonNull(code, () -> "Code not generated for callable: " + callable));
     }
 
     @Override

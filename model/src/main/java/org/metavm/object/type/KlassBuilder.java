@@ -29,9 +29,7 @@ public class KlassBuilder {
     private boolean struct;
     private String desc;
     private List<ClassType> interfaces = new ArrayList<>();
-    private Klass existing;
     private boolean done;
-    private Long suffix;
     private List<TypeVariable> typeParameters = List.of();
     private long tag = TypeTags.DEFAULT;
     private Integer sourceTag;
@@ -81,12 +79,6 @@ public class KlassBuilder {
         return this;
     }
 
-    public KlassBuilder temporary() {
-        ephemeral = true;
-        anonymous = true;
-        return randomSuffix();
-    }
-
     public KlassBuilder typeParameters(List<TypeVariable> typeParameters) {
         this.typeParameters = typeParameters;
         return this;
@@ -116,15 +108,6 @@ public class KlassBuilder {
         return this;
     }
 
-    public KlassBuilder randomSuffix() {
-        return suffix(Utils.randomNonNegative());
-    }
-
-    public KlassBuilder suffix(@Nullable Long suffix) {
-        this.suffix = suffix;
-        return this;
-    }
-
     public KlassBuilder typeParameters(TypeVariable... typeParameters) {
         return typeParameters(List.of(typeParameters));
     }
@@ -141,11 +124,6 @@ public class KlassBuilder {
 
     public KlassBuilder sourceTag(Integer sourceTag) {
         this.sourceTag = sourceTag;
-        return this;
-    }
-
-    public KlassBuilder existing(Klass existing) {
-        this.existing = existing;
         return this;
     }
 
@@ -187,45 +165,28 @@ public class KlassBuilder {
             isTemplate = true;
         }
         Klass klass;
-        String effectiveName = suffix != null ? name + "_" + suffix : name;
-        String effectiveCode = qualifiedName != null ? (suffix != null ? qualifiedName + "_" + suffix : qualifiedName) : null;
-        if (existing == null) {
-            klass = new Klass(
-                    tmpId,
-                    effectiveName,
-                    effectiveCode,
-                    superType,
-                    interfaces,
-                    kind,
-                    source,
-                    anonymous,
-                    ephemeral,
-                    struct,
-                    searchable,
-                    desc,
-                    isAbstract,
-                    isTemplate,
-                    enclosingFlow,
-                    declaringKlass,
-                    typeParameters,
-                    tag,
-                    sourceTag,
-                    since,
-                    maintenanceDisabled);
-        } else {
-            klass = existing;
-            existing.setName(effectiveName);
-            existing.setQualifiedName(effectiveCode);
-            existing.setSuperType(superType);
-            existing.setInterfaces(interfaces);
-            existing.setSource(source);
-            existing.setAbstract(isAbstract);
-            existing.setAnonymous(anonymous);
-            existing.setDesc(desc);
-            existing.setTypeParameters(typeParameters);
-            existing.setStruct(struct);
-            existing.setSearchable(searchable);
-        }
+        klass = new Klass(
+                tmpId,
+                name,
+                qualifiedName,
+                superType,
+                interfaces,
+                kind,
+                source,
+                anonymous,
+                ephemeral,
+                struct,
+                searchable,
+                desc,
+                isAbstract,
+                isTemplate,
+                enclosingFlow,
+                declaringKlass,
+                typeParameters,
+                tag,
+                sourceTag,
+                since,
+                maintenanceDisabled);
         klass.setAttributes(attributes);
         return klass;
     }

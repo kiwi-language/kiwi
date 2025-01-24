@@ -5,10 +5,7 @@ import org.metavm.entity.Entity;
 import org.metavm.entity.EntityMemoryIndex;
 import org.metavm.entity.EntityRepository;
 import org.metavm.entity.IndexDef;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.util.IdentitySet;
 import org.metavm.util.Utils;
 
@@ -52,6 +49,11 @@ public class MockEntityRepository implements EntityRepository {
         }
         index.save(entity);
         return entity;
+    }
+
+    @Override
+    public void updateMemoryIndex(ClassInstance entity) {
+        index.save(entity);
     }
 
     @Override

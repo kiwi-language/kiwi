@@ -1,23 +1,23 @@
 package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.classfile.ClassFileListener;
 import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.FieldChange;
 import org.metavm.ddl.FieldChangeKind;
 import org.metavm.entity.Entity;
+import org.metavm.entity.EntityRepository;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.*;
-import org.metavm.util.BusinessException;
-import org.metavm.util.DebugEnv;
-import org.metavm.util.Instances;
-import org.metavm.util.Utils;
+import org.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 @Slf4j
-public class SaveTypeBatch implements TypeDefProvider {
+public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
 
     public static SaveTypeBatch create(IInstanceContext context) {
         return new SaveTypeBatch(context);
@@ -44,6 +44,8 @@ public class SaveTypeBatch implements TypeDefProvider {
     private final Set<Klass> searchEnabledClasses = new HashSet<>();
     private final Set<Field> newStaticFields = new HashSet<>();
     private final Set<Field> removedEnumConstants = new HashSet<>();
+    private final boolean tracing = DebugEnv.traceDeployment;
+
 
     private SaveTypeBatch(IInstanceContext context) {
         this.context = context;
@@ -122,7 +124,7 @@ public class SaveTypeBatch implements TypeDefProvider {
         return modifiedEnumConstants;
     }
 
-    public IInstanceContext getContext() {
+    public EntityRepository getContext() {
         return context;
     }
 
@@ -230,10 +232,6 @@ public class SaveTypeBatch implements TypeDefProvider {
             }
         }
         for (ClassInstance enumConstant : enumConstants) {
-            if (tracing) {
-                log.trace("Applying DDL to enum constant: {}-{}",
-                        enumConstant.getInstanceKlass().getName(), enumConstant.getField("name"));
-            }
             Instances.applyDDL(
                     (MvClassInstance) enumConstant,
                     newFields,
@@ -279,5 +277,221 @@ public class SaveTypeBatch implements TypeDefProvider {
         if (DebugEnv.traceDeployment)
             log.trace("Adding removed enum constant {}", enumConstant.getQualifiedName(), new Exception());
         removedEnumConstants.add(enumConstant);
+    }
+
+    // Class file listener implementation
+
+    private record FieldInfo(Type type, MetadataState state, boolean isChild, String name, int ordinal) {
+
+        static FieldInfo fromField(Field field) {
+            return new FieldInfo(field.getType(), field.getState(), field.isChild(), field.getName(), field.getOrdinal());
+        }
+
+    }
+
+    private static class KlassInfo {
+
+        static KlassInfo fromKlass(Klass klass, @Nullable KlassInfo parent) {
+            return new KlassInfo(
+                    klass.getKind(),
+                    klass.isSearchable(),
+                    klass.getSuperType(),
+                    klass.getFields(),
+                    klass.getEnumConstants(),
+                    klass.getNextFieldTag(),
+                    klass.getNextFieldSourceCodeTag(),
+                    parent);
+        }
+
+        @Nullable KlassInfo parent;
+        private final ClassKind kind;
+        private final List<Field> fields;
+        private final List<Field> enumConstants;
+        private final ClassType superType;
+        private final boolean searchable;
+        private int nextFieldTag;
+        private int nextFieldSourceTag;
+
+        KlassInfo(ClassKind kind, boolean searchable, ClassType superType,  List<Field> fields,
+                  List<Field> enumConstants, int nextFieldTag, int nextFieldSourceTag,
+                  @Nullable KlassInfo parent) {
+            this.kind = kind;
+            this.searchable = searchable;
+            this.superType = superType;
+            this.fields = new ArrayList<>(fields);
+            this.enumConstants = new ArrayList<>(enumConstants);
+            this.nextFieldTag = nextFieldTag;
+            this.nextFieldSourceTag = nextFieldSourceTag;
+            this.parent = parent;
+        }
+
+        public static KlassInfo empty(KlassInfo klassInfo) {
+            return new KlassInfo(
+                    ClassKind.CLASS,
+                    false,
+                    null,
+                    List.of(),
+                    List.of(),
+                    0,
+                    1000000,
+                    klassInfo
+            );
+        }
+
+        int nextFieldTag() {
+            return nextFieldTag++;
+        }
+
+        int nextFieldSourceTag() {
+            return nextFieldSourceTag++;
+        }
+    }
+
+    private FieldInfo fieldInfo;
+    private KlassInfo klassInfo;
+
+    @Override
+    public void onFieldCreate(Field field) {
+        if (tracing) log.trace("New field created: {}", field.getQualifiedName());
+        context.bind(field);
+        field.initTag(Objects.requireNonNull(klassInfo).nextFieldTag());
+        if(field.getSourceTag() == null)
+            field.setSourceTag(klassInfo.nextFieldSourceTag());
+        if(field.isStatic())
+            addNewStaticField(field);
+        else if (field.getDeclaringType().isPersisted())
+            addNewField(field);
+        if (field.isEnumConstant())
+            addNewEnumConstant(field);
+    }
+
+    @Override
+    public void beforeFieldUpdate(Field field) {
+        fieldInfo = FieldInfo.fromField(field);
+    }
+
+    @Override
+    public void onFieldUpdate(Field field) {
+        var tracing = this.tracing;
+        var fieldInfo = Objects.requireNonNull(this.fieldInfo);
+        if(tracing) log.trace("Field {} updated", field.getQualifiedName());
+        if(!field.isStatic() && !field.getType().isAssignableFrom(fieldInfo.type)) {
+            addTypeChangedField(field);
+            field.changeTag(Objects.requireNonNull(klassInfo).nextFieldTag());
+        }
+        if(fieldInfo.state != field.getState()) {
+            if(fieldInfo.state == MetadataState.REMOVED) {
+                if (field.isStatic())
+                    addNewStaticField(field);
+                else {
+                    addNewField(field);
+                    if (tracing) log.trace("Resurrecting removed field {}", field.getQualifiedName());
+                }
+            }
+        }
+        if(fieldInfo.isChild != field.isChild()) {
+            if(field.isChild())
+                addToChildField(field);
+            else
+                addToNonChildField(field);
+        }
+        if (field.isEnumConstant() && (!fieldInfo.name.equals(field.getName()) || fieldInfo.ordinal != field.getOrdinal()))
+            addModifiedEnumConstant(field);
+        getContext().updateMemoryIndex(field);
+    }
+
+    @Override
+    public void onMethodRead(Method method) {
+        if(method.getParameters().isEmpty() && !method.isStatic() && method.getName().equals(Constants.RUN_METHOD_NAME))
+            addRunMethod(method);
+//        if (method.hasBody())
+//            method.getCode().rebuildNodes();
+    }
+
+    @Override
+    public void onIndexRead(Index index) {
+        if (index.isNew())
+            addNewIndex(index);
+    }
+
+    @Override
+    public void beforeKlassCreate() {
+        klassInfo = KlassInfo.empty(this.klassInfo);
+    }
+
+    @Override
+    public void onKlassCreate(Klass klass) {
+        if (tracing) log.trace("klass '{}' created", klass.getName());
+        var klassInfo = Objects.requireNonNull(this.klassInfo);
+        klass.setNextFieldTag(klassInfo.nextFieldTag);
+        klass.setNextFieldSourceCodeTag(klassInfo.nextFieldSourceTag);
+        klasses.add(klass);
+        context.updateMemoryIndex(klass);
+        if(klass.getTag() == TypeTags.DEFAULT) {
+            klass.setTag(KlassTagAssigner.getInstance(context).next());
+            if (tracing) log.trace("Assigned tag {} to klass {}", klass.getTag(), klass.getName());
+        } if(klass.getSourceTag() == null)
+            klass.setSourceTag(KlassSourceCodeTagAssigner.getInstance(context).next());
+    }
+
+    @Override
+    public void beforeKlassUpdate(Klass klass) {
+        klassInfo = KlassInfo.fromKlass(klass, klassInfo);
+        if (tracing) log.trace("Klass {} to be updated", klass.getName());
+    }
+
+    @Override
+    public void onKlassUpdate(Klass klass) {
+        var tracing = this.tracing;
+        klasses.add(klass);
+        var klassInfo = Objects.requireNonNull(this.klassInfo);
+        klass.setNextFieldTag(klassInfo.nextFieldTag);
+        klass.setNextFieldSourceCodeTag(klassInfo.nextFieldSourceTag);
+        if (tracing) log.trace("Klass '{}' updated", klass.getName());
+        var prevKind = klassInfo.kind;
+        var newKind = klass.getKind();
+        if(prevKind != newKind) {
+            if(newKind == ClassKind.VALUE)
+                addEntityToValueKlass(klass);
+            else if (prevKind == ClassKind.VALUE)
+                addValueToEntityKlass(klass);
+            if(newKind == ClassKind.ENUM) {
+                if (tracing) log.trace("Class {} changed to enum", klass.getQualifiedName());
+                addToEnumKlass(klass);
+            } else if(prevKind == ClassKind.ENUM) {
+                if (tracing) log.trace("Enum {} changed to ordinary class", klass.getQualifiedName());
+                addFromEnumKlass(klass);
+            }
+        }
+        if(!klass.isEnum() && klass.getSuperType() != null && !Objects.equals(klassInfo.superType, klass.getSuperType())) {
+            if (tracing) log.trace("Super type of {} changed from {} to {}", klass.getName(), klassInfo.superType, klass.getSuperType());
+            addChangingSuperKlass(klass);
+        } if (klass.isSearchable() && !klassInfo.searchable)
+            addSearchEnabledKlass(klass);
+        if (klass.isEnum()) {
+            var enumConstantSet = new HashSet<>(klass.getEnumConstants());
+            for (var prevEnumConstant : klassInfo.enumConstants) {
+                if (!enumConstantSet.contains(prevEnumConstant))
+                    addRemovedEnumConstant(prevEnumConstant);
+            }
+        }
+        var prevFields = klassInfo.fields;
+        if (!prevFields.isEmpty()) {
+            var fieldSet = new HashSet<>(klass.getFields());
+            for (var oldField : prevFields) {
+                if (!fieldSet.contains(oldField)) {
+                    if (oldField.isChild()) {
+                        addRemovedChildField(
+                                FieldBuilder.newBuilder(oldField.getName(), klass, oldField.getType())
+                                        .isChild(true)
+                                        .tag(oldField.getTag())
+                                        .state(MetadataState.REMOVED)
+                                        .build()
+                        );
+                    }
+                }
+            }
+        }
+        context.updateMemoryIndex(klass);
     }
 }

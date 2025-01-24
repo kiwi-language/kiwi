@@ -1,24 +1,24 @@
 package org.metavm.object.type;
 
 import org.metavm.beans.BeanDefinitionRegistry;
+import org.metavm.classfile.ClassFileReader;
 import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.flow.DeployKlassInput;
 import org.metavm.flow.Flows;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.PhysicalId;
-import org.metavm.object.instance.core.WAL;
+import org.metavm.flow.KlassInput;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.TreeDTO;
 import org.metavm.object.type.rest.dto.TreeResponse;
 import org.metavm.object.type.rest.dto.TypeTreeQuery;
 import org.metavm.object.version.VersionManager;
 import org.metavm.object.version.Versions;
-import org.metavm.util.*;
+import org.metavm.util.BusinessException;
+import org.metavm.util.ContextUtil;
+import org.metavm.util.Instances;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -147,8 +147,9 @@ public class TypeManager extends EntityContextFactoryAware {
     }
 
     private void readKlass(InputStream in, SaveTypeBatch batch) {
-        var klassIn = new DeployKlassInput(in, batch);
-        klassIn.readEntity(Klass.class, null);
+        var klassIn = new KlassInput(in, batch.getContext());
+        var reader = new ClassFileReader(klassIn, batch.getContext(), batch);
+        reader.read();
     }
 
     public String getEnumConstantId(String klassName, String enumConstantName) {

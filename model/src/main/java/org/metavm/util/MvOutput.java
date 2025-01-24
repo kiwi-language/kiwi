@@ -97,16 +97,8 @@ public abstract class MvOutput extends OutputStream {
         id.write(this);
     }
 
-    public void writeEntityId(Entity entity) {
-        writeId(entity.getId());
-    }
-
     public void writeReference(Reference reference) {
         writeId(reference.getId());
-    }
-
-    public Id getId(Entity entity) {
-        return entity.getId();
     }
 
     protected OutputStream getOut() {

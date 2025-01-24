@@ -6,7 +6,6 @@ import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
-import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.flow.CodeWriter;
 import org.metavm.flow.Flows;
@@ -55,7 +54,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
             Long tmpId,
             String name,
             Klass declaringType,
-            @NotNull Type type,
+            int typeIndex,
             Access access,
             boolean readonly,
             boolean isTransient,
@@ -74,15 +73,15 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
             MetadataState state
     ) {
         super(tmpId);
-        if(isChild && type.isPrimitive())
-            throw new BusinessException(ErrorCode.CHILD_FIELD_CAN_NOT_BE_PRIMITIVE_TYPED);
+//        if(isChild && type.isPrimitive())
+//            throw new BusinessException(ErrorCode.CHILD_FIELD_CAN_NOT_BE_PRIMITIVE_TYPED);
         this.name = NamingUtils.ensureValidName(name);
         this.declaringType = Objects.requireNonNull(declaringType);
         this._static = isStatic;
         this.access = access;
         this.state = state;
-        this.type = type;
-        this.typeIndex = declaringType.addConstant(type);
+        this.type = declaringType.getConstantPool().getType(typeIndex);
+        this.typeIndex = typeIndex;
         this.tag = tag;
         this.sourceTag = sourceTag;
         this.readonly = readonly;
@@ -96,7 +95,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
             this.column = column;
         } else {
             this.column = Objects.requireNonNull(declaringType.allocateColumn(this),
-                    "Fail to allocate a column for field " + this);
+                    () -> "Fail to allocate a column for field " + name);
         }
         setDefaultValue(defaultValue);
         this.isChild = isChild;
@@ -405,6 +404,11 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         resetTypeIndex();
     }
 
+    public void setTypeIndex(int typeIndex) {
+        this.typeIndex = typeIndex;
+        this.type = declaringType.getConstantPool().getType(typeIndex);
+    }
+
     public void resetTypeIndex() {
         typeIndex = declaringType.addConstant(type);
     }
@@ -491,6 +495,10 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         return since;
     }
 
+    public void setSince(int since) {
+        this.since = since;
+    }
+
     public void setDeclaringType(Klass declaringType) {
         this.declaringType = declaringType;
     }
@@ -504,18 +512,13 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
 
     public int getFlags() {
         int flags = 0;
-        if(_static)
-            flags |= FLAG_STATIC;
-        if(isChild)
-            flags |= FLAG_CHILD;
+        if (_static) flags |= FLAG_STATIC;
+        if (isChild) flags |= FLAG_CHILD;
 //        if(readonly)
 //            flags |= FLAG_READONLY;
-        if(isTransient)
-            flags |= FLAG_TRANSIENT;
-        if(lazy)
-            flags |= FLAG_LAZY;
-        if (isEnumConstant)
-            flags |= FLAG_ENUM_CONSTANT;
+        if (isTransient) flags |= FLAG_TRANSIENT;
+        if (lazy) flags |= FLAG_LAZY;
+        if (isEnumConstant) flags |= FLAG_ENUM_CONSTANT;
         return flags;
     }
 
@@ -537,11 +540,20 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         return initializerReference != null ? (Method) initializerReference.get() : null;
     }
 
+    @Nullable
+    public Reference getInitializerReference() {
+        return initializerReference;
+    }
+
     public void setInitializer(@Nullable Method initializer) {
         this.initializerReference = Utils.safeCall(initializer, Instance::getReference);
     }
 
-    public void initialize(@Nullable ClassInstance self,  IInstanceContext context) {
+    public void setInitializerReference(@Nullable Reference initializerReference) {
+        this.initializerReference = initializerReference;
+    }
+
+    public void initialize(@Nullable ClassInstance self, IInstanceContext context) {
         if (initializerReference != null) {
             var initializer = (Method) initializerReference.get();
             if (isStatic()) {

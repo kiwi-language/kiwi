@@ -51,8 +51,12 @@ public class IndexField extends org.metavm.entity.Entity implements LocalKey, IT
     private Value value;
 
     public IndexField(Index index, String name, Type type, @Nullable Value value) {
+        this(index, name, index.getDeclaringType().addConstant(type), value);
+    }
+
+    public IndexField(Index index, String name, int typeIndex, @Nullable Value value) {
         setName(name);
-        typeIndex = index.getDeclaringType().addConstant(type);
+        this.typeIndex = typeIndex;
         this.index = index;
         this.value = value;
         index.addField(this);
@@ -71,6 +75,14 @@ public class IndexField extends org.metavm.entity.Entity implements LocalKey, IT
 
     public Type getType(TypeMetadata typeMetadata) {
         return typeMetadata.getType(typeIndex);
+    }
+
+    public Type getType() {
+        return index.getDeclaringType().getConstantPool().getType(typeIndex);
+    }
+
+    public int getTypeIndex() {
+        return typeIndex;
     }
 
     public String getQualifiedName() {
@@ -133,6 +145,10 @@ public class IndexField extends org.metavm.entity.Entity implements LocalKey, IT
 
     public void setType(Type type) {
         typeIndex = getIndex().getDeclaringType().addConstant(type);
+    }
+
+    public void setTypeIndex(int typeIndex) {
+        this.typeIndex = typeIndex;
     }
 
     @Override

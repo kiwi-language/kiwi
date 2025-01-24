@@ -230,7 +230,7 @@ public class Declarator extends VisitorBase {
         }
         else {
             field = isStatic ? klass.findSelfStaticField(f -> Objects.equals(f.getSourceTag(), fieldTag))
-                    : klass.findSelfField(f -> Objects.equals(f.getSourceTag(), fieldTag));
+                    : klass.findSelfInstanceField(f -> Objects.equals(f.getSourceTag(), fieldTag));
         }
         var modList = requireNonNull(psiField.getModifierList());
         var isTransient = modList.hasModifierProperty(PsiModifier.TRANSIENT);
