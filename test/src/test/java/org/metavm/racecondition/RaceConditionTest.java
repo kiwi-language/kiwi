@@ -36,7 +36,7 @@ public class RaceConditionTest extends TestCase {
     }
 
     public void test() throws InterruptedException {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/asm/race_condition.masm",
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/mv/race_condition.mv",
                 typeManager, schedulerAndWorker);
         long size = (int) TestUtils.doInTransaction(() -> apiClient.callMethod("Utils", "size", List.of(
                 List.of()

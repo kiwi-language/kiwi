@@ -49,38 +49,38 @@ public class AssemblerTest extends TestCase {
     }
 
     public void testParentChild() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/ParentChild.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/ParentChild.mv");
     }
 
     public void testMyList() {
 //        assemble(List.of(source));
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/List.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/List.mv");
     }
 
     public void testShopping() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/Shopping.mv");
         // redeploy
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/Shopping.mv");
     }
 
     public void testLivingBeing() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/LivingBeing.mv");
     }
 
     public void testUtils() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/Utils.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/Utils.mv");
     }
 
     public void testGenericOverloading() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/GenericOverloading.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/GenericOverloading.mv");
     }
 
     public void testLambda() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/Lambda.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/Lambda.mv");
     }
 
     public void testCreateArray() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/CreateArray.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/CreateArray.mv");
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance("Utils")));
             var method = klass.getMethod("createArray", List.of());
@@ -92,15 +92,15 @@ public class AssemblerTest extends TestCase {
     }
 
     public void testInstanceOf() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/instanceof.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/instanceof.mv");
     }
 
     public void testUpdateField() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/update_field.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/update_field.mv");
     }
 
     public void testTreeSet() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/tree_set.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/tree_set.mv");
         var id = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("TreeSetLab", "create", List.of()));
         var elements = List.of(5,4,3,2,1);
         TestUtils.doInTransaction(() -> apiClient.callMethod(id, "addAll", List.of(elements)));
@@ -116,11 +116,11 @@ public class AssemblerTest extends TestCase {
     }
 
     public void testSwapSuper() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/swap_super_before.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/swap_super_before.mv");
         var id = saveInstance("Derived", Map.of(
                 "value1", 1, "value2", 2, "value3", 3
         ));
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/swap_super_after.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/swap_super_after.mv");
         Assert.assertEquals(
                 2,
                 callMethod(id, "getValue2", List.of())
@@ -128,13 +128,13 @@ public class AssemblerTest extends TestCase {
     }
 
     public void testCircularReference() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/circular_ref.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/circular_ref.mv");
         var id = saveInstance("Foo", Map.of());
         getObject(id);
     }
 
     public void testSmallInt() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/asm/smallint.masm");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/smallint.mv");
         var className = "SmallIntFoo";
         Assert.assertEquals((short) 3, callMethod(className, "addShorts", List.of(1, 2)));
         Assert.assertEquals(3.0, callMethod(className, "addShortAndDouble", List.of(1, 2)));

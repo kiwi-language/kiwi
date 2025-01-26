@@ -104,7 +104,7 @@
 //    }
 //
 //    private @Nullable Klass tryBuildInitializerKlass(Klass klass) {
-//        var asmFile = "/initializers/" + Objects.requireNonNull(klass.getQualifiedName()).replace('.', '/') + ".masm";
+//        var asmFile = "/initializers/" + Objects.requireNonNull(klass.getQualifiedName()).replace('.', '/') + ".mv";
 //        try(var input = Klass.class.getResourceAsStream(asmFile)) {
 //            if(input == null)
 //                return null;

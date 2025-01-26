@@ -185,7 +185,7 @@ public class MockUtils {
     }
 
     public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/Shopping.masm", typeManager, schedulerAndWorker);
+        assemble("/Users/leen/workspace/object/test/src/test/resources/mv/Shopping.mv", typeManager, schedulerAndWorker);
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var productKlass = context.getKlassByQualifiedName("Product");
@@ -226,7 +226,7 @@ public class MockUtils {
     }
 
     public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/asm/LivingBeing.masm", typeManager, schedulerAndWorker);
+        assemble("/Users/leen/workspace/object/test/src/test/resources/mv/LivingBeing.mv", typeManager, schedulerAndWorker);
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var livingBeingKlass = context.getKlassByQualifiedName("LivingBeing");
