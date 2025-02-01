@@ -26,7 +26,7 @@ public class StringBuilderNative extends NativeBase {
         return StringBuilder();
     }
 
-    public Value StringBuilder__string(Value value, CallContext callContext) {
+    public Value StringBuilder__String(Value value, CallContext callContext) {
         var sb = StringBuilder();
         append(value, callContext);
         return sb;
@@ -67,7 +67,7 @@ public class StringBuilderNative extends NativeBase {
         return append(value, callContext);
     }
 
-    public Value append__string(Value value, CallContext callContext) {
+    public Value append__String(Value value, CallContext callContext) {
         return append(value, callContext);
     }
 

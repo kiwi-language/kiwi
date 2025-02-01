@@ -36,7 +36,7 @@ public class InstanceTest extends TestCase {
     public void testBar() {
         var fooTypes = MockUtils.createFooTypes(false);
         ClassInstance instance = getBarInstance(fooTypes);
-        Assert.assertEquals(CONST_BAR_CODE, instance.getStringField(fooTypes.barCodeField()).getValue());
+        Assert.assertEquals(CONST_BAR_CODE, instance.getStringField(fooTypes.barCodeField()));
     }
 
     private ClassInstance getBarInstance(FooTypes fooTypes) {
@@ -62,9 +62,9 @@ public class InstanceTest extends TestCase {
         var fooTypes = MockUtils.createFooTypes(false);
         var foo = getFooInstance(fooTypes);
         var bar = foo.getInstanceArray(fooTypes.fooBarsField()).getFirst().resolveObject();
-        Assert.assertEquals(CONST_FOO_NAME, foo.getStringField(fooTypes.fooNameField()).getValue());
+        Assert.assertEquals(CONST_FOO_NAME, foo.getStringField(fooTypes.fooNameField()));
         Assert.assertNotNull(bar);
-        Assert.assertEquals(CONST_BAR_CODE, bar.getStringField(fooTypes.barCodeField()).getValue());
+        Assert.assertEquals(CONST_BAR_CODE, bar.getStringField(fooTypes.barCodeField()));
     }
 
     public void testChildren() {
@@ -83,7 +83,7 @@ public class InstanceTest extends TestCase {
         var bars = foo.getInstanceArray(fooTypes.fooBarsField());
         var bar = bars.getInstance(0).resolveObject();
         Assert.assertEquals(1, bars.length());
-        Assert.assertEquals(CONST_BAR_CODE, bar.getStringField(fooTypes.barCodeField()).getValue());
+        Assert.assertEquals(CONST_BAR_CODE, bar.getStringField(fooTypes.barCodeField()));
     }
 
 

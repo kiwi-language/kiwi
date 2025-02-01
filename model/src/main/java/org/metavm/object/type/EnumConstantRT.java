@@ -24,7 +24,7 @@ public class EnumConstantRT {
     }
 
     public String getName() {
-        return instance.getStringField(Types.getEnumNameField(instance.getInstanceKlass())).getValue();
+        return instance.getStringField(Types.getEnumNameField(instance.getInstanceKlass()));
     }
 
     public int getOrdinal() {

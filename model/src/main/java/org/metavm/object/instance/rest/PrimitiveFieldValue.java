@@ -28,10 +28,6 @@ public class PrimitiveFieldValue extends FieldValue {
         this.value = value;
     }
 
-    public static PrimitiveFieldValue createString(String value) {
-        return new PrimitiveFieldValue(value, PrimitiveKind.STRING.code(), value);
-    }
-
     public static PrimitiveFieldValue createLong(long value) {
         return new PrimitiveFieldValue(Long.toString(value), PrimitiveKind.LONG.code(), value);
     }

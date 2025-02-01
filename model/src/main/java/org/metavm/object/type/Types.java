@@ -372,7 +372,7 @@ public class Types {
     }
 
     public static boolean isString(Type type) {
-        return type instanceof PrimitiveType primitiveType && primitiveType.getKind() == PrimitiveKind.STRING;
+        return type.isString();
     }
 
     public static boolean isPassword(Type type) {
@@ -525,7 +525,6 @@ public class Types {
                 case BOOLEAN -> Boolean.class;
                 case LONG -> Long.class;
                 case INT -> Integer.class;
-                case STRING -> String.class;
                 case TIME -> Date.class;
                 case VOID -> Void.class;
                 case PASSWORD -> Password.class;
@@ -632,8 +631,8 @@ public class Types {
         return PrimitiveType.charType;
     }
 
-    public static PrimitiveType getStringType() {
-        return PrimitiveType.stringType;
+    public static ClassType getStringType() {
+        return StdKlass.string.type();
     }
 
     public static PrimitiveType getTimeType() {

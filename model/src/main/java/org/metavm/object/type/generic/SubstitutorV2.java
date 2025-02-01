@@ -89,6 +89,11 @@ public class SubstitutorV2 extends ElementVisitor<Element> {
     }
 
     @Override
+    public Element visitStringType(StringType type) {
+        return type;
+    }
+
+    @Override
     public Element visitKlassType(KlassType type) {
         return KlassType.create(
                 (GenericDeclarationRef) Utils.safeCall(type.getOwner(), k -> k.accept(this)),

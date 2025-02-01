@@ -51,8 +51,6 @@ public class SubstitutorV2Test extends TestCase {
             Nodes.setField(valueField.getRef(), code);
             Nodes.voidRet(code);
         }
-
-        var stringType = PrimitiveType.stringType;
     }
 
 }

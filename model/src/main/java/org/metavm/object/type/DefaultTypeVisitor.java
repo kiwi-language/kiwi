@@ -12,6 +12,11 @@ public abstract class DefaultTypeVisitor<R, S> implements TypeVisitor<R, S> {
     }
 
     @Override
+    public R visitStringType(StringType type, S s) {
+        return visitKlassType(type, s);
+    }
+
+    @Override
     public R visitArrayType(ArrayType type, S s) {
         return visitType(type, s);
     }

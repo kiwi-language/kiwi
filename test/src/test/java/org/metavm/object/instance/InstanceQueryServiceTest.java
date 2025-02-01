@@ -50,7 +50,7 @@ public class InstanceQueryServiceTest extends TestCase {
                 .fields(
                         InstanceQueryField.create(
                                 fooNameField,
-                                foo.getStringField(fooNameField)
+                                foo.getField(fooNameField)
                         ),
                         InstanceQueryField.create(fooQuxField, qux),
                         InstanceQueryField.create(fooBazListField, baz)

@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.NotNull;
+import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.expression.antlr.MetaVMLexer;
 import org.metavm.expression.antlr.MetaVMParser;
@@ -295,7 +296,7 @@ public class ExpressionParser {
         if(ctx.BOOLEAN() != null)
             return PrimitiveType.booleanType;
         if(ctx.STRING() != null)
-            return PrimitiveType.stringType;
+            return StdKlass.string.type();
         if (ctx.INT() != null)
             return PrimitiveType.intType;
         if(ctx.LONG() != null)

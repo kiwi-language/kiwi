@@ -45,9 +45,9 @@ public class ConstantExpression extends Expression {
     @Override
     public String buildSelf(VarType symbolType, boolean relaxedCheck) {
         return switch (value) {
-            case StringValue stringInstance -> "\"" + Utils.escape(stringInstance.getValue()) + "\"";
             case CharValue charValue -> "'" + Utils.escape(charValue.getValue()) + "'";
             case PrimitiveValue primitiveValue -> primitiveValue.getValue() + "";
+            case StringReference s -> "\"" + Utils.escape(s.getValue()) + "\"";
             case Reference d -> {
                 if (relaxedCheck)
                     yield  Constants.ID_PREFIX + Utils.orElse(d.getStringId(), "<uninitializedId>");
@@ -71,10 +71,6 @@ public class ConstantExpression extends Expression {
     @Override
     protected Value evaluateSelf(EvaluationContext context) {
         return value;
-    }
-
-    public boolean isString() {
-        return value instanceof StringValue;
     }
 
     @Override
@@ -114,7 +110,6 @@ public class ConstantExpression extends Expression {
         map.put("value", this.getValue().toJson());
         map.put("type", this.getType().toJson());
         map.put("components", this.getComponents().stream().map(Expression::toJson).toList());
-        map.put("string", this.isString());
         map.put("variableComponent", this.getVariableComponent().toJson());
         map.put("constantComponent", this.getConstantComponent().toJson());
         map.put("fieldComponent", this.getFieldComponent().toJson());

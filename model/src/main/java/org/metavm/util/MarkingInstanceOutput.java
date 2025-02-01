@@ -15,6 +15,8 @@ public class MarkingInstanceOutput extends InstanceOutput {
     private final ByteArrayOutputStream bout;
     private @Nullable Block lastBlock;
     private boolean defaultWriting;
+    private int depth;
+
 
     public MarkingInstanceOutput() {
         this(new ByteArrayOutputStream());
@@ -48,15 +50,17 @@ public class MarkingInstanceOutput extends InstanceOutput {
     }
 
     private void enterValue() {
-        insertBytesSectionIfRequired();
-        if(lastBlock instanceof ValueBlock valueSection)
-            valueSection.incrementCount();
-        else
-            addBlock(new ValueBlock());
+        if (depth++ == 0) {
+            insertBytesSectionIfRequired();
+            if (lastBlock instanceof ValueBlock valueSection)
+                valueSection.incrementCount();
+            else
+                addBlock(new ValueBlock());
+        }
     }
 
     private void exitValue() {
-        lastValueEnd = size();
+        if (--depth == 0) lastValueEnd = size();
     }
 
     public void insertBytesSectionIfRequired() {

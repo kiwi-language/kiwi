@@ -37,7 +37,10 @@ public class PersistenceUtils {
 
     public static void forEachIndexEntries(Instance instance, long appId, Consumer<IndexEntryPO> action,
                                            Consumer<IndexEntryPO> actionForUnique) {
-        ((ClassType) instance.getInstanceType()).foreachIndex(index -> forEachIndexEntries(index, instance, appId, action, actionForUnique));
+        var type = ((ClassType) instance.getInstanceType());
+        type.foreachIndex(
+                index -> forEachIndexEntries(index, instance, appId, action, actionForUnique)
+        );
     }
 
     private static void forEachIndexEntries(IndexRef index, Instance instance,

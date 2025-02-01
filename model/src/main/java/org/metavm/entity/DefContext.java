@@ -11,21 +11,13 @@ import javax.annotation.Nullable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static org.metavm.object.type.ResolutionStage.DEFINITION;
 import static org.metavm.object.type.ResolutionStage.INIT;
 
 @Slf4j
 public abstract class DefContext implements IInstanceContext, TypeRegistry {
-
-    public static final Map<Class<?>, Class<?>> BOX_CLASS_MAP = Map.ofEntries(
-            Map.entry(Byte.class, Integer.class),
-            Map.entry(Short.class, Integer.class)
-    );
 
     public DefContext() {
     }
@@ -59,7 +51,7 @@ public abstract class DefContext implements IInstanceContext, TypeRegistry {
     }
 
     public org.metavm.object.type.Type getType(Type javaType) {
-        var type = Types.getPrimitiveType(javaType);
+        var type = getPrimitiveType(javaType);
         if (type != null)
             return type;
         if (javaType instanceof Class<?> k && (Value.class == k || Reference.class == k))
@@ -126,6 +118,42 @@ public abstract class DefContext implements IInstanceContext, TypeRegistry {
     @Override
     public long count(EntityIndexQuery<?> query) {
         return 0;
+    }
+
+    public static @javax.annotation.Nullable org.metavm.object.type.Type getPrimitiveType(java.lang.reflect.Type javaType) {
+        if (javaType instanceof Class<?> javaClass) {
+            if (javaClass == Object.class)
+                return AnyType.instance;
+            if (javaClass == Never.class)
+                return NeverType.instance;
+//            if (javaClass == String.class)
+//                return PrimitiveType.stringType;
+            if (javaClass == long.class)
+                return PrimitiveType.longType;
+            if( javaClass == int.class)
+                return PrimitiveType.intType;
+            if (javaClass == short.class)
+                return PrimitiveType.shortType;
+            if (javaClass == byte.class)
+                return PrimitiveType.byteType;
+            if (javaClass == char.class)
+                return PrimitiveType.charType;
+            if (javaClass == boolean.class)
+                return PrimitiveType.booleanType;
+            if (javaClass == double.class)
+                return PrimitiveType.doubleType;
+            if (javaClass == float.class)
+                return PrimitiveType.floatType;
+            if (javaClass == void.class)
+                return PrimitiveType.voidType;
+            if (javaClass == Password.class)
+                return PrimitiveType.passwordType;
+            if (javaClass == Date.class)
+                return PrimitiveType.timeType;
+            if (javaClass == Null.class)
+                return NullType.instance;
+        }
+        return null;
     }
 
 }

@@ -62,7 +62,7 @@ public class MvObjectOutputStream extends ObjectOutputStream implements NativeEp
     }
 
     public Value writeUTF(Value str, CallContext callContext) {
-        out.writeUTF(((StringValue) str).value);
+        out.writeUTF((Instances.toJavaString(str)));
         return Instances.nullInstance();
     }
 

@@ -1198,7 +1198,27 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processPrimitiveCompare() {
         var className = "primitives.PrimitiveCompareFoo";
         Assert.assertEquals(1, callMethod(className, "compareString", List.of("b", "a")));
+        Assert.assertEquals(1, callMethod(className, "compareByte", List.of(2, 1)));
+        Assert.assertEquals(1, callMethod(className, "compareShort", List.of(2, 1)));
+        Assert.assertEquals(1, callMethod(className, "compareInt", List.of(2, 1)));
+        Assert.assertEquals(1, callMethod(className, "compareLong", List.of(2, 1)));
+        Assert.assertEquals(1, callMethod(className, "compareFloat", List.of(2, 1)));
+        Assert.assertEquals(1, callMethod(className, "compareDouble", List.of(2, 1)));
         Assert.assertEquals(1, callMethod(className, "compareChar", List.of('b', 'a')));
+        Assert.assertEquals(1, callMethod(className, "compareBoolean", List.of(true, false)));
+        assertEquals((byte) 1, callMethod(className, "toByte", List.of(1)));
+        assertEquals((byte) 1, callMethod(className, "toByte", List.of((byte) 1)));
+        assertEquals((short) 1, callMethod(className, "toShort", List.of(1)));
+        assertEquals((short) 1, callMethod(className, "toShort", List.of((short) 1)));
+        assertEquals(1, callMethod(className, "toInt", List.of(1)));
+        assertEquals(1L, callMethod(className, "toLong", List.of(1)));
+        assertEquals(1L, callMethod(className, "toLong", List.of(1L)));
+        assertEquals(1f, callMethod(className, "toFloat", List.of(1)));
+        assertEquals(1f, callMethod(className, "toFloat", List.of(1f)));
+        assertEquals(1d, callMethod(className, "toDouble", List.of(1)));
+        assertEquals(1d, callMethod(className, "toDouble", List.of(1.0)));
+        assertEquals('a', callMethod(className, "toChar", List.of('a')));
+        assertEquals(true, callMethod(className, "toBoolean", List.of(true)));
     }
 
     private void processCharSequence() {

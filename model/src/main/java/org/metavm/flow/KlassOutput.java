@@ -6,6 +6,7 @@ import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.MvOutput;
 
 import java.io.OutputStream;
@@ -21,6 +22,7 @@ public class KlassOutput extends MvOutput {
 
     @Override
     public void writeReference(Reference reference) {
+        var tracing = DebugEnv.traceClassFileIO;
         var entity = reference.resolveDurable();
         switch (entity) {
             case Klass klass -> {
@@ -38,7 +40,9 @@ public class KlassOutput extends MvOutput {
                 write(SymbolRefs.METHOD);
                 writeReference(method.getDeclaringType().getReference());
 //                writeUTF(method.getInternalName(null));
-                writeInt(method.getDeclaringType().getMethods().indexOf(method));
+                int index = method.getDeclaringType().getMethods().indexOf(method);
+                if (tracing) log.trace("Writing method {} with index {}", method.getQualifiedName(), index);
+                writeInt(index);
             }
             case Field field -> {
                 write(SymbolRefs.FIELD);

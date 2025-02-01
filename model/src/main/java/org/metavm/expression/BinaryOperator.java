@@ -8,6 +8,7 @@ import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.query.OperatorTypes;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.Types;
+import org.metavm.util.ContextUtil;
 import org.metavm.util.Instances;
 import org.metavm.util.Utils;
 
@@ -120,7 +121,9 @@ public enum BinaryOperator {
     EQ(11, "=", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public Value evaluate(Value first, Value second) {
-            return Instances.booleanInstance(first.equals(second));
+            return Instances.booleanInstance(
+                    Instances.equals(first, second, ContextUtil.getEntityContext())
+            );
         }
 
         @Override
@@ -142,13 +145,13 @@ public enum BinaryOperator {
     STARTS_WITH(13, "starts with", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanValue evaluate(Value first, Value second) {
-            return first.toStringInstance().startsWith(second.toStringInstance());
+            return Instances.booleanInstance(Instances.toJavaString(first.toStringInstance()).startsWith(Instances.toJavaString(second.toStringInstance())));
         }
     },
     LIKE(14, "like", 6, OperatorTypes.BINARY, Types.getBooleanType()) {
         @Override
         public BooleanValue evaluate(Value first, Value second) {
-            return first.toStringInstance().contains(second.toStringInstance());
+            return Instances.booleanInstance(Instances.toJavaString(first.toStringInstance()).contains(Instances.toJavaString(second.toStringInstance())));
         }
     },
     IN(15, "in", 6, OperatorTypes.BINARY, Types.getBooleanType()) {

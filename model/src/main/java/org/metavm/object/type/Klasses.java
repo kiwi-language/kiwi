@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.Instances;
 
@@ -8,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 public class Klasses {
 
     public static void loadKlasses(IInstanceContext context) {

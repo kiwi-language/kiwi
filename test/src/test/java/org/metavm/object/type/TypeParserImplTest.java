@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.junit.Assert;
 import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.Entity;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.FunctionBuilder;
 import org.metavm.flow.FunctionRef;
 import org.metavm.flow.MethodBuilder;
@@ -22,6 +23,11 @@ import java.util.function.Supplier;
 
 @Slf4j
 public class TypeParserImplTest extends TestCase {
+
+    @Override
+    protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
+    }
 
     public void testFunctionType() {
         var type = TypeParser.parseType("()->any", id -> {
@@ -139,6 +145,7 @@ public class TypeParserImplTest extends TestCase {
                 .build();
         TestUtils.initEntityIds(func);
         var map = getEntityMap(func);
+        map.put(StdKlass.string.get().getId(), StdKlass.string.get());
 
         var pFunc = new FunctionRef(func, List.of(Types.getStringType()));
         Assert.assertEquals(1, pFunc.getRawFlow().getTypeParameters().size());
@@ -164,7 +171,10 @@ public class TypeParserImplTest extends TestCase {
     public void testParType() {
         var type = new ArrayType(new UnionType(Set.of(Types.getNullType(), Types.getStringType())), ArrayKind.READ_WRITE);
         var expr = type.toExpression();
-        TypeDefProvider typeDefProvider = (Id id) -> {throw new UnsupportedOperationException();};
+        TypeDefProvider typeDefProvider = (Id id) -> {
+            if (StdKlass.string.get().idEquals(id)) return StdKlass.string.get();
+            throw new UnsupportedOperationException();
+        };
         var parser = new TypeParserImpl(typeDefProvider);
         var parsedType = parser.parseType(expr);
         Assert.assertEquals(type, parsedType);

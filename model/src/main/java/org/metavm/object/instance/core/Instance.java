@@ -71,7 +71,7 @@ public interface Instance extends Message, Identifiable {
         if (isRemoved())
             throw new InternalException(String.format("Instance %s is already removed", this));
         if (DebugEnv.traceInstanceRemoval)
-            log.debug("Removing instance {} {}", this, tryGetId(), new Exception());
+            log.trace("Removing instance {} {}", this, tryGetId(), new Exception());
         state().setRemoved();
     }
 

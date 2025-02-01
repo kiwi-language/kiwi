@@ -80,13 +80,15 @@ public class Compiler {
             new CompileStage(
                     file -> true,
                     file -> {
-                        resolveQnAndActivity(file);
+//                        resolveQnAndActivity(file);
                         file.accept(new VarargsTransformer());
-                        resolveQnAndActivity(file);
+//                        resolveQnAndActivity(file);
                         file.accept(new NullSwitchCaseAppender());
                         file.accept(new DefaultSwitchCaseAppender());
-                        resolveQnAndActivity(file);
+//                        resolveQnAndActivity(file);
                         file.accept(new StringConcatTransformer());
+                        file.accept(new MethodReferenceTransformer());
+                        file.accept(new BoxingTransformer());
                         file.accept(new UnboxingTransformer());
                         file.accept(new ExplicitTypeWideningTransformer());
                     }

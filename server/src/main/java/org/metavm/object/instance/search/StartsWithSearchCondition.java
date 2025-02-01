@@ -1,14 +1,13 @@
 package org.metavm.object.instance.search;
 
-import org.metavm.object.instance.core.StringValue;
 import org.metavm.object.instance.core.Value;
+import org.metavm.util.Instances;
 
 import java.util.Map;
-import java.util.Objects;
 
 public record StartsWithSearchCondition(
         String field,
-        StringValue value
+        Value value
 ) implements SearchCondition {
 
     @Override
@@ -18,7 +17,7 @@ public record StartsWithSearchCondition(
 
     @Override
     public boolean evaluate(Map<String, Value> source) {
-        return source.get(field) instanceof StringValue str && str.value.startsWith(value.value);
+        return Instances.toJavaString(source.get(field)).startsWith(Instances.toJavaString(value));
     }
 
 }

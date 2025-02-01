@@ -6,6 +6,8 @@ public interface TypeVisitor<R,S> {
 
     R visitKlassType(KlassType type, S s);
 
+    R visitStringType(StringType type, S s);
+
     R visitArrayType(ArrayType type, S s);
 
     R visitUnionType(UnionType type, S s);

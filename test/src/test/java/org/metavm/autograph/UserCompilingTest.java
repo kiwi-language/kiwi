@@ -1,5 +1,6 @@
 package org.metavm.autograph;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.application.rest.dto.ApplicationCreateRequest;
 import org.metavm.object.instance.core.Id;
@@ -15,6 +16,7 @@ import java.util.Map;
 import static java.util.Objects.requireNonNull;
 import static org.metavm.util.TestUtils.doInTransaction;
 
+@Slf4j
 public class UserCompilingTest extends CompilerTestBase {
 
     public static final Logger logger = LoggerFactory.getLogger(UserCompilingTest.class);
@@ -101,7 +103,6 @@ public class UserCompilingTest extends CompilerTestBase {
                 // create an UserApplication by invoking the UserApplication.create method
                 var applicationId = (String) callMethod(userApplicationKlass, "create",
                         List.of("lab", platformUserId));
-                DebugEnv.stringId = applicationId;
                 var application = getObject(applicationId);
                 var reloadedPlatformUser = getObject(platformUserId);
                 var joinedApplications = reloadedPlatformUser.getArray("applications");

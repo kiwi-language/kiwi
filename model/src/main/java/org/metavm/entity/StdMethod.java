@@ -32,9 +32,11 @@ public enum StdMethod implements ValueHolderOwner<Method> {
     collectionContains(Collection.class, "contains", List.of(Object.class)),
     outputStreamWrite(OutputStream.class, "write", List.of(int.class)),
     objectOutputStreamWriteObject(ObjectOutputStream.class, "writeObject", List.of(Object.class)),
+    objectOutputStreamWriteUTF(ObjectOutputStream.class, "writeUTF", List.of(String.class)),
     objectInputStreamReadObject(ObjectInputStream.class, "readObject", List.of()),
-    enumOrdinal(Enum.class, "ordinal", List.of())
-
+    objectInputStreamReadUTF(ObjectInputStream.class, "readUTF", List.of()),
+    enumOrdinal(Enum.class, "ordinal", List.of()),
+    stringEquals(String.class, "equals", List.of(Object.class)),
     ;
 
     private final Class<?> javaClass;

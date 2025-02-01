@@ -29,7 +29,7 @@ public class SearchBuilderTest extends TestCase {
                 List.of(
                     new StartsWithSearchCondition(
                             fooTypes.fooNameField().getColumn().name(),
-                            foo.getStringField(fooTypes.fooNameField())
+                            foo.getField(fooTypes.fooNameField())
                     ),
                     new MatchSearchCondition(
                             fooTypes.fooQuxField().getColumn().name(), qux.getReference()

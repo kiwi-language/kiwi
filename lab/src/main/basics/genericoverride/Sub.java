@@ -6,7 +6,7 @@ public class Sub extends Base {
     public <T> boolean containsAny(Iterable<? extends T> iterable, Iterable<? extends T> values) {
         for (T t : iterable) {
             for (T value : values) {
-               if(value == t)
+               if(value.equals(t))
                    return true;
             }
         }

@@ -13,6 +13,8 @@ public class IntValue extends NumberValue {
 
     public static final IntValue one = new IntValue(1);
 
+    public static final IntValue minusOne = new IntValue(-1);
+
     public final int value;
 
     public IntValue(int value) {

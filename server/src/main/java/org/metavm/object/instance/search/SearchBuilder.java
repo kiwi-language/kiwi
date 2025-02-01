@@ -6,7 +6,6 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.metavm.constant.FieldNames;
 import org.metavm.expression.*;
 import org.metavm.object.instance.core.NumberValue;
-import org.metavm.object.instance.core.StringValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -69,7 +68,7 @@ public class SearchBuilder {
             Value constValue = constExpr.getValue();
             SearchField searchField = getColumn(fieldExpr);
             if (func == Func.STARTS_WITH)
-                return new StartsWithSearchCondition(searchField.name(), (StringValue) constValue);
+                return new StartsWithSearchCondition(searchField.name(), constValue);
             else
                 return new MatchSearchCondition(searchField.fuzzyName(), constValue);
         } else {

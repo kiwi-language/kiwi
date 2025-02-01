@@ -117,7 +117,14 @@ public class ListNative extends IterableNative {
     }
 
     public Value remove(Value instance, CallContext callContext) {
-        return Instances.intInstance(array.remove(instance));
+        var it = array.iterator();
+        while (it.hasNext()) {
+            if (Instances.equals(it.next(), instance, callContext)) {
+                it.remove();
+                return Instances.one();
+            }
+        }
+        return Instances.zero();
     }
 
     public Value removeAt(Value index, CallContext callContext) {
@@ -125,7 +132,11 @@ public class ListNative extends IterableNative {
     }
 
     public Value contains(Value value, CallContext callContext) {
-        return Instances.intInstance(array.contains(value));
+        for (Value e : array) {
+            if (Instances.equals(e, value, callContext))
+                return Instances.one();
+        }
+        return Instances.zero();
     }
 
     public Value clear(CallContext callContext) {

@@ -18,6 +18,7 @@ import org.metavm.http.HttpCookieImpl;
 import org.metavm.http.HttpHeaderImpl;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
+import org.metavm.object.instance.core.StringInstance;
 import org.metavm.object.type.*;
 import org.metavm.util.DummyAny;
 import org.metavm.util.IteratorImpl;
@@ -109,7 +110,16 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     mvObjectOutputStream(MvObjectOutputStream.class, false, MvObjectOutputStreamNative.class),
     mvObjectInputStream(MvObjectInputStream .class, false, MvObjectInputStreamNative.class),
     httpCookieImpl(HttpCookieImpl.class),
-    httpHeaderImpl(HttpHeaderImpl.class)
+    httpHeaderImpl(HttpHeaderImpl.class),
+    byte_(Byte.class, false, ByteNative.class),
+    short_(Short.class, false, ShortNative.class),
+    integer(Integer.class, false, IntegerNative.class),
+    long_(Long.class, false, LongNative.class),
+    float_(Float.class, false, FloatNative.class),
+    double_(Double.class, false, DoubleNative.class),
+    character(Character.class, false, CharacterNative.class),
+    boolean_(Boolean.class, false, BooleanNative.class),
+    string(String.class, false, StringInstance.class),
     ;
 
     private final Class<?> javaClass;
@@ -159,7 +169,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
         return get().getType();
     }
 
-    void set(Klass klass) {
+    public void set(Klass klass) {
         klass.setNativeClass(nativeClass);
         klassHolder.set(klass);
     }

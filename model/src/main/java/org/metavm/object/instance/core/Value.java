@@ -39,7 +39,7 @@ public interface Value {
         return getValueType().isPassword();
     }
 
-    default StringValue toStringInstance() {
+    default Value toStringInstance() {
         return Instances.stringInstance(getTitle());
     }
 

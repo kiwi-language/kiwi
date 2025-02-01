@@ -1,13 +1,12 @@
 package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.Attribute;
-import org.metavm.entity.Entity;
-import org.metavm.entity.EntityRepository;
-import org.metavm.entity.GenericDeclaration;
+import org.metavm.entity.*;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.Instances;
 import org.metavm.util.MvInput;
 import org.metavm.util.Utils;
@@ -81,14 +80,19 @@ public class KlassInput extends MvInput {
 
     @Override
     public Reference readReference() {
+        var tracing = DebugEnv.traceClassFileIO;
         var refType = read();
         return switch (refType) {
             case SymbolRefs.KLASS -> {
                 var qualName = readUTF();
                 yield new Reference(
                         TmpId.random(),
-                        () -> Objects.requireNonNull(repository.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(qualName)),
-                                () -> "Cannot find klass '" + qualName + "'")
+                        () -> {
+                            var klass = Objects.requireNonNull(repository.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(qualName)),
+                                    () -> "Cannot find klass '" + qualName + "'");
+                            if (tracing) log.trace("Resolved class klass {} for name {}", klass.getQualifiedName(), qualName);
+                            return klass;
+                        }
                 );
             }
             case SymbolRefs.ENCLOSED_KLASS -> {

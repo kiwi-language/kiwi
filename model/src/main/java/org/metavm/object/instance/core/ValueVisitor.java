@@ -42,10 +42,6 @@ public abstract class ValueVisitor<R> {
         return visitValue(value);
     }
 
-    public R visitStringValue(StringValue value) {
-        return visitPrimitiveValue(value);
-    }
-
     public R visitDoubleValue(DoubleValue value) {
         return visitNumberValue(value);
     }

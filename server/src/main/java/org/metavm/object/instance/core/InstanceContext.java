@@ -128,7 +128,7 @@ public class InstanceContext extends BufferingInstanceContext {
             forEach(instance -> {
                 if (instance instanceof MvInstance mvInst) {
                     mvInst.forEachReference((r, isChild) -> {
-                        if (!isChild && r.isResolved() && r.resolveMv().isRemoving()) {
+                        if (!isChild && r.isResolved() && r.resolveDurable() instanceof MvInstance mv && mv.isRemoving()) {
                             if (!commit.isCancelled()) {
                                 commit.cancel();
                             }
@@ -654,8 +654,7 @@ public class InstanceContext extends BufferingInstanceContext {
         forEach(instance -> {
             if(instance instanceof MvInstance mvInst && !instance.isEphemeral() && !instance.isRemoved()) {
                 mvInst.transformReference((r, isChild) -> {
-                    if(r.isValueReference() && !isChild) {
-                        var v = r.resolveMv();
+                    if(r.isValueReference() && !isChild && r.resolveDurable() instanceof MvInstance v) {
                         if(v.isDetachedValue())
                             return v.copy().getReference();
                     }

@@ -2,6 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.entity.StdMethod;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
@@ -1393,7 +1394,6 @@ public class MethodGenerator {
             case FLOAT -> createLoadFloatType();
             case DOUBLE -> createLoadDoubleType();
             case BOOLEAN -> createLoadBooleanType();
-            case STRING -> createLoadStringType();
             case PASSWORD -> createLoadPasswordType();
             case TIME -> createLoadTimeType();
         };
@@ -1516,6 +1516,11 @@ public class MethodGenerator {
             ifNodes.add(processTypeTesPattern((PsiTypeTestPattern) patternGuard.getPattern(), keyVar, keyType));
             expressionResolver.resolve(patternGuard.getGuardingExpression());
             ifNodes.add(createIfEq(null));
+        } else if (keyType.getUnderlyingType().equals(Types.getStringType())) {
+            createLoad(keyVar, keyType);
+            expressionResolver.resolve((PsiExpression) c);
+            createInvokeSpecial(StdMethod.stringEquals.get().getRef());
+            ifNodes = List.of(createIfEq(null));
         } else {
             createLoad(keyVar, keyType);
             expressionResolver.resolve((PsiExpression) c);
@@ -1556,7 +1561,7 @@ public class MethodGenerator {
         var keyType = typeResolver.resolveDeclaration(keyExpr.getType());
         var matches = getSwitchMatches(cases, keyType);
         var low = matches.isEmpty() ? 0 :matches.getFirst();
-        var high = matches.isEmpty() ? -1 : matches.get(matches.size() - 1);
+        var high = matches.isEmpty() ? -1 : matches.getLast();
         expressionResolver.resolve(keyExpr);
         createStore(keyVar);
         createLoadSwitchKey(cases, keyVar, keyType);

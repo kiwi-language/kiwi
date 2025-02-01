@@ -108,6 +108,8 @@ public class NativeMethods {
     public static Object getNativeObject(ClassInstance instance) {
         if (instance instanceof Entity || instance instanceof NativeEphemeralObject)
             return instance;
+        else if (instance instanceof StringInstance s)
+            return s;
         else if (instance instanceof MvClassInstance mvInst) {
             var nativeObject = mvInst.getNativeObject();
             if (nativeObject == null) {

@@ -3,10 +3,8 @@ package org.metavm.entity;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Generated;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.*;
@@ -93,6 +91,12 @@ public class EntityMemoryIndex {
         return (SubIndex<T>) indices.computeIfAbsent(def, SubIndex::new);
     }
 
+    public void clear() {
+        entities.clear();
+        typeIndex.clear();
+        indices.clear();
+    }
+
     private static class SubIndex<T extends Entity> {
 
         private final IdentityHashMap<Object, List<Key>> object2keys = new IdentityHashMap<>();
@@ -155,6 +159,11 @@ public class EntityMemoryIndex {
         }
 
         public void save(T object) {
+            var tracing = DebugEnv.traceMemoryIndex;
+            if (tracing) {
+                if (object instanceof Klass klass)
+                    log.trace("Indexing class {}", klass.getQualifiedName());
+            }
             remove(object);
             var keys = getKey(object);
             object2keys.put(object, keys);
@@ -281,6 +290,8 @@ public class EntityMemoryIndex {
                         return -1;
                     if (v2 == null)
                         return 1;
+                    if (v1 instanceof StringReference s1 && v2 instanceof StringReference s2)
+                        return s1.compareTo(s2);
                     if (v1 instanceof Reference e1 && v2 instanceof Reference e2) {
                         if (e1.tryGetId() != null && e2.tryGetId() != null)
                             return Objects.compare(e1.tryGetId(), e2.tryGetId(), Id::compareTo);

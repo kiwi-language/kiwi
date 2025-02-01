@@ -592,12 +592,12 @@ public class Assembler {
                     nameParam = new Parameter(
                             Utils.randomNonNegative(),
                             "_name",
-                            PrimitiveType.stringType,
+                            StdKlass.string.type(),
                             method
                     );
                 }
                 else
-                    nameParam.setType(PrimitiveType.stringType);
+                    nameParam.setType(StdKlass.string.type());
                 parameters.add(nameParam);
                 var ordinalParam = method.findParameter(p -> p.getName().equals("_ordinal"));
                 if (ordinalParam == null) {
@@ -700,7 +700,7 @@ public class Assembler {
                 classInfo.visitedIndices.add(index);
                 var indexF = index;
                 var keyType = method.getReturnType();
-                if(keyType instanceof KlassType ct && ct.isValueType()) {
+                if(keyType instanceof KlassType ct && ct.isValueType() && !ct.isString()) {
                     ct.forEachField(field -> {
                         if (!field.isStatic() && !field.isTransient()) {
                             var indexField = Utils.find(indexF.getFields(), f -> Objects.equals(f.getName(), field.getName()));
@@ -1133,7 +1133,7 @@ public class Assembler {
         else if (primitiveType.BOOLEAN() != null)
             return PrimitiveType.booleanType;
         else if (primitiveType.STRING() != null)
-            return PrimitiveType.stringType;
+            return StdKlass.string.type();
         else if (primitiveType.PASSWORD() != null)
             return PrimitiveType.passwordType;
         else if (primitiveType.TIME() != null)

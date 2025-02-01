@@ -57,7 +57,7 @@ public class LambdaNode extends Node {
     }
 
     public Lambda getLambda() {
-        return (Lambda) lambda.resolveObject();
+        return lambda.getRawLambda();
     }
 
     @Override

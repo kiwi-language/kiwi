@@ -36,16 +36,20 @@ public class ClassFileReader {
     }
 
     public Klass readKlass(@Nullable KlassDeclaration parent) {
+        var tracing = this.tracing;
         var sourceTag = input.readNullable(input::readInt);
         var name = input.readUTF();
         var qualName = input.readNullable(input::readUTF);
+        if (tracing) log.trace("Reading class {}", qualName != null ? qualName : name);
         Klass existing;
         if (sourceTag != null)
             existing = repository.selectFirstByKey(Klass.UNIQUE_SOURCE_TAG, Instances.intInstance(sourceTag));
         else if (parent == null)
-            existing = repository.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(qualName));
+            existing = repository.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(Objects.requireNonNull(qualName)));
         else
             existing = Utils.find(parent.getKlasses(), k -> k.getName().equals(name));
+        if (tracing && existing != null)
+            log.trace("Found existing class {} for '{}'", existing.getQualifiedName(), qualName);
         Klass klass;
         if (existing == null) {
             klass = KlassBuilder.newBuilder(name, qualName)
@@ -139,7 +143,7 @@ public class ClassFileReader {
         if (tracing) log.trace("Reading method {}", internalName);
         var name = input.readUTF();
         var returnTypeIndex = input.readInt();
-        var existing = Utils.find(klass.getMethods(), m -> m.getInternalName().equals(internalName));
+        var existing = Utils.find(klass.getMethods(), m -> Objects.equals(m.tryGetInternalName(), internalName));
         Method method;
         if (existing != null) {
             existing.setReturnTypeIndex(returnTypeIndex);

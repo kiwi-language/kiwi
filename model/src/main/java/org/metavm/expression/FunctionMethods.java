@@ -69,15 +69,16 @@ public class FunctionMethods {
         return Instances.sum(a, b);
     }
 
-    public static BooleanValue IS_BLANK(StringValue str) {
-        return str.isBlank();
+    public static BooleanValue IS_BLANK(Value str) {
+        if (str instanceof NullValue) return BooleanValue.true_;
+        return Instances.booleanInstance(Instances.toJavaString(str).isEmpty());
     }
 
-    public static PasswordValue PASSWORD(StringValue str) {
-        return Instances.passwordInstance(EncodingUtils.md5(str.getValue()));
+    public static PasswordValue PASSWORD(Value str) {
+        return Instances.passwordInstance(EncodingUtils.md5(Instances.toJavaString(str)));
     }
 
-    public static StringValue GET_PASSWORD(PasswordValue password) {
+    public static Value GET_PASSWORD(PasswordValue password) {
         return Instances.stringInstance(password.getValue());
     }
 
@@ -89,12 +90,12 @@ public class FunctionMethods {
         return date1.after(date2);
     }
 
-    public static StringValue UUID() {
+    public static Value UUID() {
         return Instances.stringInstance(UUID.randomUUID().toString());
     }
 
-    public static StringValue MD5(StringValue stringInstance) {
-        return Instances.stringInstance(EncodingUtils.md5(stringInstance.getValue()));
+    public static Value MD5(Value stringInstance) {
+        return Instances.stringInstance(EncodingUtils.md5(Instances.toJavaString(stringInstance)));
     }
 
     public static LongValue GET_ID(Value instance) {
@@ -104,33 +105,33 @@ public class FunctionMethods {
             return Instances.longInstance(0L);
     }
 
-    public static Value STARTS_WITH(Value first, StringValue prefix) {
+    public static Value STARTS_WITH(Value first, Value prefix) {
         if(first instanceof NullValue)
             return Instances.zero();
-        else if(first instanceof StringValue str)
-            return str.startsWith(prefix);
+        else if(first instanceof StringReference s1 && prefix instanceof StringReference s2)
+            return Instances.booleanInstance(s1.getValue().startsWith(s2.getValue()));
         throw new IllegalArgumentException("Invalid argument for starts_with function: " + first);
     }
 
-    public static Value CONTAINS(Value first, StringValue prefix) {
+    public static Value CONTAINS(Value first, Value prefix) {
         if(first instanceof NullValue)
             return Instances.zero();
-        if(first instanceof StringValue str)
-            return str.contains(prefix);
+        if(first instanceof StringReference s1 && prefix instanceof StringReference s2)
+            return Instances.booleanInstance(s1.getValue().contains(s2.getValue()));
         else
             throw new IllegalArgumentException("Invalid argument for contains function: " + first);
     }
 
-    public static StringValue CONCAT(Value str1, Value str2) {
-        return new StringValue(str1.getTitle() + str2.getTitle());
+    public static Value CONCAT(Value s1, Value s2) {
+        return StringInstance.concat(s1, s2);
     }
 
-    public static StringValue REPLACE(StringValue string, StringValue target, StringValue replacement) {
-        return Instances.stringInstance(string.getValue().replace(target.getValue(), replacement.getValue()));
+    public static Value REPLACE(Value s, Value target, Value replacement) {
+        return StringInstance.replace(s, target, replacement);
     }
 
-    public static StringValue REPLACE_FIRST(StringValue string, StringValue regex, StringValue replacement) {
-        return Instances.stringInstance(string.getValue().replaceFirst(regex.getValue(), replacement.getValue()));
+    public static Value REPLACE_FIRST(Value s, Value regex, Value replacement) {
+        return StringInstance.replaceFirst(s, regex, replacement);
     }
 
     public static LongValue RANDOM() {
@@ -173,7 +174,7 @@ public class FunctionMethods {
         return Instances.timeInstance(timeMillis.getValue());
     }
 
-    public static StringValue TO_STRING(Value instance) {
+    public static Value TO_STRING(Value instance) {
         return Instances.stringInstance(instance.getTitle());
     }
 
@@ -181,7 +182,7 @@ public class FunctionMethods {
         return Instances.intInstance(array.contains(value));
     }
 
-    public static StringValue RANDOM_PASSWORD() {
+    public static Value RANDOM_PASSWORD() {
         return Instances.stringInstance(Utils.randomPassword());
     }
 
@@ -207,22 +208,22 @@ public class FunctionMethods {
         return iteratorNative.hasNext();
     }
 
-    public static Value REGEX_MATCH(StringValue regex, StringValue value) {
-        return Instances.intInstance(Pattern.compile(regex.getValue()).matcher(value.getValue()).matches());
+    public static Value REGEX_MATCH(Value regex, Value value) {
+        return Instances.intInstance(Pattern.compile(Instances.toJavaString(regex)).matcher(Instances.toJavaString(value)).matches());
     }
 
-    public static StringValue NUMBER_FORMAT(StringValue format, LongValue value) {
-        return Instances.stringInstance(new DecimalFormat(format.getValue()).format(value.getValue()));
+    public static Value NUMBER_FORMAT(Value format, LongValue value) {
+        return Instances.stringInstance(new DecimalFormat(Instances.toJavaString(format)).format(value.getValue()));
     }
 
     public static LongValue BOUNDED_RANDOM(LongValue bound) {
         return Instances.longInstance(new Random().nextLong(bound.getValue()));
     }
 
-    public static StringValue STRING_FORMAT(StringValue format, ArrayInstance values) {
+    public static Value STRING_FORMAT(Value format, ArrayInstance values) {
         var args = new Object[values.size()];
         Utils.map(values, Value::getTitle).toArray(args);
-        return Instances.stringInstance(String.format(format.getValue(), args));
+        return Instances.stringInstance(String.format(Instances.toJavaString(format)));
     }
 
     public static LongValue DATE_GET_TIME(TimeValue date) {

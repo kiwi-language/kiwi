@@ -14,7 +14,8 @@ public class InstanceDTOBuilderTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        MockStandardTypesInitializer.init();;
+        TestUtils.ensureStringKlassInitialized();
+        MockStandardTypesInitializer.init();
     }
 
     public void test() {

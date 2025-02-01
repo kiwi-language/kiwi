@@ -1,6 +1,7 @@
 package org.metavm.util;
 
 import org.metavm.entity.Entity;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.FunctionRef;
 import org.metavm.flow.LambdaRef;
 import org.metavm.flow.MethodRef;
@@ -178,7 +179,7 @@ public abstract class MvInput implements Closeable {
             case WireTypes.NULL -> new NullValue();
             case WireTypes.DOUBLE -> new DoubleValue(readDouble());
             case WireTypes.FLOAT -> new FloatValue(readFloat());
-            case WireTypes.STRING -> new StringValue(readUTF());
+            case WireTypes.STRING -> Instances.stringInstance(readUTF());
             case WireTypes.LONG -> new LongValue(readLong());
             case WireTypes.INT -> new IntValue(readInt());
             case WireTypes.CHAR -> new CharValue(readChar());
@@ -210,7 +211,7 @@ public abstract class MvInput implements Closeable {
             case WireTypes.VOID_TYPE -> PrimitiveType.voidType;
             case WireTypes.TIME_TYPE -> PrimitiveType.timeType;
             case WireTypes.PASSWORD_TYPE -> PrimitiveType.passwordType;
-            case WireTypes.STRING_TYPE -> PrimitiveType.stringType;
+            case WireTypes.STRING_TYPE -> StdKlass.string.type();
             case WireTypes.BOOLEAN_TYPE -> PrimitiveType.booleanType;
             case WireTypes.FUNCTION_TYPE -> FunctionType.read(this);
             case WireTypes.UNCERTAIN_TYPE -> UncertainType.read(this);

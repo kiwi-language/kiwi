@@ -97,6 +97,14 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
     }
 
     @Override
+    public Type visitStringType(StringType type) {
+        var subst = substitute(type);
+        if (subst != null)
+            return subst;
+        return type;
+    }
+
+    @Override
     public Type visitKlassType(KlassType type) {
         var subst = substitute(type);
         if (subst != null)
@@ -105,7 +113,6 @@ public class TypeSubstitutor extends ElementVisitor<Type> {
                 (ClassType) Utils.safeCall(type.getOwner(), t -> t.accept(this)),
                 type.getKlass(), Utils.map(type.getTypeArguments(), t -> t.accept(this)));
     }
-
 
     @Override
     public Type visitMethodRef(MethodRef methodRef) {

@@ -3,7 +3,6 @@ package org.metavm.entity;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.ValueObject;
-import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.event.EventQueue;
 import org.metavm.flow.Function;
 import org.metavm.object.instance.IndexKeyRT;
@@ -16,7 +15,6 @@ import org.metavm.util.profile.Profiler;
 import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -81,16 +79,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
 
     public KlassDef<?> getDef(Type javaType, ResolutionStage stage) {
         checkJavaType(javaType);
-        javaType = ReflectionUtils.getBoxedType(javaType);
-        if (!(javaType instanceof TypeVariable<?>)) {
-            javaType = EntityUtils.getEntityType(javaType);
-            if (javaType instanceof Class<?> klass) {
-                if (ReflectionUtils.isPrimitiveWrapper(klass))
-                    javaType = BOX_CLASS_MAP.getOrDefault(klass, klass);
-                else
-                    javaType = EntityUtils.getRealType(klass);
-            }
-        }
         var existing = javaType2Def.get(javaType);
         if (existing != null && existing.getParser() == null)
             return existing;
@@ -227,6 +215,8 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
 
     @Override
     public void preAddDef(KlassDef<?> def) {
+        var tracing = DebugEnv.traceClassDefinition;
+        if (tracing) log.trace("Adding class def: {}", def.getJavaClass().getName());
         var existing = javaType2Def.get(def.getJavaClass());
         if (existing != null && existing != def)
             throw new InternalException("Def for java type " + def.getJavaClass() + " already exists");
@@ -338,11 +328,14 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         try (var entry = getProfiler().enter("crawNewEntities")) {
             entry.addMessage("numSeedEntities", entities.size());
             var newEntities = new HashSet<Entity>();
+            var visited = new IdentitySet<Instance>();
             for (var entity : entities) {
                 entity.visitGraph(i -> {
-                    if(i instanceof Entity e && !entities.contains(e)) newEntities.add(e);
+                    if(i instanceof Entity e && !entities.contains(e)) {
+                        newEntities.add(e);
+                    }
                     return true;
-                }, r -> true);
+                }, r -> true, visited);
             }
             try (var ignored = getProfiler().enter("crawNewEntities")) {
                 newEntities.forEach(this::writeEntity);
@@ -401,16 +394,15 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     }
 
     public void postProcess() {
+        log.info("Post processing system def context");
         standardDefBuilder.initUserFunctions();
-        buildMemoryIndex();
         standardDefBuilder.postProcess();
+        buildMemoryIndex();
         Klasses.loadKlasses(this);
         freezeKlasses();
-        PrimitiveKind.initialize(this);
         StdKlass.initialize(this, false);
         StdMethod.initialize(this, false);
         StdField.initialize(this, false);
-        StandardStaticMethods.initialize(this, false);
         for (TypeDef typeDef : typeDef2Def.keySet()) {
             if(typeDef instanceof Klass klass)
                 klass.rebuildMethodTable();
@@ -614,6 +606,8 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         var set = Utils.filter(entities, e -> !e.isValue() && !e.isEphemeral() && e.tryGetId() == null);
         idInitializer.initializeIds(1L, set);
         set.forEach(i -> entityMap.put(i.getId(), i));
+        memoryIndex.clear();
+        buildMemoryIndex();
     }
 
     @Override

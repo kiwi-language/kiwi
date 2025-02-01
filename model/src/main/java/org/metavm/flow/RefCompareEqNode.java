@@ -1,5 +1,6 @@
 package org.metavm.flow;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Instance;
@@ -13,6 +14,7 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.function.Consumer;
 
+@Slf4j
 public class RefCompareEqNode extends Node {
 
     @SuppressWarnings("unused")

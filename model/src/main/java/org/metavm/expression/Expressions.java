@@ -126,7 +126,7 @@ public class Expressions {
         return new ConstantExpression(Instances.charInstance(c));
     }
 
-    public static Expression fieldStartsWith(Field field, PrimitiveValue strInstance) {
+    public static Expression fieldStartsWith(Field field, Value strInstance) {
         return new FunctionExpression(
                 Func.STARTS_WITH,
                 List.of(
@@ -136,7 +136,7 @@ public class Expressions {
         );
     }
 
-    public static Expression fieldLike(Field field, PrimitiveValue strInstance) {
+    public static Expression fieldLike(Field field, Value strInstance) {
         return new FunctionExpression(
                 Func.CONTAINS,
                 List.of(

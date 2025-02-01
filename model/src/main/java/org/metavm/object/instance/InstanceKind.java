@@ -1,9 +1,6 @@
 package org.metavm.object.instance;
 
-import org.metavm.object.instance.rest.ArrayInstanceParam;
-import org.metavm.object.instance.rest.ClassInstanceParam;
-import org.metavm.object.instance.rest.ListInstanceParam;
-import org.metavm.object.instance.rest.PrimitiveInstanceParam;
+import org.metavm.object.instance.rest.*;
 import org.metavm.util.Utils;
 
 public enum InstanceKind {
@@ -12,6 +9,8 @@ public enum InstanceKind {
     ARRAY(2, ArrayInstanceParam.class),
     PRIMITIVE(3, PrimitiveInstanceParam.class),
     LIST(4, ListInstanceParam.class),
+    STRING(5, StringInstanceParam.class),
+
 
     ;
 

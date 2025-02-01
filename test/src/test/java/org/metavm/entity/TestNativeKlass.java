@@ -2,16 +2,15 @@ package org.metavm.entity;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.api.entity.HttpCookie;
 import org.metavm.flow.Flows;
 import org.metavm.http.HttpCookieImpl;
 import org.metavm.http.HttpRequestImpl;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.util.BootstrapUtils;
+import org.metavm.util.Instances;
 import org.metavm.util.TestConstants;
 
 import java.util.List;
+import java.util.Objects;
 
 import static org.metavm.entity.StdMethod.httpRequestGetCookie;
 import static org.metavm.entity.StdMethod.httpRequestGetMethod;
@@ -44,9 +43,9 @@ public class TestNativeKlass extends TestCase {
             );
             context.bind(request);
             var httpMethod = Flows.invokeVirtual(httpRequestGetMethod.get().getRef(), request, List.of(), context);
-            Assert.assertEquals(stringInstance("GET"), httpMethod);
+            Assert.assertEquals("GET", Instances.toJavaString(Objects.requireNonNull(httpMethod)));
             var token = Flows.invokeVirtual(httpRequestGetCookie.get().getRef(), request, List.of(stringInstance("token")), context);
-            Assert.assertEquals(stringInstance("__token__"), token);
+            Assert.assertEquals("__token__", Instances.toJavaString(Objects.requireNonNull(token)));
         }
     }
 

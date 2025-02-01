@@ -277,7 +277,7 @@ public class InstanceManagerTest extends TestCase {
             var klass = context.getKlass(klassId);
             var nameField = klass.getFieldByName("name");
             var inst = (ClassInstance) context.get(instId);
-            Assert.assertEquals(Instances.stringInstance("Leen2"), inst.getField(nameField));
+            Assert.assertEquals("Leen2", Instances.toJavaString(inst.getField(nameField)));
             var inst2 = (ClassInstance) context.get(instId2);
             Assert.assertEquals(Instances.nullInstance(), inst2.getField(nameField));
         }

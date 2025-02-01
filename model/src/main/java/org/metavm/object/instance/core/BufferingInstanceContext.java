@@ -56,7 +56,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
             instance.accept(new InstanceVisitor<Void>() {
                 @Override
                 public Void visitInstance(Instance instance) {
-                    if (!visited.add(instance))
+                    if (instance instanceof StringInstance || instance.getContext() != BufferingInstanceContext.this || !visited.add(instance))
                        return null;
                     if(instance instanceof ClassInstance clsInst)
                         updateMemoryIndex(clsInst);

@@ -546,7 +546,7 @@ public class VmStack {
                                 } else {
                                     exception = ClassInstance.allocate(StdKlass.exception.get().getType());
                                     var exceptionNative = new ExceptionNative(exception);
-                                    exceptionNative.Exception(new StringValue(
+                                    exceptionNative.Exception(Instances.stringInstance(
                                             String.format("Can not cast instance '%s' to type '%s'", inst.getTitle(), type.getName())
                                     ), callContext);
                                     break except;
@@ -1315,7 +1315,7 @@ public class VmStack {
                                 pc++;
                             }
                             case Bytecodes.LT_STRING -> {
-                                stack[top++] = PrimitiveType.stringType;
+                                stack[top++] = Types.getStringType();
                                 pc++;
                             }
                             case Bytecodes.LT_VOID -> {

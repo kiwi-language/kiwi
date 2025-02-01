@@ -629,9 +629,11 @@ public class ExpressionResolver {
                 psiMethod.getParameterList().getParameters(),
                 param -> typeResolver.resolveNullable(param.getType(), ResolutionStage.DECLARATION)
         );
-        var method = type.getKlass().getSelfMethod(
+        var method = type.getKlass().findMethod(
                 m -> m.getName().equals(psiMethod.getName()) && m.getParameterTypes().equals(paramTypes)
         );
+        requireNonNull(method, () -> "Cannot find method '" + psiMethod.getName() + "("
+                + Utils.join(paramTypes,Type::getTypeDesc) + ")' in class '" + type.getKlass().getTypeDesc() + "'");
         var typeArgs = Utils.map(psiMethod.getTypeParameters(),
                 tp -> typeResolver.resolveDeclaration(substitutor.substitute(tp)));
         var psiArgs = expression.getArgumentList().getExpressions();

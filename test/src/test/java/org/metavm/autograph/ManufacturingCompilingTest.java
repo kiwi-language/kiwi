@@ -187,7 +187,6 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                         100
                 )
         ));
-        DebugEnv.stringId = inventoryId;
         waitForAllTasksDone();
         var qualifiedInspectionStateId = typeManager.getEnumConstantId(qualityInspectionStateKlass, "QUALIFIED");
         var initialBizStateId = typeManager.getEnumConstantId("org.metavm.manufacturing.storage.InventoryBizState", "INITIAL");

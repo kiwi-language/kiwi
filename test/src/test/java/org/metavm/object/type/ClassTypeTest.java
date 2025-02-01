@@ -23,6 +23,7 @@ public class ClassTypeTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
     }
 

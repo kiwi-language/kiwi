@@ -3,6 +3,7 @@ package org.metavm.object.type.rest.dto;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.metavm.entity.StdKlass;
 import org.metavm.flow.rest.FunctionRefKey;
 import org.metavm.flow.rest.MethodRefKey;
 import org.metavm.object.instance.core.Id;
@@ -61,8 +62,6 @@ public interface TypeKey extends TypeOrTypeKey {
                 return new PrimitiveTypeKey(PrimitiveKind.DOUBLE.code());
             if (primitiveType.FLOAT() != null)
                 return new PrimitiveTypeKey(PrimitiveKind.FLOAT.code());
-            if (primitiveType.STRING() != null)
-                return new PrimitiveTypeKey(PrimitiveKind.STRING.code());
             if (primitiveType.BOOLEAN() != null)
                 return new PrimitiveTypeKey(PrimitiveKind.BOOLEAN.code());
             if (primitiveType.NULL() != null)
@@ -112,6 +111,8 @@ public interface TypeKey extends TypeOrTypeKey {
         var id = Id.parse(classType.qualifiedName().getText().substring(Constants.ID_PREFIX.length()));
         if(classType.typeArguments() != null)
             return new ParameterizedTypeKey(null, id, Utils.map(classType.typeArguments().typeList().type(), TypeKey::fromTypeContext));
+        else if (StdKlass.string.get().idEquals(id))
+            return new StringTypeKey();
         else
             return new ClassTypeKey(id);
     }
@@ -143,7 +144,7 @@ public interface TypeKey extends TypeOrTypeKey {
             case WireTypes.BYTE_TYPE -> new PrimitiveTypeKey(PrimitiveKind.BYTE.code());
             case WireTypes.DOUBLE_TYPE -> new PrimitiveTypeKey(PrimitiveKind.DOUBLE.code());
             case WireTypes.FLOAT_TYPE -> new PrimitiveTypeKey(PrimitiveKind.FLOAT.code());
-            case WireTypes.STRING_TYPE -> new PrimitiveTypeKey(PrimitiveKind.STRING.code());
+            case WireTypes.STRING_TYPE -> new StringTypeKey();
             case WireTypes.VOID_TYPE -> new PrimitiveTypeKey(PrimitiveKind.VOID.code());
             case WireTypes.NULL_TYPE -> new NullTypeKey();
             case WireTypes.TIME_TYPE -> new PrimitiveTypeKey(PrimitiveKind.TIME.code());

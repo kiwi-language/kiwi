@@ -19,7 +19,7 @@ public class ClassInstanceBuilder {
     private long version;
     private long syncVersion;
     private final ClassType type;
-    private Map<Field, Value> data;
+    private Map<Field, ? extends Value> data;
     private InstanceParentRef parentRef;
     private Consumer<Instance> load;
     private boolean ephemeral;
@@ -35,7 +35,7 @@ public class ClassInstanceBuilder {
         return this;
     }
 
-    public ClassInstanceBuilder data(Map<Field, Value> data) {
+    public ClassInstanceBuilder data(Map<Field, ? extends Value> data) {
         this.data = data;
         return this;
     }

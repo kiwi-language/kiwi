@@ -6,12 +6,8 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.SerializeContext;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.rest.dto.PrimitiveTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.MvOutput;
@@ -21,13 +17,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Entity
-public class PrimitiveType extends ClassType {
+public class PrimitiveType extends Type {
 
     public static final PrimitiveType doubleType = new PrimitiveType(PrimitiveKind.DOUBLE);
     public static final PrimitiveType longType = new PrimitiveType(PrimitiveKind.LONG);
     public static final PrimitiveType charType = new PrimitiveType(PrimitiveKind.CHAR);
     public static final PrimitiveType booleanType = new PrimitiveType(PrimitiveKind.BOOLEAN);
-    public static final PrimitiveType stringType = new PrimitiveType(PrimitiveKind.STRING);
     public static final PrimitiveType timeType = new PrimitiveType(PrimitiveKind.TIME);
     public static final PrimitiveType voidType = new PrimitiveType(PrimitiveKind.VOID);
     public static final PrimitiveType passwordType = new PrimitiveType(PrimitiveKind.PASSWORD);
@@ -137,11 +132,6 @@ public class PrimitiveType extends ClassType {
     }
 
     @Override
-    public boolean isString() {
-        return kind == PrimitiveKind.STRING;
-    }
-
-    @Override
     public boolean isVoid() {
         return kind == PrimitiveKind.VOID;
     }
@@ -180,7 +170,6 @@ public class PrimitiveType extends ClassType {
         return PrimitiveTypeKey.getTypeKeyCode(kind.code());
     }
 
-    @Override
     public Klass getKlass() {
         return kind.getKlass();
     }
@@ -188,6 +177,11 @@ public class PrimitiveType extends ClassType {
     @Override
     public void write(MvOutput output) {
         output.write(PrimitiveTypeKey.getTypeKeyCode(kind.code()));
+    }
+
+    @Override
+    public int getPrecedence() {
+        return 0;
     }
 
     public @Nullable Value getDefaultValue() {

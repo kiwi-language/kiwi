@@ -32,6 +32,10 @@ public abstract class ElementVisitor<R> {
         return visitType(type);
     }
 
+    public R visitStringType(StringType type) {
+        return visitKlassType(type);
+    }
+
     public R visitTypeVariable(TypeVariable typeVariable) {
         return visitElement(typeVariable);
     }

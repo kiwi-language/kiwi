@@ -22,6 +22,7 @@ public class InstanceDTOBuilder {
 //            serContext.writeType(instance.getType());
 //        }
         return switch (instance) {
+            case StringReference s -> s.toFieldValueDTO();
             case Reference reference -> {
                 if (reference.isArray())
                     yield buildForArray(reference.resolveArray(), depth, isChild);

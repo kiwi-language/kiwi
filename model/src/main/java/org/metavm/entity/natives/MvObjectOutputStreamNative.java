@@ -28,8 +28,8 @@ public class MvObjectOutputStreamNative extends NativeBase {
         return Instances.nullInstance();
     }
 
-    public Value writeUTF(Value str, CallContext callContext) {
-        out.writeUTF(((StringValue) str).value);
+    public Value writeUTF(Value s, CallContext callContext) {
+        out.writeUTF(Instances.toJavaString(s));
         return Instances.nullInstance();
     }
 

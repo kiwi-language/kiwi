@@ -342,7 +342,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
             var arg = argIt.next();
             var paramType = param.getType(typeMetadata);
             if (!paramType.isInstance(paramType.getUnderlyingType().fromStackValue(arg)))
-                throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT2, arg, this, param.getName(), param.getType());
+                throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT2, arg.getValueType(), this, param.getName(), param.getType());
         }
     }
 
@@ -592,6 +592,10 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     public String getInternalName() {
         return Objects.requireNonNull(internalName);
+    }
+
+    public @Nullable String tryGetInternalName() {
+        return internalName;
     }
 
     public void setInternalName(@NotNull String internalName) {

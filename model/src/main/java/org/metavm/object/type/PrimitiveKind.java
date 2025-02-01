@@ -95,42 +95,6 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
         }
 
     },
-    STRING(3, "string", String.class, StringValue.class, TypeCategory.STRING) {
-
-        @NativeApi
-        public static Value compareTo(Value self, Value that) {
-            var s1 = (StringValue) self;
-            var s2 = (StringValue) that;
-            return Instances.intInstance(s1.compareTo(s2));
-        }
-
-        @NativeApi
-        public static Value length(Value self) {
-            var s = (StringValue) self;
-            return Instances.intInstance(s.value.length());
-        }
-
-        @NativeApi
-        public static Value charAt(Value self, Value index) {
-            var s = (StringValue) self;
-            var idx = ((IntValue) index).value;
-            return Instances.intInstance(s.value.charAt(idx));
-        }
-
-        @NativeApi
-        public static Value subSequence(Value self, Value start, Value end) {
-            var s1 = ((StringValue) self).value;
-            var i1 = ((IntValue) start).value;
-            var i2 = ((IntValue) end).value;
-            return Instances.stringInstance(s1.substring(i1, i2));
-        }
-
-        @NativeApi
-        public static Value toString(Value v) {
-            return v;
-        }
-
-    },
     BOOLEAN(4, "boolean", boolean.class, BooleanValue.class, TypeCategory.BOOLEAN) {
         @Override
         public Value getDefaultValue() {
@@ -365,7 +329,6 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
         var klass = valueHolder.get();
         if (klass == null) {
             klass = KlassBuilder.newBuilder(getName(), getName()).build();
-            klass.setType(Objects.requireNonNull(type));
             valueHolder.set(klass);
         }
         return klass;
@@ -393,8 +356,6 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
         var interfaces = new ArrayList<ClassType>();
         if (primitiveType != PrimitiveType.passwordType)
             interfaces.add(KlassType.create(defContext.getKlass(Comparable.class), List.of(klass.getType())));
-        if (primitiveType == PrimitiveType.stringType)
-            interfaces.add(defContext.getKlass(CharSequence.class).getType());
         interfaces.add(defContext.getKlass(Serializable.class).getType());
         klass.setInterfaces(interfaces);
         interfaces.forEach(it -> definePrimitiveMethods(primitiveType, it));

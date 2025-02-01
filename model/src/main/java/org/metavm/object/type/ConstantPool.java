@@ -230,7 +230,7 @@ public class ConstantPool extends Entity implements LoadAware, TypeMetadata, Ele
     public void printEntries() {
         int i = 0;
         for (Value entry : entries) {
-            log.debug("Entry {}: {}", i++ ,entry);
+            log.trace("Entry {}: {}", i++ ,entry);
         }
     }
 

@@ -17,6 +17,11 @@ public class InstanceIOTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceIOTest.class);
 
+    @Override
+    protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
+    }
+
     public void testWriteString() {
         String s = "hello world";
         var bout = new ByteArrayOutputStream();
@@ -84,7 +89,7 @@ public class InstanceIOTest extends TestCase {
         var recovered = (ClassInstance) input.readSingleMessageGrove();
         var recoveredNames = recovered.getField(namesField).resolveArray();
         var name = recoveredNames.getFirst();
-        Assert.assertEquals(Instances.stringInstance("foo"), name);
+        Assert.assertEquals("foo", Instances.toJavaString(name));
         Assert.assertNotNull(instanceMap.get(names.getId()));
     }
 
@@ -108,7 +113,8 @@ public class InstanceIOTest extends TestCase {
         var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(inst)), entityMap::get, i -> {
         }, id -> null);
         var recovered = (ClassInstance) input.readSingleMessageGrove();
-        Assert.assertEquals(inst.getField(nameField), recovered.getField(nameField));
+        Assert.assertEquals(Instances.toJavaString(inst.getField(nameField)),
+                Instances.toJavaString(recovered.getField(nameField)));
     }
 
     public void test() {
@@ -142,7 +148,7 @@ public class InstanceIOTest extends TestCase {
                 PhysicalId.of(30001L, 1L),
                 Map.of(
                         barCodeField,
-                        new StringValue(barCode)
+                        Instances.stringInstance(barCode)
                 ),
                 barKlass
         );
@@ -151,7 +157,7 @@ public class InstanceIOTest extends TestCase {
                 PhysicalId.of(30002L, 0L),
                 Map.of(
                         quxNameField,
-                        new StringValue("qux001")
+                        Instances.stringInstance("qux001")
                 ),
                 quxKlass
         );
@@ -159,7 +165,7 @@ public class InstanceIOTest extends TestCase {
         var fooInst = new MvClassInstance(
                 PhysicalId.of(30001L, 0L),
                 Map.of(
-                        nameField, new StringValue(fooName),
+                        nameField, Instances.stringInstance(fooName),
                         barField, barInst.getReference(),
                         quxField, quxInst.getReference()
                 ),

@@ -177,7 +177,7 @@ public class MockUtils {
     private static Field createEnumConstantField(ClassInstance enumConstant) {
         var enumType = enumConstant.getInstanceKlass();
         var nameField = enumType.getFieldByName("name");
-        var name = enumConstant.getStringField(nameField).getValue();
+        var name = enumConstant.getStringField(nameField);
         return FieldBuilder.newBuilder(name, enumType, enumType.getType())
                 .isStatic(true)
                 .staticValue(enumConstant.getReference())

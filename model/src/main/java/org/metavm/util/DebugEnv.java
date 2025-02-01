@@ -43,6 +43,8 @@ public class DebugEnv {
 
     public static volatile AtomicInteger counter = new AtomicInteger();
 
+    public static int count = 0;
+
     public static volatile boolean saveCompileResult = false;
 
     public static volatile String stringId;
@@ -81,6 +83,8 @@ public class DebugEnv {
 
     public static volatile Klass klass;
 
+    public static volatile String traceKlassName = Character.class.getName();
+
     public static volatile Object object;
 
     public static volatile SystemDefContext defContext;
@@ -104,6 +108,13 @@ public class DebugEnv {
     public static volatile boolean traceDDL = false;
 
     public static volatile boolean traceClassFileIO = false;
+
+    public static volatile boolean traceClassDefinition = false;
+
+    public static volatile boolean traceMemoryIndex = false;
+
+    public static volatile boolean traceMethodResolution = true;
+
 
     public static void exitPathItem() {
         path.removeLast();

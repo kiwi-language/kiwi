@@ -127,6 +127,8 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
             return -1;
         if(second instanceof NullValue)
             return 1;
+        if (first instanceof StringReference s1 && second instanceof StringReference s2)
+            return s1.compareTo(s2);
         if(first instanceof Reference d1
                 && second instanceof Reference d2) {
             if(d1.isNew() && d2.isNew())

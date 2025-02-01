@@ -87,7 +87,7 @@ public class EntityContextTest extends TestCase {
             var field = klass.getStaticFieldByName("name");
             var sft = StaticFieldTable.getInstance(klass.getType(), context);
             sft.set(field, Instances.stringInstance("foo"));
-            Assert.assertEquals(Instances.stringInstance("foo"), field.getStatic(context));
+            Assert.assertEquals("foo", Instances.toJavaString(field.getStatic(context)));
         }
 
     }

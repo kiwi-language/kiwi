@@ -6,10 +6,7 @@ import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.FieldChange;
 import org.metavm.entity.*;
-import org.metavm.entity.natives.CallContext;
-import org.metavm.entity.natives.IterableNative;
-import org.metavm.entity.natives.ListNative;
-import org.metavm.entity.natives.NativeMethods;
+import org.metavm.entity.natives.*;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.Reference;
@@ -41,7 +38,6 @@ public class Instances {
             Map.entry(Double.class, PrimitiveType.doubleType),
             Map.entry(Float.class, PrimitiveType.floatType),
             Map.entry(Boolean.class, PrimitiveType.booleanType),
-            Map.entry(String.class, PrimitiveType.stringType),
             Map.entry(Date.class, PrimitiveType.timeType),
             Map.entry(Password.class, PrimitiveType.passwordType),
             Map.entry(Null.class, NullType.instance),
@@ -56,7 +52,6 @@ public class Instances {
             Map.entry(Double.class, DoubleValue.class),
             Map.entry(Float.class, FloatValue.class),
             Map.entry(Boolean.class, BooleanValue.class),
-            Map.entry(String.class, StringValue.class),
             Map.entry(Date.class, TimeValue.class),
             Map.entry(Character.class, CharValue.class),
             Map.entry(Short.class, ShortValue.class),
@@ -336,8 +331,8 @@ public class Instances {
         return new PasswordValue(password);
     }
 
-    public static StringValue stringInstance(String value) {
-        return new StringValue(value);
+    public static Value stringInstance(String value) {
+        return new StringInstance(value).getReference();
     }
 
     public static LongValue max(LongValue a, LongValue b) {
@@ -354,10 +349,6 @@ public class Instances {
 
     public static DoubleValue min(DoubleValue a, DoubleValue b) {
         return a.le(b).getValue() ? a : b;
-    }
-
-    public static StringValue createString(String value) {
-        return new StringValue(value);
     }
 
     public static BooleanValue createBoolean(boolean b) {
@@ -849,18 +840,17 @@ public class Instances {
             return Float.compare(f1.getValue(), f2.getValue());
         if (value1 instanceof BooleanValue b1 && value2 instanceof BooleanValue v2)
             return Boolean.compare(b1.getValue(), v2.getValue());
-        if (value1 instanceof StringValue s1 && value2 instanceof StringValue s2)
-            return s1.getValue().compareTo(s2.getValue());
         if (value1 instanceof NullValue && value2 instanceof NullValue)
             return 0;
         if (value1 instanceof TimeValue t1 && value2 instanceof TimeValue t2)
             return Long.compare(t1.getValue(), t2.getValue());
         if (value1 instanceof PasswordValue p1 && value2 instanceof PasswordValue p2)
             return p1.getValue().compareTo(p2.getValue());
-        else if (value1 instanceof Reference r1 && value2 instanceof Reference r2)
+        if (value1 instanceof StringReference s1 && value2 instanceof StringReference s2)
+            return s1.compareTo(s2);
+        if (value1 instanceof Reference r1 && value2 instanceof Reference r2)
             return compare(r1.get(), r2.get(), callContext);
-        else
-            throw new IllegalArgumentException("Cannot compare values " + value1 + " and " + value2);
+        throw new IllegalArgumentException("Cannot compare values " + value1 + " and " + value2);
     }
 
     public static int compare(Instance instance1, Instance instance2, CallContext callContext) {
@@ -878,6 +868,8 @@ public class Instances {
     public static int hashCode(Value value, CallContext callContext) {
         if (value instanceof PrimitiveValue primitiveValue)
             return primitiveValue.hashCode();
+        else if (value instanceof StringReference s)
+            return s.hashCode();
         else if (value instanceof Reference reference)
             return hashCode(reference.get(), callContext);
         else
@@ -953,6 +945,7 @@ public class Instances {
         return switch (value) {
             case PrimitiveValue primitiveValue -> primitiveValue.toString();
             case NullValue ignored -> "null";
+            case StringReference s -> s.getValue();
             case Reference reference -> toString(reference.get(), callContext);
             case null, default -> throw new IllegalArgumentException("Cannot convert value '" + value + "' to string");
         };
@@ -963,7 +956,7 @@ public class Instances {
             var method = clsInst.getInstanceKlass().getToStringMethod();
             if (method != null) {
                 var ret = Flows.invoke(method.getRef(), clsInst, List.of(), callContext);
-                return ((StringValue) requireNonNull(ret)).getValue();
+                return toJavaString(requireNonNull(ret));
             }
         }
         return instance.getInstanceType().getTypeDesc() + "@" + instance.getStringId();
@@ -1063,6 +1056,7 @@ public class Instances {
                 yield v;
             }
             case PrimitiveValue primitiveValue -> primitiveValue.getValue();
+            case StringReference s -> s.getValue();
             case Reference reference -> {
                 var inst = reference.resolveDurable();
                 if (inst instanceof ArrayInstance array) {
@@ -1073,8 +1067,26 @@ public class Instances {
                         javaArray[i] = toJavaValue(array.get(i), elementJavaType);
                     }
                     yield javaArray;
-                } else
-                    throw new IllegalArgumentException("Cannot get java value for object instance");
+                } else if (inst instanceof ClassInstance obj) {
+                    var klass = obj.getInstanceKlass();
+                    if (klass == StdKlass.byte_.get())
+                        yield toJavaByte(value);
+                    else if (klass == StdKlass.short_.get())
+                        yield toJavaShort(value);
+                    else if (klass == StdKlass.integer.get())
+                        yield toJavaInt(value);
+                    else if (klass == StdKlass.long_.get())
+                        yield toJavaLong(value);
+                    else if (klass == StdKlass.float_.get())
+                        yield toJavaFloat(value);
+                    else if (klass == StdKlass.double_.get())
+                        yield toJavaDouble(value);
+                    else if (klass == StdKlass.boolean_.get())
+                        yield toJavaBoolean(value);
+                    else if (klass == StdKlass.character.get())
+                        yield toJavaChar(value);
+                }
+                throw new IllegalArgumentException("Cannot get java value for object instance");
             }
             case NullValue ignored -> null;
             default -> throw new IllegalArgumentException("Cannot get java value for value " + value);
@@ -1082,6 +1094,9 @@ public class Instances {
     }
 
     public static IntValue intInstance(int i) {
+        if (i == -1) return IntValue.minusOne;
+        if (i == 0) return IntValue.zero;
+        if (i == 1) return IntValue.one;
         return new IntValue(i);
     }
 
@@ -1095,6 +1110,50 @@ public class Instances {
 
     public static ByteValue byteInstance(byte v) {
         return new ByteValue(v);
+    }
+
+    public static String toJavaString(Value value) {
+        return ((StringReference) value).getValue();
+    }
+
+    public static byte toJavaByte(Value value) {
+        var v = (ByteValue) value.resolveObject().getField(StdField.byteValue.get());
+        return v.value;
+    }
+
+    public static short toJavaShort(Value value) {
+        var v = (ShortValue) value.resolveObject().getField(StdField.shortValue.get());
+        return v.value;
+    }
+
+    public static int toJavaInt(Value value) {
+        var v = (IntValue) value.resolveObject().getField(StdField.integerValue.get());
+        return v.value;
+    }
+
+    public static long toJavaLong(Value value) {
+        var v = (LongValue) value.resolveObject().getField(StdField.longValue.get());
+        return v.value;
+    }
+
+    public static float toJavaFloat(Value value) {
+        var v = (FloatValue) value.resolveObject().getField(StdField.floatValue.get());
+        return v.value;
+    }
+
+    public static double toJavaDouble(Value value) {
+        var v = (DoubleValue) value.resolveObject().getField(StdField.doubleValue.get());
+        return v.value;
+    }
+
+    public static char toJavaChar(Value value) {
+        var v = (CharValue) value.resolveObject().getField(StdField.characterValue.get());
+        return v.value;
+    }
+
+    public static boolean toJavaBoolean(Value value) {
+        var v = (BooleanValue) value.resolveObject().getField(StdField.booleanValue.get());
+        return v.value;
     }
 
     public static Reference list(Type elementType, Iterable<Value> values) {
@@ -1117,5 +1176,35 @@ public class Instances {
         );
     }
 
+    public static Value wrappedByteInstance(byte v) {
+        return ByteNative.valueOf(byteInstance(v));
+    }
 
+    public static Value wrappedShortInstance(short v) {
+        return ShortNative.valueOf(shortInstance(v));
+    }
+
+    public static Value wrappedIntInstance(int v) {
+        return IntegerNative.valueOf(intInstance(v));
+    }
+
+    public static Value wrappedLongInstance(long v) {
+        return LongNative.valueOf(longInstance(v));
+    }
+
+    public static Value wrappedFloatInstance(float v) {
+        return FloatNative.valueOf(floatInstance(v));
+    }
+
+    public static Value wrappedDoubleInstance(double v) {
+        return DoubleNative.valueOf(doubleInstance(v));
+    }
+
+    public static Value wrappedCharInstance(char v) {
+        return CharacterNative.valueOf(charInstance(v));
+    }
+
+    public static Value wrappedBooleanInstance(boolean v) {
+        return BooleanNative.valueOf(booleanInstance(v));
+    }
 }

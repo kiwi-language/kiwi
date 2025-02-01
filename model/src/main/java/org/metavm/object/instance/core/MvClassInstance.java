@@ -42,7 +42,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     public MvClassInstance(Id id, @NotNull ClassType type, long version, long syncVersion,
                            @Nullable Consumer<Instance> load, @Nullable InstanceParentRef parentRef,
-                           @Nullable Map<Field, Value> data, boolean ephemeral, boolean initFieldTable,
+                           @Nullable Map<Field, ? extends Value> data, boolean ephemeral, boolean initFieldTable,
                            @Nullable ClosureContext closureContext) {
         super(id, type, version, syncVersion, ephemeral, load);
         this.klass = type.getKlass();
@@ -70,7 +70,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     }
 
     @NoProxy
-    public void reset(Map<Field, Value> data, long version, long syncVersion) {
+    public void reset(Map<Field, ? extends Value> data, long version, long syncVersion) {
 //        try (var ignored = ContextUtil.getProfiler().enter("ClassInstance.reset")) {
         setModified();
         clear();
@@ -117,7 +117,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     }
 
     public String getTitle() {
-                Field titleField = klass.getTitleField();
+        Field titleField = klass.getTitleField();
         return titleField != null ? field(titleField).getDisplayValue() : getStringId();
     }
 
@@ -202,6 +202,8 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     protected void writeBody(MvOutput output) {
+        var tracing = DebugEnv.traceInstanceIO;
+        if (tracing) log.trace("Writing instance {}", getInstanceType().getTypeDesc());
 //        if(DebugEnv.flag)
 //            logger.debug("Writing instance " + this);
         output.writeInt(fieldTable.countSubTablesForWriting());
@@ -295,7 +297,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     @NoProxy
     protected void readFrom(InstanceInput input) {
         var tracing = DebugEnv.traceInstanceIO;
-        if (tracing) log.trace("Reading instance {}", getId());
+        if (tracing) log.trace("Reading instance {} {}", getInstanceType().getTypeDesc(), tryGetId());
         var sortedKlasses = klass.getSortedKlasses();
         int numKlasses = input.readInt();
         var fieldTable = this.fieldTable;
@@ -457,8 +459,8 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 //        }
     }
 
-    public StringValue getStringField(Field field) {
-        return (StringValue) getField(field(field).getField());
+    public String getStringField(Field field) {
+        return Instances.toJavaString(getField(field(field).getField()));
     }
 
     public LongValue getLongField(Field field) {
@@ -511,7 +513,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public InstanceParam getParam() {
-                if (isList()) {
+        if (isList()) {
             var elements = new ListNative(this).toArray().getElements();
             if (isChildList()) {
                 return new ListInstanceParam(

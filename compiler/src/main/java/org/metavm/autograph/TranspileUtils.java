@@ -684,9 +684,6 @@ public class TranspileUtils {
                 nativeFunctionCallResolvers.add(new NativeFunctionCallResolver(getMethodSignature(javaMethod), def.get()));
             }
         }
-        for (var def : StandardStaticMethods.getDefs()) {
-            nativeFunctionCallResolvers.add(new NativeFunctionCallResolver(getMethodSignature(def.getMethod()), def.get()));
-        }
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -1683,6 +1680,16 @@ public class TranspileUtils {
 
     public static PsiAnnotation createAnnotationFromText(String text) {
         return elementFactory.createAnnotationFromText(text, null);
+    }
+
+    public static PsiMethod getSAM(PsiClass clazz) {
+        assert clazz.isInterface();
+        for (PsiMethod method : clazz.getMethods()) {
+            if (method.hasModifierProperty(PsiModifier.ABSTRACT)) {
+                return method;
+            }
+        }
+        throw new IllegalStateException("Cannot find SAM in clas '" + clazz.getQualifiedName() + "'");
     }
 
 }

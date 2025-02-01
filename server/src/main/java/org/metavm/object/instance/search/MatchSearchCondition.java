@@ -1,7 +1,7 @@
 package org.metavm.object.instance.search;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.object.instance.core.StringValue;
+import org.metavm.object.instance.core.StringReference;
 import org.metavm.object.instance.core.Value;
 
 import java.util.Map;
@@ -22,11 +22,8 @@ public record MatchSearchCondition(
     public boolean evaluate(Map<String, Value> source) {
         var srcValue = source.get(field);
         if (Objects.equals(value, srcValue)) return true;
-        else if (srcValue instanceof StringValue srcStr && value instanceof StringValue matchStr) {
-            var splits = srcStr.getValue().split(" ");
-            var match = matchStr.value;
-            for (String split : splits) if (split.equals(match)) return true;
-            return false;
+        else if (srcValue instanceof StringReference s1 && value instanceof StringReference s2) {
+            return s1.getValue().contains(s2.getValue());
         } else if (srcValue.getValueType().isArray()) {
             var array = srcValue.resolveArray();
             return array.contains(value);

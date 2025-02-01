@@ -630,9 +630,6 @@ public class Nodes {
 
     public static Node compareEq(Type type, Code code) {
         if(type instanceof PrimitiveType primitiveType) {
-            var kind = primitiveType.getKind();
-            if (kind == PrimitiveKind.STRING)
-                return refCompareEq(code);
             compare(type, code);
             return eq(code);
         }
@@ -645,10 +642,7 @@ public class Nodes {
     }
 
     public static Node compareNe(Type type, Code code) {
-        if(type instanceof PrimitiveType primitiveType) {
-            var kind = primitiveType.getKind();
-            if (kind == PrimitiveKind.STRING)
-                return refCompareNe(code);
+        if(type instanceof PrimitiveType) {
             compare(type, code);
             return ne(code);
         }

@@ -494,7 +494,7 @@ public class DDLTest extends TestCase {
             var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
             var kind = shoesInst.getField("kind").resolveObject();
             Assert.assertFalse(kind.getInstanceKlass().isEnum());
-            Assert.assertEquals(Instances.stringInstance("DEFAULT"), kind.getField("name"));
+            Assert.assertEquals("DEFAULT", Instances.toJavaString(kind.getField("name")));
             Assert.assertEquals(Instances.intInstance(0), kind.getField("code"));
             try {
                 context.get(Id.parse(hotelKind));

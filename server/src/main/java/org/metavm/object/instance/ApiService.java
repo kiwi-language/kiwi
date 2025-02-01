@@ -266,6 +266,7 @@ public class ApiService extends EntityContextFactoryAware {
             case null -> null;
             case NullValue ignored -> null;
             case PrimitiveValue primitiveValue -> primitiveValue.getValue();
+            case StringReference s -> s.getValue();
             case Reference reference -> {
                 var resolved = reference.get();
                 switch (resolved) {
@@ -273,8 +274,25 @@ public class ApiService extends EntityContextFactoryAware {
                         yield entity.toJson();
                     }
                     case ClassInstance clsInst -> {
+                        var klass = clsInst.getInstanceKlass();
+                        if (klass == StdKlass.byte_.get())
+                            yield Instances.toJavaByte(reference);
+                        if (klass == StdKlass.short_.get())
+                            yield Instances.toJavaShort(reference);
+                        if (klass == StdKlass.integer.get())
+                            yield Instances.toJavaInt(reference);
+                        if (klass == StdKlass.long_.get())
+                            yield Instances.toJavaLong(reference);
+                        if (klass == StdKlass.float_.get())
+                            yield Instances.toJavaFloat(reference);
+                        if (klass == StdKlass.double_.get())
+                            yield Instances.toJavaDouble(reference);
+                        if (klass == StdKlass.character.get())
+                            yield Instances.toJavaChar(reference);
+                        if (klass == StdKlass.boolean_.get())
+                            yield Instances.toJavaBoolean(reference);
                         if (clsInst.isEnum())
-                            yield ((StringValue) clsInst.getField(StdField.enumName.get())).getValue();
+                            yield Instances.toJavaString(clsInst.getField(StdField.enumName.get()));
                         if (clsInst.isList())
                             yield formatList(clsInst);
                         else if (asValue || reference.isValueReference())
@@ -336,6 +354,11 @@ public class ApiService extends EntityContextFactoryAware {
             }
             k.getInterfaces().forEach(queue::offer);
         } while (!queue.isEmpty());
+        if (DebugEnv.traceMethodResolution) {
+            logger.trace("Failed to resolve method '{}' for arguments '{}' in class '{}'",
+                    methodCode, rawArguments, klass.getTypeDesc());
+            klass.foreachMethod(m -> logger.trace("Method: {}", m.getQualifiedSignature()));
+        }
         throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, klass.getQualifiedName() + "." + methodCode,
                 rawArguments);
     }
@@ -385,38 +408,63 @@ public class ApiService extends EntityContextFactoryAware {
                 case String s -> {
                     if (asValue)
                         yield ValueResolutionResult.failed;
+                    if (classType.isAssignableFrom(StdKlass.string.type()))
+                        yield ValueResolutionResult.of(Instances.stringInstance(s));
                     var r = tryResolveReference(s, classType, context);
                     if (r.successful)
                         yield r;
                     if (classType.isEnum())
                         yield tryResolveEnumConstant(s, classType, context);
-                    if (classType.isAssignableFrom(PrimitiveType.stringType))
-                        yield ValueResolutionResult.of(Instances.stringInstance(s));
                     yield ValueResolutionResult.failed;
                 }
-                case Long l->  classType.isAssignableFrom(Types.getLongType()) ?
-                        ValueResolutionResult.of(Instances.longInstance(l)) :
+                case Long l->  {
+                    if (classType.isAssignableFrom(StdKlass.long_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedLongInstance(l));
+                    else if (classType.isAssignableFrom(StdKlass.double_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(l));
+                    else if (classType.isAssignableFrom(StdKlass.float_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedFloatInstance(l));
+                    else
+                        yield ValueResolutionResult.failed;
+                }
+                case Double d->  {
+                  if (classType.isAssignableFrom(StdKlass.double_.type()))
+                      yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(d));
+                  else if (classType.isAssignableFrom(StdKlass.float_.type()))
+                      yield ValueResolutionResult.of(Instances.wrappedFloatInstance(d.floatValue()));
+                  else
+                      yield ValueResolutionResult.failed;
+                }
+                case Integer i->  {
+                    if (classType.isAssignableFrom(StdKlass.byte_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedByteInstance(i.byteValue()));
+                    else if (classType.isAssignableFrom(StdKlass.short_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedShortInstance(i.shortValue()));
+                    else if (classType.isAssignableFrom(StdKlass.integer.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedIntInstance(i));
+                    else if (classType.isAssignableFrom(StdKlass.long_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedLongInstance(i));
+                    else if (classType.isAssignableFrom(StdKlass.float_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedFloatInstance(i));
+                    else if (classType.isAssignableFrom(StdKlass.double_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(i));
+                    else
+                        yield ValueResolutionResult.failed;
+                }
+                case Float f->  classType.isAssignableFrom(StdKlass.float_.type()) ?
+                        ValueResolutionResult.of(Instances.wrappedFloatInstance(f)) :
                         ValueResolutionResult.failed;
-                case Double d->  classType.isAssignableFrom(Types.getDoubleType()) ?
-                        ValueResolutionResult.of(Instances.doubleInstance(d)) :
+                case Short s->  classType.isAssignableFrom(StdKlass.short_.type()) ?
+                        ValueResolutionResult.of(Instances.wrappedShortInstance(s)) :
                         ValueResolutionResult.failed;
-                case Integer i->  classType.isAssignableFrom(Types.getIntType()) ?
-                        ValueResolutionResult.of(Instances.intInstance(i)) :
+                case Byte b->  classType.isAssignableFrom(StdKlass.byte_.type()) ?
+                        ValueResolutionResult.of(Instances.wrappedByteInstance(b)) :
                         ValueResolutionResult.failed;
-                case Float f->  classType.isAssignableFrom(Types.getFloatType()) ?
-                        ValueResolutionResult.of(Instances.floatInstance(f)) :
+                case Character c->  classType.isAssignableFrom(StdKlass.character.type()) ?
+                        ValueResolutionResult.of(Instances.wrappedCharInstance(c)) :
                         ValueResolutionResult.failed;
-                case Short s->  classType.isAssignableFrom(Types.getShortType()) ?
-                        ValueResolutionResult.of(Instances.shortInstance(s)) :
-                        ValueResolutionResult.failed;
-                case Byte b->  classType.isAssignableFrom(Types.getByteType()) ?
-                        ValueResolutionResult.of(Instances.byteInstance(b)) :
-                        ValueResolutionResult.failed;
-                case Character c->  classType.isAssignableFrom(Types.getCharType()) ?
-                        ValueResolutionResult.of(Instances.charInstance(c)) :
-                        ValueResolutionResult.failed;
-                case Boolean z->  classType.isAssignableFrom(Types.getBooleanType()) ?
-                        ValueResolutionResult.of(Instances.booleanInstance(z)) :
+                case Boolean z->  classType.isAssignableFrom(StdKlass.boolean_.type()) ?
+                        ValueResolutionResult.of(Instances.wrappedBooleanInstance(z)) :
                         ValueResolutionResult.failed;
                 case List<?> list -> tryResolveList(list, classType, currentValue, context);
                 case Map<?, ?> map -> tryResolveObject(map, classType, context);
@@ -456,8 +504,6 @@ public class ApiService extends EntityContextFactoryAware {
                     ValueResolutionResult.of(Instances.floatInstance(n.floatValue())) : ValueResolutionResult.failed;
             case BOOLEAN -> rawValue instanceof Boolean b ?
                     ValueResolutionResult.of(Instances.booleanInstance(b)) : ValueResolutionResult.failed;
-            case STRING -> rawValue instanceof String s ?
-                    ValueResolutionResult.of(Instances.stringInstance(s)) : ValueResolutionResult.failed;
             case PASSWORD -> rawValue instanceof String s ?
                     ValueResolutionResult.of(Instances.passwordInstance(s)) : ValueResolutionResult.failed;
             case CHAR -> rawValue instanceof Character c ?
@@ -476,7 +522,7 @@ public class ApiService extends EntityContextFactoryAware {
         return tryResolveValueObject(map, type, context);
     }
 
-    private ValueResolutionResult tryResolveValueObject(Object rawValue, ClassType type, IInstanceContext context) {
+    private ValueResolutionResult tryResolveValueObject(Object rawValue, Type type, IInstanceContext context) {
         if (rawValue instanceof Map<?, ?> map) {
             var classCode = (String) map.get(KEY_CLASS);
             ClassType actualType;
@@ -484,8 +530,10 @@ public class ApiService extends EntityContextFactoryAware {
                 actualType = getKlass(classCode, context);
                 if (!type.isAssignableFrom(actualType))
                     return ValueResolutionResult.failed;
-            } else
-                actualType = type;
+            } else if(type instanceof ClassType ct)
+                actualType = ct;
+            else
+                return ValueResolutionResult.failed;
             var instance = saveObject(map, actualType, context);
             return instance != null ? ValueResolutionResult.of(instance.getReference()) : ValueResolutionResult.failed;
         } else
@@ -573,7 +621,7 @@ public class ApiService extends EntityContextFactoryAware {
         if (rawValue instanceof String str) {
             var id = Id.tryParse(str);
             if (id != null) {
-                var inst = context.get(id);
+                var inst = Objects.requireNonNull(context.get(id), () -> "Instance not found for ID: " + id);
                 return type.isInstance(inst.getReference()) ? ValueResolutionResult.of(inst.getReference()) : ValueResolutionResult.failed;
             }
         }
@@ -592,17 +640,21 @@ public class ApiService extends EntityContextFactoryAware {
             return Instances.stringInstance(str);
         }
         if(rawValue instanceof Character c)
-            return Instances.charInstance(c);
+            return Instances.wrappedCharInstance(c);
         if(ValueUtils.isLong(rawValue))
-            return Instances.longInstance(((Number) rawValue).longValue());
+            return Instances.wrappedLongInstance(((Number) rawValue).longValue());
         if (ValueUtils.isInteger(rawValue))
-            return Instances.intInstance(((Number) rawValue).intValue());
+            return Instances.wrappedIntInstance(((Number) rawValue).intValue());
         if (ValueUtils.isDouble(rawValue))
-            return Instances.doubleInstance(((Number) rawValue).doubleValue());
+            return Instances.wrappedDoubleInstance(((Number) rawValue).doubleValue());
         if (ValueUtils.isFloat(rawValue))
-            return Instances.floatInstance(((Number) rawValue).floatValue());
+            return Instances.wrappedFloatInstance(((Number) rawValue).floatValue());
         if (rawValue instanceof Boolean b)
-            return Instances.booleanInstance(b);
+            return Instances.wrappedBooleanInstance(b);
+        if (rawValue instanceof Map<?,?> map) {
+            var r = tryResolveValueObject(map, Types.getAnyType(), context);
+            if (r.successful) return r.resolved;
+        }
         if (rawValue instanceof List<?> list) {
             var listType = KlassType.create(StdKlass.arrayList.get(), List.of(Types.getAnyType()));
             return Instances.createList(listType,

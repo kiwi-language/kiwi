@@ -32,6 +32,7 @@ public class InstanceContextTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
         instanceStore = new MemInstanceStore(new LocalCache());
         entityRepository = new MockDefContext();
@@ -77,7 +78,7 @@ public class InstanceContextTest extends TestCase {
         }
         try (var context = newContext()) {
             var instance = (ClassInstance) context.get(id);
-            Assert.assertEquals(Instances.stringInstance(name), instance.getField(fooNameField));
+            Assert.assertEquals(name, Instances.toJavaString(instance.getField(fooNameField)));
         }
     }
 

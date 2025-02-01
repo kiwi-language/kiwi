@@ -7,6 +7,7 @@ import org.metavm.flow.Function;
 import org.metavm.flow.FunctionRef;
 import org.metavm.object.type.Types;
 import org.metavm.util.Instances;
+import org.metavm.util.TestUtils;
 import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
 
@@ -23,6 +24,7 @@ public class StandardStaticMethodsTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
         functions = StandardStaticMethods.defineFunctions();
     }
 
@@ -48,8 +50,11 @@ public class StandardStaticMethodsTest extends TestCase {
                 List.of(stringInstance("a,b,c"), stringInstance(",")),
                 () -> null);
         Assert.assertEquals(
-                List.of(stringInstance("a"), stringInstance("b"), stringInstance("c")),
-                Objects.requireNonNull(r3.ret()).resolveArray().getElements()
+                List.of("a", "b", "c"),
+                Utils.map(
+                        Objects.requireNonNull(r3.ret()).resolveArray().getElements(),
+                        Instances::toJavaString
+                )
         );
         var stringFormat = ReflectionUtils.getMethod(String.class, "format", String.class, Object[].class);
         var r4 = getFunction(stringFormat).execute(null,
@@ -58,7 +63,7 @@ public class StandardStaticMethodsTest extends TestCase {
                 ),
                 () -> null
         );
-        Assert.assertEquals(stringInstance("1"), r4.ret());
+        Assert.assertEquals("1", Instances.toJavaString(Objects.requireNonNull(r4.ret())));
 
         var substringMethod = ReflectionUtils.getMethod(String.class, "substring", int.class, int.class);
         var r5 = getFunction(substringMethod).execute(null,
@@ -67,7 +72,7 @@ public class StandardStaticMethodsTest extends TestCase {
                         intInstance(4),
                         intInstance(6)
                 ), () -> null);
-        Assert.assertEquals(stringInstance("VM"), r5.ret());
+        Assert.assertEquals("VM", Instances.toJavaString(Objects.requireNonNull(r5.ret())));
     }
 
     private FunctionRef getFunction(Method javaMethod) {

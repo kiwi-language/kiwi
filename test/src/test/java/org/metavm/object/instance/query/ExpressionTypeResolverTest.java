@@ -26,6 +26,7 @@ public class ExpressionTypeResolverTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
         typeDefRepository = new MockTypeDefRepository();
         instanceProvider = new MockInstanceRepository();
         MockStandardTypesInitializer.init();

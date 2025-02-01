@@ -19,7 +19,7 @@ class Utils {
             var it1 = values.iterator()!!;
             while (it1.hasNext()) {
                 var next1 = it1.next()!!;
-                if(next == next1) {
+                if(equals(next, next1)) {
                     return true;
                 }
             }

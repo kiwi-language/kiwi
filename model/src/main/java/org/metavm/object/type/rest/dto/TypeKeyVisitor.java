@@ -6,6 +6,8 @@ public interface TypeKeyVisitor<R> {
 
     R visitClassTypeKey(ClassTypeKey typeKey);
 
+    R visitStringTypeKey(StringTypeKey typeKey);
+
     R visitIntersectionTypeKey(IntersectionTypeKey typeKey);
 
     R visitUnionTypeKey(UnionTypeKey typeKey);

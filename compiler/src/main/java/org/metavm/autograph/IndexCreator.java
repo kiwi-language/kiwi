@@ -1,9 +1,6 @@
 package org.metavm.autograph;
 
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiMethodReferenceExpression;
-import com.intellij.psi.PsiNewExpression;
-import com.intellij.psi.PsiTypeParameter;
+import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.Values;
@@ -60,7 +57,7 @@ public class IndexCreator extends VisitorBase {
             var methodRef = (PsiMethodReferenceExpression) args[2];
             index.setMethod(requireNonNull(requireNonNull(methodRef.resolve()).getUserData(Keys.Method)));
             var keyType = classType.getTypeArguments().getFirst();
-            if (keyType instanceof KlassType ct && ct.isValueType()) {
+            if (keyType instanceof KlassType ct && ct.isValueType() && !ct.isString()) {
                 var indexF = index;
                 ct.foreachField(keyField -> {
                     if (!keyField.isStatic() && !keyField.isTransient()) {

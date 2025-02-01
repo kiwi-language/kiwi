@@ -338,8 +338,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
         if (DebugEnv.dumpContextAfterFinish) {
             for (Instance instance : this) {
-//                if (instance.isRoot())
-                    logger.debug("{} {}", instance.tryGetTreeId(), instance.getText());
+                if (instance.isRoot()) logger.trace("{} {}", instance.tryGetTreeId(), instance.getText());
             }
         }
         if (DebugEnv.dumpClassAfterContextFinish) {
@@ -348,7 +347,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 if (instance instanceof MvClassInstance o) klasses.add(o.getInstanceKlass());
             }
             for (Klass klass : klasses) {
-                logger.debug("{}", klass.getText());
+                logger.trace("{}", klass.getText());
             }
         }
     }
@@ -690,7 +689,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         for (var instance : instances) {
             if (instance.isRoot() && !instance.isRemoved())
                 instance.visitGraph(i -> {
-                    if (i.isRemoved())
+                    if (i instanceof StringInstance || i.isRemoved())
                         return false;
                     var ctx = i.getContext();
                     if (ctx != null && ctx != BaseInstanceContext.this)
@@ -869,7 +868,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public boolean containsUniqueKey(IndexDef<?> indexDef, Value... values) {
         for (var value : values) {
-            if(value instanceof Reference ref && !containsId(ref.getId()))
+            if(value instanceof Reference ref && !ref.isInlineValueReference() && !containsId(ref.getId()))
                 return false ;
         }
         return containsUniqueKey(createIndexKey(indexDef, values));

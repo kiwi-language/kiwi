@@ -5,9 +5,7 @@ import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.DummyGenericDeclaration;
-import org.metavm.entity.GenericDeclaration;
-import org.metavm.entity.GenericDeclarationRef;
+import org.metavm.entity.*;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.antlr.TypeLexer;
@@ -206,7 +204,7 @@ public class TypeParserImpl implements TypeParser {
         if (ctx.BOOLEAN() != null)
             return PrimitiveType.booleanType;
         if (ctx.STRING() != null)
-            return PrimitiveType.stringType;
+            return StdKlass.string.type();
         if (ctx.INT() != null)
             return PrimitiveType.intType;
         if (ctx.LONG() != null)

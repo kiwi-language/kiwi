@@ -223,7 +223,6 @@ public class InstanceFactory {
             case FLOAT -> Instances.floatInstance(((Number) value).floatValue());
             case BOOLEAN -> Instances.booleanInstance((Boolean) value);
             case PASSWORD -> Instances.passwordInstance((String) value);
-            case STRING -> Instances.stringInstance((String) value);
             case TIME -> Instances.timeInstance(((Number) value).longValue());
             case CHAR -> Instances.charInstance((Character) value);
             case SHORT -> Instances.shortInstance((Short) value);

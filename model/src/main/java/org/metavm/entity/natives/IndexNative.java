@@ -6,7 +6,6 @@ import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.StringValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.Instances;
@@ -69,7 +68,7 @@ public class IndexNative extends NativeBase {
 
     private IndexRef getIndex() {
         if (index == null) {
-            var indexName = ((StringValue) instance.getField(StdField.indexName.get())).getValue();
+            var indexName = Instances.toJavaString(instance.getField(StdField.indexName.get()));
             var valueType = (ClassType) instance.getInstanceType().getTypeArguments().get(1);
             index = Objects.requireNonNull(
                     valueType.findSelfIndex(idx -> idx.getName().equals(indexName)),

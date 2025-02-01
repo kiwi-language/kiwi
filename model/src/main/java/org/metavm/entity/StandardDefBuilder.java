@@ -15,6 +15,7 @@ import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -70,6 +71,18 @@ public class StandardDefBuilder {
                 new TypeReference<Enum<?>> () {}.getType(),
                 enumKlass
         );
+        defContext.preAddDef(enumDef);
+
+        throwableKlass = newKlassBuilder(Throwable.class)
+                .source(ClassSource.BUILTIN).build();
+        var throwableDef = createKlassDef(
+                Throwable.class,
+                throwableKlass
+        );
+        defContext.preAddDef(throwableDef);
+
+        createStringKlass();
+
         var enumNameField = createField(ENUM_NAME_FIELD, true, Types.getStringType(), Access.PUBLIC,
                 ColumnKind.STRING.getColumn(0), 0, enumKlass);
         createField(ENUM_ORDINAL_FIELD, false, Types.getIntType(), Access.PRIVATE,
@@ -78,18 +91,11 @@ public class StandardDefBuilder {
         createEnumMethods(enumKlass);
         enumKlass.setStage(ResolutionStage.DEFINITION);
 
-        defContext.addDef(enumDef);
+        defContext.afterDefInitialized(enumDef);
 
         initSystemFunctions();
 
-        throwableKlass = newKlassBuilder(Throwable.class)
-                .source(ClassSource.BUILTIN).build();
         createThrowableFlows(throwableKlass);
-        var throwableDef = createKlassDef(
-                Throwable.class,
-                throwableKlass
-        );
-        defContext.preAddDef(throwableDef);
         var javaMessageField = ReflectionUtils.getField(Throwable.class, "detailMessage");
         /*
          Predefine composite types because the 'cause' field depends on Throwable | Null
@@ -154,6 +160,7 @@ public class StandardDefBuilder {
         var indexKlass = parseKlass(Index.class);
         FieldBuilder.newBuilder("name", indexKlass, Types.getStringType()).build();
         primTypeFactory.saveDefs(defContext);
+        createPrimitiveWrapperKlasses();
     }
 
     void postProcess() {
@@ -190,6 +197,164 @@ public class StandardDefBuilder {
                 .returnType(Types.getIntType())
                 .build();
     }
+
+    private void createPrimitiveWrapperKlasses() {
+        createPrimitiveKlass(Byte.class, PrimitiveType.byteType);
+        createPrimitiveKlass(Short.class, PrimitiveType.shortType);
+        createPrimitiveKlass(Integer.class, PrimitiveType.intType);
+        createPrimitiveKlass(Long.class, PrimitiveType.longType);
+        createPrimitiveKlass(Float.class, PrimitiveType.floatType);
+        createPrimitiveKlass(Double.class, PrimitiveType.doubleType);
+        createPrimitiveKlass(Character.class, PrimitiveType.charType);
+        createPrimitiveKlass(Boolean.class, PrimitiveType.booleanType);
+    }
+
+    private Klass createPrimitiveKlass(Class<?> clazz, PrimitiveType primitiveType) {
+        var klass = parseKlass(clazz);
+        klass.setKind(ClassKind.VALUE);
+        klass.setInterfaces(List.of(KlassType.create(defContext.getKlass(Comparable.class), List.of(klass.getType()))));
+        FieldBuilder.newBuilder("value", klass, primitiveType).build();
+        return klass;
+    }
+
+    private Klass createStringKlass() {
+        var klass = parseKlass(String.class, k -> {
+            StdKlass.string.set(k);
+            k.setType(new StringType());
+            k.setKind(ClassKind.VALUE);
+        });
+        MethodBuilder.newBuilder(klass, "writeObject")
+                .isNative(true)
+                .access(Access.PRIVATE)
+                .parameters(new NameAndType("s", Types.getNullableType(defContext.getType(ObjectOutputStream.class))))
+                .build();
+
+        MethodBuilder.newBuilder(klass, "readObject")
+                .isNative(true)
+                .access(Access.PRIVATE)
+                .parameters(new NameAndType("s", Types.getNullableType(defContext.getType(ObjectInputStream.class))))
+                .build();
+
+        klass.resetHierarchy();
+        return klass;
+    }
+
+//    private Klass createStringKlass() {
+//        var klass = defContext.getKlass(String.class);
+//        var stringType = klass.getType();
+//        var nullableStringType = Types.getNullableType(stringType);
+//        klass.setInterfaces(List.of(KlassType.create(defContext.getKlass(Comparable.class), List.of(klass.getType()))));
+//
+//        MethodBuilder.newBuilder(klass, "equals")
+//                .isNative(true)
+//                .parameters(new NameAndType("that", Types.getNullableAnyType()))
+//                .returnType(PrimitiveType.booleanType)
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "hashCode")
+//                .isNative(true)
+//                .returnType(PrimitiveType.intType)
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "compareTo")
+//                .isNative(true)
+//                .parameters(new NameAndType("that", nullableStringType))
+//                .returnType(PrimitiveType.intType)
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "concat")
+//                .isNative(true)
+//                .parameters(new NameAndType("that", nullableStringType))
+//                .returnType(nullableStringType)
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "startsWith")
+//                .isNative(true)
+//                .parameters(new NameAndType("that", nullableStringType))
+//                .returnType(PrimitiveType.booleanType)
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "endsWith")
+//                .isNative(true)
+//                .parameters(new NameAndType("that", nullableStringType))
+//                .returnType(PrimitiveType.booleanType)
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "contains")
+//                .isNative(true)
+//                .parameters(new NameAndType("that", Types.getNullableType(klass.getType())))
+//                .returnType(PrimitiveType.booleanType)
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "substring")
+//                .isNative(true)
+//                .parameters(
+//                        new NameAndType("beginIndex", PrimitiveType.intType)
+//                )
+//                .returnType(nullableStringType)
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "substring")
+//                .isNative(true)
+//                .parameters(
+//                        new NameAndType("beginIndex", PrimitiveType.intType),
+//                        new NameAndType("endIndex", PrimitiveType.intType)
+//                )
+//                .returnType(nullableStringType)
+//                .build();
+//
+//        var nullableCharSequenceType = Types.getNullableType(defContext.getType(CharSequence.class));
+//        MethodBuilder.newBuilder(klass, "replace")
+//                .isNative(true)
+//                .parameters(
+//                        new NameAndType("target", nullableCharSequenceType),
+//                        new NameAndType("replacement", nullableCharSequenceType)
+//                        )
+//                .returnType(nullableStringType)
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "replace")
+//                .isNative(true)
+//                .parameters(
+//                        new NameAndType("target", Types.getCharType()),
+//                        new NameAndType("replacement", Types.getCharType())
+//                )
+//                .returnType(nullableStringType)
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "replaceFirst")
+//                .isNative(true)
+//                .parameters(
+//                        new NameAndType("regex", nullableStringType),
+//                        new NameAndType("replacement", nullableStringType)
+//                )
+//                .returnType(nullableStringType)
+//                .build();
+//
+//
+//        MethodBuilder.newBuilder(klass, "replaceAll")
+//                .isNative(true)
+//                .parameters(
+//                        new NameAndType("regex", nullableStringType),
+//                        new NameAndType("replacement", nullableStringType)
+//                )
+//                .returnType(nullableStringType)
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "writeObject")
+//                .isNative(true)
+//                .access(Access.PRIVATE)
+//                .parameters(new NameAndType("s", Types.getNullableType(defContext.getType(ObjectOutputStream.class))))
+//                .build();
+//
+//        MethodBuilder.newBuilder(klass, "readObject")
+//                .isNative(true)
+//                .access(Access.PRIVATE)
+//                .parameters(new NameAndType("s", Types.getNullableType(defContext.getType(ObjectInputStream.class))))
+//                .build();
+//
+//        return klass;
+//    }
 
     private Klass createConsumerKlass() {
         return parseKlass(Consumer.class);
@@ -459,6 +624,11 @@ public class StandardDefBuilder {
     }
 
     Klass parseKlass(Class<?> javaClass) {
+        return parseKlass(javaClass, null);
+    }
+
+    Klass parseKlass(Class<?> javaClass, @Nullable Consumer<Klass> preprocessor) {
+        var tracing = DebugEnv.traceClassDefinition;
         if(javaClass == Enum.class)
             return enumKlass;
         if(javaClass == Throwable.class)
@@ -467,11 +637,15 @@ public class StandardDefBuilder {
             return defContext.getKlass(Klass.class);
         var klass = (Klass) primTypeFactory.javaType2TypeDef.get(javaClass);
         if(klass == null) {
-            var r = new ReflectDefiner(javaClass, defContext.getTypeTag(javaClass), this::parseKlass,
-                    primTypeFactory::putType).defineClass();
+            var definer = new ReflectDefiner(javaClass, defContext.getTypeTag(javaClass), this::parseKlass,
+                    primTypeFactory::putType);
+            definer.setPreprocessor(preprocessor);
+            var r = definer.defineClass();
             klass = r.klass();
-            if(r.staticFieldTable() != null)
+            if(r.staticFieldTable() != null) {
+                if (tracing) log.trace("Registering static field table for class '{}'", javaClass.getName());
                 primTypeFactory.putStaticFieldTable(klass, r.staticFieldTable());
+            }
         }
         return klass;
     }
@@ -484,7 +658,8 @@ public class StandardDefBuilder {
 
         @Override
         public void putType(Class<?> javaClass, TypeDef typeDef) {
-            Utils.require(!javaType2TypeDef.containsKey(javaClass));
+            Utils.require(!javaType2TypeDef.containsKey(javaClass),
+                    () -> "Java class " + javaClass.getName() + " is already added to the type factory");
             Utils.require(!typeDef2JavaType.containsKey(typeDef));
             javaType2TypeDef.put(javaClass, typeDef);
             typeDef2JavaType.put(typeDef, javaClass);

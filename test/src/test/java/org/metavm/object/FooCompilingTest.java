@@ -41,11 +41,11 @@ public class FooCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(
                         List.of(
                                 foo.getField("bar").toDTO(),
-                                Instances.createString("Bar001").toDTO(),
-                                Instances.createString("Bar002").toDTO(),
-                                Instances.createString("Bar004").toDTO(),
-                                Instances.createString("Bar003").toDTO(),
-                                Instances.createString("Bar005").toDTO()
+                                Instances.stringInstance("Bar001").toDTO(),
+                                Instances.stringInstance("Bar002").toDTO(),
+                                Instances.stringInstance("Bar004").toDTO(),
+                                Instances.stringInstance("Bar003").toDTO(),
+                                Instances.stringInstance("Bar005").toDTO()
                         ),
                         result
                 );
@@ -74,7 +74,7 @@ public class FooCompilingTest extends CompilerTestBase {
                 context.loadKlasses();
                 var foo = (MvClassInstance) context.get(id);
                 MatcherAssert.assertThat(page.data().getFirst()[0],
-                        InstanceDTOMatcher.of(Instances.createString("Bar001").toDTO()));
+                        InstanceDTOMatcher.of(Instances.stringInstance("Bar001").toDTO()));
                 Assert.assertEquals(page.data().getFirst()[1].id(), Objects.requireNonNull(foo.getField("qux")).getStringId());
             }
         });

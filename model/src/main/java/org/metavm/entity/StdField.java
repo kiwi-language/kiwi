@@ -11,6 +11,14 @@ public enum StdField implements ValueHolderOwner<Field> {
     enumName(Enum.class, "name"),
     enumOrdinal(Enum.class, "ordinal"),
     indexName(Index.class, "name"),
+    byteValue(Byte.class, "value"),
+    shortValue(Short.class, "value"),
+    integerValue(Integer.class, "value"),
+    longValue(Long.class, "value"),
+    floatValue(Float.class, "value"),
+    doubleValue(Double.class, "value"),
+    characterValue(Character.class, "value"),
+    booleanValue(Boolean.class, "value"),
     ;
 
     private final Class<?> javaClass;

@@ -7,6 +7,7 @@ import org.metavm.object.type.*;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
+import org.metavm.util.Instances;
 import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
@@ -17,7 +18,7 @@ public interface ClassInstance extends Instance {
 
     Klass uninitializedKlass = KlassBuilder.newBuilder("Uninitialized", "Uninitialized").build();
 
-    static MvClassInstance create(Map<Field, Value> data, ClassType type) {
+    static MvClassInstance create(Map<Field, ? extends Value> data, ClassType type) {
         return ClassInstanceBuilder.newBuilder(type).data(data).build();
     }
 
@@ -106,8 +107,8 @@ public interface ClassInstance extends Instance {
 
     void initField(Field field, Value value);
 
-    default StringValue getStringField(Field field) {
-        return (StringValue) getField(field);
+    default String getStringField(Field field) {
+        return Instances.toJavaString(getField(field));
     }
 
     default LongValue getLongField(Field field) {

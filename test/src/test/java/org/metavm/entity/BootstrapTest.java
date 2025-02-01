@@ -1,6 +1,8 @@
 //package org.metavm.entity;
 //
 //import junit.framework.TestCase;
+//import org.hamcrest.CoreMatchers;
+//import org.hamcrest.MatcherAssert;
 //import org.junit.Assert;
 //import org.metavm.api.ValueObject;
 //import org.metavm.event.MockEventQueue;
@@ -17,6 +19,7 @@
 //
 //import java.lang.reflect.Method;
 //import java.lang.reflect.Modifier;
+//import java.util.Map;
 //import java.util.Set;
 //
 //import static org.metavm.util.TestUtils.doInTransactionWithoutResult;
@@ -142,6 +145,25 @@
 //            );
 //            logger.info(profiler.finish(false, true).toString());
 //        }
+//    }
+//
+//    public void testPrimitiveWrapper() {
+//        ContextUtil.resetProfiler();
+//        var profiler = ContextUtil.getProfiler();
+//        var bootstrap = newBootstrap();
+//        var result = bootstrap.boot();
+//        Assert.assertTrue(result.numInstancesWithNullIds() > 0);
+//        TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+//        logger.info(profiler.finish(false, true).toString());
+//        Assert.assertNotNull(
+//                result.defContext().selectFirstByKey(Function.UNIQUE_NAME, Instances.stringInstance("concat"))
+//        );
+//        var defContext = ModelDefRegistry.getDefContext();
+//        var type = defContext.getType(Integer.class);
+//        MatcherAssert.assertThat(type, CoreMatchers.instanceOf(ClassType.class));
+//        Assert.assertEquals("Byte", defContext.getKlass(Byte.class).getName());
+//        var mapKlass = defContext.getKlass(Map.class);
+//        Assert.assertNotNull(mapKlass.findInnerKlass(k -> k.getName().equals("Entry")));
 //    }
 //
 //    public void testPerf() {

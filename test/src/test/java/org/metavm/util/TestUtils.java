@@ -15,6 +15,8 @@ import org.metavm.api.ValueObject;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
 import org.metavm.event.MockEventQueue;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.NameAndType;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.cache.LocalCache;
@@ -239,7 +241,7 @@ public class TestUtils {
 
     public static void initEntityIds(Instance entry) {
         var nextTreeIdRef = new Object() {
-            long value = 10000L;
+            long value = 10000000L;
         };
         var roots = new IdentitySet<Entity>();
         entry.visitGraph(o -> {
@@ -276,12 +278,13 @@ public class TestUtils {
             long value = 10000L;
         };
         var roots = new IdentitySet<Entity>();
+        var visited = new IdentitySet<Instance>();
         for (Instance entry : instances) {
             entry.visitGraph(o -> {
                 if (o instanceof Entity entity)
                     roots.add(entity.getRootEntity());
                 return true;
-            });
+            }, r -> true, visited);
         }
         roots.forEach(r -> {
             r.forEachDescendant(e -> {
@@ -302,12 +305,14 @@ public class TestUtils {
 
     public static void initInstanceIds(List<Instance> instances, EntityIdProvider idProvider) {
         var roots = new IdentitySet<Instance>();
+        var visited = new IdentitySet<Instance>();
         instances.forEach(r -> r.visitGraph(i -> {
+            if (i.isValue()) return false;
             var root = i.getRoot();
             if (!root.isIdInitialized())
                 roots.add(root);
             return true;
-        }));
+        }, r1 -> true, visited));
         roots.forEach(r -> {
             var treeId = idProvider.allocateOne(TestConstants.APP_ID);
             var nodeIdRef = new Object() {
@@ -454,4 +459,24 @@ public class TestUtils {
     public static KlassBuilder newKlassBuilder(String name, String qualifiedName) {
         return KlassBuilder.newBuilder(name, qualifiedName).tag(nextKlassTag());
     }
+
+    public static void ensureStringKlassInitialized() {
+        if (StdKlass.string.isInitialized()) return;
+        var treeId = 100000000;
+
+        var klass = TestUtils.newKlassBuilder("String", "java.lang.String")
+                .kind(ClassKind.VALUE)
+                .build();
+        StdKlass.string.set(klass);
+        klass.setType(new StringType());
+        klass.initId(PhysicalId.of(treeId, 0));
+        MethodBuilder.newBuilder(klass, "equals")
+                .isNative(true)
+                .returnType(PrimitiveType.booleanType)
+                .parameters(new NameAndType("o", Types.getNullableAnyType()))
+                .build();
+
+        klass.resetHierarchy();
+    }
+
 }

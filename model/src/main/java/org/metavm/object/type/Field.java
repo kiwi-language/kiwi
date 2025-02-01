@@ -202,10 +202,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         return Objects.requireNonNull(instance).getDoubleField(this);
     }
 
-    public StringValue getString(@NotNull ClassInstance instance) {
-        return Objects.requireNonNull((instance)).getStringField(this);
-    }
-
     public Value get(@NotNull ClassInstance instance) {
         return Objects.requireNonNull((instance)).getField(this);
     }
@@ -618,7 +614,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         if (isReadonly()) modifiers.add("readonly");
         if (isChild) modifiers.add("child");
         if (isTransient) modifiers.add("transient");
-        writer.writeln(String.join(" ", modifiers) + " " + name);
+        writer.writeln(String.join(" ", modifiers) + " " + name + ":" + getType().getTypeDesc());
     }
 
     @Override

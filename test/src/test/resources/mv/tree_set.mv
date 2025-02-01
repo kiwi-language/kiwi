@@ -1,9 +1,10 @@
 import java.util.TreeSet;
+import java.lang.Integer;
 
 class TreeSetLab {
 
-    public static TreeSet<int> create() {
-        return new TreeSet<int>();
+    public static TreeSet<Integer> create() {
+        return new TreeSet<Integer>();
     }
 
 }

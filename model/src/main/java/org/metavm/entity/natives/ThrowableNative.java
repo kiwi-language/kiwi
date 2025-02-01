@@ -1,9 +1,6 @@
 package org.metavm.entity.natives;
 
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.NullValue;
-import org.metavm.object.instance.core.StringValue;
-import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Field;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -28,8 +25,8 @@ public class ThrowableNative extends NativeBase {
         if(causeOrMessage instanceof NullValue nullInstance) {
             return Throwable(nullInstance, nullInstance, callContext);
         }
-        else if(causeOrMessage instanceof StringValue message) {
-            return Throwable(message, Instances.nullInstance(), callContext);
+        else if(causeOrMessage instanceof StringReference) {
+            return Throwable(causeOrMessage, Instances.nullInstance(), callContext);
         }
         else if(causeOrMessage instanceof Value cause) {
             return Throwable(Instances.nullInstance(), cause, callContext);
@@ -53,7 +50,7 @@ public class ThrowableNative extends NativeBase {
 
     public static String getMessage(ClassInstance exception) {
         var n = new ThrowableNative(exception);
-        if (n.getMessage() instanceof StringValue s)
+        if (n.getMessage() instanceof StringReference s)
             return s.getValue();
         else
             return null;

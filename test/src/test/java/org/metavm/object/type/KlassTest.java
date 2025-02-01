@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.entity.mocks.MockEntityRepository;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
@@ -17,6 +18,11 @@ import java.util.Objects;
 
 @Slf4j
 public class KlassTest extends TestCase {
+
+    @Override
+    protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
+    }
 
     public void testIO() {
         var testKlasses = MockUtils.createTestKlasses();
@@ -35,6 +41,8 @@ public class KlassTest extends TestCase {
         }
 
         var repo = new MockEntityRepository();
+        repo.bind(StdKlass.string.get());
+
         var in = new KlassInput(new ByteArrayInputStream(bytes), repo);
         var k = in.readEntity(Klass.class, null);
         var nk = in.readEntity(Klass.class, null);

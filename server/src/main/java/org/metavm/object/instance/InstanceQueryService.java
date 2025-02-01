@@ -135,7 +135,7 @@ public class InstanceQueryService {
             searchFieldSet.add(titleField);
         if (searchFieldSet.isEmpty())
             return null;
-        PrimitiveValue searchTextInst = Instances.stringInstance(searchText);
+        var searchTextInst = Instances.stringInstance(searchText);
         Expression result = null;
         for (Field field : searchFieldSet) {
             Expression expression;

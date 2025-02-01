@@ -13,6 +13,7 @@ import org.metavm.object.type.IndexedTypeDefProvider;
 import org.metavm.object.type.mocks.MockTypeDefRepository;
 import org.metavm.util.Instances;
 import org.metavm.util.MockUtils;
+import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,7 @@ public class ExpressionEvaluatorTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
         typeDefProvider = new MockTypeDefRepository();
         instanceProvider = new MockInstanceRepository();
