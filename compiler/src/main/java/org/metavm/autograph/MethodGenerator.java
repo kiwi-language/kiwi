@@ -1262,7 +1262,7 @@ public class MethodGenerator {
     }
 
     public Node createFloatToDouble() {
-        return onNodeCreated(new FloatToDoubleNode(nextName("f2d"), code().getLastNode(), code()));
+        return onNodeCreated(new FloatoDoubleNode(nextName("f2d"), code().getLastNode(), code()));
     }
 
     public Node createIntToFloat() {

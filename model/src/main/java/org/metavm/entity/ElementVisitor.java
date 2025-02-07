@@ -664,7 +664,7 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitFloatoDoubleNode(FloatToDoubleNode node) {
+    public R visitFloatToDoubleNode(FloatoDoubleNode node) {
         return visitNode(node);
     }
 

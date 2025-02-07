@@ -160,7 +160,7 @@ public class CodeInput extends MvInput  {
             case Bytecodes.FLOAT_COMPARE -> FloatCompareNode.read(this, name);
             case Bytecodes.FLOAT_TO_INT -> FloatToIntNode.read(this, name);
             case Bytecodes.FLOAT_TO_LONG -> FloatToLongNode.read(this, name);
-            case Bytecodes.FLOAT_TO_DOUBLE -> FloatToDoubleNode.read(this, name);
+            case Bytecodes.FLOAT_TO_DOUBLE -> FloatoDoubleNode.read(this, name);
             case Bytecodes.INT_TO_FLOAT -> IntToFloatNode.read(this, name);
             case Bytecodes.LONG_TO_FLOAT -> LongToFloatNode.read(this, name);
             case Bytecodes.DOUBLE_TO_FLOAT -> DoubleToFloatNode.read(this, name);

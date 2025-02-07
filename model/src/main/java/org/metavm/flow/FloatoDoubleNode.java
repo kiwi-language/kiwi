@@ -13,17 +13,17 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class FloatToDoubleNode extends Node {
+public class FloatoDoubleNode extends Node {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public FloatToDoubleNode(@NotNull String name, @Nullable Node previous, @NotNull Code code) {
+    public FloatoDoubleNode(@NotNull String name, @Nullable Node previous, @NotNull Code code) {
         super(name, null, previous, code);
     }
 
     public static Node read(CodeInput input, String name) {
-        return new FloatToDoubleNode(name, input.getPrev(), input.getCode());
+        return new FloatoDoubleNode(name, input.getPrev(), input.getCode());
     }
 
     @Override
@@ -59,7 +59,7 @@ public class FloatToDoubleNode extends Node {
 
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
-        return visitor.visitFloatoDoubleNode(this);
+        return visitor.visitFloatToDoubleNode(this);
     }
 
     @Override

@@ -916,7 +916,7 @@ public class Nodes {
     }
 
     public static Node floatToDouble(Code code) {
-        return new FloatToDoubleNode(code.nextNodeName("f2d"), code.getLastNode(), code);
+        return new FloatoDoubleNode(code.nextNodeName("f2d"), code.getLastNode(), code);
     }
 
     public static Node intToFloat(Code code) {
