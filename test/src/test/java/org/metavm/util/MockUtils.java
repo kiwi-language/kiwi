@@ -605,8 +605,7 @@ public class MockUtils {
             Nodes.ret(code);
         }
         var index = new Index(fooKlass, "nameIndex", "", true,
-                List.of(), nameIndexMethod);
-        new IndexField(index, "name", Types.getStringType(), null);
+                Types.getStringType(), nameIndexMethod);
         var getByNameMethod = MethodBuilder.newBuilder(fooKlass, "getByName")
                 .isStatic(true)
                 .parameters(new NameAndType("name", Types.getStringType()))

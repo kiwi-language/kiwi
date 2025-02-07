@@ -426,7 +426,7 @@ lambdaBody
     : block
     ;
 
-indexDeclaration: INDEX IDENTIFIER '{' indexField* '}';
+indexDeclaration: INDEX typeType IDENTIFIER;
 
 indexField: IDENTIFIER ':' expression ';';
 

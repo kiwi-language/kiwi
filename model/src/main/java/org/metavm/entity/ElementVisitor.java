@@ -504,10 +504,6 @@ public abstract class ElementVisitor<R> {
         return visitElement(indexRef);
     }
 
-    public R visitIndexField(IndexField indexField) {
-        return visitElement(indexField);
-    }
-
     public R visitLoadParentNode(LoadParentNode node) {
         return visitNode(node);
     }

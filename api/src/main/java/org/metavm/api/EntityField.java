@@ -11,8 +11,6 @@ public @interface EntityField {
 
     String value() default "";
 
-    boolean unique() default false;
-
     boolean asTitle() default false;
 
     boolean asKey() default false;

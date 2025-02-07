@@ -1,6 +1,5 @@
 package org.metavm.object.instance.core;
 
-import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Identifiable;
 import org.metavm.entity.Tree;
 import org.metavm.object.instance.rest.InstanceParam;

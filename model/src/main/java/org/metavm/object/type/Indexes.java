@@ -19,8 +19,11 @@ public class Indexes {
                 return values;
             }
         }
-        var type = indexRef.getIndexFieldTypes().getFirst();
-        return List.of(type.fromStackValue(key));
+        var type = indexRef.getType();
+        if (type instanceof PrimitiveType)
+            return List.of(type.fromStackValue(key));
+        else
+            return List.of(key);
     }
 
 }

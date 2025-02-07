@@ -6,9 +6,12 @@ import org.metavm.api.Entity;
 import org.metavm.api.*;
 import org.metavm.expression.ExpressionParser;
 import org.metavm.expression.TypeParsingContext;
-import org.metavm.flow.*;
-import org.metavm.object.instance.core.*;
+import org.metavm.flow.ExpressionValue;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.NameAndType;
+import org.metavm.flow.Nodes;
 import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
@@ -17,7 +20,6 @@ import org.metavm.util.*;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.*;
 import java.util.List;
 import java.util.Set;
@@ -240,14 +242,13 @@ public final class KlassParser<T> {
         IndexDef<?> indexDef = (IndexDef<?>) ReflectionUtils.get(null, indexDefField);
         var index = new Index(
                 declaringTypeDef.getKlass(),
-                EntityUtils.getMetaConstraintName(indexDefField), null, indexDef.isUnique(),
-                List.of(),
+                EntityUtils.getMetaConstraintName(indexDefField),
+                null,
+                indexDef.isUnique(),
+                Types.getAnyType(),
                 null
         );
         index.setIndexDef(indexDef);
-        for (int i = 0; i < indexDef.getFieldCount(); i++) {
-            new IndexField(index, "field" + i, Types.getAnyType(), new ConstantValue(Instances.nullInstance()));
-        }
         indexDef.setIndex(index);
     }
 
@@ -276,7 +277,6 @@ public final class KlassParser<T> {
                                                        Type fieldType) {
         EntityField annotation = javaField.getAnnotation(EntityField.class);
         ChildEntity childEntity = javaField.getAnnotation(ChildEntity.class);
-        boolean unique = annotation != null && annotation.unique();
         boolean asTitle = annotation != null && annotation.asTitle();
         boolean isChild = javaField.isAnnotationPresent(ChildEntity.class);
         boolean lazy = isChild && javaField.getAnnotation(ChildEntity.class).lazy();
@@ -285,7 +285,6 @@ public final class KlassParser<T> {
         var field = FieldBuilder.newBuilder(
                         EntityUtils.getMetaFieldName(javaField),
                         declaringType, fieldType)
-                .unique(unique)
                 .lazy(lazy)
                 .readonly(Modifier.isFinal(javaField.getModifiers()))
                 .column(colAndTag.column())

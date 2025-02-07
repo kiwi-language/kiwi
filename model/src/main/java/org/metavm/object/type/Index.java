@@ -10,16 +10,18 @@ import org.metavm.entity.LocalKey;
 import org.metavm.flow.CodeWriter;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
-import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 @NativeEntity(36)
 @Entity
@@ -27,65 +29,36 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
-    private List<IndexField> fields = new ArrayList<>();
+    private int typeIndex;
     private boolean unique;
     private @Nullable Reference method;
     private transient IndexDef<?> indexDef;
 
-    public Index(Klass type, String name, String message, boolean unique, List<Field> fields,
+    public Index(Klass declaringKlass, String name, String message, boolean unique, Type type,
                  @Nullable Method method) {
-        super(type, name, message);
+        super(declaringKlass, name, message);
         this.unique = unique;
         this.method = Utils.safeCall(method, Instance::getReference);
-        for (Field field : fields) {
-            IndexField.createFieldItem(this, field);
-        }
+        this.typeIndex = declaringKlass.getConstantPool().addValue(type);
     }
 
-    public Index(Long tmpId, Klass type, String name, String message, boolean unique) {
-        super(type, name, message);
+    public Index(Long tmpId, Klass declaringKlass, String name, String message, boolean unique, int typeIndex) {
+        super(declaringKlass, name, message);
         setTmpId(tmpId);
         this.unique = unique;
+        this.typeIndex = typeIndex;
     }
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {
         Constraint.visitBody(visitor);
-        visitor.visitList(visitor::visitEntity);
+        visitor.visitInt();
         visitor.visitBoolean();
         visitor.visitNullable(visitor::visitValue);
     }
 
-    void addField(IndexField item) {
-        this.fields.add(item);
-        item.setIndex(this);
-    }
-
-    public IndexField getField(Id id) {
-        return Utils.findRequired(fields, f -> f.idEquals(id), () -> "Can not find index item for id " + id);
-    }
-
-    public @Nullable IndexField findField(Predicate<IndexField> predicate) {
-        return Utils.find(fields, predicate);
-    }
-
-    public IndexField getFieldByTypeField(Field field) {
-        return Utils.findRequired(
-                fields,
-                item -> Objects.equals(item.getField(), field)
-        );
-    }
-
-    public List<Field> getTypeFields() {
-        return Utils.map(fields, IndexField::getField);
-    }
 
     public IndexKeyRT createIndexKey(List<Value> values) {
-        Utils.require(values.size() <= fields.size());
-        return createIndexKey(Utils.zip(fields.subList(0, values.size()), values));
-    }
-
-    public IndexKeyRT createIndexKey(Map<IndexField, Value> values) {
         return new IndexKeyRT(this, values);
     }
 
@@ -95,28 +68,32 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
 
     @Override
     public String getDefaultMessage() {
-        return "Duplicate field '" + Utils.join(fields, IndexField::getQualifiedName) + "'";
+        return "Duplicate field";
     }
 
-    public List<IndexField> getFields() {
-        return Collections.unmodifiableList(fields);
+    public Type getType() {
+        return getType(getDeclaringType().getConstantPool());
     }
 
-    public int getNumFields() {
-        return fields.size();
+    public Type getType(TypeMetadata typeMetadata) {
+        return typeMetadata.getType(typeIndex);
     }
 
-    public boolean isFieldIndex(Field field) {
-        if (fields.size() != 1) {
-            return false;
-        }
-        IndexField indexField = fields.getFirst();
-        return Objects.equals(indexField.getField(), field);
+    public int getTypeIndex() {
+        return typeIndex;
+    }
+
+    public void setTypeIndex(int typeIndex) {
+        this.typeIndex = typeIndex;
+    }
+
+    public void setType(Type type) {
+        this.typeIndex = getDeclaringType().getConstantPool().addValue(type);
     }
 
     @Override
     public String getDesc() {
-        return "Index(" + Utils.join(fields, IndexField::getName) + ")";
+        return "Index " + getName();
     }
 
     public IndexDef<?> getIndexDef() {
@@ -127,26 +104,9 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         this.indexDef = indexDef;
     }
 
-    public boolean isLastItem(IndexField item) {
-        return !fields.isEmpty() && fields.get(fields.size() - 1) == item;
-    }
-
-    public int getFieldIndex(IndexField item) {
-        int index = fields.indexOf(item);
-        if (index < 0)
-            throw new InternalException(item + " is not contained in " + this);
-        return index;
-    }
-
     @Override
     public String getTitle() {
         return getName();
-    }
-
-    public void setFields(List<IndexField> fields) {
-        this.fields.clear();
-        this.fields.addAll(fields);
-        fields.forEach(f -> f.setIndex(this));
     }
 
     public IndexRef getRef() {
@@ -178,7 +138,6 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     @Override
     public void acceptChildren(ElementVisitor<?> visitor) {
         super.acceptChildren(visitor);
-        fields.forEach(arg -> arg.accept(visitor));
     }
 
     public void writeCode(CodeWriter writer) {
@@ -192,17 +151,14 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     @Override
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-        for (var fields_ : fields) action.accept(fields_.getReference());
         if (method != null) action.accept(method);
     }
 
     @Override
     public void buildJson(Map<String, Object> map) {
-        map.put("typeFields", this.getTypeFields().stream().map(org.metavm.entity.Entity::getStringId).toList());
         map.put("unique", this.isUnique());
         map.put("defaultMessage", this.getDefaultMessage());
-        map.put("fields", this.getFields().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("numFields", this.getNumFields());
+        map.put("type", this.getType().toJson());
         map.put("desc", this.getDesc());
         map.put("indexDef", this.getIndexDef());
         map.put("ref", this.getRef().toJson());
@@ -230,7 +186,6 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
-        for (var fields_ : fields) action.accept(fields_);
     }
 
     @Override
@@ -242,7 +197,7 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     @Override
     public void readBody(MvInput input, org.metavm.entity.Entity parent) {
         super.readBody(input, parent);
-        this.fields = input.readList(() -> input.readEntity(IndexField.class, this));
+        this.typeIndex = input.readInt();
         this.unique = input.readBoolean();
         this.method = input.readNullable(() -> (Reference) input.readValue());
     }
@@ -251,7 +206,7 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     @Override
     public void writeBody(MvOutput output) {
         super.writeBody(output);
-        output.writeList(fields, output::writeEntity);
+        output.writeInt(typeIndex);
         output.writeBoolean(unique);
         output.writeNullable(method, output::writeValue);
     }

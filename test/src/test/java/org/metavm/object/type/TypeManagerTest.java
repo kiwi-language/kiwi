@@ -102,7 +102,6 @@ public class TypeManagerTest extends TestCase {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                 var klass = context.bind(TestUtils.newKlassBuilder("Foo").build());
                 var field = FieldBuilder.newBuilder("name", klass, Types.getStringType()).build();
-                new Index(klass, "nameIndex", "Duplicate name", true, List.of(field), null);
                 context.finish();
                 return field.getId();
             }

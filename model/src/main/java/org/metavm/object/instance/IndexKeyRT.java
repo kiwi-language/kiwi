@@ -4,7 +4,6 @@ import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.type.Index;
-import org.metavm.object.type.IndexField;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.KlassBuilder;
 import org.metavm.util.BytesUtils;
@@ -14,9 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 public class IndexKeyRT implements Comparable<IndexKeyRT> {
@@ -40,19 +38,11 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
     }
 
     private final Index index;
-    private final Map<IndexField, Value> fields;
+    private final List<Value> values;
 
-    public IndexKeyRT(Index index, Map<IndexField, Value> fields) {
+    public IndexKeyRT(Index index, List<Value> values) {
         this.index = index;
-        this.fields = new HashMap<>();
-        for (int i = 0; i < fields.size(); i++) {
-            var indexField = index.getFields().get(i);
-            this.fields.put(
-                    indexField,
-                    Objects.requireNonNull(fields.get(indexField),
-                            () -> "Not an index prefix")
-            );
-        }
+        this.values = new ArrayList<>(values);
     }
 
     public IndexKeyPO toPO() {
@@ -67,16 +57,13 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
         return index;
     }
 
-    public Map<IndexField, Value> getFields() {
-        return fields;
+    public List<Value> getValues() {
+        return values;
     }
 
-    public Value getField(IndexField field) {
-        return fields.get(field);
-    }
 
     public InstanceIndexQuery toQuery() {
-        var key = new InstanceIndexKey(index, Utils.map(index.getFields(), fields::get));
+        var key = new InstanceIndexKey(index, values);
         return new InstanceIndexQuery(
                 index,
                 key,
@@ -90,22 +77,21 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof IndexKeyRT that)) return false;
-        return Objects.equals(index, that.index) && Objects.equals(fields, that.fields);
+        return Objects.equals(index, that.index) && Objects.equals(values, that.values);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(index, fields);
+        return Objects.hash(index, values);
     }
 
     public int compareTo(IndexKeyRT that) {
         if(index != that.index)
             return index.getId().compareTo(that.index.getId());
-        for (int i = 0; i < index.getFields().size(); i++) {
-            var field = index.getFields().get(i);
-            var cmp = compare(fields.get(field), that.fields.get(field));
-            if(cmp != 0)
-                return cmp;
+        var it = that.values.iterator();
+        for (Value value : values) {
+            var cmp = compare(value, it.next());
+            if (cmp != 0) return cmp;
         }
         return 0;
     }
@@ -145,13 +131,13 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
     @Override
     public String toString() {
         var sb = new StringBuilder("{index: ").append(index.getName()).append(", fields: {");
-        sb.append(Utils.join(fields.entrySet(), e -> e.getKey().getName() + ": " + e.getValue().getText()));
+        sb.append(Utils.join(values, Value::getText));
         sb.append("}}");
         return sb.toString();
     }
 
     public byte[] getKeyBytes() {
-        return toKeyBytes(Utils.map(index.getFields(), fields::get));
+        return toKeyBytes(values);
     }
 
     public static byte[] toKeyBytes(List<Value> values) {

@@ -517,7 +517,7 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     @Override
     public List<Reference> selectByKey(IndexKeyRT indexKey) {
         var entities = memoryIndex.selectByKey(indexKey.getIndex().getIndexDef(),
-                new ArrayList<>(indexKey.getFields().values()));
+                new ArrayList<>(indexKey.getValues()));
         return Utils.map(entities, Instance::getReference);
     }
 
@@ -648,8 +648,8 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     public List<Reference> indexScan(IndexKeyRT from, IndexKeyRT to) {
         return query(new InstanceIndexQuery(
                 from.getIndex(),
-                new InstanceIndexKey(from.getIndex(), new ArrayList<>(from.getFields().values())),
-                new InstanceIndexKey(to.getIndex(), new ArrayList<>(to.getFields().values())),
+                new InstanceIndexKey(from.getIndex(), new ArrayList<>(from.getValues())),
+                new InstanceIndexKey(to.getIndex(), new ArrayList<>(to.getValues())),
                 false,
                 -1L
         ));
@@ -659,8 +659,8 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     public long indexCount(IndexKeyRT from, IndexKeyRT to) {
         return count(new InstanceIndexQuery(
                 from.getIndex(),
-                new InstanceIndexKey(from.getIndex(), new ArrayList<>(from.getFields().values())),
-                new InstanceIndexKey(to.getIndex(), new ArrayList<>(to.getFields().values())),
+                new InstanceIndexKey(from.getIndex(), new ArrayList<>(from.getValues())),
+                new InstanceIndexKey(to.getIndex(), new ArrayList<>(to.getValues())),
                 false,
                 -1L
         ));
@@ -668,7 +668,7 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
 
     @Override
     public List<Reference> indexSelect(IndexKeyRT key) {
-        var entities = memoryIndex.selectByKey(key.getIndex().getIndexDef(), new ArrayList<>(key.getFields().values()));
+        var entities = memoryIndex.selectByKey(key.getIndex().getIndexDef(), new ArrayList<>(key.getValues()));
         return Utils.map(entities, Instance::getReference);
     }
 

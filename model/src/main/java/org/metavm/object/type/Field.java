@@ -99,9 +99,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         }
         setDefaultValue(defaultValue);
         this.isChild = isChild;
-        if (unique != null) {
-            setUnique(unique);
-        }
         this.lazy = lazy;
         declaringType.addField(this);
     }
@@ -158,19 +155,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         this.lazy = lazy;
     }
 
-    public void setUnique(boolean unique) {
-        if (unique && isArray()) {
-            throw BusinessException.invalidField(this, "Array fields can not be unique");
-        }
-        Index constraint = declaringType.findSelfIndex(List.of(this));
-        if (constraint != null && !unique) {
-            declaringType.removeConstraint(constraint);
-        }
-        if (constraint == null && unique) {
-            ConstraintFactory.newUniqueConstraint(getName(), List.of(this));
-        }
-    }
-
     @Nullable
     @Override
     public org.metavm.entity.Entity getParentEntity() {
@@ -180,11 +164,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     @Override
     public List<Instance> beforeRemove(IInstanceContext context) {
         List<Instance> cascades = new ArrayList<>(super.beforeRemove(context));
-        List<Index> fieldIndices = declaringType.getFieldIndices(this);
-        for (Index fieldIndex : fieldIndices) {
-            declaringType.removeConstraint(fieldIndex);
-            cascades.add(fieldIndex);
-        }
         if(isStatic()) {
             var sft = context.selectFirstByKey(StaticFieldTable.IDX_KLASS, declaringType.getReference());
             if(sft != null)
@@ -260,11 +239,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     @JsonIgnore
     public boolean isPrimitive() {
         return getType().isPrimitive();
-    }
-
-    @JsonIgnore
-    public boolean isUnique() {
-        return declaringType.findSelfIndex(List.of(this)) != null;
     }
 
     @JsonIgnore

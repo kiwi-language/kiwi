@@ -226,13 +226,6 @@ public class KlassInput extends MvInput {
             stopPeeking();
             existing = Objects.requireNonNull(symbolMap).get(Index.class, name);
         }
-        else if (klass == IndexField.class) {
-            startPeeking();
-            readId();
-            var name = readUTF();
-            stopPeeking();
-            existing = Objects.requireNonNull(symbolMap).get(IndexField.class, name);
-        }
         else if (klass == TypeVariable.class) {
             startPeeking();
             readId();
@@ -425,11 +418,7 @@ public class KlassInput extends MvInput {
         }
 
         public static SymbolMap fromIndex(Index index, @Nullable SymbolMap parent) {
-            var map = new SymbolMap(parent);
-            for (IndexField field : index.getFields()) {
-                map.put(IndexField.class, field.getName(), field);
-            }
-            return map;
+            return new SymbolMap(parent);
         }
 
         void put(Class<?> clazz, String name, Entity entity) {

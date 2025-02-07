@@ -827,10 +827,7 @@ public class DDLTest extends TestCase {
             var index = k.getAllIndices().getFirst();
             var bean = context.selectFirstByKey(new IndexKeyRT(
                 index,
-                Map.of(
-                     index.getFields().getFirst(),
-                     Instances.trueInstance()
-                )
+                List.of(Instances.trueInstance())
             ));
             Assert.assertNotNull(bean);
             fooServiceId = bean.getId();

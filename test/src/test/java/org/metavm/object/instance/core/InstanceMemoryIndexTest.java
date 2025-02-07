@@ -3,6 +3,8 @@ package org.metavm.object.instance.core;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.MockStandardTypesInitializer;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Nodes;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Index;
@@ -17,6 +19,7 @@ public class InstanceMemoryIndexTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
     }
 
@@ -28,9 +31,19 @@ public class InstanceMemoryIndexTest extends TestCase {
         var nameField = FieldBuilder.newBuilder("name", fooType, Types.getStringType())
                         .build();
 
+        var getNameMethod = MethodBuilder.newBuilder(fooType, "getName")
+                .returnType(Types.getStringType())
+                .build();
+        {
+            var code = getNameMethod.getCode();
+            Nodes.this_(code);
+            Nodes.getField(nameField.getRef(), code);
+            Nodes.ret(code);
+            code.emitCode();
+        }
         var index = new Index(
                 fooType, "idxName", "name must be unique", true,
-                List.of(nameField), null
+                Types.getStringType(), getNameMethod
         );
 
         TestUtils.initEntityIds(fooType);
@@ -41,7 +54,7 @@ public class InstanceMemoryIndexTest extends TestCase {
                 .data(Map.of(nameField, name))
                 .build();
         memIndex.save(foo);
-        var result = memIndex.selectUnique(new IndexKeyRT(index, Map.of(index.getFieldByTypeField(nameField), name)));
+        var result = memIndex.selectUnique(new IndexKeyRT(index, List.of(name)));
         Assert.assertSame(foo, result);
     }
 

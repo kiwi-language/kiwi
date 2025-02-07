@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 
 @Entity
 public record RecordFoo(
-        @EntityField(unique = true) int id,
+        @EntityField int id,
         @Nullable String name
 ) {
 

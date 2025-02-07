@@ -14,7 +14,7 @@ public record InstanceIndexKey(Index index, List<Value> values) {
     }
 
     public IndexKeyRT toRT() {
-        return new IndexKeyRT(index, Utils.zip(index.getFields(), values));
+        return new IndexKeyRT(index, values);
     }
 
 }

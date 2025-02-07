@@ -638,9 +638,12 @@ public class Assembler {
             var klass = ((AsmKlass) scope).getKlass();
             var name = ctx.IDENTIFIER().getText();
             var index = klass.findSelfIndex(idx -> idx.getName().equals(name));
+            var type = parseType(ctx.typeType(), scope, getCompilationUnit());
             var mods = currentMods();
             if (index == null)
-                index = new Index(null, klass, name, null, mods.contains("unique"));
+                index = new Index(klass, name, null, mods.contains("unique"), type, null);
+            else
+                index.setType(type);
             setAttribute(ctx, AsmAttributeKey.index, index);
             return null;
         }
@@ -685,38 +688,20 @@ public class Assembler {
                     && !method.getReturnType().isVoid()
                     && !method.isStatic()) {
                 Index index = Utils.find(klass.getAllIndices(), idx -> Objects.equals(idx.getName(), name));
+                var keyType = method.getReturnType();
                 if (index == null) {
                     index = new Index(
                             klass,
                             name,
                             "",
                             name.startsWith("uniqueIdx"),
-                            List.of(),
+                            keyType,
                             method
                     );
                 } else {
                     index.setName(name);
                 }
                 classInfo.visitedIndices.add(index);
-                var indexF = index;
-                var keyType = method.getReturnType();
-                if(keyType instanceof KlassType ct && ct.isValueType() && !ct.isString()) {
-                    ct.forEachField(field -> {
-                        if (!field.isStatic() && !field.isTransient()) {
-                            var indexField = Utils.find(indexF.getFields(), f -> Objects.equals(f.getName(), field.getName()));
-                            if (indexField == null)
-                                new IndexField(indexF, field.getName(), field.getPropertyType(), Values.nullValue());
-                            else
-                                indexField.setType(field.getPropertyType());
-                        }
-                    });
-                } else {
-                    var indexField = Utils.find(index.getFields(), f -> Objects.equals(f.getName(), "value"));
-                    if (indexField == null)
-                        new IndexField(index, "value", keyType, Values.nullValue());
-                    else
-                        indexField.setType(keyType);
-                }
             }
         }
     }

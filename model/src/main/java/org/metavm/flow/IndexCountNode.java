@@ -37,7 +37,7 @@ public class IndexCountNode extends Node {
 
     @Override
     public int getStackChange() {
-        return 1 - (indexRef.getFieldCount() << 1);
+        return -1;
     }
 
     @Override

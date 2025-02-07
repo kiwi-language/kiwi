@@ -8,27 +8,21 @@ import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.natives.NativeBase;
 import org.metavm.expression.Var;
 import org.metavm.flow.Error;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.*;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -772,13 +766,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         return level;
     }
 
-    public List<Index> getFieldIndices(Field field) {
-        return Utils.filter(
-                getAllConstraints(Index.class),
-                index -> index.isFieldIndex(field)
-        );
-    }
-
     public void addConstraint(Index constraint) {
         indices.add(constraint);
         constraint.setDeclaringType(this);
@@ -1357,15 +1344,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     @JsonIgnore
     public List<Type> getDefaultTypeArguments() {
         return Utils.map(typeParameters, TypeVariable::getType);
-    }
-
-    public Index findIndex(List<Field> fields) {
-        return find(getAllIndices(), c -> c.isUnique() && c.getTypeFields().equals(fields));
-    }
-
-    public Index findSelfIndex(List<Field> fields) {
-        return find(indices,
-                c -> c instanceof Index i && i.isUnique() && i.getTypeFields().equals(fields));
     }
 
     public List<Index> getIndices() {

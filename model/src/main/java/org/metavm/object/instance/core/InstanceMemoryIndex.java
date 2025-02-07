@@ -102,9 +102,9 @@ public class InstanceMemoryIndex {
 
         private Collection<IndexEntryRT> query(Index index, @Nullable IndexKeyRT from, @Nullable IndexKeyRT to) {
             if (from == null)
-                from = new IndexKeyRT(index, Utils.toMap(index.getFields(), f -> f, f -> MIN_INSTANCE));
+                from = new IndexKeyRT(index, List.of(MIN_INSTANCE));
             if (to == null)
-                to = new IndexKeyRT(index, Utils.toMap(index.getFields(), f -> f, f -> MAX_INSTANCE));
+                to = new IndexKeyRT(index, List.of(MAX_INSTANCE));
             return map.subSet(new IndexEntryRT(from, (ClassInstance) MIN_INSTANCE.get()), true, new IndexEntryRT(to, (ClassInstance) MAX_INSTANCE.get()), true);
         }
 

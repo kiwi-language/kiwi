@@ -7,7 +7,6 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Nodes;
-import org.metavm.flow.Values;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -15,7 +14,6 @@ import org.metavm.object.instance.core.StringInstance;
 import org.metavm.object.instance.core.StringReference;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Index;
-import org.metavm.object.type.IndexField;
 import org.metavm.object.type.Types;
 import org.metavm.util.*;
 
@@ -59,8 +57,7 @@ public class StringTest extends TestCase {
                     Nodes.ret(code);
                     code.emitCode();
                 }
-                var nameIndex = new Index(fooKlass, "nameIdx", null, true, List.of(), getNameMethod);
-                new IndexField(nameIndex, "name", Types.getStringType(), Values.nullValue());
+                new Index(fooKlass, "nameIdx", null, true, Types.getStringType(), getNameMethod);
                 context.bind(fooKlass);
                 context.finish();
                 return fooKlass.getId();
@@ -85,8 +82,7 @@ public class StringTest extends TestCase {
             context.loadKlasses();
             var fooKlass = context.getKlass(fooKlassId);
             var nameIndex = fooKlass.getIndices().getFirst();
-            var indexField = nameIndex.getFields().getFirst();
-            var key = new IndexKeyRT(nameIndex, Map.of(indexField, stringInstance("Metavm")));
+            var key = new IndexKeyRT(nameIndex, List.of(stringInstance("Metavm")));
             var r = context.selectFirstByKey(key);
             Assert.assertNotNull(r);
             var foo = r.resolveObject();

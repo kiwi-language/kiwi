@@ -183,14 +183,6 @@ public class BusinessException extends RuntimeException {
         return new BusinessException(ErrorCode.FUNCTION_ARGUMENTS_INVALID, function.name());
     }
 
-    public static BusinessException duplicateKey(ClassInstance instance, Id constraintId) {
-        Index constraint = instance.getInstanceKlass().getUniqueConstraint(constraintId);
-        return new BusinessException(
-                ErrorCode.DUPLICATE_KEY,
-                Utils.join(constraint.getTypeFields(), Field::getName)
-        );
-    }
-
     public static BusinessException constraintCheckFailed(Instance instance, Constraint constraint) {
         String reason = constraint.getMessage() != null ? constraint.getMessage() : constraint.getDefaultMessage();
         throw new BusinessException(

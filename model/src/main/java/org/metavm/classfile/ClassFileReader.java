@@ -98,31 +98,20 @@ public class ClassFileReader {
 
     private Index readIndex(Klass klass) {
         var name = input.readUTF();
+        var typeIndex = input.readInt();
         var unique = input.readBoolean();
         var existing = Utils.find(klass.getIndices(), i -> i.getName().equals(name));
         Index index;
         if (existing != null) {
+            existing.setTypeIndex(typeIndex);
             existing.setUnique(unique);
             index = existing;
         }
         else
-            index = new Index(null, klass, name, null, unique);
+            index = new Index(null, klass, name, null, unique, typeIndex);
         index.setMethod(input.readNullable(input::readReference));
-        index.setFields(input.readList(() -> readIndexField(index)));
         if (listener != null) listener.onIndexRead(index);
         return index;
-    }
-
-    private IndexField readIndexField(Index index) {
-        var name = input.readUTF();
-        var typeIndex = input.readInt();
-        var existing = Utils.find(index.getFields(), f -> f.getName().equals(name));
-        if (existing != null) {
-            existing.setTypeIndex(typeIndex);
-            return existing;
-        }
-        else
-            return new IndexField(index, name, typeIndex, Values.nullValue());
     }
 
     private void readConstantPool(ConstantPool constantPool) {

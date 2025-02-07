@@ -7,23 +7,14 @@ import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.NativeMethods;
 import org.metavm.entity.natives.RuntimeExceptionNative;
-import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -239,7 +230,7 @@ public class Method extends Flow implements Property {
                             flowRef,
                             argArray,
                             closureContext,
-                            new DefaultCallContext(callContext.instanceRepository())
+                            callContext
                     );
                 } catch (Exception e) {
                     logger.info("Failed to execute method {}", getQualifiedName());

@@ -1017,11 +1017,6 @@ public class TranspileUtils {
         return asTitle == Boolean.TRUE;
     }
 
-    public static boolean isUnique(PsiVariable psiField) {
-        Boolean asTitle = (Boolean) getAnnotationAttribute(psiField, EntityField.class, "unique");
-        return asTitle == Boolean.TRUE;
-    }
-
     public static boolean isEphemeral(PsiClass psiClass) {
         Boolean ephemeral = (Boolean) getEntityAnnotationAttr(psiClass, "ephemeral");
         return ephemeral == Boolean.TRUE;

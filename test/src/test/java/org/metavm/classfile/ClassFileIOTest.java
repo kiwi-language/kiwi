@@ -44,8 +44,7 @@ public class ClassFileIOTest extends TestCase {
 
         var nameIndex = fooKlass1.getIndices().getFirst();
         Assert.assertEquals("nameIndex", nameIndex.getName());
-        Assert.assertEquals(1, nameIndex.getFields().size());
-        Assert.assertEquals(Types.getStringType(), nameIndex.getFields().getFirst().getType());
+        Assert.assertEquals(Types.getStringType(), nameIndex.getType());
 
         var typeVariable = fooKlass1.getTypeParameters().getFirst();
         Assert.assertEquals("T", typeVariable.getName());

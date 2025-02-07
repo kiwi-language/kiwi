@@ -2,7 +2,6 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.natives.ListNative;
 import org.metavm.flow.ClosureContext;
@@ -25,7 +24,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElse;
 
 public class MvClassInstance extends MvInstance implements ClassInstance {
 

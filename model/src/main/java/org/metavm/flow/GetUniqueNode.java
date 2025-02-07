@@ -40,7 +40,7 @@ public class GetUniqueNode extends Node {
 
     @Override
     public int getStackChange() {
-        return 1 - indexRef.getFieldCount();
+        return 0;
     }
 
     @Override

@@ -1,16 +1,20 @@
 package org.metavm.autograph;
 
-import com.intellij.psi.*;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiMethodReferenceExpression;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiTypeParameter;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.StdKlass;
-import org.metavm.flow.Values;
-import org.metavm.object.type.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Index;
+import org.metavm.object.type.Klass;
+import org.metavm.object.type.KlassType;
 import org.metavm.util.CompilerException;
 import org.metavm.util.LinkedList;
 import org.metavm.util.Utils;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -51,30 +55,12 @@ public class IndexCreator extends VisitorBase {
             var args = requireNonNull(expression.getArgumentList()).getExpressions();
             var name = (String) TranspileUtils.getConstant(args[0]);
             var index = valueKlass.findSelfIndex(i -> i.getName().equals(name));
+            var keyType = classType.getTypeArguments().getFirst();
             if(index == null)
-                index = new Index(valueKlass, name, "", TranspileUtils.isUniqueIndex(expression), List.of(), null);
+                index = new Index(valueKlass, name, "", TranspileUtils.isUniqueIndex(expression), keyType, null);
             classInfo.visitedIndexes.add(index);
             var methodRef = (PsiMethodReferenceExpression) args[2];
             index.setMethod(requireNonNull(requireNonNull(methodRef.resolve()).getUserData(Keys.Method)));
-            var keyType = classType.getTypeArguments().getFirst();
-            if (keyType instanceof KlassType ct && ct.isValueType() && !ct.isString()) {
-                var indexF = index;
-                ct.foreachField(keyField -> {
-                    if (!keyField.isStatic() && !keyField.isTransient()) {
-                        var indexField = Utils.find(indexF.getFields(), f -> Objects.equals(f.getName(), keyField.getName()));
-                        if (indexField == null)
-                            new IndexField(indexF, keyField.getName(), keyField.getPropertyType(), Values.nullValue());
-                        else
-                            indexField.setType(keyField.getPropertyType());
-                    }
-                });
-            } else {
-                var indexField = Utils.find(index.getFields(), f -> Objects.equals(f.getName(), "value"));
-                if (indexField == null)
-                    new IndexField(index, "value", keyType, Values.nullValue());
-                else
-                    indexField.setType(keyType);
-            }
         }
     }
 

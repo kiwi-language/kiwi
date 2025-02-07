@@ -110,14 +110,9 @@ public class ClassFileWriter {
 
     private void writeIndex(Index index) {
         output.writeUTF(index.getName());
+        output.writeInt(index.getTypeIndex());
         output.writeBoolean(index.isUnique());
         output.writeNullable(index.getMethodReference(), output::writeReference);
-        output.writeList(index.getFields(), this::writeIndexField);
-    }
-
-    private void writeIndexField(IndexField indexField) {
-        output.writeUTF(indexField.getName());
-        output.writeInt(indexField.getTypeIndex());
     }
 
     private void writeCode(Code code) {
