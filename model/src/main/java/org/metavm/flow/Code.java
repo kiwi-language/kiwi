@@ -2,35 +2,22 @@ package org.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.ChildEntity;
-import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.*;
-import org.metavm.entity.ElementVisitor;
-import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@NativeEntity(61)
-@Entity
-public class Code extends org.metavm.entity.Entity implements Element, LocalKey {
-
-    public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
+public class Code implements Element, LocalKey, Struct {
 
     private Callable callable;
     @ChildEntity
@@ -45,7 +32,17 @@ public class Code extends org.metavm.entity.Entity implements Element, LocalKey 
     }
 
     @Generated
-    public static void visitBody(StreamVisitor visitor) {
+    public static Code read(MvInput input, Object parent) {
+        var r = new Code((Callable) parent);
+        r.maxLocals = input.readInt();
+        r.maxStack = input.readInt();
+        r.code = input.readBytes();
+        r.onRead();
+        return r;
+    }
+
+    @Generated
+    public static void visit(StreamVisitor visitor) {
         visitor.visitInt();
         visitor.visitInt();
         visitor.visitBytes();
@@ -206,17 +203,6 @@ public class Code extends org.metavm.entity.Entity implements Element, LocalKey 
     }
 
     @Override
-    public String getTitle() {
-        return "<code>";
-    }
-
-    @Nullable
-    @Override
-    public org.metavm.entity.Entity getParentEntity() {
-        return (org.metavm.entity.Entity) callable;
-    }
-
-    @Override
     public boolean isValidLocalKey() {
         return true;
     }
@@ -240,11 +226,23 @@ public class Code extends org.metavm.entity.Entity implements Element, LocalKey 
         nodes = new LinkedList<>();
     }
 
-    @Override
+    public static Code read(MvInput input, org.metavm.entity.Entity parent) {
+        var code = new Code((Callable) parent);
+        code.callable = (Callable) parent;
+        code.maxLocals = input.readInt();
+        code.maxStack = input.readInt();
+        code.code = input.readBytes();
+        code.onRead();
+        return code;
+    }
+
+    public void clearNodes() {
+        nodes.clear();
+    }
+
     public void forEachReference(Consumer<Reference> action) {
     }
 
-    @Override
     public void buildJson(Map<String, Object> map) {
         map.put("nodes", this.getNodes());
         map.put("callable", this.getCallable());
@@ -252,55 +250,23 @@ public class Code extends org.metavm.entity.Entity implements Element, LocalKey 
         map.put("empty", this.isEmpty());
         map.put("notEmpty", this.isNotEmpty());
         var lastNode = this.getLastNode();
-        if (lastNode != null) map.put("lastNode", lastNode.getStringId());
+        if (lastNode != null) map.put("lastNode", lastNode.toJson());
         map.put("maxLocals", this.getMaxLocals());
         map.put("frameSize", this.getFrameSize());
         map.put("maxStack", this.getMaxStack());
         map.put("code", org.metavm.util.EncodingUtils.encodeBase64(this.getCode()));
     }
 
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
-    public void forEachChild(Consumer<? super Instance> action) {
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_Code;
-    }
-
     @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.callable = (Callable) parent;
-        this.maxLocals = input.readInt();
-        this.maxStack = input.readInt();
-        this.code = input.readBytes();
-        this.onRead();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
+    public void write(MvOutput output) {
         output.writeInt(maxLocals);
         output.writeInt(maxStack);
-        output.writeBytes(Objects.requireNonNull(code, () -> "Code not generated for callable: " + callable));
+        output.writeBytes(code);
     }
 
-    @Override
-    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
-    }
-
-    public void clearNodes() {
-        nodes.clear();
+    public Map<String, Object> toJson() {
+        var map = new java.util.HashMap<String, Object>();
+        buildJson(map);
+        return map;
     }
 }

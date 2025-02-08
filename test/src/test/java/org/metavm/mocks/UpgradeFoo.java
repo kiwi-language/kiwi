@@ -87,7 +87,7 @@ public class UpgradeFoo extends org.metavm.entity.Entity {
         else if (bar instanceof org.metavm.object.instance.core.NativeValue t) t.forEachReference(action);
         if (value instanceof Reference r) action.accept(r);
         else if (value instanceof org.metavm.object.instance.core.NativeValue t) t.forEachReference(action);
-        array.forEach(action);
+        for (var array_ : array) action.accept(array_);
     }
 
     @Override

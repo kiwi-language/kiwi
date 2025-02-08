@@ -110,7 +110,7 @@ public class FunctionExpression extends Expression {
 
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-        arguments.forEach(arg -> arg.forEachReference(action));
+        for (var arguments_ : arguments) arguments_.forEachReference(action);
     }
 
     public void buildJson(java.util.Map<String, Object> map) {

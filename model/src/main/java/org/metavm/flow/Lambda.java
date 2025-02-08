@@ -11,6 +11,8 @@ import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
@@ -50,7 +52,7 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     public static void visitBody(StreamVisitor visitor) {
         visitor.visitList(visitor::visitEntity);
         visitor.visitInt();
-        visitor.visitEntity();
+        Code.visit(visitor);
     }
 
     @Override
@@ -168,17 +170,18 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     @Override
     public void forEachReference(Consumer<Reference> action) {
         for (var parameters_ : parameters) action.accept(parameters_.getReference());
-        action.accept(code.getReference());
+        code.forEachReference(action);
     }
 
     @Override
     public void buildJson(Map<String, Object> map) {
         map.put("returnType", this.getReturnType().toJson());
+        map.put("returnTypeIndex", this.getReturnTypeIndex());
         map.put("parameters", this.getParameters().stream().map(Entity::getStringId).toList());
         map.put("functionType", this.getFunctionType().toJson());
         map.put("ref", this.getRef().toJson());
-        map.put("code", this.getCode().getStringId());
-        map.put("constantPool", this.getConstantPool().getStringId());
+        map.put("code", this.getCode().toJson());
+        map.put("constantPool", this.getConstantPool().toJson());
         map.put("flow", this.getFlow().getStringId());
         map.put("parameterTypes", this.getParameterTypes().stream().map(Type::toJson).toList());
         map.put("minLocals", this.getMinLocals());
@@ -197,7 +200,6 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
         for (var parameters_ : parameters) action.accept(parameters_);
-        action.accept(code);
     }
 
     @Override
@@ -211,7 +213,7 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
         this.flow = (Flow) parent;
         this.parameters = input.readList(() -> input.readEntity(Parameter.class, this));
         this.returnTypeIndex = input.readInt();
-        this.code = input.readEntity(Code.class, this);
+        this.code = Code.read(input, this);
     }
 
     @Generated
@@ -219,7 +221,7 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     public void writeBody(MvOutput output) {
         output.writeList(parameters, output::writeEntity);
         output.writeInt(returnTypeIndex);
-        output.writeEntity(code);
+        code.write(output);
     }
 
     @Override

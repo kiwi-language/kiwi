@@ -234,16 +234,15 @@ public class KlassType extends ClassType {
         if (typeArguments != null) typeArguments.forEach(arg -> arg.accept(visitor));
     }
 
-    public void forEachReference(Consumer<Reference> action) {
-        super.forEachReference(action);
-        if (owner != null) owner.forEachReference(action);
-        action.accept(klassReference);
-        if (typeArguments != null) typeArguments.forEach(arg -> arg.forEachReference(action));
-    }
-
     @Override
     public ColumnKind getSQLType() {
         return ColumnKind.REFERENCE;
     }
 
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
+        if (owner != null) owner.forEachReference(action);
+        action.accept(klassReference);
+        if (typeArguments != null) for (var typeArguments_ : typeArguments) typeArguments_.forEachReference(action);
+    }
 }

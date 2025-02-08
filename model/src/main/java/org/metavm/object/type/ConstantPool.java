@@ -2,29 +2,23 @@ package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.entity.*;
 import org.metavm.flow.MethodRef;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
-@NativeEntity(14)
 @Slf4j
-public class ConstantPool extends Entity implements LoadAware, TypeMetadata, Element, LocalKey {
+public class ConstantPool implements LoadAware, TypeMetadata, Element, LocalKey, Struct {
 
-    @SuppressWarnings("unused")
-    private static Klass __klass__;
-    private ConstantScope scope;
+    private final ConstantScope scope;
     private List<Value> entries = new ArrayList<>();
     @CopyIgnore
     private transient Map<Object, Integer> value2entry = new HashMap<>();
@@ -46,6 +40,19 @@ public class ConstantPool extends Entity implements LoadAware, TypeMetadata, Ele
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {
+        visitor.visitList(visitor::visitValue);
+    }
+
+    @Generated
+    public static ConstantPool read(MvInput input, Object parent) {
+        var r = new ConstantPool((ConstantScope) parent);
+        r.entries = input.readList(input::readValue);
+        r.onRead();
+        return r;
+    }
+
+    @Generated
+    public static void visit(StreamVisitor visitor) {
         visitor.visitList(visitor::visitValue);
     }
 
@@ -127,12 +134,6 @@ public class ConstantPool extends Entity implements LoadAware, TypeMetadata, Ele
         this.stage = stage;
     }
 
-    @Nullable
-    @Override
-    public Entity getParentEntity() {
-        return (Entity) scope;
-    }
-
     @Override
     public String toString() {
         return Arrays.toString(getValues());
@@ -175,57 +176,6 @@ public class ConstantPool extends Entity implements LoadAware, TypeMetadata, Ele
     public void acceptChildren(ElementVisitor<?> visitor) {
     }
 
-    @Override
-    public void forEachReference(Consumer<Reference> action) {
-        entries.forEach(v -> {
-            if (v instanceof Reference r) action.accept(r);
-            else if (v instanceof org.metavm.object.instance.core.NativeValue t) t.forEachReference(action);
-        });
-    }
-
-    @Override
-    public void buildJson(Map<String, Object> map) {
-        map.put("entries", this.getEntries().stream().map(Value::toJson).toList());
-        map.put("stage", this.getStage().name());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
-    public void forEachChild(Consumer<? super Instance> action) {
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_ConstantPool;
-    }
-
-    @Generated
-    @Override
-    public void readBody(MvInput input, Entity parent) {
-        this.scope = (ConstantScope) parent;
-        this.entries = input.readList(input::readValue);
-        this.onRead();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
-        output.writeList(entries, output::writeValue);
-    }
-
-    @Override
-    protected void buildSource(Map<String, Value> source) {
-    }
-
     @SuppressWarnings("unused")
     public void printEntries() {
         int i = 0;
@@ -234,4 +184,25 @@ public class ConstantPool extends Entity implements LoadAware, TypeMetadata, Ele
         }
     }
 
+    public void forEachReference(Consumer<Reference> action) {
+        for (var entries_ : entries)
+            if (entries_ instanceof Reference r) action.accept(r);
+            else if (entries_ instanceof org.metavm.object.instance.core.NativeValue t) t.forEachReference(action);
+    }
+
+    public void buildJson(Map<String, Object> map) {
+        map.put("entries", this.getEntries().stream().map(Value::toJson).toList());
+        map.put("stage", this.getStage().name());
+    }
+
+    @Generated
+    public void write(MvOutput output) {
+        output.writeList(entries, output::writeValue);
+    }
+
+    public Map<String, Object> toJson() {
+        var map = new HashMap<String, Object>();
+        buildJson(map);
+        return map;
+    }
 }

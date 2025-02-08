@@ -13,6 +13,8 @@ import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
@@ -159,6 +161,7 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         map.put("unique", this.isUnique());
         map.put("defaultMessage", this.getDefaultMessage());
         map.put("type", this.getType().toJson());
+        map.put("typeIndex", this.getTypeIndex());
         map.put("desc", this.getDesc());
         map.put("indexDef", this.getIndexDef());
         map.put("ref", this.getRef().toJson());

@@ -48,7 +48,6 @@ public class EntityRegistry {
     }
 
 // Generated. Do not modify. See generate_entity_registry.groovy
-    public static final int TAG_IndexField = 0;
     public static final int TAG_Method = 1;
     public static final int TAG_CapturedTypeVariable = 2;
     public static final int TAG_Application = 3;
@@ -62,7 +61,6 @@ public class EntityRegistry {
     public static final int TAG_ComponentBeanDefinition = 11;
     public static final int TAG_AddFieldTask = 12;
     public static final int TAG_Commit = 13;
-    public static final int TAG_ConstantPool = 14;
     public static final int TAG_TypeVariable = 15;
     public static final int TAG_User = 16;
     public static final int TAG_Session = 17;
@@ -109,7 +107,6 @@ public class EntityRegistry {
     public static final int TAG_StaticFieldTable = 58;
     public static final int TAG_KlassFlags = 59;
     public static final int TAG_Parameter = 60;
-    public static final int TAG_Code = 61;
     public static final int TAG_BeanDefinition = 62;
     public static final int TAG_Role = 63;
     public static final int TAG_KlassTagAssigner = 64;

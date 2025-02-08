@@ -97,7 +97,7 @@ public abstract class TaskGroup extends org.metavm.entity.Entity {
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-        tasks.forEach(arg -> action.accept(arg.getReference()));
+        for (var tasks_ : tasks) action.accept(tasks_.getReference());
     }
 
     @Override
@@ -121,7 +121,7 @@ public abstract class TaskGroup extends org.metavm.entity.Entity {
 
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
-        tasks.forEach(action);
+        for (var tasks_ : tasks) action.accept(tasks_);
     }
 
     @Override

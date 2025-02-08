@@ -143,7 +143,7 @@ public class Function extends Flow implements GlobalKey {
     public void buildJson(Map<String, Object> map) {
         map.put("parameterTypes", this.getParameterTypes().stream().map(Type::toJson).toList());
         map.put("returnType", this.getReturnType().toJson());
-        map.put("code", this.getCode().getStringId());
+        map.put("code", this.getCode().toJson());
         map.put("synthetic", this.isSynthetic());
         map.put("name", this.getName());
         map.put("state", this.getState().name());
@@ -151,12 +151,14 @@ public class Function extends Flow implements GlobalKey {
         map.put("native", this.isNative());
         map.put("typeParameters", this.getTypeParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
         map.put("parameters", this.getParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("returnTypeIndex", this.getReturnTypeIndex());
         map.put("type", this.getType().toJson());
         map.put("capturedTypeVariables", this.getCapturedTypeVariables().stream().map(org.metavm.entity.Entity::getStringId).toList());
         map.put("lambdas", this.getLambdas().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("constantPool", this.getConstantPool().getStringId());
+        map.put("constantPool", this.getConstantPool().toJson());
         map.put("klasses", this.getKlasses().stream().map(org.metavm.entity.Entity::getStringId).toList());
         map.put("flags", this.getFlags());
+        map.put("internalName", this.getInternalName());
         map.put("attributes", this.getAttributes().stream().map(org.metavm.entity.Attribute::toJson).toList());
         map.put("minLocals", this.getMinLocals());
     }

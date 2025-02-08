@@ -163,7 +163,7 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     @Override
     public void forEachReference(Consumer<Reference> action) {
         action.accept(klassReference);
-        entries.forEach(arg -> action.accept(arg.getReference()));
+        for (var entries_ : entries) action.accept(entries_.getReference());
     }
 
     @Override
@@ -184,7 +184,7 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
 
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
-        entries.forEach(action);
+        for (var entries_ : entries) action.accept(entries_);
     }
 
     @Override

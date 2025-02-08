@@ -7,6 +7,7 @@ import org.metavm.entity.Writable;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;

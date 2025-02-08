@@ -10,12 +10,16 @@ import org.metavm.entity.IndexDef;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.Flow;
 import org.metavm.flow.Parameter;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.KlassType;
 import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -181,7 +185,7 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-        beanDefinitions.forEach(arg -> action.accept(arg.getReference()));
+        for (var beanDefinitions_ : beanDefinitions) action.accept(beanDefinitions_.getReference());
     }
 
     @Override
@@ -201,7 +205,7 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
 
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
-        beanDefinitions.forEach(action);
+        for (var beanDefinitions_ : beanDefinitions) action.accept(beanDefinitions_);
     }
 
     @Override

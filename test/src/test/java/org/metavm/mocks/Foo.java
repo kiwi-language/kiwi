@@ -166,7 +166,7 @@ public class Foo extends org.metavm.entity.Entity {
         action.accept(bar.getReference());
         if (qux != null) action.accept(qux);
         if (qux2 != null) action.accept(qux2);
-        bazList.forEach(action);
+        for (var bazList_ : bazList) action.accept(bazList_);
     }
 
     @Override

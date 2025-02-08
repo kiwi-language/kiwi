@@ -7,12 +7,19 @@ import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.entity.*;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.flow.CodeWriter;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -626,6 +633,8 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         map.put("typeIndex", this.getTypeIndex());
         var initializer = this.getInitializer();
         if (initializer != null) map.put("initializer", initializer.getStringId());
+        var initializerReference = this.getInitializerReference();
+        if (initializerReference != null) map.put("initializerReference", initializerReference.toJson());
         map.put("enumConstant", this.isEnumConstant());
         map.put("ordinal", this.getOrdinal());
     }

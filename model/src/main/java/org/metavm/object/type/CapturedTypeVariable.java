@@ -10,6 +10,8 @@ import org.metavm.entity.LoadAware;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;

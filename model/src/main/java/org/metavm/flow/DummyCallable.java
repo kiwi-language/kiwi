@@ -71,28 +71,6 @@ public class DummyCallable implements Callable, ConstantScope {
                 ConstantPool.visitBody(visitor);
             }
 
-            @Generated
-            @Override
-            public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-                super.readBody(input, parent);
-            }
-
-            @Generated
-            @Override
-            public void writeBody(MvOutput output) {
-                super.writeBody(output);
-            }
-
-            @Override
-            public Klass getInstanceKlass() {
-                return __klass__;
-            }
-
-            @Override
-            public ClassType getInstanceType() {
-                return __klass__.getType();
-            }
-
             @SuppressWarnings("unused")
             private static org.metavm.object.type.Klass __klass__;
 

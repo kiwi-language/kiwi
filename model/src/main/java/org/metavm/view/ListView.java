@@ -111,8 +111,8 @@ public class ListView extends org.metavm.entity.Entity {
     @Override
     public void forEachReference(Consumer<Reference> action) {
         action.accept(klassReference);
-        visibleFields.forEach(action);
-        searchableFields.forEach(action);
+        for (var visibleFields_ : visibleFields) action.accept(visibleFields_);
+        for (var searchableFields_ : searchableFields) action.accept(searchableFields_);
     }
 
     @Override

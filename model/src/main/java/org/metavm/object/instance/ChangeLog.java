@@ -80,7 +80,7 @@ public class ChangeLog extends org.metavm.entity.Entity implements Message {
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-        items.forEach(arg -> arg.forEachReference(action));
+        for (var items_ : items) items_.forEachReference(action);
     }
 
     @Override

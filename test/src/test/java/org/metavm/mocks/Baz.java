@@ -57,7 +57,7 @@ public class Baz extends org.metavm.entity.Entity {
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-        bars.forEach(action);
+        for (var bars_ : bars) action.accept(bars_);
     }
 
     @Override

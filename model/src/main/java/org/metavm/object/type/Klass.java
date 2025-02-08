@@ -8,21 +8,29 @@ import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.natives.NativeBase;
 import org.metavm.expression.Var;
 import org.metavm.flow.Error;
 import org.metavm.flow.*;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.*;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -256,7 +264,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         visitor.visitBoolean();
         visitor.visitBoolean();
         visitor.visitBoolean();
-        visitor.visitEntity();
+        ConstantPool.visit(visitor);
         visitor.visitBoolean();
     }
 
@@ -1938,7 +1946,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         for (var typeParameters_ : typeParameters) action.accept(typeParameters_.getReference());
         for (var errors_ : errors) errors_.forEachReference(action);
         if (flags != null) action.accept(flags.getReference());
-        action.accept(constantPool.getReference());
+        constantPool.forEachReference(action);
     }
 
     @Override
@@ -1980,6 +1988,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         if (titleField != null) map.put("titleField", titleField.getStringId());
         map.put("staticFields", this.getStaticFields().stream().map(Entity::getStringId).toList());
         map.put("struct", this.isStruct());
+        map.put("nextFieldTag", this.getNextFieldTag());
+        map.put("nextFieldSourceCodeTag", this.getNextFieldSourceCodeTag());
         map.put("enumConstants", this.getEnumConstants().stream().map(Entity::getStringId).toList());
         map.put("since", this.getSince());
         var flags = this.getFlags();
@@ -1989,7 +1999,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         map.put("inner", this.isInner());
         var scope = this.getScope();
         if (scope != null) map.put("scope", scope.getStringId());
-        map.put("constantPool", this.getConstantPool().getStringId());
+        map.put("constantPool", this.getConstantPool().toJson());
         map.put("attributes", this.getAttributes().stream().map(Attribute::toJson).toList());
     }
 
@@ -2013,7 +2023,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         for (var indices_ : indices) action.accept(indices_);
         for (var typeParameters_ : typeParameters) action.accept(typeParameters_);
         if (flags != null) action.accept(flags);
-        action.accept(constantPool);
     }
 
     @Override
@@ -2061,7 +2070,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         this.struct = input.readBoolean();
         this.dummyFlag = input.readBoolean();
         this.methodTableBuildDisabled = input.readBoolean();
-        this.constantPool = input.readEntity(ConstantPool.class, this);
+        this.constantPool = ConstantPool.read(input, this);
         this.allFlag = input.readBoolean();
         this.onRead();
     }
@@ -2105,7 +2114,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         output.writeBoolean(struct);
         output.writeBoolean(dummyFlag);
         output.writeBoolean(methodTableBuildDisabled);
-        output.writeEntity(constantPool);
+        constantPool.write(output);
         output.writeBoolean(allFlag);
     }
 
@@ -2113,6 +2122,5 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     protected void buildSource(Map<String, Value> source) {
         super.buildSource(source);
     }
-
 }
 

@@ -80,7 +80,7 @@ public class RaiseNode extends Node {
         if (successor != null) map.put("successor", successor.getStringId());
         var predecessor = this.getPredecessor();
         if (predecessor != null) map.put("predecessor", predecessor.getStringId());
-        map.put("code", this.getCode().getStringId());
+        map.put("code", this.getCode().toJson());
         map.put("unconditionalJump", this.isUnconditionalJump());
         map.put("sequential", this.isSequential());
         var error = this.getError();
@@ -88,7 +88,6 @@ public class RaiseNode extends Node {
         var type = this.getType();
         if (type != null) map.put("type", type.toJson());
         map.put("expressionTypes", this.getExpressionTypes());
-        map.put("text", this.getText());
         map.put("nextExpressionTypes", this.getNextExpressionTypes());
         map.put("offset", this.getOffset());
     }

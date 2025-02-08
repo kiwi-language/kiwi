@@ -56,6 +56,7 @@ public class DummyTypeVariable extends TypeVariable {
         map.put("qualifiedName", this.getQualifiedName());
         map.put("upperBound", this.getUpperBound().toJson());
         map.put("bounds", this.getBounds().stream().map(Type::toJson).toList());
+        map.put("boundIndexes", this.getBoundIndexes());
         map.put("stage", this.getStage().name());
         map.put("typeDesc", this.getTypeDesc());
         map.put("type", this.getType().toJson());

@@ -159,7 +159,7 @@ public class FunctionType extends CompositeType {
 
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-        parameterTypes.forEach(arg -> arg.forEachReference(action));
+        for (var parameterTypes_ : parameterTypes) parameterTypes_.forEachReference(action);
         returnType.forEachReference(action);
     }
 }

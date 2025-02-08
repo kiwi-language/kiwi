@@ -7,14 +7,21 @@ import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
+import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.NativeMethods;
 import org.metavm.entity.natives.RuntimeExceptionNative;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Klass;
 import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -418,12 +425,11 @@ public class Method extends Flow implements Property {
         map.put("hidden", this.isHidden());
         var staticType = this.getStaticType();
         if (staticType != null) map.put("staticType", staticType.toJson());
-        map.put("internalName", this.getInternalName());
         map.put("minLocals", this.getMinLocals());
         map.put("flags", this.getFlags());
         map.put("parameterTypes", this.getParameterTypes().stream().map(Type::toJson).toList());
         map.put("returnType", this.getReturnType().toJson());
-        map.put("code", this.getCode().getStringId());
+        map.put("code", this.getCode().toJson());
         map.put("synthetic", this.isSynthetic());
         map.put("name", this.getName());
         map.put("state", this.getState().name());
@@ -431,11 +437,13 @@ public class Method extends Flow implements Property {
         map.put("native", this.isNative());
         map.put("typeParameters", this.getTypeParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
         map.put("parameters", this.getParameters().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("returnTypeIndex", this.getReturnTypeIndex());
         map.put("type", this.getType().toJson());
         map.put("capturedTypeVariables", this.getCapturedTypeVariables().stream().map(org.metavm.entity.Entity::getStringId).toList());
         map.put("lambdas", this.getLambdas().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("constantPool", this.getConstantPool().getStringId());
+        map.put("constantPool", this.getConstantPool().toJson());
         map.put("klasses", this.getKlasses().stream().map(org.metavm.entity.Entity::getStringId).toList());
+        map.put("internalName", this.getInternalName());
         map.put("attributes", this.getAttributes().stream().map(Attribute::toJson).toList());
     }
 

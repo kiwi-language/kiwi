@@ -280,7 +280,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     @Override
     public void forEachReference(Consumer<Reference> action) {
         action.accept(walReference);
-        fieldChanges.forEach(arg -> arg.forEachReference(action));
+        for (var fieldChanges_ : fieldChanges) fieldChanges_.forEachReference(action);
     }
 
     @Override

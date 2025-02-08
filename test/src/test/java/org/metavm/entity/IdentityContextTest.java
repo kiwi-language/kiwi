@@ -21,7 +21,6 @@ public class IdentityContextTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        super.setUp();
         MockStandardTypesInitializer.init();
     }
 
@@ -50,7 +49,6 @@ public class IdentityContextTest extends TestCase {
         Assert.assertTrue(identities.containsKey(fooNameField));
         Assert.assertTrue(identities.containsKey(method));
         Assert.assertTrue(identities.containsKey(method.getParameters().getFirst()));
-        Assert.assertTrue(identities.containsKey(method.getCode()));
     }
 
 }

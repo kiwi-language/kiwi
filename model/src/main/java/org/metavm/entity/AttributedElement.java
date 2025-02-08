@@ -86,7 +86,7 @@ public abstract class AttributedElement extends Entity implements Element {
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-        attributes.forEach(arg -> arg.forEachReference(action));
+        for (var attributes_ : attributes) attributes_.forEachReference(action);
     }
 
     @Override

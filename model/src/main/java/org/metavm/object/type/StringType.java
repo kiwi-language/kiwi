@@ -4,12 +4,14 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.rest.dto.StringTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class StringType extends KlassType {
@@ -46,5 +48,9 @@ public class StringType extends KlassType {
     @Override
     public <R, S> R accept(TypeVisitor<R, S> visitor, S s) {
         return visitor.visitStringType(this, s);
+    }
+
+    public void forEachReference(Consumer<Reference> action) {
+        super.forEachReference(action);
     }
 }

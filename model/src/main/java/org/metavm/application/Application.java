@@ -144,7 +144,7 @@ public class Application extends org.metavm.entity.Entity {
     public void forEachReference(Consumer<Reference> action) {
         action.accept(owner);
         if (secret != null) secret.forEachReference(action);
-        admins.forEach(action);
+        for (var admins_ : admins) action.accept(admins_);
     }
 
     @Override

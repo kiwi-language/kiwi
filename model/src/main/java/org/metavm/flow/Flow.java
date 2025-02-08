@@ -90,14 +90,14 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         visitor.visitBoolean();
         visitor.visitList(visitor::visitEntity);
         visitor.visitInt();
-        visitor.visitNullable(visitor::visitEntity);
+        visitor.visitNullable(() -> Code.visit(visitor));
         visitor.visitBoolean();
         visitor.visitList(visitor::visitEntity);
         visitor.visitByte();
         visitor.visitList(visitor::visitEntity);
         visitor.visitList(visitor::visitEntity);
         visitor.visitList(visitor::visitEntity);
-        visitor.visitEntity();
+        ConstantPool.visit(visitor);
         visitor.visitNullable(visitor::visitUTF);
     }
 
@@ -606,19 +606,19 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
         for (var parameters_ : parameters) action.accept(parameters_.getReference());
-        if (code != null) action.accept(code.getReference());
+        if (code != null) code.forEachReference(action);
         for (var typeParameters_ : typeParameters) action.accept(typeParameters_.getReference());
         for (var capturedTypeVariables_ : capturedTypeVariables) action.accept(capturedTypeVariables_.getReference());
         for (var lambdas_ : lambdas) action.accept(lambdas_.getReference());
         for (var klasses_ : klasses) action.accept(klasses_.getReference());
-        action.accept(constantPool.getReference());
+        constantPool.forEachReference(action);
     }
 
     @Override
     public void buildJson(Map<String, Object> map) {
         map.put("parameterTypes", this.getParameterTypes().stream().map(Type::toJson).toList());
         map.put("returnType", this.getReturnType().toJson());
-        map.put("code", this.getCode().getStringId());
+        map.put("code", this.getCode().toJson());
         map.put("synthetic", this.isSynthetic());
         map.put("name", this.getName());
         map.put("state", this.getState().name());
@@ -630,7 +630,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         map.put("type", this.getType().toJson());
         map.put("capturedTypeVariables", this.getCapturedTypeVariables().stream().map(org.metavm.entity.Entity::getStringId).toList());
         map.put("lambdas", this.getLambdas().stream().map(org.metavm.entity.Entity::getStringId).toList());
-        map.put("constantPool", this.getConstantPool().getStringId());
+        map.put("constantPool", this.getConstantPool().toJson());
         map.put("klasses", this.getKlasses().stream().map(org.metavm.entity.Entity::getStringId).toList());
         map.put("flags", this.getFlags());
         map.put("internalName", this.getInternalName());
@@ -652,12 +652,10 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
         for (var parameters_ : parameters) action.accept(parameters_);
-        if (code != null) action.accept(code);
         for (var typeParameters_ : typeParameters) action.accept(typeParameters_);
         for (var capturedTypeVariables_ : capturedTypeVariables) action.accept(capturedTypeVariables_);
         for (var lambdas_ : lambdas) action.accept(lambdas_);
         for (var klasses_ : klasses) action.accept(klasses_);
-        action.accept(constantPool);
     }
 
     @Override
@@ -674,14 +672,14 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         this.isSynthetic = input.readBoolean();
         this.parameters = input.readList(() -> input.readEntity(Parameter.class, this));
         this.returnTypeIndex = input.readInt();
-        this.code = input.readNullable(() -> input.readEntity(Code.class, this));
+        this.code = input.readNullable(() -> Code.read(input, this));
         this.isTemplate = input.readBoolean();
         this.typeParameters = input.readList(() -> input.readEntity(TypeVariable.class, this));
         this.state = MetadataState.fromCode(input.read());
         this.capturedTypeVariables = input.readList(() -> input.readEntity(CapturedTypeVariable.class, this));
         this.lambdas = input.readList(() -> input.readEntity(Lambda.class, this));
         this.klasses = input.readList(() -> input.readEntity(Klass.class, this));
-        this.constantPool = input.readEntity(ConstantPool.class, this);
+        this.constantPool = ConstantPool.read(input, this);
         this.internalName = input.readNullable(input::readUTF);
         this.onRead();
     }
@@ -695,14 +693,14 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
         output.writeBoolean(isSynthetic);
         output.writeList(parameters, output::writeEntity);
         output.writeInt(returnTypeIndex);
-        output.writeNullable(code, output::writeEntity);
+        output.writeNullable(code, arg0 -> arg0.write(output));
         output.writeBoolean(isTemplate);
         output.writeList(typeParameters, output::writeEntity);
         output.write(state.code());
         output.writeList(capturedTypeVariables, output::writeEntity);
         output.writeList(lambdas, output::writeEntity);
         output.writeList(klasses, output::writeEntity);
-        output.writeEntity(constantPool);
+        constantPool.write(output);
         output.writeNullable(internalName, output::writeUTF);
     }
 

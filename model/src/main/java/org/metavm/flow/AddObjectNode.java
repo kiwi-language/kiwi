@@ -104,14 +104,13 @@ public class AddObjectNode extends Node {
         map.put("name", this.getName());
         var predecessor = this.getPredecessor();
         if (predecessor != null) map.put("predecessor", predecessor.getStringId());
-        map.put("code", this.getCode().getStringId());
+        map.put("code", this.getCode().toJson());
         map.put("exit", this.isExit());
         map.put("unconditionalJump", this.isUnconditionalJump());
         map.put("sequential", this.isSequential());
         var error = this.getError();
         if (error != null) map.put("error", error);
         map.put("expressionTypes", this.getExpressionTypes());
-        map.put("text", this.getText());
         map.put("nextExpressionTypes", this.getNextExpressionTypes());
         map.put("offset", this.getOffset());
     }

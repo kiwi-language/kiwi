@@ -108,8 +108,8 @@ public class LivingBeing extends org.metavm.entity.Entity {
     public void forEachReference(Consumer<Reference> action) {
         if (extraInfo instanceof Reference r) action.accept(r);
         else if (extraInfo instanceof org.metavm.object.instance.core.NativeValue t) t.forEachReference(action);
-        offsprings.forEach(action);
-        ancestors.forEach(action);
+        for (var offsprings_ : offsprings) action.accept(offsprings_);
+        for (var ancestors_ : ancestors) action.accept(ancestors_);
     }
 
     @Override

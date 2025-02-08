@@ -130,7 +130,7 @@ public class User extends org.metavm.entity.Entity {
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-        roles.forEach(action);
+        for (var roles_ : roles) action.accept(roles_);
     }
 
     @Override

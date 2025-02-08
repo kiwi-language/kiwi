@@ -76,7 +76,7 @@ public class PlatformUser extends User {
     @Override
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-        applications.forEach(action);
+        for (var applications_ : applications) action.accept(applications_);
     }
 
     @Override

@@ -15,6 +15,10 @@ public record RemovedField(
         String qualifiedName
 ) implements ValueObject {
 
+    public static RemovedField fromField(Field oldField) {
+        return new RemovedField(oldField.getKlassTag(), oldField.getTag(), oldField.getQualifiedName());
+    }
+
     @Generated
     public static RemovedField read(MvInput input) {
         return new RemovedField(input.readLong(), input.readInt(), input.readUTF());
@@ -25,10 +29,6 @@ public record RemovedField(
         visitor.visitLong();
         visitor.visitInt();
         visitor.visitUTF();
-    }
-
-    public static RemovedField fromField(Field oldField) {
-        return new RemovedField(oldField.getKlassTag(), oldField.getTag(), oldField.getQualifiedName());
     }
 
     public void forEachReference(Consumer<Reference> action) {

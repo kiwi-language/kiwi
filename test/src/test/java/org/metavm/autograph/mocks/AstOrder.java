@@ -68,7 +68,7 @@ public class AstOrder extends org.metavm.entity.Entity {
     @Override
     public void forEachReference(Consumer<Reference> action) {
         action.accept(product);
-        coupons.forEach(action);
+        for (var coupons_ : coupons) action.accept(coupons_);
     }
 
     @Override

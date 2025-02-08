@@ -139,7 +139,7 @@ public class Session extends org.metavm.entity.Entity {
     @Override
     public void forEachReference(Consumer<Reference> action) {
         action.accept(userReference);
-        entries.forEach(arg -> action.accept(arg.getReference()));
+        for (var entries_ : entries) action.accept(entries_.getReference());
     }
 
     @Override
@@ -166,7 +166,7 @@ public class Session extends org.metavm.entity.Entity {
 
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
-        entries.forEach(action);
+        for (var entries_ : entries) action.accept(entries_);
     }
 
     @Override

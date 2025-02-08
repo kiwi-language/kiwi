@@ -205,7 +205,7 @@ public final class KlassParser<T> {
                 var constructor = Utils.findRequired(klass.getMethods(), org.metavm.flow.Method::isConstructor);
                 {
                     var code = constructor.getCode();
-                    code.setEphemeral();
+//                    code.setEphemeral();
                     int i = 0;
                     for (var field : klass.getFields()) {
                         if(!field.isStatic()) {
@@ -220,7 +220,7 @@ public final class KlassParser<T> {
                 for (org.metavm.object.type.Field field : klass.getFields()) {
                     var accessor = klass.getMethodByName(field.getName());
                     var code = accessor.getCode();
-                    code.setEphemeral();
+//                    code.setEphemeral();
                     Nodes.thisField(field.getRef(), code);
                     Nodes.ret(code);
                 }

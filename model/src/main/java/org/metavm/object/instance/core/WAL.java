@@ -7,16 +7,22 @@ import org.metavm.api.Generated;
 import org.metavm.entity.ContextFinishWare;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.LoadAware;
+import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.*;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.*;
+import org.metavm.util.MvInput;
+import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 

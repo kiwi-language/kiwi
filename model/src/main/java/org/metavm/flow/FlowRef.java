@@ -132,6 +132,6 @@ public abstract class FlowRef implements GenericDeclarationRef, Writable, Callab
 
     public void forEachReference(Consumer<Reference> action) {
         action.accept(flowReference);
-        typeArguments.forEach(arg -> arg.forEachReference(action));
+        for (var typeArguments_ : typeArguments) typeArguments_.forEachReference(action);
     }
 }

@@ -61,7 +61,7 @@ public class ArrayValue extends Value {
 
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-        elements.forEach(arg -> arg.forEachReference(action));
+        for (var elements_ : elements) elements_.forEachReference(action);
         type.forEachReference(action);
     }
 

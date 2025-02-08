@@ -62,8 +62,8 @@ public class SystemDDL extends org.metavm.entity.Entity {
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-        fieldAdditions.forEach(arg -> arg.forEachReference(action));
-        runMethods.forEach(action);
+        for (var fieldAdditions_ : fieldAdditions) fieldAdditions_.forEachReference(action);
+        for (var runMethods_ : runMethods) action.accept(runMethods_);
     }
 
     @Override

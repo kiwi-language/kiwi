@@ -116,7 +116,7 @@ public class ArrayExpression extends Expression {
 
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
-        expressions.forEach(arg -> arg.forEachReference(action));
+        for (var expressions_ : expressions) expressions_.forEachReference(action);
         type.forEachReference(action);
     }
 
