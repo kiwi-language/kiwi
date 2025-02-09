@@ -9,6 +9,7 @@ import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.NoProxy;
 import org.metavm.entity.SearchField;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -64,12 +65,14 @@ public class Foo extends org.metavm.entity.Entity {
 
     private boolean allFlag = true;
 
-    public Foo(String name, Bar bar) {
+    public Foo(Id id, String name, Bar bar) {
+        super(id);
         this.name = name;
         this.bar = bar;
     }
 
-    public Foo(String name, Bar bar, @Nullable Qux qux, List<Baz> bazList) {
+    public Foo(Id id, String name, Bar bar, @Nullable Qux qux, List<Baz> bazList) {
+        super(id);
         this.name = name;
         this.bar = bar;
         this.qux = Utils.safeCall(qux, Instance::getReference);
@@ -106,7 +109,7 @@ public class Foo extends org.metavm.entity.Entity {
     @NoProxy
     public void setData(Map<String, Object> data) {
         this.name = (String) data.get("name");
-        this.bar = new Bar(this, (String) data.get("barCode"));
+        this.bar = new Bar(nextChildId(), this, (String) data.get("barCode"));
     }
 
     @Nullable

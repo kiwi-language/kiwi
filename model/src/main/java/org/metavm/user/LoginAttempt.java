@@ -5,6 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
@@ -51,7 +52,8 @@ public class LoginAttempt extends org.metavm.entity.Entity {
 
     private Date time;
 
-    public LoginAttempt(boolean successful, String loginName, String clientIP, Date time) {
+    public LoginAttempt(Id id, boolean successful, String loginName, String clientIP, Date time) {
+        super(id);
         this.successful = successful;
         this.loginName = loginName;
         this.clientIP = clientIP;

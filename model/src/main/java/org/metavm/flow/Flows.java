@@ -3,14 +3,11 @@ package org.metavm.flow;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
-import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.*;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.expression.Expression;
 import org.metavm.expression.ExpressionTypeMap;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.FunctionValue;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
@@ -114,6 +111,7 @@ public class Flows {
         var m = klass.findSelfMethod(Flows::isValuesMethod);
         if(m == null) {
             m = MethodBuilder.newBuilder(klass, "values")
+                    .id(TmpId.random())
                     .isStatic(true)
                     .returnType(new ArrayType(klass.getType(), ArrayKind.READ_WRITE))
                     .build();

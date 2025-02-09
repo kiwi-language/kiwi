@@ -1,23 +1,18 @@
 package org.metavm.http;
 
 import org.metavm.api.Entity;
-import org.metavm.api.Generated;
+import org.metavm.api.EntityFlow;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import java.util.Map;
 import java.util.function.Consumer;
 
-@Entity(systemAPI = true)
+@Entity
 public class HttpCookieImpl implements HttpCookie, NativeEphemeralObject {
 
     @SuppressWarnings("unused")
@@ -33,11 +28,13 @@ public class HttpCookieImpl implements HttpCookie, NativeEphemeralObject {
     }
 
     @Override
+    @EntityFlow
     public String name() {
         return name;
     }
 
     @Override
+    @EntityFlow
     public String value() {
         return value;
     }
@@ -46,7 +43,6 @@ public class HttpCookieImpl implements HttpCookie, NativeEphemeralObject {
     public InstanceState state() {
         return state;
     }
-
 
     public Value name(CallContext callContext) {
         return Instances.stringInstance(name());

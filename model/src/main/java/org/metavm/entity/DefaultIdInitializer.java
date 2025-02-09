@@ -82,4 +82,7 @@ public class DefaultIdInitializer implements IdInitializer {
             path.removeLast();
     }
 
+    public EntityIdProvider getIdProvider() {
+        return idProvider;
+    }
 }

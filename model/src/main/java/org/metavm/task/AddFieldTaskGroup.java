@@ -5,6 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.*;
@@ -27,7 +28,8 @@ public class AddFieldTaskGroup extends TaskGroup {
     private static Klass __klass__;
     private Reference fieldReference;
 
-    public AddFieldTaskGroup(Field field) {
+    public AddFieldTaskGroup(Id id, Field field) {
+        super(id);
         this.fieldReference = field.getReference();
     }
 
@@ -46,7 +48,7 @@ public class AddFieldTaskGroup extends TaskGroup {
     }
 
     private void createTasksForKlass(Klass klass, Field field, List<Task> tasks) {
-        tasks.add(new AddFieldTask(klass.getType(), field));
+        tasks.add(new AddFieldTask(nextChildId(), klass.getType(), field));
         for (Klass subKlass : klass.getSubKlasses()) {
             createTasksForKlass(subKlass, field, tasks);
         }

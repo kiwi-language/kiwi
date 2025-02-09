@@ -3,53 +3,41 @@ package org.metavm.entity.natives;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
-import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.FieldRef;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.FunctionValue;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.KlassType;
-import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
+import org.metavm.util.MvObjectOutputStream;
 import org.metavm.util.Utils;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
-public class HashSetNative extends SetNative {
+public class HashSetNative extends AbstractSetNative {
 
     private final ClassInstance instance;
     private final Set<HashKeyWrap> set = new HashSet<>();
-    private final FieldRef arrayField;
-    private ArrayInstance array;
 
     public HashSetNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = Objects.requireNonNull(instance.getInstanceType().findFieldByName("array"));
-        if (instance.isFieldInitialized(arrayField.getRawField())) {
-            var instCtx = Objects.requireNonNull(instance.getContext(), "InstanceContext is missing in " + instance);
-            array = instance.getField(arrayField.getRawField()).resolveArray();
-            initializeElementToIndex(instCtx);
-        }
     }
 
     public Value HashSet(CallContext callContext) {
-        array = new ArrayInstance((ArrayType) arrayField.getPropertyType());
-        instance.initField(arrayField.getRawField(), array.getReference());
         return instance.getReference();
     }
 
     public Value HashSet__Collection(Value c, CallContext callContext) {
-        var collection = (Reference) c;
-        var thatArrayField = collection.resolveObject().getInstanceKlass().getFieldByName("array");
-        var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
-        array = new ArrayInstance((ArrayType) arrayField.getPropertyType(),
-                new InstanceParentRef(instance.getReference(), arrayField.getRawField()));
-        instance.initField(arrayField.getRawField(), array.getReference());
-        array.addAll(thatArray);
-        initializeElementToIndex(callContext);
+        var collNative = (CollectionNative) NativeMethods.getNativeObject(c.resolveObject());
+        collNative.forEach(e -> set.add(new HashKeyWrap(e, callContext)));
         return instance.getReference();
     }
 
+    @Override
     public Value iterator(CallContext callContext) {
         var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getInstanceType().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType);
@@ -68,16 +56,19 @@ public class HashSetNative extends SetNative {
         return Utils.mapIterator(set.iterator(), HashKeyWrap::value);
     }
 
+    @Override
     public Value add(Value value, CallContext callContext) {
         var keyWrap = new HashKeyWrap(value, callContext);
         return Instances.intInstance(set.add(keyWrap));
     }
 
+    @Override
     public Value remove(Value value, CallContext callContext) {
         var keyWrap = new HashKeyWrap(value, callContext);
         return Instances.intInstance(set.remove(keyWrap));
     }
 
+    @Override
     public Value isEmpty(CallContext callContext) {
         return Instances.intInstance(set.isEmpty());
     }
@@ -96,27 +87,37 @@ public class HashSetNative extends SetNative {
         return instance;
     }
 
-    public void clear(CallContext callContext) {
-        array.clear();
+    @Override
+    public Value clear(CallContext callContext) {
+        set.clear();
+        return Instances.nullInstance();
     }
 
     @Override
     public Value forEach(Value action, CallContext callContext) {
         if(action instanceof FunctionValue functionValue) {
-            array.forEach(e -> functionValue.execute(List.of(e), callContext));
+            set.forEach(e -> functionValue.execute(List.of(e.value()), callContext));
             return Instances.nullInstance();
         } else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    private void initializeElementToIndex(CallContext callContext) {
-        for (Value element : array) {
-            set.add(new HashKeyWrap(element, callContext));
+    public Value writeObject(Value s, CallContext callContext) {
+        var out = Instances.extractOutput(s);
+        out.writeInt(set.size());
+        for (var e : set) {
+            out.writeValue(e.value());
         }
+        return Instances.nullInstance();
     }
 
-    @Override
-    public void flush() {
-        array.setElements(Utils.map(set, HashKeyWrap::value));
+    public Value readObject(Value s, CallContext callContext) {
+        var in = Instances.extractInput(s);
+        var size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            set.add(new HashKeyWrap(in.readValue(), callContext));
+        }
+        return Instances.nullInstance();
     }
+
 }

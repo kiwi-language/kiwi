@@ -1,5 +1,7 @@
 package org.metavm.api;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,5 +69,9 @@ public class ValueList<T> extends AbstractList<T> implements ValueObject {
     public boolean removeIf(Predicate<? super T> filter) {
         throw new UnsupportedOperationException();
     }
+
+    private void writeObject(ObjectOutputStream o) {}
+
+    private void readObject(ObjectInputStream i) {}
 
 }

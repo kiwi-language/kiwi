@@ -8,6 +8,7 @@ import org.metavm.api.Generated;
 import org.metavm.entity.*;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.flow.Flow;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -37,8 +38,8 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
     private transient Type bound;
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
-    public TypeVariable(Long tmpId, @NotNull String name, @NotNull GenericDeclaration genericDeclaration) {
-        setTmpId(tmpId);
+    public TypeVariable(@NotNull Id id, @NotNull String name, @NotNull GenericDeclaration genericDeclaration) {
+        super(id);
         this.name = name;
         this.genericDeclaration = genericDeclaration;
         genericDeclaration.addTypeParameter(this);
@@ -119,12 +120,6 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
 
     public String getInternalName(@Nullable Flow current) {
         return genericDeclaration.getInternalName(current) + "." + getName();
-    }
-
-    public TypeVariable copy() {
-        var copy = new TypeVariable(null, name, DummyGenericDeclaration.INSTANCE);
-        copy.setBounds(getBounds());
-        return copy;
     }
 
     public ResolutionStage getStage() {

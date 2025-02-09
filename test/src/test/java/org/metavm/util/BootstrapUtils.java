@@ -37,12 +37,6 @@ public class BootstrapUtils {
             var defContext = state.defContext();
             ModelDefRegistry.setDefContext(defContext);
             StdFunction.setEmailSender(MockEmailSender.INSTANCE);
-//            defContext.buildMemoryIndex();
-//            StdFunction.initializeFromDefContext(defContext, false);
-//            PrimitiveKind.initialize(defContext);
-//            StdKlass.initialize(defContext, false);
-//            StdMethod.initialize(defContext, false);
-//            StdField.initialize(defContext, false);
             ParameterizedStore.getMap().clear();
             var state = BootstrapUtils.state.copy();
             var instanceStore = new MemInstanceStore(
@@ -69,8 +63,8 @@ public class BootstrapUtils {
                 try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
                     SchedulerRegistry.initialize(platformContext);
                     var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
-                    var app = new Application("demo",
-                            new PlatformUser("demo", "123456", "demo", List.of()));
+                    var app = new Application(platformContext.allocateRootId(), "demo",
+                            new PlatformUser(platformContext.allocateRootId(), "demo", "123456", "demo", List.of()));
                     platformContext.bind(app);
                     platformContext.initIds();
                     TestConstants.APP_ID = app.getId().getTreeId();
@@ -103,17 +97,17 @@ public class BootstrapUtils {
                             new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), metaContextCache), metaContextCache, entityContextFactory)
             );
         } else {
-            return create(true, true, new MemAllocatorStore(), new MemColumnStore(), new MemTypeTagStore(), Set.of(), Set.of());
+            return create(true, new MemAllocatorStore(), new MemColumnStore(), new MemTypeTagStore(), Set.of(), Set.of());
         }
     }
 
     public static BootstrapResult create(boolean saveState,
-                                         boolean saveIds,
                                          MemAllocatorStore allocatorStore,
                                          MemColumnStore columnStore,
                                          MemTypeTagStore typeTagStore,
                                          Set<Class<?>> classBlacklist,
                                          Set<Field> fieldBlacklist) {
+        generateIds(allocatorStore);
         StdFunction.setEmailSender(MockEmailSender.INSTANCE);
         var regionMapper = new MemRegionMapper();
         var regionManager = new RegionManager(regionMapper);
@@ -143,7 +137,6 @@ public class BootstrapUtils {
         var changeLogManager = new ChangeLogManager(entityContextFactory);
         var taskManager = new TaskManager(entityContextFactory, new MockTransactionOperations());
         new MockEventQueue();
-        TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(saveIds));
         var defContext = copyDefContext(entityContextFactory, idProvider, (SystemDefContext) ModelDefRegistry.getDefContext());
         if(saveState) {
             state = new BootState(
@@ -165,8 +158,8 @@ public class BootstrapUtils {
             try (var platformContext = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
                 SchedulerRegistry.initialize(platformContext);
                 var globalTagAssigner = GlobalKlassTagAssigner.initialize(platformContext);
-                var app = new Application("demo",
-                        new PlatformUser("demo", "123456", "demo", List.of()));
+                var app = new Application(platformContext.allocateRootId(), "demo",
+                        new PlatformUser(platformContext.allocateRootId(), "demo", "123456", "demo", List.of()));
                 platformContext.bind(app);
                 platformContext.initIds();
                 TestConstants.APP_ID = app.getId().getTreeId();
@@ -199,6 +192,20 @@ public class BootstrapUtils {
                 new SchedulerAndWorker(new Scheduler(entityContextFactory, transactionOps),
                         new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), metaContextCache), metaContextCache, entityContextFactory)
         );
+    }
+
+    private static void generateIds(AllocatorStore allocatorStore) {
+        var stdAllocators = new StdAllocators(allocatorStore);
+        var idGenerator = new StdIdGenerator(() -> stdAllocators.allocate(1).getFirst());
+        idGenerator.generate();
+
+        idGenerator.getIds().forEach((identity, id) -> {
+            if (id.getNodeId() == 0L)
+                stdAllocators.putId(identity, id, idGenerator.getNextNodeId(identity));
+            else
+                stdAllocators.putId(identity, id);
+        });
+        stdAllocators.save();
     }
 
     private static SystemDefContext copyDefContext(EntityContextFactory entityContextFactory, EntityIdProvider idProvider, SystemDefContext sysDefContext) {

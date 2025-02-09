@@ -5,6 +5,7 @@ import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -29,9 +30,6 @@ public class Baz extends org.metavm.entity.Entity {
     @ChildEntity
     private List<Reference> bars = new ArrayList<>();
 
-    public Baz() {
-    }
-
     @Generated
     public static void visitBody(StreamVisitor visitor) {
         visitor.visitList(visitor::visitValue);
@@ -43,7 +41,12 @@ public class Baz extends org.metavm.entity.Entity {
         return null;
     }
 
-    public Baz(List<Bar> bars) {
+    public Baz(Id id) {
+        super(id);
+    }
+
+    public Baz(Id id, List<Bar> bars) {
+        super(id);
         setBars(bars);
     }
 
@@ -52,7 +55,7 @@ public class Baz extends org.metavm.entity.Entity {
     }
 
     public void setBars(List<Bar> bars) {
-        this.bars = new ArrayList<>();
+        this.bars = Utils.map(bars, Instance::getReference);
     }
 
     @Override

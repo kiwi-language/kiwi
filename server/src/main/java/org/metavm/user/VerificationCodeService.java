@@ -48,7 +48,7 @@ public class VerificationCodeService extends EntityContextFactoryAware {
             );
             if (count > MAX_SENT_PER_FIFTEEN_MINUTES)
                 throw new BusinessException(ErrorCode.VERIFICATION_CODE_SENT_TOO_OFTEN);
-            platformCtx.bind(VerificationCode.create(receiver, code, clientIP));
+            platformCtx.bind(VerificationCode.create(platformCtx.allocateRootId(), receiver, code, clientIP));
             platformCtx.finish();
         }
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {

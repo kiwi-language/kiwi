@@ -2,22 +2,17 @@ package org.metavm.object.type;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.NativeApi;
-import org.metavm.entity.DefContext;
 import org.metavm.entity.natives.HybridValueHolder;
 import org.metavm.entity.natives.ValueHolder;
 import org.metavm.entity.natives.ValueHolderOwner;
-import org.metavm.flow.Method;
-import org.metavm.flow.MethodBuilder;
-import org.metavm.flow.MethodRef;
-import org.metavm.flow.NameAndType;
 import org.metavm.object.instance.core.*;
-import org.metavm.util.*;
+import org.metavm.util.Instances;
+import org.metavm.util.NamingUtils;
+import org.metavm.util.Password;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
-import java.io.Serializable;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.util.*;
+import java.util.Date;
 
 @Slf4j
 public enum PrimitiveKind implements ValueHolderOwner<Klass> {
@@ -107,10 +102,6 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return i == 0 ? BooleanValue.false_ : BooleanValue.true_;
         }
 
-        @Override
-        public boolean isHeapOnly() {
-            return true;
-        }
     },
     TIME(5, "time", Date.class, TimeValue.class, TypeCategory.TIME) {
 
@@ -131,10 +122,6 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return new CharValue((char) i);
         }
 
-        @Override
-        public boolean isHeapOnly() {
-            return true;
-        }
     },
     INT(10, "int", int.class, IntValue.class, TypeCategory.INT) {
         @Override
@@ -222,10 +209,6 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
         }
 
 
-        @Override
-        public boolean isHeapOnly() {
-            return true;
-        }
     },
     BYTE(13, "byte", byte.class, ByteValue.class, TypeCategory.BYTE) {
         @Override
@@ -238,10 +221,6 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
             return new ByteValue((byte) ((IntValue) value).value);
         }
 
-        @Override
-        public boolean isHeapOnly() {
-            return true;
-        }
     };
 
 
@@ -323,85 +302,6 @@ public enum PrimitiveKind implements ValueHolderOwner<Klass> {
     @Override
     public void setValueHolder(ValueHolder<Klass> valueHolder) {
         this.valueHolder = valueHolder;
-    }
-
-    public Klass getKlass() {
-        var klass = valueHolder.get();
-        if (klass == null) {
-            klass = KlassBuilder.newBuilder(getName(), getName()).build();
-            valueHolder.set(klass);
-        }
-        return klass;
-    }
-
-    public static void initialize(DefContext defContext) {
-        for (PrimitiveKind kind : PrimitiveKind.values()) {
-            if (kind != VOID)
-                initPrimitiveKlass(kind.getType(), defContext);
-        }
-    }
-
-    private static void initPrimitiveKlass(PrimitiveType primitiveType, DefContext defContext) {
-        var klass = primitiveType.getKind().getKlass();
-        klass.disableMethodTableBuild();
-        klass.setMethods(List.of());
-        klass.getConstantPool().clear();
-        if (primitiveType == PrimitiveType.longType || primitiveType == PrimitiveType.doubleType
-                || primitiveType == PrimitiveType.intType || primitiveType == PrimitiveType.floatType
-                || primitiveType == PrimitiveType.shortType || primitiveType == PrimitiveType.byteType) {
-            var numberKlass = defContext.getKlass(Number.class);
-            klass.setSuperType(numberKlass.getType());
-            definePrimitiveMethods(primitiveType, numberKlass.getType());
-        }
-        var interfaces = new ArrayList<ClassType>();
-        if (primitiveType != PrimitiveType.passwordType)
-            interfaces.add(KlassType.create(defContext.getKlass(Comparable.class), List.of(klass.getType())));
-        interfaces.add(defContext.getKlass(Serializable.class).getType());
-        klass.setInterfaces(interfaces);
-        interfaces.forEach(it -> definePrimitiveMethods(primitiveType, it));
-        klass.resetHierarchy();
-    }
-
-    private static void definePrimitiveMethods(PrimitiveType primitiveType, ClassType interfaceType) {
-        if (primitiveType.getKind().isHeapOnly())
-            return;
-        interfaceType.foreachMethod(m -> {
-            if(m.isAbstract())
-                definePrimitiveMethod(primitiveType, m);
-        });
-    }
-
-    private static void definePrimitiveMethod(PrimitiveType primitiveType, MethodRef interfaceMethod) {
-        var method = MethodBuilder.newBuilder(primitiveType.getKind().getKlass(), interfaceMethod.getName())
-                .parameters(
-                        Utils.map(
-                                interfaceMethod.getParameters(),
-                                p -> new NameAndType(p.getName(), p.getType())
-                        )
-                )
-                .returnType(interfaceMethod.getReturnType())
-                .isNative(true)
-                .build();
-        setPrimitiveNativeMethod(primitiveType, method);
-    }
-
-    private static void setPrimitiveNativeMethod(PrimitiveType primitiveType, Method method) {
-        try {
-            var kind = primitiveType.getKind();
-            var paramTypes = new Class<?>[method.getParameters().size() + 1];
-            Arrays.fill(paramTypes, Value.class);
-            var methodType = MethodType.methodType(Value.class, paramTypes);
-            var lookup = MethodHandles.lookup();
-            var mh = lookup.findStatic(kind.getClass(), method.getName(), methodType);
-            method.setNativeHandle(mh.asSpreader(Value[].class, paramTypes.length));
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean isHeapOnly() {
-        return false;
     }
 
 }

@@ -33,12 +33,12 @@ public class IdentityContextTest extends TestCase {
         var fooNameField = FieldBuilder.newBuilder("name", fooKlass, Types.getStringType())
                 .build();
 
-        var typeVar = new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE);
         var method = MethodBuilder.newBuilder(fooKlass, "bar")
                 .returnType(Types.getVoidType())
-                .typeParameters(List.of(typeVar))
                 .build();
-        method.setParameters(List.of(new Parameter(null, "t", typeVar.getType(), method)));
+        var typeVar = new TypeVariable(fooKlass.nextChildId(), "T", method);
+        method.setTypeParameters(List.of(typeVar));
+        method.setParameters(List.of(new Parameter(fooKlass.nextChildId(), "t", typeVar.getType(), method)));
         var identities = new IdentityHashMap<Object, ModelIdentity>();
         fooKlass.visitGraph(i -> {
             if (i instanceof Entity entity)

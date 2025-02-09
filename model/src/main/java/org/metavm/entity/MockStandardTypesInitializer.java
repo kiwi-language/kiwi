@@ -5,6 +5,8 @@ import org.metavm.api.ValueList;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.NameAndType;
 import org.metavm.flow.Nodes;
+import org.metavm.object.instance.core.PhysicalId;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.util.Utils;
 
@@ -17,43 +19,39 @@ import java.util.function.Predicate;
 public class MockStandardTypesInitializer {
 
     public static long nextKlassTag = 1;
+    public static int nextTreeId = 1;
 
     public static void init() {
         if (ModelDefRegistry.isDefContextPresent()) return;
         StdKlass.list.set(
                 newKlassBuilder(List.class)
                         .source(ClassSource.BUILTIN)
-                        .tmpId(Utils.randomNonNegative())
-                        .typeParameters(new TypeVariable(Utils.randomNonNegative(), "Element", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "Element", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.arrayList.set(
                 newKlassBuilder(ArrayList.class)
                         .source(ClassSource.BUILTIN)
-                        .tmpId(Utils.randomNonNegative())
-                        .typeParameters(new TypeVariable(Utils.randomNonNegative(), "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.childList.set(
                 newKlassBuilder(ChildList.class)
                         .source(ClassSource.BUILTIN)
-                        .tmpId(Utils.randomNonNegative())
-                        .typeParameters(new TypeVariable(Utils.randomNonNegative(), "ChildListElement", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "ChildListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.valueList.set(
                 newKlassBuilder(ValueList.class)
                         .source(ClassSource.BUILTIN)
-                        .tmpId(Utils.randomNonNegative())
-                        .typeParameters(new TypeVariable(Utils.randomNonNegative(), "ValueListElement", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "ValueListElement", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        var enumTypeParam = new TypeVariable(Utils.randomNonNegative(), "EnumType",
+        var enumTypeParam = new TypeVariable(TmpId.random(), "EnumType",
                 DummyGenericDeclaration.INSTANCE);
         var enumType = newKlassBuilder(Enum.class)
                 .source(ClassSource.BUILTIN)
                 .typeParameters(enumTypeParam)
-                .tmpId(Utils.randomNonNegative())
                 .build();
         enumTypeParam.setBounds(List.of(enumType.getType()));
         FieldBuilder.newBuilder("name", enumType, Types.getStringType()).build();
@@ -65,32 +63,27 @@ public class MockStandardTypesInitializer {
         StdKlass.predicate.set(
                 newKlassBuilder(Predicate.class)
                         .source(ClassSource.BUILTIN)
-                        .tmpId(Utils.randomNonNegative())
-                        .typeParameters(new TypeVariable(Utils.randomNonNegative(), "Element", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "Element", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.consumer.set(
                 newKlassBuilder(Consumer.class)
                         .source(ClassSource.BUILTIN)
-                        .tmpId(Utils.randomNonNegative())
-                        .typeParameters(new TypeVariable(Utils.randomNonNegative(), "Element", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "Element", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.throwable.set(
                 newKlassBuilder(Throwable.class)
                         .source(ClassSource.BUILTIN)
-                        .tmpId(Utils.randomNonNegative())
                         .build()
         );
         StdKlass.exception.set(
                 newKlassBuilder(Exception.class)
                         .source(ClassSource.BUILTIN)
-                        .tmpId(Utils.randomNonNegative())
                         .build()
         );
         var runtimeExceptionKlass = newKlassBuilder(RuntimeException.class)
                 .source(ClassSource.BUILTIN)
-                .tmpId(Utils.randomNonNegative())
                 .build();
         {
             var constructor = MethodBuilder.newBuilder(runtimeExceptionKlass, runtimeExceptionKlass.getName())
@@ -105,21 +98,19 @@ public class MockStandardTypesInitializer {
         StdKlass.iterable.set(
                 newKlassBuilder(Iterable.class)
                         .source(ClassSource.BUILTIN)
-                        .tmpId(Utils.randomNonNegative())
-                        .typeParameters(new TypeVariable(Utils.randomNonNegative(), "T", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.iterator.set(
                 newKlassBuilder(Iterator.class)
                         .source(ClassSource.BUILTIN)
-                        .tmpId(Utils.randomNonNegative())
-                        .typeParameters(new TypeVariable(Utils.randomNonNegative(), "T", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
     }
 
     private static KlassBuilder newKlassBuilder(Class<?> javaClass) {
-        return KlassBuilder.newBuilder(javaClass.getSimpleName(), javaClass.getName()).tag(nextKlassTag++);
+        return KlassBuilder.newBuilder(PhysicalId.of(nextTreeId++, 0), javaClass.getSimpleName(), javaClass.getName()).tag(nextKlassTag++);
     }
 
 }

@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.*;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.FunctionValue;
+import org.metavm.object.instance.core.NullId;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.util.*;
@@ -211,11 +213,11 @@ public class Types {
                 }
             }, null);
         }
-        var typeParams = Utils.map(typeVars, tv -> new TypeVariable(null, tv.getName(), DummyGenericDeclaration.INSTANCE));
-        var klass = KlassBuilder.newBuilder(functionalInterface.getKlass().getName() + "Impl", null)
-                .typeParameters(typeParams)
+        var klass = KlassBuilder.newBuilder(TmpId.random(), functionalInterface.getKlass().getName() + "Impl", null)
                 .ephemeral(true)
                 .build();
+        var typeParams = Utils.map(typeVars, tv -> new TypeVariable(TmpId.random(), tv.getName(), klass));
+        klass.setTypeParameters(typeParams);
         var subst = new TypeSubstitutor(Utils.map(typeVars, TypeVariable::getType), klass.getDefaultTypeArguments());
         Utils.biForEach(typeParams, typeVars, (typeParam, typeVar) ->
                 typeParam.setBounds(Utils.map(typeVar.getBounds(), t -> t.accept(subst)))
@@ -225,9 +227,12 @@ public class Types {
         klass.setEphemeral();
         var sam = getSAM(substInterface);
         var funcType = new FunctionType(sam.getParameterTypes(), sam.getReturnType());
-        var funcField = FieldBuilder.newBuilder("func", klass, funcType).build();
+        var funcField = FieldBuilder.newBuilder("func", klass, funcType)
+                .id(TmpId.random())
+                .build();
 
         var flow = MethodBuilder.newBuilder(klass, sam.getName())
+                .id(TmpId.random())
                 .parameters(Utils.map(sam.getParameters(), p -> new NameAndType(p.getName(), p.getType())))
                 .returnType(sam.getReturnType())
                 .build();
@@ -259,7 +264,7 @@ public class Types {
 
     public static Klass createSAMInterfaceImpl(ClassType samInterface, FunctionValue function) {
         var klass = KlassBuilder.newBuilder(
-                        samInterface.getName() + "$" + Utils.randomNonNegative(), null)
+                        TmpId.random(), samInterface.getName() + "$" + Utils.randomNonNegative(), null)
                 .interfaces(samInterface)
                 .ephemeral(true)
                 .anonymous(true)
@@ -267,6 +272,7 @@ public class Types {
         klass.setEphemeral();
         var sam = samInterface.getSingleAbstractMethod();
         var method = MethodBuilder.newBuilder(klass, sam.getName())
+                .id(TmpId.random())
                 .parameters(Utils.map(sam.getParameters(), p -> new NameAndType(p.getName(), p.getType())))
                 .returnType(sam.getReturnType())
                 .build();

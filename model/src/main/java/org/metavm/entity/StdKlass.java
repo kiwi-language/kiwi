@@ -5,10 +5,7 @@ import org.metavm.api.ChildList;
 import org.metavm.api.Index;
 import org.metavm.api.Interceptor;
 import org.metavm.api.ValueList;
-import org.metavm.api.entity.HttpCookie;
-import org.metavm.api.entity.HttpHeader;
-import org.metavm.api.entity.HttpRequest;
-import org.metavm.api.entity.HttpResponse;
+import org.metavm.api.entity.*;
 import org.metavm.entity.natives.*;
 import org.metavm.flow.FlowRef;
 import org.metavm.flow.FunctionRef;
@@ -41,19 +38,25 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     entity(Entity.class),
     enum_(java.lang.Enum.class, false, EnumNative.class),
     record(Record.class),
-    collection(Collection.class),
-    list(List.class, false, ListNative.class),
-    arrayList(ArrayList.class, false, ListNative.class),
-    childList(ChildList.class, false, ListNative.class),
-    valueList(ValueList.class, false, ListNative.class),
+    collection(Collection.class, false, CollectionNative.class),
+    list(List.class, false, ArrayListNative.class),
+    sequencedCollection(SequencedCollection.class, false, SequencedCollectionNative.class),
+    abstractCollection(AbstractCollection.class, false, AbstractCollectionNative.class),
+    abstractList(AbstractList.class, false, AbstractListNative.class),
+    arrayList(ArrayList.class, false, ArrayListNative.class),
+    childList(ChildList.class, false, ChildListNative.class),
+    valueList(ValueList.class, false, ArrayListNative.class),
     iterator(Iterator.class),
     iterable(Iterable.class),
     iteratorImpl(IteratorImpl.class, false, IteratorImplNative.class),
     set(Set.class, false, HashSetNative.class),
+    abstractSet(AbstractSet.class, false, AbstractSetNative.class),
     hashSet(HashSet.class, false, HashSetNative.class),
+    sortedSet(SortedSet.class, false, SortedSetNative.class),
     treeSet(TreeSet.class, false, TreeSetNative.class),
     map(Map.class, false, MapNative.class),
-    hashMap(HashMap.class, false, MapNative.class),
+    abstractMap(AbstractMap.class, false, AbstractMapNative.class),
+    hashMap(HashMap.class, false, HashMapNative.class),
     interceptor(Interceptor.class),
     httpRequest(HttpRequest.class),
     httpResponse(HttpResponse.class),
@@ -105,7 +108,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     objectOutputStream(ObjectOutputStream.class, false, ObjectOutputStreamNative.class),
     objectInputStream(ObjectInputStream.class, false, ObjectInputStreamNative.class),
     index(Index.class, false, IndexNative.class),
-    charSequence(CharSequence.class),
+    charSequence(CharSequence.class, false, CharSequenceNative.class),
     number(Number.class),
     mvObjectOutputStream(MvObjectOutputStream.class, false, MvObjectOutputStreamNative.class),
     mvObjectInputStream(MvObjectInputStream .class, false, MvObjectInputStreamNative.class),
@@ -120,6 +123,7 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     character(Character.class, false, CharacterNative.class),
     boolean_(Boolean.class, false, BooleanNative.class),
     string(String.class, false, StringInstance.class),
+    mvObject(MvObject.class, false, MvObjectNative.class)
     ;
 
     private final Class<?> javaClass;

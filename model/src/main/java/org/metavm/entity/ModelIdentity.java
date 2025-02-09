@@ -9,6 +9,10 @@ public record ModelIdentity(
         boolean relative
 ) {
 
+    public static ModelIdentity create(Type type, String name) {
+        return new ModelIdentity(type, name, false);
+    }
+
     public String qualifiedName() {
         return type.getTypeName() + "." + name;
     }

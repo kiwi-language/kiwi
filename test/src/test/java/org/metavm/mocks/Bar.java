@@ -6,6 +6,7 @@ import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
 import org.metavm.api.NativeApi;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -27,7 +28,8 @@ public class Bar extends org.metavm.entity.Entity {
     @EntityField(asTitle = true)
     private String code;
 
-    public Bar(@Nullable Foo foo, String code) {
+    public Bar(Id id,  @Nullable Foo foo, String code) {
+        super(id);
         this.foo = foo;
         this.code = code;
     }

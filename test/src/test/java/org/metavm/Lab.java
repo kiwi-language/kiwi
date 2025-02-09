@@ -1,28 +1,15 @@
 package org.metavm;
 
+import org.metavm.object.instance.core.Id;
+
 import java.io.IOException;
 import java.io.Serializable;
 
 
 public class Lab implements Serializable {
 
-    public static final String productFile = "/Users/leen/workspace/shopping/target/shopping/Product.mvclass";
-    public static final String productStatusFile = "/Users/leen/workspace/shopping/target/shopping/ProductStatus.mvclass";
-
     public static void main(String[] args) throws IOException {
+        System.out.println(Id.parse("0192a8d6b90700").getTreeId());
     }
-
-    private static void action(String s) {}
-
-    private static void test(It it) {
-
-    }
-
-}
-
-@FunctionalInterface
-interface It {
-
-    void accept(Object...args);
 
 }

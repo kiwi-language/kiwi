@@ -597,6 +597,10 @@ public class ReflectionUtils {
         return holder.orElseNull();
     }
 
+    public static Method getDeclaredMethod(Class<?> klass, String name, Class<?>...parameterClasses) {
+        return getDeclaredMethod(klass, name, List.of(parameterClasses));
+    }
+
     public static Method getDeclaredMethod(Class<?> klass, String name, List<Class<?>> parameterClasses) {
         Class<?>[] paramClassArray = new Class[parameterClasses.size()];
         parameterClasses.toArray(paramClassArray);

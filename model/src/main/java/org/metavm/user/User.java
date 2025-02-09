@@ -7,6 +7,7 @@ import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
 import org.metavm.entity.SearchField;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -58,7 +59,8 @@ public class User extends org.metavm.entity.Entity {
     private List<Reference> roles = new ArrayList<>();
 
 
-    public User(String loginName, String password, String name, List<Role> roles) {
+    public User(Id id, String loginName, String password, String name, List<Role> roles) {
+        super(id);
         this.loginName = loginName;
         setPassword(password);
         setName(name);

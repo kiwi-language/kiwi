@@ -11,6 +11,8 @@ import org.metavm.classfile.ClassFileWriter;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.flow.*;
+import org.metavm.object.instance.core.NullId;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
 import org.metavm.util.LinkedList;
@@ -138,7 +140,7 @@ public class Assembler {
             return existing;
         }
         return new Parameter(
-                Utils.randomNonNegative(),
+                TmpId.random(),
                 name,
                 type,
                 callable
@@ -533,6 +535,7 @@ public class Assembler {
                         .isEnumConstant(true)
                         .ordinal(ordinal)
                         .initializer(MethodBuilder.newBuilder(klass, "__init_" + name + "__")
+                                .id(TmpId.random())
                                 .isStatic(true)
                                 .returnType(klass.getType())
                                 .build()
@@ -590,7 +593,7 @@ public class Assembler {
                 var nameParam = method.findParameter(p -> p.getName().equals("_name"));
                 if (nameParam == null) {
                     nameParam = new Parameter(
-                            Utils.randomNonNegative(),
+                            TmpId.random(),
                             "_name",
                             StdKlass.string.type(),
                             method
@@ -602,7 +605,7 @@ public class Assembler {
                 var ordinalParam = method.findParameter(p -> p.getName().equals("_ordinal"));
                 if (ordinalParam == null) {
                     ordinalParam = new Parameter(
-                            Utils.randomNonNegative(),
+                            TmpId.random(),
                             "_ordinal",
                             PrimitiveType.intType,
                             method
@@ -628,7 +631,7 @@ public class Assembler {
             var name = ctx.IDENTIFIER().getText();
             var type = Utils.find(genericDecl.getTypeParameters(), tv -> tv.getName().equals(name));
             if(type == null)
-                type = new TypeVariable(Utils.randomNonNegative(), name, genericDecl);
+                type = new TypeVariable(TmpId.random(), name, genericDecl);
             setAttribute(ctx, AsmAttributeKey.typeVariable, type);
             return super.visitTypeParameter(ctx);
         }
@@ -641,7 +644,7 @@ public class Assembler {
             var type = parseType(ctx.typeType(), scope, getCompilationUnit());
             var mods = currentMods();
             if (index == null)
-                index = new Index(klass, name, null, mods.contains("unique"), type, null);
+                index = new Index(TmpId.random(), klass, name, null, mods.contains("unique"), type, null);
             else
                 index.setType(type);
             setAttribute(ctx, AsmAttributeKey.index, index);
@@ -691,6 +694,7 @@ public class Assembler {
                 var keyType = method.getReturnType();
                 if (index == null) {
                     index = new Index(
+                            TmpId.random(),
                             klass,
                             name,
                             "",
@@ -1158,7 +1162,7 @@ public class Assembler {
     }
 
     private Klass createKlass(String name, String qualifiedName, ClassKind kind) {
-        var klass = KlassBuilder.newBuilder(name, qualifiedName).kind(kind).tmpId(Utils.randomNonNegative()).build();
+        var klass = KlassBuilder.newBuilder(TmpId.random(), name, qualifiedName).kind(kind).build();
         name2klass.put(qualifiedName, klass);
         return klass;
     }

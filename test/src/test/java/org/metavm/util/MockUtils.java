@@ -3,16 +3,14 @@ package org.metavm.util;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.asm.AssemblerFactory;
 import org.metavm.ddl.CommitState;
+import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.*;
 import org.metavm.mocks.Bar;
 import org.metavm.mocks.Baz;
 import org.metavm.mocks.Foo;
 import org.metavm.mocks.Qux;
-import org.metavm.object.instance.core.ArrayInstance;
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.ClassInstanceBuilder;
-import org.metavm.object.instance.core.TmpId;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 
 import java.io.FileInputStream;
@@ -20,6 +18,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 @Slf4j
 public class MockUtils {
@@ -308,12 +308,6 @@ public class MockUtils {
         var quxAmountField = FieldBuilder.newBuilder("amount", quxKlass, Types.getLongType()).build();
         var nullableQuxType = new UnionType(Set.of(quxKlass.getType(), Types.getNullType()));
         var fooQuxField = FieldBuilder.newBuilder("qux", fooKlass, nullableQuxType).build();
-        if (initIds) {
-            TestUtils.initEntityIds(fooKlass);
-            TestUtils.initEntityIds(bazKlass);
-            TestUtils.initEntityIds(quxKlass);
-            TestUtils.initEntityIds(bazKlass);
-        }
 //        log.debug("{}", fooKlass.getText());
 //        log.debug("{}", barKlass.getText());
 //        log.debug("{}", quxKlass.getText());
@@ -345,8 +339,6 @@ public class MockUtils {
                 .build();
         var humanOccupationField = FieldBuilder.newBuilder("occupation", humanType, Types.getStringType())
                 .build();
-        if (initIds)
-            TestUtils.initEntityIds(humanType);
         return new LivingBeingTypes(
                 livingBeingType,
                 animalType,
@@ -476,28 +468,30 @@ public class MockUtils {
         return foo;
     }
 
-    public static Foo getFoo() {
-        Foo foo = new Foo("Big Foo", null);
-        foo.setBar(new Bar(foo, "Bar001"));
-        foo.setCode("Foo001");
+    public static Function<Supplier<Id>, Foo> getFooCreator() {
+        return allocator -> {
+            Foo foo = new Foo(allocator.get(), "Big Foo", null);
+            foo.setBar(new Bar(foo.nextChildId(), foo, "Bar001"));
+            foo.setCode("Foo001");
 
-        foo.setQux(new Qux(100));
-        Baz baz1 = new Baz();
-        baz1.setBars(List.of(new Bar(null, "Bar002")));
-        Baz baz2 = new Baz();
-        foo.setBazList(List.of(baz1, baz2));
-        return foo;
+            foo.setQux(new Qux(allocator.get(), 100));
+            Baz baz1 = new Baz(allocator.get());
+            baz1.setBars(List.of(new Bar(allocator.get(), null, "Bar002")));
+            Baz baz2 = new Baz(allocator.get());
+            foo.setBazList(List.of(baz1, baz2));
+            return foo;
+        };
     }
 
     public static List<Klass> createTestKlasses() {
         var supplierKlass = TestUtils.newKlassBuilder("Supplier").kind(ClassKind.INTERFACE).build();
-        var supplierTypeParam = new TypeVariable(null, "T", supplierKlass);
+        var supplierTypeParam = new TypeVariable(supplierKlass.nextChildId(), "T", supplierKlass);
         MethodBuilder.newBuilder(supplierKlass, "get")
                 .returnType(supplierTypeParam.getType())
                 .isAbstract(true)
                 .build();
         var fooKlass = TestUtils.newKlassBuilder("Foo").searchable(true).build();
-        var typeParam = new TypeVariable(null, "T", fooKlass);
+        var typeParam = new TypeVariable(fooKlass.nextChildId(), "T", fooKlass);
         fooKlass.setInterfaces(List.of(KlassType.create(supplierKlass, List.of(typeParam.getType()))));
         var nameField = FieldBuilder.newBuilder("name", fooKlass, Types.getStringType()).build();
         var valueField = FieldBuilder.newBuilder("value", fooKlass, typeParam.getType()).build();
@@ -530,11 +524,11 @@ public class MockUtils {
             Nodes.ret(code);
         }
         var factoryMethod = MethodBuilder.newBuilder(fooKlass, "create").isStatic(true).build();
-        var factoryTypeParam = new TypeVariable(null, "T", factoryMethod);
+        var factoryTypeParam = new TypeVariable(fooKlass.nextChildId(), "T", factoryMethod);
         var pKlass = KlassType.create(fooKlass, List.of(factoryTypeParam.getType()));
         factoryMethod.setParameters(List.of(
-                new Parameter(null, "name", Types.getStringType(), factoryMethod),
-                new Parameter(null, "value", factoryTypeParam.getType(), factoryMethod)
+                new Parameter(fooKlass.nextChildId(), "name", Types.getStringType(), factoryMethod),
+                new Parameter(fooKlass.nextChildId(), "value", factoryTypeParam.getType(), factoryMethod)
         ));
         factoryMethod.setReturnType(pKlass);
         {
@@ -550,10 +544,10 @@ public class MockUtils {
                 .isStatic(true)
                 .returnType(new FunctionType(List.of(longFooKlass, longFooKlass), Types.getLongType()))
                 .build();
-        var lambda = new Lambda(null, List.of(), Types.getLongType(), getComparatorMethod);
+        var lambda = new Lambda(fooKlass.nextChildId(), List.of(), Types.getLongType(), getComparatorMethod);
         lambda.setParameters(List.of(
-                new Parameter(null, "foo1", longFooKlass, lambda),
-                new Parameter(null, "foo2", longFooKlass, lambda)
+                new Parameter(fooKlass.nextChildId(), "foo1", longFooKlass, lambda),
+                new Parameter(fooKlass.nextChildId(), "foo2", longFooKlass, lambda)
         ));
         {
             var code = lambda.getCode();
@@ -604,7 +598,7 @@ public class MockUtils {
             Nodes.invokeMethod(nameIndexConstructor.getRef(), code);
             Nodes.ret(code);
         }
-        var index = new Index(fooKlass, "nameIndex", "", true,
+        var index = new Index(fooKlass.nextChildId(), fooKlass, "nameIndex", "", true,
                 Types.getStringType(), nameIndexMethod);
         var getByNameMethod = MethodBuilder.newBuilder(fooKlass, "getByName")
                 .isStatic(true)

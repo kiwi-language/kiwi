@@ -16,7 +16,7 @@ import java.util.function.BiConsumer;
 
 public interface ClassInstance extends Instance {
 
-    Klass uninitializedKlass = KlassBuilder.newBuilder("Uninitialized", "Uninitialized").build();
+    Klass uninitializedKlass = KlassBuilder.newBuilder(new NullId(), "Uninitialized", "Uninitialized").build();
 
     static MvClassInstance create(Map<Field, ? extends Value> data, ClassType type) {
         return ClassInstanceBuilder.newBuilder(type).data(data).build();
@@ -175,4 +175,9 @@ public interface ClassInstance extends Instance {
     void addChild(ClassInstance child);
 
     Map<String, Value> buildSource();
+
+    default Object getNativeObject() {
+        return null;
+    }
+
 }

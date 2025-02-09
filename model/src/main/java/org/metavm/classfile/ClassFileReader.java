@@ -2,9 +2,12 @@ package org.metavm.classfile;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Attribute;
+import org.metavm.entity.Entity;
 import org.metavm.entity.EntityRepository;
 import org.metavm.entity.GenericDeclaration;
 import org.metavm.flow.*;
+import org.metavm.object.instance.core.PhysicalId;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.DebugEnv;
@@ -52,9 +55,12 @@ public class ClassFileReader {
             log.trace("Found existing class {} for '{}'", existing.getQualifiedName(), qualName);
         Klass klass;
         if (existing == null) {
-            klass = KlassBuilder.newBuilder(name, qualName)
+            var id = parent != null ? ((Entity) parent).getRoot().nextChildId() :
+                    PhysicalId.of(repository.allocateTreeId(), 0L);
+            klass = KlassBuilder.newBuilder(id, name, qualName)
                     .sourceTag(sourceTag)
                     .build();
+            klass.setScope(parent);
             repository.bind(klass);
             if (listener != null) listener.beforeKlassCreate();
         }
@@ -89,8 +95,10 @@ public class ClassFileReader {
     private TypeVariable readTypeVariable(GenericDeclaration genericDeclaration) {
         var name = input.readUTF();
         var typeVariable = Utils.find(genericDeclaration.getTypeParameters(), tv -> tv.getName().equals(name));
-        if (typeVariable == null)
-            typeVariable = new TypeVariable(null, name, genericDeclaration);
+        if (typeVariable == null) {
+            var root = ((Entity) genericDeclaration).getRoot();
+            typeVariable = new TypeVariable(root.nextChildId(), name, genericDeclaration);
+        }
         typeVariable.setBoundIndexes(input.readList(input::readInt));
         typeVariable.setAttributes(input.readList(() -> Attribute.read(input)));
         return typeVariable;
@@ -108,7 +116,7 @@ public class ClassFileReader {
             index = existing;
         }
         else
-            index = new Index(null, klass, name, null, unique, typeIndex);
+            index = new Index(klass.getRoot().nextChildId(), klass, name, null, unique, typeIndex);
         index.setMethod(input.readNullable(input::readReference));
         if (listener != null) listener.onIndexRead(index);
         return index;
@@ -155,8 +163,9 @@ public class ClassFileReader {
     }
 
     private CapturedTypeVariable readCapturedTypeVariable(CapturedTypeScope scope) {
+        var root = ((Entity) scope).getRoot();
         var ct = new CapturedTypeVariable(
-                null,
+                root.nextChildId(),
                 input.readInt(),
                 input.readReference(),
                 scope
@@ -207,7 +216,7 @@ public class ClassFileReader {
     }
 
     private Lambda readLambda(Flow flow) {
-        var lambda = new Lambda(null, List.of(), -1, flow);
+        var lambda = new Lambda(flow.getRoot().nextChildId(), List.of(), -1, flow);
         lambda.setParameters(input.readList(() -> readParameter(lambda)));
         lambda.setReturnTypeIndex(input.readInt());
         readCode(lambda.getCode());
@@ -218,9 +227,10 @@ public class ClassFileReader {
         var name = input.readUTF();
         var typeIndex = input.readInt();
         var param = Utils.find(callable.getParameters(), p -> p.getName().equals(name));
-        if (param == null)
-            param = new Parameter(null, name, typeIndex, callable);
-        else
+        if (param == null) {
+            var root = ((Entity) callable).getRoot();
+            param = new Parameter(root.nextChildId(), name, typeIndex, callable);
+        } else
             param.setTypeIndex(typeIndex);
         param.setAttributes(input.readList(() -> Attribute.read(input)));
         return param;

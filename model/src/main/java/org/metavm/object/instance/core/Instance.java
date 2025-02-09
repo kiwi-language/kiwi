@@ -63,7 +63,7 @@ public interface Instance extends Message, Identifiable {
     }
 
     default boolean isNew() {
-        return state().isNew();
+        return requireNonNull(state()).isNew();
     }
 
     default void setRemoved() {

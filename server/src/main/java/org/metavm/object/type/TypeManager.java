@@ -100,16 +100,16 @@ public class TypeManager extends EntityContextFactoryAware {
         SaveTypeBatch batch;
         try (var context = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT))) {
             ContextUtil.setDDL(true);
-            var wal = context.bind(new WAL(context.getAppId()));
+            var wal = context.bind(new WAL(context.allocateRootId(), context.getAppId()));
             try (var bufferingContext = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT).writeWAL(wal))) {
                 batch = deploy(in, bufferingContext);
                 bufferingContext.finish();
             }
             var commit = context.bind(batch.buildCommit(wal));
             if(CommitState.PREPARING0.shouldSkip(commit))
-                context.bind(CommitState.SUBMITTING.createTask(commit));
+                context.bind(CommitState.SUBMITTING.createTask(commit, context));
             else
-                context.bind(CommitState.PREPARING0.createTask(commit));
+                context.bind(CommitState.PREPARING0.createTask(commit, context));
             context.finish();
             return commit.getStringId();
         } finally {

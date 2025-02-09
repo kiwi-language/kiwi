@@ -10,8 +10,10 @@ import org.metavm.entity.BeanKinds;
 import org.metavm.flow.Method;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.util.CompilerConfig;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.NamingUtils;
 import org.metavm.util.Utils;
 import org.slf4j.Logger;
@@ -25,6 +27,8 @@ import static org.metavm.autograph.TranspileUtils.*;
 public class Declarator extends VisitorBase {
 
     public static final Logger logger = LoggerFactory.getLogger(Declarator.class);
+
+    private final boolean tracing = DebugEnv.traceCompilation;
 
     private final PsiClass psiClass;
 
@@ -48,6 +52,8 @@ public class Declarator extends VisitorBase {
         if (psiClass != this.psiClass)
             return;
         var klass = typeResolver.getKlass(psiClass);
+        if (tracing)
+            logger.trace("Declaring klass {}", klass.getTypeDesc());
         var parent = TranspileUtils.getProperParent(psiClass, Set.of(PsiMethod.class, PsiClass.class));
         if(parent instanceof PsiMethod parentMethod)
             requireNonNull(parent.getUserData(Keys.Method),
@@ -139,6 +145,7 @@ public class Declarator extends VisitorBase {
         var isAbstract = method.getModifierList().hasModifierProperty(PsiModifier.ABSTRACT);
         if (flow == null) {
             flow = MethodBuilder.newBuilder(klass, getFlowName(method))
+                    .id(TmpId.random())
                     .isConstructor(method.isConstructor())
                     .isStatic(isStatic)
                     .access(access)
@@ -180,12 +187,12 @@ public class Declarator extends VisitorBase {
     private List<Parameter> getEnumConstructorParams(Method method) {
         var nameParam = method.findParameter(p -> "__name__".equals(p.getName()));
         if(nameParam == null)
-            nameParam = new Parameter(null, "name", Types.getStringType(), method);
+            nameParam = new Parameter(TmpId.random(), "name", Types.getStringType(), method);
         else
             nameParam.setType(Types.getStringType()); // Adding type constant into constant pool
         var ordinalParam = method.findParameter(p -> "__ordinal__".equals(p.getName()));
         if(ordinalParam == null)
-            ordinalParam = new Parameter(null, "ordinal", Types.getIntType(), method);
+            ordinalParam = new Parameter(TmpId.random(), "ordinal", Types.getIntType(), method);
         else
             ordinalParam.setType(Types.getIntType());
         return List.of(nameParam, ordinalParam);
@@ -199,7 +206,7 @@ public class Declarator extends VisitorBase {
                     var name = param.getName();
                     var type = resolveParameterType(param);
                     if(p == null)
-                        p = new Parameter(null, name, type, method);
+                        p = new Parameter(TmpId.random(), name, type, method);
                     else {
                         p.setName(name);
                         p.setType(type);
@@ -235,8 +242,8 @@ public class Declarator extends VisitorBase {
         var modList = requireNonNull(psiField.getModifierList());
         var isTransient = modList.hasModifierProperty(PsiModifier.TRANSIENT);
         if (field == null) {
-            field = FieldBuilder
-                    .newBuilder(psiField.getName(), klass, type)
+            field = FieldBuilder.newBuilder(psiField.getName(), klass, type)
+                    .id(TmpId.random())
                     .access(getAccess(psiField))
                     .isChild(TranspileUtils.isChild(psiField))
                     .isStatic(modList.hasModifierProperty(PsiModifier.STATIC))

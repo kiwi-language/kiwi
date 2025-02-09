@@ -5,15 +5,15 @@ import org.junit.Assert;
 import org.metavm.common.Page;
 import org.metavm.mocks.Foo;
 import org.metavm.mocks.Qux;
-import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.type.Klass;
+import org.metavm.object.instance.core.Id;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class EntityQueryServiceTest extends TestCase {
 
@@ -40,19 +40,20 @@ public class EntityQueryServiceTest extends TestCase {
         schedulerAndWorker = null;
     }
 
-    public <T extends Entity> T addEntity(T entity) {
+    public <T extends Entity> T addEntity(Function<Supplier<Id>, T> creator) {
 //        if (!entityContext.containsModel(entity)) {
 //            entityContext.bind(entity);
 //            entityContext.initIds();
 //        }
 //        instanceSearchService.add(getAppId(), (ClassInstance) entityContext.getInstance(entity));
-        TestUtils.doInTransactionWithoutResult(() -> {
+        return TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
+                var entity = creator.apply(context::allocateRootId);
                 context.bind(entity);
                 context.finish();
+                return entity;
             }
         });
-        return entity;
     }
 
     private IInstanceContext newContext() {
@@ -60,7 +61,7 @@ public class EntityQueryServiceTest extends TestCase {
     }
 
     public void test() {
-        Foo foo = addEntity(MockUtils.getFoo());
+        Foo foo = addEntity(MockUtils.getFooCreator());
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         try (var context = newContext()) {
             foo = context.getEntity(Foo.class, foo.getId());
@@ -78,7 +79,7 @@ public class EntityQueryServiceTest extends TestCase {
     }
 
     public void testSearchText() {
-        Foo foo = addEntity(MockUtils.getFoo());
+        Foo foo = addEntity(MockUtils.getFooCreator());
         logger.info("Foo ID: {}", foo.getId());
         DebugEnv.id = foo.getId();
         TestUtils.waitForAllTasksDone(schedulerAndWorker);

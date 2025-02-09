@@ -6,6 +6,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -40,7 +41,8 @@ public class AstOrder extends org.metavm.entity.Entity {
 
     public int state;
 
-    public AstOrder(String code, long price, AstProduct product, int amount, List<AstCoupon> coupons) {
+    public AstOrder(Id id, String code, long price, AstProduct product, int amount, List<AstCoupon> coupons) {
+        super(id);
         this.code = code;
         this.price = price;
         this.product = product.getReference();

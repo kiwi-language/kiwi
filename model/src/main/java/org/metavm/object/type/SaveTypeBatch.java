@@ -179,6 +179,7 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
             )));
         }
         return new Commit(
+                PhysicalId.of(context.allocateTreeId(), 0),
                 wal,
                 Utils.map(newFields, Entity::getStringId),
                 Utils.map(typeChangedFields, Entity::getStringId),
@@ -421,7 +422,7 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
 
     @Override
     public void onKlassCreate(Klass klass) {
-        if (tracing) log.trace("klass '{}' created", klass.getName());
+        if (tracing) log.trace("Klass '{}' ({}) created", klass.getName(), klass.getId());
         var klassInfo = Objects.requireNonNull(this.klassInfo);
         klass.setNextFieldTag(klassInfo.nextFieldTag);
         klass.setNextFieldSourceCodeTag(klassInfo.nextFieldSourceTag);

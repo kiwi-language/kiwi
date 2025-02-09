@@ -27,7 +27,8 @@ public class RemoveAppTaskGroup extends TaskGroup {
     private static Klass __klass__;
     private Id appId;
 
-    public RemoveAppTaskGroup(Id appId) {
+    public RemoveAppTaskGroup(Id id, Id appId) {
+        super(id);
         this.appId = appId;
     }
 
@@ -41,8 +42,8 @@ public class RemoveAppTaskGroup extends TaskGroup {
     public List<Task> createTasks(IInstanceContext context) {
         var app = context.getEntity(Application.class, appId);
         return List.of(
-                new ClearUsersTask(String.format("Clear users for '%s'", app.getName()), appId),
-                new ClearInvitationTask(String.format("Clear invitations for '%s'", app.getName()), appId)
+                new ClearUsersTask(nextChildId(), String.format("Clear users for '%s'", app.getName()), appId),
+                new ClearInvitationTask(nextChildId(), String.format("Clear invitations for '%s'", app.getName()), appId)
         );
     }
 

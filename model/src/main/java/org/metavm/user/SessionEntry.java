@@ -29,6 +29,7 @@ public class SessionEntry extends org.metavm.entity.Entity {
     private Value value;
 
     public SessionEntry(Session session, String key, Value value) {
+        super(session.nextChildId());
         this.session = session;
         this.key = key;
         this.value = value;

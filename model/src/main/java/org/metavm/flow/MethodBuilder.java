@@ -2,6 +2,8 @@ package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Attribute;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.util.Utils;
 
@@ -17,7 +19,7 @@ public class MethodBuilder {
 
     private final Klass declaringType;
     private final String name;
-    private Long tmpId;
+    private Id id;
     private boolean isConstructor;
     private boolean isAbstract;
     private boolean isNative;
@@ -92,7 +94,12 @@ public class MethodBuilder {
     }
 
     public MethodBuilder tmpId(Long tmpId) {
-        this.tmpId = tmpId;
+        this.id = TmpId.of(tmpId);
+        return this;
+    }
+
+    public MethodBuilder id(Id id) {
+        this.id = id;
         return this;
     }
 
@@ -116,8 +123,10 @@ public class MethodBuilder {
         Method method;
         if (state == null)
             state = MetadataState.READY;
+        if (id == null)
+            id = declaringType.getRoot().nextChildId();
         method = new Method(
-                tmpId,
+                id,
                 declaringType,
                 name,
                 isConstructor,

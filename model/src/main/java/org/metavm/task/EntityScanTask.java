@@ -4,12 +4,9 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.*;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.ScanResult;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
@@ -31,8 +28,8 @@ public abstract class EntityScanTask<T> extends ScanTask {
     private transient Class<T> entityType;
     private ClassType type;
 
-    protected EntityScanTask(String title, Class<T> entityType) {
-        super(title);
+    protected EntityScanTask(Id id, String title, Class<T> entityType) {
+        super(id, title);
         this.entityType = entityType;
         this.type = ModelDefRegistry.getClassType(entityType);
     }

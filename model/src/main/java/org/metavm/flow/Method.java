@@ -55,7 +55,7 @@ public class Method extends Flow implements Property {
     private transient String nativeName;
     private transient volatile MethodHandle nativeHandle;
 
-    public Method(Long tmpId,
+    public Method(@NotNull Id id,
                   @NotNull Klass declaringType,
                   String name,
                   boolean isConstructor,
@@ -69,7 +69,7 @@ public class Method extends Flow implements Property {
                   Access access,
                   boolean hidden,
                   MetadataState state) {
-        super(tmpId, name, isNative, isSynthetic, parameters, returnTypeIndex, List.of(), state);
+        super(id, name, isNative, isSynthetic, returnTypeIndex, List.of(), state);
         if (isStatic && isAbstract)
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.declaringType = declaringType;
@@ -79,6 +79,8 @@ public class Method extends Flow implements Property {
         this.isAbstract = isAbstract;
         this.access = access;
         this.hidden = hidden;
+        var root = declaringType.getRoot();
+        setParameters(Utils.map(parameters, p -> new Parameter(root.nextChildId(), p.name(), p.type(), this)));
         declaringType.addMethod(this);
         resetBody();
     }

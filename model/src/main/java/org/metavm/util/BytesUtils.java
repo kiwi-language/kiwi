@@ -77,7 +77,7 @@ public class BytesUtils {
         }
 
         @Override
-        protected void readFrom(InstanceInput input) {
+        protected void readBody(InstanceInput input) {
 
         }
 

@@ -17,6 +17,4 @@ public @interface Value {
 
     int since() default 0;
 
-    boolean systemAPI() default false;
-
 }

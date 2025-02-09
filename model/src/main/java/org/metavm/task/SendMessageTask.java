@@ -7,6 +7,7 @@ import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.event.rest.dto.ReceiveMessageEvent;
 import org.metavm.message.Message;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -27,8 +28,8 @@ public class SendMessageTask extends Task {
     private static Klass __klass__;
     private Message message;
 
-    public SendMessageTask(Message message) {
-        super("SendMessageTask");
+    public SendMessageTask(Id id, Message message) {
+        super(id, "SendMessageTask");
         this.message = message;
     }
 

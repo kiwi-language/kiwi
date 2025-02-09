@@ -24,8 +24,8 @@ public class ReferenceRedirector extends ReferenceScanner {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    protected ReferenceRedirector(Id id) {
-        super("ReferenceRedirector-" + id, id);
+    protected ReferenceRedirector(Id id, Id targetId) {
+        super(id, "ReferenceRedirector-" + targetId, targetId);
     }
 
     @Generated

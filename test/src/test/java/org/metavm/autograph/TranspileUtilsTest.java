@@ -33,6 +33,7 @@ public class TranspileUtilsTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         TranspileTestTools.touch();
+        TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
     }
 
@@ -67,20 +68,19 @@ public class TranspileUtilsTest extends TestCase {
         var sig = TranspileUtils.getInternalName(getMethod);
 
         var fooType = TestUtils.newKlassBuilder(SignatureFoo.class).build();
-        var typeVar = new TypeVariable(null, "T", DummyGenericDeclaration.INSTANCE);
 
-        var addMethod = MethodBuilder.newBuilder(fooType, "add")
-                .typeParameters(List.of(typeVar))
-                .build();
+        var addMethod = MethodBuilder.newBuilder(fooType, "add").build();
+        var typeVar = new TypeVariable(fooType.nextChildId(), "T", addMethod);
+        addMethod.setTypeParameters(List.of(typeVar));
 
         addMethod.setParameters(List.of(
-                new Parameter(null, "list",
+                new Parameter(fooType.nextChildId(), "list",
                         Types.getNullableType(
                                 KlassType.create(StdKlass.list.get(), List.of(
                                         new UncertainType(typeVar.getType(), Types.getAnyType())))
                         ), addMethod
                 ),
-                new Parameter(null, "element", Types.getNullableType(typeVar.getType()), addMethod)
+                new Parameter(fooType.nextChildId(), "element", Types.getNullableType(typeVar.getType()), addMethod)
         ));
         var sig2 = addMethod.getInternalName(null);
         Assert.assertEquals(sig, sig2);

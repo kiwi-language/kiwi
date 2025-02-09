@@ -7,6 +7,7 @@ import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expression;
 import org.metavm.expression.Expressions;
 import org.metavm.flow.*;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
@@ -237,7 +238,7 @@ class AsmExpressionResolver {
 
     private Type resolveLambdaExpression(AssemblyParser.LambdaExpressionContext ctx) {
         var returnType = parseType(ctx.typeTypeOrVoid());
-        var lambda = new Lambda(null, List.of(), returnType, this.code.getFlow());
+        var lambda = new Lambda(TmpId.random(), List.of(), returnType, this.code.getFlow());
         var params = parseParameterList(ctx.lambdaParameters().formalParameterList(), lambda);
         lambda.setParameters(params);
         var code = lambda.getCode();
@@ -658,7 +659,7 @@ class AsmExpressionResolver {
             return existing;
         } else {
             return new Parameter(
-                    Utils.randomNonNegative(),
+                    TmpId.random(),
                     name,
                     type,
                     callable

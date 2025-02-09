@@ -5,6 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.flow.Method;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -30,7 +31,8 @@ public class SystemDDL extends org.metavm.entity.Entity {
     private List<FieldAddition> fieldAdditions = new ArrayList<>();
     private List<Reference> runMethods = new ArrayList<>();
 
-    public SystemDDL(List<FieldAddition> fieldAdditions, List<Method> runMethods) {
+    public SystemDDL(Id id, List<FieldAddition> fieldAdditions, List<Method> runMethods) {
+        super(id);
         this.fieldAdditions.addAll(fieldAdditions);
         runMethods.forEach(m -> this.runMethods.add(m.getReference()));
     }

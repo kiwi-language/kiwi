@@ -79,10 +79,10 @@ public class TypeParserImpl implements TypeParser {
         }
     }
 
-    public Function parseFunction(String expression) {
+    public Function parseFunction(String expression, java.util.function.Function<ModelIdentity, Id> getId) {
         var parser = createAntlrParser(expression);
         try {
-           return parseFunction(parser.functionSignature());
+           return parseFunction(parser.functionSignature(), getId);
         }
         catch (Exception e) {
             throw new InternalException("Failed to parse function: " + expression, e);
@@ -100,30 +100,34 @@ public class TypeParserImpl implements TypeParser {
 
     }
 
-    private Function parseFunction(org.metavm.object.type.antlr.TypeParser.FunctionSignatureContext ctx) {
+    private Function parseFunction(org.metavm.object.type.antlr.TypeParser.FunctionSignatureContext ctx,
+                                   java.util.function.Function<ModelIdentity, Id> getId) {
         var name = ctx.IDENTIFIER().getText();
-        var func =  FunctionBuilder.newBuilder(name)
-                .typeParameters(
-                        ctx.typeParameterList() != null ?
-                                Utils.map(ctx.typeParameterList().typeParameter(), this::parseTypeParameter) : List.of()
-                )
-                .build();
-        func.setParameters(
-                        ctx.parameterList() != null ?
-                                Utils.map(ctx.parameterList().parameter(), p -> parseParameter(p, func)) : List.of()
-                );
+        var func =  FunctionBuilder.newBuilder(getId.apply(ModelIdentity.create(Function.class, name)), name).build();
+        var typeParamList = ctx.typeParameterList();
+        if (typeParamList != null)
+                func.setTypeParameters(Utils.map(typeParamList.typeParameter(), t -> parseTypeParameter(t, func, getId)));
+        var paramList = ctx.parameterList();
+        if (paramList != null)
+            func.setParameters(Utils.map(paramList.parameter(), p -> parseParameter(p, func, getId)));
         func.setReturnType(parseType(ctx.type()));
         return func;
     }
 
-    private Parameter parseParameter(org.metavm.object.type.antlr.TypeParser.ParameterContext ctx, Callable callable) {
+    private Parameter parseParameter(org.metavm.object.type.antlr.TypeParser.ParameterContext ctx,
+                                     Function function,
+                                     java.util.function.Function<ModelIdentity, Id> getId) {
         var name = ctx.IDENTIFIER().getText();
-        return new Parameter(null, name, parseType(ctx.type()), callable);
+        var id = getId.apply(ModelIdentity.create(Parameter.class, function.getName() + "." + name));
+        return new Parameter(id, name, parseType(ctx.type()), function);
     }
 
-    private TypeVariable parseTypeParameter(org.metavm.object.type.antlr.TypeParser.TypeParameterContext ctx) {
+    private TypeVariable parseTypeParameter(org.metavm.object.type.antlr.TypeParser.TypeParameterContext ctx,
+                                            Function function,
+                                            java.util.function.Function<ModelIdentity, Id> getId) {
         var name = ctx.IDENTIFIER().getText();
-        var typeVar =  new TypeVariable(null, name, DummyGenericDeclaration.INSTANCE);
+        var id = getId.apply(ModelIdentity.create(TypeVariable.class, function.getName() + "." + name));
+        var typeVar =  new TypeVariable(id, name, function);
         typeParameters.put(name, typeVar);
         return typeVar;
     }

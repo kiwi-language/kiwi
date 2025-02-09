@@ -37,17 +37,16 @@ public class BootstrapController {
     @PostMapping
     public Result<Void> boot(@RequestParam(value = "saveIds", defaultValue = "true") boolean saveIds) {
         initRegions();
-        save(saveIds);
         initSystemEntities();
         initBuiltinApplications();
         return Result.success(null);
     }
 
-    @PostMapping("/save")
-    public Result<Void> save(@RequestParam(value = "saveIds", defaultValue = "true") boolean saveIds) {
-        bootstrap.save(saveIds);
-        return Result.success(null);
-    }
+//    @PostMapping("/save")
+//    public Result<Void> save(@RequestParam(value = "saveIds", defaultValue = "true") boolean saveIds) {
+//        bootstrap.save(saveIds);
+//        return Result.success(null);
+//    }
 
     @PostMapping("/region")
     public Result<Void> initRegions() {
@@ -63,7 +62,7 @@ public class BootstrapController {
 
     @PostMapping("/rebuild-index")
     public Result<Void> rebuildIndex()  {
-        jobManager.addGlobalTask(new IndexRebuildGlobalTask());
+        jobManager.addIndexRebuildGlobalTask();
         return Result.voidSuccess();
     }
 

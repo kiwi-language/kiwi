@@ -25,8 +25,8 @@ public class ForwardedFlagSetter extends ReferenceScanner {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public ForwardedFlagSetter(Id id) {
-        super("MigrationMarkingTask-" + id, id);
+    public ForwardedFlagSetter(Id id, Id targetId) {
+        super(id, "MigrationMarkingTask-" + targetId, targetId);
     }
 
     @Generated
@@ -59,7 +59,7 @@ public class ForwardedFlagSetter extends ReferenceScanner {
         try {
             var target = (MvInstance) context.get(id);
             target.switchId();
-            var redirector = new ReferenceRedirector(id);
+            var redirector = new ReferenceRedirector(context.allocateRootId(), id);
             if(Constants.SESSION_TIMEOUT != -1)
                 redirector.setStartAt(System.currentTimeMillis() + (Constants.SESSION_TIMEOUT << 1));
             context.bind(redirector);

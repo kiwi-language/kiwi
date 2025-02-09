@@ -6,16 +6,9 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.*;
-import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +37,7 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
         if(sft == null) {
             if (DebugEnv.traceStaticFieldTableCreation)
                 log.trace("Creating static field table for klass {}", klass.getQualifiedName());
-            sft = new StaticFieldTable(klass);
+            sft = new StaticFieldTable(context.allocateRootId(), klass);
             context.bind(sft);
         }
         return sft;
@@ -56,14 +49,15 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
 
     private transient Map<Field, StaticFieldTableEntry> map = new HashMap<>();
 
-    public StaticFieldTable(Klass klass) {
+    public StaticFieldTable(@NotNull Id id, Klass klass) {
+        super(id);
         this.klassReference = klass.getReference();
     }
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {
         visitor.visitValue();
-        visitor.visitList(visitor::visitEntity);
+        visitor.visitList(() -> StaticFieldTableEntry.visit(visitor));
     }
 
     @Override
@@ -163,7 +157,7 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     @Override
     public void forEachReference(Consumer<Reference> action) {
         action.accept(klassReference);
-        for (var entries_ : entries) action.accept(entries_.getReference());
+        for (var entries_ : entries) entries_.forEachReference(action);
     }
 
     @Override
@@ -184,7 +178,6 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
 
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
-        for (var entries_ : entries) action.accept(entries_);
     }
 
     @Override
@@ -196,14 +189,14 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     @Override
     public void readBody(MvInput input, org.metavm.entity.Entity parent) {
         this.klassReference = (Reference) input.readValue();
-        this.entries = input.readList(() -> input.readEntity(StaticFieldTableEntry.class, this));
+        this.entries = input.readList(() -> StaticFieldTableEntry.read(input, this));
     }
 
     @Generated
     @Override
     public void writeBody(MvOutput output) {
         output.writeValue(klassReference);
-        output.writeList(entries, output::writeEntity);
+        output.writeList(entries, arg0 -> arg0.write(output));
     }
 
     @Override

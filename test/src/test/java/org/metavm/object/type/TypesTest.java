@@ -74,12 +74,10 @@ public class TypesTest extends TestCase {
     public void testGetNonNullType() {
         var nullableStringType = Types.getNullableStringType();
         Assert.assertEquals(Types.getStringType(), Types.getNonNullType(nullableStringType));
-
-        var typeVar1 = new TypeVariable(null, "T1", DummyGenericDeclaration.INSTANCE);
-        var typeVar2 = new TypeVariable(null, "T1", DummyGenericDeclaration.INSTANCE);
-        TestUtils.newKlassBuilder("Foo")
-                        .typeParameters(typeVar1, typeVar2)
-                        .build();
+        var klass = TestUtils.newKlassBuilder("Foo").build();
+        var typeVar1 = new TypeVariable(klass.nextChildId(), "T1", klass);
+        var typeVar2 = new TypeVariable(klass.nextChildId(), "T1", klass);
+        klass.setTypeParameters(List.of(typeVar1, typeVar2));
         Assert.assertEquals(typeVar1.getType(), Types.getNonNullType(typeVar1.getType()));
         Assert.assertEquals(
                 Types.getIntersectionType(List.of(typeVar2.getType(), Types.getAnyType())),
@@ -89,14 +87,14 @@ public class TypesTest extends TestCase {
 
     public void testResolveAncestorType() {
         var itKlass = TestUtils.newKlassBuilder("It").kind(ClassKind.INTERFACE).build();
-        new TypeVariable(null, "T", itKlass);
+        new TypeVariable(itKlass.nextChildId(), "T", itKlass);
 
         var baseKlass = TestUtils.newKlassBuilder("Base").build();
-        var superTypeVar = new TypeVariable(null, "T", baseKlass);
+        var superTypeVar = new TypeVariable(baseKlass.nextChildId(), "T", baseKlass);
         baseKlass.setInterfaces(List.of(new KlassType(null, itKlass, List.of(superTypeVar.getType()))));
 
         var subKlass = TestUtils.newKlassBuilder("Sub").build();
-        var subTypeVar = new TypeVariable(null, "T", subKlass);
+        var subTypeVar = new TypeVariable(subKlass.nextChildId(), "T", subKlass);
         subKlass.setSuperType(new KlassType(null, baseKlass, List.of(subTypeVar.getType())));
 
         var subType = new KlassType(null, subKlass, List.of(Types.getStringType()));

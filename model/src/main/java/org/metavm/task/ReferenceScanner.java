@@ -26,8 +26,8 @@ public abstract class ReferenceScanner extends Task {
     private Id targetId;
     private long next;
 
-    protected ReferenceScanner(String title, Id targetId) {
-        super(title);
+    protected ReferenceScanner(Id id, String title, Id targetId) {
+        super(id, title);
         this.targetId = targetId;
     }
 

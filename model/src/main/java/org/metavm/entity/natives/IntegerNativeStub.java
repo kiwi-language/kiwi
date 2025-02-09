@@ -12,7 +12,7 @@ import org.metavm.util.Instances;
 import java.util.Map;
 
 // Generated code. Do not modify. @see @PrimitiveNativeGenerator
-public class IntegerNativeStub extends NativeBase {
+public class IntegerNativeStub implements NativeBase {
 
     private final ClassInstance instance;
 

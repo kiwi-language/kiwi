@@ -2,7 +2,6 @@ package org.metavm.object.instance;
 
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.StdKlass;
-import org.metavm.entity.natives.ListNative;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
@@ -108,15 +107,11 @@ public class InstanceFactory {
             array.addAll(elements);
         } else if (param instanceof ListInstanceParam listInstanceParam) {
             var listType = (ClassType) type;
-            var list = ClassInstance.allocate(listType);
-            var listNative = new ListNative(list);
-            listNative.List();
-            Utils.forEach(
+            var values = Utils.map(
                     listInstanceParam.elements(),
-                    v -> listNative.add(resolveValue(v, listType.getTypeArguments().getFirst(), null, context
-                    ))
+                    v -> resolveValue(v, listType.getTypeArguments().getFirst(), null, context)
             );
-            instance = list;
+            instance = Instances.newList(listType, values);
         } else {
             throw new InternalException("Can not create instance for type '" + type + "'");
         }
@@ -179,7 +174,7 @@ public class InstanceFactory {
         } else if (rawValue instanceof ListFieldValue listFieldValue) {
             if (listFieldValue.getId() != null) {
                 var list = (ClassInstance) context.get(Id.parse(listFieldValue.getId()));
-                var listNative = new ListNative(list);
+                var listNative = Instances.getListNative(list);
                 listNative.clear();
                 Utils.forEach(
                         listFieldValue.getElements(),
@@ -199,13 +194,12 @@ public class InstanceFactory {
                 }
                 else
                     klass = classType;
-                var list = ClassInstance.allocate(klass);
-                var listNative = new ListNative(list);
-                listNative.List();
-                Utils.forEach(
+                var elementType = klass.getTypeArguments().getFirst();
+                var values = Utils.map(
                         listFieldValue.getElements(),
-                        e -> listNative.add(resolveValue(e, list.getInstanceType().getFirstTypeArgument(), null, context))
+                        e -> resolveValue(e, elementType, null, context)
                 );
+                var list = Instances.newList(klass, values);
                 list.setParentInternal(parentRef);
                 return list.getReference();
             }

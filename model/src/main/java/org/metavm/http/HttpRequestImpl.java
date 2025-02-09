@@ -2,6 +2,7 @@ package org.metavm.http;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityFlow;
 import org.metavm.api.ValueObject;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
@@ -21,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@Entity(systemAPI = true)
+@Entity
 @Slf4j
 public class HttpRequestImpl implements HttpRequest, ValueObject, NativeEphemeralObject {
 
@@ -42,25 +43,27 @@ public class HttpRequestImpl implements HttpRequest, ValueObject, NativeEphemera
     }
 
     @Override
-    @Nonnull
+    @EntityFlow
     public String getMethod() {
         return method;
     }
 
     @Override
-    @Nonnull
+    @EntityFlow
     public String getRequestURI() {
         return requestURI;
     }
 
     @Nullable
     @Override
+    @EntityFlow
     public String getCookie(String name) {
         return cookies.get(name);
     }
 
     @Nullable
     @Override
+    @EntityFlow
     public String getHeader(String name) {
         return headers.get(name);
     }

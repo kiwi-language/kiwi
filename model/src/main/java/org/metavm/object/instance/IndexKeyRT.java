@@ -21,7 +21,7 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
 
     public static final Logger logger = LoggerFactory.getLogger(IndexKeyRT.class);
 
-    private static final Klass DUMMY_TYPE = KlassBuilder.newBuilder("Dummy", "Dummy").build();
+    private static final Klass DUMMY_TYPE = KlassBuilder.newBuilder(new NullId(), "Dummy", "Dummy").build();
 
     public  static final Reference MIN_INSTANCE;
 

@@ -198,7 +198,7 @@ public class EntityMemoryIndex {
 
         }
 
-        public static final Object MAX_OBJECT = new Entity() {
+        public static final Object MAX_OBJECT = new Entity(TmpId.random()) {
 
             public int getEntityTag() {
                 throw new UnsupportedOperationException();

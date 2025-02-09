@@ -5,7 +5,6 @@ import org.junit.Assert;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Nodes;
 import org.metavm.mocks.Bar;
@@ -63,7 +62,7 @@ public class WALTest extends TestCase {
         );
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
-                var wal = new WAL(context.getAppId());
+                var wal = new WAL(context.allocateRootId(), context.getAppId());
                 context.bind(wal);
                 wal.saveInstances(ChangeList.inserts(List.of(instancePO)));
                 context.finish();
@@ -81,11 +80,11 @@ public class WALTest extends TestCase {
         final var fooName = "foo";
         var ids = TestUtils.doInTransaction(() -> {
             try (var outerContext = newContext()) {
-                var wal = outerContext.bind(new WAL(outerContext.getAppId()));
+                var wal = outerContext.bind(new WAL(outerContext.allocateRootId(), outerContext.getAppId()));
                 Id fooId;
                 try (var context = entityContextFactory.newBufferingContext(APP_ID, wal)) {
-                    var foo = new Foo(fooName, null);
-                    foo.setBar(new Bar(foo, "bar001"));
+                    var foo = new Foo(context.allocateRootId(), fooName, null);
+                    foo.setBar(new Bar(foo.nextChildId(), foo, "bar001"));
                     context.bind(foo);
                     context.finish();
                     fooId = foo.getId();
@@ -120,7 +119,7 @@ public class WALTest extends TestCase {
         var instId = ids[1];
         var ids2 = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
-                var wal = context.bind(new WAL(context.getAppId()));
+                var wal = context.bind(new WAL(context.allocateRootId(), context.getAppId()));
                 String fieldId;
                 try (var walContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
                     var klass = walContext.getKlass(klassId);
@@ -135,9 +134,11 @@ public class WALTest extends TestCase {
                     walContext.finish();
                     fieldId = field.getStringId();
                 }
-                var commit = new Commit(wal,
+                var commit = new Commit(
+                        PhysicalId.of(context.allocateTreeId(), 0L),
+                        wal,
                         List.of(fieldId), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
-                context.bind(new DDLTask(commit, CommitState.PREPARING0));
+                context.bind(new DDLTask(context.allocateRootId(), commit, CommitState.PREPARING0));
                 context.finish();
                 return new Id[] {wal.getId(), commit.getId()};
             }
@@ -197,7 +198,7 @@ public class WALTest extends TestCase {
         final var className = "IndexFoo";
         var walId = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
-                var wal = context.bind(new WAL(context.getAppId()));
+                var wal = context.bind(new WAL(context.allocateRootId(), context.getAppId()));
                 try (var bufContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
                     bufContext.bind(TestUtils.newKlassBuilder(className, className).build());
                     bufContext.finish();
@@ -223,7 +224,7 @@ public class WALTest extends TestCase {
             try (var context = newContext()) {
                 var klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(className));
                 Assert.assertNotNull(klass);
-                var wal = context.bind(new WAL(context.getAppId()));
+                var wal = context.bind(new WAL(context.allocateRootId(), context.getAppId()));
                 try (var bufContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
                     bufContext.remove(bufContext.getEntity(Klass.class, klass.getId()));
                     bufContext.finish();

@@ -10,6 +10,8 @@ import org.metavm.object.type.*;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.MvOutput;
 
+import java.util.Objects;
+
 @Slf4j
 public class ClassFileWriter {
 
@@ -118,7 +120,8 @@ public class ClassFileWriter {
     private void writeCode(Code code) {
         output.writeInt(code.getMaxLocals());
         output.writeInt(code.getMaxStack());
-        output.writeBytes(code.getCode());
+        output.writeBytes(Objects.requireNonNull(code.getCode(),
+                () -> "Code not yet emitted for flow: " + code.getFlow().getQualifiedName()));
     }
 
 }

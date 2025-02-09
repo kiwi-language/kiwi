@@ -7,7 +7,7 @@ import org.metavm.util.MvObjectOutputStream;
 
 import java.util.Objects;
 
-public class MvObjectOutputStreamNative extends NativeBase {
+public class MvObjectOutputStreamNative implements NativeBase {
 
     private final MarkingInstanceOutput out;
 

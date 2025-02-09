@@ -4,57 +4,46 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
-import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.FieldRef;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.FunctionValue;
+import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.KlassType;
-import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
 import org.metavm.util.Utils;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 
 @Slf4j
-public class TreeSetNative extends SetNative {
+public class TreeSetNative extends AbstractSetNative implements NavigableSetNative {
 
     private final ClassInstance instance;
     private final TreeSet<ComparableKeyWrap> set = new TreeSet<>();
-    private final FieldRef arrayField;
-    private ArrayInstance array;
 
     public TreeSetNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = Objects.requireNonNull(instance.getInstanceType().findFieldByName("array"));
-        if (instance.isFieldInitialized(arrayField.getRawField())) {
-            var instCtx = Objects.requireNonNull(instance.getContext(), "InstanceContext is missing in " + instance);
-            array = instance.getField(arrayField.getRawField()).resolveArray();
-            initializeSet(instCtx);
-        }
     }
 
     public Value TreeSet(CallContext callContext) {
-        array = new ArrayInstance((ArrayType) arrayField.getPropertyType());
-        instance.initField(arrayField.getRawField(), array.getReference());
         return instance.getReference();
     }
 
     public Value TreeSet(Value c, CallContext callContext) {
         if(c instanceof Reference collection) {
-            var thatArrayField = collection.resolveObject().getInstanceKlass().getFieldByName("array");
-            var thatArray = collection.resolveObject().getField(thatArrayField).resolveArray();
-            array = new ArrayInstance((ArrayType) arrayField.getPropertyType(),
-                    new InstanceParentRef(instance.getReference(), arrayField.getRawField()));
-            instance.initField(arrayField.getRawField(), array.getReference());
-            array.addAll(thatArray);
-            initializeSet(callContext);
+            var collNative = (CollectionNative) NativeMethods.getNativeObject(collection.resolveObject());
+            collNative.forEach(e -> set.add(new ComparableKeyWrap(e, callContext)));
             return instance.getReference();
         }
         else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
+    @Override
     public Value iterator(CallContext callContext) {
         var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getInstanceType().getFirstTypeArgument()));
         var it = ClassInstance.allocate(iteratorImplType);
@@ -68,6 +57,7 @@ public class TreeSetNative extends SetNative {
         set.forEach(k -> action.accept(k.value()));
     }
 
+    @Override
     public Value first(CallContext callContext) {
         if(set.isEmpty()) {
             throw new NoSuchElementException();
@@ -75,16 +65,19 @@ public class TreeSetNative extends SetNative {
         return set.first().value();
     }
 
+    @Override
     public Value add(Value value, CallContext callContext) {
         var keyWrap = new ComparableKeyWrap(value, callContext);
         return Instances.intInstance(set.add(keyWrap));
     }
 
+    @Override
     public Value remove(Value value, CallContext callContext) {
         var keyWrap = new ComparableKeyWrap(value, callContext);
         return Instances.intInstance(set.remove(keyWrap));
     }
 
+    @Override
     public Value isEmpty(CallContext callContext) {
         return Instances.intInstance(set.isEmpty());
     }
@@ -99,6 +92,7 @@ public class TreeSetNative extends SetNative {
         return set.contains(new ComparableKeyWrap(value, callContext));
     }
 
+    @Override
     public Value clear(CallContext callContext) {
         set.clear();
         return Instances.nullInstance();
@@ -107,21 +101,10 @@ public class TreeSetNative extends SetNative {
     @Override
     public Value forEach(Value action, CallContext callContext) {
         if(action instanceof FunctionValue functionValue) {
-            array.forEach(e -> functionValue.execute(List.of(e), callContext));
+            set.forEach(e -> functionValue.execute(List.of(e.value()), callContext));
             return Instances.nullInstance();
         } else
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
-    }
-
-    private void initializeSet(CallContext callContext) {
-        for (Value element : array) {
-            set.add(new ComparableKeyWrap(element, callContext));
-        }
-    }
-
-    @Override
-    public void flush() {
-        array.setElements(Utils.map(set, ComparableKeyWrap::value));
     }
 
     public @NotNull Iterator<Value> iterator() {
@@ -132,4 +115,35 @@ public class TreeSetNative extends SetNative {
     public ClassInstance getInstance() {
         return instance;
     }
+
+    @Override
+    public Value getFirst(CallContext callContext) {
+        var first = set.getFirst();
+        return first != null ? first.value() : Instances.nullInstance();
+    }
+
+    @Override
+    public Value getLast(CallContext callContext) {
+        var last = set.getLast();
+        return last != null ? last.value() : Instances.nullInstance();
+    }
+
+    public Value writeObject(Value s, CallContext callContext) {
+        var out = Instances.extractOutput(s);
+        out.writeInt(set.size());
+        for (var e : set) {
+            out.writeValue(e.value());
+        }
+        return Instances.nullInstance();
+    }
+
+    public Value readObject(Value s, CallContext callContext) {
+        var in = Instances.extractInput(s);
+        var size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            set.add(new ComparableKeyWrap(in.readValue(), callContext));
+        }
+        return Instances.nullInstance();
+    }
+
 }

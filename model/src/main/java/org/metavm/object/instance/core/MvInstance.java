@@ -3,6 +3,7 @@ package org.metavm.object.instance.core;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.SerializeContext;
+import org.metavm.entity.StdKlass;
 import org.metavm.entity.TreeTags;
 import org.metavm.entity.natives.NativeBase;
 import org.metavm.object.instance.rest.InstanceDTO;
@@ -240,10 +241,10 @@ public abstract class MvInstance extends BaseInstance {
 
     public void readRecord(InstanceInput input) {
         setLoadedFromCache(input.isLoadedFromCache());
-        readFrom(input);
+        readBody(input);
     }
 
-    protected abstract void readFrom(InstanceInput input);
+    protected abstract void readBody(InstanceInput input);
 
     boolean isModified() {
         return modified;

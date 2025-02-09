@@ -6,11 +6,9 @@ import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.RedirectStatusProvider;
-import org.metavm.object.type.ResolutionStage;
 import org.metavm.object.type.TypeDef;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.InstanceInput;
-import org.metavm.util.ParameterizedMap;
 import org.metavm.util.Utils;
 import org.metavm.util.profile.Profiler;
 
@@ -31,7 +29,7 @@ public class MockDefContext extends DefContext {
     }
 
     @Override
-    public KlassDef<?> getDef(Type javaType, ResolutionStage stage) {
+    public KlassDef<?> getDef(Type javaType) {
         throw new UnsupportedOperationException();
     }
 
@@ -44,6 +42,11 @@ public class MockDefContext extends DefContext {
     @Override
     public Collection<KlassDef<?>> getAllDefList() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Id getModelId(Object o) {
+        return null;
     }
 
     @Override
@@ -229,17 +232,17 @@ public class MockDefContext extends DefContext {
     }
 
     @Override
-    public void initIdManually(Instance instance, Id id) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void increaseVersionsForAll() {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public void updateMemoryIndex(ClassInstance instance) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long allocateTreeId() {
         throw new UnsupportedOperationException();
     }
 

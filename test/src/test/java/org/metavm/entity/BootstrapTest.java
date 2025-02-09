@@ -20,6 +20,7 @@
 //import java.lang.reflect.Method;
 //import java.lang.reflect.Modifier;
 //import java.util.Map;
+//import java.util.Objects;
 //import java.util.Set;
 //
 //import static org.metavm.util.TestUtils.doInTransactionWithoutResult;
@@ -70,10 +71,10 @@
 //    }
 //
 //    public void _testTmp() {
+//        generateIds(allocatorStore);
 //        var bootstrap = newBootstrap();
 //        var result = bootstrap.boot();
 //        Assert.assertTrue(result.numInstancesWithNullIds() > 0);
-//        TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
 //
 //        var defContext = ModelDefRegistry.getDefContext();
 //        var klass = defContext.getKlass(HttpRequestImpl.class);
@@ -87,13 +88,13 @@
 //    }
 //
 //    public void test() {
+//        generateIds(allocatorStore);
 //        {
 //            ContextUtil.resetProfiler();
 //            var profiler = ContextUtil.getProfiler();
 //            var bootstrap = newBootstrap();
 //            var result = bootstrap.boot();
-//            Assert.assertTrue(result.numInstancesWithNullIds() > 0);
-//            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+//            Assert.assertEquals(0, result.numInstancesWithNullIds());
 //            logger.info(profiler.finish(false, true).toString());
 //            Assert.assertNotNull(
 //                    result.defContext().selectFirstByKey(Function.UNIQUE_NAME, Instances.stringInstance("concat"))
@@ -107,7 +108,6 @@
 //            var bootstrap = newBootstrap();
 //            var result = bootstrap.boot();
 //            Assert.assertEquals(0, result.numInstancesWithNullIds());
-//            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
 //            logger.info(profiler.finish(false, true).toString());
 //        }
 //        // test remove field
@@ -118,9 +118,7 @@
 //            bootstrap.setFieldBlacklist(Set.of(ReflectionUtils.getDeclaredField(Klass.class, "dummyFlag")));
 //            var result = bootstrap.boot();
 //            Assert.assertEquals(0, result.numInstancesWithNullIds());
-//            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
 //            logger.info(profiler.finish(false, true).toString());
-//
 //        }
 //        {
 //            ContextUtil.resetProfiler();
@@ -133,14 +131,16 @@
 //            instanceStore = new MemInstanceStore(new LocalCache());
 //            idProvider = new MockIdProvider();
 //            var bootstrap = newBootstrap();
-//            doInTransactionWithoutResult(bootstrap::bootAndSave);
+//            doInTransactionWithoutResult(bootstrap::boot);
 //            var defContext = (SystemDefContext) ModelDefRegistry.getDefContext();
 //            Assert.assertEquals(
 //                    originalIds,
 //                    Utils.map(
 //                            modelIds,
 //                            modelId ->
-//                                    defContext.getIdentityContext().getModel(modelId).tryGetId()
+//                                    Objects.requireNonNull(defContext.getIdentityContext().getModel(modelId),
+//                                                    () -> "Failed to get model for identity " + modelId)
+//                                            .tryGetId()
 //                    )
 //            );
 //            logger.info(profiler.finish(false, true).toString());
@@ -148,12 +148,12 @@
 //    }
 //
 //    public void testPrimitiveWrapper() {
+//        generateIds(allocatorStore);
 //        ContextUtil.resetProfiler();
 //        var profiler = ContextUtil.getProfiler();
 //        var bootstrap = newBootstrap();
 //        var result = bootstrap.boot();
-//        Assert.assertTrue(result.numInstancesWithNullIds() > 0);
-//        TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+//        Assert.assertEquals(0, result.numInstancesWithNullIds());
 //        logger.info(profiler.finish(false, true).toString());
 //        Assert.assertNotNull(
 //                result.defContext().selectFirstByKey(Function.UNIQUE_NAME, Instances.stringInstance("concat"))
@@ -167,6 +167,7 @@
 //    }
 //
 //    public void testPerf() {
+//        generateIds(allocatorStore);
 //        {
 //            ContextUtil.resetProfiler();
 //            var profiler = ContextUtil.getProfiler();
@@ -177,15 +178,14 @@
 //    }
 //
 //    public void testBootWithExistingIdFiles() {
+//        generateIds(allocatorStore);
 //        var bootstrap1 = newBootstrap();
 //        bootstrap1.boot();
-//        TestUtils.doInTransactionWithoutResult(() -> bootstrap1.save(true));
 //        instanceStore = new MemInstanceStore(new LocalCache());
 //        idProvider = new MockIdProvider();
 //        stdIdStore = new MemoryStdIdStore();
 //        var bootstrap2 = newBootstrap();
 //        bootstrap2.boot();
-//        TestUtils.doInTransactionWithoutResult(() -> bootstrap2.save(true));
 ////        for (var instance : ModelDefRegistry.getDefContext()) {
 ////            if (!instance.isEphemeral() && instance.isRoot()) {
 ////                var ref = new Object() {
@@ -201,13 +201,13 @@
 //    }
 //
 //    public void testReboot() {
+//        generateIds(allocatorStore);
 //        {
 //            ContextUtil.resetProfiler();
 //            var profiler = ContextUtil.getProfiler();
 //            var bootstrap = newBootstrap();
 //            var result = bootstrap.boot();
-//            Assert.assertTrue(result.numInstancesWithNullIds() > 0);
-//            TestUtils.doInTransactionWithoutResult(() -> bootstrap.save(true));
+//            Assert.assertEquals(0, result.numInstancesWithNullIds());
 //            logger.info(profiler.finish(false, true).toString());
 //        }
 //        {
@@ -218,5 +218,20 @@
 //                Assert.assertNotNull(entity.tryGetId());
 //        }
 //    }
+//
+//    private static void generateIds(AllocatorStore allocatorStore) {
+//        var stdAllocators = new StdAllocators(allocatorStore);
+//        var idGenerator = new StdIdGenerator(() -> stdAllocators.allocate(1).getFirst());
+//        idGenerator.generate();
+//
+//        idGenerator.getIds().forEach((identity, id) -> {
+//            if (id.getNodeId() == 0L)
+//                stdAllocators.putId(identity, id, idGenerator.getNextNodeId(identity));
+//            else
+//                stdAllocators.putId(identity, id);
+//        });
+//        stdAllocators.save();
+//    }
+//
 //
 //}

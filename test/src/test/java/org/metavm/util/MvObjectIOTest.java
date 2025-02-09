@@ -7,7 +7,6 @@ import org.metavm.entity.StdMethod;
 import org.metavm.flow.Flows;
 import org.metavm.mocks.Bar;
 import org.metavm.mocks.Foo;
-import org.metavm.object.instance.core.ClassInstance;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -32,8 +31,8 @@ public class MvObjectIOTest extends TestCase {
         var ref = new Object() { byte[] bytes;};
         TestUtils.doInTransactionWithoutResult( () -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                var foo = new Foo("foo", null);
-                foo.setBar(new Bar(foo, "bar001"));
+                var foo = new Foo(context.allocateRootId(), "foo", null);
+                foo.setBar(new Bar(context.allocateRootId(), foo, "bar001"));
                 context.bind(foo);
                 context.initIds();
                 var output = new MarkingInstanceOutput();

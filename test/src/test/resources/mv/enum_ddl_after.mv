@@ -61,7 +61,7 @@ enum ProductKind {
         var values = ProductKind.values();
         int i = 0;
         while (i < values.length) {
-            var name = values[i].name();
+            var name = values[i].name()!!;
             if(name.equals(kind.name)) {
                 return values[i];
             }

@@ -1,91 +1,97 @@
 package org.metavm.entity.natives;
 
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ArrayType;
-import org.metavm.object.type.Field;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.util.Instances;
 
-import java.util.Objects;
-
-public class StringBuilderNative extends NativeBase {
+public class StringBuilderNative implements CharSequenceNative {
 
     private final ClassInstance instance;
-    private final Field arrayField;
-    private ArrayInstance array;
+    private StringBuilder sb;
 
     public StringBuilderNative(ClassInstance instance) {
         this.instance = instance;
-        arrayField = Objects.requireNonNull(instance.getInstanceKlass().findFieldByName("array"));
-        if(instance.isFieldInitialized(arrayField)) {
-            array = instance.getField(arrayField).resolveArray();
-        }
     }
 
     public Value StringBuilder(CallContext callContext) {
-        return StringBuilder();
-    }
-
-    public Value StringBuilder__String(Value value, CallContext callContext) {
-        var sb = StringBuilder();
-        append(value, callContext);
-        return sb;
-    }
-
-    public Value StringBuilder() {
-        array = new ArrayInstance((ArrayType) arrayField.getType());
-        instance.initField(arrayField, array.getReference());
+        sb = new StringBuilder();
         return instance.getReference();
     }
 
-    public Value append(Value value, CallContext callContext) {
-        array.addElement(value);
+    public Value StringBuilder__String(Value value, CallContext callContext) {
+        sb = new StringBuilder(Instances.toString(value, callContext));
+        return instance.getReference();
+    }
+
+    public Value StringBuilder() {
         return instance.getReference();
     }
 
     public Value append__char(Value value, CallContext callContext) {
-        return append(PrimitiveType.charType.fromStackValue(value), callContext);
+        var i = (IntValue) value;
+        sb.append((char) i.value);
+        return instance.getReference();
     }
 
     public Value append__boolean(Value value, CallContext callContext) {
-        return append(PrimitiveType.booleanType.fromStackValue(value), callContext);
+        var i = (IntValue) value;
+        sb.append(i.value == 1);
+        return instance.getReference();
     }
 
     public Value append__int(Value value, CallContext callContext) {
-        return append(value, callContext);
+        var i = (IntValue) value;
+        sb.append(i.value);
+        return instance.getReference();
     }
 
     public Value append__long(Value value, CallContext callContext) {
-        return append(value, callContext);
-    }
-
-    public Value append__double(Value value, CallContext callContext) {
-        return append(value, callContext);
+        var i = (LongValue) value;
+        sb.append(i.value);
+        return instance.getReference();
     }
 
     public Value append__float(Value value, CallContext callContext) {
-        return append(value, callContext);
+        var i = (FloatValue) value;
+        sb.append(i.value);
+        return instance.getReference();
+    }
+
+    public Value append__double(Value value, CallContext callContext) {
+        var i = (DoubleValue) value;
+        sb.append(i.value);
+        return instance.getReference();
     }
 
     public Value append__String(Value value, CallContext callContext) {
-        return append(value, callContext);
+        var i = (StringReference) value;
+        sb.append(i.getValue());
+        return instance.getReference();
     }
 
     public Value append__Any(Value value, CallContext callContext) {
-        return append(value, callContext);
+        sb.append(Instances.toString(value, callContext));
+        return instance.getReference();
     }
 
+    @Override
     public Value isEmpty(CallContext callContext) {
-        return Instances.intInstance(array.isEmpty());
+        return Instances.intInstance(sb.isEmpty());
     }
 
+    @Override
     public Value length(CallContext callContext) {
-        return Instances.intInstance(array.length());
+        return Instances.intInstance(sb.length());
     }
 
+    @Override
+    public Value charAt(Value index, CallContext callContext) {
+        var i = ((IntValue) index).value;
+        return Instances.intInstance(sb.charAt(i));
+    }
+
+    @Override
     public Value toString(CallContext callContext) {
-        var sb = new StringBuilder();
-        array.forEach(v -> sb.append(Instances.toString(v, callContext)));
         return Instances.stringInstance(sb.toString());
     }
 

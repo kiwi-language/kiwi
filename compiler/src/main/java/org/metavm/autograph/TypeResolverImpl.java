@@ -9,6 +9,7 @@ import org.metavm.api.Value;
 import org.metavm.api.builtin.Password;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -190,7 +191,7 @@ public class TypeResolverImpl implements TypeResolver {
         var psiMethod = Objects.requireNonNull(TranspileUtils.findParent(psiCapturedType.getContext(), PsiMethod.class));
         var method = Objects.requireNonNull(psiMethod.getUserData(Keys.Method));
         var capturedTypeVar = new CapturedTypeVariable(
-                null,
+                TmpId.random(),
                 resolveWildcardType(psiCapturedType.getWildcard(), stage),
                 resolveTypeVariable(psiCapturedType.getTypeParameter()).getVariable().getReference(),
                 method
@@ -377,7 +378,7 @@ public class TypeResolverImpl implements TypeResolver {
             typeVariable = Utils.find(genericDeclaration.getTypeParameters(),
                     tv -> Objects.equals(tv.getName(), typeParameter.getName()));
         if (typeVariable == null)
-            typeVariable = new TypeVariable(null, Objects.requireNonNull(typeParameter.getName()),
+            typeVariable = new TypeVariable(TmpId.random(), Objects.requireNonNull(typeParameter.getName()),
                     genericDeclaration != null ? genericDeclaration : DummyGenericDeclaration.INSTANCE);
         typeParameter.putUserData(Keys.TYPE_VARIABLE, typeVariable);
         typeVariable.setBounds(Utils.map(
@@ -434,7 +435,7 @@ public class TypeResolverImpl implements TypeResolver {
             Klass declaringKlass = null;
             if(parent instanceof PsiClass)
                 declaringKlass = requireNonNull(parent.getUserData(Keys.MV_CLASS));
-            var klass = KlassBuilder.newBuilder(name, qualName)
+            var klass = KlassBuilder.newBuilder(TmpId.random(), name, qualName)
                     .kind(kind)
                     .ephemeral(TranspileUtils.isEphemeral(psiClass) || TranspileUtils.isLocalClass(psiClass))
                     .struct(TranspileUtils.isStruct(psiClass))
@@ -498,11 +499,11 @@ public class TypeResolverImpl implements TypeResolver {
     }
 
     private void processKlass(Klass klass, final ResolutionStage stage) {
-        if (klass.tryGetId() == null) {
+//        if (klass.tryGetId() == null) {
             var psiClass = Objects.requireNonNull(psiClassMap.get(klass),
                     () -> "Cannot find PsiClass for klass " + klass.getTypeDesc());
             processKlass(klass, psiClass, stage);
-        }
+//        }
     }
 
     private void processKlass(Klass klass, PsiClass psiClass, final ResolutionStage stage) {

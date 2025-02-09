@@ -1,11 +1,12 @@
 package org.metavm.autograph.mocks;
 
 import org.metavm.annotation.NativeEntity;
-import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
-import org.metavm.api.NativeApi;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -36,6 +37,10 @@ public class AstProduct extends org.metavm.entity.Entity {
     public long inventory;
 
     public AstProductState state;
+
+    public AstProduct(Id id) {
+        super(id);
+    }
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {
@@ -71,7 +76,7 @@ public class AstProduct extends org.metavm.entity.Entity {
         return calcDiscount(list);
     }
 
-    public AstOrder buy(int amount, AstCoupon[] coupons) {
+    public AstOrder buy(int amount, AstCoupon[] coupons, IInstanceContext context) {
         dec(amount);
         List<AstCoupon> selectedCoupons = new ArrayList<>();
         long orderPrice = amount * price;
@@ -81,6 +86,7 @@ public class AstProduct extends org.metavm.entity.Entity {
             selectedCoupons.add(coupons[i]);
         }
         return new AstOrder(
+                context.allocateRootId(),
                 title + ++orderCount,
                 orderPrice,
                 this,

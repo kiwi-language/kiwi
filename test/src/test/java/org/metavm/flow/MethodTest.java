@@ -16,11 +16,11 @@ public class MethodTest extends TestCase {
 
     public void testGetInternalName() {
         var listKlass = TestUtils.newKlassBuilder("List").build();
-        new TypeVariable(null, "T", listKlass);
+        new TypeVariable(listKlass.nextChildId(), "T", listKlass);
         var klass = TestUtils.newKlassBuilder("Foo").build();
         var testMethod = MethodBuilder.newBuilder(klass, "test").build();
-        var testTypeVar = new TypeVariable(null, "T", testMethod);
-        var param = new Parameter(null, "list",
+        var testTypeVar = new TypeVariable(klass.nextChildId(), "T", testMethod);
+        var param = new Parameter(klass.nextChildId(), "list",
                 Types.getNullableType(
                     KlassType.create(
                             listKlass,

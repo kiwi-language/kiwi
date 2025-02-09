@@ -6,6 +6,7 @@ import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -40,7 +41,7 @@ public class SchedulerRegistry extends org.metavm.entity.Entity {
         var existing = context.selectFirstByKey(SchedulerRegistry.IDX_ALL_FLAG, Instances.trueInstance());
         if (existing != null)
             throw new IllegalStateException("SchedulerRegistry already exists");
-        context.bind(new SchedulerRegistry());
+        context.bind(new SchedulerRegistry(context.allocateRootId()));
     }
 
     private long version;
@@ -48,6 +49,10 @@ public class SchedulerRegistry extends org.metavm.entity.Entity {
     @Nullable
     private String ip;
     private boolean allFlag = true;
+
+    public SchedulerRegistry(Id id) {
+        super(id);
+    }
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {

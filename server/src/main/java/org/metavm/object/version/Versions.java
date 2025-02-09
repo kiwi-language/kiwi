@@ -20,7 +20,9 @@ public class Versions {
                 "Change set is empty");
         Version lastVersion = versionRepository.getLastVersion();
         long nextVersion = lastVersion != null ? lastVersion.getVersion() + 1 : 1;
-        var version = new Version(nextVersion,
+        var version = new Version(
+                versionRepository.allocateId(),
+                nextVersion,
                 changedTypeIds,
                 removedTypeIds,
                 changedFunctionIds,

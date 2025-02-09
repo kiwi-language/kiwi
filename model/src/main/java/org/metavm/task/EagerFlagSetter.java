@@ -25,8 +25,8 @@ public class EagerFlagSetter extends ReferenceScanner {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public EagerFlagSetter(Id id) {
-        super("EagerFlagSetter-" + id, id);
+    public EagerFlagSetter(Id id, Id targetId) {
+        super(id, "EagerFlagSetter-" + targetId, targetId);
     }
 
     @Generated

@@ -48,7 +48,7 @@ public class SchedulerTest extends TestCase {
         };
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
-                ref.task = new TestTask();
+                ref.task = new TestTask(context.allocateRootId());
                 context.bind(ref.task);
                 context.finish();
             }

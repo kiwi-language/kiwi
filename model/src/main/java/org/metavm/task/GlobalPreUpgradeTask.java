@@ -5,10 +5,8 @@ import org.metavm.api.Generated;
 import org.metavm.application.Application;
 import org.metavm.entity.Entity;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Instance;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.rest.dto.PreUpgradeRequest;
@@ -30,12 +28,12 @@ public class GlobalPreUpgradeTask extends GlobalTask {
     private String requestJSON;
     private Reference defWALReference;
 
-    public GlobalPreUpgradeTask(PreUpgradeRequest preUpgradeRequest, WAL defWAL) {
-        this(Utils.toJSONString(preUpgradeRequest), defWAL);
+    public GlobalPreUpgradeTask(Id id, PreUpgradeRequest preUpgradeRequest, WAL defWAL) {
+        this(id, Utils.toJSONString(preUpgradeRequest), defWAL);
     }
 
-    private GlobalPreUpgradeTask(String requestJSON, WAL defWAL) {
-        super("GlobalPreUpgradeTask");
+    private GlobalPreUpgradeTask(Id id, String requestJSON, WAL defWAL) {
+        super(id, "GlobalPreUpgradeTask");
         this.requestJSON = requestJSON;
         this.defWALReference = defWAL.getReference();
     }

@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.metavm.entity.EntityUtils;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.mocks.Foo;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.Constraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ public class ReflectionUtilsTest extends TestCase {
     }
 
     public void testExtractReferences() {
-        Foo foo = MockUtils.getFoo();
+        Foo foo = MockUtils.getFooCreator().apply(TmpId::random);
         List<Reference> references = EntityUtils.extractReferences(List.of(foo), t -> true);
         logger.info(references.toString());
     }

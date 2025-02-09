@@ -8,7 +8,7 @@ import org.metavm.object.instance.core.Value;
 import java.util.List;
 import java.util.Objects;
 
-public class ObjectInputStreamNative extends NativeBase {
+public class ObjectInputStreamNative implements NativeBase {
 
     private final ClassInstance instance;
     private final Method readObjectOverride;

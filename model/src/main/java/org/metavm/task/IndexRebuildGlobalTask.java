@@ -6,6 +6,7 @@ import org.metavm.application.Application;
 import org.metavm.api.Entity;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -24,8 +25,8 @@ public class IndexRebuildGlobalTask extends GlobalTask {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public IndexRebuildGlobalTask() {
-        super("Index rebuild boot");
+    public IndexRebuildGlobalTask(Id id) {
+        super(id, "Index rebuild boot");
     }
 
     @Generated
@@ -35,7 +36,7 @@ public class IndexRebuildGlobalTask extends GlobalTask {
 
     @Override
     protected void processApplication(IInstanceContext context, Application application) {
-        context.bind(new IndexRebuildTask());
+        context.bind(new IndexRebuildTask(context.allocateRootId()));
     }
 
     @Override

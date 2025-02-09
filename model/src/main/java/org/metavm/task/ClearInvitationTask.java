@@ -29,8 +29,8 @@ public class ClearInvitationTask extends Task {
     private static Klass __klass__;
     private Id appId;
 
-    public ClearInvitationTask(String title, Id appId) {
-        super(title);
+    public ClearInvitationTask(Id id, String title, Id appId) {
+        super(id, title);
         this.appId = appId;
     }
 

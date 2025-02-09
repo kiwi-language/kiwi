@@ -1,5 +1,7 @@
 package org.metavm.api;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,5 +73,9 @@ public class ChildList<T> extends AbstractList<T> {
     public boolean removeIf(Predicate<? super T> filter) {
         return list.removeIf(filter);
     }
+
+    private void writeObject(ObjectOutputStream o) {}
+
+    private void readObject(ObjectInputStream i) {}
 
 }

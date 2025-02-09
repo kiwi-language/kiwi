@@ -45,7 +45,8 @@ public class Session extends org.metavm.entity.Entity {
     private SessionState state = SessionState.ACTIVE;
     private List<SessionEntry> entries = new ArrayList<>();
 
-    public Session(User user, Date autoCloseAt) {
+    public Session(Id id, User user, Date autoCloseAt) {
+        super(id);
         createdAt = new Date();
         this.token = UUID.randomUUID().toString();
         this.userReference = user.getReference();

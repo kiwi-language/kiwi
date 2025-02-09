@@ -5,6 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -24,6 +25,10 @@ public class DDLRollbackTaskGroup extends TaskGroup {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
+    public DDLRollbackTaskGroup(Id id) {
+        super(id);
+    }
+
     @Generated
     public static void visitBody(StreamVisitor visitor) {
         TaskGroup.visitBody(visitor);
@@ -31,7 +36,7 @@ public class DDLRollbackTaskGroup extends TaskGroup {
 
     @Override
     public List<Task> createTasks(IInstanceContext context) {
-        return List.of(new DDLRollbackTask());
+        return List.of(new DDLRollbackTask(nextChildId()));
     }
 
     @Override

@@ -105,6 +105,10 @@ public class DebugEnv {
 
     public static volatile boolean traceDeployment = false;
 
+    public static volatile boolean traceContextBinding = true;
+
+    public static volatile boolean traceCrawling = false;
+
     public static volatile boolean traceDDL = false;
 
     public static volatile boolean traceClassFileIO = false;
@@ -115,6 +119,9 @@ public class DebugEnv {
 
     public static volatile boolean traceMethodResolution = true;
 
+    public static volatile boolean traceContextActivity = false;
+
+    public static volatile boolean traceCompilation = false;
 
     public static void exitPathItem() {
         path.removeLast();

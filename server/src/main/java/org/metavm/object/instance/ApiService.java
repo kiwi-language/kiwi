@@ -6,7 +6,7 @@ import org.metavm.api.entity.HttpResponse;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.entity.natives.ListNative;
+import org.metavm.entity.natives.ArrayListNative;
 import org.metavm.entity.natives.ThrowableNative;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Flows;
@@ -330,8 +330,7 @@ public class ApiService extends EntityContextFactoryAware {
     private List<Object> formatList(ClassInstance instance) {
         var list = new ArrayList<>();
         var isChildList = instance.isChildList();
-        var listNative = new ListNative(instance);
-        listNative.toArray().forEach(e -> list.add(formatInstance(e, isChildList)));
+        Instances.toJavaList(instance).forEach(e -> list.add(formatInstance(e, isChildList)));
         return list;
     }
 
@@ -580,9 +579,9 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private ValueResolutionResult tryResolveList(List<?> list, ClassType type, @Nullable Value currentValue, IInstanceContext context) {
-        ListNative listNative;
+        ArrayListNative listNative;
         if (currentValue != null && currentValue.isObject() && type.isInstance(currentValue)) {
-            listNative = new ListNative(currentValue.resolveObject());
+            listNative = Instances.getListNative(currentValue.resolveObject());
             listNative.clear();
         } else {
             ClassType concreteType;
@@ -599,8 +598,7 @@ public class ApiService extends EntityContextFactoryAware {
                 concreteType = type;
             else
                 return ValueResolutionResult.failed;
-            listNative = new ListNative(ClassInstance.allocate(concreteType));
-            listNative.List();
+            listNative = Instances.getListNative(Instances.newList(concreteType));
         }
         var elements = new ArrayList<Value>();
         var actualType = listNative.getInstance().getInstanceType();

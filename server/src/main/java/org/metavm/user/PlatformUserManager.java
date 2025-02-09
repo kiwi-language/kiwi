@@ -92,6 +92,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
         PlatformUser user;
         if (userDTO.id() == null) {
             user = new PlatformUser(
+                    platformContext.allocateRootId(),
                     userDTO.loginName(),
                     userDTO.password(),
                     userDTO.name(),
@@ -167,7 +168,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
             try (var context = newContext(app.getTreeId())) {
                 var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, Instances.stringInstance(platformUser.getStringId()));
                 if (user == null) {
-                    user = new User(generateLoginName(platformUser.getLoginName(), context),
+                    user = new User(context.allocateRootId(), generateLoginName(platformUser.getLoginName(), context),
                             Utils.randomPassword(), platformUser.getName(), List.of());
                     user.setPlatformUserId(platformUser.getStringId());
                     context.bind(user);

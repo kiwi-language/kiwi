@@ -10,10 +10,9 @@ import org.metavm.entity.Element;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.LocalKey;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.NamingUtils;
@@ -35,9 +34,9 @@ public abstract class Constraint extends org.metavm.entity.Entity implements  Cl
     @Nullable
     private String message;
 
-    public Constraint(@NotNull Klass declaringType,
+    public Constraint(Id id, @NotNull Klass declaringType,
                       String name, @Nullable String message) {
-        super(null);
+        super(id);
         this.declaringType = declaringType;
         this.name =  NamingUtils.ensureValidName(name);
         this.message = message;

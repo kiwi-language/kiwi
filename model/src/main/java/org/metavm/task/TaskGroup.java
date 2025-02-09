@@ -6,6 +6,7 @@ import org.metavm.api.Generated;
 import org.metavm.api.NativeApi;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -32,8 +33,8 @@ public abstract class TaskGroup extends org.metavm.entity.Entity {
     private boolean failed;
     private List<Task> tasks = new ArrayList<>();
 
-    public TaskGroup() {
-        System.out.println(tasks);
+    public TaskGroup(Id id) {
+        super(id);
     }
 
     @Generated

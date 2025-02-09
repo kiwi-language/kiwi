@@ -6,6 +6,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -42,7 +43,8 @@ public class LivingBeing extends org.metavm.entity.Entity {
     @ChildEntity
     private List<Reference> ancestors = new ArrayList<>();
 
-    public LivingBeing(long age) {
+    public LivingBeing(Id id, long age) {
+        super(id);
         this.age = age;
     }
 

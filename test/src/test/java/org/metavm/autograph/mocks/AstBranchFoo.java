@@ -6,6 +6,7 @@ import org.metavm.api.Generated;
 import org.metavm.api.NativeApi;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.HashedValue;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -26,6 +27,10 @@ public class AstBranchFoo extends org.metavm.entity.Entity {
     private static Klass __klass__;
     private AstProductState state = AstProductState.NORMAL;
     private int inventory = 0;
+
+    public AstBranchFoo(Id id) {
+        super(id);
+    }
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {

@@ -2,6 +2,8 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.flow.Method;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.Column;
 import org.metavm.util.Instances;
@@ -23,7 +25,7 @@ public class FieldBuilder {
     private final @Nullable Type type;
     private final int typeIndex;
     private Column column;
-    private Long tmpId;
+    private Id id;
     private Access access = Access.PUBLIC;
     private boolean unique = false;
     private Value defaultValue;
@@ -58,7 +60,12 @@ public class FieldBuilder {
     }
 
     public FieldBuilder tmpId(Long tmpId) {
-        this.tmpId = tmpId;
+        this.id = TmpId.of(tmpId);
+        return this;
+    }
+
+    public FieldBuilder id(Id id) {
+        this.id = id;
         return this;
     }
 
@@ -167,16 +174,17 @@ public class FieldBuilder {
             state = defaultValue.isNotNull() ? MetadataState.INITIALIZING : MetadataState.READY;
         if(tag == -1)
             tag = declaringType.nextFieldTag();
+        if (id == null)
+            id = declaringType.getRoot().nextChildId();
         int typeIndex = type != null ? declaringType.getConstantPool().addValue(type) : this.typeIndex;
         field = new Field(
-                tmpId,
+                id,
                 name,
                 declaringType,
                 typeIndex,
                 access,
                 readonly,
                 isTransient,
-                unique,
                 defaultValue,
                 isChild,
                 isStatic,

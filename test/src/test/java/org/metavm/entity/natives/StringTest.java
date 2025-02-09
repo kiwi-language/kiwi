@@ -39,10 +39,6 @@ public class StringTest extends TestCase {
     }
 
     public void test() {
-        var stringKlass = StdKlass.string.get();
-        Assert.assertNotNull(stringKlass.getReadObjectMethod());
-        Assert.assertNotNull(stringKlass.getWriteObjectMethod());
-
         var fooKlassId = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
                 var fooKlass = TestUtils.newKlassBuilder("Foo").build();
@@ -57,7 +53,7 @@ public class StringTest extends TestCase {
                     Nodes.ret(code);
                     code.emitCode();
                 }
-                new Index(fooKlass, "nameIdx", null, true, Types.getStringType(), getNameMethod);
+                new Index(fooKlass.nextChildId(), fooKlass, "nameIdx", null, true, Types.getStringType(), getNameMethod);
                 context.bind(fooKlass);
                 context.finish();
                 return fooKlass.getId();

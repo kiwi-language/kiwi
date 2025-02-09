@@ -3,7 +3,7 @@ package org.metavm.object.instance.core;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.NoProxy;
-import org.metavm.entity.natives.ListNative;
+import org.metavm.entity.natives.StatefulNative;
 import org.metavm.flow.ClosureContext;
 import org.metavm.flow.Flows;
 import org.metavm.flow.MethodRef;
@@ -29,7 +29,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     public static final Logger logger = LoggerFactory.getLogger(MvClassInstance.class);
 
-    public static final Klass uninitializedKlass = KlassBuilder.newBuilder("Uninitialized", "Uninitialized").build();
+    public static final Klass uninitializedKlass = KlassBuilder.newBuilder(new NullId(), "Uninitialized", "Uninitialized").build();
 
     private final FieldTable fieldTable = new FieldTable(this);
     private Klass klass;
@@ -121,6 +121,10 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
+        if (getNativeObject() instanceof StatefulNative statefulNative) {
+            statefulNative.forEachChild(action);
+            return;
+        }
         forEachField((f, v) -> {
             if(f.isChild() && v instanceof Reference r)
                 action.accept(r.get());
@@ -130,6 +134,10 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public void forEachMember(Consumer<? super Instance> action) {
+        if (getNativeObject() instanceof StatefulNative statefulNative) {
+            statefulNative.forEachMember(action);
+            return;
+        }
         forEachField((f, v) -> {
             if(v instanceof Reference r && (f.isChild() || r.isValueReference()))
                 action.accept(r.get());
@@ -139,6 +147,10 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public void forEachValue(Consumer<? super Instance> action) {
+        if (getNativeObject() instanceof StatefulNative statefulNative) {
+            statefulNative.forEachValue(action);
+            return;
+        }
         forEachField((f, v) -> {
             if(v instanceof Reference r && (r.isValueReference()))
                 action.accept(r.get());
@@ -147,14 +159,22 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     }
 
     public void forEachReference(Consumer<Reference> action) {
+        if (getNativeObject() instanceof StatefulNative statefulNative) {
+            statefulNative.forEachReference(action);
+            return;
+        }
         forEachField((f, v) -> {
-            if(v instanceof Reference r)
+            if (v instanceof Reference r)
                 action.accept(r);
         });
         children.forEach(c -> action.accept(c.getReference()));
     }
 
     public void forEachReference(BiConsumer<Reference, Boolean> action) {
+        if (getNativeObject() instanceof StatefulNative statefulNative) {
+            statefulNative.forEachReference(action);
+            return;
+        }
         forEachField((f, v) -> {
             if(v instanceof Reference r)
                 action.accept(r, f.isChild());
@@ -164,6 +184,10 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public void forEachReference(TriConsumer<Reference, Boolean, Type> action) {
+        if (getNativeObject() instanceof StatefulNative statefulNative) {
+            statefulNative.forEachReference(action);
+            return;
+        }
         forEachField((f, v) -> {
             if(v instanceof Reference r)
                 action.accept(r, f.isChild(), f.getType());
@@ -173,6 +197,10 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public void transformReference(TriFunction<Reference, Boolean, Type, Reference> function) {
+        if (getNativeObject() instanceof StatefulNative statefulNative) {
+            statefulNative.transformReference(function);
+            return;
+        }
         forEachField((f, v) -> {
             if(v instanceof Reference r) {
                 var r1 = function.apply(r, r.isResolved() && r.get().isChildOf(this, f), f.getType());
@@ -293,7 +321,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     @NoProxy
-    protected void readFrom(InstanceInput input) {
+    protected void readBody(InstanceInput input) {
         var tracing = DebugEnv.traceInstanceIO;
         if (tracing) log.trace("Reading instance {} {}", getInstanceType().getTypeDesc(), tryGetId());
         var sortedKlasses = klass.getSortedKlasses();
@@ -512,7 +540,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     @Override
     public InstanceParam getParam() {
         if (isList()) {
-            var elements = new ListNative(this).toArray().getElements();
+            var elements = Instances.toJavaList(this);
             if (isChildList()) {
                 return new ListInstanceParam(
                         true,
@@ -587,11 +615,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 //    @Override
     public Object toJson(IInstanceContext context) {
         if (isList()) {
-            var listNative = new ListNative(this);
-            var array = listNative.toArray();
-            var list = new ArrayList<>();
-            array.forEach(e -> list.add(e.toJson()));
-            return list;
+            return Instances.toJavaList(this);
         } else {
             var map = new HashMap<String, Object>();
             forEachField((f, v) -> {

@@ -13,10 +13,4 @@ public class IdTest extends TestCase {
         assertEquals(id, Id.parse(id.toString()));
     }
 
-    private ClassType mockClassTypeKey(long treeId, long nodeId) {
-        var klass = TestUtils.newKlassBuilder("Mock", "Mock").build();
-        klass.initId(new PhysicalId(treeId, nodeId));
-        return klass.getType();
-    }
-
 }

@@ -9,11 +9,11 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.light.LightRecordCanonicalConstructor;
 import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Enum;
 import org.metavm.api.Index;
 import org.metavm.api.*;
-import org.metavm.entity.natives.StandardStaticMethods;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.*;
@@ -1418,7 +1418,11 @@ public class TranspileUtils {
         return typeArgs;
     }
 
-    public static List<PsiClass> getAllClasses(PsiJavaFile file) {
+    public static Collection<PsiClass> getAllClasses(PsiJavaFile file) {
+        /*
+         Note: local classes are intentionally omitted because they must be processed AFTER
+         the enclosing method is declared. Including them in the result list would disrupt this order.
+         */
         var queue = new LinkedList<>(List.of(file.getClasses()));
         var result = new ArrayList<PsiClass>();
         while (!queue.isEmpty()) {

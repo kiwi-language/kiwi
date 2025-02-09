@@ -586,10 +586,7 @@ public class VmStack {
                                 var index = (IndexRef) constants[(bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff];
                                 var result = callContext.instanceRepository().indexSelect(loadIndexKey(index, stack[--top]));
                                 var type = new KlassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType()));
-                                var list = ClassInstance.allocate(type);
-                                var listNative = new ListNative(list);
-                                listNative.List(callContext);
-                                result.forEach(e -> listNative.add(e, callContext));
+                                var list = Instances.newList(type, result);
                                 stack[top++] = list.getReference();
                                 pc += 3;
                             }

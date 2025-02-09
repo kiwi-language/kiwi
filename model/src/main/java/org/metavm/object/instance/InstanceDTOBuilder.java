@@ -1,9 +1,10 @@
 package org.metavm.object.instance;
 
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.natives.ListNative;
+import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
+import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.Utils;
 
@@ -47,17 +48,18 @@ public class InstanceDTOBuilder {
             if (depth <= 0 && !isChild) {
                 return instance.toFieldValueDTO();
             } else {
-                var array = new ListNative(instance).toArray();
+                var list = Instances.toJavaList(instance);
+                var isChildList = instance.getInstanceKlass() == StdKlass.childList.get();
                 InstanceDTO instanceDTO = new InstanceDTO(
                         instance.getStringIdForDTO(),
                         instance.getInstanceType().toExpression(serContext),
                         instance.getInstanceType().getName(),
                         instance.getTitle(),
                         new ListInstanceParam(
-                                array.isChildArray(),
+                                isChildList,
                                 Utils.map(
-                                        array.getElements(),
-                                        e -> build(e, depth, isChild && array.isChildArray())
+                                        list,
+                                        e -> build(e, depth, isChild && isChildList)
                                 )
                         )
                 );

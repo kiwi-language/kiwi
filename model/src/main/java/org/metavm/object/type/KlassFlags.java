@@ -4,6 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
@@ -26,6 +27,7 @@ public class KlassFlags extends org.metavm.entity.Entity {
     private Klass klass;
 
     public KlassFlags(Klass klass) {
+        super(klass.getRoot().nextChildId());
         this.klass = klass;
     }
 

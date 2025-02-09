@@ -168,7 +168,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     private transient Klass componentKlass;
 
     public Klass(
-            Long tmpId,
+            @NotNull Id id,
             String name,
             @Nullable String qualifiedName,
             @Nullable ClassType superType,
@@ -189,7 +189,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
             @Nullable Integer sourceTag,
             int since,
             boolean methodTableBuildDisabled) {
-        setTmpId(tmpId);
+        super(id);
         this.name = name;
         this.qualifiedName = qualifiedName;
         this.kind = kind;
@@ -514,7 +514,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         assert fields.size() <= 1 || Utils.allMatch(fields, EntityUtils::isModelInitialized);
     }
 
-    MethodTable getMethodTable() {
+    public MethodTable getMethodTable() {
         if (methodTable == null) {
             synchronized (this) {
                 if (methodTable == null)
@@ -1718,7 +1718,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     @JsonIgnore
     public Klass getArrayKlass() {
        if(arrayKlass == null) {
-           arrayKlass = KlassBuilder.newBuilder(name + "[]", Utils.safeCall(qualifiedName, c -> c + "[]")).build();
+           arrayKlass = KlassBuilder.newBuilder(new NullId(), name + "[]", Utils.safeCall(qualifiedName, c -> c + "[]")).build();
            arrayKlass.setEphemeral();
            arrayKlass.componentKlass = this;
        }

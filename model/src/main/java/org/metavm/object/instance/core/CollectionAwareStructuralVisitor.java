@@ -1,14 +1,14 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.entity.natives.ListNative;
+import org.metavm.util.Instances;
 
 public abstract class CollectionAwareStructuralVisitor extends StructuralInstanceVisitor {
 
     @Override
     public Void visitInstance(Instance instance) {
-        if(instance instanceof ClassInstance classInstance && classInstance.isList()) {
+        if(instance instanceof MvClassInstance classInstance && classInstance.isList()) {
             if(classInstance.isChildList())
-                for (Value element : new ListNative(classInstance).toArray().getElements()) {
+                for (Value element :  Instances.toJavaList(classInstance)) {
                     if(element instanceof Reference r)
                         r.get().accept(this);
                 }

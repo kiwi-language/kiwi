@@ -5,7 +5,7 @@ import org.metavm.object.type.Field;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 
-public class ThrowableNative extends NativeBase {
+public class ThrowableNative implements NativeBase {
 
     private final ClassInstance instance;
     private final Field messageField;

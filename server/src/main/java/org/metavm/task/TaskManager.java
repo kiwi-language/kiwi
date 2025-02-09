@@ -53,6 +53,14 @@ public class TaskManager extends EntityContextFactoryAware {
     }
 
     @Transactional
+    public void addIndexRebuildGlobalTask() {
+        try (var context = newPlatformContext()) {
+            context.bind(new IndexRebuildGlobalTask(context.allocateRootId()));
+            context.finish();
+        }
+    }
+
+    @Transactional
     public void runTask(String taskClassName) {
         try (IInstanceContext context = newContext()) {
             Class<? extends Task> taskClass = ReflectionUtils.classForName(taskClassName).asSubclass(Task.class);
@@ -66,7 +74,7 @@ public class TaskManager extends EntityContextFactoryAware {
             platformContext.setDescription("ShadowTask");
             for (Task task : created) {
                 var defWal = task.getDefWalId() != null ? platformContext.getEntity(WAL.class, task.getDefWalId()) : null;
-                platformContext.bind(new ShadowTask(appId, task.getId(), task.getStartAt(), defWal));
+                platformContext.bind(new ShadowTask(platformContext.allocateRootId(), appId, task.getId(), task.getStartAt(), defWal));
             }
             platformContext.finish();
         }

@@ -1,39 +1,79 @@
 package org.metavm.entity;
 
+import lombok.extern.slf4j.Slf4j;
+import org.metavm.api.ChildList;
+import org.metavm.api.ValueList;
 import org.metavm.api.ValueObject;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.SerializablePermission;
 import java.lang.reflect.Field;
 import java.lang.reflect.*;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
+@Slf4j
 public class ReflectDefiner {
-
-    public static final Logger logger = LoggerFactory.getLogger(ReflectDefiner.class);
-
     private final Class<?> javaClass;
     private Klass klass;
     private final long tag;
     private final Function<Class<?>, Klass> getKlass;
     private final BiConsumer<? super Class<?>, ? super Klass> addKlass;
 
-    private @Nullable Consumer<Klass> preprocessor;
+    public static final Set<Class<?>> valueClasses = Set.of(
+            String.class, Byte.class, Short.class, Integer.class, Long.class,
+            Float.class, Double.class, Character.class, Boolean.class
+    );
+
+    public static final Set<Field> fieldWhitelist = Set.of(
+            ReflectionUtils.getDeclaredField(Enum.class, "name"),
+            ReflectionUtils.getDeclaredField(Enum.class, "ordinal"),
+            ReflectionUtils.getDeclaredField(Throwable.class, "detailMessage"),
+            ReflectionUtils.getDeclaredField(Throwable.class, "cause"),
+            ReflectionUtils.getDeclaredField(org.metavm.api.Index.class, "name"),
+            ReflectionUtils.getDeclaredField(Byte.class, "value"),
+            ReflectionUtils.getDeclaredField(Short.class, "value"),
+            ReflectionUtils.getDeclaredField(Integer.class, "value"),
+            ReflectionUtils.getDeclaredField(Long.class, "value"),
+            ReflectionUtils.getDeclaredField(Float.class, "value"),
+            ReflectionUtils.getDeclaredField(Double.class, "value"),
+            ReflectionUtils.getDeclaredField(Character.class, "value"),
+            ReflectionUtils.getDeclaredField(Boolean.class, "value")
+    );
+
+    public static final Set<Method> methodWhitelist = Set.of(
+            ReflectionUtils.getDeclaredMethod(HashMap.class, "readObject", ObjectInputStream.class),
+            ReflectionUtils.getDeclaredMethod(HashMap.class, "writeObject", ObjectOutputStream.class),
+            ReflectionUtils.getDeclaredMethod(ArrayList.class, "readObject", ObjectInputStream.class),
+            ReflectionUtils.getDeclaredMethod(ArrayList.class, "writeObject", ObjectOutputStream.class),
+            ReflectionUtils.getDeclaredMethod(ChildList.class, "readObject", ObjectInputStream.class),
+            ReflectionUtils.getDeclaredMethod(ChildList.class, "writeObject", ObjectOutputStream.class),
+            ReflectionUtils.getDeclaredMethod(ValueList.class, "readObject", ObjectInputStream.class),
+            ReflectionUtils.getDeclaredMethod(ValueList.class, "writeObject", ObjectOutputStream.class),
+            ReflectionUtils.getDeclaredMethod(HashSet.class, "readObject", ObjectInputStream.class),
+            ReflectionUtils.getDeclaredMethod(HashSet.class, "writeObject", ObjectOutputStream.class),
+            ReflectionUtils.getDeclaredMethod(TreeSet.class, "readObject", ObjectInputStream.class),
+            ReflectionUtils.getDeclaredMethod(TreeSet.class, "writeObject", ObjectOutputStream.class)
+    );
+
     private final Map<java.lang.reflect.TypeVariable<?>, org.metavm.object.type.TypeVariable> typeVariableMap = new HashMap<>();
     private final Map<org.metavm.object.type.Field, Value> staticInitialValues = new HashMap<>();
-    private static final Set<JavaMethodSignature> ignoredFunctionalInterfaceMethods;
+
+    private final Function<Object, Id> getId;
+    public static final Set<JavaMethodSignature> ignoredFunctionalInterfaceMethods;
 
     static {
         var set = new HashSet<JavaMethodSignature>();
@@ -44,111 +84,121 @@ public class ReflectDefiner {
         ignoredFunctionalInterfaceMethods = Collections.unmodifiableSet(set);
     }
 
-    public ReflectDefiner(Class<?> javaClass, long tag, Function<Class<?>, Klass> getKlass, BiConsumer<? super Class<?>, ? super Klass> addKlass) {
+    public ReflectDefiner(Class<?> javaClass, long tag, Function<Class<?>, Klass> getKlass, BiConsumer<? super Class<?>, ? super Klass> addKlass, Function<Object, Id> getId) {
         this.javaClass = javaClass;
         this.tag = tag;
         this.getKlass = getKlass;
         this.addKlass = addKlass;
+        this.getId = getId;
     }
 
     public ReflectDefineResult defineClass() {
         var tracing = DebugEnv.traceClassDefinition;
-        if(tracing) logger.trace("Defining class {}", javaClass.getName());
-        var kind = javaClass.isEnum() ? ClassKind.ENUM : (javaClass.isInterface() ? ClassKind.INTERFACE :
-                (ValueObject.class.isAssignableFrom(javaClass) ? ClassKind.VALUE : ClassKind.CLASS));
-        var code = javaClass.getName().replace('$', '.');
-        klass = KlassBuilder.newBuilder(javaClass.getSimpleName(), code)
-                .tag(tag)
-                .source(ClassSource.BUILTIN)
-                .kind(kind)
-                .isAbstract(Modifier.isAbstract(javaClass.getModifiers()))
-                .maintenanceDisabled()
-                .build();
-        if (preprocessor != null) {
-            preprocessor.accept(klass);
-            if (tracing) logger.trace("Preprocessed klass {}, kind: {} fields: {}",
-                    klass.getQualifiedName(),
-                    klass.getKind().name(),
-                    Utils.join(klass.getFields(), org.metavm.object.type.Field::getName));
-        }
-        addKlass.accept(javaClass, klass);
-        if (javaClass.getDeclaringClass() != null)
-            klass.setScope(getKlass.apply(javaClass.getDeclaringClass()));
-        klass.setTypeParameters(Utils.map(javaClass.getTypeParameters(), tv -> defineTypeVariable(tv, klass)));
-        if (javaClass.getGenericSuperclass() != null && javaClass.getGenericSuperclass() != Object.class)
-            klass.setSuperType((ClassType) resolveType(javaClass.getGenericSuperclass()));
-        klass.setInterfaces(Utils.map(List.of(javaClass.getGenericInterfaces()), it -> (ClassType) resolveType(it)));
-        var methodSignatures = new HashSet<MethodSignature>();
-        out: for (Constructor<?> javaConstructor : javaClass.getDeclaredConstructors()) {
-            var mod = javaConstructor.getModifiers();
-            if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod) || javaConstructor.isSynthetic())
-                continue;
-            for (Class<?> parameterType : javaConstructor.getParameterTypes()) {
-                if (parameterType == Charset.class || parameterType == Locale.class) continue out;
-            }
-            var constructor = MethodBuilder.newBuilder(klass, javaClass.getSimpleName())
-                    .returnType(klass.getType())
-                    .isNative(true)
-                    .isConstructor(true)
+        try {
+            if (tracing) DebugEnv.path.addLast(javaClass.getName());
+            if (tracing) log.trace("Defining class {}", javaClass.getName());
+            var kind = javaClass.isEnum() ? ClassKind.ENUM : (javaClass.isInterface() ? ClassKind.INTERFACE :
+                    (ValueObject.class.isAssignableFrom(javaClass) || valueClasses.contains(javaClass) ?
+                            ClassKind.VALUE : ClassKind.CLASS));
+            var code = javaClass.getName().replace('$', '.');
+            klass = KlassBuilder.newBuilder(getId.apply(javaClass), javaClass.getSimpleName(), code)
+                    .tag(tag)
+                    .source(ClassSource.BUILTIN)
+                    .kind(kind)
+                    .isAbstract(Modifier.isAbstract(javaClass.getModifiers()))
+                    .maintenanceDisabled()
                     .build();
-            constructor.setTypeParameters(Utils.map(javaConstructor.getTypeParameters(), tv -> defineTypeVariable(tv, constructor)));
-            constructor.setParameters(Utils.map(javaConstructor.getParameters(), p -> parseParameter(p, constructor)));
-            if(!methodSignatures.add(MethodSignature.of(constructor)))
-                klass.removeMethod(constructor);
-        }
-        var isFunctionalInterface = javaClass.isAnnotationPresent(FunctionalInterface.class);
-        out: for (Method javaMethod : javaClass.getDeclaredMethods()) {
-            if (javaMethod.isSynthetic()
-                    || (!Modifier.isPublic(javaMethod.getModifiers()) && !Modifier.isProtected(javaMethod.getModifiers())))
-                continue;
-            for (Class<?> parameterType : javaMethod.getParameterTypes()) {
-                if (parameterType == Charset.class || parameterType == Locale.class) continue out;
-            }
-            if(isFunctionalInterface) {
-                if(javaMethod.isDefault() || ignoredFunctionalInterfaceMethods.contains(JavaMethodSignature.of(javaMethod)))
+            addKlass.accept(javaClass, klass);
+            if (javaClass == Entity.class)
+                return new ReflectDefineResult(klass, null);
+            if (javaClass.getDeclaringClass() != null)
+                klass.setScope(getKlass.apply(javaClass.getDeclaringClass()));
+            klass.setTypeParameters(Utils.map(javaClass.getTypeParameters(), tv -> defineTypeVariable(tv, klass)));
+            if (javaClass.getGenericSuperclass() != null && javaClass.getGenericSuperclass() != Object.class)
+                klass.setSuperType((ClassType) resolveType(javaClass.getGenericSuperclass()));
+            klass.setInterfaces(Utils.map(List.of(javaClass.getGenericInterfaces()), it -> (ClassType) resolveType(it)));
+            var methodSignatures = new HashSet<MethodSignature>();
+            out:
+            for (Constructor<?> javaConstructor : javaClass.getDeclaredConstructors()) {
+                var mod = javaConstructor.getModifiers();
+                if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod) || javaConstructor.isSynthetic())
                     continue;
+                for (Class<?> parameterType : javaConstructor.getParameterTypes()) {
+                    if (parameterType == Charset.class || parameterType == Locale.class) continue out;
+                }
+                var constructor = MethodBuilder.newBuilder(klass, javaClass.getSimpleName())
+                        .id(getId.apply(javaConstructor))
+                        .returnType(klass.getType())
+                        .isNative(true)
+                        .isConstructor(true)
+                        .build();
+                constructor.setTypeParameters(Utils.map(javaConstructor.getTypeParameters(), tv -> defineTypeVariable(tv, constructor)));
+                constructor.setParameters(Utils.map(javaConstructor.getParameters(), p -> parseParameter(p, constructor)));
+                if (!methodSignatures.add(MethodSignature.of(constructor)))
+                    klass.removeMethod(constructor);
             }
-            var _static = Modifier.isStatic(javaMethod.getModifiers());
-            var abs = Modifier.isAbstract(javaMethod.getModifiers()) ||
-                    kind == ClassKind.INTERFACE && !_static && !javaMethod.isDefault();
-            var method = MethodBuilder.newBuilder(klass, javaMethod.getName())
-                    .isAbstract(abs)
-                    .isStatic(_static)
-                    .isNative(!abs)
-                    .build();
-            method.setTypeParameters(Utils.map(javaMethod.getTypeParameters(), tv -> defineTypeVariable(tv, method)));
-            method.setParameters(Utils.map(javaMethod.getParameters(), p -> parseParameter(p, method)));
-            method.setReturnType(resolveNullableType(javaMethod.getGenericReturnType()));
-            if(!methodSignatures.add(MethodSignature.of(method))) {
-                var name = method.getName();
-                int i = 1;
-                method.setName(name + i);
-                while (!methodSignatures.add(MethodSignature.of(method)))
-                    method.setName(name + ++i);
+            var isFunctionalInterface = javaClass.isAnnotationPresent(FunctionalInterface.class);
+            for (Method javaMethod : javaClass.getDeclaredMethods()) {
+                var mods = javaMethod.getModifiers();
+                if (javaMethod.isSynthetic()
+                        || (!Modifier.isPublic(mods) && !Modifier.isProtected(mods) && !methodWhitelist.contains(javaMethod)))
+                    continue;
+                if (isFunctionalInterface) {
+                    if (javaMethod.isDefault() || ignoredFunctionalInterfaceMethods.contains(JavaMethodSignature.of(javaMethod)))
+                        continue;
+                }
+                var _static = Modifier.isStatic(javaMethod.getModifiers());
+                var abs = Modifier.isAbstract(javaMethod.getModifiers()) ||
+                        kind == ClassKind.INTERFACE && !_static && !javaMethod.isDefault();
+                var method = MethodBuilder.newBuilder(klass, javaMethod.getName())
+                        .id(getId.apply(javaMethod))
+                        .isAbstract(abs)
+                        .isStatic(_static)
+                        .isNative(!abs)
+                        .build();
+                method.setTypeParameters(Utils.map(javaMethod.getTypeParameters(), tv -> defineTypeVariable(tv, method)));
+                method.setParameters(Utils.map(javaMethod.getParameters(), p -> parseParameter(p, method)));
+                method.setReturnType(resolveNullableType(javaMethod.getGenericReturnType()));
+                if (!methodSignatures.add(MethodSignature.of(method))) {
+                    var name = method.getName();
+                    int i = 1;
+                    method.setName(name + i);
+                    while (!methodSignatures.add(MethodSignature.of(method)))
+                        method.setName(name + ++i);
+                }
+            }
+            var innerKlasses = new ArrayList<Klass>();
+            for (Class<?> k : javaClass.getDeclaredClasses()) {
+                if (!Modifier.isPublic(k.getModifiers())) continue;
+                innerKlasses.add(getKlass.apply(k));
+            }
+            klass.setKlasses(innerKlasses);
+            for (Field field : javaClass.getDeclaredFields()) {
+                if (Modifier.isPublic(field.getModifiers()) && Modifier.isStatic(field.getModifiers())
+                        || fieldWhitelist.contains(field))
+                    defineField(field, klass);
+            }
+            if (staticInitialValues.isEmpty())
+                return new ReflectDefineResult(klass, null);
+            else {
+                var sft = new StaticFieldTable(
+                        getId.apply(ModelIdentity.create(StaticFieldTable.class, code)),
+                        klass
+                );
+                staticInitialValues.forEach(sft::set);
+                return new ReflectDefineResult(klass, sft);
             }
         }
-        var innerKlasses = new ArrayList<Klass>();
-        for (Class<?> k : javaClass.getDeclaredClasses()) {
-            if (!Modifier.isPublic(k.getModifiers())) continue;
-            innerKlasses.add(getKlass.apply(k));
-        }
-        klass.setKlasses(innerKlasses);
-        klass.rebuildMethodTable();
-        for (Field field : javaClass.getDeclaredFields()) {
-            if (Modifier.isPublic(field.getModifiers()) && Modifier.isStatic(field.getModifiers()))
-                defineField(field, klass);
-        }
-        if (staticInitialValues.isEmpty())
-            return new ReflectDefineResult(klass, null);
-        else {
-            var sft = new StaticFieldTable(klass);
-            staticInitialValues.forEach(sft::set);
-            return new ReflectDefineResult(klass, sft);
+        finally {
+            if (tracing) {
+                DebugEnv.path.removeLast();
+            }
         }
     }
 
     public void defineField(Field javaField, Klass klass) {
         var field = FieldBuilder.newBuilder(javaField.getName(), klass, resolveNullableType(javaField.getGenericType()))
+                .id(getId.apply(javaField))
                 .isStatic(Modifier.isStatic(javaField.getModifiers()))
                 .readonly(Modifier.isFinal(javaField.getModifiers()))
                 .access(getAccess(javaField.getModifiers()))
@@ -172,14 +222,14 @@ public class ReflectDefiner {
     }
 
     private TypeVariable defineTypeVariable(java.lang.reflect.TypeVariable<?> typeVariable, GenericDeclaration genericDeclaration) {
-        var tv = new TypeVariable(null, typeVariable.getName(), genericDeclaration);
+        var tv = new TypeVariable(getId.apply(typeVariable), typeVariable.getName(), genericDeclaration);
         typeVariableMap.put(typeVariable, tv);
         tv.setBounds(Utils.map(typeVariable.getBounds(), this::resolveType));
         return tv;
     }
 
     private Parameter parseParameter(java.lang.reflect.Parameter parameter, org.metavm.flow.Method method) {
-        return new Parameter(null, parameter.getName(), resolveNullableType(parameter.getParameterizedType()), method);
+        return new Parameter(getId.apply(parameter), parameter.getName(), resolveNullableType(parameter.getParameterizedType()), method);
     }
 
     private Type resolveNullableType(java.lang.reflect.Type type) {
@@ -187,10 +237,6 @@ public class ReflectDefiner {
         if(!ReflectionUtils.isPrimitiveType(type))
             mType = Types.getNullableType(mType);
         return mType;
-    }
-
-    public void setPreprocessor(@Nullable Consumer<Klass> preprocessor) {
-        this.preprocessor = preprocessor;
     }
 
     private Type resolveType(java.lang.reflect.Type type) {
@@ -252,7 +298,7 @@ public class ReflectDefiner {
         };
     }
 
-    private record JavaMethodSignature(
+    public record JavaMethodSignature(
             String name,
             List<java.lang.reflect.Type> parameterTypes
     ) {

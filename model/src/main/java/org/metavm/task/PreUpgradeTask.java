@@ -39,8 +39,8 @@ public class PreUpgradeTask extends ScanTask  implements RemovalAware {
     private Id defWalId;
     private List<Id> newKlassIds = new ArrayList<>();
 
-    public PreUpgradeTask(WAL wal, Id defWalId, List<Id> newKlassIds, Id ddlId) {
-        super("PreUpgradeTask-" + ddlId);
+    public PreUpgradeTask(Id id, WAL wal, Id defWalId, List<Id> newKlassIds, Id ddlId) {
+        super(id, "PreUpgradeTask-" + ddlId);
         this.walReference = wal.getReference();
         this.defWalId = defWalId;
         this.ddlId = ddlId;

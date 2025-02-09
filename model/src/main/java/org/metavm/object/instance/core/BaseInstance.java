@@ -1,6 +1,7 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.entity.NoProxy;
+import org.metavm.entity.natives.NativeBase;
 
 import javax.annotation.Nullable;
 

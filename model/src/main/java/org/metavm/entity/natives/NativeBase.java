@@ -5,9 +5,9 @@ import org.metavm.object.instance.core.IntValue;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.InternalException;
 
-public class NativeBase {
+public interface NativeBase {
 
-    protected int getInt(Value instance) {
+    default int getInt(Value instance) {
         if(instance instanceof IntValue intValue) {
             return intValue.value;
         }
@@ -16,7 +16,7 @@ public class NativeBase {
         }
     }
 
-    protected boolean getBool(Value instance) {
+    default boolean getBool(Value instance) {
         if(instance instanceof BooleanValue boolInstance) {
             return boolInstance.getValue();
         }
@@ -25,6 +25,6 @@ public class NativeBase {
         }
     }
 
-    public void flush() {}
+    default void flush() {}
 
 }

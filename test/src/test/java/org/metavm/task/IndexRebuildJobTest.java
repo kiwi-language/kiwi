@@ -32,22 +32,23 @@ public class IndexRebuildJobTest extends TestCase {
     }
 
     public void test() {
-        IndexRebuildTask job = new IndexRebuildTask();
-        TestUtils.doInTransactionWithoutResult(() -> {
+        var task = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
                 for (int i = 0; i < 100; i++) {
-                    var foo = new Foo("foo" + i, null);
-                    foo.setBar(new Bar(foo, "bar" + i));
+                    var foo = new Foo(context.allocateRootId(), "foo" + i, null);
+                    foo.setBar(new Bar(foo.nextChildId(), foo, "bar" + i));
                     context.bind(foo);
                 }
-                context.bind(job);
+                var t = new IndexRebuildTask(context.allocateRootId());
+                context.bind(t);
                 context.finish();
+                return t;
             }
         });
         instanceSearchService.clear();
         TestUtils.doInTransactionWithoutResult(() -> {
             try (var context = newContext()) {
-                var job2 = context.getEntity(IndexRebuildTask.class, job.getId());
+                var job2 = context.getEntity(IndexRebuildTask.class, task.getId());
                 for (int i = 0; i < 50; i++) {
                     if (job2.run0(context, context))
                         break;

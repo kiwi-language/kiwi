@@ -65,8 +65,8 @@ public enum CommitState {
         }
 
         @Override
-        public Task createTask(Commit commit) {
-            return new SimpleDDLTask(commit, this);
+        public Task createTask(Commit commit, IInstanceContext context) {
+            return new SimpleDDLTask(context.allocateRootId(), commit, this);
         }
 
         @Override
@@ -294,8 +294,8 @@ public enum CommitState {
         return Utils.findRequired(values(), s -> s.code == code);
     }
 
-    public Task createTask(Commit commit) {
-        return new DDLTask(commit, this);
+    public Task createTask(Commit commit, IInstanceContext context) {
+        return new DDLTask(context.allocateRootId(), commit, this);
     }
 
     public void transition(Commit commit, IInstanceContext taskContext) {
@@ -310,7 +310,7 @@ public enum CommitState {
         }
         commit.setState(nextState);
         if(!nextState.isTerminal()) {
-            var nextTask = nextState.createTask(commit);
+            var nextTask = nextState.createTask(commit, taskContext);
             if(DISABLE_DELAY)
                 taskContext.bind(nextTask);
             else

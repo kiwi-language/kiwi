@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
+import org.metavm.entity.natives.StatefulNative;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;
 import org.metavm.object.type.Klass;
@@ -53,6 +54,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     private ParameterizedMap parameterizedMap;
     private final transient WeakReference<IInstanceContext> enclosingEntityContext;
+    private final boolean tracing = DebugEnv.traceContextActivity;
 
     public BaseInstanceContext(long appId,
                                IInstanceContext parent,
@@ -387,14 +389,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public abstract boolean isFinished();
 
 
-    @Override
-    public void initIdManually(Instance instance, Id id) {
-        Utils.require(instance.getContext() == this,
-                () -> "Instance " + instance + " is not managed by this context");
-        instance.initId(id);
-        onIdInitialized(instance);
-    }
-
     protected void onIdInitialized(Instance instance) {
         instanceMap.put(instance.tryGetId(), instance);
         listeners.forEach(l -> l.onInstanceIdInit(instance));
@@ -496,7 +490,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (parent != null && !parent.isRemoved() && !removalBatch.contains(parent)) {
             switch (parent) {
                 case ClassInstance classParent -> {
-                    if (instance instanceof MvClassInstance mvInst) {
+                    if (classParent.getNativeObject() instanceof StatefulNative statefulNative) {
+                        statefulNative.onChildRemove(instance);
+                    }
+                    else if (instance instanceof MvInstance mvInst) {
                         var parentField = requireNonNull(mvInst.getParentField());
                         if (classParent.getField(parentField) instanceof Reference r && r.get() == instance) {
                             if (parentField.isNullable())
@@ -560,7 +557,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public void batchBind(Collection<Instance> instances) {
         instances.forEach(this::checkForBind);
         for (var inst : instances) {
-            if (inst.tryGetTreeId() == null) add(inst);
+//            if (inst.tryGetTreeId() == null) add(inst);
+            add(inst);
             if (inst instanceof Entity entity) updateMemoryIndex(entity);
         }
     }
@@ -569,8 +567,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         //        NncUtils.requireFalse(instance.isEphemeral(), "Can not bind an ephemeral instance");
 //        NncUtils.requireFalse(instance.isValue(), "Can not bind a value instance");
         Utils.require(instance.getContext() == null, () -> "Instance " + instance + "  already bound");
-        Utils.require(instance.tryGetTreeId() == null,
-                () -> "Can not bind a persisted instance: " + instance);
+//        Utils.require(instance.tryGetTreeId() == null,
+//                () -> "Can not bind a persisted instance: " + instance);
         Utils.require(!instance.isRemoved(),
                 () -> "Can not bind instance " + instance + " because it's already removed");
     }
@@ -580,7 +578,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             var added = doCraw(this);
             entry.addMessage("numNewInstances", added.size());
             for (var inst : added) {
-                if (inst.tryGetTreeId() == null && !containsInstance(inst)) {
+                if (/*inst.tryGetTreeId() == null && */!containsInstance(inst)) {
                     add(inst);
                 }
             }
@@ -611,6 +609,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private void add(Instance instance) {
+        if (tracing)
+            logger.trace("Adding instance {} to context", instance.tryGetId());
         Utils.require(instance.getContext() == null);
         instance.setContext(this);
         if (instance.tryGetId() == null && instance.isValue())
@@ -628,7 +628,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (instance.tryGetCurrentId() != null) {
 //            logger.info("Adding instance {} to context, treeId: {}", instance.getId(), instance.getId().tryGetTreeId());
             if (instanceMap.put(instance.tryGetCurrentId(), instance) != null)
-                logger.warn("Duplicate instance add to context: " + instance.tryGetCurrentId());
+                logger.warn("Duplicate instance add to context type: {}, ID: {}",
+                        instance.getInstanceType().getTypeDesc(), instance.tryGetCurrentId());
         }
         if (instance.tryGetOldId() != null)
             instanceMap.put(instance.tryGetOldId(), instance);
@@ -684,20 +685,31 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private List<Instance> doCraw(Iterable<Instance> instances) {
+        var tracing = DebugEnv.traceCrawling;
         var added = new ArrayList<Instance>();
         var visited = new IdentitySet<Instance>();
         for (var instance : instances) {
             if (instance.isRoot() && !instance.isRemoved())
                 instance.visitGraph(i -> {
+                    if (tracing)
+                        logger.trace("Crawler is visiting {} ({})", i, i.tryGetId());
                     if (i instanceof StringInstance || i.isRemoved())
                         return false;
                     var ctx = i.getContext();
                     if (ctx != null && ctx != BaseInstanceContext.this)
                         return false;
-                    if (ctx == null)
+                    if (ctx == null) {
+                        if (tracing)
+                            logger.trace("Crawler found new instance {} ({}) @ {}", i, i.tryGetId(), System.identityHashCode(i));
                         added.add(i);
+                    }
                     return true;
-                }, r -> r.tryGetId() == null || instanceMap.containsKey(r.getId()), visited);
+                }, r -> {
+                    if (r.isNew() && r.resolveDurable().getContext() == null) {
+                        return true;
+                    }
+                    return r.tryGetId() == null || instanceMap.containsKey(r.getId());
+                }, visited);
         }
         return added;
     }

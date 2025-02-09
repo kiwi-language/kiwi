@@ -128,24 +128,20 @@ public class ClassTypeTest extends TestCase {
     }
 
     public void testNestedParameterizedType() {
-        var listKlass = TestUtils.newKlassBuilder("List")
-                .typeParameters(new TypeVariable(null, "E", DummyGenericDeclaration.INSTANCE))
-                .build();
-        var fooKlass = TestUtils.newKlassBuilder("Foo")
-                .typeParameters(
-                        new TypeVariable(null, "K", DummyGenericDeclaration.INSTANCE),
-                        new TypeVariable(null, "V", DummyGenericDeclaration.INSTANCE)
-                )
-                .build();
-        var entryKlass = TestUtils.newKlassBuilder("Entry")
-                .typeParameters(
-                        new TypeVariable(null, "K", DummyGenericDeclaration.INSTANCE),
-                        new TypeVariable(null, "V", DummyGenericDeclaration.INSTANCE)
-                )
-                .build();
-        TestUtils.initEntityIds(listKlass);
-        TestUtils.initEntityIds(fooKlass);
-        TestUtils.initEntityIds(entryKlass);
+        var listKlass = TestUtils.newKlassBuilder("List").build();
+        listKlass.setTypeParameters(List.of(
+                new TypeVariable(listKlass.nextChildId(), "E", listKlass)
+        ));
+        var fooKlass = TestUtils.newKlassBuilder("Foo").build();
+        fooKlass.setTypeParameters(List.of(
+                new TypeVariable(fooKlass.nextChildId(), "K", fooKlass),
+                new TypeVariable(fooKlass.nextChildId(), "V", fooKlass)
+        ));
+        var entryKlass = TestUtils.newKlassBuilder("Entry").build();
+        entryKlass.setTypeParameters(List.of(
+                new TypeVariable(entryKlass.nextChildId(), "K", entryKlass),
+                new TypeVariable(entryKlass.nextChildId(), "V", entryKlass)
+        ));
         var classType = new KlassType(
                 null,
                 listKlass,

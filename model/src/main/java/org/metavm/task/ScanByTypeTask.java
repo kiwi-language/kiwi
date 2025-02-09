@@ -29,8 +29,8 @@ public abstract class ScanByTypeTask extends ScanTask {
     private static Klass __klass__;
     protected Type type;
 
-    protected ScanByTypeTask(String title, Type type) {
-        super(title);
+    protected ScanByTypeTask(Id id, String title, Type type) {
+        super(id, title);
         this.type = type;
     }
 

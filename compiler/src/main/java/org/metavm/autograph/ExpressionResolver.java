@@ -5,6 +5,7 @@ import com.intellij.psi.tree.IElementType;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.BinaryOperator;
 import org.metavm.flow.*;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -1042,7 +1043,7 @@ public class ExpressionResolver {
         enterLambda(expression);
         var returnType = typeResolver.resolveNullable(TranspileUtils.getLambdaReturnType(expression), ResolutionStage.DECLARATION);
         var funcInterface = (ClassType) typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType());
-        var lambda = new Lambda(null, List.of(), returnType, methodGenerator.getMethod());
+        var lambda = new Lambda(TmpId.random(), List.of(), returnType, methodGenerator.getMethod());
         var parameters = new ArrayList<Parameter>();
         int i = 0;
         for (var psiParameter : expression.getParameterList().getParameters()) {
@@ -1079,7 +1080,7 @@ public class ExpressionResolver {
 
     private Parameter resolveParameter(PsiParameter psiParameter, Callable callable) {
         return new Parameter(
-                null, psiParameter.getName(),
+                TmpId.random(), psiParameter.getName(),
                 typeResolver.resolveNullable(psiParameter.getType(), ResolutionStage.DECLARATION),
                 callable
         );

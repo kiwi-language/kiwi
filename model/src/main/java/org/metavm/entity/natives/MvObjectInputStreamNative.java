@@ -9,7 +9,7 @@ import org.metavm.util.MvObjectInputStream;
 import java.io.IOException;
 import java.util.Objects;
 
-public class MvObjectInputStreamNative extends NativeBase {
+public class MvObjectInputStreamNative implements NativeBase {
 
     private final InstanceInput input;
 

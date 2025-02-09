@@ -4,6 +4,8 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.mocks.EntityBar;
 import org.metavm.entity.mocks.EntityFoo;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Klass;
@@ -36,12 +38,12 @@ public class EntityContextTest extends TestCase {
             Id barId;
         };
         TestUtils.doInTransactionWithoutResult(() -> {
-            try (var entityContext = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                var bar = new EntityBar("bar001");
-                var foo = new EntityFoo("foo", bar);
-                entityContext.bind(bar);
-                entityContext.bind(foo);
-                entityContext.finish();
+            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                var bar = new EntityBar(context.allocateRootId(), "bar001");
+                var foo = new EntityFoo(context.allocateRootId(), "foo", bar);
+                context.bind(bar);
+                context.bind(foo);
+                context.finish();
                 ref.fooId = foo.getId();
                 ref.barId = foo.getBar().getId();
             }
@@ -82,7 +84,7 @@ public class EntityContextTest extends TestCase {
             }
         });
 
-        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+        try(var context = newContext()) {
             var klass = context.getKlass(klassId);
             var field = klass.getStaticFieldByName("name");
             var sft = StaticFieldTable.getInstance(klass.getType(), context);
@@ -90,6 +92,34 @@ public class EntityContextTest extends TestCase {
             Assert.assertEquals("foo", Instances.toJavaString(field.getStatic(context)));
         }
 
+    }
+
+    public void testBindingKlass() {
+        var fooKlassId = TestUtils.doInTransaction(() -> {
+            try (var context = newContext()) {
+                var fooKlass = TestUtils.newKlassBuilder("Foo").build();
+                FieldBuilder.newBuilder("name", fooKlass, Types.getStringType()).build();
+                MethodBuilder.newBuilder(fooKlass, "getName")
+                        .isNative(true)
+                        .build();
+                context.bind(fooKlass);
+                context.finish();
+                return fooKlass.getId();
+            }
+        });
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var fooKlass = context.getKlass(fooKlassId);
+            Assert.assertEquals("Foo", fooKlass.getName());
+            var f = fooKlass.findFieldByName("name");
+            Assert.assertNotNull(f);
+            var m = fooKlass.findMethodByName("getName");
+            Assert.assertNotNull(m);
+        }
+    }
+
+    private IInstanceContext newContext() {
+        return entityContextFactory.newContext(TestConstants.APP_ID);
     }
 
 }

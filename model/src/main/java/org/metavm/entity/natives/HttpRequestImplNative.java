@@ -5,7 +5,7 @@ import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
 
-public class HttpRequestImplNative extends NativeBase {
+public class HttpRequestImplNative implements NativeBase {
 
     private final HttpRequestImpl instance;
 

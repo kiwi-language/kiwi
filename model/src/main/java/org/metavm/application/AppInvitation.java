@@ -8,6 +8,7 @@ import org.metavm.api.Entity;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -37,7 +38,7 @@ public class AppInvitation extends org.metavm.entity.Entity {
     public static AppInvitation create(AppInvitationDTO invitationDTO, IInstanceContext platformCtx) {
         var app = platformCtx.getEntity(Application.class, invitationDTO.appId());
         var user = platformCtx.getEntity(PlatformUser.class, invitationDTO.userId());
-        return new AppInvitation(app, user, invitationDTO.isAdmin());
+        return new AppInvitation(platformCtx.allocateRootId(), app, user, invitationDTO.isAdmin());
     }
 
     private Reference application;
@@ -45,7 +46,8 @@ public class AppInvitation extends org.metavm.entity.Entity {
     private boolean isAdmin;
     private AppInvitationState state = AppInvitationState.INITIAL;
 
-    public AppInvitation(Application application, User user, boolean isAdmin) {
+    public AppInvitation(Id id, Application application, User user, boolean isAdmin) {
+        super(id);
         this.application = application.getReference();
         this.user = user.getReference();
         this.isAdmin = isAdmin;

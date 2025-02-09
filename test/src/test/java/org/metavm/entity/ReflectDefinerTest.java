@@ -3,6 +3,7 @@ package org.metavm.entity;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.flow.Method;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Utils;
 import org.metavm.util.TestUtils;
@@ -27,6 +28,7 @@ public class ReflectDefinerTest extends TestCase {
 
     public void test() {
         var treeSetKlass = getKlass(TreeSet.class);
+        treeSetKlass.resetHierarchy();
         var constructors = Utils.filter(treeSetKlass.getMethods(), Method::isConstructor);
         Assert.assertEquals(4, constructors.size());
         for (Method c : constructors) {
@@ -56,7 +58,7 @@ public class ReflectDefinerTest extends TestCase {
         var existing = map.get(javaClass);
         if(existing != null)
             return existing;
-        var definer = new ReflectDefiner(javaClass, TestUtils.nextKlassTag(), this::getKlass, map::put);
+        var definer = new ReflectDefiner(javaClass, TestUtils.nextKlassTag(), this::getKlass, map::put, o -> TmpId.random());
         var klass =  definer.defineClass().klass();
         map.put(javaClass, klass);
         return klass;

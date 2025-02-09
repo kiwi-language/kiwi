@@ -12,7 +12,7 @@ import org.metavm.util.Instances;
 import java.util.List;
 
 @Slf4j
-public class OutputStreamNative extends NativeBase {
+public class OutputStreamNative implements NativeBase {
 
     private final ClassInstance instance;
 

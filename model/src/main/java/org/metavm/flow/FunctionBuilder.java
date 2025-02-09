@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeVariable;
@@ -13,12 +14,11 @@ import java.util.List;
 
 public class FunctionBuilder {
 
-    public static FunctionBuilder newBuilder(String name) {
-        return new FunctionBuilder(name);
+    public static FunctionBuilder newBuilder(Id id, String name) {
+        return new FunctionBuilder(id, name);
     }
 
-    @Nullable
-    private Long tmpId;
+    private final Id id;
     private @NotNull String name;
     private boolean isNative;
     private boolean isSynthetic;
@@ -28,15 +28,11 @@ public class FunctionBuilder {
     private List<TypeVariable> typeParameters = new ArrayList<>();
     private MetadataState state = MetadataState.READY;
 
-    public FunctionBuilder(@NotNull String name) {
+    public FunctionBuilder(Id id, @NotNull String name) {
+        this.id = id;
         this.name = name;
     }
 
-
-    public FunctionBuilder tmpId(Long tmpId) {
-        this.tmpId = tmpId;
-        return this;
-    }
 
     public FunctionBuilder isNative() {
         this.isNative = true;
@@ -89,7 +85,7 @@ public class FunctionBuilder {
 
     public Function build() {
          var func = new Function(
-                tmpId,
+                id,
                 name,
                 isNative,
                 isSynthetic,

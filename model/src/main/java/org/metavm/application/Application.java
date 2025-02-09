@@ -9,6 +9,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.HashedValue;
 import org.metavm.entity.SearchField;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -47,7 +48,8 @@ public class Application extends org.metavm.entity.Entity {
 
     private ApplicationState state;
 
-    public Application(String name, PlatformUser owner) {
+    public Application(Id id, String name, PlatformUser owner) {
+        super(id);
         this.name = name;
         this.owner = owner.getReference();
         this.admins.add(owner.getReference());

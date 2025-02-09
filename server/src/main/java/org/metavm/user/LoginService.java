@@ -75,14 +75,14 @@ public class LoginService extends EntityContextFactoryAware {
                 token = null;
             else
                 token = directLogin(request.appId(), user, context);
-            context.bind(new LoginAttempt(token != null, request.loginName(), clientIP, new Date()));
+            context.bind(new LoginAttempt(context.allocateRootId(), token != null, request.loginName(), clientIP, new Date()));
             context.finish();
             return new LoginResult(token, user.getStringId());
         }
     }
 
     public Token directLogin(long appId, User user, IInstanceContext context) {
-        var session = new Session(user, new Date(System.currentTimeMillis() + TOKEN_TTL));
+        var session = new Session(context.allocateRootId(), user, new Date(System.currentTimeMillis() + TOKEN_TTL));
         context.bind(session);
         return new Token(appId, session.getToken());
     }

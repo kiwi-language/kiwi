@@ -3,6 +3,7 @@ package org.metavm.object.type;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.Flow;
+import org.metavm.object.instance.core.Id;
 import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
@@ -11,11 +12,11 @@ import java.util.List;
 
 public class KlassBuilder {
 
-    public static KlassBuilder newBuilder(String name, String qualifiedName) {
-        return new KlassBuilder(name, qualifiedName);
+    public static KlassBuilder newBuilder(Id id, String name, String qualifiedName) {
+        return new KlassBuilder(id, name, qualifiedName);
     }
 
-    private Long tmpId;
+    private final Id id;
     private final String name;
     private final String qualifiedName;
     private ClassType superType;
@@ -39,18 +40,14 @@ public class KlassBuilder {
     private @Nullable Klass declaringKlass;
     private boolean maintenanceDisabled;
 
-    private KlassBuilder(String name, @Nullable String qualifiedName) {
+    private KlassBuilder(Id id, String name, @Nullable String qualifiedName) {
+        this.id = id;
         this.name = name;
         this.qualifiedName = qualifiedName;
     }
 
     public KlassBuilder superType(ClassType superType) {
         this.superType = superType;
-        return this;
-    }
-
-    public KlassBuilder tmpId(Long tmpId) {
-        this.tmpId = tmpId;
         return this;
     }
 
@@ -164,9 +161,8 @@ public class KlassBuilder {
         if (Utils.isNotEmpty(typeParameters)) {
             isTemplate = true;
         }
-        Klass klass;
-        klass = new Klass(
-                tmpId,
+        var klass = new Klass(
+                id,
                 name,
                 qualifiedName,
                 superType,

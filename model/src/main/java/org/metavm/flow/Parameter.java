@@ -9,6 +9,7 @@ import org.metavm.api.JsonIgnore;
 import org.metavm.entity.*;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -16,6 +17,7 @@ import org.metavm.object.type.ITypeDef;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeMetadata;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
@@ -35,17 +37,18 @@ public class Parameter extends AttributedElement implements LocalKey, ITypeDef {
     private int typeIndex;
     private Callable callable;
 
-    public Parameter(Long tmpId,
+    public Parameter(@NotNull Id id,
                      String name,
                      Type type,
                      Callable callable) {
-        this(tmpId, name, callable.getConstantPool().addValue(type), callable);
+        this(id, name, callable.getConstantPool().addValue(type), callable);
     }
-    public Parameter(Long tmpId,
+
+    public Parameter(@NotNull Id id,
                       String name,
                       int typeIndex,
                       Callable callable) {
-        setTmpId(tmpId);
+        super(id);
         this.callable = callable;
         this.name = name;
         this.typeIndex =  typeIndex;

@@ -16,6 +16,7 @@ public class PlatformUsers {
             platformUser.leaveApplication(app);
             platformContext.bind(
                     new Message(
+                            platformContext.allocateRootId(),
                             platformUser,
                             String.format("You have left application '%s'", app.getName()),
                             MessageKind.LEAVE,

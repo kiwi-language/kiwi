@@ -128,6 +128,8 @@ public class KlassType extends ClassType {
     @Override
     public void write(MvOutput output) {
         if (owner == null && typeArguments == null) {
+            if (getKlass().getName().equals("$2"))
+                throw new RuntimeException("Writing local class without owner " + System.identityHashCode(this));
             output.write(WireTypes.CLASS_TYPE);
             output.writeReference(klassReference);
         } else {
@@ -160,7 +162,6 @@ public class KlassType extends ClassType {
 
     public TypeMetadata getTypeMetadata() {
         if (typeMetadata == null) {
-//            logger.debug("Getting type metadata for type {}, owner: {}", this, owner);
             typeMetadata = getKlass().getTypeMetadata(getAllTypeArguments());
         }
         return typeMetadata;

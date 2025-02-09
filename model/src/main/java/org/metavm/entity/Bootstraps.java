@@ -26,14 +26,14 @@ public class Bootstraps {
             ThreadConfigs.sharedParameterizedElements(true);
             ContextUtil.setAppId(ROOT_APP_ID);
             var identityContext = new IdentityContext();
-            var defContext = new SystemDefContext(stdAllocators, columnStore, typeTagStore, identityContext);
+            var defContext = new SystemDefContext(stdAllocators, typeTagStore, identityContext);
             defContext.setFieldBlacklist(fieldBlacklist);
             ModelDefRegistry.setDefContext(defContext);
             var entityClasses = EntityUtils.getModelClasses();
             for (ResolutionStage stage : ResolutionStage.values()) {
                 for (Class<?> entityClass : entityClasses) {
                     if (!entityClass.isAnonymousClass() && !classBlackList.contains(entityClass))
-                        defContext.getDef(entityClass, stage);
+                        defContext.getDef(entityClass);
                 }
             }
             defContext.postProcess();
@@ -43,7 +43,7 @@ public class Bootstraps {
             if (!idNullInstances.isEmpty()) {
                 log.warn(idNullInstances.size() + " instances have null ids. Save is required");
                 if (DebugEnv.bootstrapVerbose) {
-                    for (int i = 0; i < 10; i++) {
+                    for (int i = 0; i < Math.min(10, idNullInstances.size()); i++) {
                         var inst = idNullInstances.get(i);
                         log.warn("instance with null id: {}, identity: {}", Instances.getInstancePath(inst),
                                 identityContext.getModelId((Entity) inst));

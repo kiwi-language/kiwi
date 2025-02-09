@@ -1,6 +1,7 @@
 package org.metavm.http;
 
 import org.metavm.api.Entity;
+import org.metavm.api.EntityFlow;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpResponse;
@@ -21,37 +22,39 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@Entity(ephemeral = true, systemAPI = true)
+@Entity(ephemeral = true)
 public class HttpResponseImpl implements HttpResponse, NativeEphemeralObject {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
     private final transient InstanceState state = InstanceState.ephemeral(this);
 
-    public final List<HttpHeader> headers = new ArrayList<>();
+    private final List<HttpHeader> headers = new ArrayList<>();
 
-    public final List<HttpCookie> cookies = new ArrayList<>();
+    private final List<HttpCookie> cookies = new ArrayList<>();
 
     @Override
+    @EntityFlow
     public void addCookie(String name, String value) {
         cookies.removeIf(c -> c.name().equals(name));
         cookies.add(new HttpCookieImpl(name, value));
     }
 
     @Override
+    @EntityFlow
     public void addHeader(String name, String value) {
         headers.removeIf(h -> h.name().equals(name));
         headers.add(new HttpHeaderImpl(name, value));
     }
 
     @Override
-    @Nonnull
+    @EntityFlow
     public List<HttpCookie> getCookies() {
         return Collections.unmodifiableList(cookies);
     }
 
     @Override
-    @Nonnull
+    @EntityFlow
     public List<HttpHeader> getHeaders() {
         return Collections.unmodifiableList(headers);
     }
@@ -80,7 +83,6 @@ public class HttpResponseImpl implements HttpResponse, NativeEphemeralObject {
         return Instances.list(StdKlass.httpHeader.type(),
                 Utils.map(getHeaders(), h -> (Value) h));
     }
-
 
     @Override
     public void forEachReference(Consumer<Reference> action) {

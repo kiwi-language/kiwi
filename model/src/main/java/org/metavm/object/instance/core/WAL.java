@@ -56,11 +56,13 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
     private transient List<ReferencePO> removedReferences = new ArrayList<>();
     private transient List<InstanceLog> instanceLogs = new ArrayList<>();
 
-    public WAL(long appId) {
+    public WAL(@NotNull Id id, long appId) {
+        super(id);
         this.appId = appId;
     }
 
-    public WAL(long appId, String data) {
+    public WAL(@NotNull Id id,  long appId, String data) {
+        super(id);
         this.appId = appId;
         setData(data);
     }
@@ -196,8 +198,8 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         return null;
     }
 
-    public WAL copy() {
-        return new WAL(appId, data);
+    public WAL copy(Id id) {
+        return new WAL(id, appId, data);
     }
 
     @Override

@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.metavm.entity.*;
 import org.metavm.event.EventQueue;
 import org.metavm.event.MockEventQueue;
+import org.metavm.flow.MethodBuilder;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.cache.LocalCache;
@@ -56,12 +57,10 @@ public class InstanceContextTest extends TestCase {
     }
 
     public void test() {
-        var fooKlass = TestUtils.newKlassBuilder("Foo", "Foo").build();
+        var fooKlass = TestUtils.newKlassBuilder(PhysicalId.of(101L, 0L), "Foo", "Foo").build();
         var fooNameField = FieldBuilder.newBuilder("name", fooKlass, Types.getStringType())
+                .id(PhysicalId.of(111L, 0L))
                 .build();
-        fooKlass.initId(PhysicalId.of(101L, 0L));
-        fooNameField.initId(PhysicalId.of(111L, 0L));
-
         entityRepository.bind(fooKlass);
         var tmpId = TmpId.of(10001L);
         String name = "foo";
@@ -130,6 +129,5 @@ public class InstanceContextTest extends TestCase {
             }
         });
     }
-
 
 }

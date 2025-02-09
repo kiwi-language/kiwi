@@ -13,6 +13,7 @@ import org.metavm.entity.IndexDef;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.DefaultCallContext;
 import org.metavm.entity.natives.FunctionImpl;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -50,7 +51,7 @@ public class Function extends Flow implements GlobalKey {
 
     private transient @Nullable FunctionImpl nativeCode;
 
-    public Function(Long tmpId,
+    public Function(@NotNull Id id,
                     String name,
                     boolean isNative,
                     boolean isSynthetic,
@@ -58,7 +59,8 @@ public class Function extends Flow implements GlobalKey {
                     int returnTypeIndex,
                     List<TypeVariable> typeParameters,
                     MetadataState state) {
-        super(tmpId, name, isNative, isSynthetic, parameters, returnTypeIndex, typeParameters, state);
+        super(id, name, isNative, isSynthetic, returnTypeIndex, typeParameters, state);
+        setParameters(Utils.map(parameters, p -> new Parameter(nextChildId(), p.name(), p.type(), this)));
         resetBody();
     }
 

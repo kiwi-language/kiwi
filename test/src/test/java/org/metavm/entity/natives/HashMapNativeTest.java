@@ -15,7 +15,7 @@ import org.metavm.util.TestConstants;
 
 import java.util.List;
 
-public class MapNativeTest extends TestCase {
+public class HashMapNativeTest extends TestCase {
 
     private EntityContextFactory entityContextFactory;
 
@@ -38,7 +38,7 @@ public class MapNativeTest extends TestCase {
                             Types.getStringType()
                     )
             ));
-            var nat = new MapNative(map);
+            var nat = new HashMapNative(map);
             nat.HashMap(context);
             var inst = ModelDefRegistry.getDefContext().getKlass(Klass.class);
             var value = Instances.stringInstance("value");

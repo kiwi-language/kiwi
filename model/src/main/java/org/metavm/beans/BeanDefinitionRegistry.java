@@ -53,10 +53,11 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
         var existing = context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance());
         if(existing != null)
             throw new IllegalStateException("BeanDefinitionRegistry already exists");
-        context.bind(new BeanDefinitionRegistry());
+        context.bind(new BeanDefinitionRegistry(context.allocateRootId()));
     }
 
-    private BeanDefinitionRegistry() {
+    private BeanDefinitionRegistry(Id id) {
+        super(id);
     }
 
     @Generated

@@ -31,7 +31,7 @@ public class PrimitiveNativeGenerator {
             import java.util.Map;
  
             // Generated code. Do not modify. @see @PrimitiveNativeGenerator
-            public class {U1}NativeStub extends NativeBase {
+            public class {U1}NativeStub implements NativeBase {
                 
                 private final ClassInstance instance;
 

@@ -20,6 +20,7 @@ import org.metavm.flow.NameAndType;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.cache.LocalCache;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.TmpId;
@@ -52,6 +53,8 @@ public class TestUtils {
             .enable(JsonGenerator.Feature.IGNORE_UNKNOWN)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static long nextKlassTag = 1000000;
+
+    private static long nextTreeId = 10000000L;
 
     static {
         SimpleModule module = new SimpleModule();
@@ -239,71 +242,15 @@ public class TestUtils {
         }
     }
 
-    public static void initEntityIds(Instance entry) {
-        var nextTreeIdRef = new Object() {
-            long value = 10000000L;
-        };
-        var roots = new IdentitySet<Entity>();
-        entry.visitGraph(o -> {
-            if (o instanceof Entity entity)
-                roots.add(entity.getRootEntity());
-            return true;
-        });
-        roots.forEach(r -> {
-            long treeId;
-            var nextNodeIdRef = new Object() {
-                long value;
-            };
-            if (r.hasPhysicalId()) {
-                treeId = r.getTreeId();
-                r.forEachDescendant(e -> {
-                    if (e.hasPhysicalId())
-                        nextNodeIdRef.value = Math.max(nextNodeIdRef.value, e.getId().getNodeId() + 1);
-                });
-            }
-            else
-                treeId = nextTreeIdRef.value++;
-            r.forEachDescendant(e -> {
-                if(!e.isEphemeral() && !(e instanceof ValueObject) && !e.hasPhysicalId()) {
-                    var type =
-                            ModelDefRegistry.isDefContextPresent() ? ModelDefRegistry.getType((Entity) e) : AnyType.instance;
-                    e.initId(PhysicalId.of(treeId, nextNodeIdRef.value++));
-                }
-            });
-        });
-    }
-
-    public static void initEntityTmpIds(List<? extends Instance> instances) {
-        var ref = new Object() {
-            long value = 10000L;
-        };
-        var roots = new IdentitySet<Entity>();
-        var visited = new IdentitySet<Instance>();
-        for (Instance entry : instances) {
-            entry.visitGraph(o -> {
-                if (o instanceof Entity entity)
-                    roots.add(entity.getRootEntity());
-                return true;
-            }, r -> true, visited);
-        }
-        roots.forEach(r -> {
-            r.forEachDescendant(e -> {
-                if(!e.isEphemeral() && !(e instanceof ValueObject) && !e.hasPhysicalId()) {
-                    e.initId(TmpId.of(ref.value++));
-                }
-            });
-        });
-    }
-
     public static void initInstanceIds(Instance instance) {
         initInstanceIds(List.of(instance));
     }
 
-    public static void initInstanceIds(List<Instance> instances) {
+    public static void initInstanceIds(List<? extends Instance> instances) {
         initInstanceIds(instances, new MockIdProvider());
     }
 
-    public static void initInstanceIds(List<Instance> instances, EntityIdProvider idProvider) {
+    public static void initInstanceIds(List<? extends Instance> instances, EntityIdProvider idProvider) {
         var roots = new IdentitySet<Instance>();
         var visited = new IdentitySet<Instance>();
         instances.forEach(r -> r.visitGraph(i -> {
@@ -448,6 +395,10 @@ public class TestUtils {
         return nextKlassTag++;
     }
 
+    public static Id nextRootId() {
+        return PhysicalId.of(nextTreeId++, 0);
+    }
+
     public static KlassBuilder newKlassBuilder(Class<?> javaClass) {
         return newKlassBuilder(javaClass.getSimpleName(), javaClass.getName());
     }
@@ -457,19 +408,21 @@ public class TestUtils {
     }
 
     public static KlassBuilder newKlassBuilder(String name, String qualifiedName) {
-        return KlassBuilder.newBuilder(name, qualifiedName).tag(nextKlassTag());
+        return newKlassBuilder(PhysicalId.of(nextTreeId++, 0), name, qualifiedName).tag(nextKlassTag());
+    }
+
+    public static KlassBuilder newKlassBuilder(Id id, String name, String qualifiedName) {
+        return KlassBuilder.newBuilder(id, name, qualifiedName).tag(nextKlassTag());
     }
 
     public static void ensureStringKlassInitialized() {
         if (StdKlass.string.isInitialized()) return;
         var treeId = 100000000;
-
-        var klass = TestUtils.newKlassBuilder("String", "java.lang.String")
+        var klass = TestUtils.newKlassBuilder(PhysicalId.of(treeId, 0), "String", "java.lang.String")
                 .kind(ClassKind.VALUE)
                 .build();
         StdKlass.string.set(klass);
         klass.setType(new StringType());
-        klass.initId(PhysicalId.of(treeId, 0));
         MethodBuilder.newBuilder(klass, "equals")
                 .isNative(true)
                 .returnType(PrimitiveType.booleanType)

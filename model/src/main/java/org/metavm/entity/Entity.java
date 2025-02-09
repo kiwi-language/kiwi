@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.*;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -18,12 +19,9 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
 
     private transient Entity root;
 
-    public Entity() {
-        this(null);
-    }
-
-    public Entity(Long tmpId) {
-        super(tmpId != null ? TmpId.of(tmpId) : null, 0,0 , false);
+    public Entity(@NotNull Id id) {
+        super(id, 0,0 , false);
+        state.setNew();
     }
 
     @NoProxy
@@ -80,9 +78,10 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
 
     @Override
     public final void initId(Id id) {
-        if (tryGetPhysicalId() != null)
-            throw new IllegalStateException("objectId is already initialized");
-        this.state.id = id;
+        throw new UnsupportedOperationException("Cannot call initId on " + getClass().getName());
+//        if (tryGetPhysicalId() != null)
+//            throw new IllegalStateException("objectId is already initialized");
+//        this.state.id = id;
     }
 
     @Override
@@ -113,10 +112,6 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
             return tmpId.tmpId();
         else
             return null;
-    }
-
-    public void setTmpId(Long tmpId) {
-        initId(tmpId != null ? TmpId.of(tmpId) : null);
     }
 
     @Override
@@ -203,4 +198,11 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
     public String getText() {
         return toString();
     }
+
+    public Id nextChildId() {
+        assert isRoot();
+        var treeId = tryGetTreeId();
+        return treeId != null ? PhysicalId.of(treeId, nextNodeId()) : TmpId.random();
+    }
+
 }

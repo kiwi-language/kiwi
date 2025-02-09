@@ -49,7 +49,8 @@ public class Message extends org.metavm.entity.Entity {
     private boolean read;
     private Value target;
 
-    public Message(User receiver, String title, MessageKind kind, Value target) {
+    public Message(Id id, User receiver, String title, MessageKind kind, Value target) {
+        super(id);
         this.receiver = receiver.getReference();
         this.title = title;
         this.kind = kind;

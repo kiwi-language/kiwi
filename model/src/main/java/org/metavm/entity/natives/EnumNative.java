@@ -4,7 +4,7 @@ import org.metavm.entity.StdField;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Value;
 
-public class EnumNative extends NativeBase {
+public class EnumNative implements NativeBase {
 
     private final ClassInstance instance;
 
@@ -13,8 +13,8 @@ public class EnumNative extends NativeBase {
     }
 
     public Value Enum(Value name, Value ordinal, CallContext callContext) {
-        instance.setField(StdField.enumName.get(), name);
-        instance.setField(StdField.enumOrdinal.get(), ordinal);
+        instance.setFieldForce(StdField.enumName.get(), name);
+        instance.setFieldForce(StdField.enumOrdinal.get(), ordinal);
         return instance.getReference();
     }
 

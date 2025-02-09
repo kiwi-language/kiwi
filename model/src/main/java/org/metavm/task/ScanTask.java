@@ -4,11 +4,8 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.ScanResult;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
@@ -31,8 +28,8 @@ public abstract class ScanTask extends Task {
 
     private long cursor;
 
-    protected ScanTask(String title) {
-        super(title);
+    protected ScanTask(Id id, String title) {
+        super(id, title);
     }
 
     @Generated

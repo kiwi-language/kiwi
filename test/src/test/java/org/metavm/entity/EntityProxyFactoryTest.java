@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.mocks.Bar;
 import org.metavm.mocks.Foo;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.util.ReflectionUtils;
 import org.metavm.util.TypeReference;
 
@@ -17,7 +18,7 @@ public class EntityProxyFactoryTest extends TestCase {
         Foo recursiveFooProxy = EntityProxyFactory.getProxy(Foo.class, foo -> {
             if(foo.tryGetId() == null) {
                 foo.setName("Big Foo");
-                foo.setBar(new Bar(foo, "Bar001"));
+                foo.setBar(new Bar(TmpId.random(), foo, "Bar001"));
             }
         }) ;
         Assert.assertEquals("Big Foo", recursiveFooProxy.getName());

@@ -7,6 +7,7 @@ import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -28,8 +29,8 @@ public class SimpleDDLTask extends Task implements IDDLTask {
     private Reference commitReference;
     private CommitState commitState;
 
-    public SimpleDDLTask(Commit commit, CommitState commitState) {
-        super("SimpleDDLTask-" + commitState.name());
+    public SimpleDDLTask(Id id, Commit commit, CommitState commitState) {
+        super(id, "SimpleDDLTask-" + commitState.name());
         this.commitReference = commit.getReference();
         this.commitState = commitState;
     }

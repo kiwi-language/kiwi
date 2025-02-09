@@ -110,7 +110,7 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
     @Override
     @NoProxy
-    protected void readFrom(InstanceInput input) {
+    protected void readBody(InstanceInput input) {
         var parentField = getParentField();
         var elements = this.elements;
         int len = input.readInt();

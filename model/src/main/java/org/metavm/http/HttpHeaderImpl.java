@@ -1,6 +1,7 @@
 package org.metavm.http;
 
 import org.metavm.api.Entity;
+import org.metavm.api.EntityFlow;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.object.instance.core.*;
@@ -13,7 +14,7 @@ import org.metavm.util.Instances;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@Entity(systemAPI = true)
+@Entity
 public class HttpHeaderImpl implements HttpHeader, NativeEphemeralObject {
 
     @SuppressWarnings("unused")
@@ -34,11 +35,13 @@ public class HttpHeaderImpl implements HttpHeader, NativeEphemeralObject {
     }
 
     @Override
+    @EntityFlow
     public String name() {
         return name;
     }
 
     @Override
+    @EntityFlow
     public String value() {
         return value;
     }

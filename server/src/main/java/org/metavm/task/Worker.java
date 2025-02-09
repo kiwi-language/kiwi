@@ -39,7 +39,7 @@ public class Worker extends EntityContextFactoryAware {
             try (var context = newPlatformContext()) {
                 var executorData = context.selectFirstByKey(ExecutorData.IDX_IP, Instances.stringInstance(NetworkUtils.localIP));
                 if (executorData == null) {
-                    executorData = new ExecutorData(NetworkUtils.localIP);
+                    executorData = new ExecutorData(context.allocateRootId(), NetworkUtils.localIP);
                     context.bind(executorData);
                 }
                 executorData.setAvailable(true);

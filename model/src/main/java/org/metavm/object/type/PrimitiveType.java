@@ -170,10 +170,6 @@ public class PrimitiveType extends Type {
         return PrimitiveTypeKey.getTypeKeyCode(kind.code());
     }
 
-    public Klass getKlass() {
-        return kind.getKlass();
-    }
-
     @Override
     public void write(MvOutput output) {
         output.write(PrimitiveTypeKey.getTypeKeyCode(kind.code()));

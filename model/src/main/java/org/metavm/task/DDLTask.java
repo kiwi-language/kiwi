@@ -7,10 +7,7 @@ import org.metavm.api.Generated;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
@@ -34,8 +31,8 @@ public class DDLTask extends ScanTask implements IDDLTask {
     private Reference commitReference;
     private CommitState commitState;
 
-    public DDLTask(Commit commit, CommitState commitState) {
-        super(String.format("DDLTask-%s", commitState.name()));
+    public DDLTask(Id id, Commit commit, CommitState commitState) {
+        super(id, String.format("DDLTask-%s", commitState.name()));
         this.commitReference = commit.getReference();
         this.commitState = commitState;
     }
@@ -67,7 +64,7 @@ public class DDLTask extends ScanTask implements IDDLTask {
         var commit = getCommit();
         if (commit.getState() != CommitState.ABORTING) {
             commit.setState(CommitState.ABORTING);
-            taskContext.bind(new DDLTask(getCommit(), CommitState.ABORTING));
+            taskContext.bind(new DDLTask(taskContext.allocateRootId(), getCommit(), CommitState.ABORTING));
         }
         else
             log.error("Failed to rollback DDL {}", commit.getId());

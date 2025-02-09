@@ -28,8 +28,8 @@ public class AddFieldTask extends ScanByClassTask {
     private static Klass __klass__;
     private Reference fieldReference;
 
-    protected AddFieldTask(ClassType type, Field field) {
-        super("Add field", type);
+    protected AddFieldTask(Id id, ClassType type, Field field) {
+        super(id, "Add field", type);
         this.fieldReference = field.getReference();
     }
 

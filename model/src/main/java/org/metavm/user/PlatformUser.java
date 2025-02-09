@@ -8,6 +8,7 @@ import org.metavm.application.ApplicationState;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -36,8 +37,8 @@ public class PlatformUser extends User {
 
     private List<Reference> applications = new ArrayList<>();
 
-    public PlatformUser(String loginName, String password, String name, List<Role> roles) {
-        super(loginName, password, name, roles);
+    public PlatformUser(Id id, String loginName, String password, String name, List<Role> roles) {
+        super(id, loginName, password, name, roles);
     }
 
     @Generated

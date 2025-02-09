@@ -30,8 +30,8 @@ public class ClearUsersTask extends Task {
     private static Klass __klass__;
     private Id appId;
 
-    protected ClearUsersTask(String title, Id appId) {
-        super(title);
+    protected ClearUsersTask(Id id, String title, Id appId) {
+        super(id, title);
         this.appId = appId;
     }
 

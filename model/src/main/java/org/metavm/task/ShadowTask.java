@@ -52,7 +52,8 @@ public class ShadowTask extends org.metavm.entity.Entity {
 
     public static BiConsumer<Long, List<Task>> saveShadowTasksHook;
 
-    public ShadowTask(long appId, Id appTaskId, long startAt, @Nullable WAL defWal) {
+    public ShadowTask(Id id, long appId, Id appTaskId, long startAt, @Nullable WAL defWal) {
+        super(id);
         this.appId = appId;
         this.appTaskId = appTaskId;
         this.startAt = startAt;

@@ -1,6 +1,6 @@
 package org.metavm.object.type;
 
-import org.metavm.entity.natives.ListNative;
+import org.metavm.entity.natives.ArrayListNative;
 import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
@@ -31,21 +31,18 @@ public class ValueFormatter {
         if (actualType instanceof KlassType classType) {
             if (classType.isList()) {
                 var param = (ListInstanceParam) instanceDTO.param();
-                ClassInstance list;
-                ListNative listNative;
+                MvClassInstance list;
+                ArrayListNative listNative;
+                var values = param.elements().stream().map(
+                        element -> parseOne(element, classType.getFirstTypeArgument(), null, context)
+                );
                 if (!instanceDTO.isNew()) {
-                    list = (ClassInstance) context.get(instanceDTO.parseId());
-                    listNative = new ListNative(list);
+                    list = (MvClassInstance) context.get(instanceDTO.parseId());
+                    listNative = Instances.getListNative(list);
                     listNative.clear();
+                    values.forEach(listNative::add);
                 } else {
-                    list = ClassInstance.allocate(classType);
-                    listNative = new ListNative(list);
-                    listNative.List();
-                }
-                for (FieldValue element : param.elements()) {
-                    listNative.add(
-                            parseOne(element, classType.getFirstTypeArgument(),
-                                    null, context));
+                    list = Instances.newList(classType, values.toList());
                 }
                 return list.getReference();
             } else {

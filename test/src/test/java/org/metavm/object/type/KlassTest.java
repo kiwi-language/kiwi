@@ -26,7 +26,6 @@ public class KlassTest extends TestCase {
 
     public void testIO() {
         var testKlasses = MockUtils.createTestKlasses();
-        TestUtils.initEntityTmpIds(testKlasses);
         var fooKlass = testKlasses.getFirst();
         var nameIndexKlass = testKlasses.get(1);
         var supplierKlass = testKlasses.get(2);
@@ -117,7 +116,6 @@ public class KlassTest extends TestCase {
         var nameIndexKlass = testKlasses.get(1);
         var supplierKlass = testKlasses.get(2);
 
-        TestUtils.initEntityIds(fooKlass);
         Assert.assertNotNull(nameIndexKlass.tryGetId());
         Assert.assertNotNull(supplierKlass.tryGetId());
 

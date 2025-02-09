@@ -18,8 +18,6 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static org.metavm.object.type.ResolutionStage.*;
-
 @Slf4j
 public class SystemDefContext extends DefContext implements DefMap, IInstanceContext, TypeRegistry {
 
@@ -30,35 +28,25 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     private final StdIdProvider stdIdProvider;
     private final Set<Entity> entities = new IdentitySet<>();
     private final IdentityContext identityContext;
-    private final ColumnStore columnStore;
     private final TypeTagStore typeTagStore;
-    private final Map<Type, KlassParser<?>> parsers = new HashMap<>();
     private final EntityMemoryIndex memoryIndex = new EntityMemoryIndex();
     private final Map<Id, Entity> entityMap = new HashMap<>();
     private final Set<java.lang.reflect.Field> fieldBlacklist = new HashSet<>();
     private final Set<ClassType> typeDefTypes = new HashSet<>();
     private final Set<ClassType> functionTypes = new HashSet<>();
     private final StandardDefBuilder standardDefBuilder;
-    private final IdInitializer idInitializer;
     private final Profiler profiler = new Profiler();
 
-    public SystemDefContext(StdAllocators stdAllocators, ColumnStore columnStore, TypeTagStore typeTagStore) {
-        this(stdAllocators, columnStore, typeTagStore, new IdentityContext());
+    public SystemDefContext(StdAllocators stdAllocators, TypeTagStore typeTagStore) {
+        this(stdAllocators, typeTagStore, new IdentityContext());
     }
 
-    public SystemDefContext(StdAllocators allocators, ColumnStore columnStore, TypeTagStore typeTagStore, IdentityContext identityContext) {
+    public SystemDefContext(StdAllocators allocators, TypeTagStore typeTagStore, IdentityContext identityContext) {
         this.stdIdProvider = new StdIdProvider(allocators);
         this.identityContext = identityContext;
         this.typeTagStore = typeTagStore;
         standardDefBuilder = new StandardDefBuilder(this);
         standardDefBuilder.initRootTypes();
-        this.columnStore = columnStore;
-        this.idInitializer = new BootIdInitializer(new BootIdProvider(allocators), identityContext);
-    }
-
-    @Override
-    public KlassDef<?> getDef(Type javaType) {
-        return getDef(javaType, DEFINITION);
     }
 
     @Override
@@ -66,23 +54,12 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         return Objects.requireNonNull(tryGetDef(typeDef), "Can not find def for: " + typeDef);
     }
 
-    public void ensureStage(org.metavm.object.type.Type type, ResolutionStage stage) {
-        type.accept(new StructuralTypeVisitor() {
-            @Override
-            public Void visitKlassType(KlassType type, Void unused) {
-                var def = Objects.requireNonNull(typeDef2Def.get(type.getKlass()));
-                getDef(def.getJavaClass(), stage);
-                return super.visitKlassType(type, unused);
-            }
-        }, null);
-    }
-
-    public KlassDef<?> getDef(Type javaType, ResolutionStage stage) {
+    public KlassDef<?> getDef(Type javaType) {
         checkJavaType(javaType);
         var existing = javaType2Def.get(javaType);
         if (existing != null && existing.getParser() == null)
             return existing;
-        return parseType(javaType, stage);
+        return parseType(javaType);
     }
 
     @SuppressWarnings("unused")
@@ -112,10 +89,15 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         return getDef(javaClass).getTypeDef();
     }
 
-    private Id getEntityId(Entity entity) {
-        if (entity instanceof ValueObject || entity.isEphemeral())
-            return null;
-        return stdIdProvider.getId(identityContext.getModelId(entity));
+    @Override
+    public Id getModelId(Object o) {
+        var identity = o instanceof ModelIdentity i ? i : ModelIdentities.getIdentity(o);
+        var id = stdIdProvider.getId(identity);
+//        if (DebugEnv.flag) {
+            if (id == null)
+                throw new NullPointerException("Failed to get id for model: " + o);
+//        }
+        return id;
     }
 
     @SuppressWarnings("unchecked")
@@ -138,79 +120,17 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         return typeDef2Def.get(typeDef);
     }
 
-    private KlassParser<?> getParser(Type javaType) {
-        javaType = EntityUtils.getEntityType(javaType);
-        var parser = parsers.get(javaType);
-        if (parser != null)
-            return parser;
-        parser = createParser(javaType);
-        parsers.put(javaType, parser);
-        return parser;
-    }
-
-    private KlassParser<?> createParser(Type javaType) {
-        Class<?> javaClass = ReflectionUtils.getRawClass(javaType);
-        if (Value.class == javaClass || Reference.class == javaClass) {
-            throw new InternalException("Instance def should be predefined by StandardDefBuilder");
-        } else {
-            Utils.require(javaType == javaClass,
-                    "Generic type not supported: " + javaType);
-            return new KlassParser<>(javaClass, javaType, this, columnStore);
-        }
-    }
-
-    private @NotNull KlassDef<?> parseType(Type javaType, ResolutionStage stage) {
-        if(javaType instanceof Class<?> javaClass && javaClass.getName().startsWith("java.")) {
-            var def = new KlassDef<>(
-                    javaClass,
-                    standardDefBuilder.parseKlass(javaClass)
-            );
-            preAddDef(def);
-            afterDefInitialized(def);
-            return def;
-        }
-        var parser = parsers.get(javaType);
-        KlassDef<?> def;
-        if (parser == null) {
-            Utils.require(javaType2Def.get(javaType) == null);
-            parser = getParser(javaType);
-            def = parser.create();
-            //noinspection unchecked,rawtypes
-            def.setParser((KlassParser) parser);
-            preAddDef(def);
-        } else
-            def = parser.get();
-        var curStage = parser.setStage(stage);
-        if (curStage.isBefore(SIGNATURE) && stage.isAfterOrAt(SIGNATURE)) {
-            parser.generateSignature();
-            tryInitDefEntityIds(def);
-        }
-        if (curStage.isBefore(DECLARATION) && stage.isAfterOrAt(DECLARATION)) {
-            parser.generateDeclaration();
-            tryInitDefEntityIds(def);
-        }
-        if (curStage.isBefore(DEFINITION) && stage.isAfterOrAt(DEFINITION)) {
-            parser.generateDefinition();
-            afterDefInitialized(def);
-        }
+    private @NotNull KlassDef<?> parseType(Type javaType) {
+        var javaClass = ReflectionUtils.getRawClass(javaType);
+        var parser = new KlassParser<>(javaClass, this, this::getModelId);
+        var def = parser.parse();
+        afterDefInitialized(def);
         return def;
     }
 
     @Override
     public boolean containsJavaType(Type javaType) {
         return javaType2Def.containsKey(javaType);
-    }
-
-    public Map<String, Id> getStdIdMap() {
-        var stdIds = new HashMap<String, Id>();
-        for (var entity : entities) {
-            var id = entity.tryGetId();
-            if (id instanceof PhysicalId) {
-                var modeId = identityContext.getModelId(entity);
-                stdIds.put(modeId.qualifiedName(), id);
-            }
-        }
-        return stdIds;
     }
 
     @Override
@@ -225,7 +145,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         if (existing != null && existing != def)
             throw new InternalException("Def for type " + def.getTypeDef() + " already exists. Def: " + existing);
         typeDef2Def.put(def.getTypeDef(), def);
-        tryInitDefEntityIds(def);
     }
 
     @Override
@@ -239,7 +158,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         if (def.isInitialized())
             return;
         def.setInitialized(true);
-        tryInitDefEntityIds(def);
         def.getEntities().forEach(this::writeEntityIfNotPresent);
     }
 
@@ -248,26 +166,13 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
             writeEntity(entity);
     }
 
-    private void tryInitDefEntityIds(KlassDef<?> def) {
-        def.getEntities().forEach(entity -> entity.forEachDescendant(i -> tryInitEntityId((Entity) i)));
-    }
-
-    private void tryInitEntityId(Entity entity) {
-        if (entity.isDurable()) {
-            var id = getEntityId(entity);
-            if(id != null) {
-                entityMap.put(id, entity);
-                if ((entity instanceof IdInitializing idInitializing) && idInitializing.tryGetId() == null) {
-                    idInitializing.initId(id);
-                }
-            }
-        }
-    }
-
     void writeEntity(Entity entity) {
         if (entities.add(entity)) {
-            if (!(entity instanceof ValueObject)) tryInitEntityId(entity);
-        } else
+            entity.setContext(this);
+            if (entity.tryGetId() != null)
+                entityMap.put(entity.getId(), entity);
+        }
+        else
             throw new InternalException("Entity " + entity + " is already written to the context");
     }
 
@@ -280,15 +185,11 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
         return identityContext.getIdentityMap();
     }
 
-    private void ensureAllDefsDefined() {
-        new ArrayList<>(parsers.values()).forEach(p -> ensureStage(p.get().getType(), DEFINITION));
-    }
-
     public void flush() {
         try (var ignored = getProfiler().enter("flush")) {
-            ensureAllDefsDefined();
             crawNewEntities();
             recordHotTypes();
+            setupIdentityContext();
         }
     }
 
@@ -307,6 +208,14 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     @Override
     public boolean isFunctionType(ClassType type) {
         return functionTypes.contains(type);
+    }
+
+    private void setupIdentityContext() {
+        for (Entity entity : entities) {
+            if (!(entity instanceof ValueObject || entity.isEphemeral())) {
+                identityContext.getModelId(entity);
+            }
+        }
     }
 
     private void recordHotTypes() {
@@ -396,7 +305,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     public void postProcess() {
         log.info("Post processing system def context");
         standardDefBuilder.initUserFunctions();
-        standardDefBuilder.postProcess();
         buildMemoryIndex();
         Klasses.loadKlasses(this);
         freezeKlasses();
@@ -569,11 +477,6 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     }
 
     @Override
-    public void initIdManually(Instance instance, Id id) {
-        instance.initId(id);
-    }
-
-    @Override
     public void increaseVersionsForAll() {
         for (Instance entity : entities) {
             entity.incVersion();
@@ -582,6 +485,11 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
 
     @Override
     public void updateMemoryIndex(ClassInstance instance) {
+    }
+
+    @Override
+    public long allocateTreeId() {
+        throw new UnsupportedOperationException();
     }
 
     @Nullable
@@ -602,12 +510,7 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
 
     @Override
     public void finish() {
-        flush();
-        var set = Utils.filter(entities, e -> !e.isValue() && !e.isEphemeral() && e.tryGetId() == null);
-        idInitializer.initializeIds(1L, set);
-        set.forEach(i -> entityMap.put(i.getId(), i));
-        memoryIndex.clear();
-        buildMemoryIndex();
+        throw new UnsupportedOperationException();
     }
 
     @Override

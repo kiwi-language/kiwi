@@ -1,22 +1,17 @@
 package org.metavm.task;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.IndexDef;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -45,7 +40,8 @@ public abstract class Task extends org.metavm.entity.Entity {
     @Nullable
     private TaskGroup group;
 
-    protected Task(String title) {
+    protected Task(@NotNull Id id, String title) {
+        super(id);
         this.title = title;
     }
 

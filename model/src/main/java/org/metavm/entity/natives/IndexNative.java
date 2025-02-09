@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Slf4j
-public class IndexNative extends NativeBase {
+public class IndexNative implements NativeBase {
 
     private final ClassInstance instance;
     private transient IndexRef index;
@@ -59,10 +59,7 @@ public class IndexNative extends NativeBase {
     private Value convertToList(List<Reference> result, CallContext callContext) {
         var type = (ClassType) instance.getInstanceType().getTypeArguments().get(1);
         var listType = new KlassType(null, StdKlass.arrayList.get(), List.of(type));
-        var list = ClassInstance.allocate(listType);
-        var listNative = new ListNative(list);
-        listNative.List(callContext);
-        result.forEach(e -> listNative.add(e, callContext));
+        var list = Instances.newList(listType, result);
         return list.getReference();
     }
 

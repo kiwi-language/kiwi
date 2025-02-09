@@ -6,6 +6,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -36,7 +37,8 @@ public class UpgradeFoo extends org.metavm.entity.Entity {
     @ChildEntity(since = 1)
     private List<Reference> array = new ArrayList<>();
 
-    public UpgradeFoo(String name, Value bar) {
+    public UpgradeFoo(Id id, String name, Value bar) {
+        super(id);
         this.name = name;
         this.bar = bar;
     }

@@ -4,9 +4,11 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
+import org.metavm.api.ValueObject;
 import org.metavm.entity.BuildKeyContext;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.LocalKey;
+import org.metavm.entity.Struct;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -20,14 +22,18 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@NativeEntity(6)
-@Entity
-public class StaticFieldTableEntry extends org.metavm.entity.Entity implements LocalKey {
+//@NativeEntity(6)
+//@Entity
+public class StaticFieldTableEntry implements LocalKey, Struct {
     @SuppressWarnings("unused")
     private static Klass __klass__;
     private StaticFieldTable table;
     private Reference fieldReference;
     private Value value;
+
+    public StaticFieldTableEntry(StaticFieldTable table) {
+        this.table = table;
+    }
 
     public StaticFieldTableEntry(StaticFieldTable table, Field field, Value value) {
         this.table = table;
@@ -37,6 +43,20 @@ public class StaticFieldTableEntry extends org.metavm.entity.Entity implements L
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {
+        visitor.visitValue();
+        visitor.visitValue();
+    }
+
+    @Generated
+    public static StaticFieldTableEntry read(MvInput input, Object parent) {
+        var r = new StaticFieldTableEntry((StaticFieldTable) parent);
+        r.fieldReference = (Reference) input.readValue();
+        r.value = input.readValue();
+        return r;
+    }
+
+    @Generated
+    public static void visit(StreamVisitor visitor) {
         visitor.visitValue();
         visitor.visitValue();
     }
@@ -63,64 +83,43 @@ public class StaticFieldTableEntry extends org.metavm.entity.Entity implements L
         return getField().getName();
     }
 
-    @Nullable
-    @Override
-    public org.metavm.entity.Entity getParentEntity() {
-        return table;
-    }
-
-    @Override
-    public String getTitle() {
-        return "";
-    }
-
-    @Override
     public void forEachReference(Consumer<Reference> action) {
         action.accept(fieldReference);
         if (value instanceof Reference r) action.accept(r);
         else if (value instanceof org.metavm.object.instance.core.NativeValue t) t.forEachReference(action);
     }
 
-    @Override
     public void buildJson(Map<String, Object> map) {
         map.put("field", this.getField().getStringId());
-    }
-
-    @Override
-    public Klass getInstanceKlass() {
-        return __klass__;
-    }
-
-    @Override
-    public ClassType getInstanceType() {
-        return __klass__.getType();
-    }
-
-    @Override
-    public void forEachChild(Consumer<? super Instance> action) {
-    }
-
-    @Override
-    public int getEntityTag() {
-        return EntityRegistry.TAG_StaticFieldTableEntry;
+        map.put("value", this.getValue().toJson());
     }
 
     @Generated
-    @Override
-    public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.table = (StaticFieldTable) parent;
-        this.fieldReference = (Reference) input.readValue();
-        this.value = input.readValue();
-    }
-
-    @Generated
-    @Override
-    public void writeBody(MvOutput output) {
+    public void write(MvOutput output) {
         output.writeValue(fieldReference);
         output.writeValue(value);
     }
 
-    @Override
-    protected void buildSource(Map<String, Value> source) {
+    public Map<String, Object> toJson() {
+        var map = new java.util.HashMap<String, Object>();
+        buildJson(map);
+        return map;
     }
+
+    //    public void buildJson(Map<String, Object> map) {
+//        map.put("field", this.getField().getStringId());
+//        map.put("value", this.getValue().toJson());
+//        var parentEntity = this.getParentEntity();
+//        if (parentEntity != null) map.put("parentEntity", parentEntity.getStringId());
+//        map.put("title", this.getTitle());
+//        map.put("instanceKlass", this.getInstanceKlass().getStringId());
+//        map.put("instanceType", this.getInstanceType().toJson());
+//        map.put("entityTag", this.getEntityTag());
+//    }
+
+    //    public Map<String, Object> toJson() {
+//        var map = new java.util.HashMap<String, Object>();
+//        buildJson(map);
+//        return map;
+//    }
 }

@@ -235,8 +235,13 @@ public class KlassInput extends MvInput {
             existing = Objects.requireNonNull(symbolMap).get(TypeVariable.class, name);
         }
         var id = readId();
-        //noinspection unchecked
-        return existing != null ? (T) existing : getEntity(klass, id);
+        if (existing != null) {
+            //noinspection unchecked
+            return (T) existing;
+        }
+        var entity = getEntity(klass, id);
+        entity.state().setNew();
+        return entity;
     }
 
     @Override
@@ -341,7 +346,7 @@ public class KlassInput extends MvInput {
         enterSymbolMap(entity);
         entity.readHeadAndBody(this, parent);
         exitSymbolMap();
-        if (entity.tryGetId() instanceof TmpId tmpId && repository.getEntity(klass, tmpId) == null)
+        if (entity.isNew() && repository.getEntity(klass, entity.getId()) == null)
             repository.bind(entity);
         return entity;
     }
@@ -351,7 +356,7 @@ public class KlassInput extends MvInput {
     }
 
     protected void enterSymbolMap(Entity entity) {
-        symbolMap = entity.tryGetId() instanceof PhysicalId ? SymbolMap.fromEntity(entity, symbolMap) : new SymbolMap(symbolMap);
+        symbolMap = !entity.isNew() ? SymbolMap.fromEntity(entity, symbolMap) : new SymbolMap(symbolMap);
     }
 
     protected void exitSymbolMap() {

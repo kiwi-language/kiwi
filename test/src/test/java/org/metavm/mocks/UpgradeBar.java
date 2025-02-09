@@ -4,6 +4,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -25,7 +26,8 @@ public class UpgradeBar extends org.metavm.entity.Entity {
     private static Klass __klass__;
     private String name;
 
-    public UpgradeBar(String name) {
+    public UpgradeBar(Id id, String name) {
+        super(id);
         this.name = name;
     }
 

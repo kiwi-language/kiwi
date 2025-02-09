@@ -153,9 +153,8 @@ public class Instances {
 
     public static String getInstanceDetailedDesc(Value instance) {
         if (instance instanceof Reference r && r.get() instanceof ClassInstance clsInst && clsInst.getInstanceType().isList()) {
-            var listNative = new ListNative(clsInst);
-            var array = listNative.toArray();
-            return clsInst.getInstanceType().getName() + " [" + Utils.join(array, Instances::getInstanceDesc) + "]";
+            var list = Instances.toJavaList(clsInst);
+            return clsInst.getInstanceType().getName() + " [" + Utils.join(list, Instances::getInstanceDesc) + "]";
         } else
             return getInstanceDesc(instance);
     }
@@ -461,13 +460,7 @@ public class Instances {
             if (listType.getKlass() == StdKlass.list.get()) {
                 listType = KlassType.create(StdKlass.arrayList.get(), List.of(elementType));
             }
-            var list = ClassInstance.allocate(listType);
-            var listNative = new ListNative(list);
-            listNative.List();
-            for (Value element : elements) {
-                listNative.add(element);
-            }
-            return list;
+            return Instances.newList(listType, elements);
         } else
             throw new IllegalArgumentException(listType + " is not a List type");
     }
@@ -622,8 +615,8 @@ public class Instances {
                 var sft = StaticFieldTable.getInstance(enumClass.getType(), context);
                 if (referent instanceof ClassInstance object && object.getInstanceKlass() == enumClass && !sft.isEnumConstant(object.getReference())) {
                     var r1 = object.getReference();
-                    object.setField(StdField.enumName.get(), Instances.stringInstance(""));
-                    object.setField(StdField.enumOrdinal.get(), Instances.intInstance(-1));
+                    object.setFieldForce(StdField.enumName.get(), Instances.stringInstance(""));
+                    object.setFieldForce(StdField.enumOrdinal.get(), Instances.intInstance(-1));
                     var ec = mapEnumConstant(r1, enumClass, context);
                     return redirectStatus != null ? new RedirectingReference(referent, ec, redirectStatus) : ec;
                 }
@@ -1112,6 +1105,11 @@ public class Instances {
         return new ByteValue(v);
     }
 
+    public static List<Value> toJavaList(ClassInstance instance) {
+        var nat = (ArrayListNative) ((MvClassInstance) instance).getNativeObject();
+        return nat.getList();
+    }
+
     public static String toJavaString(Value value) {
         return ((StringReference) value).getValue();
     }
@@ -1158,10 +1156,7 @@ public class Instances {
 
     public static Reference list(Type elementType, Iterable<Value> values) {
         var type = KlassType.create(StdKlass.arrayList.get(), List.of(elementType));
-        var list = ClassInstance.allocate(type);
-        var nat = new ListNative(list);
-        nat.List();
-        values.forEach(nat::add);
+        var list = newList(type, values);
         return list.getReference();
     }
 
@@ -1207,4 +1202,29 @@ public class Instances {
     public static Value wrappedBooleanInstance(boolean v) {
         return BooleanNative.valueOf(booleanInstance(v));
     }
+
+    public static ArrayListNative getListNative(ClassInstance instance) {
+        return (ArrayListNative) ((MvClassInstance) instance).getNativeObject();
+    }
+
+    public static MvClassInstance newList(ClassType listType) {
+        return newList(listType, List.of());
+    }
+
+    public static MvClassInstance newList(ClassType listType, Iterable<? extends Value> values) {
+        var list = ClassInstance.allocate(listType);
+        var nat = (ArrayListNative) NativeMethods.getNativeObject(list);
+        nat.List();
+        values.forEach(nat::add);
+        return list;
+    }
+
+    public static MvOutput extractOutput(Value value) {
+        return ((MvObjectOutputStream) value.resolveObject()).getOut();
+    }
+
+    public static MvInput extractInput(Value value) {
+        return ((MvObjectInputStream) value.resolveObject()).getInput();
+    }
+
 }

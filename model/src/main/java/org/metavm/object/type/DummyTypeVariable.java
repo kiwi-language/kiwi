@@ -8,6 +8,7 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
@@ -26,7 +27,7 @@ public class DummyTypeVariable extends TypeVariable {
     private static Klass __klass__;
 
     private DummyTypeVariable() {
-        super(null, "Dummy", DummyGenericDeclaration.INSTANCE);
+        super(TmpId.random(), "Dummy", DummyGenericDeclaration.INSTANCE);
     }
 
     @Generated

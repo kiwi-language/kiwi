@@ -1,10 +1,8 @@
 package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.Entity;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.MvOutput;
@@ -80,12 +78,6 @@ public class KlassOutput extends MvOutput {
             }
             default -> throw new IllegalStateException("Unrecognized reference target: " + entity);
         }
-    }
-
-    @Override
-    public void writeEntity(Entity entity) {
-        entity.initId(TmpId.random());
-        super.writeEntity(entity);
     }
 
 }

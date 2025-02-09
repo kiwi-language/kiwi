@@ -64,11 +64,11 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         try(var context = newContext(appId);
             var ignored = ContextUtil.getProfiler().enter("createSearchSyncTask")) {
             WAL wal = instanceStore instanceof CachingInstanceStore cachingInstanceStore ?
-                    cachingInstanceStore.getWal().copy() : null;
+                    cachingInstanceStore.getWal().copy(context.allocateRootId()) : null;
 //            WAL defWal = defContext instanceof ReversedDefContext reversedDefContext ?
 //                    DefContextUtils.getWal(reversedDefContext) : null;
             context.bind(new SynchronizeSearchTask(
-                    idsToIndex, idsToRemove, wal, /*defWal != null ? defWal.getId() : null*/ null));
+                    context.allocateRootId(), idsToIndex, idsToRemove, wal, /*defWal != null ? defWal.getId() : null*/ null));
 //                this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
             context.finish();
             }
@@ -106,6 +106,11 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                                 changedFunctionIds,
                                 removedFunctionIds,
                                 new VersionRepository() {
+                                    @Override
+                                    public Id allocateId() {
+                                        return context.allocateRootId();
+                                    }
+
                                     @Nullable
                                     @Override
                                     public Version getLastVersion() {
@@ -120,7 +125,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                                     }
                                 });
                         if (!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty() || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
-                            context.bind(new PublishMetadataEventTask(changedTypeDefIds, removedTypeDefIds, changedFunctionIds, removedFunctionIds, v.getVersion(), clientId));
+                            context.bind(new PublishMetadataEventTask(context.allocateRootId(), changedTypeDefIds, removedTypeDefIds, changedFunctionIds, removedFunctionIds, v.getVersion(), clientId));
                         }
                         context.finish();
                     }

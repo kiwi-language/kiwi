@@ -6,6 +6,7 @@ import org.metavm.api.Generated;
 import org.metavm.api.NativeApi;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -35,7 +36,8 @@ public class ExecutorData extends org.metavm.entity.Entity {
     private long lastHeartbeat;
     private boolean available;
 
-    public ExecutorData(String ip) {
+    public ExecutorData(Id id, String ip) {
+        super(id);
         this.ip = ip;
     }
 

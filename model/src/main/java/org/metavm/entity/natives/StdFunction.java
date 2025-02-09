@@ -407,7 +407,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             ),
             (func, args, callContext) -> {
                 var list = args.getFirst().resolveObject();
-                var nat = new ListNative(list);
+                var nat = Instances.getListNative(list);
                 nat.sort(callContext);
                 return FlowExecResult.of(null);
             }
@@ -543,7 +543,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             List.of(ReflectionUtils.getMethod(Collections.class, "reverse", List.class)),
             (func, args, callContext) -> {
                 var list = args.getFirst().resolveObject();
-                var nat = new ListNative(list);
+                var nat = Instances.getListNative(list);
                 nat.reverse();
                 return FlowExecResult.of(null);
             }
@@ -685,10 +685,10 @@ public enum StdFunction implements ValueHolderOwner<Function> {
         Constants.emailSender = emailSender;
     }
 
-    public static List<Function> defineSystemFunctions() {
+    public static List<Function> defineSystemFunctions(DefContext defContext) {
         return Arrays.stream(values())
                 .filter(StdFunction::isSystem)
-                .map(def -> def.define(null))
+                .map(def -> def.define(defContext))
                 .toList();
     }
 
@@ -729,13 +729,13 @@ public enum StdFunction implements ValueHolderOwner<Function> {
 
     private Function parseFunction(DefContext defContext) {
         return new TypeParserImpl(
-                (String name) -> {
+                (String name1) -> {
                     if (defContext != null)
-                        return defContext.getKlass(ReflectionUtils.classForName(name));
+                        return defContext.getKlass(ReflectionUtils.classForName(name1));
                     else
                         throw new NullPointerException("defContext is null");
                 }
-        ).parseFunction(signature);
+        ).parseFunction(signature, defContext::getModelId);
     }
 
     public List<Method> getJavaMethods() {

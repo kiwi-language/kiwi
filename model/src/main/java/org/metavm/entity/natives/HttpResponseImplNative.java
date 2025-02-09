@@ -9,7 +9,7 @@ import org.metavm.util.Instances;
 import org.metavm.util.Utils;
 
 @Slf4j
-public class HttpResponseImplNative extends NativeBase {
+public class HttpResponseImplNative implements NativeBase {
 
     private final HttpResponseImpl instance;
 

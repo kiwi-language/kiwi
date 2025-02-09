@@ -7,10 +7,9 @@ import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.EntityRepository;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -45,7 +44,8 @@ public class KlassTagAssigner extends org.metavm.entity.Entity {
     private long next;
     private long max;
 
-    public KlassTagAssigner(long start, long max) {
+    public KlassTagAssigner(Id id, long start, long max) {
+        super(id);
         this.start = next = start;
         this.max = max;
     }
@@ -55,7 +55,7 @@ public class KlassTagAssigner extends org.metavm.entity.Entity {
         if(existing != null)
             throw new IllegalStateException("ClassTagAssigner already exists");
         var range = globalKlassTagAssigner.allocate(1000000);
-        context.bind(new KlassTagAssigner(range[0], range[1]));
+        context.bind(new KlassTagAssigner(context.allocateRootId(), range[0], range[1]));
     }
 
     @Generated

@@ -6,6 +6,7 @@ import org.metavm.application.Application;
 import org.metavm.api.Entity;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -25,8 +26,8 @@ public abstract class GlobalTask extends EntityScanTask<Application> {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    protected GlobalTask(String title) {
-        super(title, Application.class);
+    protected GlobalTask(Id id, String title) {
+        super(id, title, Application.class);
     }
 
     @Generated

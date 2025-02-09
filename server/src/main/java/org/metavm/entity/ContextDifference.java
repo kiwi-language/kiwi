@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.persistence.InstancePO;
@@ -87,7 +88,7 @@ public class ContextDifference {
         if (t1 == null) {
             getInstanceIds(t2).forEach(s -> {
                 if (DebugEnv.traceDifference)
-                    logger.trace("Entity {} created", s.getId());
+                    logger.trace("Entity {} created, treeId: {}", s.getId(), s.getId().getTreeId());
                 entityChange.addInsert(new VersionRT(appId, s.getId(), t2.version(), s.entityTag()));
             });
         } else if (t2 == null) {

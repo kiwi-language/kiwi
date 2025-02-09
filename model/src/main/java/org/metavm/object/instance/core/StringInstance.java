@@ -2,6 +2,7 @@ package org.metavm.object.instance.core;
 
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.CallContext;
+import org.metavm.entity.natives.CharSequenceNative;
 import org.metavm.entity.natives.NativeBase;
 import org.metavm.flow.ClosureContext;
 import org.metavm.object.instance.rest.InstanceParam;
@@ -19,7 +20,7 @@ import java.util.function.Consumer;
 
 import static org.metavm.util.Instances.toJavaString;
 
-public class StringInstance extends NativeBase implements ClassInstance {
+public class StringInstance implements CharSequenceNative, ClassInstance {
 
     private final StringReference ref;
     private String value;
@@ -392,6 +393,11 @@ public class StringInstance extends NativeBase implements ClassInstance {
     @Override
     public Instance copy() {
         return this;
+    }
+
+    @Override
+    public boolean isNew() {
+        return false;
     }
 
     // </editor-fold>

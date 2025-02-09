@@ -1,5 +1,6 @@
 package org.metavm.ddl;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
@@ -57,7 +58,8 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     private boolean cancelled = false;
     private boolean submitted;
 
-    public Commit(WAL wal,
+    public Commit(@NotNull Id id,
+                  WAL wal,
                   List<String> newFieldIds,
                   List<String> convertingFieldIds,
                   List<String> toChildFieldIds,
@@ -73,6 +75,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
                   List<String> searchEnabledKlassIds,
                   List<String> changedEnumConstantIds,
                   List<FieldChange> fieldChanges) {
+        super(id);
         this.walReference = wal.getReference();
         this.newFieldIds.addAll(newFieldIds);
         this.convertingFieldIds.addAll(convertingFieldIds);

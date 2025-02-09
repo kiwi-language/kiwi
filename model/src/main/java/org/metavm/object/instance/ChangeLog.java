@@ -43,7 +43,8 @@ public class ChangeLog extends org.metavm.entity.Entity implements Message {
     private List<InstanceLog> items = new ArrayList<>();
     private ChangeLogStatus status;
 
-    public ChangeLog(List<InstanceLog> items) {
+    public ChangeLog(Id id, List<InstanceLog> items) {
+        super(id);
         this.items.addAll(items);
         this.status = ChangeLogStatus.PENDING;
     }

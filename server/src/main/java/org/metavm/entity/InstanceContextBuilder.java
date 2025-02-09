@@ -3,7 +3,6 @@ package org.metavm.entity;
 import org.metavm.event.EventQueue;
 import org.metavm.object.instance.*;
 import org.metavm.object.instance.cache.Cache;
-import org.metavm.object.instance.core.EntityInstanceContextBridge;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.InstanceContext;
 import org.metavm.object.instance.core.WAL;
@@ -52,11 +51,6 @@ public class InstanceContextBuilder {
         this.appId = appId;
         this.instanceStore = instanceStore;
         this.idInitializer = idInitializer;
-    }
-
-    public InstanceContextBuilder dependency(EntityInstanceContextBridge dependency) {
-        this.typeDefProvider = dependency;
-        return this;
     }
 
     public InstanceContextBuilder plugins(ContextPlugin...plugins) {

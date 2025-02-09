@@ -7,6 +7,7 @@ import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.SearchField;
 import org.metavm.entity.SerializeContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceVisitor;
 import org.metavm.object.instance.core.Reference;
@@ -34,9 +35,6 @@ public class Role extends org.metavm.entity.Entity {
     @EntityField(asTitle = true)
     private String name;
 
-    public Role() {
-    }
-
     @Generated
     public static void visitBody(StreamVisitor visitor) {
         visitor.visitUTF();
@@ -48,9 +46,9 @@ public class Role extends org.metavm.entity.Entity {
         return null;
     }
 
-    public Role(Long tmpId, String name) {
-        setTmpId(tmpId);
-        this.name = name;
+    public Role(Id id, String name) {
+        super(id);
+       this.name = name;
     }
 
     public void update(RoleDTO roleDTO) {

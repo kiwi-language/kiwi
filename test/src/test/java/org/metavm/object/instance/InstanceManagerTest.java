@@ -210,7 +210,7 @@ public class InstanceManagerTest extends TestCase {
     public void testIndexQuery() {
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
-                var foo = new IndexFoo();
+                var foo = new IndexFoo(context.allocateRootId());
                 context.bind(foo);
                 context.finish();
             }

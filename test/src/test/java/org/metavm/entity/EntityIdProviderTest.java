@@ -18,10 +18,9 @@ import java.util.Set;
 public class EntityIdProviderTest extends TestCase {
 
     private void testAllocate(EntityIdProvider entityIdProvider) {
-        Klass typeType = TestUtils.newKlassBuilder("Type", null).build();
-        Klass fooType = TestUtils.newKlassBuilder("Foo", null).build();
-        typeType.initId(PhysicalId.of(1L, 0L));
-        fooType.initId(PhysicalId.of(entityIdProvider.allocateOne(TestConstants.APP_ID), 0L));
+        TestUtils.newKlassBuilder(PhysicalId.of(1L, 0L), "Type", null).build();
+        TestUtils.newKlassBuilder(PhysicalId.of(entityIdProvider.allocateOne(TestConstants.APP_ID), 0L),
+                "Foo", null).build();
         int numIdsForClass = 10;
         var ids = entityIdProvider.allocate(TestConstants.APP_ID, numIdsForClass);
         Set<Long> visitedIds = new HashSet<>();

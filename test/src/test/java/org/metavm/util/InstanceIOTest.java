@@ -74,7 +74,6 @@ public class InstanceIOTest extends TestCase {
         var namesField = FieldBuilder.newBuilder("names", fooKlass, stringArrayType)
                 .isChild(true)
                 .build();
-        TestUtils.initEntityIds(fooKlass);
         var entityMap = new HashMap<Id, Instance>();
         fooKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
         var names = new ArrayInstance(stringArrayType, List.of(Instances.stringInstance("foo")));
@@ -98,7 +97,6 @@ public class InstanceIOTest extends TestCase {
         var nameField = FieldBuilder.newBuilder("name", baseKlass, Types.getStringType()).build();
         var derivedKlass = TestUtils.newKlassBuilder("Derived").superType(baseKlass.getType()).build();
         var codeField = FieldBuilder.newBuilder("code", derivedKlass, Types.getLongType()).build();
-        TestUtils.initEntityIds(derivedKlass);
         var entityMap = new HashMap<Id, Instance>();
         baseKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
         derivedKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
@@ -134,10 +132,6 @@ public class InstanceIOTest extends TestCase {
 
         Field quxNameField = FieldBuilder
                 .newBuilder("name", quxKlass, Types.getStringType()).build();
-
-        TestUtils.initEntityIds(fooKlass);
-        TestUtils.initEntityIds(barKlass);
-        TestUtils.initEntityIds(quxField);
 
         var entityMap = new HashMap<Id, Instance>();
         fooKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));

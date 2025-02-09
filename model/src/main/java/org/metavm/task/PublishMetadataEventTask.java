@@ -7,6 +7,7 @@ import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.event.rest.dto.FunctionChangeEvent;
 import org.metavm.event.rest.dto.TypeChangeEvent;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -35,13 +36,14 @@ public class PublishMetadataEventTask extends Task {
     private long version;
     private @Nullable String clientId;
 
-    public PublishMetadataEventTask(Collection<String> changedTypeDefIds,
+    public PublishMetadataEventTask(Id id,
+                                    Collection<String> changedTypeDefIds,
                                     Collection<String> removedTypeDefIds,
                                     Collection<String> changedFunctionIds,
                                     Collection<String> removedFunctionIds,
                                     long version,
                                     @Nullable String clientId) {
-        super("PublishMetadataEventTask");
+        super(id, "PublishMetadataEventTask");
         this.changedTypeDefIds.addAll(changedTypeDefIds);
         this.removedTypeDefIds.addAll(removedTypeDefIds);
         this.changedFunctionIds.addAll(changedFunctionIds);

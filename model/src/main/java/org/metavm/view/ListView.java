@@ -6,6 +6,7 @@ import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -41,7 +42,8 @@ public class ListView extends org.metavm.entity.Entity {
     private List<Reference> visibleFields = new ArrayList<>();
     private List<Reference> searchableFields = new ArrayList<>();
 
-    public ListView(String code, Klass klass) {
+    public ListView(Id id,String code, Klass klass) {
+        super(id);
         this.code = code;
         this.klassReference = klass.getReference();
     }

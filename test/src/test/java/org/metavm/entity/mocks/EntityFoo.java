@@ -5,6 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -36,7 +37,8 @@ public class EntityFoo extends org.metavm.entity.Entity {
     @Nullable
     private ValueBaz baz;
 
-    public EntityFoo(String name, EntityBar bar) {
+    public EntityFoo(Id id, String name, EntityBar bar) {
+        super(id);
         this.name = name;
         this.bar = bar.getReference();
     }

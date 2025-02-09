@@ -226,6 +226,11 @@ public class InstanceInput extends MvInput {
         this.parentField = parentField;
     }
 
+    @Nullable
+    public Field getParentField() {
+        return parentField;
+    }
+
     public long readTreeId() {
         return treeId = readLong();
     }

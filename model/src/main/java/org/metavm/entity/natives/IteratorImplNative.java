@@ -1,26 +1,23 @@
 package org.metavm.entity.natives;
 
-import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.Instances;
-import org.metavm.util.Utils;
 
-public class IteratorImplNative extends NativeBase {
+import java.util.Iterator;
+
+public class IteratorImplNative implements NativeBase {
 
     private final ClassInstance instance;
-    private ArrayInstance array;
-    private int size;
-    private int index;
+    private Iterator<Value> iterator;
 
     public IteratorImplNative(ClassInstance instance) {
         this.instance = instance;
     }
 
     public Value IteratorImpl(ClassInstance collection, CallContext callContext) {
-        var arrayField = collection.getInstanceKlass().getFieldByName("array");
-        array = collection.getField(arrayField).resolveArray();
-        size = array.size();
+        var nat = (IterableNative) NativeMethods.getNativeObject(collection);
+        iterator = nat.iterator();
         return instance.getReference();
     }
 
@@ -29,12 +26,11 @@ public class IteratorImplNative extends NativeBase {
     }
 
     public Value hasNext() {
-        return Instances.intInstance(index < size);
+        return Instances.intInstance(iterator.hasNext());
     }
 
     public Value next(CallContext callContext) {
-        Utils.require(index < size);
-        return array.get(index++);
+        return iterator.next();
     }
 
 }

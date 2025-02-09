@@ -5,15 +5,13 @@ import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
 import org.metavm.flow.*;
 import org.metavm.object.type.*;
-import org.metavm.util.CompilerConfig;
-import org.metavm.util.Instances;
-import org.metavm.util.InternalException;
-import org.metavm.util.Utils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.LinkedList;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.util.Utils.ifNotNull;
@@ -21,6 +19,8 @@ import static org.metavm.util.Utils.ifNotNull;
 public class Generator extends VisitorBase {
 
     public static final Logger logger = LoggerFactory.getLogger(Generator.class);
+
+    public final boolean tracing = DebugEnv.traceCompilation;
 
     private final PsiClass psiClass;
     private final LinkedList<MethodGenerator> builders = new LinkedList<>();
@@ -46,12 +46,18 @@ public class Generator extends VisitorBase {
         var klass = Objects.requireNonNull(psiClass.getUserData(Keys.MV_CLASS));
         if (klass.getStage().isAfterOrAt(ResolutionStage.DEFINITION))
             return;
+        if (tracing)
+            logger.trace("Generating code for klass {}", klass.getTypeDesc());
         klass.setStage(ResolutionStage.DEFINITION);
         klass.setQualifiedName(psiClass.getQualifiedName());
+//        if (klass.isLocal())
+//            logger.debug("Processing local class {}", klass.getTypeDesc(), new Exception());
         enterClass(new ClassInfo(klass, psiClass));
         super.visitClass(psiClass);
         exitClass();
         klass.setStage(ResolutionStage.DEFINITION);
+        if (tracing)
+            logger.trace("Emitting code for klass {}", klass.getTypeDesc());
         klass.emitCode();
     }
 

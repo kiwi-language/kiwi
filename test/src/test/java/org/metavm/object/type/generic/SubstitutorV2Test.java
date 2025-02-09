@@ -23,16 +23,14 @@ public class SubstitutorV2Test extends TestCase {
 
     public void test() {
         var voidType = PrimitiveType.voidType;
+        Klass fooKlass = TestUtils.newKlassBuilder("Foo", "Foo").build();
+        var typeVar = new TypeVariable(fooKlass.nextChildId(), "E", fooKlass);
+        fooKlass.setTypeParameters(List.of(typeVar));
 
-        var typeVar = new TypeVariable(null, "E", DummyGenericDeclaration.INSTANCE);
-        Klass foo = TestUtils.newKlassBuilder("Foo", "Foo")
-                .typeParameters(typeVar)
-                .build();
-
-        var valueField = FieldBuilder.newBuilder("value", foo, typeVar.getType())
+        var valueField = FieldBuilder.newBuilder("value", fooKlass, typeVar.getType())
                 .build();
         {
-            var getValueFlow = MethodBuilder.newBuilder(foo, "getValue")
+            var getValueFlow = MethodBuilder.newBuilder(fooKlass, "getValue")
                     .returnType(typeVar.getType())
                     .build();
             var code = getValueFlow.getCode();
@@ -41,7 +39,7 @@ public class SubstitutorV2Test extends TestCase {
         }
 
         {
-            var flow = MethodBuilder.newBuilder(foo, "setValue")
+            var flow = MethodBuilder.newBuilder(fooKlass, "setValue")
                     .returnType(voidType)
                     .parameters(new NameAndType("value", typeVar.getType()))
                     .build();

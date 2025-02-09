@@ -13,11 +13,7 @@ public @interface Entity {
 
     boolean compiled() default false;
 
-    boolean anonymous() default false;
-
     boolean ephemeral() default false;
-
-    boolean systemAPI() default false;
 
     boolean searchable() default false;
 

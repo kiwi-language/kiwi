@@ -12,13 +12,13 @@ import org.metavm.util.Instances;
 import java.util.List;
 import java.util.Objects;
 
-public abstract class SetNative extends IterableNative {
+public abstract class AbstractSetNative extends AbstractCollectionNative {
 
     public Value equals(Value o, CallContext callContext) {
         if(o instanceof Reference ref) {
             if(ref.get() instanceof MvClassInstance that
                     && Objects.equals(that.getInstanceType().asSuper(StdKlass.set.get()), getInstance().getInstanceType().asSuper(StdKlass.set.get()))) {
-                var thatNat = (SetNative) NativeMethods.getNativeObject(that);
+                var thatNat = (AbstractSetNative) NativeMethods.getNativeObject(that);
                 if(size() == thatNat.size()) {
                     for (Value value : thatNat) {
                         if(!thatNat.contains0(value, callContext))
@@ -76,12 +76,12 @@ public abstract class SetNative extends IterableNative {
         return Instances.intInstance(changed);
     }
 
-    public abstract Value add(Value value, CallContext callContext);
-
+    @Override
     public Value contains(Value value, CallContext callContext) {
         return Instances.intInstance(contains0(value, callContext));
     }
 
+    @Override
     public Value size(CallContext callContext) {
         return Instances.intInstance(size());
     }

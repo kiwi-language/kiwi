@@ -5,6 +5,7 @@ import org.metavm.api.Generated;
 import org.metavm.entity.Entity;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -22,6 +23,10 @@ public abstract class DynamicTaskGroup extends TaskGroup {
     @SuppressWarnings("unused")
     private static Klass __klass__;
     private int activeTaskCount;
+
+    public DynamicTaskGroup(Id id) {
+        super(id);
+    }
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {

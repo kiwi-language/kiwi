@@ -5,6 +5,7 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Generated;
 import org.metavm.entity.Entity;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -24,7 +25,8 @@ public class EntityBar extends Entity {
     private static Klass __klass__;
     private String code;
 
-    public EntityBar(String code) {
+    public EntityBar(Id id, String code) {
+        super(id);
         this.code = code;
     }
 

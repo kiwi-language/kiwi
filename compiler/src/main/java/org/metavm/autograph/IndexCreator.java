@@ -6,6 +6,7 @@ import com.intellij.psi.PsiNewExpression;
 import com.intellij.psi.PsiTypeParameter;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.StdKlass;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Index;
 import org.metavm.object.type.Klass;
@@ -57,7 +58,7 @@ public class IndexCreator extends VisitorBase {
             var index = valueKlass.findSelfIndex(i -> i.getName().equals(name));
             var keyType = classType.getTypeArguments().getFirst();
             if(index == null)
-                index = new Index(valueKlass, name, "", TranspileUtils.isUniqueIndex(expression), keyType, null);
+                index = new Index(TmpId.random(), valueKlass, name, "", TranspileUtils.isUniqueIndex(expression), keyType, null);
             classInfo.visitedIndexes.add(index);
             var methodRef = (PsiMethodReferenceExpression) args[2];
             index.setMethod(requireNonNull(requireNonNull(methodRef.resolve()).getUserData(Keys.Method)));

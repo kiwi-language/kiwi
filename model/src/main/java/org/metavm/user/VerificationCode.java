@@ -5,6 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -42,8 +43,8 @@ public class VerificationCode extends org.metavm.entity.Entity {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public static VerificationCode create(String receiver, String code, String clientIP) {
-        return new VerificationCode(receiver, code, new Date(System.currentTimeMillis() + DEFAULT_EXPIRE_IN_MILLIS), clientIP);
+    public static VerificationCode create(Id id, String receiver, String code, String clientIP) {
+        return new VerificationCode(id, receiver, code, new Date(System.currentTimeMillis() + DEFAULT_EXPIRE_IN_MILLIS), clientIP);
     }
 
     private String code;
@@ -56,7 +57,8 @@ public class VerificationCode extends org.metavm.entity.Entity {
 
     private Date createdAt = new Date();
 
-    public VerificationCode(String receiver, String code, Date expiredAt, String clientIP) {
+    public VerificationCode(Id id, String receiver, String code, Date expiredAt, String clientIP) {
+        super(id);
         this.code = code;
         this.receiver = receiver;
         this.expiredAt = expiredAt;

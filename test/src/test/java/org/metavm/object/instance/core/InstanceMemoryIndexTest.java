@@ -26,12 +26,12 @@ public class InstanceMemoryIndexTest extends TestCase {
     public void test() {
         var memIndex = new InstanceMemoryIndex();
 
-        var fooType = TestUtils.newKlassBuilder("Foo", "Foo")
+        var fooKlass = TestUtils.newKlassBuilder("Foo", "Foo")
                         .build();
-        var nameField = FieldBuilder.newBuilder("name", fooType, Types.getStringType())
+        var nameField = FieldBuilder.newBuilder("name", fooKlass, Types.getStringType())
                         .build();
 
-        var getNameMethod = MethodBuilder.newBuilder(fooType, "getName")
+        var getNameMethod = MethodBuilder.newBuilder(fooKlass, "getName")
                 .returnType(Types.getStringType())
                 .build();
         {
@@ -42,15 +42,13 @@ public class InstanceMemoryIndexTest extends TestCase {
             code.emitCode();
         }
         var index = new Index(
-                fooType, "idxName", "name must be unique", true,
+                fooKlass.nextChildId(), fooKlass, "idxName", "name must be unique", true,
                 Types.getStringType(), getNameMethod
         );
 
-        TestUtils.initEntityIds(fooType);
-
         var name = Instances.stringInstance("foo001");
 
-        var foo = ClassInstanceBuilder.newBuilder(fooType.getType())
+        var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType())
                 .data(Map.of(nameField, name))
                 .build();
         memIndex.save(foo);

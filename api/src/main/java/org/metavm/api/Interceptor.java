@@ -5,7 +5,6 @@ import org.metavm.api.entity.HttpResponse;
 
 import javax.annotation.Nullable;
 
-@Entity(systemAPI = true)
 public interface Interceptor {
 
     void before(HttpRequest request, HttpResponse response);

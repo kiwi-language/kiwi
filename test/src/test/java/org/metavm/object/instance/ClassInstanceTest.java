@@ -93,7 +93,6 @@ public class ClassInstanceTest extends TestCase {
         flowKlass.resetHierarchy();
         Assert.assertEquals(1, flowKlass.getSortedKlasses().size());
         Assert.assertEquals(1, flowKlass.getSortedFields().size());
-        TestUtils.initEntityIds(flowKlass);
 
         Assert.assertNotNull(codeKlass.tryGetId());
 

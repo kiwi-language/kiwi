@@ -257,10 +257,6 @@ public class CopyVisitor extends ElementVisitor<Element> {
                 default -> {
                     var entityType = EntityUtils.getRealType(entity.getClass());
                     var copy = existing != null ? existing : allocateCopy(entity);
-                    var tmpId = getCopyTmpId(entity);
-                    if (copy instanceof Entity entityCopy && entityCopy.isIdNull() && tmpId != null) {
-                        entityCopy.setTmpId(tmpId);
-                    }
                     addCopy(entity, copy);
                     var desc = DescStore.get(entityType);
                     for (EntityProp prop : desc.getProps()) {

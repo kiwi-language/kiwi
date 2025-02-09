@@ -1,5 +1,6 @@
 package org.metavm.object.type;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
@@ -10,11 +11,10 @@ import org.metavm.entity.LocalKey;
 import org.metavm.flow.CodeWriter;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
@@ -36,17 +36,16 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
     private @Nullable Reference method;
     private transient IndexDef<?> indexDef;
 
-    public Index(Klass declaringKlass, String name, String message, boolean unique, Type type,
+    public Index(@NotNull Id id, Klass declaringKlass, String name, String message, boolean unique, Type type,
                  @Nullable Method method) {
-        super(declaringKlass, name, message);
+        super(id, declaringKlass, name, message);
         this.unique = unique;
         this.method = Utils.safeCall(method, Instance::getReference);
         this.typeIndex = declaringKlass.getConstantPool().addValue(type);
     }
 
-    public Index(Long tmpId, Klass declaringKlass, String name, String message, boolean unique, int typeIndex) {
-        super(declaringKlass, name, message);
-        setTmpId(tmpId);
+    public Index(@NotNull Id id, Klass declaringKlass, String name, String message, boolean unique, int typeIndex) {
+        super(id, declaringKlass, name, message);
         this.unique = unique;
         this.typeIndex = typeIndex;
     }

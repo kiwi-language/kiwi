@@ -34,8 +34,8 @@ public class SynchronizeSearchTask extends Task {
     @Nullable
     private Id defWalId;
 
-    public SynchronizeSearchTask(Collection<Id> changedIds, Collection<Id> removedIds, @Nullable WAL wal, @Nullable Id defWalId) {
-        super("SynchronizeSearchTask");
+    public SynchronizeSearchTask(Id id, Collection<Id> changedIds, Collection<Id> removedIds, @Nullable WAL wal, @Nullable Id defWalId) {
+        super(id, "SynchronizeSearchTask");
         this.changedIds.addAll(changedIds);
         this.removedIds.addAll(removedIds);
         this.walReference = Utils.safeCall(wal, Instance::getReference);

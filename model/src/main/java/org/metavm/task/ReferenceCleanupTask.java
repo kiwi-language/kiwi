@@ -29,8 +29,8 @@ public class ReferenceCleanupTask extends Task {
     private Id targetId;
     private long nextTreeId;
 
-    public ReferenceCleanupTask(Id targetId, String typeName, String instanceTitle) {
-        super("Reference cleanup " + instanceTitle + "/" + typeName);
+    public ReferenceCleanupTask(Id id, Id targetId, String typeName, String instanceTitle) {
+        super(id, "Reference cleanup " + instanceTitle + "/" + typeName);
         this.targetId = targetId;
     }
 

@@ -5,8 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.api.NativeApi;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.InstanceVisitor;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
@@ -24,6 +23,10 @@ public class DummyAny extends org.metavm.entity.Entity {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
+
+    public DummyAny() {
+        super(TmpId.random());
+    }
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {

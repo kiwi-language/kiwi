@@ -5,6 +5,7 @@ import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -31,7 +32,8 @@ public class UpgradeValue extends org.metavm.entity.Entity {
     private Reference foo;
     private Value value;
 
-    public UpgradeValue(UpgradeFoo foo) {
+    public UpgradeValue(Id id, UpgradeFoo foo) {
+        super(id);
         this.foo = foo.getReference();
     }
 

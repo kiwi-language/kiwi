@@ -11,7 +11,7 @@ import org.metavm.util.Instances;
 import java.util.List;
 
 @Slf4j
-public class ObjectOutputStreamNative extends NativeBase {
+public class ObjectOutputStreamNative implements NativeBase {
 
     private final ClassInstance instance;
     private final Method writeObjectOverride;

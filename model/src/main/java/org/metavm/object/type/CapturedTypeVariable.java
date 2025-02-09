@@ -8,10 +8,9 @@ import org.metavm.entity.ElementVisitor;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.LoadAware;
 import org.metavm.flow.Flow;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
@@ -37,16 +36,16 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
-    public CapturedTypeVariable(Long tmpId, @NotNull UncertainType uncertainType,
+    public CapturedTypeVariable(@NotNull Id id, @NotNull UncertainType uncertainType,
                                 @NotNull Reference typeVariable,
                                 @NotNull CapturedTypeScope scope) {
-        this(tmpId, scope.getConstantPool().addValue(uncertainType), typeVariable, scope);
+        this(id, scope.getConstantPool().addValue(uncertainType), typeVariable, scope);
     }
 
-    public CapturedTypeVariable(Long tmpId, int uncertainTypeIndex,
-                        @NotNull Reference typeVariable,
-                        @NotNull CapturedTypeScope scope) {
-        setTmpId(tmpId);
+    public CapturedTypeVariable(@NotNull Id id, int uncertainTypeIndex,
+                                @NotNull Reference typeVariable,
+                                @NotNull CapturedTypeScope scope) {
+        super(id);
         this.scope = scope;
         this.typeVariable = typeVariable;
         this.uncertainTypeIndex = uncertainTypeIndex;

@@ -15,6 +15,7 @@ import java.util.Map;
 
 @Slf4j
 public class MockEntityRepository implements EntityRepository {
+    private long nextTreeId = 1000000;
 
     private final IdentitySet<Object> objects = new IdentitySet<>();
     private final Map<Id, Entity> entities = new HashMap<>();
@@ -54,6 +55,11 @@ public class MockEntityRepository implements EntityRepository {
     @Override
     public void updateMemoryIndex(ClassInstance entity) {
         index.save(entity);
+    }
+
+    @Override
+    public long allocateTreeId() {
+        return nextTreeId++;
     }
 
     @Override

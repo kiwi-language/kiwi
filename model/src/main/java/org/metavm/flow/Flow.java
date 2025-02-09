@@ -12,6 +12,7 @@ import org.metavm.entity.*;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.expression.VoidStructuralVisitor;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -63,22 +64,20 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     private transient ResolutionStage stage = ResolutionStage.INIT;
     private transient Set<String> nodeNames = new HashSet<>();
 
-    public Flow(Long tmpId,
+    public Flow(@NotNull Id id,
                 @NotNull String name,
                 boolean isNative,
                 boolean isSynthetic,
-                List<NameAndType> parameters,
                 int returnTypeIndex,
                 List<TypeVariable> typeParameters,
                 @NotNull MetadataState state
     ) {
-        super(tmpId);
+        super(id);
         this.name = NamingUtils.ensureValidName(name);
         this.isNative = isNative;
         this.isSynthetic = isSynthetic;
         this.returnTypeIndex = returnTypeIndex;
         setTypeParameters(typeParameters);
-        setParameters(Utils.map(parameters, p -> new Parameter(null, p.name(), p.type(), this)), false);
         this.state = state;
     }
 

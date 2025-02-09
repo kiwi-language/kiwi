@@ -142,8 +142,6 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     <E> E getAttribute(ContextAttributeKey<E> key);
 
-    void initIdManually(Instance instance, Id id);
-
     void increaseVersionsForAll();
 
     void updateMemoryIndex(ClassInstance instance);

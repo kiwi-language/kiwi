@@ -33,6 +33,8 @@ public class Compiler {
 
     public static final Logger logger = LoggerFactory.getLogger(Compiler.class);
 
+    private final boolean tracing = DebugEnv.traceCompilation;
+
     public static final String REQUEST_DIR = "/Users/leen/workspace/object/compiler/src/test/resources/requests";
 
     private static final LightVirtualFileBase.MyVirtualFileSystem fileSystem = LightVirtualFileBase.ourFileSystem;
@@ -161,7 +163,8 @@ public class Compiler {
         var psiClasses = Utils.flatMap(files, TranspileUtils::getAllClasses);
         psiClasses.forEach(k -> classNames.add(k.getQualifiedName()));
         for (var stage : stages) {
-//                logger.debug("Stage {}", stage.stage.name());
+            if (tracing)
+                logger.info("Entering compilation stage {}", stage.stage.name());
             try (var ignored1 = profiler.enter("stage: " + stage)) {
                 var sortedKlasses = stage.sort(psiClasses, typeResolver);
                 var psiClassTypes = Utils.map(
@@ -169,6 +172,8 @@ public class Compiler {
                         TranspileUtils.getElementFactory()::createType
                 );
                 psiClassTypes.forEach(t -> {
+                    if (tracing)
+                        logger.trace("Processing class {}", t.getCanonicalText());
                      typeResolver.resolve(t, stage.stage);
                     if (stage.stage == ResolutionStage.DECLARATION) {
                         var klass = Objects.requireNonNull(Objects.requireNonNull(t.resolve()).getUserData(Keys.MV_CLASS),

@@ -4,12 +4,11 @@ import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -34,7 +33,7 @@ public class GlobalKlassTagAssigner extends org.metavm.entity.Entity {
         var existing = context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance());
         if (existing != null)
             throw new IllegalStateException("GlobalKlassTagAssigner already exists");
-        return context.bind(new GlobalKlassTagAssigner());
+        return context.bind(new GlobalKlassTagAssigner(context.allocateRootId()));
     }
 
     public static GlobalKlassTagAssigner getInstance(IInstanceContext context) {
@@ -47,6 +46,10 @@ public class GlobalKlassTagAssigner extends org.metavm.entity.Entity {
     @SuppressWarnings("unused")
     private boolean allFlags = true;
     private long next = 1000000;
+
+    public GlobalKlassTagAssigner(Id id) {
+        super(id);
+    }
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {

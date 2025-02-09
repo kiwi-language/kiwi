@@ -57,7 +57,7 @@ public class RoleManager extends EntityContextFactoryAware {
         if (role != null) {
             role.update(roleDTO);
         } else {
-            role = new Role(roleDTO.tmpId(), roleDTO.name());
+            role = new Role(context.allocateRootId(), roleDTO.name());
             context.bind(role);
         }
         return role;

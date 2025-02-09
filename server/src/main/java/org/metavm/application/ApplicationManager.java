@@ -8,11 +8,11 @@ import org.metavm.entity.*;
 import org.metavm.message.Message;
 import org.metavm.message.MessageKind;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.GlobalKlassTagAssigner;
 import org.metavm.object.type.KlassSourceCodeTagAssigner;
 import org.metavm.object.type.KlassTagAssigner;
-import org.metavm.system.IdService;
 import org.metavm.task.RemoveAppTaskGroup;
 import org.metavm.user.*;
 import org.metavm.user.rest.dto.*;
@@ -121,7 +121,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
             Application app;
             if (appDTO.id() == null || appDTO.id() == 0L) {
                 var owner = platformCtx.getEntity(PlatformUser.class, ContextUtil.getUserId());
-                app = createApp(null, appDTO.name(), owner, platformCtx);
+                app = createApp(platformCtx.allocateTreeId(), appDTO.name(), owner, platformCtx);
             } else {
                 app = platformCtx.getEntity(Application.class, Constants.getAppId(appDTO.id()));
                 ensureAppAdmin(app);
@@ -148,14 +148,11 @@ public class ApplicationManager extends EntityContextFactoryAware {
     }
 
     private Application createApp(Long id, String name, PlatformUser owner, IInstanceContext platformContext) {
-        long appId = id != null ? id :
-                idService.allocateOne(PLATFORM_APP_ID);
-        Application application = new Application(name, owner);
+        Application application = new Application(PhysicalId.of(id, 0L), name, owner);
         // initIdManually will bind application to context
         platformContext.bind(application);
-        platformContext.initIdManually(application, Constants.getAppId(appId));
         platformUserManager.joinApplication(owner, application, platformContext);
-        setupApplication(appId, platformContext);
+        setupApplication(application.getTreeId(), platformContext);
         return application;
     }
 
@@ -212,7 +209,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
             var app = platformContext.getEntity(Application.class, id);
             ensureAppOwner(app);
             app.deactivate();
-            platformContext.bind(new RemoveAppTaskGroup(id));
+            platformContext.bind(new RemoveAppTaskGroup(platformContext.allocateRootId(), id));
             platformContext.finish();
         }
     }
@@ -237,9 +234,10 @@ public class ApplicationManager extends EntityContextFactoryAware {
             if (invitee.hasJoinedApplication(app))
                 throw new BusinessException(ErrorCode.ALREADY_JOINED_APP, invitee.getLoginName());
             var currentUser = platformCtx.getEntity(User.class, ContextUtil.getUserId());
-            var invitation = platformCtx.bind(new AppInvitation(app, invitee, request.isAdmin()));
+            var invitation = platformCtx.bind(new AppInvitation(platformCtx.allocateRootId(), app, invitee, request.isAdmin()));
             platformCtx.bind(
                     new Message(
+                            platformCtx.allocateRootId(),
                             invitee,
                             String.format("'%s' invited you to join application '%s'", currentUser.getName(), app.getName()),
                             MessageKind.INVITATION, invitation.getReference())
@@ -255,7 +253,8 @@ public class ApplicationManager extends EntityContextFactoryAware {
             ensureAppAdmin(app);
             var user = context.getEntity(PlatformUser.class, userId);
             app.addAdmin(user);
-            context.bind(new Message(user, String.format("You have become admin of '%s'", app.getName()),
+            context.bind(new Message(context.allocateRootId(),
+                    user, String.format("You have become admin of '%s'", app.getName()),
                     MessageKind.DEFAULT,
                     Instances.nullInstance()));
             context.finish();
@@ -269,7 +268,8 @@ public class ApplicationManager extends EntityContextFactoryAware {
             ensureAppAdmin(app);
             var user = context.getEntity(PlatformUser.class, userId);
             app.removeAdmin(user);
-            context.bind(new Message(user, String.format("You are no longer admin of '%s'", app.getName()),
+            context.bind(new Message(context.allocateRootId(),
+                    user, String.format("You are no longer admin of '%s'", app.getName()),
                     MessageKind.DEFAULT,
                     Instances.nullInstance()));
             context.finish();

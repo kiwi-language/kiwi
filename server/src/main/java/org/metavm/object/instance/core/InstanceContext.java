@@ -139,6 +139,12 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
+    @Override
+    public long allocateTreeId() {
+        var idProvider = ((DefaultIdInitializer) idInitializer).getIdProvider();
+        return idProvider.allocateOne(appId);
+    }
+
     private static class PatchContext {
 
         public static final int MAX_BUILD = 10;

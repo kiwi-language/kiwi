@@ -2,6 +2,7 @@ package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
@@ -12,9 +13,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.*;
-
-import static org.metavm.object.type.ResolutionStage.DEFINITION;
-import static org.metavm.object.type.ResolutionStage.INIT;
 
 @Slf4j
 public abstract class DefContext implements IInstanceContext, TypeRegistry {
@@ -28,19 +26,17 @@ public abstract class DefContext implements IInstanceContext, TypeRegistry {
         return Objects.requireNonNull(tryGetDef(typeDef), "Can not find def for: " + typeDef);
     }
 
-    public abstract KlassDef<?> getDef(Type javaType, ResolutionStage stage);
+    public abstract KlassDef<?> getDef(Type javaType);
 
     public abstract @Nullable KlassDef<?> getDefIfPresent(Type javaType);
 
     public abstract Collection<KlassDef<?>> getAllDefList();
 
+    public abstract Id getModelId(Object o);
+
     public  <T> KlassDef<T> getDef(Class<T> klass) {
         //noinspection unchecked
         return (KlassDef<T>) getDef((Type) klass);
-    }
-
-    public KlassDef<?> getDef(Type javaType) {
-        return getDef(javaType, DEFINITION);
     }
 
     public org.metavm.object.type.Type getNullableType(Type javaType) {
@@ -71,7 +67,7 @@ public abstract class DefContext implements IInstanceContext, TypeRegistry {
                 throw new IllegalArgumentException("Cannot resolve type variable '" + tv
                         + "'. Only class type parameters are supported");
         } else
-            return getDef(javaType, INIT).getType();
+            return getDef(javaType).getType();
     }
 
     public abstract boolean containsDef(TypeDef typeDef);

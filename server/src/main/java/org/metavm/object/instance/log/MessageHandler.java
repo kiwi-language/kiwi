@@ -20,7 +20,7 @@ public class MessageHandler implements LogHandler<Message> {
     @Override
     public void process(List<Message> created, @Nullable String clientId, IInstanceContext context, EntityContextFactory entityContextFactory) {
         for (Message message : created) {
-            context.bind(new SendMessageTask(message));
+            context.bind(new SendMessageTask(context.allocateRootId(), message));
         }
     }
 }

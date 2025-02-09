@@ -34,7 +34,6 @@ public class ExpressionTypeResolverTest extends TestCase {
 
     public void testEq() {
         var fooType = TestUtils.newKlassBuilder("Foo", "Foo").build();
-        TestUtils.initEntityIds(fooType);
         typeDefRepository.save(List.of(fooType));
         FieldBuilder.newBuilder("name", fooType, Types.getStringType()).build();
         String exprString = "this.name = \"Big Foo\"";
@@ -51,7 +50,6 @@ public class ExpressionTypeResolverTest extends TestCase {
         FieldBuilder.newBuilder("visibleFields", listViewType, fieldChildArrayType).build();
         FieldBuilder.newBuilder("type", listViewType, classTypeType.getType()).build();
         FieldBuilder.newBuilder("declaringType", fieldType, classTypeType.getType()).build();
-        TestUtils.initEntityIds(listViewType);
         typeDefRepository.save(List.of(listViewType, classTypeType, fieldType));
 
         String str = "allmatch(visibleFields, declaringType=this.type)";

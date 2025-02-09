@@ -66,7 +66,16 @@ public class NativeMethods {
                     }
                     args[arguments.size() + 1] = callContext;
                     var mh = getNativeMethod(method, nativeObject);
-                    var result = (Value) mh.invokeExact(args);
+                    Value result;
+                    try {
+                        result = (Value) mh.invokeExact(args);
+                    } catch (ClassCastException e) {
+                        logger.debug("Type: {}", classInstance.getInstanceType().getTypeDesc());
+                        logger.debug("Native object: {}", nativeObject.getClass().getName());
+                        logger.debug("Method: {}", method.getQualifiedSignature());
+                        logger.debug("Method handle: {}", mh);
+                        throw new RuntimeException(e);
+                    }
                     if (method.getReturnType().isVoid()) {
                         return new FlowExecResult(null, null);
                     } else {
@@ -84,9 +93,14 @@ public class NativeMethods {
     private static MethodHandle getNativeMethod(Method method, @Nullable Object nativeObject) {
         var nativeMethod = method.getNativeHandle();
         if (nativeMethod == null) {
-            var nativeClass = nativeObject != null ? nativeObject.getClass() : tryGetNativeClass(method.getDeclaringType());
-            Objects.requireNonNull(nativeClass,
-                    "Native class not available for type '" + method.getDeclaringType().getName() + "'");
+            Class<?> nativeClass;
+            if (nativeObject != null && !(nativeObject instanceof NativeBase))
+                nativeClass = nativeObject.getClass();
+            else {
+                nativeClass = tryGetNativeClass(method.getDeclaringType());
+                Objects.requireNonNull(nativeClass,
+                        "Native class not available for type '" + method.getDeclaringType().getName() + "'");
+            }
             List<Class<?>> paramTypes = new ArrayList<>();
             if (method.isStatic())
                 paramTypes.add(Klass.class);

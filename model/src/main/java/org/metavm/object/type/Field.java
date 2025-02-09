@@ -58,14 +58,13 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     private int ordinal;
 
     public Field(
-            Long tmpId,
+            @NotNull Id id,
             String name,
             Klass declaringType,
             int typeIndex,
             Access access,
             boolean readonly,
             boolean isTransient,
-            Boolean unique,
             Value defaultValue,
             boolean isChild,
             boolean isStatic,
@@ -79,7 +78,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
             @Nullable Method initializer,
             MetadataState state
     ) {
-        super(tmpId);
+        super(id);
 //        if(isChild && type.isPrimitive())
 //            throw new BusinessException(ErrorCode.CHILD_FIELD_CAN_NOT_BE_PRIMITIVE_TYPED);
         this.name = NamingUtils.ensureValidName(name);
@@ -573,8 +572,8 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     public void updateEnumConstant(IInstanceContext context) {
         assert isEnumConstant;
         var value = getStatic(context).resolveObject();
-        value.setField(StdField.enumName.get(), Instances.stringInstance(name));
-        value.setField(StdField.enumOrdinal.get(), Instances.intInstance(ordinal));
+        value.setFieldForce(StdField.enumName.get(), Instances.stringInstance(name));
+        value.setFieldForce(StdField.enumOrdinal.get(), Instances.intInstance(ordinal));
     }
 
     @Override

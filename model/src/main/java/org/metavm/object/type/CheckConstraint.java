@@ -1,5 +1,7 @@
 package org.metavm.object.type;
 
+import org.checkerframework.checker.initialization.qual.NotOnlyInitialized;
+import org.jetbrains.annotations.NotNull;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
@@ -12,10 +14,9 @@ import org.metavm.expression.PropertyExpression;
 import org.metavm.expression.UnaryExpression;
 import org.metavm.flow.Value;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -34,8 +35,8 @@ public class CheckConstraint extends Constraint {
 
     private transient ConstraintDef<?> constraintDef;
 
-    public CheckConstraint(Klass type, String name, String message, Value condition) {
-        super(type, name, message);
+    public CheckConstraint(@NotNull Id id, Klass type, String name, String message, Value condition) {
+        super(id, type, name, message);
         this.condition = condition;
     }
 
