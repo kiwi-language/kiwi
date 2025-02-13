@@ -282,6 +282,27 @@ class AsmExpressionResolver {
         }
     }
 
+    private Type resolveInnerNew(AssemblyParser.ExpressionContext ctx) {
+        resolve0(ctx.expression(0));
+        var creator = ctx.creator();
+        var type = (ClassType) parseClassType(creator.classOrInterfaceType());
+        Nodes.createNewChild(code, type);
+        List<AssemblyParser.ExpressionContext> arguments =
+                Utils.getOrElse(
+                        creator.arguments().expressionList(),
+                        AssemblyParser.ExpressionListContext::expression,
+                        List.of()
+                );
+        List<Type> typeArgs = creator.typeArguments() != null ?
+                Utils.map(creator.typeArguments().typeType(), this::parseType) : List.of();
+        var argTypes = Utils.map(arguments, this::resolve0);
+        var constructor = type.resolveMethod(
+                type.getKlass().getName(), argTypes, typeArgs, false
+        );
+        Nodes.invokeMethod(constructor, code);
+        return type;
+    }
+
     private Type resolveShift(AssemblyParser.ExpressionContext ctx) {
         var type = resolve0(ctx.expression(0));
         resolve0(ctx.expression(1));
@@ -368,6 +389,8 @@ class AsmExpressionResolver {
             return resolveInstanceOf(ctx.expression(0), ctx.typeType());
         if(ctx.methodCall() != null)
             return resolveMethodCall(ctx.expression(0), ctx.methodCall());
+        if (ctx.creator() != null)
+            return resolveInnerNew(ctx);
         var type = resolve0(ctx.expression(0));
         resolve0(ctx.expression(1));
         return switch (bop) {

@@ -1,7 +1,6 @@
 package org.metavm.mocks;
 
 import org.metavm.annotation.NativeEntity;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
@@ -51,7 +50,6 @@ public class Foo extends org.metavm.entity.Entity {
     @Nullable
     private String code;
 
-    @ChildEntity
     private Bar bar;
 
     @Nullable
@@ -60,7 +58,6 @@ public class Foo extends org.metavm.entity.Entity {
     @Nullable
     private Reference qux2;
 
-    @ChildEntity
     private List<Reference> bazList = new ArrayList<>();
 
     private boolean allFlag = true;

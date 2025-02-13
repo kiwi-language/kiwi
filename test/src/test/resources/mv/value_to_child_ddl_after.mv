@@ -1,6 +1,6 @@
 class Product {
     private title string name;
-    private child Price price;
+    private Price price;
 
     public Product(string name, Price price) {
         this.name = name;

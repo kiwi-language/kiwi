@@ -51,12 +51,8 @@ public class TypeExpressions {
         return getParameterizedType(StdKlass.list.get().getStringId(), elementType);
     }
 
-    public static String getReadWriteListType(String elementType) {
+    public static String getArrayListType(String elementType) {
         return getParameterizedType(StdKlass.arrayList.get().getStringId(), elementType);
-    }
-
-    public static String getChildListType(String elementType) {
-        return getParameterizedType(StdKlass.childList.get().getStringId(), elementType);
     }
 
 }

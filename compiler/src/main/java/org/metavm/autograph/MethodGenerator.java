@@ -183,20 +183,11 @@ public class MethodGenerator {
     }
 
     Node createSetField(FieldRef fieldRef) {
-        if (fieldRef.isChild()) {
-            return onNodeCreated(new SetChildFieldNode(
-                    nextName("setchildfield"),
-                    code().getLastNode(),
-                    code(),
-                    fieldRef));
-        }
-        else {
-            return onNodeCreated(new SetFieldNode(
-                    nextName("setfield"),
-                    code().getLastNode(),
-                    code(),
-                    fieldRef));
-        }
+        return onNodeCreated(new SetFieldNode(
+                nextName("setfield"),
+                code().getLastNode(),
+                code(),
+                fieldRef));
     }
 
     SetStaticNode createSetStatic(FieldRef fieldRef) {

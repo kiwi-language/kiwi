@@ -1,6 +1,5 @@
 package org.metavm.entity;
 
-import org.metavm.api.JsonIgnore;
 import org.metavm.flow.ClosureContext;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Field;
@@ -9,7 +8,6 @@ import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
 
 import javax.annotation.Nullable;
-import java.util.Set;
 import java.util.function.BiConsumer;
 
 public interface NativeObject extends ClassInstance {
@@ -20,12 +18,6 @@ public interface NativeObject extends ClassInstance {
 
     @Override
     default void forEachField(BiConsumer<Field, Value> action) {
-    }
-
-    @JsonIgnore
-    @Override
-    default Set<Instance> getChildren() {
-        return Set.of();
     }
 
     @Override

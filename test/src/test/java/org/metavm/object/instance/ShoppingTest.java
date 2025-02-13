@@ -20,6 +20,7 @@ public class ShoppingTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
         var bootResult = BootstrapUtils.bootstrap();
         var managers = TestUtils.createCommonManagers(bootResult);
@@ -56,14 +57,15 @@ public class ShoppingTest extends TestCase {
         MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
         var productId = createProduct();
         var product = getObject(productId);
-        var firstSku = product.getArray("skuList").getObject(0);
+        var firstSkuId = (String) product.getArray("skuList").get(0);
+        var firstSku = getObject(firstSkuId);
         int originalAmount = firstSku.getInt("quantity");
-        callMethod(firstSku.id(), "decQuantity", List.of(1));
-        var updatedFirstSku = getObject(firstSku.id());
+        callMethod(firstSkuId, "decQuantity", List.of(1));
+        var updatedFirstSku = getObject(firstSkuId);
         int newAmount = updatedFirstSku.getInt("quantity");
         assertEquals(originalAmount - 1, newAmount);
         try {
-            callMethod(firstSku.id(), "decQuantity", List.of(originalAmount));
+            callMethod(firstSkuId, "decQuantity", List.of(originalAmount));
             fail("Should fail when amount is not enough");
         } catch (BusinessException e) {
             Assert.assertEquals("Out of inventory", e.getMessage());
@@ -75,8 +77,9 @@ public class ShoppingTest extends TestCase {
         var productId = createProduct();
         var product = getObject(productId);
         var couponsIds = createCoupons();
-        var firstSku = product.getArray("skuList").getObject(0);
-        var orderId = (String) callMethod(firstSku.id(), "buy", List.of(1, couponsIds));
+        var firstSkuId = (String) product.getArray("skuList").get(0);
+        var firstSku = getObject(firstSkuId);
+        var orderId = (String) callMethod(firstSkuId, "buy", List.of(1, couponsIds));
         var order = getObject(orderId);
         Assert.assertEquals(1, order.getInt("quantity"));
         Assert.assertEquals(70.0, order.getDouble("price"), 0.0001);
@@ -84,7 +87,7 @@ public class ShoppingTest extends TestCase {
             var coupon = getObject(couponId);
             Assert.assertEquals("USED", coupon.getString("state"));
         }
-        var reloadedFirstSkuDTO = getObject(firstSku.id());
+        var reloadedFirstSkuDTO = getObject(firstSkuId);
         var originalQuantity = firstSku.getInt("quantity");
         var skuQuantity = reloadedFirstSkuDTO.getInt("quantity");
         Assert.assertEquals(originalQuantity - 1, skuQuantity);

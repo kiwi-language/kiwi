@@ -1604,12 +1604,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     public boolean isList() {
         return StdKlass.list.get().isAssignableFrom(this);
     }
-
-    @JsonIgnore
-    public boolean isChildList() {
-        return this == StdKlass.childList.get();
-    }
-
     @JsonIgnore
     public boolean isSAMInterface() {
         return isInterface() && Utils.count(methods, m -> m.isAbstract() && !m.isStatic()) == 1;

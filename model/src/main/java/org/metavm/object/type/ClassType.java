@@ -135,10 +135,6 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
         return getKlass().isList();
     }
 
-    public boolean isChildList() {
-        return getKlass().isChildList();
-    }
-
     @Override
     public <S> void acceptComponents(TypeVisitor<?, S> visitor, S s) {
         getTypeArguments().forEach(t -> t.accept(visitor, s));

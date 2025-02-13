@@ -66,16 +66,7 @@ public class NativeMethods {
                     }
                     args[arguments.size() + 1] = callContext;
                     var mh = getNativeMethod(method, nativeObject);
-                    Value result;
-                    try {
-                        result = (Value) mh.invokeExact(args);
-                    } catch (ClassCastException e) {
-                        logger.debug("Type: {}", classInstance.getInstanceType().getTypeDesc());
-                        logger.debug("Native object: {}", nativeObject.getClass().getName());
-                        logger.debug("Method: {}", method.getQualifiedSignature());
-                        logger.debug("Method handle: {}", mh);
-                        throw new RuntimeException(e);
-                    }
+                    var result = (Value) mh.invokeExact(args);
                     if (method.getReturnType().isVoid()) {
                         return new FlowExecResult(null, null);
                     } else {

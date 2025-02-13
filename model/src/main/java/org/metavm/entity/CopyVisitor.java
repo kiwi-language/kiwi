@@ -205,46 +205,6 @@ public class CopyVisitor extends ElementVisitor<Element> {
         try {
             enterElement(entity);
             return switch (entity) {
-//                case ChildArray<?> childArray -> {
-//                    ChildArray copy;
-//                    if (existing != null) {
-//                        copy = (ChildArray) existing;
-//                        copy.clear();
-//                    } else {
-//                        copy = new ChildArray<>(childArray.getElementType());
-//                        copy.setStrictEphemeral(strictEphemeral);
-//                    }
-//                    addCopy(entity, copy);
-//                    for (Entity child : childArray) {
-//                        copy.addChild((Entity) copy0(child));
-//                    }
-//                    yield copy;
-//                }
-//                case ReadWriteArray readWriteArray -> {
-//                    ReadWriteArray copy;
-//                    if (existing != null) {
-//                        copy = (ReadWriteArray) existing;
-//                        copy.clear();
-//                    } else {
-//                        copy = new ReadWriteArray<>(readWriteArray.getElementType());
-//                        copy.setStrictEphemeral(strictEphemeral);
-//                    }
-//                    addCopy(entity, copy);
-//                    for (int i = 0; i < readWriteArray.size(); i++) {
-//                        final int _i = i;
-//                        copy.add(getValue(readWriteArray.get(i), v -> copy.set(_i, v)));
-//                    }
-//                    yield copy;
-//                }
-//                case ValueArray valueArray -> {
-//                    var copy = new List<>(valueArray.getElementType(), List.of());
-//                    var table = copy.secretlyGetTable();
-//                    for (int i = 0; i < valueArray.size(); i++) {
-//                        final int _i = i;
-//                        table.add(getValue(valueArray.get(i), v -> table.set(_i, v)));
-//                    }
-//                    yield copy;
-//                }
                 case List<?> list -> {
                     var copy = new ArrayList<>();
                     int i = 0;
@@ -266,10 +226,7 @@ public class CopyVisitor extends ElementVisitor<Element> {
                         Object fieldValueCopy;
                         if (fieldValue == null)
                             fieldValueCopy = null;
-                        else if (prop.isChildEntity()) {
-                            assert copy instanceof Entity;
-                            fieldValueCopy = copy0(fieldValue);
-                        } else
+                        else
                             fieldValueCopy = getValue(fieldValue, v -> prop.set(copy, v));
                         prop.set(copy, fieldValueCopy);
                     }

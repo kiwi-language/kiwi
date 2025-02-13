@@ -1,10 +1,7 @@
 package bitset;
 
-import org.metavm.api.ChildEntity;
-
 public class BitSet {
 
-    @ChildEntity
     private final long[] bits;
 
     public BitSet(int n) {

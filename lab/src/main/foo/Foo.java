@@ -1,6 +1,4 @@
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
-import org.metavm.api.EntityField;
 
 import javax.annotation.Nullable;
 
@@ -9,19 +7,38 @@ public class Foo {
 
     private String name;
 
-    @ChildEntity
     private final Bar bar;
-    @ChildEntity
+
     private final Baz[] bazList;
 
     @Nullable
     private final Qux qux;
 
-    public Foo(String name, Bar bar, Baz[] bazList, @Nullable Qux qux) {
+    public Foo(String name, BarDto bar, BazDto[] bazList, @Nullable Qux qux) {
         this.name = name;
-        this.bar = bar;
-        this.bazList = bazList;
+        this.bar = new Bar(bar.code());
+        this.bazList = new Baz[bazList.length];
+        for (int i = 0; i < bazList.length; i++) {
+            var bazDTO = bazList[i];
+            var bars = new Bar[bazDTO.bars().length];
+            for (int i1 = 0; i1 < bazDTO.bars().length; i1++) {
+                bars[i1] = new Bar(bazDTO.bars()[i1].code());
+            }
+            this.bazList[i] = new Baz(bars);
+        }
         this.qux = qux;
+    }
+
+    public class Bar {
+        private final String code;
+
+        public Bar(String code) {
+            this.code = code;
+        }
+
+        public String getCode() {
+            return code;
+        }
     }
 
     public String getName() {

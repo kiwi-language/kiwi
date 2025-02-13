@@ -71,8 +71,6 @@ public class InstanceField implements IInstanceField {
 
     public void set(Value value) {
         checkValue(value);
-        if (field.isChild() && value.isNotNull())
-            ((Reference) value).get().setParent(this.owner, this.field);
         this.value = value;
     }
 

@@ -1,7 +1,5 @@
 package objectio;
 
-import org.metavm.api.ChildEntity;
-
 import java.io.*;
 import java.util.Arrays;
 
@@ -34,7 +32,6 @@ class List extends AbstractFoo {
 
     private int size;
 
-    @ChildEntity
     private transient Object[] elements;
 
     public List(Object[] elements) {

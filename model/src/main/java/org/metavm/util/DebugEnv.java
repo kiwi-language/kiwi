@@ -75,7 +75,7 @@ public class DebugEnv {
 
     public static volatile Id inventoryId;
     public static List<Type> types;
-    public static boolean traceInstanceRemoval;
+    public static boolean traceInstanceRemoval = false;
 
     public static void enterPathItem(String pathItem) {
         path.addLast(pathItem);
@@ -136,9 +136,5 @@ public class DebugEnv {
     }
 
     public static Task task;
-
-    public static boolean isTargetKlass(Klass klass) {
-        return klass.getTypeDesc().equals("ChildList<AreabuiltinView>");
-    }
 
 }

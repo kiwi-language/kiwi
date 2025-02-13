@@ -1,9 +1,7 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.api.ChildEntity;
-import org.metavm.api.ChildList;
-import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityField;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,9 +11,7 @@ public class Warehouse {
     private String code;
     @EntityField(asTitle = true)
     private String name;
-    @ChildEntity
-    private final ChildList<Area> areas = new ChildList<>();
-    @ChildEntity
+    private final List<Area> areas = new ArrayList<>();
     private final List<Position> positions = new ArrayList<>();
 
     public Warehouse(String code, String name) {

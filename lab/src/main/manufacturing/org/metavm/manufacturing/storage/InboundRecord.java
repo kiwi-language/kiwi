@@ -10,7 +10,7 @@ import java.util.Date;
 @Entity
 public record InboundRecord(
         @EntityField(asTitle = true) String inboundOrderCode,
-        InboundOrderItem inboundOrderItem,
+        InboundOrder.Item inboundOrderItem,
         InboundBizType bizType,
         Material material,
         Position position,

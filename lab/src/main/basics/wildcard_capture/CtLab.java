@@ -1,17 +1,14 @@
 package wildcard_capture;
 
-import org.metavm.api.ChildEntity;
-import org.metavm.api.ChildList;
-
+import java.util.ArrayList;
 import java.util.List;
 
 public class CtLab {
 
-    @ChildEntity("foos")
-    private final ChildList<CtFoo> foos;
+    private final List<CtFoo> foos = new ArrayList<>();
 
     public CtLab(List<CtFoo> foos) {
-        this.foos = new ChildList<>(foos);
+        this.foos.addAll(foos);
     }
 
     public CtFoo getFooByName(String name) {

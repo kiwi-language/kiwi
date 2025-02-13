@@ -2,7 +2,6 @@ package org.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Generated;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.Reference;
@@ -20,7 +19,6 @@ import java.util.function.Consumer;
 public class Code implements Element, LocalKey, Struct {
 
     private Callable callable;
-    @ChildEntity
     private transient LinkedList<Node> nodes = new LinkedList<>();
     private int maxLocals;
     private int maxStack;

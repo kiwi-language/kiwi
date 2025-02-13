@@ -33,7 +33,7 @@ public class TypeExpressionBuilder {
     }
 
     public TypeExpressionBuilder readWriteList() {
-        expression = TypeExpressions.getReadWriteListType(expression);
+        expression = TypeExpressions.getArrayListType(expression);
         return this;
     }
 

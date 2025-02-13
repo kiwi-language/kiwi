@@ -49,7 +49,7 @@ public class ClassInstanceTest extends TestCase {
                 ))
                 .build();
         var barArray = foo.getField(fooTypes.fooBarsField()).resolveDurable();
-        Assert.assertTrue(barArray.isChildOf(foo, fooTypes.fooBarsField()));
+        Assert.assertFalse(barArray.isChildOf(foo, fooTypes.fooBarsField()));
     }
 
     public void test_add_not_null_field() {
@@ -86,9 +86,7 @@ public class ClassInstanceTest extends TestCase {
         var flowKlass = TestUtils.newKlassBuilder("Flow", "Flow").build();
         var codeKlass = TestUtils.newKlassBuilder("Code", "Code").build();
         var nullableScopeType = new UnionType(Set.of(Types.getNullType(), codeKlass.getType()));
-        var codeField = FieldBuilder.newBuilder("code", flowKlass, nullableScopeType)
-                .isChild(true)
-                .build();
+        var codeField = FieldBuilder.newBuilder("code", flowKlass, nullableScopeType).build();
 
         flowKlass.resetHierarchy();
         Assert.assertEquals(1, flowKlass.getSortedKlasses().size());

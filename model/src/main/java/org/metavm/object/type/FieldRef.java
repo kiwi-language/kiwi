@@ -114,10 +114,6 @@ public class FieldRef implements PropertyRef {
         return getRawField().isPublic();
     }
 
-    public boolean isChild() {
-        return getRawField().isChild();
-    }
-
     @Override
     public <R> R accept(ElementVisitor<R> visitor) {
         return visitor.visitFieldRef(this);

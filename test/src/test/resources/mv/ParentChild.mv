@@ -1,6 +1,5 @@
 import java.util.List;
 import java.util.ArrayList;
-import org.metavm.api.ChildList;
 
 class Child {
     private string name;
@@ -27,11 +26,11 @@ class Child {
 
 class Parent {
 
-    private readonly child ChildList<Child> children;
+    private readonly ArrayList<Child> children;
 
     public Parent() {
-        this.children = new ChildList<Child>();
-        this.children.add(new Child("child001"));
+        this.children = new ArrayList<Child>();
+        this.children.add(this.new Child("child001"));
     }
 
     public List<Child> getChildren() {
@@ -51,8 +50,7 @@ class Parent {
         var child3 = new Child("Child003");
         child2.setNext(child3);
         this.children.add(child2);
-        this.children.add(child3);
-        this.children.remove(child3);
+        delete child3;
     }
 
 }

@@ -14,16 +14,16 @@ class Product extends Versioned {
 
     private title string name;
     private double price;
-    private child Inventory inventory;
+    private Inventory inventory;
     private boolean available;
     private string|null description;
     private any manufacturer;
 
-    public Product(string name, double price, Inventory inventory, string|null description, any manufacturer) {
+    public Product(string name, double price, int quantity, string|null description, any manufacturer) {
         super();
         this.name = name;
         this.price = price;
-        this.inventory = inventory;
+        this.inventory = this.new Inventory(quantity);
         this.description = description;
         this.manufacturer = manufacturer;
     }

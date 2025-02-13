@@ -5,8 +5,8 @@ class LivingBeing {
 
     private int age;
     private any|null extra;
-    private child List<LivingBeing> offsprings;
-    private child List<LivingBeing> ancestors;
+    private List<LivingBeing> offsprings;
+    private List<LivingBeing> ancestors;
 
     public LivingBeing(int age, any|null extra) {
         this.age = age;

@@ -3,7 +3,6 @@ package org.metavm.object.instance.core;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
 import org.metavm.entity.TreeTags;
 import org.metavm.entity.natives.NativeBase;
 import org.metavm.object.instance.rest.InstanceDTO;
@@ -14,8 +13,6 @@ import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.*;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -31,12 +28,10 @@ public abstract class MvInstance extends BaseInstance {
     private transient boolean modified;
     private transient Object mappedEntity;
 
-    private @Nullable Field parentField;
     private @NotNull MvInstance root;
     
     private MvInstance parent;
     private @Nullable MvInstance oldRoot;
-    private @Nullable Field oldParentField;
     private @Nullable Id oldId;
     private @Nullable Id relocatedId;
     private @NotNull MvInstance aggregateRoot;
@@ -103,39 +98,32 @@ public abstract class MvInstance extends BaseInstance {
     @Override
     public void setParent(Instance parent, @Nullable Field parentField) {
         if (this.parent != null) {
-            if (this.parent.equals(parent) && Objects.equals(this.parentField, parentField))
+            if (this.parent.equals(parent))
                 return;
             throw new InternalException("Can not change parent of " + Instances.getInstanceDesc(getReference())
                     + ", current parent: " + this.parent
-                    + ", current parentField: " + this.parentField
                     + ", new parent: " + parent
                     + ", new parentField: " + parentField
             );
         }
-        setParentInternal((MvInstance) parent, parentField, state.id == null || !state.id.isRoot());
+        setParentInternal((MvInstance) parent, state.id == null || !state.id.isRoot());
     }
 
     public void setParentInternal(@Nullable InstanceParentRef parentRef) {
         if (parentRef != null)
-            setParentInternal((MvInstance) parentRef.parent().get(), parentRef.field(), true);
+            setParentInternal((MvInstance) parentRef.parent().get(), true);
         else
-            setParentInternal(null, null, true);
+            setParentInternal(null, true);
     }
 
-    public void setParentInternal(@Nullable MvInstance parent, @Nullable Field parentField, boolean setRoot) {
-        if (parent == this.parent && parentField == this.parentField)
+    public void setParentInternal(@Nullable MvInstance parent, boolean setRoot) {
+        if (parent == this.parent)
             return;
         if (parent != null) {
             this.parent = parent;
-            if (parent instanceof ClassInstance) {
-                this.parentField = parentField;
-//                assert parentField.isChild() : "Invalid parent field: " + parentField;
-            } else if (parent instanceof ArrayInstance parentArray) {
-                Utils.require(parentField == null);
-                assert parentArray.isChildArray();
-                this.parentField = null;
-            } else
+            if (!(parent instanceof ClassInstance)) {
                 throw new IllegalArgumentException("Invalid parent: " + parent);
+            } else
             if (setRoot)
                 root = (MvInstance) parent.getRoot();
             if (!pendingChild)
@@ -144,7 +132,6 @@ public abstract class MvInstance extends BaseInstance {
                 forEachDescendant(instance -> instance.state().setEphemeral());
         } else {
             this.parent = null;
-            this.parentField = null;
             if (setRoot)
                 aggregateRoot = root = this;
         }
@@ -152,7 +139,6 @@ public abstract class MvInstance extends BaseInstance {
 
     public void clearParent() {
         this.parent = null;
-        this.parentField = null;
     }
 
     public boolean isRoot() {
@@ -179,7 +165,7 @@ public abstract class MvInstance extends BaseInstance {
     }
 
     public boolean canExtract() {
-        return !isValue() && !isRoot() && this.parent != null && parentField != null && !parentField.isChild();
+        return !isValue() && !isRoot() && this.parent != null;
     }
 
     public void initId(Id id) {
@@ -193,10 +179,6 @@ public abstract class MvInstance extends BaseInstance {
             throw new IllegalStateException(String.format("Instance %s is immutable", this));
     }
 
-    public Set<Instance> getChildren() {
-        return Set.of();
-    }
-
     @Override
     public void writeTo(MvOutput output) {
         output.write(TreeTags.DEFAULT);
@@ -207,7 +189,6 @@ public abstract class MvInstance extends BaseInstance {
         if (isSeparateChild()) {
             output.writeBoolean(true);
             output.writeId(requireNonNull(getParent()).getId());
-            output.writeId(requireNonNull(getParentField()).getId());
         } else
             output.writeBoolean(false);
         write(output);
@@ -276,18 +257,8 @@ public abstract class MvInstance extends BaseInstance {
     }
 
     public boolean isChildOf(Instance instance, @Nullable Field parentField) {
-        return !isRoot() && this.parent == instance && this.parentField == parentField;
+        return !isRoot() && this.parent == instance;
     }
-
-    @Nullable
-    public Field getParentField() {
-        return parentField;
-    }
-
-    public @Nullable InstanceParentRef getParentRef() {
-        return this.parent == null ? null : new InstanceParentRef(this.parent.getReference(), parentField);
-    }
-
 
     public NativeBase getNativeObject() {
         return nativeObject;
@@ -386,9 +357,7 @@ public abstract class MvInstance extends BaseInstance {
         if (isRoot) {
             this.root = aggregateRoot = this;
             oldRoot = this.parent;
-            oldParentField = parentField;
             this.parent = null;
-            parentField = null;
         } else {
             this.oldRoot = this.root;
             this.root = aggregateRoot = requireNonNull(this.parent);
@@ -403,8 +372,6 @@ public abstract class MvInstance extends BaseInstance {
         useOldId = false;
         if (isRoot) {
             root = aggregateRoot = this.parent = requireNonNull(oldRoot);
-            parentField = oldParentField;
-            oldParentField = null;
         } else
             root = aggregateRoot = requireNonNull(oldRoot);
         oldRoot = null;

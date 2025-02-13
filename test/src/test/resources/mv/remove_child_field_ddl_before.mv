@@ -1,10 +1,10 @@
 class Product {
     private title string name;
-    private child Inventory inventory;
+    private Inventory inventory;
 
-    public Product(string name, Inventory inventory) {
+    public Product(string name, int quantity) {
         this.name = name;
-        this.inventory = inventory;
+        this.inventory = this.new Inventory(quantity);
     }
 
     public string getName() {

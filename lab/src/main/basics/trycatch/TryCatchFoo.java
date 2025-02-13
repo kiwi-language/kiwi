@@ -1,6 +1,5 @@
 package trycatch;
 
-import org.metavm.api.ChildEntity;
 import org.metavm.api.lang.Lang;
 
 import java.util.ArrayList;
@@ -10,7 +9,6 @@ import java.util.function.BiConsumer;
 
 public class TryCatchFoo<K, V> {
 
-    @ChildEntity
     private final List<Entry<K,V>> entries = new ArrayList<>();
 
     public void put(K key, V value) {

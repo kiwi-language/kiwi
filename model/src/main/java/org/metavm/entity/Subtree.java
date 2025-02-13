@@ -10,7 +10,6 @@ import java.util.Objects;
 public record Subtree(
         Id id,
         Id parentId,
-        long parentFieldTag,
         @Nullable Id oldId,
         boolean useOldId,
         byte[] data,
@@ -25,12 +24,12 @@ public record Subtree(
     public boolean equals(Object object) {
         if (this == object) return true;
         if (!(object instanceof Subtree subTree)) return false;
-        return id == subTree.id && Objects.equals(parentId, subTree.parentId) && Objects.equals(parentFieldTag, subTree.parentFieldTag) && Arrays.equals(data, subTree.data);
+        return id == subTree.id && Objects.equals(parentId, subTree.parentId) && Arrays.equals(data, subTree.data);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(id, parentId, parentFieldTag);
+        int result = Objects.hash(id, parentId);
         result = 31 * result + Arrays.hashCode(data);
         return result;
     }

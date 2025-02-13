@@ -43,10 +43,8 @@ public class WireTypes {
     public static final int STRING_TYPE = 37;
     public static final int CHAR_TYPE = 38;
     public static final int READ_ONLY_ARRAY_TYPE = 39;
-    public static final int READ_WRITE_ARRAY_TYPE = 40;
-    public static final int CHILD_ARRAY_TYPE = 41;
+    public static final int ARRAY_TYPE = 40;
     public static final int CAPTURED_TYPE = 42;
-    public static final int VALUE_ARRAY_TYPE = 44;
     public static final int INT_TYPE = 45;
     public static final int FLOAT_TYPE = 46;
     public static final int SHORT_TYPE = 47;

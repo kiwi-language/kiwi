@@ -5,12 +5,15 @@ import org.junit.Assert;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.instance.rest.InstanceQueryDTO;
-import org.metavm.util.*;
+import org.metavm.util.BusinessException;
+import org.metavm.util.Constants;
+import org.metavm.util.ContextUtil;
+import org.metavm.util.TestUtils;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.Objects;
 
 import static org.metavm.util.TestUtils.doInTransaction;
 import static org.metavm.util.TestUtils.doInTransactionWithoutResult;
@@ -249,10 +252,10 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                         null
                 )
         ));
-        var inboundOrderItemId = doInTransaction(() -> apiClient.newInstance(
-                "org.metavm.manufacturing.storage.InboundOrderItem",
+        var inboundOrderItemId = (String) doInTransaction(() -> apiClient.callMethod(
+                inboundOrderId,
+                "createItem",
                 Arrays.asList(
-                        inboundOrderId,
                         material.id(),
                         storageObjects.position.id(),
                         100,
@@ -324,10 +327,10 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 List.of("transferOrder1", "STORAGE", storageObjects.warehouse.id(), storageObjects.warehouse.id())
         ));
         // create a transfer order item
-        var qcTransferOrderItem = "org.metavm.manufacturing.storage.TransferOrderItem";
-        var transferOrderItemId = doInTransaction(() -> apiClient.newInstance(
-                qcTransferOrderItem,
-                Arrays.asList(transferOrderId, material.id(), 100, unit.id(), null, null)
+        var transferOrderItemId = (String) doInTransaction(() -> apiClient.callMethod(
+                transferOrderId,
+                "createItem",
+                Arrays.asList(material.id(), 100, unit.id(), null, null)
         ));
         // create an inventory
         var inventoryId = doInTransaction(() -> apiClient.newInstance(
@@ -387,23 +390,26 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         var workCenterId = doInTransaction(() -> apiClient.newInstance(qcWorkCenter, List.of()));
         var qcProcess = "org.metavm.manufacturing.production.Process";
         var processId = doInTransaction(() -> apiClient.newInstance(qcProcess, List.of("process1")));
-        var routingId = (String) doInTransaction(() -> apiClient.saveInstance(
-                "org.metavm.manufacturing.production.Routing",
-                Map.of(
-                        "name", "routing001",
-                        "product", material.id(),
-                        "unit", unit.id(),
-                        "processes", List.of(
-                                Map.of(
-                                        "processCode", "process1",
-                                        "processDescription", "process1",
-                                        "sequence", 1,
-                                        "process", processId,
-                                        "workCenter", workCenterId,
-                                        "items", List.of()
-                                )
-                        ),
-                        "successions", List.of()
+        var routingId = (String) doInTransaction(() -> apiClient.callMethod(
+                "routingService",
+                "save",
+                List.of(
+                    Map.of(
+                            "name", "routing001",
+                            "product", material.id(),
+                            "unit", unit.id(),
+                            "processes", List.of(
+                                    Map.of(
+                                            "processCode", "process1",
+                                            "processDescription", "process1",
+                                            "sequence", 1,
+                                            "process", processId,
+                                            "workCenter", workCenterId,
+                                            "items", List.of()
+                                    )
+                            ),
+                            "successions", List.of()
+                    )
                 )
         ));
         Assert.assertNotNull(routingId);
@@ -412,72 +418,80 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
 //        var reloadedRoutingView = instanceManager.getDefaultView(routingId).instance();
 //        var viewId = (DefaultViewId) Id.parse(reloadedRoutingView.id());
 //        Assert.assertEquals(viewId.getSourceId(), Id.parse(routingId));
-        var routing = getObject(routingId);
+        var routing = TestUtils.doInTransaction(() ->
+                (ClassInstanceWrap) Objects.requireNonNull(apiClient.callMethod("routingService", "get", List.of(routingId)))
+        );
         var routingProcess = routing.getArray("processes").getObject(0);
 //        var processListView = reloadedRoutingView.getInstance("processes");
 //        var itemView = processListView.getElementInstance(0);
 //        var successionListView = reloadedRoutingView.getInstance("successions");
-        doInTransactionWithoutResult(() -> apiClient.saveInstance(
-                "org.metavm.manufacturing.production.Routing",
-                Map.of(
-                        ApiService.KEY_ID, routing.id(),
-                        "name", "routing001",
-                        "product", material.id(),
-                        "unit", unit.id(),
-                        "processes", List.of(
-                                routingProcess.getMap(),
-                                Map.of(
-                                        "processCode", "process2",
-                                        "processDescription", "process2",
-                                        "sequence", 1,
-                                        "workCenter", workCenterId,
-                                        "process", processId,
-                                        "items", List.of()
-                                )
-                        ),
-                        "successions", List.of()
+        doInTransactionWithoutResult(() -> apiClient.callMethod(
+                "routingService",
+                "save",
+                List.of(
+                    Map.of(
+                            "entity", routingId,
+                            "name", "routing001",
+                            "product", material.id(),
+                            "unit", unit.id(),
+                            "processes", List.of(
+                                    routingProcess.getMap(),
+                                    Map.of(
+                                            "processCode", "process2",
+                                            "processDescription", "process2",
+                                            "sequence", 1,
+                                            "workCenter", workCenterId,
+                                            "process", processId,
+                                            "items", List.of()
+                                    )
+                            ),
+                            "successions", List.of()
+                    )
                 )
         ));
         return new RoutingObjects(routing, routingProcess);
     }
 
     private void processBOM(ClassInstanceWrap material, ClassInstanceWrap unit, ClassInstanceWrap routing, ClassInstanceWrap routingProcess) {
-        var bomId = saveInstance(
-                "org.metavm.manufacturing.production.BOM",
-                Map.of(
-                        "product", material.id(),
-                        "unit", unit.id(),
-                        "routing", routing.id(),
-                        "reportingProcess", routingProcess.id(),
-                        "state", "ENABLED",
-                        "inbound", true,
-                        "autoInbound", true,
-                        "secondaryOutputs", List.of(),
-                        "components", List.of(
-                                Map.ofEntries(
-                                        Map.entry("sequence", 1),
-                                        Map.entry("material", material.id()),
-                                        Map.entry("unit", unit.id()),
-                                        Map.entry("numerator", 1),
-                                        Map.entry("denominator", 1),
-                                        Map.entry("attritionRate", 0.0),
-                                        Map.entry("pickMethod", "ON_DEMAND"),
-                                        Map.entry("routingSpecified", false),
-                                        Map.entry("process", routingProcess.id()),
-                                        Map.entry("qualityInspectionState", "QUALIFIED"),
-                                        Map.entry("feedType", "DIRECT"),
-                                        Map.entry("items", List.of(
-                                                Map.of(
-                                                        "sequence", 1,
-                                                        "numerator", 1,
-                                                        "denominator", 1,
-                                                        "process", routingProcess.id(),
-                                                        "qualityInspectionState", "QUALIFIED",
-                                                        "feedType", "DIRECT"
-                                                )
-                                        ))
-                                )
-                        )
+        var bomId = (String) callMethod(
+                "bomService",
+                "create",
+                List.of(
+                    Map.of(
+                            "product", material.id(),
+                            "unit", unit.id(),
+                            "routing", routing.getString("entity"),
+                            "reportingProcess", routingProcess.getString("entity"),
+                            "state", "ENABLED",
+                            "inbound", true,
+                            "autoInbound", true,
+                            "secondaryOutputs", List.of(),
+                            "components", List.of(
+                                    Map.ofEntries(
+                                            Map.entry("sequence", 1),
+                                            Map.entry("material", material.id()),
+                                            Map.entry("unit", unit.id()),
+                                            Map.entry("numerator", 1),
+                                            Map.entry("denominator", 1),
+                                            Map.entry("attritionRate", 0.0),
+                                            Map.entry("pickMethod", "ON_DEMAND"),
+                                            Map.entry("routingSpecified", false),
+                                            Map.entry("process", routingProcess.getString("entity")),
+                                            Map.entry("qualityInspectionState", "QUALIFIED"),
+                                            Map.entry("feedType", "DIRECT"),
+                                            Map.entry("items", List.of(
+                                                    Map.of(
+                                                            "sequence", 1,
+                                                            "numerator", 1,
+                                                            "denominator", 1,
+                                                            "process", routingProcess.getString("entity"),
+                                                            "qualityInspectionState", "QUALIFIED",
+                                                            "feedType", "DIRECT"
+                                                    )
+                                            ))
+                                    )
+                            )
+                    )
                 )
         );
 //        var bomId = TestUtils.getSourceId(bomViewId);

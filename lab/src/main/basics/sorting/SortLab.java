@@ -1,14 +1,11 @@
 package sorting;
 
-import org.metavm.api.ChildEntity;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class SortLab {
 
-    @ChildEntity
     private final List<ComparableFoo> foos;
 
     public SortLab(List<ComparableFoo> foos) {

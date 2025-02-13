@@ -1,21 +1,20 @@
 package innerclass;
 
-import org.metavm.api.ChildEntity;
-import org.metavm.api.ChildList;
 import org.metavm.api.Entity;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class InnerClassFoo<K,V> {
 
-    @ChildEntity
-    private final ChildList<Entry<K,V>> entries = new ChildList<>();
+    private final List<Entry<K,V>> entries = new ArrayList<>();
 
-    public void addEntry(Entry<K,V> entry) {
-        entries.add(entry);
+    public void addEntry(K key, V value) {
+        entries.add(new Entry<>(key, value));
     }
 
-    public static class Entry<K,V> {
+    public class Entry<K,V> {
         private K key;
         private V value;
 

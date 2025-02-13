@@ -322,11 +322,7 @@ public class ExpressionParser {
         if(ctx.R() != null)
             return ArrayKind.READ_ONLY;
         if(ctx.LBRACK() != null)
-            return ArrayKind.READ_WRITE;
-        if(ctx.C() != null)
-            return ArrayKind.CHILD;
-        if(ctx.V() != null)
-            return ArrayKind.VALUE;
+            return ArrayKind.DEFAULT;
         throw new IllegalStateException("Unrecognized array kind: " + ctx.getText());
     }
 

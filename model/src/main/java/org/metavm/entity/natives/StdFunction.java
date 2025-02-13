@@ -489,7 +489,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             (func, args, callContext) -> {
                 var array = args.getFirst().resolveArray();
                 var newLength = ((IntValue) args.get(1)).value;
-                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().getFirst()), ArrayKind.READ_WRITE);
+                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().getFirst()), ArrayKind.DEFAULT);
                 return FlowExecResult.of(array.copyOf(newLength, newType).getReference());
             }
     ),
@@ -516,7 +516,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var array = args.getFirst().resolveArray();
                 var from = ((IntValue) args.get(1)).value;
                 var to = ((IntValue) args.get(2)).value;
-                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().getFirst()), ArrayKind.READ_WRITE);
+                var newType = new ArrayType(Types.getNullableType(func.getTypeArguments().getFirst()), ArrayKind.DEFAULT);
                 return FlowExecResult.of(array.copyOfRange(from, to, newType).getReference());
             }
     ),
@@ -564,7 +564,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             (func, args, callContext) -> {
                 var k = (Klass) args.getFirst().resolveObject();
                 var len = ((IntValue) args.get(1)).value;
-                var type = new ArrayType(Types.getNullableType(Types.getGeneralType(k)), ArrayKind.READ_WRITE);
+                var type = new ArrayType(Types.getNullableType(Types.getGeneralType(k)), ArrayKind.DEFAULT);
                 var array = new ArrayInstance(type);
                 Instances.initArray(array, new int[] {len}, 0);
                 return FlowExecResult.of(array.getReference());

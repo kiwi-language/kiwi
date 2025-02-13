@@ -10,7 +10,6 @@ import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -125,10 +124,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             statefulNative.forEachChild(action);
             return;
         }
-        forEachField((f, v) -> {
-            if(f.isChild() && v instanceof Reference r)
-                action.accept(r.get());
-        });
         children.forEach(action);
     }
 
@@ -138,10 +133,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             statefulNative.forEachMember(action);
             return;
         }
-        forEachField((f, v) -> {
-            if(v instanceof Reference r && (f.isChild() || r.isValueReference()))
-                action.accept(r.get());
-        });
         children.forEach(action);
     }
 
@@ -177,7 +168,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         }
         forEachField((f, v) -> {
             if(v instanceof Reference r)
-                action.accept(r, f.isChild());
+                action.accept(r, false);
         });
         children.forEach(c -> action.accept(c.getReference(), true));
     }
@@ -190,7 +181,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         }
         forEachField((f, v) -> {
             if(v instanceof Reference r)
-                action.accept(r, f.isChild(), f.getType());
+                action.accept(r, false, f.getType());
         });
         children.forEach(c -> action.accept(c.getReference(), true, c.getInstanceType()));
     }
@@ -214,16 +205,8 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         return (KlassType) super.getInstanceType();
     }
 
-    public Set<Instance> getChildren() {
-                var children = new IdentitySet<Instance>();
-        forEachField((f, v) -> {
-            if (f.isChild()) {
-                if (v.isNotNull()) {
-                    children.add(((Reference) v).get());
-                }
-            }
-        });
-        return children;
+    public void removeChild(ClassInstance instance) {
+        children.remove(instance);
     }
 
     @Override
@@ -417,13 +400,11 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
                 m++;
             }
             if (m < fields.size() && (field = fields.get(m)).getTag() == fieldTag) {
-                input.setParentField(field.getField());
                 field.secretlySet(input.readValue());
                 m++;
             } else
                 unknownFields.add(new UnknownField(this, klassTag, fieldTag, input.readInstanceBytes()));
         }
-        input.setParentField(getParentField());
         for (; m < fields.size(); m++) {
             fields.get(m).ensureInitialized();
         }
@@ -451,8 +432,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
                         + (field.getDeclaringType() == requireNonNull(klass.getSuperType()).getKlass()));
         if (checkMutability && field.isReadonly())
             throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD, field.getQualifiedName());
-        if (field.isChild() && value.isNotNull())
-            ((Reference) value).get().setParent(this, field);
         setModified();
         field(field).set(value);
     }
@@ -479,8 +458,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         Utils.require(field.getDeclaringType().isAssignableFrom(klass));
         Utils.require(!isFieldInitialized(field),
                 "Field " + field.getQualifiedName() + " is already initialized");
-        if (field.isChild() && value.isNotNull())
-            ((Reference) value).get().setParent(this, field);
         addField(field, value);
 //        }
     }
@@ -541,21 +518,10 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     public InstanceParam getParam() {
         if (isList()) {
             var elements = Instances.toJavaList(this);
-            if (isChildList()) {
-                return new ListInstanceParam(
-                        true,
-                        Utils.map(elements, e ->
-                                new InstanceFieldValue(
-                                        e.getTitle(), e.toDTO()
-                                )
-                        )
-                );
-            } else {
-                return new ListInstanceParam(
-                        false,
-                        Utils.map(elements, Value::toFieldValueDTO)
-                );
-            }
+            return new ListInstanceParam(
+                    false,
+                    Utils.map(elements, Value::toFieldValueDTO)
+            );
         } else
             return new ClassInstanceParam(Utils.filterByTypeAndMap(fieldTable, InstanceField.class, InstanceField::toDTO));
     }
@@ -567,10 +533,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         forEachField((f, v) -> {
             treeWriter.writeLine(f.getName() + ":");
             treeWriter.indent();
-            if (v instanceof Reference r && (r.isValueReference() || f.isChild()))
-                r.get().writeTree(treeWriter);
-            else
-                treeWriter.writeLine(v.getTitle());
+            treeWriter.writeLine(v.getTitle());
             treeWriter.deIndent();
         });
         treeWriter.deIndent();
@@ -602,10 +565,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     public boolean isEnum() {
         return klass.isEnum();
-    }
-
-    public boolean isChildList() {
-        return klass.isChildList();
     }
 
     public ArrayInstance getInstanceArray(Field field) {
@@ -663,8 +622,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             var st = copy.fieldTable.addSubTable(subTable.type);
             for (var field : subTable.fields) {
                 var v = field.getValue();
-                if(field.getField().isChild() && v instanceof Reference r)
-                    v = r.get().copy().getReference();
                 st.add(new InstanceField(copy, field.getField(), field.getType(), v));
             }
         }
@@ -889,12 +846,10 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     public Map<String, Value> buildSource() {
         var source = new HashMap<String, Value>();
         forEachField((field, value) -> {
-            if (!field.isChild()) {
-                var prefix = "l" + field.getDeclaringType().getLevel() + ".";
-                source.put(prefix + field.getColumn().name(), value);
-                if (field.getColumn().fuzzyName() != null)
-                    source.put(prefix + field.getColumn().fuzzyName(), value);
-            }
+            var prefix = "l" + field.getDeclaringType().getLevel() + ".";
+            source.put(prefix + field.getColumn().name(), value);
+            if (field.getColumn().fuzzyName() != null)
+                source.put(prefix + field.getColumn().fuzzyName(), value);
         });
         return source;
     }

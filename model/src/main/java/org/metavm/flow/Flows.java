@@ -113,7 +113,7 @@ public class Flows {
             m = MethodBuilder.newBuilder(klass, "values")
                     .id(TmpId.random())
                     .isStatic(true)
-                    .returnType(new ArrayType(klass.getType(), ArrayKind.READ_WRITE))
+                    .returnType(new ArrayType(klass.getType(), ArrayKind.DEFAULT))
                     .build();
         }
         return m;
@@ -126,7 +126,7 @@ public class Flows {
         valuesMethod.clearContent();
         valuesMethod.setReturnType(retType); // Add return type to constant pool
         var code = valuesMethod.getCode();
-        var arrayType = new ArrayType(klass.getType(), ArrayKind.READ_WRITE);
+        var arrayType = new ArrayType(klass.getType(), ArrayKind.DEFAULT);
         Nodes.newArray(arrayType, code);
         var arrayVar = code.nextVariableIndex();
         Nodes.store(arrayVar, code);

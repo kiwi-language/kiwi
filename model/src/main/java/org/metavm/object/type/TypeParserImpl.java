@@ -276,13 +276,9 @@ public class TypeParserImpl implements TypeParser {
 
     private ArrayKind parseArrayKind(org.metavm.object.type.antlr.TypeParser.ArrayKindContext ctx) {
         if (ctx.LBRACK() != null)
-            return ArrayKind.READ_WRITE;
+            return ArrayKind.DEFAULT;
         if (ctx.R() != null)
             return ArrayKind.READ_ONLY;
-        if (ctx.C() != null)
-            return ArrayKind.CHILD;
-        if(ctx.V() != null)
-            return ArrayKind.VALUE;
         throw new IllegalArgumentException("Unknown array kind: " + ctx.getText());
     }
 

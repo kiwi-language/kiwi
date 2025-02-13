@@ -27,6 +27,7 @@ class Product {
 
 }
 
+@Tag(1)
 enum ProductKind {
 
     DEFAULT,

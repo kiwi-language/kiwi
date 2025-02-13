@@ -857,4 +857,24 @@ public interface AssemblyParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitAnnotation(AssemblyParser.AnnotationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#elementValuePairs}.
+	 * @param ctx the parse tree
+	 */
+	void enterElementValuePairs(AssemblyParser.ElementValuePairsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#elementValuePairs}.
+	 * @param ctx the parse tree
+	 */
+	void exitElementValuePairs(AssemblyParser.ElementValuePairsContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link AssemblyParser#elementValuePair}.
+	 * @param ctx the parse tree
+	 */
+	void enterElementValuePair(AssemblyParser.ElementValuePairContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link AssemblyParser#elementValuePair}.
+	 * @param ctx the parse tree
+	 */
+	void exitElementValuePair(AssemblyParser.ElementValuePairContext ctx);
 }

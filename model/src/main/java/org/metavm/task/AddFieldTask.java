@@ -43,7 +43,7 @@ public class AddFieldTask extends ScanByClassTask {
     protected void processClassInstance(ClassInstance instance, IInstanceContext context) {
         Value fieldValue;
         var field = getField();
-        if(field.isChild() && field.getType() instanceof ArrayType arrayType)
+        if(field.getType() instanceof ArrayType arrayType)
             fieldValue = new ArrayInstance(arrayType).getReference();
         else
             fieldValue = Instances.computeFieldInitialValue(instance, field, context);

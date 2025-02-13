@@ -149,10 +149,8 @@ public interface TypeKey extends TypeOrTypeKey {
             case WireTypes.NULL_TYPE -> new NullTypeKey();
             case WireTypes.TIME_TYPE -> new PrimitiveTypeKey(PrimitiveKind.TIME.code());
             case WireTypes.PASSWORD_TYPE -> new PrimitiveTypeKey(PrimitiveKind.PASSWORD.code());
-            case WireTypes.CHILD_ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.CHILD.code(), read(input));
             case WireTypes.READ_ONLY_ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.READ_ONLY.code(), read(input));
-            case WireTypes.READ_WRITE_ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.READ_WRITE.code(), read(input));
-            case WireTypes.VALUE_ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.VALUE.code(), read(input));
+            case WireTypes.ARRAY_TYPE -> new ArrayTypeKey(ArrayKind.DEFAULT.code(), read(input));
             case WireTypes.CLASS_TYPE -> new ClassTypeKey(input.readId());
             case WireTypes.PARAMETERIZED_TYPE ->
                     new ParameterizedTypeKey(readGenericDeclarationRef(input), input.readId(), readTypeKeyList(input));
@@ -184,13 +182,9 @@ public interface TypeKey extends TypeOrTypeKey {
 
     private static ArrayKind parseArrayKind(@Nullable TypeParser.ArrayKindContext ctx) {
         if(ctx == null)
-            return ArrayKind.READ_WRITE;
+            return ArrayKind.DEFAULT;
         if(ctx.R() != null)
             return ArrayKind.READ_ONLY;
-        if(ctx.C() != null)
-            return ArrayKind.CHILD;
-        if(ctx.V() != null)
-            return ArrayKind.VALUE;
         throw new InternalException("Unrecognized array kind: " + ctx.getText());
     }
 

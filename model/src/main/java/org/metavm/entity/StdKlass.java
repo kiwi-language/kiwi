@@ -1,10 +1,8 @@
 package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.api.ChildList;
 import org.metavm.api.Index;
 import org.metavm.api.Interceptor;
-import org.metavm.api.ValueList;
 import org.metavm.api.entity.*;
 import org.metavm.entity.natives.*;
 import org.metavm.flow.FlowRef;
@@ -44,8 +42,6 @@ public enum StdKlass implements ValueHolderOwner<Klass> {
     abstractCollection(AbstractCollection.class, false, AbstractCollectionNative.class),
     abstractList(AbstractList.class, false, AbstractListNative.class),
     arrayList(ArrayList.class, false, ArrayListNative.class),
-    childList(ChildList.class, false, ChildListNative.class),
-    valueList(ValueList.class, false, ArrayListNative.class),
     iterator(Iterator.class),
     iterable(Iterable.class),
     iteratorImpl(IteratorImpl.class, false, IteratorImplNative.class),

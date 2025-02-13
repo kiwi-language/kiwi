@@ -3,7 +3,6 @@ package org.metavm.object.instance.core;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.CharSequenceNative;
-import org.metavm.entity.natives.NativeBase;
 import org.metavm.flow.ClosureContext;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.instance.rest.StringInstanceParam;
@@ -14,7 +13,6 @@ import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -275,11 +273,6 @@ public class StringInstance implements CharSequenceNative, ClassInstance {
     @Override
     public String getTitle() {
         return value;
-    }
-
-    @Override
-    public Set<Instance> getChildren() {
-        return Set.of();
     }
 
     @Override

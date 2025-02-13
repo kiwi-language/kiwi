@@ -488,29 +488,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             return;
         var parent = instance.getParent();
         if (parent != null && !parent.isRemoved() && !removalBatch.contains(parent)) {
-            switch (parent) {
-                case ClassInstance classParent -> {
-                    if (classParent.getNativeObject() instanceof StatefulNative statefulNative) {
-                        statefulNative.onChildRemove(instance);
-                    }
-                    else if (instance instanceof MvInstance mvInst) {
-                        var parentField = requireNonNull(mvInst.getParentField());
-                        if (classParent.getField(parentField) instanceof Reference r && r.get() == instance) {
-                            if (parentField.isNullable())
-                                classParent.setField(parentField, Instances.nullInstance());
-                            else {
-                                throw new BusinessException(
-                                        ErrorCode.STRONG_REFS_PREVENT_REMOVAL2,
-                                        ((MvInstance) instance).getQualifiedTitle(),
-                                        classParent.getTitle()
-                                );
-                            }
-                        }
-                    }
-                }
-                case ArrayInstance arrayParent -> arrayParent.remove(instance.getReference());
-                default -> throw new IllegalStateException("Unexpected value: " + instance);
-            }
+            if (parent instanceof MvClassInstance clsParent && instance instanceof MvClassInstance clsInst)
+                clsParent.removeChild(clsInst);
         }
         instance.setRemoved();
         if (instance instanceof ClassInstance classInstance)

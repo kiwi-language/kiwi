@@ -990,9 +990,6 @@ public class TranspileUtils {
         String bizName = tryGetNameFromAnnotation(psiField, EntityField.class);
         if (bizName != null)
             return bizName;
-        String childName = tryGetNameFromAnnotation(psiField, ChildEntity.class);
-        if (childName != null)
-            return childName;
         return psiField.getName();
     }
 
@@ -1055,10 +1052,6 @@ public class TranspileUtils {
         if (modifiers.hasModifierProperty(PsiModifier.PRIVATE))
             return Access.PRIVATE;
         return Access.PACKAGE;
-    }
-
-    public static boolean isChild(PsiVariable psiField) {
-        return getAnnotation(psiField, ChildEntity.class) != null;
     }
 
     public static String getBizClassName(PsiClass klass) {
@@ -1202,9 +1195,6 @@ public class TranspileUtils {
         var entityField = getAnnotation(field, EntityField.class);
         if(entityField != null)
             return getAnnotationAttribute(entityField, attributeName, defaultValue);
-        var childEntity = getAnnotation(field, ChildEntity.class);
-        if(childEntity != null)
-            return getAnnotationAttribute(childEntity, attributeName, defaultValue);
         return defaultValue;
     }
 

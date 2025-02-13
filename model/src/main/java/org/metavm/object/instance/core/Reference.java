@@ -98,7 +98,8 @@ public class Reference implements Value {
 //        else {
             return new ReferenceFieldValue(
                     getTitle(),
-                    Objects.requireNonNull(this.getStringIdForDTO(), "Id required"),
+                    Objects.requireNonNull(this.getStringIdForDTO(),
+                            () -> "Instance " + this.resolveDurable() + " has an uninitialized ID"),
                     getValueType().toExpression());
 //        }
     }

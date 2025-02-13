@@ -48,13 +48,8 @@ public class EntityUtils {
         if (ENUM_ORDINAL_FIELD.equals(javaField)) {
             return "ordinal";
         }
-        EntityField entityField = javaField.getAnnotation(EntityField.class);
-        ChildEntity childEntity = javaField.getAnnotation(ChildEntity.class);
-        return Utils.firstNonBlank(
-                Utils.safeCall(entityField, EntityField::value),
-                Utils.safeCall(childEntity, ChildEntity::value),
-                javaField.getName()
-        );
+        var entityField = javaField.getAnnotation(EntityField.class);
+        return Utils.safeCall(entityField, EntityField::value);
     }
 
     public static String getMetaConstraintName(Field field) {

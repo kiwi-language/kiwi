@@ -40,11 +40,18 @@ public class Nodes {
                 code.getLastNode(), code);
     }
 
+    public static NewChildNode createNewChild(Code code, ClassType type) {
+        return new NewChildNode(code.nextNodeName("newchild"), type, code.getLastNode(), code);
+    }
+
     public static NewObjectNode newObject(Code code, ClassType type, boolean ephemeral, boolean unbound) {
         return new NewObjectNode(code.nextNodeName("newObject"),
                 type, code.getLastNode(), code, ephemeral, unbound);
     }
 
+    public static DeleteObjectNode delete(Code code) {
+        return new DeleteObjectNode(code.nextNodeName("delete"), code.getLastNode(), code);
+    }
     public static VoidReturnNode voidRet(Code code) {
         return new VoidReturnNode(code.nextNodeName("voidRet"), code.getLastNode(), code);
     }
@@ -170,22 +177,12 @@ public class Nodes {
     }
 
     public static Node setField(FieldRef fieldRef, Code code) {
-        if (fieldRef.isChild()) {
-            return new SetChildFieldNode(
-                    code.nextNodeName("setchildfield"),
-                    code.getLastNode(),
-                    code,
-                    fieldRef
-            );
-        }
-        else {
-            return new SetFieldNode(
-                    code.nextNodeName("setfield"),
-                    code.getLastNode(),
-                    code,
-                    fieldRef
-            );
-        }
+        return new SetFieldNode(
+                code.nextNodeName("setfield"),
+                code.getLastNode(),
+                code,
+                fieldRef
+        );
     }
 
     public static SetStaticNode setStatic(Field field, Code code) {

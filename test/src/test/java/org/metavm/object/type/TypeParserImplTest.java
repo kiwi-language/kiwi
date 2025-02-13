@@ -164,7 +164,7 @@ public class TypeParserImplTest extends TestCase {
     }
 
     public void testParType() {
-        var type = new ArrayType(new UnionType(Set.of(Types.getNullType(), Types.getStringType())), ArrayKind.READ_WRITE);
+        var type = new ArrayType(new UnionType(Set.of(Types.getNullType(), Types.getStringType())), ArrayKind.DEFAULT);
         var expr = type.toExpression();
         TypeDefProvider typeDefProvider = (Id id) -> {
             if (StdKlass.string.get().idEquals(id)) return StdKlass.string.get();

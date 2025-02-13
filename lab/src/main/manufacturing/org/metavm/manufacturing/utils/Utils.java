@@ -4,7 +4,8 @@ import org.metavm.api.Entity;
 import org.metavm.api.lang.Lang;
 
 import javax.annotation.Nullable;
-import java.util.Date;
+import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 @Entity
@@ -50,6 +51,23 @@ public class Utils {
         if(object == null)
             throw new NullPointerException();
         return object;
+    }
+
+    public static <T> void setChildren(List<T> list, List<T> newList) {
+        var set = new HashSet<>(newList);
+        for (T t : list) {
+            if (!set.contains(t)) Lang.delete(t);
+        }
+        list.clear();
+        list.addAll(newList);
+    }
+
+    public static <T,R> List<R> map(Collection<T> collection, Function<T, R> mapper) {
+        var result = new ArrayList<R>();
+        for (T t : collection) {
+            result.add(mapper.apply(t));
+        }
+        return result;
     }
 
 }

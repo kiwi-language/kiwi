@@ -1,6 +1,5 @@
 package org.metavm.lab.shopping;
 
-import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
 
@@ -19,7 +18,6 @@ public class AstOrder {
 
     public final int amount;
 
-    @ChildEntity
     public final List<AstCoupon> coupons;
 
     public int state;

@@ -97,6 +97,7 @@ memberDeclaration
     | fieldDeclaration
     | constructorDeclaration
     | indexDeclaration
+    | classDeclaration
 //    | genericConstructorDeclaration
     ;
 
@@ -168,6 +169,7 @@ statement
     | SWITCH '{' branchCase* '}'
     | RETURN expression? ';'
     | THROW expression ';'
+    | DELETE expression ';'
     | SEMI
     | statementExpression=expression ';'
     | localVariableDeclaration ';'
@@ -265,6 +267,7 @@ expression
          IDENTIFIER
        | THIS
        | methodCall
+       | NEW creator
 //       | SUPER superSuffix
 //       | explicitGenericInvocation
       )
@@ -371,7 +374,7 @@ typeType
     | '[' typeType ',' typeType ']'
     ;
 
-arrayKind: R | RW | C | V;
+arrayKind: R | RW;
 
 classOrInterfaceType: qualifiedName typeArguments?;
 
@@ -398,7 +401,6 @@ modifier
     : classOrInterfaceModifier
     | NATIVE
     | READONLY
-    | CHILD
     | TITLE
     | UNIQUE
     | DELETED
@@ -430,4 +432,12 @@ indexDeclaration: INDEX typeType IDENTIFIER;
 
 indexField: IDENTIFIER ':' expression ';';
 
-annotation: '@' IDENTIFIER;
+annotation: '@' IDENTIFIER ('(' (elementValuePairs | expression)? ')')?;
+
+elementValuePairs
+    : elementValuePair (',' elementValuePair)*
+    ;
+
+elementValuePair
+    : IDENTIFIER '=' expression
+    ;

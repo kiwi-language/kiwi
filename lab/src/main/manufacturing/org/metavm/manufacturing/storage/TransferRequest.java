@@ -1,11 +1,12 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.api.ValueList;
 import org.metavm.api.ValueStruct;
+
+import java.util.List;
 
 @ValueStruct
 public record TransferRequest(
     Position to,
-    ValueList<TransferRequestItem> items
+    List<TransferRequestItem> items
 ) {
 }

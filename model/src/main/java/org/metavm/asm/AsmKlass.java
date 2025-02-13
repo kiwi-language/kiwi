@@ -5,6 +5,7 @@ import org.metavm.object.type.*;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -22,6 +23,7 @@ final class AsmKlass implements AsmScope, AsmGenericDeclaration {
     final Set<Method> visitedMethods = new HashSet<>();
     final Set<Field> visitedFields = new HashSet<>();
     final Set<Index> visitedIndices = new HashSet<>();
+    final Set<Klass> visitedInnerKlasses = new LinkedHashSet<>();
 
     AsmKlass(
             @Nullable AsmScope parent,

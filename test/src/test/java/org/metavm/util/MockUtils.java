@@ -3,7 +3,6 @@ package org.metavm.util;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.asm.AssemblerFactory;
 import org.metavm.ddl.CommitState;
-import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.*;
 import org.metavm.mocks.Bar;
@@ -28,7 +27,7 @@ public class MockUtils {
         var productType = TestUtils.newKlassBuilder("Product", "Product").build();
         var skuType = TestUtils.newKlassBuilder("SKU", "SKU").build();
         var couponType = TestUtils.newKlassBuilder("Coupon", "Coupon").build();
-        var couponArrayType = new ArrayType(couponType.getType(), ArrayKind.READ_WRITE);
+        var couponArrayType = new ArrayType(couponType.getType(), ArrayKind.DEFAULT);
         var orderType = TestUtils.newKlassBuilder("Order", "Order").build();
         var couponStateType = TestUtils.newKlassBuilder("CouponState", "CouponState")
                 .kind(ClassKind.ENUM)
@@ -61,10 +60,8 @@ public class MockUtils {
         var productTitleField = FieldBuilder.newBuilder("title", productType, Types.getStringType())
                 .asTitle()
                 .build();
-        var skuChildArrayType = new ArrayType(skuType.getType(), ArrayKind.CHILD);
-        var productSkuListField = FieldBuilder.newBuilder("skuList", productType, skuChildArrayType)
-                .isChild(true)
-                .build();
+        var skuArrayType = new ArrayType(skuType.getType(), ArrayKind.DEFAULT);
+        var productSkuListField = FieldBuilder.newBuilder("skuList", productType, skuArrayType).build();
         var skuTitleField = FieldBuilder.newBuilder("title", skuType, Types.getStringType())
                 .asTitle()
                 .build();
@@ -77,8 +74,7 @@ public class MockUtils {
                 .asTitle()
                 .build();
         var orderProductField = FieldBuilder.newBuilder("product", orderType, productType.getType()).build();
-        var orderCouponsField = FieldBuilder.newBuilder("coupons", orderType, couponArrayType)
-                .isChild(true).build();
+        var orderCouponsField = FieldBuilder.newBuilder("coupons", orderType, couponArrayType).build();
         var orderAmountField = FieldBuilder.newBuilder("amount", orderType, Types.getLongType()).build();
         var orderPriceField = FieldBuilder.newBuilder("price", orderType, Types.getDoubleType()).build();
         var orderTimeField = FieldBuilder.newBuilder("time", orderType, Types.getTimeType()).build();
@@ -92,7 +88,7 @@ public class MockUtils {
                 .build();
 
         return new ShoppingTypes(
-                productType, skuType, couponType, orderType, couponStateType, skuChildArrayType, couponArrayType,
+                productType, skuType, couponType, orderType, couponStateType, skuArrayType, couponArrayType,
                 productTitleField, productSkuListField, skuTitleField, skuPriceField, skuAmountField,
                 couponTitleField, couponDiscountField, couponStateField, orderCodeField, orderProductField,
                 orderCouponsField, orderAmountField, orderPriceField, orderTimeField, couponNormalState, couponUsedState
@@ -193,15 +189,15 @@ public class MockUtils {
             var couponKlass = context.getKlassByQualifiedName("Coupon");
             var couponStateKlas = context.getKlassByQualifiedName("CouponState");
             var orderKlass = context.getKlassByQualifiedName("Order");
-            var skuChildListType = TypeExpressions.getChildListType(TypeExpressions.getClassType(skuKlass.getStringId()));
-            var couponListType = TypeExpressions.getReadWriteListType(TypeExpressions.getClassType(couponKlass.getStringId()));
+            var skuListType = TypeExpressions.getArrayListType(TypeExpressions.getClassType(skuKlass.getStringId()));
+            var couponListType = TypeExpressions.getArrayListType(TypeExpressions.getClassType(couponKlass.getStringId()));
             return new ShoppingTypeIds(
                     productKlass.getStringId(),
                     skuKlass.getStringId(),
                     couponStateKlas.getStringId(),
                     couponKlass.getStringId(),
                     orderKlass.getStringId(),
-                    skuChildListType,
+                    skuListType,
                     couponListType,
                     productKlass.getFieldByName("name").getStringId(),
                     productKlass.getFieldByName("skuList").getStringId(),
@@ -295,13 +291,12 @@ public class MockUtils {
         var barKlass = TestUtils.newKlassBuilder("Bar", "Bar").build();
         var barCodeField = FieldBuilder.newBuilder("code", barKlass, Types.getStringType())
                 .asTitle().build();
-        var barChildArrayType = new ArrayType(barKlass.getType(), ArrayKind.CHILD);
-        var barArrayType = new ArrayType(barKlass.getType(), ArrayKind.READ_WRITE);
+        var bardArrayType = new ArrayType(barKlass.getType(), ArrayKind.DEFAULT);
+        var barArrayType = new ArrayType(barKlass.getType(), ArrayKind.DEFAULT);
 //        var nullableBarType = new UnionType(null, Set.of(barType, getNullType()));
-        var fooBarsField = FieldBuilder.newBuilder("bars", fooKlass, barChildArrayType)
-                .isChild(true).build();
+        var fooBarsField = FieldBuilder.newBuilder("bars", fooKlass, bardArrayType).build();
         var bazKlass = TestUtils.newKlassBuilder("Baz", "Baz").build();
-        var bazArrayType = new ArrayType(bazKlass.getType(), ArrayKind.READ_WRITE);
+        var bazArrayType = new ArrayType(bazKlass.getType(), ArrayKind.DEFAULT);
         var bazBarsField = FieldBuilder.newBuilder("bars", bazKlass, barArrayType).build();
         var fooBazListField = FieldBuilder.newBuilder("bazList", fooKlass, bazArrayType).build();
         var quxKlass = TestUtils.newKlassBuilder("Qux", "Qux").build();
@@ -312,7 +307,7 @@ public class MockUtils {
 //        log.debug("{}", barKlass.getText());
 //        log.debug("{}", quxKlass.getText());
 //        log.debug("{}", bazKlass.getText());
-        return new FooTypes(fooKlass, barKlass, quxKlass, bazKlass, barArrayType, barChildArrayType, bazArrayType, fooNameField,
+        return new FooTypes(fooKlass, barKlass, quxKlass, bazKlass, barArrayType, bardArrayType, bazArrayType, fooNameField,
                 fooCodeField, fooBarsField, fooQuxField, fooBazListField, barCodeField, bazBarsField, quxAmountField);
     }
 
@@ -322,12 +317,10 @@ public class MockUtils {
                 .build();
         var livingBeingExtraInfoField = FieldBuilder.newBuilder("extraInfo", livingBeingType, Types.getAnyType())
                 .build();
-        var livingBeingArrayType = new ArrayType(livingBeingType.getType(), ArrayKind.READ_WRITE);
+        var livingBeingArrayType = new ArrayType(livingBeingType.getType(), ArrayKind.DEFAULT);
         var livingBeingOffspringsField = FieldBuilder.newBuilder("offsprings", livingBeingType, livingBeingArrayType)
-                .isChild(true)
                 .build();
         var livingBeingAncestorsField = FieldBuilder.newBuilder("ancestors", livingBeingType, livingBeingArrayType)
-                .isChild(true)
                 .build();
         var animalType = TestUtils.newKlassBuilder("Animal", "Animal")
                 .superType(livingBeingType.getType())

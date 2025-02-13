@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.*;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.FunctionValue;
-import org.metavm.object.instance.core.NullId;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.core.TypeTag;
 import org.metavm.object.type.generic.TypeSubstitutor;
@@ -662,23 +661,19 @@ public class Types {
     }
 
     public static ArrayType getAnyArrayType() {
-        return new ArrayType(AnyType.instance, ArrayKind.READ_WRITE);
+        return new ArrayType(AnyType.instance, ArrayKind.DEFAULT);
     }
 
     public static ArrayType getArrayType(Type elementType) {
-        return new ArrayType(elementType, ArrayKind.READ_WRITE);
+        return new ArrayType(elementType, ArrayKind.DEFAULT);
     }
 
     public static ArrayType getNeverArrayType() {
-        return new ArrayType(NeverType.instance, ArrayKind.READ_WRITE);
+        return new ArrayType(NeverType.instance, ArrayKind.DEFAULT);
     }
 
     public static ArrayType getReadOnlyAnyArrayType() {
         return new ArrayType(AnyType.instance, ArrayKind.READ_ONLY);
-    }
-
-    public static ArrayType getChildAnyArrayType() {
-        return new ArrayType(AnyType.instance, ArrayKind.CHILD);
     }
 
     public static Field getEnumNameField(Klass classType) {

@@ -46,9 +46,7 @@ public class StdIdGeneratorTest extends TestCase {
             Assert.assertNotNull(generator.getId(k));
         }
         var indexId = generator.getId(ReflectionUtils.getField(Klass.class, "UNIQUE_QUALIFIED_NAME"));
-        log.debug("Index ID: {}", indexId);
         Assert.assertNotNull(indexId);
-        log.debug("Next node ID: {}", generator.getNextNodeId(Enum.class));
     }
 
 }

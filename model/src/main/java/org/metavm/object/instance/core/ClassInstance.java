@@ -66,8 +66,6 @@ public interface ClassInstance extends Instance {
         }
     }
 
-    Set<Instance> getChildren();
-
     void defaultWrite(InstanceOutput output);
 
     void defaultRead(InstanceInput input);
@@ -145,10 +143,6 @@ public interface ClassInstance extends Instance {
 
     default boolean isEnum() {
         return getInstanceKlass().isEnum();
-    }
-
-    default boolean isChildList() {
-        return getInstanceKlass().isChildList();
     }
 
     default ArrayInstance getInstanceArray(Field field) {

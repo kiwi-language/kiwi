@@ -2,7 +2,6 @@ package org.metavm.autograph;
 
 import com.intellij.psi.*;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.EntityField;
 
 import java.util.HashMap;
@@ -62,8 +61,7 @@ public class RecordToClass extends VisitorBase {
                 if(method.isConstructor()) {
                     for (PsiParameter parameter : method.getParameterList().getParameters()) {
                         for (PsiAnnotation annotation : parameter.getAnnotations()) {
-                            if (TranspileUtils.isAnnotationInstanceOf(annotation, EntityField.class)
-                                    || TranspileUtils.isAnnotationInstanceOf(annotation, ChildEntity.class)) {
+                            if (TranspileUtils.isAnnotationInstanceOf(annotation, EntityField.class)) {
                                 annotation.delete();
                             }
                         }

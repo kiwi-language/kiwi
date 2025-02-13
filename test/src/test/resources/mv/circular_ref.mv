@@ -3,10 +3,10 @@ import java.io.ObjectInputStream;
 
 class Foo {
 
-    private child Bar bar;
+    private Bar bar;
 
     public Foo() {
-        this.bar = new Bar(this);
+        this.bar = this.new Bar(this);
     }
 
     public Bar getBar() {

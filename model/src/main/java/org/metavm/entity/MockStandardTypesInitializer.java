@@ -1,14 +1,11 @@
 package org.metavm.entity;
 
-import org.metavm.api.ChildList;
-import org.metavm.api.ValueList;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.NameAndType;
 import org.metavm.flow.Nodes;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
-import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -26,28 +23,16 @@ public class MockStandardTypesInitializer {
         StdKlass.list.set(
                 newKlassBuilder(List.class)
                         .source(ClassSource.BUILTIN)
-                        .typeParameters(new TypeVariable(TmpId.random(), "Element", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "E", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.arrayList.set(
                 newKlassBuilder(ArrayList.class)
                         .source(ClassSource.BUILTIN)
-                        .typeParameters(new TypeVariable(TmpId.random(), "ReadWriteListElement", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "E", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
-        StdKlass.childList.set(
-                newKlassBuilder(ChildList.class)
-                        .source(ClassSource.BUILTIN)
-                        .typeParameters(new TypeVariable(TmpId.random(), "ChildListElement", DummyGenericDeclaration.INSTANCE))
-                        .build()
-        );
-        StdKlass.valueList.set(
-                newKlassBuilder(ValueList.class)
-                        .source(ClassSource.BUILTIN)
-                        .typeParameters(new TypeVariable(TmpId.random(), "ValueListElement", DummyGenericDeclaration.INSTANCE))
-                        .build()
-        );
-        var enumTypeParam = new TypeVariable(TmpId.random(), "EnumType",
+        var enumTypeParam = new TypeVariable(TmpId.random(), "E",
                 DummyGenericDeclaration.INSTANCE);
         var enumType = newKlassBuilder(Enum.class)
                 .source(ClassSource.BUILTIN)
@@ -63,13 +48,13 @@ public class MockStandardTypesInitializer {
         StdKlass.predicate.set(
                 newKlassBuilder(Predicate.class)
                         .source(ClassSource.BUILTIN)
-                        .typeParameters(new TypeVariable(TmpId.random(), "Element", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.consumer.set(
                 newKlassBuilder(Consumer.class)
                         .source(ClassSource.BUILTIN)
-                        .typeParameters(new TypeVariable(TmpId.random(), "Element", DummyGenericDeclaration.INSTANCE))
+                        .typeParameters(new TypeVariable(TmpId.random(), "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
         StdKlass.throwable.set(

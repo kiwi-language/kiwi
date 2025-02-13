@@ -1,7 +1,6 @@
 package org.metavm.mocks;
 
 import org.metavm.annotation.NativeEntity;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
@@ -34,7 +33,7 @@ public class UpgradeFoo extends org.metavm.entity.Entity {
     private Value bar;
     @EntityField
     private Value value;
-    @ChildEntity(since = 1)
+    @EntityField(since = 1)
     private List<Reference> array = new ArrayList<>();
 
     public UpgradeFoo(Id id, String name, Value bar) {

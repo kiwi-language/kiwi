@@ -1,7 +1,7 @@
 package org.metavm.manufacturing.storage;
 
 public record TransferDetail(
-        TransferOrderItem transferOrderItem,
+        TransferOrder.Item transferOrderItem,
         Inventory inventory,
         long amount
 ) {

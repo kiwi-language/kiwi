@@ -70,7 +70,7 @@ public class ExpressionResolverV2 extends CopyVisitor {
             }
             return new ArrayExpression(
                     elements,
-                    new ArrayType(elementType, ArrayKind.READ_WRITE)
+                    new ArrayType(elementType, ArrayKind.DEFAULT)
             );
         } finally {
             assignedTypeStack.pop();

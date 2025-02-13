@@ -1,8 +1,8 @@
 
 public class Utils {
 
-    public static any[c] createArray() {
-        return new any[c];
+    public static any[] createArray() {
+        return new any[];
     }
 
 }

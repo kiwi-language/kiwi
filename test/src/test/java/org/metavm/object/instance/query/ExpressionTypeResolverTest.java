@@ -46,8 +46,8 @@ public class ExpressionTypeResolverTest extends TestCase {
         var listViewType = TestUtils.newKlassBuilder("ListView", "ListView").build();
         var classTypeType = TestUtils.newKlassBuilder("ClassType", "ClassType").build();
         var fieldType = TestUtils.newKlassBuilder("Field", "Field").build();
-        var fieldChildArrayType = new ArrayType(fieldType.getType(), ArrayKind.CHILD);
-        FieldBuilder.newBuilder("visibleFields", listViewType, fieldChildArrayType).build();
+        var fieldArrayType = new ArrayType(fieldType.getType(), ArrayKind.DEFAULT);
+        FieldBuilder.newBuilder("visibleFields", listViewType, fieldArrayType).build();
         FieldBuilder.newBuilder("type", listViewType, classTypeType.getType()).build();
         FieldBuilder.newBuilder("declaringType", fieldType, classTypeType.getType()).build();
         typeDefRepository.save(List.of(listViewType, classTypeType, fieldType));

@@ -43,7 +43,6 @@ public class LabUser {
     @Nullable
     private LabPlatformUser platformUser;
 
-    @ChildEntity
     private final List<LabRole> roles = new ArrayList<>();
 
     public LabUser(String loginName, String password, String name, List<LabRole> roles, LabApplication application) {

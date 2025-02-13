@@ -1,5 +1,4 @@
 import java.util.List;
-import org.metavm.api.ChildList;
 
 class Product {
     private title string name;

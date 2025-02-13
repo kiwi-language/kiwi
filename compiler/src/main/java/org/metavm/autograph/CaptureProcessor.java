@@ -50,7 +50,7 @@ public class CaptureProcessor {
                     }
                 }
                 case ArrayType arrayType -> {
-                    assert arrayType.getKind() == ArrayKind.READ_WRITE;
+                    assert arrayType.getKind() == ArrayKind.DEFAULT;
                     constructType(arrayType.getElementType(), builder, ctVars);
                     builder.createLoadArrayType();
                 }

@@ -72,19 +72,6 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
         }
     }
 
-    @NoProxy
-    public boolean isChildArray() {
-        return getInstanceType().getKind() == ArrayKind.CHILD;
-    }
-
-    public Set<Instance> getChildren() {
-        if (getInstanceType().getKind() == ArrayKind.CHILD) {
-            return Utils.filterAndMapUnique(elements, Value::isNotNull, Value::resolveDurable);
-        } else {
-            return Set.of();
-        }
-    }
-
     @Override
     protected void writeBody(MvOutput output) {
         var elements = this.elements;
@@ -94,16 +81,9 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
                 size++;
         }
         output.writeInt(size);
-        if (isChildArray()) {
-            for (Value element : elements) {
-                if (element.isNull() || !element.shouldSkipWrite())
-                    output.writeInstance(element);
-            }
-        } else {
-            for (Value element : elements) {
-                if (element.isNull() || !element.shouldSkipWrite()) {
-                    output.writeValue(element);
-                }
+        for (Value element : elements) {
+            if (element.isNull() || !element.shouldSkipWrite()) {
+                output.writeValue(element);
             }
         }
     }
@@ -111,15 +91,12 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
     @Override
     @NoProxy
     protected void readBody(InstanceInput input) {
-        var parentField = getParentField();
         var elements = this.elements;
         int len = input.readInt();
-        input.setParentField(null);
         for (int i = 0; i < len; i++) {
             var element = input.readValue();
             elements.add(element);
         }
-        input.setParentField(parentField);
     }
 
     public Value get(int index) {
@@ -178,8 +155,6 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
     public Value setElement(int index, Value element) {
         checkIndex(index);
         checkElement(element);
-        if (isChildArray() && element.isNotNull())
-            element.resolveDurable().setParent(this, null);
         var removed = elements.set(index, element);
         if (removed != null)
             onRemove(removed);
@@ -198,8 +173,6 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
     private boolean addInternally(Value element) {
         checkElement(element);
-        if (isChildArray() && element.isNotNull())
-            element.resolveDurable().setParent(this, null);
         elements.add(element);
         onAdd(element);
         return true;
@@ -271,12 +244,6 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
     @Override
     public void forEachChild(Consumer<? super Instance> action) {
-        if(isChildArray()) {
-            elements.forEach(e -> {
-                if (e instanceof Reference r)
-                    action.accept(r.get());
-            });
-        }
     }
 
     @Override
@@ -297,32 +264,29 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
     @Override
     public void forEachReference(BiConsumer<Reference, Boolean> action) {
-        boolean isChild = isChildArray();
         elements.forEach(e -> {
             if(e instanceof Reference r)
-                action.accept(r, isChild);
+                action.accept(r, false);
         });
     }
 
     @Override
     public void forEachReference(TriConsumer<Reference, Boolean, Type> action) {
-        var isChild = isChildArray();
         var elementType = getInstanceType().getElementType();
         elements.forEach(e -> {
             if(e instanceof Reference r)
-                action.accept(r, isChild, elementType);
+                action.accept(r, false, elementType);
         });
     }
 
     @Override
     public void transformReference(TriFunction<Reference, Boolean, Type, Reference> function) {
-        var isChild = isChildArray();
         var elementType = getInstanceType().getElementType();
         var it = elements.listIterator();
         while (it.hasNext()) {
             var v = it.next();
             if(v instanceof Reference r) {
-                var r1 = function.apply(r, isChild, elementType);
+                var r1 = function.apply(r, false, elementType);
                 if(r1 != r)
                     it.set(r1);
             }
@@ -331,28 +295,11 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
     //    @Override
     public ArrayInstanceParam getParam() {
-        if (isChildArray()) {
-            return new ArrayInstanceParam(
-                    true,
-                    Utils.map(elements, e ->
-                            new InstanceFieldValue(
-                                    e.getTitle(), e.toDTO()
-                            )
-                    )
-            );
-        } else {
-            return new ArrayInstanceParam(
-                    false,
-                    Utils.map(elements, Value::toFieldValueDTO)
-            );
-        }
+        return new ArrayInstanceParam(
+                false,
+                Utils.map(elements, Value::toFieldValueDTO)
+        );
     }
-
-//    @Override
-//    @NoProxy
-//    public <R> R accept(InstanceVisitor<R> visitor) {
-//        return visitor.visitArrayInstance(this);
-//    }
 
 //    @Override
     public <R> void acceptReferences(ValueVisitor<R> visitor) {
@@ -361,8 +308,6 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
 //    @Override
     public <R> void acceptChildren(ValueVisitor<R> visitor) {
-        if (isChildArray())
-            elements.forEach(visitor::visit);
     }
 
     @SuppressWarnings("unused")
@@ -439,21 +384,11 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
     public void writeTree(TreeWriter treeWriter) {
         treeWriter.writeLine(getInstanceType().getName() + " " + tryGetId());
         treeWriter.indent();
-        if(isChildArray()) {
-            for (Value element : elements) {
-                if(element instanceof Reference r)
-                    r.get().writeTree(treeWriter);
-                else
-                    treeWriter.writeLine(element.getTitle());
-            }
-        }
-        else {
-            for (Value element : elements) {
-                if(element instanceof Reference r && r.isValueReference())
-                    r.get().writeTree(treeWriter);
-                else
-                    treeWriter.writeLine(element.getTitle());
-            }
+        for (Value element : elements) {
+            if(element instanceof Reference r && r.isValueReference())
+                r.get().writeTree(treeWriter);
+            else
+                treeWriter.writeLine(element.getTitle());
         }
         treeWriter.deIndent();
     }
@@ -467,11 +402,6 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
         var list = new ArrayList<>();
         forEach(e -> list.add(e.toJson()));
         return list;
-    }
-
-//    @Override
-    public boolean isMutable() {
-        return getInstanceType().getKind() != ArrayKind.VALUE;
     }
 
     @Override
@@ -490,16 +420,7 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
     @Override
     public ArrayInstance copy() {
         var copy = new ArrayInstance(getInstanceType());
-        if(isChildArray()) {
-            var copyElements = copy.elements;
-            elements.forEach(e -> {
-                if (e instanceof Reference r)
-                    e = r.get().copy().getReference();
-                copyElements.add(e);
-            });
-        }
-        else
-            copy.elements.addAll(elements);
+        copy.elements.addAll(elements);
         return copy;
     }
 

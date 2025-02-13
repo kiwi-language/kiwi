@@ -33,7 +33,7 @@ public class ExpressionParserTest extends TestCase {
         var parser = new ExpressionParser("(any|null)[].class", new MyParsingContext());
         var expr = (TypeLiteralExpression) parser.parse(Types.getAnyType());
         Assert.assertEquals(
-                new ArrayType(Types.getNullableAnyType(), ArrayKind.READ_WRITE),
+                new ArrayType(Types.getNullableAnyType(), ArrayKind.DEFAULT),
                 expr.getTypeObject()
         );
     }

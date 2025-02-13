@@ -1,13 +1,10 @@
 package org.metavm.autograph.mocks;
 
-import org.metavm.api.ChildEntity;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class AstForeachFoo {
 
-    @ChildEntity
     private final List<Double> prices = new ArrayList<>();
 
     public double getAveragePrice() {

@@ -51,27 +51,11 @@ public class ArrayListNative extends AbstractListNative implements ListNative, S
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
-    public Value ChildList(CallContext callContext) {
-        return List(callContext);
-    }
-
-    public Value ChildList(Value c, CallContext callContext) {
-        return List(c, callContext);
-    }
-
     public Value ArrayList(CallContext callContext) {
         return List(callContext);
     }
 
     public Value ArrayList__Collection(Value c, CallContext callContext) {
-        return List(c, callContext);
-    }
-
-    public Value ValueList(CallContext callContext) {
-        return List(callContext);
-    }
-
-    public Value ValueList(Value c, CallContext callContext) {
         return List(c, callContext);
     }
 
@@ -256,13 +240,10 @@ public class ArrayListNative extends AbstractListNative implements ListNative, S
 
     public Value readObject(Value i, CallContext callContext) {
         var in = ((MvObjectInputStream) i.resolveObject()).getInput();
-        var prevParentField = in.getParentField();
-        in.setParentField(null);
         var size = in.readInt();
         for (int i1 = 0; i1 < size; i1++) {
             list.add(in.readValue());
         }
-        in.setParentField(prevParentField);
         return Instances.nullInstance();
     }
 
@@ -301,19 +282,17 @@ public class ArrayListNative extends AbstractListNative implements ListNative, S
 
     @Override
     public void forEachReference(TriConsumer<Reference, Boolean, Type> action) {
-        var isChildList = isChildList();
         for (Value value : list) {
-            if (value instanceof Reference r) action.accept(r, isChildList, elementType);
+            if (value instanceof Reference r) action.accept(r, false, elementType);
         }
     }
 
     @Override
     public void transformReference(TriFunction<Reference, Boolean, Type, Reference> function) {
-        var isChildList = isChildList();
         var newList = new ArrayList<Value>();
         for (Value value : list) {
             if (value instanceof Reference r)
-                newList.add(function.apply(r, isChildList, elementType));
+                newList.add(function.apply(r, false, elementType));
             else
                 newList.add(value);
         }
@@ -322,10 +301,6 @@ public class ArrayListNative extends AbstractListNative implements ListNative, S
 
     public List<Value> getList() {
         return Collections.unmodifiableList(list);
-    }
-
-    public boolean isChildList() {
-        return false;
     }
 
 }

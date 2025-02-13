@@ -332,17 +332,7 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
-	public void visitReadWriteArrayType() {
-        visitValue();
-    }
-
-    @Override
-	public void visitChildArrayType() {
-        visitValue();
-    }
-
-    @Override
-	public void visitValueArrayType() {
+	public void visitArrayType() {
         visitValue();
     }
 

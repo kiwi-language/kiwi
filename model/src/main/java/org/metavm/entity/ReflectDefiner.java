@@ -1,8 +1,6 @@
 package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.api.ChildList;
-import org.metavm.api.ValueList;
 import org.metavm.api.ValueObject;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
@@ -15,11 +13,8 @@ import org.metavm.util.*;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.SerializablePermission;
 import java.lang.reflect.Field;
 import java.lang.reflect.*;
-import java.net.InterfaceAddress;
-import java.net.NetworkInterface;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -35,7 +30,8 @@ public class ReflectDefiner {
 
     public static final Set<Class<?>> valueClasses = Set.of(
             String.class, Byte.class, Short.class, Integer.class, Long.class,
-            Float.class, Double.class, Character.class, Boolean.class
+            Float.class, Double.class, Character.class, Boolean.class,
+            ArrayList.class
     );
 
     public static final Set<Field> fieldWhitelist = Set.of(
@@ -59,10 +55,6 @@ public class ReflectDefiner {
             ReflectionUtils.getDeclaredMethod(HashMap.class, "writeObject", ObjectOutputStream.class),
             ReflectionUtils.getDeclaredMethod(ArrayList.class, "readObject", ObjectInputStream.class),
             ReflectionUtils.getDeclaredMethod(ArrayList.class, "writeObject", ObjectOutputStream.class),
-            ReflectionUtils.getDeclaredMethod(ChildList.class, "readObject", ObjectInputStream.class),
-            ReflectionUtils.getDeclaredMethod(ChildList.class, "writeObject", ObjectOutputStream.class),
-            ReflectionUtils.getDeclaredMethod(ValueList.class, "readObject", ObjectInputStream.class),
-            ReflectionUtils.getDeclaredMethod(ValueList.class, "writeObject", ObjectOutputStream.class),
             ReflectionUtils.getDeclaredMethod(HashSet.class, "readObject", ObjectInputStream.class),
             ReflectionUtils.getDeclaredMethod(HashSet.class, "writeObject", ObjectOutputStream.class),
             ReflectionUtils.getDeclaredMethod(TreeSet.class, "readObject", ObjectInputStream.class),
@@ -265,7 +257,7 @@ public class ReflectDefiner {
                 if (k == Object.class)
                     yield Types.getAnyType();
                 if(k.isArray())
-                    yield new ArrayType(resolveNullableType(k.getComponentType()), ArrayKind.READ_WRITE);
+                    yield new ArrayType(resolveNullableType(k.getComponentType()), ArrayKind.DEFAULT);
                 if(k == javaClass)
                     yield this.klass.getType();
                 yield Objects.requireNonNull(getKlass.apply(k), () -> "Cannot find klass for java class '" + k.getName() + "'")
@@ -292,7 +284,7 @@ public class ReflectDefiner {
                     () -> "Cannot find type variable " + tv.getName() + " in class " + javaClass.getName()
             ).getType();
             case GenericArrayType genericArrayType -> new ArrayType(
-                    resolveNullableType(genericArrayType.getGenericComponentType()), ArrayKind.READ_WRITE
+                    resolveNullableType(genericArrayType.getGenericComponentType()), ArrayKind.DEFAULT
             );
             case null, default -> throw new InternalException("Cannot resolve java type: " + type);
         };

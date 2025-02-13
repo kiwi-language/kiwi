@@ -316,21 +316,19 @@ public class ApiService extends EntityContextFactoryAware {
         if (id != null)
             map.put(KEY_ID, id);
         map.put(KEY_CLASS, instance.getInstanceType().getKlass().getQualifiedName());
-        instance.forEachField((field, value) -> map.put(field.getName(), formatInstance(value, field.isChild())));
+        instance.forEachField((field, value) -> map.put(field.getName(), formatInstance(value, false)));
         return map;
     }
 
     private List<Object> formatArray(ArrayInstance arrayInstance) {
         var list = new ArrayList<>();
-        var isChildArray = arrayInstance.isChildArray();
-        arrayInstance.forEach(e -> list.add(formatInstance(e, isChildArray)));
+        arrayInstance.forEach(e -> list.add(formatInstance(e, false)));
         return list;
     }
 
     private List<Object> formatList(ClassInstance instance) {
         var list = new ArrayList<>();
-        var isChildList = instance.isChildList();
-        Instances.toJavaList(instance).forEach(e -> list.add(formatInstance(e, isChildList)));
+        Instances.toJavaList(instance).forEach(e -> list.add(formatInstance(e, false)));
         return list;
     }
 
@@ -400,7 +398,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     private ValueResolutionResult tryResolveValue(Object rawValue, Type type, boolean asValue, @Nullable Value currentValue, IInstanceContext context) {
         return switch (type) {
-            case NullType nullType ->
+            case NullType ignored ->
                     rawValue == null ? ValueResolutionResult.of(Instances.nullInstance()) : ValueResolutionResult.failed;
             case PrimitiveType primitiveType -> tryResolvePrimitive(rawValue, primitiveType);
             case KlassType classType -> switch (rawValue) {
@@ -557,9 +555,8 @@ public class ApiService extends EntityContextFactoryAware {
             return tryResolveReference(s, type, context);
         else if (rawValue instanceof List<?> list) {
             var elements = new ArrayList<Value>();
-            var isChildArray = type.isChildArray();
             for (Object o : list) {
-                var r = tryResolveValue(o, type.getElementType(), isChildArray, null, context);
+                var r = tryResolveValue(o, type.getElementType(), false, null, context);
                 if (r.successful())
                     elements.add(r.resolved());
                 else
@@ -602,10 +599,9 @@ public class ApiService extends EntityContextFactoryAware {
         }
         var elements = new ArrayList<Value>();
         var actualType = listNative.getInstance().getInstanceType();
-        var isChildList = actualType.getKlass().isChildList();
         var elementType = actualType.getFirstTypeArgument();
         for (Object o : list) {
-            var r = tryResolveValue(o, elementType, isChildList, null, context);
+            var r = tryResolveValue(o, elementType, false, null, context);
             if (r.successful())
                 elements.add(r.resolved());
             else

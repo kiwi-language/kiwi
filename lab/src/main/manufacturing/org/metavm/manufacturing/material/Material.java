@@ -1,10 +1,8 @@
 package org.metavm.manufacturing.material;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.ChildEntity;
-import org.metavm.api.ChildList;
-import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityField;
 import org.metavm.manufacturing.common.OwnedEntity;
 import org.metavm.manufacturing.storage.Position;
 import org.metavm.manufacturing.storage.Warehouse;
@@ -25,8 +23,7 @@ public class Material extends OwnedEntity {
 
     private @NotNull Unit unit;
 
-    @ChildEntity
-    private final ChildList<UnitConversion> unitConversions = new ChildList<>();
+    private final List<UnitConversion> unitConversions = new ArrayList<>();
 
     private @Nullable Unit auxiliaryUnit;
 
@@ -34,10 +31,8 @@ public class Material extends OwnedEntity {
 
     private boolean enableBatch;
 
-    @ChildEntity
-    private final ChildList<MaterialAttribute> attributes = new ChildList<>();
+    private final List<MaterialAttribute> attributes = new ArrayList<>();
 
-    @ChildEntity
     private final InventoryAttributes batchAttributes = new InventoryAttributes();
 
     private @NotNull Unit storageUnit;
@@ -52,10 +47,8 @@ public class Material extends OwnedEntity {
 
     private boolean firstInFirstOut;
 
-    @ChildEntity
     private final InventoryAttributes inventoryAttributes = new InventoryAttributes();
 
-    @ChildEntity
     private final List<QualityInspectionState> feedQualityInspectionStates = new ArrayList<>();
 
     private @NotNull Unit feedUnit;
@@ -268,6 +261,110 @@ public class Material extends OwnedEntity {
         if (sourceUnit.equals(targetUnit))
             return amount;
         return convertAmountFromMainUnit(convertAmountToMainUnit(amount, sourceUnit), targetUnit);
+    }
+
+    @Entity
+    public class UnitConversion {
+
+        private int x;
+
+        private int y;
+
+        private Unit fromUnit;
+
+        private Unit toUnit;
+
+        private boolean enabled;
+
+        private Material material;
+
+        public UnitConversion(int x, int y, Unit fromUnit, Unit toUnit, boolean enabled, Material material) {
+            this.x = x;
+            this.y = y;
+            this.fromUnit = fromUnit;
+            this.toUnit = toUnit;
+            this.enabled = enabled;
+            this.material = material;
+        }
+
+        public int getX() {
+            return x;
+        }
+
+        public void setX(int x) {
+            this.x = x;
+        }
+
+        public int getY() {
+            return y;
+        }
+
+        public void setY(int y) {
+            this.y = y;
+        }
+
+        public Unit getFromUnit() {
+            return fromUnit;
+        }
+
+        public void setFromUnit(Unit fromUnit) {
+            this.fromUnit = fromUnit;
+        }
+
+        public Unit getToUnit() {
+            return toUnit;
+        }
+
+        public void setToUnit(Unit toUnit) {
+            this.toUnit = toUnit;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public Material getMaterial() {
+            return material;
+        }
+
+        public void setMaterial(Material material) {
+            this.material = material;
+        }
+
+    }
+
+    @Entity
+    public class MaterialAttribute {
+        private final MaterialAttributeKey key;
+        @EntityField(asTitle = true)
+        private final String name;
+        private Object value;
+
+        public MaterialAttribute(MaterialAttributeKey key, Object value) {
+            this.name = key.getName();
+            this.key = key;
+            this.value = value;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public MaterialAttributeKey getKey() {
+            return key;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        public void setValue(Object value) {
+            this.value = value;
+        }
     }
 
 }

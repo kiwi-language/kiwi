@@ -282,10 +282,10 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
 
     // Class file listener implementation
 
-    private record FieldInfo(Type type, MetadataState state, boolean isChild, String name, int ordinal) {
+    private record FieldInfo(Type type, MetadataState state, String name, int ordinal) {
 
         static FieldInfo fromField(Field field) {
-            return new FieldInfo(field.getType(), field.getState(), field.isChild(), field.getName(), field.getOrdinal());
+            return new FieldInfo(field.getType(), field.getState(), field.getName(), field.getOrdinal());
         }
 
     }
@@ -390,12 +390,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
                 }
             }
         }
-        if(fieldInfo.isChild != field.isChild()) {
-            if(field.isChild())
-                addToChildField(field);
-            else
-                addToNonChildField(field);
-        }
         if (field.isEnumConstant() && (!fieldInfo.name.equals(field.getName()) || fieldInfo.ordinal != field.getOrdinal()))
             addModifiedEnumConstant(field);
         getContext().updateMemoryIndex(field);
@@ -474,23 +468,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
             for (var prevEnumConstant : klassInfo.enumConstants) {
                 if (!enumConstantSet.contains(prevEnumConstant))
                     addRemovedEnumConstant(prevEnumConstant);
-            }
-        }
-        var prevFields = klassInfo.fields;
-        if (!prevFields.isEmpty()) {
-            var fieldSet = new HashSet<>(klass.getFields());
-            for (var oldField : prevFields) {
-                if (!fieldSet.contains(oldField)) {
-                    if (oldField.isChild()) {
-                        addRemovedChildField(
-                                FieldBuilder.newBuilder(oldField.getName(), klass, oldField.getType())
-                                        .isChild(true)
-                                        .tag(oldField.getTag())
-                                        .state(MetadataState.REMOVED)
-                                        .build()
-                        );
-                    }
-                }
             }
         }
         context.updateMemoryIndex(klass);

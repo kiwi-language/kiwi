@@ -1,11 +1,12 @@
 package valuetypes;
 
-import org.metavm.api.ValueList;
 import org.metavm.api.Value;
+
+import java.util.List;
 
 @Value
 public record Price(
         Currency defaultPrice,
-        ValueList<ChannelPrice> channelPrices
+        List<ChannelPrice> channelPrices
 ) {
 }

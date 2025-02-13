@@ -6,11 +6,7 @@ public class TypeTags {
 
     public static final int READONLY_ARRAY = 1;
 
-    public static final int READ_WRITE_ARRAY = 2;
-
-    public static final int CHILD_ARRAY = 3;
-
-    public static final int VALUE_ARRAY = 4;
+    public static final int ARRAY = 2;
 
     public static final int SYSTEM_TYPE_TAG_LIMIT = 1000000;
 

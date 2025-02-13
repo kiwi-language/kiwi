@@ -70,26 +70,22 @@ public class InstanceIOTest extends TestCase {
 
     public void testArrayChildField() {
         var fooKlass = TestUtils.newKlassBuilder("Foo").build();
-        var stringArrayType = new ArrayType(Types.getStringType(), ArrayKind.READ_WRITE);
-        var namesField = FieldBuilder.newBuilder("names", fooKlass, stringArrayType)
-                .isChild(true)
-                .build();
+        var stringArrayType = new ArrayType(Types.getStringType(), ArrayKind.DEFAULT);
+        var namesField = FieldBuilder.newBuilder("names", fooKlass, stringArrayType).build();
         var entityMap = new HashMap<Id, Instance>();
         fooKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
         var names = new ArrayInstance(stringArrayType, List.of(Instances.stringInstance("foo")));
-        names.initId(PhysicalId.of(1L, 1L));
+        Assert.assertTrue(names.getReference().isInlineValueReference());
         var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType())
                 .data(Map.of(namesField, names.getReference()))
                 .id(PhysicalId.of(1L, 0L))
                 .build();
-        var instanceMap = new HashMap<Id, Instance>();
         var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(foo)), entityMap::get,
-                i -> instanceMap.put(i.getId(), i), id -> null);
+                i -> {}, id -> null);
         var recovered = (ClassInstance) input.readSingleMessageGrove();
         var recoveredNames = recovered.getField(namesField).resolveArray();
         var name = recoveredNames.getFirst();
         Assert.assertEquals("foo", Instances.toJavaString(name));
-        Assert.assertNotNull(instanceMap.get(names.getId()));
     }
 
     public void testInheritance() {
@@ -124,7 +120,7 @@ public class InstanceIOTest extends TestCase {
         Field nameField = FieldBuilder
                 .newBuilder("name", fooKlass, Types.getStringType()).build();
         Field barField = FieldBuilder
-                .newBuilder("bar", fooKlass, barKlass.getType()).isChild(true).build();
+                .newBuilder("bar", fooKlass, barKlass.getType()).build();
         Field quxField = FieldBuilder.newBuilder("qux", fooKlass, quxKlass.getType()).build();
 
         Field barCodeField = FieldBuilder
@@ -165,7 +161,7 @@ public class InstanceIOTest extends TestCase {
                 ),
                 fooKlass
         );
-        barInst.setParentInternal(fooInst, barField, true);
+        barInst.setParentInternal(fooInst, true);
 
         Function<Id, Instance> resolveInst = id -> {
             var entity = entityMap.get(id);

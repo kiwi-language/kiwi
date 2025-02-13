@@ -723,7 +723,7 @@ public class InstanceContext extends BufferingInstanceContext {
         forEach(i -> {
             if(i instanceof ClassInstance classInstance) {
                 classInstance.forEachField((f, v) -> {
-                    if (f.isChild() && v instanceof Reference r) {
+                    if (v instanceof Reference r && Objects.equals(r.tryGetTreeId(), i.tryGetTreeId())) {
                         if (!r.isInitialized()) {
                             buffer(r.getId());
                         }

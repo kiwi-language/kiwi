@@ -1,10 +1,10 @@
 class Product {
     private title string name;
-    private child ProductKind kind;
+    private Product.Kind kind;
 
-    public Product(string name, ProductKind kind) {
+    public Product(string name, string kind) {
         this.name = name;
-        this.kind = kind;
+        this.kind = this.new Product.Kind(kind);
     }
 
     public string getName() {
@@ -15,29 +15,31 @@ class Product {
         this.name = name;
     }
 
-    public ProductKind getKind() {
+    public Product.Kind getKind() {
         return this.kind;
     }
 
-    public void setKind(ProductKind kind) {
+    public void setKind(Product.Kind kind) {
         this.kind = kind;
     }
 
-}
+    @Tag(1)
+    class Kind {
+        private title readonly string name;
 
-class ProductKind {
-    private title readonly string name;
+        public Kind(string name) {
+            this.name = name;
+        }
 
-    public ProductKind(string name) {
-        this.name = name;
+        public string getName() {
+            return this.name;
+        }
+
+        public string __name__(string name, int ordinal) {
+            return name;
+        }
+
     }
 
-    public string getName() {
-        return this.name;
-    }
-
-    public string __name__(string name, int ordinal) {
-        return name;
-    }
 
 }

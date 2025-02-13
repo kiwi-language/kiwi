@@ -1,6 +1,5 @@
 package org.metavm.entity;
 
-import org.metavm.api.ChildEntity;
 import org.metavm.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
@@ -13,14 +12,12 @@ public class EntityProp {
     private final Field field;
     private final boolean accessible;
     private final boolean _transient;
-    private final boolean childEntity;
     private final boolean copyIgnore;
 
     public EntityProp(Field field) {
         this.field = field;
         accessible = field.trySetAccessible();
         _transient = Modifier.isTransient(field.getModifiers());
-        childEntity = field.isAnnotationPresent(ChildEntity.class);
         copyIgnore = field.isAnnotationPresent(CopyIgnore.class);
     }
 
@@ -78,10 +75,6 @@ public class EntityProp {
             }
         }
         return false;
-    }
-
-    public boolean isChildEntity() {
-        return childEntity;
     }
 
     public Entity getEntity(Object object) {

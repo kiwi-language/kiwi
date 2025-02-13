@@ -214,10 +214,6 @@ public interface Instance extends Message, Identifiable {
         return null;
     }
 
-    default Field getParentField() {
-        return null;
-    }
-
     private boolean isSeparateChild() {
         return false;
     }

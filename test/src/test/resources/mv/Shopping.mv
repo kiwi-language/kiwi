@@ -1,16 +1,15 @@
 import java.util.List;
 import java.util.ArrayList;
 import java.lang.RuntimeException;
-import org.metavm.api.ChildList;
 
 @Searchable
 struct Product {
     private title string name;
-    private readonly child ChildList<SKU> skuList;
+    private readonly ArrayList<SKU> skuList;
 
     public Product(string name, List<SKU> skuList) {
         this.name = name;
-        this.skuList = new ChildList<SKU>(skuList);
+        this.skuList = new ArrayList<SKU>(skuList);
     }
 
     public string getName() {
@@ -140,7 +139,7 @@ class Order {
     private readonly int quantity;
     private readonly double price;
     private readonly SKU sku;
-    private child readonly List<Coupon> coupons;
+    private readonly List<Coupon> coupons;
     private readonly time orderTime;
 
     public Order(string code, int quantity, double price, SKU sku, List<Coupon> coupons) {

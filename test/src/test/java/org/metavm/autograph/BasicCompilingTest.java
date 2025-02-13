@@ -3,6 +3,8 @@ package org.metavm.autograph;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
+import org.metavm.object.instance.core.ArrayInstanceWrap;
+import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.instance.core.RemovalFailureException;
 import org.metavm.object.type.*;
 import org.metavm.task.SynchronizeSearchTask;
@@ -147,14 +149,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         var lab = getObject(labId);
         var foos = lab.getArray("foos");
         Assert.assertEquals(3, foos.size());
-        var foo002 = foos.getObject(1);
+        var foo002Id = foos.get(1);
         var foundFooId = TestUtils.doInTransaction(() -> apiClient.callMethod(
                 labId,
                 "getFooByName",
                 List.of("foo002"))
         );
         // Process captured types from type variable bounds
-        Assert.assertEquals(foo002.id(), foundFooId);
+        Assert.assertEquals(foo002Id, foundFooId);
         var result = TestUtils.doInTransaction(() ->
                 apiClient.callMethod("wildcard_capture.BoundCaptureFoo", "test", List.of())
         );
@@ -231,11 +233,10 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processInterceptor() {
-        //noinspection unchecked
-        var user = (Map<String, Object>) TestUtils.doInTransaction(
+        var user = (ClassInstanceWrap) TestUtils.doInTransaction(
                 () -> apiClient.callMethod("userService", "getUserByName", List.of("leen"))
         );
-        var tel = (String) user.get("telephone");
+        var tel =  user.getString("telephone");
         Assert.assertEquals("123******12", tel);
     }
 
@@ -360,10 +361,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var id = (String) TestUtils.doInTransaction(() ->
                 apiClient.saveInstance("innerclass.InnerClassFoo<string, string>", Map.of())
         );
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "addEntry", List.of(Map.of(
-                "key", "name",
-                "value", "leen"
-        ))));
+        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "addEntry", List.of("name", "leen")));
         var entryId = (String) callMethod(id, "first", List.of());
         var entry = apiClient.getObject(entryId);
         Assert.assertEquals("name", entry.get("key"));
@@ -469,8 +467,9 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processAnonymousClass() {
-        var id = TestUtils.doInTransaction(() ->
-                apiClient.saveInstance("anonymous_class.AnonymousClassFoo<string, any>",
+        var id = (String) TestUtils.doInTransaction(() ->
+                apiClient.callMethod("anonymous_class.AnonymousClassFoo",
+                        "create<string, any>",
                         Map.of(
                                 "entries", List.of(
                                         Map.of(
@@ -1148,8 +1147,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         } catch (Exception ignored) {}
         Assert.assertEquals(fooId, callMethod(fooClass, "findByName", List.of("foo")));
         Assert.assertEquals(1L, (long) callMethod(fooClass, "countBySeq", List.of(0, 5)));
-        //noinspection unchecked
-        var list = (List<String>) callMethod(fooClass, "queryBySeq", List.of(0, 5));
+        var list = (ArrayInstanceWrap) callMethod(fooClass, "queryBySeq", List.of(0, 5));
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals(fooId, list.getFirst());

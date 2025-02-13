@@ -3,6 +3,7 @@ package org.metavm.autograph;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.application.rest.dto.ApplicationCreateRequest;
+import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.rest.InstanceQueryDTO;
 import org.metavm.user.rest.dto.LoginRequest;
@@ -119,12 +120,11 @@ public class UserCompilingTest extends CompilerTestBase {
                 var token = login(platformApplication.id(), email, "123456");
 
                 // enter application
-                // noinspection unchecked
-                var loginResult = (Map<String, Object>) doInTransaction(() -> apiClient.callMethod(
+                var loginResult = (ClassInstanceWrap) doInTransaction(() -> apiClient.callMethod(
                         userKlass,
                         "enterApp", List.of(platformUserId, application.id())
                 ));
-                token = (String) loginResult.get("token");
+                token = loginResult.getString("token");
                 Assert.assertNotNull(token);
 
                 // test leave application
@@ -192,13 +192,12 @@ public class UserCompilingTest extends CompilerTestBase {
                 var reloadedAnotherPlatformUser = getObject(anotherPlatformUserId);
                 var anotherJoinedApplications = reloadedAnotherPlatformUser.getArray("applications");
                 Assert.assertEquals(1, anotherJoinedApplications.size());
-                //noinspection unchecked
-                loginResult = (Map<String, Object>) doInTransaction(() -> apiClient.callMethod(
+                loginResult = (ClassInstanceWrap) doInTransaction(() -> apiClient.callMethod(
                         userKlass,
                         "enterApp",
                         List.of(anotherPlatformUserId, application.id())
                 ));
-                token = (String) loginResult.get("token");
+                token = loginResult.getString("token");
                 Assert.assertNotNull(token);
 
                 // test leaving the application
@@ -267,8 +266,8 @@ public class UserCompilingTest extends CompilerTestBase {
                 // execute the LabUser.verify method and check verification result
                 var tokenValue = createTokenValue(application.id(), token);
                 var loginInfo = verify(tokenValue);
-                Assert.assertEquals(application.id(), loginInfo.get("application"));
-                Assert.assertEquals(userId, loginInfo.get("user"));
+                Assert.assertEquals(application.id(), loginInfo.getString("application"));
+                Assert.assertEquals(userId, loginInfo.getString("user"));
 
                 // test logout
                 var tokenF = token;
@@ -331,9 +330,8 @@ public class UserCompilingTest extends CompilerTestBase {
         Assert.assertNull(loginInfo.get("application"));
     }
 
-    private Map<String, Object> verify(Map<String, Object> tokenValue) {
-        //noinspection unchecked
-        return (Map<String, Object>) callMethod(
+    private ClassInstanceWrap verify(Map<String, Object> tokenValue) {
+        return (ClassInstanceWrap) callMethod(
                 "org.metavm.user.LabUser", "verify", List.of(tokenValue)
         );
     }
@@ -343,12 +341,11 @@ public class UserCompilingTest extends CompilerTestBase {
     }
 
     private String login(String applicationId, String loginName, String password, String clientIP, boolean checkToken) {
-        //noinspection unchecked
-        var loginResult = (Map<String, Object>) callMethod(
+        var loginResult = (ClassInstanceWrap) callMethod(
                 "org.metavm.user.LabUser", "login",
                 List.of(applicationId, loginName, password, clientIP)
         );
-        var token = (String) loginResult.get("token");
+        var token = loginResult.getString("token");
         if (checkToken)
             Assert.assertNotNull(token);
         return token;

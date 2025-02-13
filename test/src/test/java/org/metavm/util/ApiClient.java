@@ -60,7 +60,7 @@ public class ApiClient {
         var resp = new HttpResponseImpl();
         var rs = apiService.handleMethodCall(qualifier, methodName, arguments, req, resp);
         processResponse(resp);
-        return rs;
+        return InstanceWrap.convertValue(rs);
     }
 
     public @Nullable String newInstance(String className, List<Object> arguments) {

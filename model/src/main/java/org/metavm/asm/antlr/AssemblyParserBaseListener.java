@@ -1032,6 +1032,30 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitAnnotation(AssemblyParser.AnnotationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterElementValuePairs(AssemblyParser.ElementValuePairsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitElementValuePairs(AssemblyParser.ElementValuePairsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterElementValuePair(AssemblyParser.ElementValuePairContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitElementValuePair(AssemblyParser.ElementValuePairContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

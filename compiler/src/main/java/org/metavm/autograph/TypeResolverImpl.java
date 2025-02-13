@@ -1,11 +1,8 @@
 package org.metavm.autograph;
 
-import com.intellij.lang.jvm.types.JvmPrimitiveTypeKind;
 import com.intellij.psi.*;
-import org.metavm.api.ChildList;
-import org.metavm.api.ValueList;
-import org.metavm.api.ValueStruct;
 import org.metavm.api.Value;
+import org.metavm.api.ValueStruct;
 import org.metavm.api.builtin.Password;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
@@ -20,7 +17,6 @@ import java.util.LinkedList;
 import java.util.*;
 import java.util.function.Supplier;
 
-import static com.intellij.lang.jvm.types.JvmPrimitiveTypeKind.*;
 import static java.util.Objects.requireNonNull;
 import static org.metavm.object.type.ResolutionStage.*;
 import static org.metavm.object.type.Types.getIntersectionType;
@@ -66,20 +62,6 @@ public class TypeResolverImpl implements TypeResolver {
         map.put(TranspileUtils.createClassType(LinkedList.class), StdKlass.arrayList::get);
         STANDARD_CLASSES = Collections.unmodifiableMap(map);
     }
-
-    private static final List<Class<?>> COLLECTION_CLASSES = List.of(
-            IteratorImpl.class,
-            Iterator.class,
-            ChildList.class,
-            ValueList.class,
-            ArrayList.class,
-            LinkedList.class,
-            org.metavm.util.LinkedList.class,
-            List.class,
-            HashSet.class,
-            Set.class,
-            Collection.class
-    );
 
     public TypeResolverImpl() {
         codeGenerator = new CodeGenerator();
@@ -151,7 +133,7 @@ public class TypeResolverImpl implements TypeResolver {
     private ArrayType resolveArrayType(PsiArrayType psiArrayType, ResolutionStage stage) {
         return new ArrayType(
                 resolveNullable(psiArrayType.getComponentType(), stage),
-                ArrayKind.READ_WRITE
+                ArrayKind.DEFAULT
         );
     }
 

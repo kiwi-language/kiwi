@@ -218,9 +218,7 @@ public abstract class MvInput implements Closeable {
             case WireTypes.UNION_TYPE -> UnionType.read(this);
             case WireTypes.INTERSECTION_TYPE -> IntersectionType.read(this);
             case WireTypes.READ_ONLY_ARRAY_TYPE -> ArrayType.read(this, ArrayKind.READ_ONLY);
-            case WireTypes.READ_WRITE_ARRAY_TYPE -> ArrayType.read(this, ArrayKind.READ_WRITE);
-            case WireTypes.CHILD_ARRAY_TYPE -> ArrayType.read(this, ArrayKind.CHILD);
-            case WireTypes.VALUE_ARRAY_TYPE -> ArrayType.read(this, ArrayKind.VALUE);
+            case WireTypes.ARRAY_TYPE -> ArrayType.read(this, ArrayKind.DEFAULT);
             case WireTypes.NEVER_TYPE -> NeverType.instance;
             case WireTypes.ANY_TYPE -> AnyType.instance;
             case WireTypes.FIELD_REF -> FieldRef.read(this);

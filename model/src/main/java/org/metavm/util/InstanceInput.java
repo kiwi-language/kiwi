@@ -4,10 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.Entity;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.TreeTags;
-import org.metavm.object.instance.ChangeType;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.InstancePO;
@@ -54,8 +52,6 @@ public class InstanceInput extends MvInput {
     private long treeId;
     @Nullable
     private MvInstance parent;
-    @Nullable
-    private Field parentField;
     private @Nullable KlassDataSlot currentKlassSlot;
     private boolean loadedFromCache;
 
@@ -104,20 +100,20 @@ public class InstanceInput extends MvInput {
         var separateChild = readBoolean();
         Reference parent = null;
         Field parentField = null;
-        boolean pendingChild = false;
-        if (separateChild) {
-            parent = resolveInstance(readId());
-            var fieldId = readId();
-            parentField = ((ClassInstance) parent.get()).getInstanceKlass().findField(f -> f.idEquals(fieldId));
-            pendingChild = parentField == null || !parentField.isChild();
-        }
+//        boolean pendingChild = false;
+//        if (separateChild) {
+//            parent = resolveInstance(readId());
+//            var fieldId = readId();
+//            parentField = ((ClassInstance) parent.get()).getInstanceKlass().findField(f -> f.idEquals(fieldId));
+//            pendingChild = parentField == null || !parentField.isChild();
+//        }
         var instance = (MvInstance) readValue().resolveDurable();
         instance.setVersion(version);
         instance.setNextNodeId(nextNodeId);
-        if (separateChild) {
-            instance.setPendingChild(pendingChild);
-            instance.setParentInternal((MvInstance) parent.get(), parentField, false);
-        }
+//        if (separateChild) {
+//            instance.setPendingChild(pendingChild);
+//            instance.setParentInternal((MvInstance) parent.get(), parentField, false);
+//        }
         return instance;
     }
 
@@ -184,7 +180,7 @@ public class InstanceInput extends MvInput {
                 new ArrayInstance(id, arrayType, false, null) :
                 ClassInstanceBuilder.newBuilder((ClassType) type).id(id).initFieldTable(false).build();
         if(parent != null)
-            instance.setParentInternal(parent, parentField, true);
+            instance.setParentInternal(parent, true);
         if(oldTreeId != -1L) {
             instance.setOldId(PhysicalId.of(oldTreeId, oldNodeId));
             instance.setUseOldId(useOldId);
@@ -220,15 +216,6 @@ public class InstanceInput extends MvInput {
 
     public void setParent(@Nullable MvInstance parent) {
         this.parent = parent;
-    }
-
-    public void setParentField(@Nullable Field parentField) {
-        this.parentField = parentField;
-    }
-
-    @Nullable
-    public Field getParentField() {
-        return parentField;
     }
 
     public long readTreeId() {
@@ -287,7 +274,6 @@ public class InstanceInput extends MvInput {
     public InstanceInput copy(InputStream in) {
         var copy = new InstanceInput(in, resolver, addValue, redirectStatusProvider);
         copy.parent = parent;
-        copy.parentField = parentField;
         copy.treeId = treeId;
         copy.currentKlassSlot = currentKlassSlot;
         copy.loadedFromCache = loadedFromCache;

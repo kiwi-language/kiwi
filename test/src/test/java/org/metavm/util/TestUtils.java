@@ -11,7 +11,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.zaxxer.hikari.HikariDataSource;
-import org.metavm.api.ValueObject;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
 import org.metavm.event.MockEventQueue;
@@ -23,7 +23,6 @@ import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.PhysicalId;
-import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.instance.rest.FieldValue;
@@ -43,6 +42,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+@Slf4j
 public class TestUtils {
 
     public static final String TEST_RESOURCE_ROOT = "/Users/leen/workspace/object/src/test/resources";
@@ -254,10 +254,11 @@ public class TestUtils {
         var roots = new IdentitySet<Instance>();
         var visited = new IdentitySet<Instance>();
         instances.forEach(r -> r.visitGraph(i -> {
-            if (i.isValue()) return false;
-            var root = i.getRoot();
-            if (!root.isIdInitialized())
-                roots.add(root);
+            if (!i.isValue()) {
+                var root = i.getRoot();
+                if (!root.isIdInitialized())
+                    roots.add(root);
+            }
             return true;
         }, r1 -> true, visited));
         roots.forEach(r -> {

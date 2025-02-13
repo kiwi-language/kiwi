@@ -27,9 +27,7 @@ public class FieldBuilder {
     private Column column;
     private Id id;
     private Access access = Access.PUBLIC;
-    private boolean unique = false;
     private Value defaultValue;
-    private boolean isChild;
     private boolean isStatic = false;
     private Value staticValue;
     private MetadataState state;
@@ -74,11 +72,6 @@ public class FieldBuilder {
         return this;
     }
 
-    public FieldBuilder unique(boolean unique) {
-        this.unique = unique;
-        return this;
-    }
-
     public FieldBuilder state(MetadataState state) {
         this.state = state;
         return this;
@@ -111,11 +104,6 @@ public class FieldBuilder {
 
     public FieldBuilder defaultValue(Value defaultValue) {
         this.defaultValue = defaultValue;
-        return this;
-    }
-
-    public FieldBuilder isChild(boolean isChild) {
-        this.isChild = isChild;
         return this;
     }
 
@@ -186,7 +174,6 @@ public class FieldBuilder {
                 readonly,
                 isTransient,
                 defaultValue,
-                isChild,
                 isStatic,
                 lazy,
                 isEnumConstant,

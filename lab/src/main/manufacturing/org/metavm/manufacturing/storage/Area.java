@@ -1,9 +1,7 @@
 package org.metavm.manufacturing.storage;
 
-import org.metavm.api.ChildEntity;
-import org.metavm.api.ChildList;
-import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityField;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -17,10 +15,8 @@ public class Area {
     @EntityField(asTitle = true)
     private String name;
     private final @Nullable Area parent;
-    @ChildEntity
-    private final ChildList<Area> children = new ChildList<>();
-    @ChildEntity
-    private final ChildList<Position> positions = new ChildList<>();
+    private final List<Area> children = new ArrayList<>();
+    private final List<Position> positions = new ArrayList<>();
 
     public Area(String code, String name, Warehouse warehouse, @Nullable Area parent) {
         this.code = code;

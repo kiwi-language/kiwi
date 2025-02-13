@@ -17,7 +17,6 @@ import java.util.function.Consumer;
 public class SubtreeExtractor extends StreamVisitor {
 
     private Id parentId;
-    private long parentFieldTag = -1L;
     private final Consumer<Subtree> add;
 
     public SubtreeExtractor(InputStream in, Consumer<Subtree> add) {
@@ -33,14 +32,12 @@ public class SubtreeExtractor extends StreamVisitor {
         output.writeLong(nodeId);
         typeOrTypeKey.write(output);
         var oldParentId = parentId;
-        var oldParentFieldTag = parentFieldTag;
         var id = PhysicalId.of(treeId, nodeId);
         parentId = id;
-        parentFieldTag = -1;
         new StreamCopier(getInput(), output) {
             @Override
             public void visitField() {
-                writeLong(parentFieldTag = readLong());
+                writeLong(readLong());
                 visitValue();
             }
 
@@ -53,12 +50,10 @@ public class SubtreeExtractor extends StreamVisitor {
             }
         }.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
         parentId = oldParentId;
-        parentFieldTag = oldParentFieldTag;
         var oldId = oldTreeId != -1L ? PhysicalId.of(oldTreeId, oldNodeId) : null;
         add.accept(new Subtree(
                 id,
                 parentId,
-                parentFieldTag,
                 oldId,
                 useOldId,
                 bout.toByteArray(),
@@ -90,7 +85,6 @@ public class SubtreeExtractor extends StreamVisitor {
         add.accept(new Subtree(
                 id,
                 parentId,
-                parentFieldTag,
                 null,
                 false,
                 bout.toByteArray(),

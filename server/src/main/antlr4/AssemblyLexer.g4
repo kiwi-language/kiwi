@@ -23,7 +23,6 @@ ELSE:               'else';
 ENUM:               'enum';
 EXTENDS:            'extends';
 READONLY:           'readonly';
-CHILD:              'child';
 TITLE:              'title';
 FINALLY:            'finally';
 FOR:                'for';
@@ -60,6 +59,7 @@ SELECT:             'select';
 SELECT_FIRST:       'selectFirst';
 DELETED:            'deleted';
 VAR:                'var';
+DELETE:             'delete';
 
 // Operators
 
@@ -149,9 +149,7 @@ TEXT_BLOCK:         '"""' [ \t]* [\r\n] (. | EscapeSequence)*? '"""';
 // array kinds
 
 R: '[r]';
-RW: '[rw]';
-C:  '[c]';
-V: '[v]';
+RW: '[]';
 
 // Identifiers
 

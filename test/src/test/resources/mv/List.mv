@@ -1,6 +1,5 @@
 import java.util.List;
 import java.util.ArrayList;
-import org.metavm.api.ChildList;
 
 struct Node<T> {
     private string label;
@@ -24,11 +23,11 @@ struct Node<T> {
 struct MyList<T> {
 
     private string label;
-    private readonly child ChildList<Node<T>> nodes;
+    private readonly ArrayList<Node<T>> nodes;
 
     public MyList(string label, List<Node<T>> nodes) {
         this.label = label;
-        this.nodes = new ChildList<Node<T>>(nodes);
+        this.nodes = new ArrayList<Node<T>>(nodes);
     }
 
     public string getLabel() {

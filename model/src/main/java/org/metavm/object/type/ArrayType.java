@@ -63,15 +63,6 @@ public class ArrayType extends CompositeType {
     }
 
     @Override
-    public ColumnKind getSQLType() {
-        if (isChildArray()) {
-            return elementType.getSQLType();
-        } else {
-            return super.getSQLType();
-        }
-    }
-
-    @Override
     public boolean isArray() {
         return true;
     }
@@ -110,10 +101,6 @@ public class ArrayType extends CompositeType {
 
     public ArrayKind getKind() {
         return kind;
-    }
-
-    public boolean isChildArray() {
-        return kind == ArrayKind.CHILD;
     }
 
     @Override
@@ -156,7 +143,7 @@ public class ArrayType extends CompositeType {
 
     @Override
     public boolean isValueType() {
-        return kind == ArrayKind.VALUE;
+        return true;
     }
 
     @Override

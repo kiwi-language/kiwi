@@ -1,6 +1,5 @@
 package org.metavm.application;
 
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.lang.Lang;
 import org.metavm.message.LabMessage;
@@ -21,7 +20,6 @@ public class UserApplication extends LabApplication {
 
     private LabPlatformUser owner;
 
-    @ChildEntity
     private final List<LabPlatformUser> admins = new ArrayList<>();
 
     private LabApplicationState state;

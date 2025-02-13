@@ -1,13 +1,23 @@
 package anonymous_class;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.api.ChildEntity;
-import org.metavm.api.ChildList;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
-public record AnonymousClassFoo<K,V>(@ChildEntity ChildList<Entry<K,V>> entries) {
+public class AnonymousClassFoo<K,V> {
+
+    public static <K, V> AnonymousClassFoo<K, V> create(List<EntryDTO<K, V>> entries) {
+        var foo = new AnonymousClassFoo<K, V>();
+        for (EntryDTO<K, V> entry : entries) {
+            foo.new Entry(entry.key(), entry.value());
+        }
+        return foo;
+    }
+
+    private final List<Entry> entries = new ArrayList<>();
+
 
     public Iterable<K> keysSnapshot() {
         var a0 = new ArrayList<>(entries);
@@ -18,7 +28,7 @@ public record AnonymousClassFoo<K,V>(@ChildEntity ChildList<Entry<K,V>> entries)
             public Iterator<K> iterator() {
                 return new Iterator<>() {
 
-                    private final Iterator<Entry<K,V>> i = a0.iterator();
+                    private final Iterator<Entry> i = a0.iterator();
 
                     @Override
                     public boolean hasNext() {
@@ -46,7 +56,25 @@ public record AnonymousClassFoo<K,V>(@ChildEntity ChildList<Entry<K,V>> entries)
         return r;
     }
 
-    public record Entry<K,V>(K key, V value) {
+    public class Entry {
+        private final K key;
+        private final V value;
+
+        public Entry(K key, V value) {
+            this.key = key;
+            this.value = value;
+            entries.add(this);
+        }
+
+        public K key() {
+            return key;
+        }
+
+        public V value() {
+            return value;
+        }
+
+
     }
 
 }

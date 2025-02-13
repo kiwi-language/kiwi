@@ -1,9 +1,6 @@
 package org.metavm.asm;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.*;
 import org.metavm.asm.antlr.AssemblyLexer;
 import org.metavm.asm.antlr.AssemblyParser;
 import org.metavm.asm.antlr.AssemblyParserBaseVisitor;
@@ -11,7 +8,6 @@ import org.metavm.classfile.ClassFileWriter;
 import org.metavm.entity.*;
 import org.metavm.expression.Expression;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.NullId;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
 import org.metavm.object.type.generic.TypeSubstitutor;
@@ -370,6 +366,8 @@ public class Assembler {
 
     private class AsmInit extends VisitorBase {
 
+        private final LinkedList<Klass> klasses = new LinkedList<>();
+
         @Override
         public void visitTypeDef(String name,
                                  TypeCategory typeCategory,
@@ -378,29 +376,40 @@ public class Assembler {
                                  @Nullable AssemblyParser.TypeParametersContext typeParameters,
                                  List<AssemblyParser.AnnotationContext> annotations, ParserRuleContext ctx,
                                  Runnable processBody) {
-            var code = getCompilationUnit().getDefinitionName(name);
-            var klass = findKlass(code);
+            var parentKlass = klasses.peekLast();
+            var qualName = parentKlass == null ? getCompilationUnit().getDefinitionName(name) :
+                    parentKlass.getQualifiedName() + "." + name;
+            if (parentKlass != null) {
+                logger.debug("Creating inner klass {}", qualName);
+            }
+            var klass = findKlass(qualName);
             var kind = ClassKind.fromTypeCategory(typeCategory);
             boolean searchable = false;
             boolean isBean = false;
+            Integer sourceTag = null;
             for (AssemblyParser.AnnotationContext annotation : annotations) {
                 if(annotation.IDENTIFIER().getText().equals("Component"))
                     isBean = true;
                 else if(annotation.IDENTIFIER().getText().equals("Searchable"))
                     searchable = true;
+                else if(annotation.IDENTIFIER().getText().equals("Tag"))
+                    sourceTag = Integer.parseInt(annotation.expression().getText());
             }
             if (klass == null) {
-                klass = createKlass(name, code, kind);
+                klass = createKlass(name, qualName, kind);
+                klass.setScope(parentKlass);
                 klass.disableMethodTableBuild();
             } else {
                 klass.getConstantPool().clear();
                 klass.disableMethodTableBuild();
+                klass.setScope(parentKlass);
                 if (klass.getKind() == ClassKind.ENUM && kind != ClassKind.ENUM)
                     klass.clearEnumConstantDefs();
                 klass.setKind(kind);
                 if(!klass.isEnum())
                     klass.setSuperType(null);
             }
+            if (sourceTag != null) klass.setSourceTag(sourceTag);
             if(isBean) {
                 klass.setAttribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT);
                 klass.setAttribute(AttributeNames.BEAN_NAME, NamingUtils.firstCharToLowerCase(klass.getName()));
@@ -419,7 +428,9 @@ public class Assembler {
                     typeCategory == TypeCategory.ENUM
             );
             setAttribute(ctx, AsmAttributeKey.classInfo, classInfo);
+            klasses.addLast(klass);
             super.visitTypeDef(name, typeCategory, isStruct, superType, interfaces, typeParameters, annotations, ctx, processBody);
+            klasses.removeLast();
         }
 
         @Override
@@ -458,9 +469,13 @@ public class Assembler {
 
         @Override
         public void visitTypeDef(String name, TypeCategory typeCategory, boolean isStruct, @Nullable AssemblyParser.TypeTypeContext superType, @Nullable AssemblyParser.TypeListContext interfaces, @Nullable AssemblyParser.TypeParametersContext typeParameters, List<AssemblyParser.AnnotationContext> annotations, ParserRuleContext ctx, Runnable processBody) {
+            var parentClassInfo = (AsmKlass) scope;
+            var parentKlass = Utils.safeCall(parentClassInfo, AsmKlass::getKlass);
             var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
             enterScope(classInfo);
             var klass = classInfo.getKlass();
+            if (parentClassInfo != null) parentClassInfo.visitedInnerKlasses.add(klass);
+            klass.setScope(parentKlass);
             klass.setStruct(isStruct);
             if (typeCategory.isEnum())
                 classInfo.superType = new KlassType(null, getKlass(Enum.class.getName()), List.of(classInfo.getKlass().getType()));
@@ -483,6 +498,7 @@ public class Assembler {
                 f.resetTypeIndex();
             });
             Utils.exclude(klass.getStaticFields(), classInfo.visitedFields::contains).forEach(klass::removeField);
+            klass.setKlasses(new ArrayList<>(classInfo.visitedInnerKlasses));
             klass.rebuildMethodTable();
             exitScope();
         }
@@ -499,12 +515,10 @@ public class Assembler {
             if (field == null) {
                 field = FieldBuilder.newBuilder(name, klass, type)
                         .tmpId(Utils.randomNonNegative())
-                        .isChild(mods.contains(Modifiers.CHILD))
                         .isStatic(isStatic)
                         .build();
             } else {
                 field.setType(type);
-                field.setChild(mods.contains(Modifiers.CHILD));
             }
             field.setAccess(getAccess(mods));
             field.setReadonly(mods.contains(Modifiers.READONLY));
@@ -970,6 +984,10 @@ public class Assembler {
                     g.setTarget(entry);
                     ifNode.setTarget(Nodes.label(code));
                 }
+                else if (statement.DELETE() != null) {
+                    parseExpression(statement.expression());
+                    Nodes.delete(code);
+                }
                 else if(statement.localVariableDeclaration() != null) {
                     var callable = (AsmCallable) this.scope;
                     var decl = statement.localVariableDeclaration();
@@ -1029,6 +1047,7 @@ public class Assembler {
     private AssemblyParser.CompilationUnitContext parse(String source) {
         var input = CharStreams.fromString(source);
         var parser = new AssemblyParser(new CommonTokenStream(new AssemblyLexer(input)));
+        parser.setErrorHandler(new BailErrorStrategy());
         return parser.compilationUnit();
     }
 
@@ -1098,11 +1117,7 @@ public class Assembler {
         if (ctx.R() != null)
             return ArrayKind.READ_ONLY;
         else if (ctx.RW() != null)
-            return ArrayKind.READ_WRITE;
-        else if (ctx.C() != null)
-            return ArrayKind.CHILD;
-        else if (ctx.V() != null)
-            return ArrayKind.VALUE;
+            return ArrayKind.DEFAULT;
         throw new InternalException("Unknown array kind: " + ctx.getText());
     }
 

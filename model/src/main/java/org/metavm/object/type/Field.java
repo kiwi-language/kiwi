@@ -43,7 +43,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     private Value defaultValue;
     private boolean lazy;
     private Column column;
-    private boolean isChild;
     private boolean readonly;
     private boolean isTransient;
     private MetadataState state;
@@ -66,7 +65,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
             boolean readonly,
             boolean isTransient,
             Value defaultValue,
-            boolean isChild,
             boolean isStatic,
             boolean lazy,
             boolean isEnumConstant,
@@ -79,8 +77,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
             MetadataState state
     ) {
         super(id);
-//        if(isChild && type.isPrimitive())
-//            throw new BusinessException(ErrorCode.CHILD_FIELD_CAN_NOT_BE_PRIMITIVE_TYPED);
         this.name = NamingUtils.ensureValidName(name);
         this.declaringType = Objects.requireNonNull(declaringType);
         this._static = isStatic;
@@ -104,7 +100,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
                     () -> "Fail to allocate a column for field " + name);
         }
         setDefaultValue(defaultValue);
-        this.isChild = isChild;
         this.lazy = lazy;
         declaringType.addField(this);
     }
@@ -120,7 +115,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         Column.visit(visitor);
         visitor.visitBoolean();
         visitor.visitBoolean();
-        visitor.visitBoolean();
         visitor.visitByte();
         visitor.visitInt();
         visitor.visitValue();
@@ -130,14 +124,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         visitor.visitNullable(visitor::visitValue);
         visitor.visitBoolean();
         visitor.visitInt();
-    }
-
-    public boolean isChild() {
-        return isChild;
-    }
-
-    public void setChild(boolean child) {
-        isChild = child;
     }
 
     public boolean isTitle() {
@@ -489,7 +475,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     public int getFlags() {
         int flags = 0;
         if (_static) flags |= FLAG_STATIC;
-        if (isChild) flags |= FLAG_CHILD;
 //        if(readonly)
 //            flags |= FLAG_READONLY;
         if (isTransient) flags |= FLAG_TRANSIENT;
@@ -499,7 +484,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     }
 
     public void setFlags(int flags) {
-        setChild((flags & FLAG_CHILD) != 0);
         setStatic((flags & FLAG_STATIC) != 0);
         setTransient((flags & FLAG_TRANSIENT) != 0);
 //        setReadonly((flags & FLAG_READONLY) != 0);
@@ -592,7 +576,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         if (access != Access.PACKAGE) modifiers.add(access.name().toLowerCase());
         if (isStatic()) modifiers.add("static");
         if (isReadonly()) modifiers.add("readonly");
-        if (isChild) modifiers.add("child");
         if (isTransient) modifiers.add("transient");
         writer.writeln(String.join(" ", modifiers) + " " + name + ":" + getType().getTypeDesc());
     }
@@ -608,7 +591,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
 
     @Override
     public void buildJson(Map<String, Object> map) {
-        map.put("child", this.isChild());
         map.put("lazy", this.isLazy());
         map.put("type", this.getType().toJson());
         map.put("defaultValue", this.getDefaultValue().toJson());
@@ -668,7 +650,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         this.defaultValue = input.readValue();
         this.lazy = input.readBoolean();
         this.column = Column.read(input);
-        this.isChild = input.readBoolean();
         this.readonly = input.readBoolean();
         this.isTransient = input.readBoolean();
         this.state = MetadataState.fromCode(input.read());
@@ -692,7 +673,6 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         output.writeValue(defaultValue);
         output.writeBoolean(lazy);
         column.write(output);
-        output.writeBoolean(isChild);
         output.writeBoolean(readonly);
         output.writeBoolean(isTransient);
         output.write(state.code());

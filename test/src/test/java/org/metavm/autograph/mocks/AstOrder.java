@@ -1,7 +1,6 @@
 package org.metavm.autograph.mocks;
 
 import org.metavm.annotation.NativeEntity;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
@@ -36,7 +35,6 @@ public class AstOrder extends org.metavm.entity.Entity {
 
     public int amount;
 
-    @ChildEntity
     public List<Reference> coupons;
 
     public int state;

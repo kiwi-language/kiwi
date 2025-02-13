@@ -1276,7 +1276,7 @@ public class VmStack {
                                 pc++;
                             }
                             case Bytecodes.LT_ARRAY -> {
-                                stack[top++] = new ArrayType(((Type) stack[--top]), ArrayKind.READ_WRITE);
+                                stack[top++] = new ArrayType(((Type) stack[--top]), ArrayKind.DEFAULT);
                                 pc++;
                             }
                             case Bytecodes.LT_NULLABLE -> {

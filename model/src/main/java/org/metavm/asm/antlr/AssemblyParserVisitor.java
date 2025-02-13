@@ -520,4 +520,16 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitAnnotation(AssemblyParser.AnnotationContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#elementValuePairs}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitElementValuePairs(AssemblyParser.ElementValuePairsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link AssemblyParser#elementValuePair}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitElementValuePair(AssemblyParser.ElementValuePairContext ctx);
 }

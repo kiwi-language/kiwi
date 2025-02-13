@@ -13,7 +13,7 @@ public class InstanceWrap {
             throw new IllegalArgumentException("Invalid instance value: " + value);
     }
 
-    protected static Object convertValue(Object value) {
+    public static Object convertValue(Object value) {
         if(value instanceof Map<?,?> m)
             //noinspection unchecked
             return new ClassInstanceWrap((Map<String, Object>) m);

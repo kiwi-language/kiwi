@@ -1,7 +1,6 @@
 package org.metavm.mocks;
 
 import org.metavm.annotation.NativeEntity;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
@@ -37,10 +36,8 @@ public class LivingBeing extends org.metavm.entity.Entity {
 
     private Value extraInfo;
 
-    @ChildEntity
     private List<Reference> offsprings = new ArrayList<>();
 
-    @ChildEntity
     private List<Reference> ancestors = new ArrayList<>();
 
     public LivingBeing(Id id, long age) {

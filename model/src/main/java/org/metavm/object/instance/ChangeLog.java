@@ -1,10 +1,8 @@
 package org.metavm.object.instance;
 
 import org.metavm.annotation.NativeEntity;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
-import org.metavm.api.NativeApi;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.*;

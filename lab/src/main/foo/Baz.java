@@ -1,15 +1,12 @@
-import org.metavm.api.ChildEntity;
-
 public class Baz {
 
-    @ChildEntity
-    private final Bar[] bars;
+    private final Foo.Bar[] bars;
 
-    public Baz(Bar[] bars) {
+    public Baz(Foo.Bar[] bars) {
         this.bars = bars;
     }
 
-    public Bar[] getBars() {
+    public Foo.Bar[] getBars() {
         return bars;
     }
 }

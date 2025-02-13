@@ -1,6 +1,5 @@
 package org.metavm.user;
 
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.lang.Lang;
 import org.metavm.api.lang.PasswordUtils;
@@ -18,7 +17,6 @@ import java.util.List;
 @Entity(searchable = true)
 public class LabPlatformUser extends LabUser {
 
-    @ChildEntity
     private final List<LabApplication> applications = new ArrayList<>();
 
     public LabPlatformUser(String loginName, String password, String name, List<LabRole> roles) {

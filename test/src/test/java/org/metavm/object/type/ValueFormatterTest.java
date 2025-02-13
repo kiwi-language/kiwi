@@ -13,12 +13,14 @@ public class ValueFormatterTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
     }
 
     public void testFormat() {
         var fooTypes = MockUtils.createFooTypes(true);
         var instance = MockUtils.createFoo(fooTypes);
+        TestUtils.initInstanceIds(instance);
         for (Field field : instance.getInstanceKlass().getAllFields()) {
             Object fieldValue = ValueFormatter.format(instance.getField(field));
             TestUtils.logJSON(logger, field.getName(), fieldValue);

@@ -3,7 +3,8 @@ package org.metavm.util;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.type.*;
+import org.metavm.object.type.Type;
+import org.metavm.object.type.TypeOrTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,9 +68,7 @@ public class StreamVisitor {
             case WireTypes.UNION_TYPE -> visitUnionType();
             case WireTypes.INTERSECTION_TYPE -> visitIntersectionType();
             case WireTypes.READ_ONLY_ARRAY_TYPE -> visitReadOnlyArrayType();
-            case WireTypes.READ_WRITE_ARRAY_TYPE -> visitReadWriteArrayType();
-            case WireTypes.CHILD_ARRAY_TYPE -> visitChildArrayType();
-            case WireTypes.VALUE_ARRAY_TYPE -> visitValueArrayType();
+            case WireTypes.ARRAY_TYPE -> visitArrayType();
             case WireTypes.NEVER_TYPE -> visitNeverType();
             case WireTypes.ANY_TYPE -> visitAnyType();
             case WireTypes.FIELD_REF -> visitFieldRef();
@@ -204,15 +203,7 @@ public class StreamVisitor {
         visitValue();
     }
 
-    public void visitReadWriteArrayType() {
-        visitValue();
-    }
-
-    public void visitChildArrayType() {
-        visitValue();
-    }
-
-    public void visitValueArrayType() {
+    public void visitArrayType() {
         visitValue();
     }
 

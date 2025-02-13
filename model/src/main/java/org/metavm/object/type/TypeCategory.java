@@ -17,10 +17,8 @@ public enum TypeCategory {
     ENUM(TypeCategoryCodes.ENUM, ColumnKind.REFERENCE, 2),
     INTERFACE(TypeCategoryCodes.INTERFACE, ColumnKind.UNSPECIFIED, 3),
     VALUE(TypeCategoryCodes.VALUE, ColumnKind.UNSPECIFIED, 2 ),
-    READ_WRITE_ARRAY(TypeCategoryCodes.READ_WRITE_ARRAY, ColumnKind.REFERENCE, ArrayNative.class, 4),
+    ARRAY(TypeCategoryCodes.READ_WRITE_ARRAY, ColumnKind.REFERENCE, ArrayNative.class, 4),
     READ_ONLY_ARRAY(TypeCategoryCodes.READ_ONLY_ARRAY, ColumnKind.REFERENCE, ArrayNative.class, 4),
-    CHILD_ARRAY(TypeCategoryCodes.CHILD_ARRAY, ColumnKind.REFERENCE, ArrayNative.class, 4),
-    VALUE_ARRAY(TypeCategoryCodes.VALUE_ARRAY, ColumnKind.REFERENCE, ArrayNative.class, 4),
     UNION(TypeCategoryCodes.UNION, ColumnKind.UNSPECIFIED, 5),
     NULL(TypeCategoryCodes.NULL, ColumnKind.UNSPECIFIED, 5),
     STRING(TypeCategoryCodes.STRING, ColumnKind.STRING, 5),
@@ -69,7 +67,7 @@ public enum TypeCategory {
     }
 
     public static List<TypeCategory> arrayCategories() {
-        return List.of(READ_WRITE_ARRAY, READ_ONLY_ARRAY, CHILD_ARRAY);
+        return List.of(ARRAY, READ_ONLY_ARRAY);
     }
 
     public static Set<TypeCategory> pojoCategories() {
@@ -97,7 +95,7 @@ public enum TypeCategory {
     }
 
     public boolean isArray() {
-        return this == READ_ONLY_ARRAY || this == READ_WRITE_ARRAY || this == CHILD_ARRAY;
+        return this == READ_ONLY_ARRAY || this == ARRAY;
     }
 
     public boolean isObject() {

@@ -355,7 +355,7 @@ public class Instances {
     }
 
     private static ArrayType getAnyArrayType() {
-        return new ArrayType(AnyType.instance, ArrayKind.READ_WRITE);
+        return new ArrayType(AnyType.instance, ArrayKind.DEFAULT);
     }
 
     public static ArrayInstance createArray(List<Value> instances) {

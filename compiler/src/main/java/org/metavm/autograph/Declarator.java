@@ -245,7 +245,6 @@ public class Declarator extends VisitorBase {
             field = FieldBuilder.newBuilder(psiField.getName(), klass, type)
                     .id(TmpId.random())
                     .access(getAccess(psiField))
-                    .isChild(TranspileUtils.isChild(psiField))
                     .isStatic(modList.hasModifierProperty(PsiModifier.STATIC))
                     .isTransient(isTransient)
                     .sourceTag(fieldTag != -1 ? fieldTag : null)
@@ -254,7 +253,6 @@ public class Declarator extends VisitorBase {
             field.setName(getBizFieldName(psiField));
             field.setType(type);
             field.setAccess(getAccess(psiField));
-            field.setChild(TranspileUtils.isChild(psiField));
             field.setTransient(isTransient);
         }
         currentClass().visitedFields.add(field);

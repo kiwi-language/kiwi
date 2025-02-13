@@ -1,7 +1,6 @@
 package org.metavm.object.version;
 
 import org.metavm.annotation.NativeEntity;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
@@ -17,11 +16,7 @@ import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 @NativeEntity(76)

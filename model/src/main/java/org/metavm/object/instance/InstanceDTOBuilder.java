@@ -1,7 +1,6 @@
 package org.metavm.object.instance;
 
 import org.metavm.entity.SerializeContext;
-import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
 import org.metavm.util.Instances;
@@ -49,17 +48,16 @@ public class InstanceDTOBuilder {
                 return instance.toFieldValueDTO();
             } else {
                 var list = Instances.toJavaList(instance);
-                var isChildList = instance.getInstanceKlass() == StdKlass.childList.get();
                 InstanceDTO instanceDTO = new InstanceDTO(
                         instance.getStringIdForDTO(),
                         instance.getInstanceType().toExpression(serContext),
                         instance.getInstanceType().getName(),
                         instance.getTitle(),
                         new ListInstanceParam(
-                                isChildList,
+                                false,
                                 Utils.map(
                                         list,
-                                        e -> build(e, depth, isChild && isChildList)
+                                        e -> build(e, depth, isChild)
                                 )
                         )
                 );
@@ -86,7 +84,7 @@ public class InstanceDTOBuilder {
                                                 f.getName(),
                                                 f.getType().getConcreteType().getCategory().code(),
                                                 f.getType().isArray(),
-                                                build(instance.getField(f), depth - 1, isChild && f.isChild())
+                                                build(instance.getField(f), depth - 1, isChild)
                                         )
                                 )
                         )
@@ -107,10 +105,10 @@ public class InstanceDTOBuilder {
                         array.getInstanceType().getName(),
                         array.getTitle(),
                         new ArrayInstanceParam(
-                                array.isChildArray(),
+                                false,
                                 Utils.map(
                                         array.getElements(),
-                                        e -> build(e, depth, isChild && array.isChildArray())
+                                        e -> build(e, depth, isChild)
                                 )
                         )
                 );

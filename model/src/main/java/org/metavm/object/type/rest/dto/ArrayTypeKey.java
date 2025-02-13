@@ -15,13 +15,9 @@ public record ArrayTypeKey(int kind, TypeKey elementTypeKey) implements TypeKey 
 
     static {
         typeKeyCodes[ArrayKind.READ_ONLY.code()] = WireTypes.READ_ONLY_ARRAY_TYPE;
-        typeKeyCodes[ArrayKind.READ_WRITE.code()] = WireTypes.READ_WRITE_ARRAY_TYPE;
-        typeKeyCodes[ArrayKind.CHILD.code()] = WireTypes.CHILD_ARRAY_TYPE;
-        typeKeyCodes[ArrayKind.VALUE.code()] = WireTypes.VALUE_ARRAY_TYPE;
+        typeKeyCodes[ArrayKind.DEFAULT.code()] = WireTypes.ARRAY_TYPE;
         typeTags[ArrayKind.READ_ONLY.code()] = TypeTags.READONLY_ARRAY;
-        typeTags[ArrayKind.READ_WRITE.code()] = TypeTags.READ_WRITE_ARRAY;
-        typeTags[ArrayKind.CHILD.code()] = TypeTags.CHILD_ARRAY;
-        typeTags[ArrayKind.VALUE.code()] = TypeTags.VALUE_ARRAY;
+        typeTags[ArrayKind.DEFAULT.code()] = TypeTags.ARRAY;
     }
 
     @Override

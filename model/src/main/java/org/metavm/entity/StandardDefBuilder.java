@@ -1,13 +1,12 @@
 package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.api.ChildList;
 import org.metavm.api.Index;
 import org.metavm.api.Interceptor;
-import org.metavm.api.ValueList;
 import org.metavm.api.entity.*;
 import org.metavm.entity.natives.StdFunction;
-import org.metavm.object.type.*;
+import org.metavm.object.type.Klass;
+import org.metavm.object.type.StringType;
 import org.metavm.util.IteratorImpl;
 
 import java.io.*;
@@ -79,8 +78,6 @@ public class StandardDefBuilder {
             Enum.class,
             Throwable.class,
             ArrayList.class,
-            ChildList.class,
-            ValueList.class,
             HashSet.class,
             TreeSet.class,
             HashMap.class,

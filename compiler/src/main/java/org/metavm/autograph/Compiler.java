@@ -2,7 +2,7 @@ package org.metavm.autograph;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
-import org.metavm.api.ChildList;
+import org.metavm.api.Index;
 import org.metavm.autograph.env.IrCoreApplicationEnvironment;
 import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
@@ -130,7 +130,7 @@ public class Compiler {
 //        projectEnv.addSourcesToClasspath(requireNonNull(apiSource));
 //        projectEnv.addSourcesToClasspath(requireNonNull(fileSystem.findFileByPath("/Users/leen/workspace/object/api/src/main/java")));
         try {
-            var apiSource = Paths.get(ChildList.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toFile();
+            var apiSource = Paths.get(Index.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toFile();
             if (apiSource.getName().endsWith(".jar")) {
                 projectEnv.addSourcesToClasspath(
                         Objects.requireNonNull(appEnv.getJarFileSystem().findFileByPath(apiSource.getAbsolutePath() + "!/"))

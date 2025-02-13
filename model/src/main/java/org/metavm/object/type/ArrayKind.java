@@ -7,10 +7,10 @@ import javax.annotation.Nullable;
 
 public enum ArrayKind {
 
-    READ_WRITE(1, TypeCategory.READ_WRITE_ARRAY, TypeTags.READ_WRITE_ARRAY, "[]") {
+    DEFAULT(1, TypeCategory.ARRAY, TypeTags.ARRAY, "[]") {
         @Override
         public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
-             return (that == READ_WRITE || that == CHILD) && assignedElementType.contains(assignmentElementType);
+             return (that == DEFAULT) && assignedElementType.contains(assignmentElementType);
         }
 
         @Override
@@ -28,28 +28,6 @@ public enum ArrayKind {
         @Override
         public String getInternalName(String elementInternalName) {
             return elementInternalName + "[R]";
-        }
-    },
-    CHILD(3, TypeCategory.CHILD_ARRAY, TypeTags.CHILD_ARRAY, "[C]") {
-        @Override
-        public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
-            return that == CHILD && assignedElementType.contains(assignmentElementType);
-        }
-
-        @Override
-        public String getInternalName(String elementInternalName) {
-            return elementInternalName + "[C]";
-        }
-    },
-    VALUE(4, TypeCategory.VALUE_ARRAY, TypeTags.VALUE_ARRAY, "[V]") {
-        @Override
-        public boolean isAssignableFrom(ArrayKind that, Type assignedElementType, Type assignmentElementType) {
-            return that == VALUE && assignedElementType.contains(assignmentElementType);
-        }
-
-        @Override
-        public String getInternalName(String elementInternalName) {
-            return elementInternalName + "[V]";
         }
     },
     ;

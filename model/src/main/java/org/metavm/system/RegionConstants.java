@@ -1,6 +1,5 @@
 package org.metavm.system;
 
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeCategory;
 import org.metavm.util.InternalException;
 
@@ -14,16 +13,14 @@ public class RegionConstants {
     static final Map<TypeCategory, RegionInfo> VALUE_MAP = new HashMap<>();
     public static RegionInfo CLASS_REGION;
     public static RegionInfo ENUM_REGION;
-    public static RegionInfo CHILD_ARRAY_REGION;
     public static RegionInfo READ_WRITE_ARRAY_REGION;
     public static RegionInfo READ_ONLY_ARRAY_REGION;
 
     static {
         CLASS_REGION = create(TypeCategory.CLASS, CLASS_REGION_BASE, CLASS_REGION_END);
         ENUM_REGION = create(TypeCategory.ENUM, ENUM_REGION_BASE, ENUM_REGION_END);
-        READ_WRITE_ARRAY_REGION = create(TypeCategory.READ_WRITE_ARRAY, READ_WRITE_ARRAY_REGION_BASE, READ_WRITE_ARRAY_REGION_END);
+        READ_WRITE_ARRAY_REGION = create(TypeCategory.ARRAY, READ_WRITE_ARRAY_REGION_BASE, READ_WRITE_ARRAY_REGION_END);
         READ_ONLY_ARRAY_REGION = create(TypeCategory.READ_ONLY_ARRAY, READ_ONLY_ARRAY_REGION_BASE, READ_ONLY_ARRAY_REGION_END);
-        CHILD_ARRAY_REGION = create(TypeCategory.CHILD_ARRAY, CHILD_ARRAY_REGION_BASE, CHILD_ARRAY_REGION_END);
     }
 
     private static RegionInfo create(TypeCategory typeCategory, long start, long end) {

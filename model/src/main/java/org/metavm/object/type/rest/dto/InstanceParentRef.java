@@ -15,9 +15,8 @@ public record InstanceParentRef(
         return new InstanceParentRef(reference, null);
     }
 
-    @Nullable
     public static InstanceParentRef ofObject(Reference reference, Field field) {
-        return field.isChild() ? new InstanceParentRef(reference, field) : null;
+        return new InstanceParentRef(reference, field);
     }
 
 

@@ -87,7 +87,7 @@ public class AssemblerTest extends TestCase {
             var result = Flows.invoke(method.getRef(), null, List.of(), context);
             Assert.assertNotNull(result);
             var array = result.resolveArray();
-            Assert.assertSame(ArrayKind.CHILD, array.getInstanceType().getKind());
+            Assert.assertSame(ArrayKind.DEFAULT, array.getInstanceType().getKind());
         }
     }
 
@@ -138,6 +138,23 @@ public class AssemblerTest extends TestCase {
         var className = "SmallIntFoo";
         Assert.assertEquals((short) 3, callMethod(className, "addShorts", List.of(1, 2)));
         Assert.assertEquals(3.0, callMethod(className, "addShortAndDouble", List.of(1, 2)));
+    }
+
+    public void testInnerKlass() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/inner_klass.mv");
+        var className = "Product";
+        var productId = saveInstance(className, Map.of("quantity", 100));
+        var product = getObject(productId);
+        var inventory = getObject(product.getString("inventory"));
+        Assert.assertEquals(100, inventory.getInt("quantity"));
+    }
+
+    public void testTag() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/mv/tag.mv");
+        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            var klass = context.getKlassByQualifiedName("Foo");
+            Assert.assertEquals((Integer) 1, klass.getSourceTag());
+        }
     }
 
     private void assemble(List<String> sources, Assembler assembler) {

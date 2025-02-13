@@ -1,7 +1,6 @@
 package org.metavm.mocks;
 
 import org.metavm.annotation.NativeEntity;
-import org.metavm.api.ChildEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
@@ -27,7 +26,6 @@ public class Baz extends org.metavm.entity.Entity {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
-    @ChildEntity
     private List<Reference> bars = new ArrayList<>();
 
     @Generated

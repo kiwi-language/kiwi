@@ -82,6 +82,8 @@ public class InstanceContextTest extends TestCase {
     }
 
     public void testOnChange() {
+        BootstrapUtils.bootstrap();
+
         Id fooId;
         Id bazId;
         var fooTypes = MockUtils.createFooTypes(true);
@@ -113,6 +115,19 @@ public class InstanceContextTest extends TestCase {
                 context.remove(bar001.get());
                 final boolean[] onChangeCalled = new boolean[1];
                 context.addListener(new ContextListener() {
+
+                    @Override
+                    public boolean onRemove(Instance instance) {
+                        if (instance == bar001.resolveObject()) {
+                            bars.remove(bar001);
+                            baz.getField(fooTypes.bazBarsField()).resolveArray().remove(bar001);
+                            onChangeCalled[0] = true;
+                            return true;
+                        }
+                        else
+                            return false;
+                    }
+
                     @Override
                     public boolean onChange(Instance instance) {
                         if (instance == foo) {
