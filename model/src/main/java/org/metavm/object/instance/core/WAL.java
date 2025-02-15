@@ -7,23 +7,19 @@ import org.metavm.api.Generated;
 import org.metavm.entity.ContextFinishWare;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.LoadAware;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.log.InstanceLog;
-import org.metavm.object.instance.persistence.*;
+import org.metavm.object.instance.persistence.IndexEntryPO;
+import org.metavm.object.instance.persistence.IndexKeyPO;
+import org.metavm.object.instance.persistence.IndexQueryPO;
+import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
-import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @NativeEntity(70)
@@ -32,16 +28,11 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
 
     private static Consumer<WAL> commitHook;
 
-    private static BiConsumer<Long, List<InstanceLog>> postProcessHook;
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
     public static void setCommitHook(Consumer<WAL> commitHook) {
         WAL.commitHook = commitHook;
-    }
-
-    public static void setPostProcessHook(BiConsumer<Long, List<InstanceLog>> postProcessHook) {
-        WAL.postProcessHook = postProcessHook;
     }
 
     private long appId;
@@ -52,8 +43,6 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
     private transient Map<Long, InstancePO> deletes = new HashMap<>();
     private transient IndexEntryList newIndexEntries = new IndexEntryList();
     private transient IndexEntryList removedIndexEntries = new IndexEntryList();
-    private transient List<ReferencePO> newReferences = new ArrayList<>();
-    private transient List<ReferencePO> removedReferences = new ArrayList<>();
     private transient List<InstanceLog> instanceLogs = new ArrayList<>();
 
     public WAL(@NotNull Id id, long appId) {
@@ -82,8 +71,6 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         input.readList(() -> input.readInstancePO(appId)).forEach(inst -> inserts.put(inst.getId(), inst));
         input.readList(() -> input.readInstancePO(appId)).forEach(inst -> updates.put(inst.getId(), inst));
         input.readList(() -> input.readInstancePO(appId)).forEach(inst -> deletes.put(inst.getId(), inst));
-        newReferences = new ArrayList<>(input.readList(() -> input.readReferencePO(appId)));
-        removedReferences = new ArrayList<>(input.readList(() -> input.readReferencePO(appId)));
         newIndexEntries = new IndexEntryList(input.readList(() -> input.readIndexEntryPO(appId)));
         removedIndexEntries = new IndexEntryList(input.readList(() -> input.readIndexEntryPO(appId)));
         instanceLogs = input.readList(() -> InstanceLog.read(input));
@@ -100,8 +87,6 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         output.writeList(inserts.values(), output::writeInstancePO);
         output.writeList(updates.values(), output::writeInstancePO);
         output.writeList(deletes.values(), output::writeInstancePO);
-        output.writeList(newReferences, output::writeReferencePO);
-        output.writeList(removedReferences, output::writeReferencePO);
         output.writeList(newIndexEntries.values, output::writeIndexEntryPO);
         output.writeList(removedIndexEntries.values, output::writeIndexEntryPO);
         output.writeList(instanceLogs, log -> log.write(output));
@@ -116,11 +101,6 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         changeList.inserts().forEach(inst -> inserts.put(inst.getId(), inst));
         changeList.updates().forEach(inst -> updates.put(inst.getId(), inst));
         changeList.deletes().forEach(inst -> deletes.put(inst.getId(), inst));
-    }
-
-    public void saveReferences(ChangeList<ReferencePO> changeList) {
-        newReferences.addAll(changeList.inserts());
-        removedReferences.addAll(changeList.deletes());
     }
 
     public void saveIndexEntries(ChangeList<IndexEntryPO> changeList) {
@@ -166,10 +146,6 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         return ChangeList.create(inserts.values(), updates.values(), deletes.values());
     }
 
-    public ChangeList<ReferencePO> getReferenceChanges() {
-        return ChangeList.create(newReferences, List.of(), removedReferences);
-    }
-
     public ChangeList<IndexEntryPO> getIndexEntryChanges() {
         return ChangeList.create(newIndexEntries.values, List.of(), removedIndexEntries.values);
     }
@@ -185,7 +161,6 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
 
     public void commit() {
         commitHook.accept(this);
-        postProcessHook.accept(appId, instanceLogs);
     }
 
     public long getAppId() {
@@ -211,7 +186,6 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
         map.put("data", this.getData());
         map.put("newIndexEntries", this.getNewIndexEntries());
         map.put("instanceChanges", this.getInstanceChanges());
-        map.put("referenceChanges", this.getReferenceChanges());
         map.put("indexEntryChanges", this.getIndexEntryChanges());
         map.put("instanceLogs", this.getInstanceLogs().stream().map(InstanceLog::toJson).toList());
         map.put("appId", this.getAppId());

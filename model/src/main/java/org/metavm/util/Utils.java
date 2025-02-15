@@ -15,6 +15,7 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import javax.sql.DataSource;
 import java.io.*;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Type;
@@ -1928,6 +1929,12 @@ public class Utils {
                 source.remove();
             }
         };
+    }
+
+    public static String repeatWithDelimiter(String s, int count, String delimiter) {
+        if (count == 0) return "";
+        else if (count == 1) return s;
+        return s + (delimiter + s).repeat(count - 1);
     }
 
 }

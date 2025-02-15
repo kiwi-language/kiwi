@@ -596,17 +596,7 @@
 //    }
 //
 //    @Override
-//    public List<Instance> getRelocated() {
-//        return List.of();
-//    }
-//
-//    @Override
 //    public void buffer(Id id) {
-//
-//    }
-//
-//    @Override
-//    public void removeForwardingPointer(MvInstance instance, boolean clearingOldId) {
 //
 //    }
 //

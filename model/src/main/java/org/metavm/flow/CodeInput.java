@@ -52,7 +52,6 @@ public class CodeInput extends MvInput  {
             case Bytecodes.ADD_OBJECT -> AddObjectNode.read(this, name);
             case Bytecodes.SET_FIELD -> SetFieldNode.read(this, name);
             case Bytecodes.SET_CHILD_FIELD -> SetChildFieldNode.read(this, name);
-            case Bytecodes.DELETE_OBJECT -> DeleteObjectNode.read(this, name);
             case Bytecodes.RETURN -> ReturnNode.read(this, name);
             case Bytecodes.RAISE -> RaiseNode.read(this, name);
             case Bytecodes.INVOKE_VIRTUAL -> InvokeVirtualNode.read(this, name);
@@ -251,22 +250,7 @@ public class CodeInput extends MvInput  {
     }
 
     @Override
-    public Value readRelocatingInstance() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Value readInstance() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Value readRedirectingInstance() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Value readRedirectingReference() {
         throw new UnsupportedOperationException();
     }
 

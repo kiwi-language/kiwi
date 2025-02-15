@@ -6,11 +6,9 @@ import org.metavm.entity.Entity;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.KlassDataSlot;
 import org.metavm.object.instance.core.Message;
-import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.InstancePO;
-import org.metavm.object.instance.persistence.ReferencePO;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -58,12 +56,6 @@ public class InstanceOutput extends MvOutput {
         write(indexKeyPO.getIndexId());
         writeInt(indexKeyPO.getData().length);
         write(indexKeyPO.getData());
-    }
-
-    public void writeReferencePO(ReferencePO referencePO) {
-        writeLong(referencePO.getSourceTreeId());
-        write(referencePO.getTargetId());
-        writeInt(referencePO.getKind());
     }
 
     public @javax.annotation.Nullable Instance getCurrent() {

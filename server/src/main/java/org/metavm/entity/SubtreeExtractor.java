@@ -25,7 +25,7 @@ public class SubtreeExtractor extends StreamVisitor {
     }
 
     @Override
-    public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.write(WireTypes.INSTANCE);
@@ -42,20 +42,17 @@ public class SubtreeExtractor extends StreamVisitor {
             }
 
             @Override
-            public void visitInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
+            public void visitInstance(long treeId, long nodeId) {
                 var typeKey = readTypeKey();
                 write(WireTypes.REFERENCE);
                 writeId(PhysicalId.of(treeId, nodeId));
-                SubtreeExtractor.this.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeKey);
+                SubtreeExtractor.this.visitInstanceBody(treeId, nodeId, typeKey);
             }
-        }.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
+        }.visitInstanceBody(treeId, nodeId, typeOrTypeKey);
         parentId = oldParentId;
-        var oldId = oldTreeId != -1L ? PhysicalId.of(oldTreeId, oldNodeId) : null;
         add.accept(new Subtree(
                 id,
                 parentId,
-                oldId,
-                useOldId,
                 bout.toByteArray(),
                 -1
         ));
@@ -85,8 +82,6 @@ public class SubtreeExtractor extends StreamVisitor {
         add.accept(new Subtree(
                 id,
                 parentId,
-                null,
-                false,
                 bout.toByteArray(),
                 tag
         ));

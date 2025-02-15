@@ -177,6 +177,10 @@ public abstract class Task extends org.metavm.entity.Entity {
         return group;
     }
 
+    public boolean isMigrating() {
+        return false;
+    }
+
     @Override
     public void forEachReference(Consumer<Reference> action) {
     }

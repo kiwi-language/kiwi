@@ -138,7 +138,7 @@ public class WALTest extends TestCase {
                         PhysicalId.of(context.allocateTreeId(), 0L),
                         wal,
                         List.of(fieldId), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
-                context.bind(new DDLTask(context.allocateRootId(), commit, CommitState.PREPARING0));
+                context.bind(new DDLTask(context.allocateRootId(), commit, CommitState.MIGRATING));
                 context.finish();
                 return new Id[] {wal.getId(), commit.getId()};
             }
@@ -177,7 +177,7 @@ public class WALTest extends TestCase {
         try (var context = newContext()) {
             var wal = context.getEntity(WAL.class, walId);
             var commit = context.getEntity(Commit.class, commitId);
-            Assert.assertEquals(CommitState.PREPARING0, commit.getState());
+            Assert.assertEquals(CommitState.MIGRATING, commit.getState());
             Assert.assertEquals(commit, context.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance()));
             try (var loadedContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
                 loadedContext.loadKlasses();
@@ -218,21 +218,6 @@ public class WALTest extends TestCase {
             try(var context = newContext()) {
                 var wal = context.getEntity(WAL.class, walId);
                 wal.commit();
-            }
-        });
-        TestUtils.doInTransactionWithoutResult(() -> {
-            try (var context = newContext()) {
-                var klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(className));
-                Assert.assertNotNull(klass);
-                var wal = context.bind(new WAL(context.allocateRootId(), context.getAppId()));
-                try (var bufContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
-                    bufContext.remove(bufContext.getEntity(Klass.class, klass.getId()));
-                    bufContext.finish();
-                }
-                try (var loadedContext = entityContextFactory.newLoadedContext(APP_ID, wal)) {
-                    Assert.assertNull(loadedContext.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(className)));
-                }
-                context.finish();
             }
         });
     }

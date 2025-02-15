@@ -77,17 +77,6 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
     }
 
     @Override
-    public List<IndexEntryPO> selectByInstanceIdsOrKeys(long appId,
-                                                        Collection<byte[]> instanceIds,
-                                                        Collection<IndexKeyPO> keys) {
-        var globalKeys = Utils.map(keys, k -> new GlobalKey(appId, k));
-        return Utils.union(
-                Utils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id))),
-                Utils.flatMap(globalKeys, this::getItems)
-        );
-    }
-
-    @Override
     public List<IndexEntryPO> selectByInstanceIds(long appId, Collection<byte[]> instanceIds) {
         try (var ignored = ContextUtil.getProfiler().enter("MemIndexEntryMapper.selectByInstanceIds")) {
             return Utils.flatMap(instanceIds, id -> getItemsByInstanceId(Id.fromBytes(id)));
@@ -105,10 +94,19 @@ public class MemIndexEntryMapper implements IndexEntryMapper {
     @Override
     public void batchInsert(Collection<IndexEntryPO> entries) {
         for (IndexEntryPO entry : entries) {
+            if(!this.entries.add(entry))
+                throw new InternalException("Duplicate index entry: " + entry);
             getItems(new GlobalKey(entry.getAppId(), entry.getKey())).add(entry);
             getItemsByInstanceId(entry.getId()).add(entry);
-            if(!this.entries.add(entry)) {
-                throw new InternalException("Duplicate index entry: " + entry);
+        }
+    }
+
+    @Override
+    public void tryBatchInsert(Collection<IndexEntryPO> items) {
+        for (IndexEntryPO entry : items) {
+            if (this.entries.add(entry)) {
+                getItems(new GlobalKey(entry.getAppId(), entry.getKey())).add(entry);
+                getItemsByInstanceId(entry.getId()).add(entry);
             }
         }
     }

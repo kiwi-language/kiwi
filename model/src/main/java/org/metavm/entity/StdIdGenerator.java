@@ -78,7 +78,7 @@ public class StdIdGenerator {
     }
 
     public void printIds() {
-        ids.forEach((identity, id) -> DebugEnv.logger.debug("{}: {}", identity, id));
+        ids.forEach((identity, id) -> DebugEnv.logger.trace("{}: {}", identity, id));
     }
 
 

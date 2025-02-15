@@ -56,6 +56,8 @@ public class BytesUtils {
     private static Object convertInstanceToValue(Value instance) {
         if(instance instanceof PrimitiveValue primitiveValue)
             return primitiveValue.getValue();
+        else if (instance instanceof StringReference)
+            return Instances.toJavaString(instance);
         else if(instance instanceof Reference durableInstance)
             return durableInstance.getId();
         else

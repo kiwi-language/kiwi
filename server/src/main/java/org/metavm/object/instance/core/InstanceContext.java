@@ -9,7 +9,6 @@ import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.StoreTreeSource;
 import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.persistence.InstancePO;
-import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.LinkedList;
@@ -25,8 +24,6 @@ import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
-import static org.metavm.util.Utils.mergeSets;
-
 public class InstanceContext extends BufferingInstanceContext {
 
     private boolean finished;
@@ -40,7 +37,6 @@ public class InstanceContext extends BufferingInstanceContext {
     private final Cache cache;
     private final boolean skipPostprocessing;
     private final boolean relocationEnabled;
-    private final List<Instance> relocated = new ArrayList<>();
 
     public InstanceContext(long appId,
                            IInstanceStore instanceStore,
@@ -98,16 +94,12 @@ public class InstanceContext extends BufferingInstanceContext {
         headContext.freeze();
         if(commit != null)
             tryCancelCommit(commit);
-        finalizeRedirections();
-        var migrationResult = relocationEnabled ? relocate() : Relocations.EMPTY;
-        var patchContext = new PatchContext(migrationResult);
+        var patchContext = new PatchContext();
         var patch = buildPatch(null, patchContext);
         validateRemoval();
-        processRemoval(patch);
         /*patch = */
         beforeSaving(patch, patchContext);
         saveInstances(patch.treeChanges);
-        saveReferences(patch);
         afterSaving(patch);
         headContext.unfreeze();
         headContext.clear();
@@ -149,10 +141,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
         public static final int MAX_BUILD = 10;
         int numBuild;
-        final Relocations relocations;
-
-        public PatchContext(Relocations relocations) {
-            this.relocations = relocations;
+        public PatchContext() {
         }
 
         void incBuild() {
@@ -171,9 +160,8 @@ public class InstanceContext extends BufferingInstanceContext {
             check();
             initIds();
             var bufferedTrees = buildBufferedTrees();
-            var difference = buildDifference(bufferedTrees, patchContext.relocations);
+            var difference = buildDifference(bufferedTrees);
             var entityChange = difference.getEntityChange();
-            var refChange = difference.getReferenceChange();
             var treeChanges = difference.getTreeChanges();
             onContextInitializeId();
             if (prevPatch != null) {
@@ -184,7 +172,7 @@ public class InstanceContext extends BufferingInstanceContext {
                     });
                 }
             }
-            return processChanges(new Patch(bufferedTrees, entityChange, treeChanges, refChange), computeNonPersistedOrphans(), patchContext);
+            return processChanges(new Patch(bufferedTrees, entityChange, treeChanges), computeNonPersistedOrphans(), patchContext);
         }
     }
 
@@ -193,7 +181,7 @@ public class InstanceContext extends BufferingInstanceContext {
             var orphans = new ArrayList<>(nonPersistedOrphans);
             for (var version : patch.entityChange.deletes()) {
                 var instance = Objects.requireNonNull(getSelfBuffered(version.id()));
-                if (!instance.isRemoved())
+                if (!instance.isRemoved() && !instance.isValue())
                     orphans.add(instance);
             }
             if (!orphans.isEmpty())
@@ -215,11 +203,6 @@ public class InstanceContext extends BufferingInstanceContext {
                 }
             });
         }
-    }
-
-    @Override
-    public List<Instance> getByReferenceTargetId(Id targetId, long startExclusive, long limit) {
-        return batchGetRoots(instanceStore.getByReferenceTargetId(targetId, startExclusive, limit, this));
     }
 
     public void initIds() {
@@ -253,8 +236,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private record Patch(List<Tree> trees,
                          EntityChange<VersionRT> entityChange,
-                         EntityChange<InstancePO> treeChanges,
-                         EntityChange<ReferencePO> referenceChange) {
+                         EntityChange<InstancePO> treeChanges) {
     }
 
     private Patch beforeSaving(Patch patch, PatchContext patchContext) {
@@ -274,33 +256,11 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
-    private ContextDifference buildDifference(Collection<Tree> bufferedTrees, Relocations relocations) {
+    private ContextDifference buildDifference(Collection<Tree> bufferedTrees) {
         try (var ignored = getProfiler().enter("InstanceContext.buildDifference")) {
             var difference = new ContextDifference(appId);
             difference.diffTrees(headContext.trees(), bufferedTrees);
-            difference.diffReferences(headContext.getReferences(), getBufferedReferences(bufferedTrees));
-            if(relocations.isEmpty())
-                difference.diffEntities(headContext.trees(), bufferedTrees);
-            else {
-                List<Instance> toRebuild = new ArrayList<>();
-                for (Instance instance : relocations.merged) {
-                    toRebuild.add(instance.getRoot());
-                    toRebuild.add(instance);
-                }
-                var discardedTreeIds = new HashSet<Long>();
-                relocations.forEach(i -> {
-                    discardedTreeIds.add(i.getCurrentId().getTreeId());
-                    discardedTreeIds.add(i.getOldId().getTreeId());
-                });
-                relocations.rollback();
-                for (Instance extracted : relocations.extracted) {
-                    toRebuild.add(extracted.getRoot());
-                }
-                var trees = Utils.exclude(bufferedTrees, t -> discardedTreeIds.contains(t.id()));
-                toRebuild.forEach(i -> trees.add(buildTree(i)));
-                difference.diffEntities(headContext.trees(), trees);
-                relocations.recover();
-            }
+            difference.diffEntities(headContext.trees(), bufferedTrees);
             return difference;
         }
     }
@@ -391,39 +351,6 @@ public class InstanceContext extends BufferingInstanceContext {
         });
     }
 
-    private void processRemoval(Patch patch) {
-        try (var ignored = getProfiler().enter("processRemoval")) {
-            var entityChange = patch.entityChange;
-            if (Utils.isEmpty(entityChange.deletes()))
-                return;
-            var idsToRemove = new HashSet<Id>();
-            for (VersionRT delete : entityChange.deletes()) {
-                var i = internalGet(delete.id());
-                if(i.tryGetCurrentId() != null)
-                    idsToRemove.add(i.getCurrentId());
-                if(i.tryGetOldId() != null)
-                    idsToRemove.add(i.getOldId());
-            }
-            var idsToUpdate = Utils.mapToSet(entityChange.updates(), v -> v.id().getTreeId());
-            var ref = instanceStore.getFirstReference(
-                    appId, idsToRemove, mergeSets(Utils.mapToSet(idsToRemove, Id::getTreeId), idsToUpdate)
-            );
-            if (ref != null) {
-                unfrozen(() -> {
-                    var referring = getRoot(ref.getSourceTreeId());
-                    var referred = internalGet(ref.getTargetInstanceId());
-                    throw new RemovalFailureException(
-                            "Cannot remove instance " + referred + " (tree ID: " + ref.getTargetInstanceId().getTreeId() + ")"
-                                    + " because it is referenced by instance " + referring
-                                    + " (tree ID: " + ref.getSourceTreeId() +")"
-                    );
-//                    throw BusinessException.strongReferencesPreventRemoval(getRoot(ref.getSourceTreeId()).getReference(),
-//                            internalGet(ref.getTargetInstanceId()).getReference());
-                });
-            }
-        }
-    }
-
     @Override
     public boolean isFinished() {
         return finished;
@@ -474,14 +401,6 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
-    private Set<ReferencePO> getBufferedReferences(Collection<Tree> trees) {
-        Set<ReferencePO> references = new HashSet<>();
-        for (Tree tree : trees) {
-            new ReferenceExtractor(tree.openInput(), appId, references::add).visitGrove();
-        }
-        return references;
-    }
-
     private void registerTransactionSynchronization() {
         if (skipPostprocessing)
             return;
@@ -509,15 +428,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private void saveInstances(EntityChange<InstancePO> change) {
         try (var ignored = getProfiler().enter("processEntityChangeHelper")) {
-            instanceStore.save(change.toChangeList());
-        }
-    }
-
-    private void saveReferences(Patch patch) {
-        var diff = new ContextDifference(appId);
-        diff.diffReferences(headContext.getReferences(), getBufferedReferences(patch.trees));
-        try (var ignored = getProfiler().enter("saveReferences")) {
-            instanceStore.saveReferences(diff.getReferenceChange().toChangeList());
+            instanceStore.save(appId, change.toChangeList());
         }
     }
 
@@ -590,115 +501,8 @@ public class InstanceContext extends BufferingInstanceContext {
                 });
             }
         }
-        var cursor = treeIds.isEmpty() ? 0 : treeIds.get(treeIds.size() - 1);
+        var cursor = treeIds.isEmpty() ? 0 : treeIds.getLast();
         return new ScanResult(batch, treeIds.size() < limit, cursor);
-    }
-
-    public record Relocations(
-            List<MvInstance> merged,
-            List<MvInstance> extracted
-    ) {
-
-        static final Relocations EMPTY = new Relocations(List.of(), List.of());
-
-        void forEach(Consumer<? super Instance> action) {
-            merged.forEach(action);
-            extracted.forEach(action);
-        }
-
-        void rollback() {
-            merged.forEach(MvInstance::rollbackMerge);
-            extracted.forEach(MvInstance::rollbackExtraction);
-        }
-
-        void recover() {
-            merged.forEach(MvInstance::merge);
-            extracted.forEach(i -> i.extract(i.getRelocatedId().isRoot()));
-        }
-
-        public boolean isEmpty() {
-            return merged.isEmpty() && extracted.isEmpty();
-        }
-    }
-
-    private void finalizeRedirections() {
-        forEach(instance -> instance.transformReference(r -> {
-            if(r instanceof RedirectingReference redirectingRef && redirectingRef.shouldRedirect())
-                return redirectingRef.getRedirectionReference();
-            else
-                return r;
-        }));
-    }
-
-    private Relocations relocate() {
-        var merged = merge();
-        var extracted = extract();
-        mergeDetachedValues();
-        return new Relocations(merged, extracted);
-    }
-
-    private List<MvInstance> merge() {
-        var merged = new ArrayList<MvInstance>();
-        forEach(instance -> {
-            if (instance instanceof MvInstance mvInst && !instance.isEphemeral() && !instance.isRemoved()) {
-                if(mvInst.canMerge()) {
-                    mvInst.forEachDescendant(i -> {
-                        var d = (MvInstance) i;
-                        d.merge();
-                        addForwardingPointer(new ForwardingPointer(i.getOldId(), d.getCurrentId()));
-                        mapManually(i.getId(), i);
-                        merged.add(d);
-                    });
-                    this.relocated.add(instance);
-                }
-            }
-        });
-        return merged;
-    }
-
-    private void mergeDetachedValues() {
-        forEach(instance -> {
-            if(instance instanceof MvInstance mvInst && !instance.isEphemeral() && !instance.isRemoved()) {
-                mvInst.transformReference((r, isChild) -> {
-                    if(r.isValueReference() && !isChild && r.resolveDurable() instanceof MvInstance v) {
-                        if(v.isDetachedValue())
-                            return v.copy().getReference();
-                    }
-                    return r;
-                });
-            }
-        });
-    }
-
-    private List<MvInstance> extract() {
-        var extracted = new ArrayList<MvInstance>();
-        forEach(instance -> {
-            if (instance instanceof MvInstance mvInst && !mvInst.isRemoved() && !mvInst.isEphemeral() && mvInst.canExtract()) {
-                var ref = instance.getReference();
-                Objects.requireNonNull(instance.getParent()).forEachReference(r -> {
-                    if(r.equals(ref)) r.setForwarded();
-                });
-                mvInst.extract(true);
-                extracted.add(mvInst);
-                mvInst.forEachProperDescendant(i -> {
-                    var d = (MvInstance) i;
-                    d.extract(false);
-                    extracted.add(d);
-                });
-                relocated.add(mvInst);
-            }
-        });
-        idInitializer.initializeIds(appId, extracted);
-        for (var instance : extracted) {
-            addForwardingPointer(new ForwardingPointer(instance.getOldId(), instance.getCurrentId()));
-            mapManually(instance.getId(), instance);
-        }
-        return extracted;
-    }
-
-    @Override
-    public List<Instance> getRelocated() {
-        return Collections.unmodifiableList(relocated);
     }
 
     // For debugging, don't remove
@@ -716,25 +520,6 @@ public class InstanceContext extends BufferingInstanceContext {
         for (InstancePO delete : treeChanges.deletes()) {
             logger.info("Tree ID: {}", delete.getId());
         }
-    }
-
-    private void loadSeparateChildren() {
-        // Assuming multiple levels of separate children are rare, hence only one level of buffering is applied
-        forEach(i -> {
-            if(i instanceof ClassInstance classInstance) {
-                classInstance.forEachField((f, v) -> {
-                    if (v instanceof Reference r && Objects.equals(r.tryGetTreeId(), i.tryGetTreeId())) {
-                        if (!r.isInitialized()) {
-                            buffer(r.getId());
-                        }
-                    }
-                });
-            }
-        });
-        forEachRoot(r -> {
-            if (r.getParent() == null)
-                r.forEachDescendant(i -> {});
-        });
     }
 
     private void unfrozen(Runnable action) {

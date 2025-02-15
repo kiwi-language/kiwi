@@ -1,18 +1,18 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.ReferenceExtractor;
 import org.metavm.entity.Tree;
-import org.metavm.object.instance.persistence.ReferencePO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class SubContext {
     public static final Logger logger = LoggerFactory.getLogger(SubContext.class);
     private final Map<Long, Tree> trees = new HashMap<>();
-    private final Set<ReferencePO> references = new HashSet<>();
     private boolean frozen;
     private final long appId;
 
@@ -29,7 +29,6 @@ public final class SubContext {
             return false;
         ensureNotFrozen();
         trees.put(tree.id(), tree);
-        new ReferenceExtractor(tree.openInput(), appId, references::add).visitGrove();
         return true;
     }
 
@@ -38,14 +37,9 @@ public final class SubContext {
             throw new IllegalArgumentException("Tree " + tree.id() + " already exists in the HeadContext");
     }
 
-    public Set<ReferencePO> getReferences() {
-        return references;
-    }
-
     public void clear() {
         ensureNotFrozen();
         trees.clear();
-        references.clear();
     }
 
     Collection<Tree> trees() {

@@ -3,8 +3,6 @@ package org.metavm.system.rest;
 import org.metavm.application.ApplicationManager;
 import org.metavm.common.Result;
 import org.metavm.entity.Bootstrap;
-import org.metavm.system.RegionManager;
-import org.metavm.task.IndexRebuildGlobalTask;
 import org.metavm.task.Scheduler;
 import org.metavm.task.TaskManager;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,18 +15,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class BootstrapController {
 
     private final Bootstrap bootstrap;
-    private final RegionManager regionManager;
     private final Scheduler scheduler;
     private final TaskManager jobManager;
     private final ApplicationManager applicationManager;
 
     public BootstrapController(Bootstrap bootstrap,
-                               RegionManager regionManager,
                                Scheduler scheduler,
                                TaskManager jobManager,
                                ApplicationManager applicationManager) {
         this.bootstrap = bootstrap;
-        this.regionManager = regionManager;
         this.scheduler = scheduler;
         this.jobManager = jobManager;
         this.applicationManager = applicationManager;
@@ -36,7 +31,6 @@ public class BootstrapController {
 
     @PostMapping
     public Result<Void> boot(@RequestParam(value = "saveIds", defaultValue = "true") boolean saveIds) {
-        initRegions();
         initSystemEntities();
         initBuiltinApplications();
         return Result.success(null);
@@ -47,12 +41,6 @@ public class BootstrapController {
 //        bootstrap.save(saveIds);
 //        return Result.success(null);
 //    }
-
-    @PostMapping("/region")
-    public Result<Void> initRegions() {
-        regionManager.initialize();
-        return Result.success(null);
-    }
 
     @PostMapping("/init-system-entities")
     public Result<Void> initSystemEntities() {

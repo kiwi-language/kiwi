@@ -49,9 +49,6 @@ public class Nodes {
                 type, code.getLastNode(), code, ephemeral, unbound);
     }
 
-    public static DeleteObjectNode delete(Code code) {
-        return new DeleteObjectNode(code.nextNodeName("delete"), code.getLastNode(), code);
-    }
     public static VoidReturnNode voidRet(Code code) {
         return new VoidReturnNode(code.nextNodeName("voidRet"), code.getLastNode(), code);
     }

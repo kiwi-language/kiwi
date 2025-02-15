@@ -1,55 +1,25 @@
 package org.metavm.entity;
 
 import org.metavm.object.instance.InstanceStore;
-import org.metavm.object.instance.cache.Cache;
+import org.metavm.object.instance.persistence.MapperRegistry;
 import org.metavm.object.instance.persistence.InstancePO;
-import org.metavm.object.instance.persistence.mappers.InstanceMapper;
-import org.metavm.object.instance.persistence.mappers.*;
+import org.metavm.object.instance.persistence.MemMapperRegistry;
 import org.metavm.util.Utils;
 
 import java.util.List;
 
 public class MemInstanceStore extends InstanceStore {
 
-    private final IndexEntryMapper indexEntryMapper;
-
-    public MemInstanceStore(Cache cache) {
-        this(new MemIndexEntryMapper(), cache);
+    public MemInstanceStore() {
+        this(new MemMapperRegistry());
     }
 
-    public MemInstanceStore(MemIndexEntryMapper indexEntryMapper, Cache cache) {
-        this(
-                new MemInstanceMapper(),
-                indexEntryMapper,
-                new MemReferenceMapper(),
-                cache
-        );
-    }
-
-    public MemInstanceStore(InstanceMapper instanceMapper,
-                            IndexEntryMapper indexEntryMapper,
-                            ReferenceMapper referenceMapper,
-                            Cache cache
-                            ) {
-        super(instanceMapper,
-                indexEntryMapper, referenceMapper, cache);
-        this.indexEntryMapper = indexEntryMapper;
-    }
-
-    public MemIndexEntryMapper getIndexEntryMapper() {
-        return (MemIndexEntryMapper) indexEntryMapper;
+    public MemInstanceStore(MapperRegistry instanceMapperRegistry) {
+        super(instanceMapperRegistry);
     }
 
     public InstancePO get(long appId, long id) {
-        return Utils.first(instanceMapper.selectByIds(appId, List.of(id), 0));
-    }
-
-    public MemInstanceMapper getInstanceMapper() {
-        return (MemInstanceMapper) instanceMapper;
-    }
-
-    public MemReferenceMapper getReferenceMapper() {
-        return (MemReferenceMapper) referenceMapper;
+        return Utils.first(this.getInstanceMapper(appId).selectByIds(appId, List.of(id)));
     }
 
 }

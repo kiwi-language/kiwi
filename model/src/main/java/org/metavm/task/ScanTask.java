@@ -1,5 +1,6 @@
 package org.metavm.task;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
@@ -18,6 +19,7 @@ import java.util.function.Consumer;
 
 @NativeEntity(52)
 @Entity
+@Slf4j
 public abstract class ScanTask extends Task {
 
     public static final int DEFAULT_BATCH_SIZE = 256;

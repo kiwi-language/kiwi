@@ -7,8 +7,6 @@ import org.metavm.object.type.*;
 import org.metavm.system.IdGenerator;
 import org.metavm.system.IdService;
 import org.metavm.system.MemoryBlockRepository;
-import org.metavm.system.RegionManager;
-import org.metavm.system.persistence.MemRegionMapper;
 import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
 
@@ -33,8 +31,6 @@ public class EntityIdProviderTest extends TestCase {
     }
 
     public void testAllocateForIdService() {
-        RegionManager regionManager = new RegionManager(new MemRegionMapper());
-        regionManager.initialize();
         testAllocate(new IdService(new IdGenerator(new MemoryBlockRepository())));
     }
 

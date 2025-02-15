@@ -109,10 +109,6 @@ public class ApiController {
                 else
                     throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
             }
-            case "DELETE" -> {
-                apiService.deleteInstance(path);
-                yield null;
-            }
             default -> throw new BusinessException(ErrorCode.INVALID_REQUEST_METHOD);
         };
         saveResponse(response, servletResponse);

@@ -76,14 +76,6 @@ public class PersistenceUtils {
         );
     }
 
-    public static Set<ReferencePO> extractReferences(Type type, InstancePO instancePO) {
-        return switch (type) {
-            case KlassType classType -> extractReferences(classType, instancePO);
-            case ArrayType arrayType -> extractReferences(arrayType, instancePO);
-            default -> Set.of();
-        };
-    }
-
     public static InstancePO buildInstancePO(long appId, long id, byte[] treeBytes) {
         var ref = new Object() {
             long version;

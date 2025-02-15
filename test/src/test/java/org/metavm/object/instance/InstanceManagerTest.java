@@ -113,28 +113,21 @@ public class InstanceManagerTest extends TestCase {
         Assert.assertTrue(reloadedHuman.getBoolean("thinking"));
     }
 
-    public void testRemoveNonPersistedChild() {
-        final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/mv/ParentChild.mv";
-        MockUtils.assemble(parentChildMasm, typeManager, schedulerAndWorker);
-        var parentId = saveInstance("Parent", Map.of());
-        callMethod(parentId, "test", List.of());
-        var parent = getObject(parentId);
-        var children = parent.getArray("children");
-        Assert.assertEquals(0, children.size());
-        try {
-            callMethod(parentId, "test2", List.of());
-            Assert.fail("Should not be able to delete non-persisted child when it's referenced");
-        } catch (BusinessException e) {
-            Assert.assertSame(e.getErrorCode(), ErrorCode.STRONG_REFS_PREVENT_REMOVAL);
-        }
-    }
-
-    public void testRemoveRoot() {
-        final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/mv/ParentChild.mv";
-        MockUtils.assemble(parentChildMasm, typeManager, schedulerAndWorker);
-        var parentId = saveInstance("Parent", Map.of());
-        deleteObject(parentId);
-    }
+//    public void testRemoveNonPersistedChild() {
+//        final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/mv/ParentChild.mv";
+//        MockUtils.assemble(parentChildMasm, typeManager, schedulerAndWorker);
+//        var parentId = saveInstance("Parent", Map.of());
+//        callMethod(parentId, "test", List.of());
+//        var parent = getObject(parentId);
+//        var children = parent.getArray("children");
+//        Assert.assertEquals(0, children.size());
+//        try {
+//            callMethod(parentId, "test2", List.of());
+//            Assert.fail("Should not be able to delete non-persisted child when it's referenced");
+//        } catch (BusinessException e) {
+//            Assert.assertSame(e.getErrorCode(), ErrorCode.STRONG_REFS_PREVENT_REMOVAL);
+//        }
+//    }
 
 //    public void testRelocation() {
 //        var klassIds = TestUtils.doInTransaction(() -> {
@@ -297,10 +290,6 @@ public class InstanceManagerTest extends TestCase {
 
     protected Object getStatic(String className, String fieldName) {
         return apiClient.getStatic(className, fieldName);
-    }
-
-    protected void deleteObject(String id) {
-        TestUtils.doInTransactionWithoutResult(() -> apiClient.deleteInstance(id));
     }
 
 

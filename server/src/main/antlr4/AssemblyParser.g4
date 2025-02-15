@@ -169,7 +169,6 @@ statement
     | SWITCH '{' branchCase* '}'
     | RETURN expression? ';'
     | THROW expression ';'
-    | DELETE expression ';'
     | SEMI
     | statementExpression=expression ';'
     | localVariableDeclaration ';'

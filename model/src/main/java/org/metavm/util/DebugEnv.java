@@ -123,6 +123,10 @@ public class DebugEnv {
 
     public static volatile boolean traceCompilation = false;
 
+    public static volatile boolean traceMigration = false;
+
+    public static volatile boolean traceTaskExecution = false;
+
     public static void exitPathItem() {
         path.removeLast();
     }

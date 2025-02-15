@@ -809,11 +809,6 @@ public class BasicCompilingTest extends CompilerTestBase {
                 Map.of("id", "002", "elements", List.of()));
         callMethod(id, "add", List.of(id2));
         Assert.assertEquals(id2, callMethod(id, "get", List.of(3)));
-        try {
-            deleteObject(id2);
-            Assert.fail();
-        }
-        catch (RemovalFailureException ignored) {}
     }
 
     private void processUnaryAndPrefix() {

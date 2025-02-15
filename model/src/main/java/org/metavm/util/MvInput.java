@@ -190,10 +190,7 @@ public abstract class MvInput implements Closeable {
             case WireTypes.PASSWORD -> new PasswordValue(readUTF());
             case WireTypes.FLAGGED_REFERENCE -> readFlaggedReference();
             case WireTypes.REFERENCE -> readReference();
-            case WireTypes.REDIRECTING_REFERENCE -> readRedirectingReference();
-            case WireTypes.REDIRECTING_INSTANCE -> readRedirectingInstance();
             case WireTypes.INSTANCE -> readInstance();
-            case WireTypes.RELOCATING_INSTANCE -> readRelocatingInstance();
             case WireTypes.VALUE_INSTANCE -> readValueInstance();
             case WireTypes.REMOVING_INSTANCE ->  readRemovingInstance();
             case WireTypes.CLASS_TYPE -> KlassType.read(this);
@@ -236,8 +233,6 @@ public abstract class MvInput implements Closeable {
 
     public abstract Value readValueInstance();
 
-    public abstract Value readRelocatingInstance();
-
     public abstract Value readInstance();
 
     public <T extends Entity> T readEntity(Class<T> klass, Entity parent) {
@@ -245,10 +240,6 @@ public abstract class MvInput implements Closeable {
         entity.readHeadAndBody(this, parent);
         return entity;
     }
-
-    public abstract Value readRedirectingInstance();
-
-    public abstract Value readRedirectingReference();
 
     public abstract Reference readReference();
 

@@ -222,7 +222,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
 
     public void applyDDLToEnumConstants() {
         var tracing = DebugEnv.traceDeployment;
-         removedEnumConstants.forEach(ec -> context.remove(ec.getStatic(context).resolveObject()));
         var enumConstants = new ArrayList<ClassInstance>();
         for (Klass klass : klasses) {
             if (klass.isEnum()) {
@@ -233,7 +232,7 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
             }
         }
         for (ClassInstance enumConstant : enumConstants) {
-            Instances.applyDDL(
+            Instances.migrate(
                     (MvClassInstance) enumConstant,
                     newFields,
                     typeChangedFields,

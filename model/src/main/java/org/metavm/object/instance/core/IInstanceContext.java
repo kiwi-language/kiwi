@@ -72,15 +72,6 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     void loadTree(long id);
 
-    default boolean isReferenced(Instance instance) {
-        if(instance instanceof MvInstance mvInst && mvInst.isReferencedByParent())
-            return true;
-        if(instance.tryGetId() instanceof PhysicalId id)
-            return !getByReferenceTargetId(id, 0, 1).isEmpty();
-        // TODO handle in-memory references
-        return false;
-    }
-
     TypeDefProvider getTypeDefProvider();
 
     RedirectStatusProvider getRedirectStatusProvider();
@@ -89,13 +80,7 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     boolean containsId(Id id);
 
-    List<Instance> getByReferenceTargetId(Id targetId, long startExclusive, long limit);
-
-    List<Instance> getRelocated();
-
     void buffer(Id id);
-
-    void removeForwardingPointer(MvInstance instance, boolean clearingOldId);
 
     default void buffer(Collection<? extends Id> ids) {
         ids.forEach(this::buffer);
@@ -264,7 +249,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     }
 
     default Klass getKlassByQualifiedName(String qualifiedName) {
-        return Objects.requireNonNull(findKlassByQualifiedName(qualifiedName));
+        return Objects.requireNonNull(findKlassByQualifiedName(qualifiedName),
+                () -> "Cannot find klass for name " + qualifiedName);
     }
 
     default Commit getCommit(String id) {

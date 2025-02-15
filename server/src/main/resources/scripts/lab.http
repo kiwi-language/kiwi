@@ -1153,6 +1153,18 @@ Content-Type: application/json
 }
 
 ###
+PUT http://localhost:8080/api/shopping/Product
+X-App-ID: 1000009000
+Content-Type: application/json
+
+{
+  "name": "MacBook Air",
+  "price": 7500,
+  "stock": 100
+}
+
+
+###
 POST http://localhost:8080/api/search/shopping/product
 X-App-ID: 1000000026
 Content-Type: application/json

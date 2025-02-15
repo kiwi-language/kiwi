@@ -68,6 +68,7 @@ public class ClassFileReader {
             klass = existing;
             klass.setQualifiedName(qualName);
             klass.setName(name);
+            klass.incVersion();
             if (listener != null) listener.beforeKlassUpdate(klass);
         }
         klass.disableMethodTableBuild();

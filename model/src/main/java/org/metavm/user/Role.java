@@ -35,9 +35,12 @@ public class Role extends org.metavm.entity.Entity {
     @EntityField(asTitle = true)
     private String name;
 
+    public boolean deleted;
+
     @Generated
     public static void visitBody(StreamVisitor visitor) {
         visitor.visitUTF();
+        visitor.visitBoolean();
     }
 
     @Nullable
@@ -106,16 +109,22 @@ public class Role extends org.metavm.entity.Entity {
         return EntityRegistry.TAG_Role;
     }
 
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+
     @Generated
     @Override
     public void readBody(MvInput input, org.metavm.entity.Entity parent) {
         this.name = input.readUTF();
+        this.deleted = input.readBoolean();
     }
 
     @Generated
     @Override
     public void writeBody(MvOutput output) {
         output.writeUTF(name);
+        output.writeBoolean(deleted);
     }
 
     @Override

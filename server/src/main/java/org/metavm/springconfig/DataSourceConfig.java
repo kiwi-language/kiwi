@@ -2,18 +2,11 @@ package org.metavm.springconfig;
 
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ibatis.session.SqlSessionFactory;
-import org.metavm.util.PrimaryMapper;
-import org.metavm.util.SecondaryMapper;
-import org.mybatis.spring.SqlSessionFactoryBean;
-import org.mybatis.spring.mapper.MapperScannerConfigurer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -82,46 +75,4 @@ public class DataSourceConfig {
         return new TransactionTemplate(transactionManager);
     }
 
-    @Bean
-    @Primary
-    public SqlSessionFactory primarySqlSessionFactory(@Qualifier("primaryDataSource") DataSource dataSource) throws Exception {
-        SqlSessionFactoryBean sessionFactory = new SqlSessionFactoryBean();
-        sessionFactory.setDataSource(dataSource);
-        Resource[] locations = new PathMatchingResourcePatternResolver()
-                .getResources("classpath:/mappers/*.xml");
-        sessionFactory.setMapperLocations(locations);
-        sessionFactory.setTypeAliasesPackage("org.metavm.object.meta.persistence");
-        sessionFactory.setTypeHandlersPackage("org.metavm.util");
-        return sessionFactory.getObject();
-    }
-
-    @Bean
-    public MapperScannerConfigurer primaryMapperScannerConfigurer() {
-        var config = new MapperScannerConfigurer();
-        config.setBasePackage("org.metavm");
-        config.setSqlSessionFactoryBeanName("primarySqlSessionFactory");
-        config.setMarkerInterface(PrimaryMapper.class);
-        return config;
-    }
-
-    @Bean
-    public SqlSessionFactory idSequenceSqlSessionFactory(@Qualifier("secondaryDataSource") DataSource dataSource) throws Exception {
-        SqlSessionFactoryBean sessionFactory = new SqlSessionFactoryBean();
-        sessionFactory.setDataSource(dataSource);
-        Resource[] locations = new PathMatchingResourcePatternResolver()
-                .getResources("classpath:/mappers/*.xml");
-        sessionFactory.setMapperLocations(locations);
-        sessionFactory.setTypeAliasesPackage("org.metavm.object.meta.persistence");
-        sessionFactory.setTypeHandlersPackage("org.metavm.util");
-        return sessionFactory.getObject();
-    }
-
-    @Bean
-    public MapperScannerConfigurer secondaryMapperScannerConfigurer() {
-        var config = new MapperScannerConfigurer();
-        config.setBasePackage("org.metavm");
-        config.setSqlSessionFactoryBeanName("idSequenceSqlSessionFactory");
-        config.setMarkerInterface(SecondaryMapper.class);
-        return config;
-    }
 }

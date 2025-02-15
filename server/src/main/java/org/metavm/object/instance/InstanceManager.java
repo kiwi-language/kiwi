@@ -7,7 +7,6 @@ import org.metavm.expression.ExpressionParser;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.persistence.InstancePO;
-import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.instance.query.GraphQueryExecutor;
 import org.metavm.object.instance.query.InstanceNode;
 import org.metavm.object.instance.query.Path;
@@ -152,71 +151,6 @@ public class InstanceManager extends EntityContextFactoryAware {
 
     public Instance create(InstanceDTO instanceDTO, IInstanceContext context) {
         return InstanceFactory.create(instanceDTO, context).get();
-    }
-
-    @Transactional
-    public void batchDelete(List<String> ids) {
-        try (var context = newContext()) {
-            context.batchRemove((Utils.mapAndFilter(ids, id -> context.get(Id.parse(id)), Objects::nonNull)));
-            context.finish();
-        }
-    }
-
-    @Transactional
-    public void delete(String id) {
-        try (var context = newContext()) {
-            var instance = context.get(Id.parse(id));
-            if (instance != null) {
-                context.remove(instance);
-                context.finish();
-            }
-        }
-    }
-
-    @Transactional
-    public void deleteByTypes(List<String> typeIds) {
-        // TODO run a task to remove instances by type
-//        try (var context = newInstanceContext()) {
-//            var types = NncUtils.mapAndFilter(typeIds, id -> context.getType(Id.parse(id)), type -> !type.isEnum());
-//            var toRemove = NncUtils.flatMap(
-//                    types,
-//                    type -> context.getByType(type, null, 1000)
-//            );
-//            context.batchRemove(toRemove);
-//            context.finish();
-//        }
-    }
-
-    public List<String> getReferenceChain(String stringId, int rootMode) {
-        try (var context = newContext()) {
-            var id = Id.parse(stringId);
-            ReferenceTree root = new ReferenceTree(context.get(id), rootMode);
-            Set<Long> visited = new HashSet<>();
-            Map<Id, ReferenceTree> trees = new HashMap<>();
-            trees.put(id, root);
-            visited.add(id.getTreeId());
-            Set<Id> ids = new HashSet<>();
-            ids.add(id);
-            while (!ids.isEmpty()) {
-                var refs = instanceStore.getAllStrongReferences(context.getAppId(), ids, visited);
-                ids.clear();
-                for (ReferencePO ref : refs) {
-                    var sourceId = ref.getSourceTreeId();
-                    if (visited.contains(sourceId)) continue;
-                    visited.add(sourceId);
-                    var inst = context.getRoot(sourceId);
-                    var parent = trees.get(ref.getTargetInstanceId());
-                    var tree = new ReferenceTree(inst, rootMode);
-                    parent.addChild(tree);
-                    inst.forEachDescendant(instance -> {
-                        ids.add(instance.getId());
-                        trees.put(instance.getId(), tree);
-                    });
-                }
-            }
-//            context.batchGet(visited);
-            return root.getPaths();
-        }
     }
 
     public QueryInstancesResponse query(InstanceQueryDTO query) {

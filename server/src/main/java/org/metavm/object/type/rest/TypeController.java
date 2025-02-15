@@ -19,11 +19,6 @@ public class TypeController {
         this.typeManager = typeManager;
     }
 
-    @PostMapping("/query-trees")
-    public Result<TreeResponse> queryTrees(@RequestBody TypeTreeQuery query) {
-        return Result.success(typeManager.queryTrees(query));
-    }
-
     @PostMapping("/deploy")
     public Result<Void> deploy(HttpServletRequest servletRequest) throws IOException {
         typeManager.deploy(servletRequest.getInputStream());

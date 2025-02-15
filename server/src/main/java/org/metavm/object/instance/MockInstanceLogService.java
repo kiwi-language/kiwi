@@ -15,7 +15,7 @@ public class MockInstanceLogService implements InstanceLogService {
     private final List<InstanceLog> logs = new ArrayList<>();
 
     @Override
-    public void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, List<Id> migrated, @Nullable String clientId, DefContext defContext) {
+    public void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, @Nullable String clientId, DefContext defContext) {
         this.logs.addAll(logs);
     }
 

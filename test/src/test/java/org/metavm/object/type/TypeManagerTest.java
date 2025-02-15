@@ -97,28 +97,28 @@ public class TypeManagerTest extends TestCase {
         Assert.assertEquals(1, optValue);
     }
 
-    public void testRemoveField() {
-        var fieldId = TestUtils.doInTransaction(() -> {
-            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                var klass = context.bind(TestUtils.newKlassBuilder("Foo").build());
-                var field = FieldBuilder.newBuilder("name", klass, Types.getStringType()).build();
-                context.finish();
-                return field.getId();
-            }
-        });
-        TestUtils.doInTransactionWithoutResult(() -> {
-            try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-                var field = context.getField(fieldId);
-                var klass = field.getDeclaringType();
-                context.remove(field);
-                klass.removeField(field);
-                Assert.assertEquals(0, klass.getFields().size());
-                Assert.assertEquals(0, klass.getIndices().size());
-                context.finish();
-            }
-        });
-
-    }
+//    public void testRemoveField() {
+//        var fieldId = TestUtils.doInTransaction(() -> {
+//            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+//                var klass = context.bind(TestUtils.newKlassBuilder("Foo").build());
+//                var field = FieldBuilder.newBuilder("name", klass, Types.getStringType()).build();
+//                context.finish();
+//                return field.getId();
+//            }
+//        });
+//        TestUtils.doInTransactionWithoutResult(() -> {
+//            try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+//                var field = context.getField(fieldId);
+//                var klass = field.getDeclaringType();
+//                context.remove(field);
+//                klass.removeField(field);
+//                Assert.assertEquals(0, klass.getFields().size());
+//                Assert.assertEquals(0, klass.getIndices().size());
+//                context.finish();
+//            }
+//        });
+//
+//    }
 
     public void testGetSourceTag() {
         TestUtils.doInTransactionWithoutResult(() -> {

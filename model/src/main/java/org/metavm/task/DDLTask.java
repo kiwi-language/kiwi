@@ -81,7 +81,13 @@ public class DDLTask extends ScanTask implements IDDLTask {
     @Nullable
     @Override
     public WAL getWAL() {
-        return commitState.isPreparing() ? getCommit().getWal() : null;
+        return commitState.isMigrating() ? getCommit().getWal() : null;
+    }
+
+
+    @Override
+    public boolean isMigrating() {
+        return commitState == CommitState.MIGRATING;
     }
 
     @Nullable

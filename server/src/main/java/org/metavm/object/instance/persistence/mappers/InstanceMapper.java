@@ -1,31 +1,24 @@
 package org.metavm.object.instance.persistence.mappers;
 
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.metavm.object.instance.ScanQuery;
 import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.VersionPO;
-import org.metavm.util.PrimaryMapper;
 import org.metavm.util.Utils;
 
 import java.util.Collection;
 import java.util.List;
 
-@Mapper
-public interface InstanceMapper extends PrimaryMapper {
+public interface InstanceMapper {
 
-    InstancePO selectById(@Param("id") long id);
+    InstancePO selectById(long id);
 
-    List<InstancePO> selectByIds(@Param("appId") long appId, @Param("ids") Collection<Long> ids,
-                                 @Param("lockMode") int lockMode);
-
-//    List<InstancePO> selectByTypeIds(@Param("appId") long appId,
-//                                     @Param("queries") Collection<ByTypeQuery> queries);
+    List<InstancePO> selectByIds(long appId, Collection<Long> ids);
 
     void batchInsert(Collection<InstancePO> records);
 
     void batchUpdate(Collection<InstancePO> records);
+
+    void batchUpsert(Collection<InstancePO> records);
 
     default void batchDelete1(List<InstancePO> toDeletes) {
         if(toDeletes.isEmpty())
@@ -36,21 +29,20 @@ public interface InstanceMapper extends PrimaryMapper {
         batchDelete(appId, timestamp, versions);
     }
 
-    void batchDelete(@Param("appId") long appId,
-                     @Param("timestamp") long timestamp,
-                     @Param("versions") Collection<VersionPO> versions);
+    void batchDelete(long appId,
+                     long timestamp,
+                     Collection<VersionPO> versions);
 
-//    List<byte[]> getAliveIds(@Param("appId") long appId, @Param("ids") Collection<byte[]> ids);
+    void tryBatchDelete(long appId,
+                     long timestamp,
+                     Collection<VersionPO> versions);
 
     int updateSyncVersion(List<VersionPO> versions);
 
-    List<InstancePO> scan(@Param("appId") long appId,
-                          @Param("queries") Collection<ScanQuery> queries);
-
-    List<Long> scanTrees(@Param("appId") long appId,
-                         @Param("startId") long startId,
-                         @Param("limit") long limit);
+    List<Long> scanTrees(long appId,
+                         long startId,
+                         long limit);
 
 
-    List<TreeVersion> selectVersions(@Param("appId") long appId, @Param("ids") List<Long> ids);
+    List<TreeVersion> selectVersions(long appId, List<Long> ids);
 }

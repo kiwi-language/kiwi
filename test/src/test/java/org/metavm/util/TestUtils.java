@@ -24,12 +24,12 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.log.InstanceLogService;
+import org.metavm.object.instance.persistence.MockSchemaManager;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.*;
-import org.metavm.object.version.VersionManager;
 import org.metavm.task.*;
 import org.slf4j.Logger;
 
@@ -218,8 +218,7 @@ public class TestUtils {
                                                                InstanceLogService instanceLogService,
                                                                IndexEntryMapper indexEntryMapper) {
         var factory = new EntityContextFactory(
-                getInstanceContextFactory(idProvider, instanceStore),
-                indexEntryMapper
+                getInstanceContextFactory(idProvider, instanceStore)
         );
         factory.setInstanceLogService(instanceLogService);
         return factory;
@@ -280,11 +279,10 @@ public class TestUtils {
         var entityContextFactory = bootResult.entityContextFactory();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         var transactionOps = new MockTransactionOperations();
-        var typeManager = new TypeManager(entityContextFactory, new BeanManager());
+        var typeManager = new TypeManager(entityContextFactory, new BeanManager(), new MockSchemaManager(bootResult.mapperRegistry()));
         var instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
         var scheduler = new Scheduler(entityContextFactory, transactionOps);
         var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), bootResult.metaContextCache());
-        typeManager.setVersionManager(new VersionManager(entityContextFactory));
         return new CommonManagers(
                 typeManager,
                 instanceManager,
@@ -314,7 +312,7 @@ public class TestUtils {
 
     public static void waitForDDLPrepared(SchedulerAndWorker schedulerAndWorker) {
 //        waitForTaskGroupDone(t -> t instanceof DDLPreparationTaskGroup, entityContextFactory);
-        waitForDDLState(CommitState.RELOCATING, schedulerAndWorker);
+        waitForDDLState(CommitState.COMPLETED, schedulerAndWorker);
     }
 
     public static void waitForDDLAborted(SchedulerAndWorker schedulerAndWorker) {

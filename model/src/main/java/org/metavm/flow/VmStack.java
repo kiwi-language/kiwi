@@ -121,10 +121,6 @@ public class VmStack {
                                     ref.get().setParent(instance, field.getRawField());
                                 pc += 3;
                             }
-                            case Bytecodes.DELETE_OBJECT -> {
-                                callContext.instanceRepository().remove(stack[--top].resolveDurable());
-                                pc++;
-                            }
                             case Bytecodes.RETURN -> {
                                 var v = stack[top - 1];
                                 Arrays.fill(stack, base, base + code.getFrameSize(), null);

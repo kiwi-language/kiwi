@@ -76,7 +76,6 @@ public class SchedulerTest extends TestCase {
             Assert.assertEquals(1, tasks.size());
         }
         Assert.assertTrue(worker.waitFor(t -> t.idEquals(ref.task.getId()), 10, 0));
-        Assert.assertNull(instanceStore.get(TestConstants.APP_ID, ref.task.getId().getTreeId()));
     }
 
     private IInstanceContext newPlatformContext() {

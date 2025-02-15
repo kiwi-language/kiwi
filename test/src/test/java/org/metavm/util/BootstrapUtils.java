@@ -2,20 +2,19 @@ package org.metavm.util;
 
 import org.metavm.application.Application;
 import org.metavm.beans.BeanDefinitionRegistry;
+import org.metavm.ddl.CommitService;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.ChangeLogManager;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
-import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.log.InstanceLogServiceImpl;
+import org.metavm.object.instance.persistence.MemMapperRegistry;
+import org.metavm.object.instance.persistence.MockSchemaManager;
 import org.metavm.object.type.*;
 import org.metavm.system.IdGenerator;
 import org.metavm.system.IdService;
 import org.metavm.system.MemoryBlockRepository;
-import org.metavm.system.RegionManager;
-import org.metavm.system.persistence.MemBlockMapper;
-import org.metavm.system.persistence.MemRegionMapper;
 import org.metavm.task.*;
 import org.metavm.user.PlatformUser;
 import org.slf4j.Logger;
@@ -39,18 +38,14 @@ public class BootstrapUtils {
             StdFunction.setEmailSender(MockEmailSender.INSTANCE);
             ParameterizedStore.getMap().clear();
             var state = BootstrapUtils.state.copy();
-            var instanceStore = new MemInstanceStore(
-                    state.instanceMapper(),
-                    state.indexEntryMapper(),
-                    state.referenceMapper(),
-                    new LocalCache()
-            );
+            var instanceMapperRegistry = state.instanceMapperRegistry();
+            var instanceStore = new MemInstanceStore(instanceMapperRegistry);
             var idProvider = new IdService(new IdGenerator(state.blockRepository()));
             var instanceSearchService = state.instanceSearchService();
             Hooks.SEARCH_BULK = instanceSearchService::bulk;
             var instanceContextFactory =
                     TestUtils.getInstanceContextFactory(idProvider, instanceStore);
-            var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
+            var entityContextFactory = new EntityContextFactory(instanceContextFactory);
             var metaContextCache = new MetaContextCache(entityContextFactory);
             entityContextFactory.setInstanceLogService(
                     new InstanceLogServiceImpl(entityContextFactory, instanceStore, new MockTransactionOperations(), metaContextCache)
@@ -78,12 +73,11 @@ public class BootstrapUtils {
                 }
             });
             var transactionOps = new MockTransactionOperations();
+            var schemaManager = new MockSchemaManager(instanceMapperRegistry);
             return new BootstrapResult(
                     defContext,
                     entityContextFactory,
                     idProvider,
-                    state.blockMapper(),
-                    state.regionMapper(),
                     instanceStore,
                     instanceSearchService,
                     state.allocatorStore(),
@@ -94,7 +88,10 @@ public class BootstrapUtils {
                     changeLogManager,
                     taskManager,
                     new SchedulerAndWorker(new Scheduler(entityContextFactory, transactionOps),
-                            new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), metaContextCache), metaContextCache, entityContextFactory)
+                    new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), metaContextCache), metaContextCache, entityContextFactory),
+                    instanceMapperRegistry,
+                    schemaManager,
+                    new CommitService(schemaManager, entityContextFactory)
             );
         } else {
             return create(true, new MemAllocatorStore(), new MemColumnStore(), new MemTypeTagStore(), Set.of(), Set.of());
@@ -109,17 +106,14 @@ public class BootstrapUtils {
                                          Set<Field> fieldBlacklist) {
         generateIds(allocatorStore);
         StdFunction.setEmailSender(MockEmailSender.INSTANCE);
-        var regionMapper = new MemRegionMapper();
-        var regionManager = new RegionManager(regionMapper);
-        regionManager.initialize();
-        var blockMapper = new MemBlockMapper();
         var blockRepository = new MemoryBlockRepository();
         var idProvider = new IdService(new IdGenerator(blockRepository));
-        var instanceStore = new MemInstanceStore(new LocalCache());
+        var instanceMapperRegistry = new MemMapperRegistry();
+        var instanceStore = new MemInstanceStore(instanceMapperRegistry);
         var instanceSearchService = new MemInstanceSearchServiceV2();
         var instanceContextFactory =
                 TestUtils.getInstanceContextFactory(idProvider, instanceStore);
-        var entityContextFactory = new EntityContextFactory(instanceContextFactory, instanceStore.getIndexEntryMapper());
+        var entityContextFactory = new EntityContextFactory(instanceContextFactory);
         var metaContextCache = new MetaContextCache(entityContextFactory);
         entityContextFactory.setInstanceLogService(
                 new InstanceLogServiceImpl(entityContextFactory, instanceStore, new MockTransactionOperations(), metaContextCache)
@@ -141,17 +135,13 @@ public class BootstrapUtils {
         if(saveState) {
             state = new BootState(
                     defContext,
-                    instanceStore.getInstanceMapper().copy(),
-                    instanceStore.getReferenceMapper().copy(),
-                    instanceStore.getIndexEntryMapper().copy(),
-                    regionMapper.copy(),
-                    blockMapper.copy(),
                     blockRepository.copy(),
                     columnStore.copy(),
                     typeTagStore.copy(),
                     stdIdStore.copy(),
                     allocatorStore.copy(),
-                    instanceSearchService.copy()
+                    instanceSearchService.copy(),
+                    instanceMapperRegistry.copy()
             );
         }
         TestUtils.doInTransactionWithoutResult(() -> {
@@ -174,12 +164,11 @@ public class BootstrapUtils {
         });
         Hooks.SEARCH_BULK = instanceSearchService::bulk;
         var transactionOps = new MockTransactionOperations();
+        var schemaManager = new MockSchemaManager(instanceMapperRegistry);
         return new BootstrapResult(
                 ModelDefRegistry.getDefContext(),
                 entityContextFactory,
                 idProvider,
-                blockMapper,
-                regionMapper,
                 instanceStore,
                 instanceSearchService,
                 allocatorStore,
@@ -189,8 +178,10 @@ public class BootstrapUtils {
                 metaContextCache,
                 changeLogManager,
                 taskManager,
-                new SchedulerAndWorker(new Scheduler(entityContextFactory, transactionOps),
-                        new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), metaContextCache), metaContextCache, entityContextFactory)
+                new SchedulerAndWorker(new Scheduler(entityContextFactory, transactionOps), new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), metaContextCache), metaContextCache, entityContextFactory),
+                instanceMapperRegistry,
+                schemaManager,
+                new CommitService(schemaManager, entityContextFactory)
         );
     }
 

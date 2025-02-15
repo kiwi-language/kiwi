@@ -7,7 +7,6 @@ import org.metavm.object.instance.IndexConstraintPlugin;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.log.InstanceLogService;
-import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,14 +21,11 @@ import java.util.function.Consumer;
 public class EntityContextFactory {
 
     private final InstanceContextFactory instanceContextFactory;
-    private final IndexEntryMapper indexEntryMapper;
     private InstanceLogService instanceLogService;
     private DefContext defContext;
 
-    public EntityContextFactory(InstanceContextFactory instanceContextFactory,
-                                IndexEntryMapper indexEntryMapper) {
+    public EntityContextFactory(InstanceContextFactory instanceContextFactory) {
         this.instanceContextFactory = instanceContextFactory;
-        this.indexEntryMapper = indexEntryMapper;
     }
 
     public IInstanceContext newContext() {

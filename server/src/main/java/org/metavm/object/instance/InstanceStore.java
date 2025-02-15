@@ -2,7 +2,6 @@ package org.metavm.object.instance;
 
 import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.entity.StoreLoadRequest;
-import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TreeVersion;
@@ -11,7 +10,6 @@ import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.*;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.instance.persistence.mappers.InstanceMapper;
-import org.metavm.object.instance.persistence.mappers.ReferenceMapper;
 import org.metavm.system.RegionConstants;
 import org.metavm.util.ChangeList;
 import org.metavm.util.Constants;
@@ -21,42 +19,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 
 @Component
 public class InstanceStore extends BaseInstanceStore {
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceStore.class);
 
-    protected final InstanceMapper instanceMapper;
-    private final IndexEntryMapper indexEntryMapper;
-    protected final ReferenceMapper referenceMapper;
-//    private final Cache cache;
+    protected final MapperRegistry instanceMapperRegistry;
 
-    public InstanceStore(InstanceMapper instanceMapper,
-                         IndexEntryMapper indexEntryMapper,
-                         ReferenceMapper referenceMapper,
-                         Cache cache) {
-        this.instanceMapper = instanceMapper;
-        this.indexEntryMapper = indexEntryMapper;
-        this.referenceMapper = referenceMapper;
-//        this.cache = cache;
+    public InstanceStore(MapperRegistry instanceMapperRegistry) {
+        this.instanceMapperRegistry = instanceMapperRegistry;
         WAL.setCommitHook(wal -> {
-            save(wal.getInstanceChanges());
-            saveReferences(wal.getReferenceChanges());
-            saveIndexEntries(wal.getIndexEntryChanges());
+            var migratingStore = new MigrationInstanceStore(this);
+            migratingStore.save(wal.getAppId(), wal.getInstanceChanges());
+            migratingStore.saveIndexEntries(wal.getAppId(), wal.getIndexEntryChanges());
         });
     }
 
     @Override
-    public void save(ChangeList<InstancePO> diff) {
+    public void save(long appId, ChangeList<InstancePO> diff) {
         try (var entry = ContextUtil.getProfiler().enter("InstanceStore.save")) {
-//            cache.save(diff);
+            var mapper = instanceMapperRegistry.getInstanceMapper(appId, "instance");
             entry.addMessage("numChanges", diff.inserts().size() + diff.updates().size() + diff.deletes().size());
             diff.apply(
-                    instanceMapper::batchInsert,
-                    instanceMapper::batchUpdate,
-                    instanceMapper::batchDelete1
+                    mapper::batchInsert,
+                    mapper::batchUpdate,
+                    mapper::batchDelete1
             );
         }
     }
@@ -65,10 +57,11 @@ public class InstanceStore extends BaseInstanceStore {
     public List<TreeVersion> getVersions(List<Long> ids, IInstanceContext context) {
         try (var entry = context.getProfiler().enter("getRootVersions")) {
             entry.addMessage("numIds", ids.size());
+            var mapper = getInstanceMapper(context.getAppId());
             var systemIds = Utils.filter(ids, RegionConstants::isSystemId);
             var nonSystemIds = Utils.exclude(ids, RegionConstants::isSystemId);
-            List<TreeVersion> systemTrees = systemIds.isEmpty() ? List.of() : instanceMapper.selectVersions(Constants.ROOT_APP_ID, systemIds);
-            List<TreeVersion> nonSystemTrees = nonSystemIds.isEmpty() ? List.of() : instanceMapper.selectVersions(context.getAppId(), nonSystemIds);
+            List<TreeVersion> systemTrees = systemIds.isEmpty() ? List.of() : mapper.selectVersions(Constants.ROOT_APP_ID, systemIds);
+            List<TreeVersion> nonSystemTrees = nonSystemIds.isEmpty() ? List.of() : mapper.selectVersions(context.getAppId(), nonSystemIds);
             var treeMap = new HashMap<Long, TreeVersion>();
             systemTrees.forEach(v -> treeMap.put(v.id(), v));
             nonSystemTrees.forEach(v -> treeMap.put(v.id(), v));
@@ -78,32 +71,20 @@ public class InstanceStore extends BaseInstanceStore {
 
     @Override
     public List<IndexEntryPO> getIndexEntriesByKeys(List<IndexKeyPO> keys, IInstanceContext context) {
-        return indexEntryMapper.selectByKeys(context.getAppId(), keys);
+        return getIndexEntryMapper(context.getAppId()).selectByKeys(context.getAppId(), keys);
     }
 
     @Override
     public List<IndexEntryPO> getIndexEntriesByInstanceIds(Collection<Id> instanceIds, IInstanceContext context) {
-        return indexEntryMapper.selectByInstanceIds(context.getAppId(), Utils.map(instanceIds, Id::toBytes));
+        return getIndexEntryMapper(context.getAppId()).selectByInstanceIds(context.getAppId(), Utils.map(instanceIds, Id::toBytes));
     }
 
     @Override
-    public void saveReferences(ChangeList<ReferencePO> refChanges) {
-        try (var entry = ContextUtil.getProfiler().enter("InstanceStore.saveReferences")) {
-            entry.addMessage("numChanges", refChanges.inserts().size() + refChanges.updates().size() + refChanges.deletes().size());
-            refChanges.apply(
-                    referenceMapper::batchInsert,
-                    referenceMapper::batchUpdate,
-                    referenceMapper::batchDelete
-            );
-        }
-    }
-
-    @Override
-    public void saveIndexEntries(ChangeList<IndexEntryPO> changes) {
+    public void saveIndexEntries(long appId, ChangeList<IndexEntryPO> changes) {
         changes.apply(
-                indexEntryMapper::batchInsert,
+                getIndexEntryMapper(appId)::batchInsert,
                 i -> {},
-                indexEntryMapper::batchDelete
+                getIndexEntryMapper(appId)::batchDelete
         );
     }
 
@@ -114,30 +95,14 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     @Override
-    public ReferencePO getFirstReference(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds) {
-        if (targetIds.isEmpty())
-            return null;
-        try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getFirstStrongReferences")) {
-            return referenceMapper.selectFirstStrongReference(appId, Utils.map(targetIds, Id::toBytes), excludedSourceIds);
-        }
-    }
-
-    @Override
-    public List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds) {
-        try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getAllStrongReferences")) {
-            return referenceMapper.selectAllStrongReferences(appId, Utils.map(targetIds, Id::toBytes), excludedSourceIds);
-        }
-    }
-
-    @Override
     public List<Id> indexScan(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
-        return Utils.map(indexEntryMapper.scan(context.getAppId(), from, to),
+        return Utils.map(getIndexEntryMapper(context.getAppId()).scan(context.getAppId(), from, to),
                 IndexEntryPO::getId);
     }
 
     @Override
     public long indexCount(IndexKeyPO from, IndexKeyPO to, IInstanceContext context) {
-        return indexEntryMapper.countRange(context.getAppId(), from, to);
+        return getIndexEntryMapper(context.getAppId()).countRange(context.getAppId(), from, to);
     }
 
     @Override
@@ -149,47 +114,26 @@ public class InstanceStore extends BaseInstanceStore {
 
     @Override
     public List<IndexEntryPO> queryEntries(InstanceIndexQuery query, IInstanceContext context) {
-        return indexEntryMapper.query(PersistenceUtils.toIndexQueryPO(query, context.getAppId(), context.getLockMode().code()));
+        return getIndexEntryMapper(context.getAppId()).query(PersistenceUtils.toIndexQueryPO(query, context.getAppId(), context.getLockMode().code()));
     }
 
     @Override
     public long count(InstanceIndexQuery query, IInstanceContext context) {
         try (var ignored = context.getProfiler().enter("InstanceStore.count")) {
-            return indexEntryMapper.count(PersistenceUtils.toIndexQueryPO(query, context.getAppId(), context.getLockMode().code()));
+            return getIndexEntryMapper(context.getAppId()).count(PersistenceUtils.toIndexQueryPO(query, context.getAppId(), context.getLockMode().code()));
         }
     }
-
-    @Override
-    public List<Long> getByReferenceTargetId(Id targetId, long startIdExclusive, long limit, IInstanceContext context) {
-        try (var ignored = context.getProfiler().enter("InstanceStore.getByReferenceTargetId")) {
-            return Utils.map(
-                    referenceMapper.selectByTargetId(context.getAppId(), targetId.toBytes(), startIdExclusive, limit),
-                    ReferencePO::getSourceTreeId
-            );
-        }
-    }
-
-//    @Override
-//    public List<InstancePO> queryByTypeIds(List<ByTypeQuery> queries, IInstanceContext context) {
-//        try (var ignored = context.getProfiler().enter("InstanceStore.queryByTypeIds")) {
-//            return instanceMapper.selectByTypeIds(context.getAppId(), queries);
-//        }
-//    }
 
     public List<Long> scan(long appId, long startId, long limit) {
-        return instanceMapper.scanTrees(appId, startId, limit);
-    }
-
-    @Override
-    public List<InstancePO> scan(List<ScanQuery> queries, IInstanceContext context) {
-        try (var ignored = context.getProfiler().enter("InstanceStore.scan")) {
-            return instanceMapper.scan(context.getAppId(), queries);
-        }
+        return getInstanceMapper(appId).scanTrees(appId, startId, limit);
     }
 
     public void updateSyncVersion(List<VersionPO> versions) {
+        if (versions.isEmpty()) return;
         try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.updateSyncVersion")) {
-            Utils.doInBatch(versions, instanceMapper::updateSyncVersion);
+            var appId = versions.getFirst().appId();
+            var mapper = getInstanceMapper(appId);
+            Utils.doInBatch(versions, mapper::updateSyncVersion);
         }
     }
 
@@ -201,24 +145,7 @@ public class InstanceStore extends BaseInstanceStore {
             entry.addMessage("numInstances", ids.size());
             if (entry.isVerbose())
                 entry.addMessage("ids", ids);
-//            var hits = cache.batchGet(ids);
-//            var result = new ArrayList<InstancePO>();
-//            var missedIds = new ArrayList<Long>();
-//            NncUtils.biForEach(ids, hits, (id, hit) -> {
-//                if(hit != null)
-//                    result.add(PersistenceUtils.buildInstancePO(context.getAppId(), id, hit));
-//                else
-//                    missedIds.add(id);
-//            });
-//            if(!missedIds.isEmpty()) {
-//                var records = instanceMapper.selectByIds(context.getAppId(), missedIds,
-//                        context.getLockMode().code());
-//                result.addAll(records);
-//            }
-//            var typeIds = NncUtils.mapUnique(records, InstancePO::getInstanceId);
-//            context.buffer(typeIds);
-//            return result;
-            return instanceMapper.selectByIds(context.getAppId(), ids, context.getLockMode().code());
+            return getInstanceMapper(context.getAppId()).selectByIds(context.getAppId(), ids);
         }
     }
 
@@ -232,24 +159,26 @@ public class InstanceStore extends BaseInstanceStore {
             if (Utils.isEmpty(request.ids())) {
                 return List.of();
             }
-            List<InstancePO> records = instanceMapper.selectByIds(context.getAppId(), request.ids(), context.getLockMode().code());
-//            Set<Id> typeIds = NncUtils.mapUnique(records,
-//                    r -> ((PhysicalId) r.getInstanceId()).getTypeId());
-//            context.buffer(typeIds);
-            return records;
+            return getInstanceMapper(context.getAppId()).selectByIds(context.getAppId(), request.ids());
         }
     }
 
-    //    @Override
-//    public Set<Id> getAliveInstanceIds(long appId, Set<Id> instanceIds) {
-//        if (NncUtils.isEmpty(instanceIds))
-//            return Set.of();
-//        try (var ignored = ContextUtil.getProfiler().enter("InstanceStore.getAliveInstanceIds")) {
-//            return NncUtils.mapUnique(
-//                    instanceMapper.getAliveIds(appId, NncUtils.map(instanceIds, Id::toBytes)),
-//                    Id::fromBytes
-//            );
-//        }
-//    }
+    public InstanceMapper getInstanceMapper(long appId) {
+        return getInstanceMapper(appId, "instance");
+    }
+
+    public IndexEntryMapper getIndexEntryMapper(long appId) {
+        return getIndexEntryMapper(appId, "index_entry");
+    }
+
+    @Override
+    public InstanceMapper getInstanceMapper(long appId, String table) {
+        return instanceMapperRegistry.getInstanceMapper(appId, table);
+    }
+
+    @Override
+    public IndexEntryMapper getIndexEntryMapper(long appId, String table) {
+        return instanceMapperRegistry.getIndexEntryMapper(appId, table);
+    }
 
 }

@@ -31,12 +31,7 @@ public abstract class MvInstance extends BaseInstance {
     private @NotNull MvInstance root;
     
     private MvInstance parent;
-    private @Nullable MvInstance oldRoot;
-    private @Nullable Id oldId;
-    private @Nullable Id relocatedId;
     private @NotNull MvInstance aggregateRoot;
-    private boolean pendingChild;
-    private boolean useOldId;
 
     private transient NativeBase nativeObject;
 
@@ -59,14 +54,6 @@ public abstract class MvInstance extends BaseInstance {
     }
 
     public @Nullable Id tryGetId() {
-        return useOldId ? oldId : state.id;
-    }
-
-    public Id getCurrentId() {
-        return requireNonNull(state.id);
-    }
-
-    public @Nullable Id tryGetCurrentId() {
         return state.id;
     }
 
@@ -125,9 +112,7 @@ public abstract class MvInstance extends BaseInstance {
                 throw new IllegalArgumentException("Invalid parent: " + parent);
             } else
             if (setRoot)
-                root = (MvInstance) parent.getRoot();
-            if (!pendingChild)
-                aggregateRoot = parent;
+                root = parent.getRoot();
             if (parent.isEphemeral() && !state.isEphemeral())
                 forEachDescendant(instance -> instance.state().setEphemeral());
         } else {
@@ -142,7 +127,7 @@ public abstract class MvInstance extends BaseInstance {
     }
 
     public boolean isRoot() {
-        return !isInlineValue() && getRoot() == this;
+        return !isValue() && getRoot() == this;
     }
 
     public boolean isReferencedByParent() {
@@ -160,14 +145,6 @@ public abstract class MvInstance extends BaseInstance {
             return false;
     }
 
-    public boolean canMerge() {
-        return !pendingChild && this.parent != null && isRoot();
-    }
-
-    public boolean canExtract() {
-        return !isValue() && !isRoot() && this.parent != null;
-    }
-
     public void initId(Id id) {
         if (isIdInitialized())
             throw new InternalException("id already initialized");
@@ -182,7 +159,6 @@ public abstract class MvInstance extends BaseInstance {
     @Override
     public void writeTo(MvOutput output) {
         output.write(TreeTags.DEFAULT);
-        // !!! IMPORTANT: Version must starts at the second byte. @see org.metavm.entity.ContextDifference.incVersion !!!
         output.writeLong(getVersion());
         output.writeLong(getTreeId());
         output.writeLong(getNextNodeId());
@@ -200,19 +176,10 @@ public abstract class MvInstance extends BaseInstance {
     }
 
     protected void writeHead(MvOutput output) {
-        if (isInlineValue())
+        if (isValue())
             output.write(WireTypes.VALUE_INSTANCE);
         else {
-            if (oldId != null) {
-                output.write(WireTypes.RELOCATING_INSTANCE);
-                output.writeLong(oldId.getTreeId());
-                output.writeLong(oldId.getNodeId());
-                output.writeBoolean(useOldId);
-            }
-            else if(isRemoving())
-                output.write(WireTypes.REMOVING_INSTANCE);
-            else
-                output.write(WireTypes.INSTANCE);
+            output.write(WireTypes.INSTANCE);
             output.writeLong(state.id.getNodeId());
         }
         getInstanceType().write(output);
@@ -285,45 +252,8 @@ public abstract class MvInstance extends BaseInstance {
         return getInstanceType().isValueType();
     }
 
-    public boolean isInlineValue() {
-        return state.id == null && isValue();
-    }
-
-    public boolean isDetachedValue() {
-        return state.id != null && isValue();
-    }
-
-    public Id getOldId() {
-        return requireNonNull(oldId);
-    }
-
-    public @Nullable Id tryGetOldId() {
-        return oldId;
-    }
-
-    public void setOldId(@Nullable Id oldId) {
-        this.oldId = oldId;
-    }
-
-    public void setUseOldId(boolean useOldId) {
-        this.useOldId = useOldId;
-    }
-
-    public boolean isUseOldId() {
-        return useOldId;
-    }
-
-    void clearOldId() {
-        assert oldId != null;
-        this.oldId = null;
-    }
-
     public boolean isSeparateChild() {
         return isRoot() && this.parent != null;
-    }
-
-    public boolean isPendingChild() {
-        return pendingChild;
     }
 
     public Instance getAggregateRoot() {
@@ -331,71 +261,6 @@ public abstract class MvInstance extends BaseInstance {
             return this;
         else
             return aggregateRoot = (MvInstance) aggregateRoot.getAggregateRoot();
-    }
-
-    public void merge() {
-        this.oldId = state.id;
-        this.oldRoot = root;
-        this.root = (MvInstance) requireNonNull(this.parent).getRoot();
-        state.id = relocatedId != null ? relocatedId : PhysicalId.of(root.getTreeId(), root.nextNodeId());
-        useOldId = true;
-    }
-
-    public void rollbackMerge() {
-        relocatedId = state.id;
-        state.id = oldId;
-        oldId = null;
-        useOldId = false;
-        root = requireNonNull(oldRoot);
-        oldRoot = null;
-    }
-
-    public void extract(boolean isRoot) {
-        this.oldId = state.id;
-        state.id = relocatedId;
-        useOldId = true;
-        if (isRoot) {
-            this.root = aggregateRoot = this;
-            oldRoot = this.parent;
-            this.parent = null;
-        } else {
-            this.oldRoot = this.root;
-            this.root = aggregateRoot = requireNonNull(this.parent);
-        }
-    }
-
-    public void rollbackExtraction() {
-        var isRoot = isRoot();
-        relocatedId = state.id;
-        state.id = oldId;
-        oldId = null;
-        useOldId = false;
-        if (isRoot) {
-            root = aggregateRoot = this.parent = requireNonNull(oldRoot);
-        } else
-            root = aggregateRoot = requireNonNull(oldRoot);
-        oldRoot = null;
-    }
-
-    public void switchId() {
-        useOldId = false;
-    }
-
-    public void writeForwardingPointers(InstanceOutput output) {
-        output.write(TreeTags.RELOCATED);
-        output.writeId(requireNonNull(oldId));
-        output.writeId(state.id);
-    }
-
-    public void setPendingChild(boolean pendingChild) {
-        this.pendingChild = pendingChild;
-    }
-
-    public Reference getReference() {
-        var ref = new Reference(this);
-        if(oldId != null && useOldId)
-            ref.setForwarded();
-        return ref;
     }
 
     public abstract boolean isArray();
@@ -452,9 +317,6 @@ public abstract class MvInstance extends BaseInstance {
         return treeWriter.toString();
     }
 
-    public Id getRelocatedId() {
-        return requireNonNull(relocatedId);
-    }
 
     public boolean isEnum() {
         return false;

@@ -21,8 +21,6 @@ public class Lang {
         return context.get(key);
     }
 
-    public static void delete(Object obj) {}
-
     public static void print(@Nullable Object message) {
         System.out.println(message);
     }

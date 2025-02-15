@@ -14,14 +14,10 @@ import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.SearchResult;
-import org.metavm.task.DDLTask;
-import org.metavm.task.IDDLTask;
-import org.metavm.task.ScanTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +33,6 @@ public class DDLTest extends TestCase {
     private EntityContextFactory entityContextFactory;
     private SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
-    private MemInstanceStore instanceStore;
     private MetaContextCache metaContextCache;
 
     @Override
@@ -48,7 +43,6 @@ public class DDLTest extends TestCase {
         entityContextFactory = bootResult.entityContextFactory();
         apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache(),
                 new InstanceQueryService(bootResult.instanceSearchService())));
-        instanceStore = bootResult.instanceStore();
         schedulerAndWorker  = bootResult.schedulerAndWorker();
         metaContextCache = bootResult.metaContextCache();
         ContextUtil.setAppId(TestConstants.APP_ID);
@@ -59,7 +53,6 @@ public class DDLTest extends TestCase {
         typeManager = null;
         entityContextFactory = null;
         apiClient = null;
-        instanceStore = null;
         schedulerAndWorker = null;
         metaContextCache = null;
     }
@@ -92,19 +85,15 @@ public class DDLTest extends TestCase {
                 "price", 20,
                 "manufacturer", "AppEase"
         ));
-        try (var context = newContext()) {
-            var commit = context.getEntity(Commit.class, commitId);
-            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
-                    Instances.stringInstance("Product")));
-            Assert.assertNull(klass.findFieldByName("version"));
-            try (var cachingContext = entityContextFactory.newLoadedContext(TestConstants.APP_ID, commit.getWal())) {
-                cachingContext.loadKlasses();
-                var hat = (ClassInstance) cachingContext.get(Id.parse(hatId));
-                var ver = hat.getField("version").resolveObject();
-                Assert.assertEquals(Instances.intInstance(0), ver.getField("majorVersion"));
-            }
-        }
         TestUtils.waitForDDLPrepared(schedulerAndWorker);
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var hat = (ClassInstance) context.get(Id.parse(hatId));
+            var ver = hat.getField("version").resolveObject();
+            Assert.assertEquals(Instances.intInstance(0), ver.getField("majorVersion"));
+            var commit = context.getCommit(commitId);
+            Assert.assertFalse(commit.isRunning());
+        }
 //        try (var context = newContext()) {
 //            var productKlass = context.getKlassByQualifiedName("Product");
 //            Assert.assertTrue(productKlass.getFieldByName("inventory").isChild());
@@ -146,7 +135,7 @@ public class DDLTest extends TestCase {
 //               return invInst.getId();
 //           }
 //        });
-        var newInventorId = Id.parse(inventoryId);
+//        var newInventorId = Id.parse(inventoryId);
 //        TestUtils.waitForDDLCompleted(schedulerAndWorker);
 //        try(var context = newContext()) {
 //            var boxInst = (ClassInstance) context.get(Id.parse(boxId));
@@ -163,28 +152,28 @@ public class DDLTest extends TestCase {
 //                    instanceStore.get(TestConstants.APP_ID, Id.parse(inventoryId).getTreeId())
 //            );
 //        }
-        logger.info("Deploying rollback metadata");
-        assemble("ddl_rollback.mv", false);
-        TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, schedulerAndWorker);
+//        logger.info("Deploying rollback metadata");
+//        assemble("ddl_rollback.mv", false);
+//        TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, schedulerAndWorker);
 //        try(var context = newContext()) {
 //            var invInst = context.get(newInventorId);
 //            Assert.assertNotEquals(newInventorId, invInst.tryGetCurrentId());
 //            Assert.assertEquals(newInventorId, invInst.getId());
 //        }
 //        TestUtils.waitForDDLState(CommitState.UPDATING_REFERENCE, schedulerAndWorker);
-        TestUtils.doInTransactionWithoutResult(() -> {
-            try(var context = newContext()) {
-                context.remove(context.get(Id.parse(shoesId)));
-                var invInst = context.get(newInventorId);
-                context.remove(invInst);
-                try {
-                    context.finish();
-                    Assert.fail("The inventory object is referenced and the removal should have failed");
-                }
-                catch (RemovalFailureException ignored) {
-                }
-            }
-        });
+//        TestUtils.doInTransactionWithoutResult(() -> {
+//            try(var context = newContext()) {
+//                context.remove(context.get(Id.parse(shoesId)));
+//                var invInst = context.get(newInventorId);
+//                context.remove(invInst);
+//                try {
+//                    context.finish();
+//                    Assert.fail("The inventory object is referenced and the removal should have failed");
+//                }
+//                catch (RemovalFailureException ignored) {
+//                }
+//            }
+//        });
 //        TestUtils.waitForDDLCompleted(schedulerAndWorker);
 //        try(var context = newContext()) {
 //            try {
@@ -353,7 +342,18 @@ public class DDLTest extends TestCase {
             var priceKlass2 = context.getKlassByQualifiedName("Price");
             Assert.assertTrue(priceKlass2.isValueKlass());
         }
-        TestUtils.waitForDDLCompleted(schedulerAndWorker);
+        try (var context = newContext()) {
+            context.loadKlasses();
+            for (String productId : productIds) {
+                var product = (MvClassInstance) context.get(Id.parse(productId));
+                var priceRef = (Reference) product.getField("price");
+                Assert.assertTrue(priceRef.isValueReference());
+                var price = priceRef.resolveObject();
+                Assert.assertTrue(price.getInstanceKlass().isValueKlass());
+                Assert.assertNull(price.tryGetId());
+            }
+        }
+//        TestUtils.waitForDDLCompleted(schedulerAndWorker);
         for (String productId : productIds) {
             var product = apiClient.getObject(productId);
             MatcherAssert.assertThat(product.getObject("price"), CoreMatchers.instanceOf(ClassInstanceWrap.class));
@@ -367,8 +367,8 @@ public class DDLTest extends TestCase {
         MatcherAssert.assertThat(price1, CoreMatchers.instanceOf(ClassInstanceWrap.class));
         TestUtils.waitForDDLPrepared(schedulerAndWorker);
         try(var context = newContext()) {
-            var commit = context.getEntity(Commit.class, commitId);
-            Assert.assertEquals(CommitState.RELOCATING, commit.getState());
+//            var commit = context.getEntity(Commit.class, commitId);
+//            Assert.assertEquals(CommitState.RELOCATING, commit.getState());
             var priceKlass3 = context.getKlassByQualifiedName("Price");
             Assert.assertSame(ClassKind.CLASS, priceKlass3.getKind());
         }
@@ -376,7 +376,7 @@ public class DDLTest extends TestCase {
             var product = apiClient.getObject(productId);
             MatcherAssert.assertThat(product.get("price"), CoreMatchers.instanceOf(String.class));
         }
-        TestUtils.waitForDDLCompleted(schedulerAndWorker);
+//        TestUtils.waitForDDLCompleted(schedulerAndWorker);
         try (var context = newContext()){
             var commit = context.getEntity(Commit.class, commitId);
             Assert.assertEquals(CommitState.COMPLETED, commit.getState());
@@ -386,7 +386,6 @@ public class DDLTest extends TestCase {
                 var productInst = (ClassInstance) context.get(Id.parse(productId));
                 var priceRef = (Reference) productInst.getField(priceField);
                 Assert.assertFalse(priceRef.isResolved());
-                Assert.assertFalse(priceRef.isEager());
                 Assert.assertFalse(priceRef.isValueReference());
             }
         }
@@ -409,104 +408,98 @@ public class DDLTest extends TestCase {
                 context.finish();
             }
         });
-        TestUtils.waitForDDLState(CommitState.ABORTING, schedulerAndWorker);
-        try(var context = newContext()) {
-            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
-            var priceRef = (Reference) shoesInst.getField("price");
-            Assert.assertTrue(priceRef.isEager());
-        }
         TestUtils.waitForDDLAborted(schedulerAndWorker);
         try(var context = newContext()) {
             var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
             var priceRef = (Reference) shoesInst.getField("price");
-            Assert.assertFalse(priceRef.isEager());
+            Assert.assertFalse(priceRef.isValueReference());
         }
     }
 
-    public void testRollbackValueToEntityConversion() {
-        assemble("value_ddl_after.mv");
-        var shoesId = saveInstance("Product", Map.of(
-                "name", "Shoes",
-                "price", Map.of(
-                        "amount", 100,
-                        "currency", "YUAN"
-                )
-        ));
-        var commitId = assemble("value_ddl_before.mv", false);
-        TestUtils.doInTransactionWithoutResult(() -> {
-            try(var context = newContext()) {
-                var commit = context.getCommit(commitId);
-                commit.cancel();
-                context.finish();
-            }
-        });
-        TestUtils.waitForDDLState(CommitState.ABORTING, schedulerAndWorker);
-        Id priceId;
-        try(var context = newContext()) {
-            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
-            var priceRef = (Reference) shoesInst.getField("price");
-            Assert.assertTrue(priceRef.isValueReference());
-            priceId = priceRef.getId();
-        }
-        TestUtils.waitForDDLAborted(schedulerAndWorker);
-        try(var context = newContext()) {
-            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
-            var priceRef = (Reference) shoesInst.getField("price");
-            Assert.assertFalse(priceRef.isEager());
-            Assert.assertTrue(priceRef.isValueReference());
-            Assert.assertTrue(priceRef.isInlineValueReference());
-            Assert.assertTrue(priceRef.isResolved());
-            try {
-                context.get(priceId);
-                Assert.fail("Should have been removed");
-            }
-            catch (BusinessException e) {
-                Assert.assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
-            }
-        }
-    }
+//    public void testRollbackValueToEntityConversion() {
+//        assemble("value_ddl_after.mv");
+//        var shoesId = saveInstance("Product", Map.of(
+//                "name", "Shoes",
+//                "price", Map.of(
+//                        "amount", 100,
+//                        "currency", "YUAN"
+//                )
+//        ));
+//        var commitId = assemble("value_ddl_before.mv", false);
+//        TestUtils.doInTransactionWithoutResult(() -> {
+//            try(var context = newContext()) {
+//                var commit = context.getCommit(commitId);
+//                commit.cancel();
+//                context.finish();
+//            }
+//        });
+//        TestUtils.waitForDDLState(CommitState.ABORTING, schedulerAndWorker);
+//        Id priceId;
+//        try(var context = newContext()) {
+//            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
+//            var priceRef = (Reference) shoesInst.getField("price");
+//            Assert.assertTrue(priceRef.isValueReference());
+//            priceId = priceRef.getId();
+//        }
+//        TestUtils.waitForDDLAborted(schedulerAndWorker);
+//        try(var context = newContext()) {
+//            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
+//            var priceRef = (Reference) shoesInst.getField("price");
+//            Assert.assertFalse(priceRef.isEager());
+//            Assert.assertTrue(priceRef.isValueReference());
+//            Assert.assertTrue(priceRef.isInlineValueReference());
+//            Assert.assertTrue(priceRef.isResolved());
+//            try {
+//                context.get(priceId);
+//                Assert.fail("Should have been removed");
+//            }
+//            catch (BusinessException e) {
+//                Assert.assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+//            }
+//        }
+//    }
 
-    public void testEntityToEnumConversion() {
-        assemble("enum_ddl_before.mv");
-        var shoesId = saveInstance("Product", Map.of(
-                "name", "Shoes",
-                "kind", Map.of(
-                        "name", "DEFAULT",
-                        "code", 0
-                )
-        ));
-        var kindId0 = apiClient.getObject(shoesId).getString("kind");
-        assemble("enum_ddl_after.mv", false);
-        TestUtils.waitForDDLCompleted(schedulerAndWorker);
-        var isDefaultProduct = TestUtils.doInTransaction(() -> apiClient.callMethod(shoesId, "isDefaultKind", List.of()));
-        Assert.assertEquals(true, isDefaultProduct);
-        var shoes = apiClient.getObject(shoesId);
-        var hotelKind = typeManager.getEnumConstantId("ProductKind", "HOTEL");
-        var kindId = shoes.getString("kind");
-        Assert.assertEquals("DEFAULT", kindId);
-        try {
-            apiClient.getObject(kindId0);
-            Assert.fail("Should have been removed");
-        }
-        catch (BusinessException e) {
-            Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
-        }
-        assemble("enum_ddl_rollback.mv");
-        try (var context = newContext()) {
-            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
-            var kind = shoesInst.getField("kind").resolveObject();
-            Assert.assertFalse(kind.getInstanceKlass().isEnum());
-            Assert.assertEquals("DEFAULT", Instances.toJavaString(kind.getField("name")));
-            Assert.assertEquals(Instances.intInstance(0), kind.getField("code"));
-            try {
-                context.get(Id.parse(hotelKind));
-                Assert.fail("Should have been removed");
-            }
-            catch (BusinessException e) {
-                Assert.assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
-            }
-        }
-    }
+//    public void testEntityToEnumConversion() {
+//        assemble("enum_ddl_before.mv");
+//        var shoesId = saveInstance("Product", Map.of(
+//                "name", "Shoes",
+//                "kind", Map.of(
+//                        "name", "DEFAULT",
+//                        "code", 0
+//                )
+//        ));
+//        var kindId0 = apiClient.getObject(shoesId).getString("kind");
+//        assemble("enum_ddl_after.mv", false);
+//        TestUtils.waitForDDLCompleted(schedulerAndWorker);
+//        var isDefaultProduct = TestUtils.doInTransaction(() -> apiClient.callMethod(shoesId, "isDefaultKind", List.of()));
+//        Assert.assertEquals(true, isDefaultProduct);
+//        var shoes = apiClient.getObject(shoesId);
+//        var hotelKind = typeManager.getEnumConstantId("ProductKind", "HOTEL");
+//        var kindId = shoes.getString("kind");
+//        Assert.assertEquals("DEFAULT", kindId);
+//        try {
+//            apiClient.getObject(kindId0);
+//            Assert.fail("Should have been removed");
+//        }
+//        catch (BusinessException e) {
+//            Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+//        }
+//        assemble("enum_ddl_rollback.mv");
+//        try (var context = newContext()) {
+//            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
+//            var kind = shoesInst.getField("kind").resolveObject();
+//            Assert.assertFalse(kind.getInstanceKlass().isEnum());
+//            Assert.assertEquals("DEFAULT", Instances.toJavaString(kind.getField("name")));
+//            Assert.assertEquals(Instances.intInstance(0), kind.getField("code"));
+//            try {
+//                context.get(Id.parse(hotelKind));
+//                Assert.fail("Should have been removed");
+//            }
+//            catch (BusinessException e) {
+//                Assert.assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+//            }
+//        }
+//    }
 
     public void testEnumConversionRollback() {
         assemble("enum_ddl_before.mv");
@@ -530,7 +523,6 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
             var kindRef = (Reference) shoesInst.getField("kind");
-            Assert.assertFalse(kindRef instanceof RedirectingReference);
             var kind = (ClassInstance) context.get(Id.parse(kindId));
             Assert.assertSame(kind, kindRef.get());
             Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag()));

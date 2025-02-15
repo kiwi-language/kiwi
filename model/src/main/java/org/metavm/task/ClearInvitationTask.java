@@ -49,7 +49,6 @@ public class ClearInvitationTask extends Task {
         for (AppInvitation invitation : invitations) {
             var messages = context.selectByKey(Message.IDX_TARGET, invitation.getReference());
             messages.forEach(Message::clearTarget);
-            context.remove(invitation);
         }
         return invitations.size() < BATCH_SIZE;
     }

@@ -8,7 +8,6 @@ import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.PersistenceUtils;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.type.Index;
-import org.metavm.object.type.IndexProvider;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ChangeList;
 import org.metavm.util.Utils;
@@ -94,7 +93,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         Collection<IndexEntryPO> oldItems = change.getAttribute(OLD_INDEX_ITEMS);
         Collection<IndexEntryPO> currentItems = change.getAttribute(NEW_INDEX_ITEMS);
         ChangeList<IndexEntryPO> changeList = ChangeList.build(oldItems, currentItems, Function.identity());
-        instanceStore.saveIndexEntries(changeList);
+        instanceStore.saveIndexEntries(context.getAppId(), changeList);
 //        if (NncUtils.isNotEmpty(changeList.inserts())) {
 //            NncUtils.doInBatch(changeList.inserts(), instanceStore::batchInsert);
 //        }

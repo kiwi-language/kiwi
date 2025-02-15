@@ -68,7 +68,7 @@ public class RoleManager extends EntityContextFactoryAware {
         try (var context = newContext()) {
             Role role = context.getEntity(Role.class, id);
             Objects.requireNonNull(role, () -> "Role not found: " + id);
-            context.remove(role);
+            role.setDeleted(true);
             context.finish();
         }
     }

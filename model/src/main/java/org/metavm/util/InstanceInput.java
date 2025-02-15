@@ -9,7 +9,6 @@ import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.InstancePO;
-import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.type.*;
 
 import javax.annotation.Nullable;
@@ -86,9 +85,11 @@ public class InstanceInput extends MvInput {
     }
 
     public Entity readEntityMessage() {
+        var version = readLong();
         readTreeId();
         var nextNodeId = readLong();
         var entity = readEntity(Entity.class, null);
+        entity.setVersion(version);
         entity.setNextNodeId(nextNodeId);
         return entity;
     }
@@ -127,13 +128,6 @@ public class InstanceInput extends MvInput {
         return ref;
     }
 
-    public Value readRedirectingInstance() {
-        var redirectionRef = (Reference) readValue();
-        var redirectionStatus = redirectStatusProvider.getRedirectStatus(readId());
-        var record = (Reference) readValue();
-        return new RedirectingReference(record.get(), redirectionRef, redirectionStatus);
-    }
-
     public Reference readReference() {
 //        var inst = resolveInstance(readId());
 //        if(parentField != null && parentField.isChild())
@@ -149,16 +143,6 @@ public class InstanceInput extends MvInput {
         return ref;
     }
 
-    public Reference readRedirectingReference() {
-        var flags = read();
-        var id = readId();
-        var redirectionRef = (Reference) readValue();
-        var status = redirectStatusProvider.getRedirectStatus(readId());
-        var ref = new RedirectingReference(id, () -> resolver.apply(id), redirectionRef, status);
-        ref.setFlags(flags);
-        return ref;
-    }
-
     private Reference resolveInstance(Id id) {
         return new Reference(id, () -> resolver.apply(id));
     }
@@ -166,25 +150,15 @@ public class InstanceInput extends MvInput {
     private final StreamVisitor skipper = new StreamVisitor(this);
 
     public Reference readInstance() {
-        return readInstance(-1L, -1L, false, treeId, readLong());
+        return readInstance(treeId, readLong());
     }
 
-    public Value readRelocatingInstance() {
-        return readInstance(readLong(), readLong(), readBoolean(), treeId, readLong());
-    }
-
-    private Reference readInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
-        var type = this.readType();
+    private Reference readInstance(long treeId, long nodeId) {
+        var type = (ClassType) this.readType();
         var id = PhysicalId.of(treeId, nodeId);
-        var instance = type instanceof ArrayType arrayType ?
-                new ArrayInstance(id, arrayType, false, null) :
-                ClassInstanceBuilder.newBuilder((ClassType) type).id(id).initFieldTable(false).build();
+        var instance = ClassInstanceBuilder.newBuilder(type).id(id).initFieldTable(false).build();
         if(parent != null)
             instance.setParentInternal(parent, true);
-        if(oldTreeId != -1L) {
-            instance.setOldId(PhysicalId.of(oldTreeId, oldNodeId));
-            instance.setUseOldId(useOldId);
-        }
         var oldParent = parent;
         var ref = instance.getReference();
         parent = instance;
@@ -251,10 +225,6 @@ public class InstanceInput extends MvInput {
 
     public long getTreeId() {
         return treeId;
-    }
-
-    public ReferencePO readReferencePO(long appId) {
-        return new ReferencePO(appId, readLong(), readId().toBytes(), readInt());
     }
 
     @Nullable

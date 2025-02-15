@@ -170,14 +170,6 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public void deleteInstance(String id) {
-        try (var context = newContext()) {
-            context.remove(context.get(Id.parse(id)));
-            context.finish();
-        }
-    }
-
-    @Transactional(isolation = Isolation.SERIALIZABLE)
     public String saveInstance(String classCode, Map<String, Object> object, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
 //            logTxId();

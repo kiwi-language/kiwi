@@ -10,6 +10,7 @@ import org.metavm.message.MessageKind;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.TmpId;
+import org.metavm.object.instance.persistence.SchemaManager;
 import org.metavm.object.type.GlobalKlassTagAssigner;
 import org.metavm.object.type.KlassSourceCodeTagAssigner;
 import org.metavm.object.type.KlassTagAssigner;
@@ -40,14 +41,22 @@ public class ApplicationManager extends EntityContextFactoryAware {
     private final EntityIdProvider idService;
 
     private final EntityQueryService entityQueryService;
+    private final SchemaManager schemaManager;
 
-    public ApplicationManager(EntityContextFactory entityContextFactory, RoleManager roleManager, PlatformUserManager platformUserManager, VerificationCodeService verificationCodeService, EntityIdProvider idService, EntityQueryService entityQueryService) {
+    public ApplicationManager(EntityContextFactory entityContextFactory,
+                              RoleManager roleManager,
+                              PlatformUserManager platformUserManager,
+                              VerificationCodeService verificationCodeService,
+                              EntityIdProvider idService,
+                              EntityQueryService entityQueryService,
+                              SchemaManager schemaManager) {
         super(entityContextFactory);
         this.roleManager = roleManager;
         this.platformUserManager = platformUserManager;
         this.verificationCodeService = verificationCodeService;
         this.idService = idService;
         this.entityQueryService = entityQueryService;
+        this.schemaManager = schemaManager;
     }
 
     public Page<ApplicationDTO> list(int page, int pageSize, String searchText) {
@@ -151,8 +160,12 @@ public class ApplicationManager extends EntityContextFactoryAware {
         Application application = new Application(PhysicalId.of(id, 0L), name, owner);
         // initIdManually will bind application to context
         platformContext.bind(application);
-        platformUserManager.joinApplication(owner, application, platformContext);
-        setupApplication(application.getTreeId(), platformContext);
+        if (id != PLATFORM_APP_ID && id != ROOT_APP_ID) {
+            schemaManager.createInstanceTable(id, "instance");
+            schemaManager.createIndexEntryTable(id, "index_entry");
+            platformUserManager.joinApplication(owner, application, platformContext);
+            setupApplication(application.getTreeId(), platformContext);
+        }
         return application;
     }
 

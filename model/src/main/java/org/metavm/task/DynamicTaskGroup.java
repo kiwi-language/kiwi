@@ -46,7 +46,6 @@ public abstract class DynamicTaskGroup extends TaskGroup {
         if(getTasks().contains(task))
             super.onTaskCompletion(task, context, taskContext);
         else {
-            taskContext.remove(task);
             if(isCompleted())
                 onCompletion(context, taskContext);
         }

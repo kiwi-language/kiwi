@@ -59,7 +59,6 @@ SELECT:             'select';
 SELECT_FIRST:       'selectFirst';
 DELETED:            'deleted';
 VAR:                'var';
-DELETE:             'delete';
 
 // Operators
 

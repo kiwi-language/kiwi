@@ -8,11 +8,13 @@ import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.*;
+import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
+import org.metavm.object.instance.persistence.mappers.InstanceMapper;
 import org.metavm.util.ChangeList;
+import org.metavm.util.Utils;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 public class BufferedInstanceStore implements IInstanceStore {
 
@@ -25,7 +27,7 @@ public class BufferedInstanceStore implements IInstanceStore {
     }
 
     @Override
-    public void save(ChangeList<InstancePO> diff) {
+    public void save(long appId, ChangeList<InstancePO> diff) {
         wal.saveInstances(diff);
     }
 
@@ -40,28 +42,13 @@ public class BufferedInstanceStore implements IInstanceStore {
     }
 
     @Override
-    public void saveReferences(ChangeList<ReferencePO> refChanges) {
-        wal.saveReferences(refChanges);
-    }
-
-    @Override
-    public void saveIndexEntries(ChangeList<IndexEntryPO> changes) {
+    public void saveIndexEntries(long appId, ChangeList<IndexEntryPO> changes) {
         wal.saveIndexEntries(changes);
     }
 
     @Override
     public void saveInstanceLogs(List<InstanceLog> instanceLogs, IInstanceContext context) {
         wal.saveInstanceLogs(instanceLogs);
-    }
-
-    @Override
-    public ReferencePO getFirstReference(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds) {
-        return wrapped.getFirstReference(appId, targetIds, excludedSourceIds);
-    }
-
-    @Override
-    public List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds) {
-        return wrapped.getAllStrongReferences(appId, targetIds, excludedSourceIds);
     }
 
     @Override
@@ -90,18 +77,8 @@ public class BufferedInstanceStore implements IInstanceStore {
     }
 
     @Override
-    public List<Long> getByReferenceTargetId(Id targetId, long startIdExclusive, long limit, IInstanceContext context) {
-        return wrapped.getByReferenceTargetId(targetId, startIdExclusive, limit, context);
-    }
-
-    @Override
     public List<InstancePO> loadForest(Collection<Long> ids, IInstanceContext context) {
         return wrapped.loadForest(ids, context);
-    }
-
-    @Override
-    public List<InstancePO> scan(List<ScanQuery> queries, IInstanceContext context) {
-        return wrapped.scan(queries, context);
     }
 
     @Override
@@ -121,6 +98,17 @@ public class BufferedInstanceStore implements IInstanceStore {
 
     @Override
     public List<IndexEntryPO> getIndexEntriesByInstanceIds(Collection<Id> instanceIds, IInstanceContext context) {
-        return wrapped.getIndexEntriesByInstanceIds(instanceIds, context);
+        var mapper = getIndexEntryMapper(context.getAppId(), "index_entry_tmp");
+        return mapper.selectByInstanceIds(context.getAppId(), Utils.map(instanceIds, Id::toBytes));
+    }
+
+    @Override
+    public InstanceMapper getInstanceMapper(long appId, String table) {
+        return wrapped.getInstanceMapper(appId, table);
+    }
+
+    @Override
+    public IndexEntryMapper getIndexEntryMapper(long appId, String table) {
+        return wrapped.getIndexEntryMapper(appId, table);
     }
 }

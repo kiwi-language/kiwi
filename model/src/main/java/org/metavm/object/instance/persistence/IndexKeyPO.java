@@ -83,6 +83,10 @@ public class IndexKeyPO implements Comparable<IndexKeyPO> {
         return Utils.map(getColumns(), b -> BytesUtils.readIndexValue(b, resolver));
     }
 
+    public static List<Object> parseBytes(byte[] bytes) {
+        return Utils.map(toColumns(bytes), BytesUtils::readIndexBytes);
+    }
+
     List<byte[]> getColumns() {
         if(columns == null)
             columns = toColumns(data);

@@ -26,14 +26,6 @@ public interface Instance extends Message, Identifiable {
         return new Reference(this);
     }
 
-    default @Nullable Id tryGetOldId() {
-        return null;
-    }
-
-    default Id getOldId() {
-        throw new UnsupportedOperationException();
-    }
-
     void forEachChild(Consumer<? super Instance> action);
 
     default Id tryGetId() {
@@ -162,10 +154,6 @@ public interface Instance extends Message, Identifiable {
 
     Type getInstanceType();
 
-    default boolean isInlineValue() {
-        return false;
-    }
-
     default boolean isArray() {
         return false;
     }
@@ -279,14 +267,6 @@ public interface Instance extends Message, Identifiable {
 
     void write(MvOutput output);
 
-    default Id getCurrentId() {
-        return Objects.requireNonNull(state().id);
-    }
-
-    default Id tryGetCurrentId() {
-        return state().id;
-    }
-
     default boolean isLoadedFromCache() {
         return false;
     }
@@ -309,6 +289,10 @@ public interface Instance extends Message, Identifiable {
     }
 
     InstanceState state();
+
+    default void clearId() {
+        state().id = null;
+    }
 
     default IInstanceContext getContext() {
         return Objects.requireNonNull(state(), () -> getClass().getName() + " returns a null state").context;
@@ -362,10 +346,6 @@ public interface Instance extends Message, Identifiable {
 
     default void setRemoving() {
         state().setRemoving();
-    }
-
-    default void clearRemoving() {
-        state().clearRemoving();
     }
 
     String getText();

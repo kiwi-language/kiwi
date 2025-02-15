@@ -3,30 +3,7 @@ package org.metavm.entity;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.Id;
 
-import javax.annotation.Nullable;
-import java.util.Objects;
-
-public record DiffId(Id id, @Nullable Id oldId, boolean useOldId, int entityTag) implements Comparable<DiffId> {
-
-    @Override
-    public Id id() {
-        return id;
-    }
-
-    @Override
-    @Nullable
-    public Id oldId() {
-        return oldId;
-    }
-
-    @Override
-    public boolean useOldId() {
-        return useOldId;
-    }
-
-    public Id getId() {
-        return useOldId ? Objects.requireNonNull(oldId) : id;
-    }
+public record DiffId(Id id, int entityTag) implements Comparable<DiffId> {
 
     @Override
     public boolean equals(Object obj) {

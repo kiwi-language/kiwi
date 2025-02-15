@@ -4,7 +4,6 @@ import org.metavm.object.instance.ScanQuery;
 import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.persistence.VersionPO;
-import org.metavm.util.IdentitySet;
 import org.metavm.util.InternalException;
 import org.metavm.util.Utils;
 import org.slf4j.Logger;
@@ -18,26 +17,13 @@ public class MemInstanceMapper implements InstanceMapper {
     public static final Logger logger = LoggerFactory.getLogger(MemInstanceMapper.class);
 
     private final NavigableMap<Long, InstancePO> id2instance = new TreeMap<>();
-//    private final Map<Id, List<InstancePO>> type2instances = new HashMap<>();
     private final Map<Long, InstancePO> removed = new HashMap<>();
-    private final Map<Long, Set<InstancePO>> forest = new HashMap<>();
+    private String table;
 
-//    @Override
-//    public List<InstancePO> selectByTypeIds(long appId, Collection<ByTypeQuery> queries) {
-//        List<InstancePO> result = NncUtils.flatMap(
-//                queries,
-//                q -> queryByType(appId, q)
-//        );
-//        return NncUtils.deduplicateAndSort(result, Comparator.comparing(InstancePO::getId));
-//    }
 
-    //    private List<InstancePO> queryByType(long appId, ByTypeQuery query) {
-//        List<InstancePO> result = NncUtils.filter(
-//                type2instances.get(query.getTypeId()),
-//                instancePO -> instancePO.getAppId() == appId
-//        );
-//        return result.subList(0, Math.min((int) query.getLimit(), result.size()));
-//    }
+    public MemInstanceMapper(String table) {
+        this.table = table;
+    }
 
     @Override
     public InstancePO selectById(long id) {
@@ -45,20 +31,29 @@ public class MemInstanceMapper implements InstanceMapper {
     }
 
     @Override
-    public List<InstancePO> selectByIds(long appId, Collection<Long> ids, int lockMode) {
+    public List<InstancePO> selectByIds(long appId, Collection<Long> ids) {
         return Utils.mapAndFilter(ids, id2instance::get, i -> i != null && i.getAppId() == appId);
     }
 
     @Override
     public void batchUpdate(Collection<InstancePO> records) {
         for (InstancePO record : records) {
-            var instance = Objects.requireNonNull(id2instance.get(record.getId()));
+            var instance = Objects.requireNonNull(id2instance.get(record.getId()),
+                    () -> "Instance " + record.getId() + " not found in table " + table);
             instance.setVersion(record.getVersion());
             instance.setSyncVersion(record.getSyncVersion());
             instance.setNextNodeId(record.getNextNodeId());
             if(record.getData() != null)
                 instance.setData(record.getData());
         }
+    }
+
+    @Override
+    public void batchUpsert(Collection<InstancePO> records) {
+        var inserts = Utils.exclude(records, i -> id2instance.containsKey(i.getId()));
+        var updates = Utils.filter(records, i -> id2instance.containsKey(i.getId()));
+        batchInsert(inserts);
+        batchUpdate(updates);
     }
 
     @Override
@@ -77,13 +72,24 @@ public class MemInstanceMapper implements InstanceMapper {
         }
     }
 
+    @Override
+    public void tryBatchDelete(long appId, long timestamp, Collection<VersionPO> versions) {
+        for (VersionPO version : versions) {
+            var instancePO = id2instance.get(version.id());
+            if (instancePO != null) {
+                remove(version.id());
+                removed.put(version.id(), instancePO);
+            }
+        }
+    }
+
     private void add(InstancePO instancePO) {
         instancePO = instancePO.copy();
         Utils.require(id2instance.get(instancePO.getId()) == null,
                 "Instance with id " + instancePO.getId() + " already exists");
         id2instance.put(instancePO.getId(), instancePO);
 //        type2instances.computeIfAbsent(Id.fromBytes(instancePO.getTypeId()), k -> new ArrayList<>()).add(instancePO);
-        forest.computeIfAbsent(instancePO.getId(), k -> new HashSet<>()).add(instancePO);
+//        forest.computeIfAbsent(instancePO.getId(), k -> new HashSet<>()).add(instancePO);
     }
 
     private void remove(long id) {
@@ -91,24 +97,12 @@ public class MemInstanceMapper implements InstanceMapper {
         if(instancePO == null) {
             throw new InternalException("Instance " + id + " does not exist");
         }
-        var tree = forest.get(instancePO.getId());
-        if(tree != null)
-            tree.remove(instancePO);
-//        type2instances.get(Id.fromBytes(instancePO.getTypeId())).removeIf(i -> Arrays.equals(i.getId(), instancePO.getId()));
     }
 
     public List<InstancePO> head() {
         List<InstancePO> values = new ArrayList<>(id2instance.values());
         return values.subList(0, Math.min(100, values.size()));
     }
-
-//    @Override
-//    public List<byte[]> getAliveIds(long appId, Collection<byte[]> ids) {
-//        return NncUtils.filter(ids, id -> {
-//            InstancePO instanceArrayPO = id2instance.get(Id.fromBytes(id));
-//            return instanceArrayPO != null && instanceArrayPO.getAppId() == appId;
-//        });
-//    }
 
     @Override
     public int updateSyncVersion(List<VersionPO> versions) {
@@ -120,17 +114,6 @@ public class MemInstanceMapper implements InstanceMapper {
             instancePO.setSyncVersion(version.version());
         }
         return versions.size();
-    }
-
-    @Override
-    public List<InstancePO> scan(long appId, Collection<ScanQuery> queries) {
-        Set<InstancePO> uniqueResult = new IdentitySet<>();
-        for (ScanQuery query : queries) {
-            uniqueResult.addAll(scan(appId, query));
-        }
-        List<InstancePO> result = new ArrayList<>(uniqueResult);
-        result.sort(Comparator.comparing(InstancePO::getId));
-        return result;
     }
 
     @Override
@@ -171,10 +154,18 @@ public class MemInstanceMapper implements InstanceMapper {
     }
 
     public MemInstanceMapper copy() {
-        var copy = new MemInstanceMapper();
+        var copy = new MemInstanceMapper(table);
         id2instance.values().forEach(i -> copy.add(i.copy()));
         removed.values().forEach(i -> copy.removed.put(i.getId(), i.copy()));
         return copy;
+    }
+
+    public void setTable(String table) {
+        this.table = table;
+    }
+
+    public Collection<Long> getTreeIds() {
+        return Collections.unmodifiableCollection(id2instance.keySet());
     }
 
 }

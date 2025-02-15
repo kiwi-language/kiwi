@@ -12,9 +12,9 @@ import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.instance.persistence.MockSchemaManager;
 import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.*;
-import org.metavm.object.version.VersionManager;
 import org.metavm.user.LoginService;
 import org.metavm.user.PlatformUserManager;
 import org.metavm.user.RoleManager;
@@ -76,12 +76,11 @@ public abstract class CompilerTestBase extends TestCase  {
         schedulerAndWorker = bootResult.schedulerAndWorker();
         metaContextCache = bootResult.metaContextCache();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
-        typeManager = new TypeManager(bootResult.entityContextFactory(), new BeanManager());
+        typeManager = new TypeManager(bootResult.entityContextFactory(), new BeanManager(), new MockSchemaManager(bootResult.mapperRegistry()));
         instanceManager = new InstanceManager(entityContextFactory,
                 bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
         typeClient = new MockTypeClient(typeManager, executor, new MockTransactionOperations());
         FlowSavingContext.initConfig();
-        typeManager.setVersionManager(new VersionManager(entityContextFactory));
         var entityQueryService = new EntityQueryService(bootResult.instanceSearchService());
         var roleManager = new RoleManager(entityContextFactory, entityQueryService);
         loginService = new LoginService(bootResult.entityContextFactory());
@@ -89,7 +88,7 @@ public abstract class CompilerTestBase extends TestCase  {
         platformUserManager = new PlatformUserManager(entityContextFactory,
                 loginService, entityQueryService, new MockEventQueue(), verificationCodeService);
         applicationManager = new ApplicationManager(entityContextFactory, roleManager, platformUserManager,
-                verificationCodeService, bootResult.idProvider(), entityQueryService);
+                verificationCodeService, bootResult.idProvider(), entityQueryService, bootResult.schemaManager());
         var apiService = new ApiService(entityContextFactory, bootResult.metaContextCache(), instanceQueryService);
         apiClient = new ApiClient(apiService);
         ContextUtil.resetProfiler();
@@ -186,10 +185,6 @@ public abstract class CompilerTestBase extends TestCase  {
 
     protected Object getStatic(String className, String fieldName) {
         return apiClient.getStatic(className, fieldName);
-    }
-
-    protected void deleteObject(String id) {
-        TestUtils.doInTransactionWithoutResult(() -> apiClient.deleteInstance(id));
     }
 
 }

@@ -379,11 +379,6 @@ public class StringInstance implements CharSequenceNative, ClassInstance {
     }
 
     @Override
-    public boolean isInlineValue() {
-        return true;
-    }
-
-    @Override
     public Instance copy() {
         return this;
     }

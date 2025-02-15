@@ -34,9 +34,9 @@ public class DiskTreeStore implements TreeSource {
             new StreamVisitor(new ByteArrayInputStream(tree.data())) {
 
                 @Override
-                public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+                public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
                     ids.add(PhysicalId.of(treeId, nodeId));
-                    super.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
+                    super.visitInstanceBody(treeId, nodeId, typeOrTypeKey);
                 }
 
                 @Override

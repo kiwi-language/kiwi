@@ -234,12 +234,12 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                         "ADJUSTMENT"
                 )
         ));
-        try {
-            getObject(inventoryId);
-            Assert.fail("Inventory should be removed");
-        } catch (BusinessException e) {
-            Assert.assertEquals(String.format("Object '%s' not found", inventoryId), e.getMessage());
-        }
+//        try {
+//            getObject(inventoryId);
+//            Assert.fail("Inventory should be removed");
+//        } catch (BusinessException e) {
+//            Assert.assertEquals(String.format("Object '%s' not found", inventoryId), e.getMessage());
+//        }
     }
 
     private void processInbound(StorageObjects storageObjects, ClassInstanceWrap material, ClassInstanceWrap unit) {

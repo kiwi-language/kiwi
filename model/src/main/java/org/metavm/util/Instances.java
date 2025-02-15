@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.ReadonlyList;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.ddl.Commit;
-import org.metavm.ddl.FieldChange;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.*;
 import org.metavm.flow.Flows;
@@ -13,8 +12,6 @@ import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.type.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -26,8 +23,6 @@ import static java.util.Objects.requireNonNull;
 
 @Slf4j
 public class Instances {
-
-    private static final Logger logger = LoggerFactory.getLogger(Instances.class);
 
     public static final Map<Class<?>, Type> JAVA_CLASS_TO_BASIC_TYPE = Map.ofEntries(
             Map.entry(Integer.class, PrimitiveType.intType),
@@ -465,7 +460,8 @@ public class Instances {
             throw new IllegalArgumentException(listType + " is not a List type");
     }
 
-    public static void applyDDL(Iterable<? extends Instance> instances, Commit commit, IInstanceContext context) {
+    public static void migrate(Iterable<? extends Instance> instances, Commit commit, IInstanceContext context) {
+        var tracing = DebugEnv.traceMigration;
         var newFields = Utils.map(commit.getNewFieldIds(), context::getField);
         var convertingFields = Utils.map(commit.getConvertingFieldIds(), context::getField);
         var toChildFields = Utils.map(commit.getToChildFieldIds(), context::getField);
@@ -478,28 +474,31 @@ public class Instances {
         var newIndexes = Utils.map(commit.getNewIndexIds(), id -> context.getEntity(Index.class, id));
         var searchEnabledKlasses = Utils.map(commit.getSearchEnabledKlassIds(), context::getKlass);
         for (Instance instance : instances) {
+            if (tracing)
+                log.trace("Migrating instance {}, tree ID: {}", instance, instance.tryGetTreeId());
+            instance.incVersion();
             if (instance instanceof MvInstance mvInst && !mvInst.isEnum()) {
-                applyDDL(mvInst, newFields, convertingFields, toChildFields, changingSuperKlasses, toValueKlasses,
+                migrate(mvInst, newFields, convertingFields, toChildFields, changingSuperKlasses, toValueKlasses,
                         valueToEntityKlasses, toEnumKlasses, removingChildFields, runMethods, newIndexes, searchEnabledKlasses,
                         commit, context);
             }
         }
     }
 
-    public static void applyDDL(MvInstance instance,
-                                Collection<Field> newFields,
-                                Collection<Field> convertingFields,
-                                Collection<Field> toChildFields,
-                                Collection<Klass> changingSuperKlasses,
-                                Collection<Klass> toValueKlasses,
-                                Collection<Klass> valueToEntityKlasses,
-                                Collection<Klass> toEnumKlasses,
-                                Collection<Field> removingChildFields,
-                                Collection<Method> runMethods,
-                                Collection<Index> newIndexes,
-                                Collection<Klass> searchEnabledKlasses,
-                                @Nullable RedirectStatus redirectStatus,
-                                IInstanceContext context) {
+    public static void migrate(MvInstance instance,
+                               Collection<Field> newFields,
+                               Collection<Field> convertingFields,
+                               Collection<Field> toChildFields,
+                               Collection<Klass> changingSuperKlasses,
+                               Collection<Klass> toValueKlasses,
+                               Collection<Klass> valueToEntityKlasses,
+                               Collection<Klass> toEnumKlasses,
+                               Collection<Field> removingChildFields,
+                               Collection<Method> runMethods,
+                               Collection<Index> newIndexes,
+                               Collection<Klass> searchEnabledKlasses,
+                               @Nullable RedirectStatus redirectStatus,
+                               IInstanceContext context) {
         if (instance instanceof ClassInstance clsInst) {
             for (Field field : newFields) {
                 var k = clsInst.getInstanceType().asSuper(field.getDeclaringType());
@@ -548,11 +547,11 @@ public class Instances {
                             ref.referenced = true;
                     });
                 });
-                if (!ref.referenced) {
-                    var referring = context.getByReferenceTargetId(child.getId(), 0, 1);
-                    if (!referring.isEmpty())
-                        ref.referenced = true;
-                }
+//                if (!ref.referenced) {
+//                    var referring = context.getByReferenceTargetId(child.getId(), 0, 1);
+//                    if (!referring.isEmpty())
+//                        ref.referenced = true;
+//                }
                 if (ref.referenced)
                     throw new InternalException(
                             "Unable to delete child field " +
@@ -581,30 +580,20 @@ public class Instances {
                 }
             }
         }
-        for (Klass klass : valueToEntityKlasses) {
-            instance.forEachReference(r -> {
-                if (r.isResolved()) {
-                    var resolved = r.get();
-                    if (resolved instanceof ClassInstance clsInst) {
-                        var k = clsInst.getInstanceType().asSuper(klass);
-                        if (k != null)
-                            r.setEager();
-                    }
-                }
-            });
-        }
         for (Klass klass : toEnumKlasses) {
             handleEnumConversion(instance, klass, redirectStatus, context);
         }
     }
 
     private static void handleEntityToValueConversion(MvClassInstance instance, Klass klass) {
-        instance.forEachReference((r, isChild, type) -> {
+        instance.transformReference((r, isChild, type) -> {
             if (type.isAssignableFrom(klass.getType())) {
-                var referent = r.get();
-                if (referent instanceof ClassInstance object && object.getInstanceType().asSuper(klass) != null)
-                    r.setEager();
+                if (r.get() instanceof ClassInstance object && object.getInstanceType().asSuper(klass) != null) {
+                    object.clearId();
+                    return object.getReference();
+                }
             }
+            return r;
         });
     }
 
@@ -617,8 +606,7 @@ public class Instances {
                     var r1 = object.getReference();
                     object.setFieldForce(StdField.enumName.get(), Instances.stringInstance(""));
                     object.setFieldForce(StdField.enumOrdinal.get(), Instances.intInstance(-1));
-                    var ec = mapEnumConstant(r1, enumClass, context);
-                    return redirectStatus != null ? new RedirectingReference(referent, ec, redirectStatus) : ec;
+                    return mapEnumConstant(r1, enumClass, context);
                 }
             }
             return r;
@@ -635,15 +623,6 @@ public class Instances {
         if (found == null)
             throw new IllegalStateException("Failed to find an enum constant mapper in class " + enumClass.getName());
         return found;
-    }
-
-    public static void setEagerFlag(List<Instance> referring, Id id) {
-        for (Instance ref : referring) {
-            ref.forEachReference(r -> {
-                if (r.idEquals(id))
-                    r.setEager();
-            });
-        }
     }
 
     public static void initializeField(ClassInstance instance, Field field, IInstanceContext context) {
@@ -739,7 +718,10 @@ public class Instances {
     }
 
     private static void computeSuper(ClassInstance instance, Klass klass, IInstanceContext context) {
+        var tracing = DebugEnv.traceMigration;
         var superInitializer = findSuperInitializer(klass);
+        if (tracing)
+            log.trace("Initializing super klass for instance {} with initializer {}", instance, superInitializer);
         if (superInitializer != null) {
             var initializer = requireNonNull(superInitializer);
             var s = requireNonNull(Flows.invoke(initializer.getRef(), instance, List.of(), context)).resolveObject();
@@ -754,71 +736,6 @@ public class Instances {
                                     () -> "Default value is missing for field: " + field.getQualifiedName()));
                 }
             });
-        }
-    }
-
-    public static void rollbackDDL(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
-        for (FieldChange fieldChange : commit.getFieldChanges()) {
-            var klass = context.getKlass(fieldChange.klassId());
-            for (Instance instance : instances) {
-                if (instance instanceof ClassInstance object) {
-                    var k = object.getInstanceType().asSuper(klass);
-                    if (k != null)
-                        object.tryClearUnknownField(k.getKlassTag(), fieldChange.newTag());
-                }
-            }
-        }
-        for (Instance instance : instances) {
-            if(instance instanceof MvInstance mvInst) {
-                for (String toChildFieldId : commit.getToChildFieldIds()) {
-                    var field = context.getField(toChildFieldId);
-                    if (instance instanceof ClassInstance object) {
-                        var k = object.getInstanceType().asSuper(field.getDeclaringType());
-                        if (k != null) {
-                            var value = object.getField(field);
-                            if (value instanceof Reference ref)
-                                ref.resolveMv().clearParent();
-                        }
-                    }
-                }
-                if (mvInst.isRemoving())
-                    mvInst.clearRemoving();
-            }
-        }
-        for (List<String> klassIdsList : List.of(commit.getEntityToValueKlassIds(), commit.getValueToEntityKlassIds())) {
-            for (String klassId : klassIdsList) {
-                var klass = context.getKlass(klassId);
-                for (Instance instance : instances) {
-                    instance.forEachReference(r -> {
-                        if (r.isEager()) {
-                            var referent = r.get();
-                            if (referent instanceof ClassInstance object && object.getInstanceType().asSuper(klass) != null) {
-                                if (object.isValue())
-                                    context.remove(object);
-                                else
-                                    r.clearEager();
-                            }
-                        }
-                    });
-                }
-            }
-        }
-        for (String klassId : commit.getToEnumKlassIds()) {
-            var klass = context.getKlass(klassId);
-            for (Instance instance : instances) {
-                if (instance instanceof MvInstance mvInst) {
-                    mvInst.transformReference((r, isChild, type) -> {
-                        if (r instanceof RedirectingReference && type.isAssignableFrom(klass.getType())) {
-                            if (r.get() instanceof ClassInstance object && object.getInstanceKlass() == klass) {
-                                object.tryClearUnknownField(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag());
-                                object.tryClearUnknownField(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag());
-                                return object.getReference();
-                            }
-                        }
-                        return r;
-                    });
-                }
-            }
         }
     }
 

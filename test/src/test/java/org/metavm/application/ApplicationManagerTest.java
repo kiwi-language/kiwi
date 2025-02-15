@@ -37,7 +37,8 @@ public class ApplicationManagerTest extends TestCase {
                 ),
                 verificationCodeService,
                 bootResult.idProvider(),
-                entityQueryService
+                entityQueryService,
+                bootResult.schemaManager()
         );
     }
 

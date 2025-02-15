@@ -44,7 +44,6 @@ public class InstanceContextBuilder {
     private long timeout;
     private boolean changeLogDisabled;
 
-
     public InstanceContextBuilder(long appId,
                                   IInstanceStore instanceStore,
                                   IdInitializer idInitializer) {
@@ -152,6 +151,11 @@ public class InstanceContextBuilder {
         return this;
     }
 
+    public InstanceContextBuilder migrating(boolean migrating) {
+        if (migrating)
+            instanceStore = new MigrationInstanceStore(instanceStore);
+        return this;
+    }
 
     public IInstanceContext build() {
         if (executor == null)

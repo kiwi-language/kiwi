@@ -66,6 +66,7 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitEntityMessage() {
+        output.writeLong(readLong());
         output.writeLong(readTreeId());
         output.writeLong(readLong());
         visitEntity();
@@ -95,27 +96,14 @@ public class StreamCopier extends StreamVisitor {
     private void copyInstance() {
         var nodeId = readLong();
         output.writeLong(nodeId);
-        visitInstance(-1L, -1L, false, getTreeId(), nodeId);
+        visitInstance(getTreeId(), nodeId);
     }
 
     @Override
-    public void visitRelocatingInstance() {
-        var oldTreeId = readLong();
-        output.writeLong(oldTreeId);
-        var oldNodeId = readLong();
-        output.writeLong(oldNodeId);
-        var useOldId = readBoolean();
-        output.writeBoolean(useOldId);
-        var nodeId = readLong();
-        output.writeLong(nodeId);
-        visitInstance(oldTreeId, oldNodeId, useOldId, getTreeId(), nodeId);
-    }
-
-    @Override
-    public void visitInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
+    public void visitInstance(long treeId, long nodeId) {
         var typeKey = readTypeKey();
         typeKey.write(output);
-        visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeKey);
+        visitInstanceBody(treeId, nodeId, typeKey);
     }
 
     @Override

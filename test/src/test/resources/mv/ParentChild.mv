@@ -45,12 +45,4 @@ class Parent {
         this.children.clear();
     }
 
-    public void test2() {
-        var child2 = new Child("Child002");
-        var child3 = new Child("Child003");
-        child2.setNext(child3);
-        this.children.add(child2);
-        delete child3;
-    }
-
 }

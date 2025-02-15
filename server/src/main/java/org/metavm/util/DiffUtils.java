@@ -1,6 +1,5 @@
 package org.metavm.util;
 
-import org.apache.ibatis.annotations.Mapper;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.InstanceContext;
 import org.springframework.stereotype.Component;
@@ -125,7 +124,7 @@ public class DiffUtils {
     }
 
     private static boolean isSpringBean0(Class<?> klass) {
-        return klass.isAnnotationPresent(Component.class) || klass.isAnnotationPresent(Mapper.class)
+        return klass.isAnnotationPresent(Component.class)
                 || klass.isAnnotationPresent(Repository.class) || klass.isAnnotationPresent(RestController.class)
                 || klass.isAnnotationPresent(Service.class);
     }

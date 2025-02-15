@@ -218,9 +218,6 @@ public class Inventory {
 
     public static void decreaseInventory(Inventory inventory, long quantity, Unit unit, InventoryOp op) {
         inventory.decreaseQuantity(quantity, unit, op);
-        if(inventory.quantity == 0)
-            Lang.delete(inventory);
-
     }
 
     public static void decreaseQuantity(

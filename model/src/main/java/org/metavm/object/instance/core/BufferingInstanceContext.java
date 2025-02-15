@@ -5,8 +5,6 @@ import org.metavm.entity.*;
 import org.metavm.object.instance.IndexSource;
 import org.metavm.object.instance.TreeNotFoundException;
 import org.metavm.object.instance.TreeSource;
-import org.metavm.object.type.RedirectStatusProvider;
-import org.metavm.object.type.TypeDefProvider;
 import org.metavm.util.*;
 
 import javax.annotation.Nullable;
@@ -61,8 +59,6 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
                     if(instance instanceof ClassInstance clsInst)
                         updateMemoryIndex(clsInst);
                     instance.forEachReference(r -> {
-                        if (r.isEager())
-                            r.get();
                         if(r.isResolved())
                             r.get().accept(this);
                     });
@@ -157,11 +153,4 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
         );
     }
 
-    @Override
-    public void removeForwardingPointer(MvInstance instance, boolean clearingOldId) {
-        Objects.requireNonNull(forwardingPointers.get(instance.getOldId().getTreeId()))
-                .remove(new ForwardingPointer(instance.getOldId(), instance.getCurrentId()));
-        if(clearingOldId)
-            instance.clearOldId();
-    }
 }

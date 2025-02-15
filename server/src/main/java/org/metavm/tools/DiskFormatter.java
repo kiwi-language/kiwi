@@ -98,12 +98,8 @@ public class DiskFormatter {
 
                 try (Connection connection = dataSource.getConnection();
                      Statement statement = connection.createStatement()) {
-                    statement.execute("delete from id_block");
-//                statement.execute("delete from id_region");
-                    statement.execute("delete from instance");
-                    statement.execute("delete from reference");
-                    statement.execute("delete from index_entry");
-                    statement.execute("delete from files");
+                    statement.execute("delete from instance_2");
+                    statement.execute("delete from index_entry_2");
                     statement.execute("delete from id_sequence");
                 } catch (SQLException e) {
                     throw new InternalException("SQL Error", e);

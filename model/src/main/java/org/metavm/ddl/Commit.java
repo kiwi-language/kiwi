@@ -1,5 +1,6 @@
 package org.metavm.ddl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
@@ -22,15 +23,19 @@ import java.util.*;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 @NativeEntity(13)
 @Entity
+@Slf4j
 public class Commit extends org.metavm.entity.Entity implements RedirectStatus, Message {
 
     public static final IndexDef<Commit> IDX_RUNNING = IndexDef.create(Commit.class,
             1, commit -> List.of(Instances.booleanInstance(commit.running)));
 
     public static BiConsumer<Long, Id> META_CONTEXT_INVALIDATE_HOOK;
+    public static BiConsumer<Long, Id> tableSwitchHook;
+    public static LongConsumer dropTmpTableHook;
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
@@ -53,7 +58,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     private List<String> newIndexIds = new ArrayList<>();
     private List<String> searchEnabledKlassIds = new ArrayList<>();
 
-    private CommitState state = CommitState.PREPARING0;
+    private CommitState state = CommitState.MIGRATING;
     private boolean running = true;
     private boolean cancelled = false;
     private boolean submitted;
@@ -126,6 +131,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         this.submitted = true;
         var wal = getWal();
         wal.commit();
+        tableSwitchHook.accept(wal.getAppId(), getId());
         if(META_CONTEXT_INVALIDATE_HOOK != null) {
             META_CONTEXT_INVALIDATE_HOOK.accept(wal.getAppId(), null);
             META_CONTEXT_INVALIDATE_HOOK.accept(wal.getAppId(), wal.getId());
@@ -146,8 +152,10 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         if(state.ordinal() <= this.state.ordinal())
             throw new IllegalStateException("Invalid state transition from " + this.state + " to " + state);
         this.state = state;
-        if(state.isTerminal())
-            running = false;
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
     }
 
     public Date getTime() {
@@ -225,7 +233,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
     public void cancel() {
         if(cancelled)
             throw new IllegalStateException("The commit has already been cancelled");
-        if(!state.isPreparing())
+        if(!state.isMigrating())
             throw new IllegalStateException("Cannot cancel a prepared commit");
         cancelled = true;
     }
@@ -248,7 +256,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
 
     @Override
     public boolean shouldRedirect() {
-        return state != CommitState.PREPARING0 && state != CommitState.ABORTING && state != CommitState.ABORTED;
+        return state != CommitState.MIGRATING && state != CommitState.ABORTING && state != CommitState.ABORTED;
     }
 
     @Nullable

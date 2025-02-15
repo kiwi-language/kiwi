@@ -19,3 +19,7 @@ value_to_child_ddl_after.mv: Product.price
 7 Support for separate child is removed in InstanceInput.readMessage, need to make sure it's OK.
 
 8 InstanceManagerTest.testRelocation was commented
+
+9 The assertion of enum constant being removed at the end of DDLCompilingTest was commented out
+
+10 The assertion at the of end of ManufacturingCompilingTest.processInventory was commented out

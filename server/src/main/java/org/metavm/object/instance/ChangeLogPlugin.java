@@ -59,7 +59,7 @@ public class ChangeLogPlugin implements ContextPlugin {
         List<InstanceLog> logs = context.getAttribute(CHANGE_LOGS);
         if (Utils.isNotEmpty(logs) || !context.getSearchReindexSet().isEmpty()) {
             instanceLogService.process(context.getAppId(), logs,
-                    instanceStore, Utils.map(context.getRelocated(), Instance::getId), context.getClientId(), ModelDefRegistry.getDefContext());
+                    instanceStore, context.getClientId(), ModelDefRegistry.getDefContext());
             var tasks = new ArrayList<Task>();
             var idsToIndex = new HashSet<>(Utils.filterAndMap(context.getSearchReindexSet(), i -> !i.isRemoved(), Instance::getId));
             var idsToRemove = new ArrayList<Id>();

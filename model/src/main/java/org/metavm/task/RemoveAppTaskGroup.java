@@ -49,7 +49,6 @@ public class RemoveAppTaskGroup extends TaskGroup {
 
     @Override
     protected void onCompletion(IInstanceContext context, IInstanceContext taskContext) {
-        context.remove(context.getEntity(Application.class, appId));
     }
 
     @Override

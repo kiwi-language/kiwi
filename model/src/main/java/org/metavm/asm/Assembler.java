@@ -379,9 +379,6 @@ public class Assembler {
             var parentKlass = klasses.peekLast();
             var qualName = parentKlass == null ? getCompilationUnit().getDefinitionName(name) :
                     parentKlass.getQualifiedName() + "." + name;
-            if (parentKlass != null) {
-                logger.debug("Creating inner klass {}", qualName);
-            }
             var klass = findKlass(qualName);
             var kind = ClassKind.fromTypeCategory(typeCategory);
             boolean searchable = false;
@@ -983,10 +980,6 @@ public class Assembler {
                     var g = Nodes.goto_(code);
                     g.setTarget(entry);
                     ifNode.setTarget(Nodes.label(code));
-                }
-                else if (statement.DELETE() != null) {
-                    parseExpression(statement.expression());
-                    Nodes.delete(code);
                 }
                 else if(statement.localVariableDeclaration() != null) {
                     var callable = (AsmCallable) this.scope;

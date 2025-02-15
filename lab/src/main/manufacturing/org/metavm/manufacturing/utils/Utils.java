@@ -54,10 +54,6 @@ public class Utils {
     }
 
     public static <T> void setChildren(List<T> list, List<T> newList) {
-        var set = new HashSet<>(newList);
-        for (T t : list) {
-            if (!set.contains(t)) Lang.delete(t);
-        }
         list.clear();
         list.addAll(newList);
     }

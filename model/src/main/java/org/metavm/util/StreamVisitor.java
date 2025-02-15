@@ -43,7 +43,6 @@ public class StreamVisitor {
             case WireTypes.REDIRECTING_REFERENCE -> visitRedirectingReference();
             case WireTypes.REDIRECTING_INSTANCE -> visitRedirectingInstance();
             case WireTypes.INSTANCE -> visitInstance();
-            case WireTypes.RELOCATING_INSTANCE -> visitRelocatingInstance();
             case WireTypes.VALUE_INSTANCE -> visitValueInstance();
             case WireTypes.REMOVING_INSTANCE -> visitRemovingInstance();
             case WireTypes.CLASS_TYPE -> visitClassType();
@@ -255,7 +254,7 @@ public class StreamVisitor {
     public void visitGrove() {
         int trees = readInt();
         for (int i = 0; i < trees; i++) {
-            visitTree();;
+            visitTree();
         }
     }
 
@@ -290,6 +289,7 @@ public class StreamVisitor {
     }
 
     public void visitEntityMessage() {
+        readLong();
         readTreeId();
         visitNextNodeId(input.readLong());
         visitEntity();
@@ -309,15 +309,11 @@ public class StreamVisitor {
     }
 
     public void visitInstance() {
-        visitInstance(-1L, -1L, false, getTreeId(), readLong());
+        visitInstance(getTreeId(), readLong());
     }
 
-    public void visitRelocatingInstance() {
-        visitInstance(readLong(), readLong(), readBoolean(), getTreeId(), readLong());
-    }
-
-    public void visitInstance(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId) {
-        visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, TypeKey.read(input));
+    public void visitInstance(long treeId, long nodeId) {
+        visitInstanceBody(treeId, nodeId, TypeKey.read(input));
     }
 
     public void visitValueInstance() {
@@ -376,7 +372,7 @@ public class StreamVisitor {
         return input.readBoolean();
     }
 
-    public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
         visitBody(typeOrTypeKey);
     }
 

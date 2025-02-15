@@ -29,8 +29,8 @@ public record InstanceIndexQuery(
 
     public boolean memoryOnly() {
         return index.isIdNull()
-                || from != null && Utils.anyMatch(from.values(), i -> i instanceof Reference d && !d.isInlineValueReference() && !d.isIdInitialized())
-                || to != null && Utils.anyMatch(to.values(), i -> i instanceof Reference d && !d.isInlineValueReference() && !d.isIdInitialized());
+                || from != null && Utils.anyMatch(from.values(), i -> i instanceof Reference d && !d.isValueReference() && !d.isIdInitialized())
+                || to != null && Utils.anyMatch(to.values(), i -> i instanceof Reference d && !d.isValueReference() && !d.isIdInitialized());
     }
 
     @Override

@@ -7,12 +7,9 @@ import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.WAL;
-import org.metavm.object.version.Version;
-import org.metavm.object.version.VersionRepository;
-import org.metavm.object.version.Versions;
-import org.metavm.task.PublishMetadataEventTask;
 import org.metavm.task.SynchronizeSearchTask;
 import org.metavm.util.ContextUtil;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.Instances;
 import org.metavm.util.Utils;
 import org.slf4j.Logger;
@@ -23,7 +20,6 @@ import org.springframework.transaction.support.TransactionOperations;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 
 @Component
@@ -44,17 +40,15 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
         this.instanceStore = instanceStore;
         this.transactionOperations = transactionOperations;
         this.metaContextCache = metaContextCache;
-        WAL.setPostProcessHook((appId, logs) -> process(appId, logs, instanceStore, List.of(), null, ModelDefRegistry.getDefContext()));
     }
 
     @Override
-    public void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, List<Id> migrated, @Nullable String clientId, DefContext defContext) {
-        if (Utils.isEmpty(logs) && migrated.isEmpty())
+    public void process(long appId, List<InstanceLog> logs, IInstanceStore instanceStore, @Nullable String clientId, DefContext defContext) {
+        if (Utils.isEmpty(logs))
             return;
         try (var ignored = ContextUtil.getProfiler().enter("InstanceLogServiceImpl.process")) {
-            var newInstanceIds = Utils.filterAndMapUnique(logs, InstanceLog::isInsert, InstanceLog::getId);
-            handleDDL(appId, newInstanceIds);
-            handleMetaChanges(appId, logs, clientId);
+            var instanceIds = Utils.filterAndMapUnique(logs, InstanceLog::isInsertOrUpdate, InstanceLog::getId);
+            handleMigration(appId, instanceIds);
         }
     }
 
@@ -74,88 +68,34 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
             }
     }
 
-    private void handleMetaChanges(long appId, List<InstanceLog> logs, @Nullable String clientId) {
-        try (var ignored = ContextUtil.getProfiler().enter("handleMetaChanges")){
-            var changedTypeDefIds = new HashSet<String>();
-            var changedFunctionIds = new HashSet<String>();
-            var removedTypeDefIds = new HashSet<String>();
-            var removedFunctionIds = new HashSet<String>();
-            for (InstanceLog log : logs) {
-                var id = log.getId();
-                var entityTag = log.getEntityTag();
-                if (entityTag == EntityRegistry.TAG_Klass) {
-                    if (log.isDelete())
-                        removedTypeDefIds.add(id.toString());
-                    else
-                        changedTypeDefIds.add(id.toString());
-                } else if (entityTag == EntityRegistry.TAG_Function) {
-                    if (log.isDelete())
-                        removedFunctionIds.add(id.toString());
-                    else
-                        changedFunctionIds.add(id.toString());
-                }
-            }
-            if (!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty()
-                    || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
-                transactionOperations.executeWithoutResult(s -> {
-                    try (var context = newContext(appId, builder -> builder.timeout(0))) {
-                        context.setDescription("MetaChange");
-                        var v = Versions.create(
-                                changedTypeDefIds,
-                                removedTypeDefIds,
-                                changedFunctionIds,
-                                removedFunctionIds,
-                                new VersionRepository() {
-                                    @Override
-                                    public Id allocateId() {
-                                        return context.allocateRootId();
-                                    }
-
-                                    @Nullable
-                                    @Override
-                                    public Version getLastVersion() {
-                                        return Utils.first(
-                                                context.query(Version.IDX_VERSION.newQueryBuilder().limit(1).desc(true).build())
-                                        );
-                                    }
-
-                                    @Override
-                                    public void save(Version version) {
-                                        context.bind(version);
-                                    }
-                                });
-                        if (!changedTypeDefIds.isEmpty() || !removedTypeDefIds.isEmpty() || !changedFunctionIds.isEmpty() || !removedFunctionIds.isEmpty()) {
-                            context.bind(new PublishMetadataEventTask(context.allocateRootId(), changedTypeDefIds, removedTypeDefIds, changedFunctionIds, removedFunctionIds, v.getVersion(), clientId));
-                        }
-                        context.finish();
-                    }
-                });
-            }
-        }
-    }
-
-    private void handleDDL(long appId, Collection<Id> instanceIds) {
+    private void handleMigration(long appId, Collection<Id> instanceIds) {
         if (instanceIds.isEmpty() || ContextUtil.isDDL())
             return;
+        var tracing = DebugEnv.traceMigration;
         try (var ignored = ContextUtil.getProfiler().enter("handleDDL")) {
             transactionOperations.executeWithoutResult(s -> {
                 try (var context = newContext(appId, builder -> builder.timeout(0))) {
                     var commit = context.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
-                    if (commit != null) {
+                    if (commit != null/* && commit.getState().isMigrating()*/) {
+                        if (tracing) {
+                            logger.trace("Migrating instances in real time. commit state: {}, appId: {}, instanceIds: {}",
+                                    commit.getState().name(), appId, Utils.join(instanceIds, Id::toString));
+                        }
                         var commitState = commit.getState();
-                        var wal = commitState.isPreparing() ? commit.getWal() : null;
-                        try (var loadedContext = newContext(appId,
-                                metaContextCache.get(appId, wal != null ? wal.getId() : null),
+                        var wal = commit.getWal();
+                        try (var loadedContext = newContext(appId, metaContextCache.get(appId, wal.getId()),
                                 builder -> builder
                                         .readWAL(wal)
                                         .relocationEnabled(commitState.isRelocationEnabled())
+                                        .migrating(true)
+                                        .skipPostProcessing(true)
                                         .timeout(0)
                         )
                         ) {
                             loadedContext.setDescription("DDLHandler");
                             Iterable<Instance> instances = () -> instanceIds.stream().map(loadedContext::get)
                                     .iterator();
-                            commit.getState().process(instances, commit, loadedContext);
+                            Instances.migrate(instances, commit, loadedContext);
                             loadedContext.finish();
                         }
                     }

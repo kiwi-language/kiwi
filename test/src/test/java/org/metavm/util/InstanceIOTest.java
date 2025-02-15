@@ -75,7 +75,7 @@ public class InstanceIOTest extends TestCase {
         var entityMap = new HashMap<Id, Instance>();
         fooKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
         var names = new ArrayInstance(stringArrayType, List.of(Instances.stringInstance("foo")));
-        Assert.assertTrue(names.getReference().isInlineValueReference());
+        Assert.assertTrue(names.getReference().isValueReference());
         var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType())
                 .data(Map.of(namesField, names.getReference()))
                 .id(PhysicalId.of(1L, 0L))

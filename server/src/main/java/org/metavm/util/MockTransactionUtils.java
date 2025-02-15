@@ -12,6 +12,24 @@ public class MockTransactionUtils {
     }
 
     public static void commitTransaction() {
+        doBeforeCommit();
+        doAfterCommit();
+        TransactionSynchronizationManager.clear();
+    }
+
+    private static void doBeforeCommit() {
+        var syncs = TransactionSynchronizationManager.getSynchronizations();
+        var offset = 0;
+        do {
+            for (int i = offset; i < syncs.size(); i++) {
+                syncs.get(i).beforeCommit(TransactionSynchronizationManager.isCurrentTransactionReadOnly());
+            }
+            offset = syncs.size();
+            syncs = TransactionSynchronizationManager.getSynchronizations();
+        } while (offset != syncs.size());
+    }
+
+    private static void doAfterCommit() {
         var syncs = TransactionSynchronizationManager.getSynchronizations();
         var offset = 0;
         do {
@@ -21,7 +39,6 @@ public class MockTransactionUtils {
             offset = syncs.size();
             syncs = TransactionSynchronizationManager.getSynchronizations();
         } while (offset != syncs.size());
-        TransactionSynchronizationManager.clear();
     }
 
     public static void doInTransactionWithoutResult(Runnable action) {

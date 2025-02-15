@@ -376,23 +376,8 @@ public class MockDefContext extends DefContext {
     }
 
     @Override
-    public List<Instance> getByReferenceTargetId(Id targetId, long startExclusive, long limit) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public List<Instance> getRelocated() {
-        return List.of();
-    }
-
-    @Override
     public void buffer(Id id) {
 
-    }
-
-    @Override
-    public void removeForwardingPointer(MvInstance instance, boolean clearingOldId) {
-        throw new UnsupportedOperationException();
     }
 
     @NotNull

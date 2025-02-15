@@ -121,26 +121,24 @@ public class Worker extends EntityContextFactoryAware {
     }
 
     private Task runTask(ShadowTask shadowTask) {
+        var tracing = DebugEnv.traceTaskExecution;
         return transactionOperations.execute(s -> {
             try (var appContext = newContext(shadowTask.getAppId())) {
                 var appTask = appContext.getEntity(Task.class, shadowTask.getAppTaskId());
                 appContext.setTimeout(appTask.getTimeout());
-                logger.info("Running task {}-{}", shadowTask.getAppId(), appTask.getTitle());
+                logger.info("Running task {}. app ID: {}, task ID: {}, shadow task ID: {}",
+                        appTask.getTitle(), shadowTask.getAppId(), appTask.getId(), shadowTask.getId());
                 boolean terminated;
                 try {
-                    var parentContext = /*shadowTask.getDefWal() != null ?
-                            DefContextUtils.createReversedDefContext(shadowTask.getDefWal(), entityContextFactory,
-                                    NncUtils.map(appTask.getExtraStdKlassIds(), Id::toString)) :*/
-//                            ModelDefRegistry.getDefContext();
-                            (
-                                    shadowTask.getAppId() != Constants.ROOT_APP_ID ?
+                    if (appTask.isMigrating())
+                        ContextUtil.setDDL(true);
+                    var parentContext = shadowTask.getAppId() != Constants.ROOT_APP_ID ?
                                 metaContextCache.get(shadowTask.getAppId(), appTask.getMetaWAL() != null ? appTask.getMetaWAL().getId() : null) :
-                                            ModelDefRegistry.getDefContext()
-                            );
-                    IInstanceContext oldContext = ContextUtil.getEntityContext();
+                                            ModelDefRegistry.getDefContext();
                     try (var walContext = entityContextFactory.newContext(shadowTask.getAppId(), parentContext,
                             builder -> builder.readWAL(appTask.getWAL())
                                     .relocationEnabled(appTask.isRelocationEnabled())
+                                    .migrating(appTask.isMigrating())
                                     .timeout(appTask.getTimeout()))) {
                         terminated = runTask0(appTask, walContext, appContext);
                         if(!appTask.isFailed())
@@ -148,27 +146,26 @@ public class Worker extends EntityContextFactoryAware {
                         if(terminated)
                             logger.info("Task {}-{} completed successfully", shadowTask.getAppId(), appTask.getTitle());
                     }
-                    finally {
-//                        if(parentContext instanceof ReversedDefContext)
-//                            SystemConfig.clearLocal();
-                    }
                 }
                 catch (Exception e) {
                     logger.error("Failed to execute task {}-{}", shadowTask.getAppId(), appTask.getTitle(), e);
                     terminated = true;
                 }
+                finally {
+                    if (appTask.isMigrating())
+                        ContextUtil.setDDL(false);
+                }
                 if (terminated) {
-                    var group = appTask.getGroup();
-                    if (group != null) {
-                        if (group.isTerminated())
-                            appContext.remove(group);
-                    } else
-                        appContext.remove(appTask);
+                    if (tracing)
+                        logger.trace("Removing shadow task {}", shadowTask.getId());
                     try (var context = newPlatformContext()) {
                         context.remove(context.getEntity(ShadowTask.class, shadowTask.getId()));
                         context.finish();
                     }
                 }
+                if (tracing)
+                    logger.trace("After running task {}. task ID: {}, terminated: {}",
+                            appTask.getTitle(), appTask.getId(), terminated);
                 appContext.finish();
                 return appTask;
             }

@@ -1,12 +1,12 @@
 package org.metavm.manufacturing.production;
 
-import org.elasticsearch.core.Nullable;
 import org.metavm.api.EntityField;
 import org.metavm.manufacturing.material.Material;
 import org.metavm.manufacturing.material.QualityInspectionState;
 import org.metavm.manufacturing.material.Unit;
 import org.metavm.manufacturing.utils.Utils;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;

@@ -143,6 +143,7 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
     @Override
     public void writeTo(MvOutput output) {
         output.write(TreeTags.ENTITY);
+        output.writeLong(getVersion());
         output.writeLong(state.id.getTreeId());
         output.writeLong(getNextNodeId());
         output.writeEntity(this);

@@ -156,10 +156,6 @@ public abstract class ElementVisitor<R> {
         return visitNode(node);
     }
 
-    public R visitDeleteObjectNode(DeleteObjectNode node) {
-        return visitNode(node);
-    }
-
     public R visitGetUniqueNode(GetUniqueNode node) {
         return visitNode(node);
     }

@@ -29,12 +29,9 @@ Relocation process
  */
 public class Reference implements Value {
 
-    public static final int FLAG_FORWARDED = 1;
-    public static final int FLAG_EAGER = 2;
-
     public static final Logger logger = LoggerFactory.getLogger(Reference.class);
 
-    private @Nullable Id id;
+    private final @Nullable Id id;
     private @Nullable Instance target;
     private final Supplier<Instance> resolver;
     private int flags = 0;
@@ -67,7 +64,7 @@ public class Reference implements Value {
 
     @Override
     public Id getId() {
-        return Objects.requireNonNull(tryGetId());
+        return Objects.requireNonNull(tryGetId(), () -> "Instance " + get() + " has an uninitialized ID");
     }
 
     @Nullable
@@ -80,10 +77,6 @@ public class Reference implements Value {
         this.target = target;
     }
 
-    public boolean isForwarded() {
-        return (flags & FLAG_FORWARDED) != 0;
-    }
-
     @Nullable
     @Override
     public Id tryGetId() {
@@ -92,16 +85,11 @@ public class Reference implements Value {
 
     @Override
     public FieldValue toFieldValueDTO() {
-        var target = get();
-//        if(target.isInlineValue() || target.isArray() || (target instanceof ClassInstance clsInst && clsInst.isList()))
-//            return new InstanceFieldValue(resolve().getTitle(), resolve().toDTO());
-//        else {
-            return new ReferenceFieldValue(
-                    getTitle(),
-                    Objects.requireNonNull(this.getStringIdForDTO(),
-                            () -> "Instance " + this.resolveDurable() + " has an uninitialized ID"),
-                    getValueType().toExpression());
-//        }
+        return new ReferenceFieldValue(
+                getTitle(),
+                Objects.requireNonNull(this.getStringIdForDTO(),
+                        () -> "Instance " + this.resolveDurable() + " has an uninitialized ID"),
+                getValueType().toExpression());
     }
 
     @Override
@@ -116,7 +104,7 @@ public class Reference implements Value {
 
     @Override
     public void write(MvOutput output) {
-        if (isInlineValueReference())
+        if (isValueReference())
             writeInstance(output);
         else {
             if(flags != 0) {
@@ -166,55 +154,9 @@ public class Reference implements Value {
         return target != null;
     }
 
-    public void setForwarded() {
-        flags |= FLAG_FORWARDED;
-    }
-
-    public void clearForwarded() {
-        flags &= ~FLAG_FORWARDED;
-    }
-
-    public boolean isEager() {
-        return (this.flags & FLAG_EAGER) != 0;
-    }
-
-    public void setEager() {
-        this.flags |= FLAG_EAGER;
-    }
-
-    public void clearEager() {
-        flags &= ~FLAG_EAGER;
-    }
-
     public void setFlags(int flags) {
         this.flags = flags;
     }
-
-    public Reference forward() {
-        assert isForwarded();
-        var r = get().getReference();
-        r.setFlags(flags & ~FLAG_FORWARDED);
-        return r;
-    }
-
-    //    public IInstanceContext getContext() {
-//        return target != null ? target.getContext() : context;
-//    }
-
-//    public void setContext(IInstanceContext context) {
-//        this.context = context;
-//    }
-
-//    public Object getMappedEntity() {
-//        return target != null ? target.getMappedEntity() : mappedEntity;
-//    }
-
-//    public void setMappedEntity(Object mappedEntity) {
-//        if (target != null)
-//            target.setMappedEntity(mappedEntity);
-//        else
-//            this.mappedEntity = mappedEntity;
-//    }
 
     public long getTreeId() {
         return Objects.requireNonNull(id).getTreeId();
@@ -260,21 +202,16 @@ public class Reference implements Value {
     public boolean equals(Object obj) {
         // TODO refactor this mess
         if (obj instanceof Reference that) {
-            that = that.tryRedirect();
             var id = this.tryGetId();
             var thatId = that.tryGetId();
             if (!(id instanceof PhysicalId) && !(thatId instanceof PhysicalId))
                 return get() == that.get();
             if (id != null && id.equals(thatId))
                 return true;
-            if (id == null || thatId == null || isForwarded() || that.isForwarded())
+            if (id == null || thatId == null)
                 return get() == that.get();
         }
         return false;
-    }
-
-    public Reference tryRedirect() {
-        return this;
     }
 
     @Override
@@ -288,11 +225,7 @@ public class Reference implements Value {
     }
 
     public boolean isValueReference() {
-        return (id == null || target != null) && get().isValue();
-    }
-
-    public boolean isInlineValueReference() {
-        return id == null && get().isInlineValue();
+        return id == null && get().isValue();
     }
 
     public boolean isResolved() {
@@ -311,11 +244,6 @@ public class Reference implements Value {
     public ClosureContext getClosureContext() {
         var r = get();
         return r instanceof ClassInstance obj ? obj.getClosureContext() : null;
-    }
-
-    public void refreshId() {
-        if (!(id instanceof PhysicalId))
-            id = get().tryGetId();
     }
 
 }

@@ -1,10 +1,8 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.persistence.InstancePO;
-import org.metavm.object.instance.persistence.ReferencePO;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.type.TypeOrTypeKey;
 import org.metavm.util.*;
@@ -18,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
 public class ContextDifference {
 
@@ -26,7 +23,6 @@ public class ContextDifference {
 
     private final long appId;
     private final EntityChange<VersionRT> entityChange = new EntityChange<>(VersionRT.class);
-    private final EntityChange<ReferencePO> referenceChange = new EntityChange<>(ReferencePO.class);
     private final EntityChange<InstancePO> treeChanges = new EntityChange<>(InstancePO.class);
     private int numSubTreeAdded;
     private int numSubTreeRemoved;
@@ -34,18 +30,6 @@ public class ContextDifference {
 
     public ContextDifference(long appId) {
         this.appId = appId;
-    }
-
-    public void diffReferences(Collection<ReferencePO> head, Collection<ReferencePO> buffer) {
-        try (var ignored = ContextUtil.getProfiler().enter("Difference.diffReferences")) {
-            Utils.forEachPair(head, buffer, Function.identity(), (r1, r2) -> {
-                if (r1 == null) {
-                    referenceChange.addInsert(r2);
-                } else if (r2 == null) {
-                    referenceChange.addDelete(r1);
-                }
-            });
-        }
     }
 
     public void diffTrees(Collection<Tree> head, Collection<Tree> buffer) {
@@ -62,7 +46,7 @@ public class ContextDifference {
 
     private void diffTree(@Nullable Tree t1, @Nullable Tree t2) {
         if (t1 == null && t2 == null)
-            return;
+            throw new NullPointerException("Both trees are null");
         if (t1 == null) {
             if (DebugEnv.traceDifference)
                 logger.trace("Tree {} is created", t2.id());
@@ -88,14 +72,14 @@ public class ContextDifference {
         if (t1 == null) {
             getInstanceIds(t2).forEach(s -> {
                 if (DebugEnv.traceDifference)
-                    logger.trace("Entity {} created, treeId: {}", s.getId(), s.getId().getTreeId());
-                entityChange.addInsert(new VersionRT(appId, s.getId(), t2.version(), s.entityTag()));
+                    logger.trace("Entity {} created, treeId: {}", s.id(), s.id().getTreeId());
+                entityChange.addInsert(new VersionRT(appId, s.id(), t2.version(), s.entityTag()));
             });
         } else if (t2 == null) {
             getInstanceIds(t1).forEach(s -> {
                 if (DebugEnv.traceDifference)
-                    logger.trace("Entity {} deleted", s.getId());
-                entityChange.addDelete(new VersionRT(appId, s.getId(), t1.version() + 1, s.entityTag()));
+                    logger.trace("Entity {} deleted", s.id());
+                entityChange.addDelete(new VersionRT(appId, s.id(), t1.version() + 1, s.entityTag()));
             });
 
         } else if (!Arrays.equals(t1.data(), t2.data())) {
@@ -104,16 +88,16 @@ public class ContextDifference {
                     return;
                 if (s1 == null) {
                     if (DebugEnv.traceDifference)
-                        logger.trace("Entity {} created", s2.getId());
-                    entityChange.addInsert(new VersionRT(appId, s2.getId(), t2.version(), s2.entityTag()));
+                        logger.trace("Entity {} created", s2.id());
+                    entityChange.addInsert(new VersionRT(appId, s2.id(), t2.version(), s2.entityTag()));
                 } else if (s2 == null) {
                     if (DebugEnv.traceDifference)
-                        logger.trace("Entity {} deleted", s1.getId());
-                    entityChange.addDelete(new VersionRT(appId, s1.getId(), t2.version(), s1.entityTag()));
+                        logger.trace("Entity {} deleted", s1.id());
+                    entityChange.addDelete(new VersionRT(appId, s1.id(), t2.version(), s1.entityTag()));
                 } else if (!s1.equals(s2)) {
                     if (DebugEnv.traceDifference)
-                        logger.trace("Entity {} updated", s1.getId());
-                    entityChange.addUpdate(new VersionRT(appId, s2.getId(), t2.version(), s2.entityTag()));
+                        logger.trace("Entity {} updated", s1.id());
+                    entityChange.addUpdate(new VersionRT(appId, s2.id(), t2.version(), s2.entityTag()));
                 }
             });
         }
@@ -152,24 +136,19 @@ public class ContextDifference {
         new StreamVisitor(tree.openInput()) {
 
             @Override
-            public void visitInstanceBody(long oldTreeId, long oldNodeId, boolean useOldId, long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+            public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
                 var id =  PhysicalId.of(treeId, nodeId);
-                var oldId = oldTreeId != -1L ? PhysicalId.of(oldTreeId, oldNodeId) : null;
-                ids.add(new DiffId(id, oldId, useOldId, -1));
-                super.visitInstanceBody(oldTreeId, oldNodeId, useOldId, treeId, nodeId, typeOrTypeKey);
+                ids.add(new DiffId(id, -1));
+                super.visitInstanceBody(treeId, nodeId, typeOrTypeKey);
             }
 
             @Override
             public void visitEntityBody(int tag, Id id) {
-                ids.add(new DiffId(id, null, false, tag));
+                ids.add(new DiffId(id, tag));
                 super.visitEntityBody(tag, id);
             }
         }.visitGrove();
         return ids;
-    }
-
-    public EntityChange<ReferencePO> getReferenceChange() {
-        return referenceChange;
     }
 
     public EntityChange<InstancePO> getTreeChanges() {

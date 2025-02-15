@@ -7,7 +7,7 @@ import org.metavm.application.rest.dto.ApplicationCreateRequest;
 import org.metavm.common.Result;
 import org.metavm.object.instance.core.Id;
 import org.metavm.system.CacheManager;
-import org.metavm.system.StoreManager;
+//import org.metavm.system.StoreManager;
 import org.metavm.user.PlatformUserManager;
 import org.metavm.user.Tokens;
 import org.metavm.user.rest.controller.LoginController;
@@ -59,18 +59,23 @@ public class SystemController {
 
     private final CacheManager cacheManager;
 
-    private final StoreManager storeManager;
+//    private final StoreManager storeManager;
 
 //    private final DDLManager ddlManager;
 
-    public SystemController(ApplicationManager applicationManager, LoginController loginController, BootstrapController bootstrapController, PlatformUserManager platformUserManager, CacheManager cacheManager, StoreManager storeManager
+    public SystemController(ApplicationManager applicationManager,
+                            LoginController loginController,
+                            BootstrapController bootstrapController,
+                            PlatformUserManager platformUserManager,
+                            CacheManager cacheManager
+                            /*, StoreManager storeManager */
             /*, DDLManager ddlManager*/) {
         this.applicationManager = applicationManager;
         this.loginController = loginController;
         this.bootstrapController = bootstrapController;
         this.platformUserManager = platformUserManager;
         this.cacheManager = cacheManager;
-        this.storeManager = storeManager;
+//        this.storeManager = storeManager;
 //        this.ddlManager = ddlManager;
     }
 
@@ -128,16 +133,16 @@ public class SystemController {
         return Result.voidSuccess();
     }
 
-    @GetMapping("/instance/{id:[0-9]+}")
-    public Result<Object> getInstance(@PathVariable("id") long id) {
-        return Result.success(storeManager.getInstance(id));
-    }
+//    @GetMapping("/instance/{id:[0-9]+}")
+//    public Result<Object> getInstance(@PathVariable("id") long id) {
+//        return Result.success(storeManager.getInstance(id));
+//    }
 
-    @GetMapping("/cache/{id:[0-9]+}")
-    public Result<Object> getCached(@PathVariable("id") long id) {
-        return Result.success(storeManager.getCached(id));
-    }
-
+//    @GetMapping("/cache/{id:[0-9]+}")
+//    public Result<Object> getCached(@PathVariable("id") long id) {
+//        return Result.success(storeManager.getCached(id));
+//    }
+//
     @PostMapping("/download-cache/{id:[0-9]+}")
     public Result<Void> saveCacheBytes(@PathVariable("id") long id) {
         cacheManager.saveCacheBytes(id);

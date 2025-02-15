@@ -103,19 +103,6 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 System.out.println(args.getFirst().getTitle());
                 return FlowExecResult.of(null);
             }),
-    delete(
-            "void delete(any instance)",
-            true,
-            List.of(ReflectionUtils.getMethod(Lang.class, "delete", Object.class)),
-            (func, args, callContext) -> {
-                var entityContext = ContextUtil.getEntityContext();
-                var instance = args.getFirst();
-                if (instance instanceof Reference ref) {
-                    entityContext.remove(ref.get());
-                    return FlowExecResult.of(null);
-                } else
-                    throw new BusinessException(ErrorCode.DELETE_NON_DURABLE_INSTANCE, instance);
-            }),
     setContext(
             "void setContext(string key, any value)",
             true,

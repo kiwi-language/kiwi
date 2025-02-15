@@ -118,7 +118,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
             if (user == null) {
                 throw BusinessException.userNotFound(userId);
             }
-            context.remove(user);
+            user.setState(UserState.DETACHED);
             context.finish();
         }
     }
@@ -161,7 +161,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
 
     public void joinApplication(PlatformUser platformUser, Application app, IInstanceContext platformContext) {
         platformUser.joinApplication(app);
-        if (app.getTreeId() != platformContext.getAppId()) {
+        if (app.getTreeId() != platformContext.getAppId() && app.getTreeId() != Constants.ROOT_APP_ID) {
             if (app.isIdNull())
                 platformContext.initIds();
             ContextUtil.enterApp(app.getTreeId(), null);

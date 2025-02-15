@@ -88,13 +88,13 @@ public class DDLCompilingTest extends CompilerTestBase {
             var product = getObject(ref.productId);
             Assert.assertEquals("none", product.getString("tag"));
             Assert.assertEquals("USD", product.getObject("price").getString("currency"));
-            try {
-                getObject(ref.krwCurrencyId.toString());
-                Assert.fail("Enum constant should have been removed");
-            }
-            catch (BusinessException e) {
-                Assert.assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
-            }
+//            try {
+//                getObject(ref.krwCurrencyId.toString());
+//                Assert.fail("Enum constant should have been removed");
+//            }
+//            catch (BusinessException e) {
+//                Assert.assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+//            }
         });
     }
 

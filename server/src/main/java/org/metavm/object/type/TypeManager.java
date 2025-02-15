@@ -9,25 +9,20 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.flow.Flows;
 import org.metavm.flow.KlassInput;
-import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.rest.TreeDTO;
-import org.metavm.object.type.rest.dto.TreeResponse;
-import org.metavm.object.type.rest.dto.TypeTreeQuery;
-import org.metavm.object.version.VersionManager;
-import org.metavm.object.version.Versions;
+import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.WAL;
+import org.metavm.object.instance.persistence.SchemaManager;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Instances;
-import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -39,54 +34,14 @@ public class TypeManager extends EntityContextFactoryAware {
 
     public static final Logger logger = LoggerFactory.getLogger(TypeManager.class);
 
-    private VersionManager versionManager;
-
     private final BeanManager beanManager;
 
-    public TypeManager(EntityContextFactory entityContextFactory, BeanManager beanManager) {
+    private final SchemaManager schemaManager;
+
+    public TypeManager(EntityContextFactory entityContextFactory, BeanManager beanManager, SchemaManager schemaManager) {
         super(entityContextFactory);
         this.beanManager = beanManager;
-    }
-
-    public TreeResponse queryTrees(TypeTreeQuery query) {
-        try (var context = newContext()) {
-            List<? extends Instance> entities;
-            List<Long> removedIds;
-            long version;
-            if (query.version() == -1L) {
-                entities = versionManager.getAllKlasses(context);
-                removedIds = List.of();
-                version = Versions.getLatestVersion(context);
-            } else {
-                var patch = versionManager.pullInternal(query.version(), context);
-                entities = Utils.merge(
-                        Utils.map(patch.changedTypeDefIds(), context::getTypeDef),
-                        Utils.map(patch.changedFunctionIds(), context::getFunction)
-                );
-                var removedInstanceIds = Utils.merge(
-                        patch.removedTypeDefIds(),
-                        patch.removedFunctionIds()
-                );
-                removedIds = new ArrayList<>();
-                for (String removedInstanceId : removedInstanceIds) {
-                    var id = Id.parse(removedInstanceId);
-                    if (id instanceof PhysicalId physicalId && physicalId.getNodeId() == 0L)
-                        removedIds.add(id.getTreeId());
-                }
-                version = patch.version();
-            }
-            return new TreeResponse(
-                    version,
-                    Utils.filterAndMap(entities,
-                            Instance::isRoot,
-                            t -> getTypeTree(t, context)),
-                    removedIds
-            );
-        }
-    }
-
-    private TreeDTO getTypeTree(Instance entity, IInstanceContext context) {
-        return entity.toTree().toDTO();
+        this.schemaManager = schemaManager;
     }
 
     private void initClass(Klass klass, IInstanceContext context) {
@@ -97,6 +52,8 @@ public class TypeManager extends EntityContextFactoryAware {
 
     @Transactional
     public String deploy(InputStream in) {
+        schemaManager.createInstanceTable(ContextUtil.getAppId(), "instance_tmp");
+        schemaManager.createIndexEntryTable(ContextUtil.getAppId(), "index_entry_tmp");
         SaveTypeBatch batch;
         try (var context = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT))) {
             ContextUtil.setDDL(true);
@@ -106,10 +63,10 @@ public class TypeManager extends EntityContextFactoryAware {
                 bufferingContext.finish();
             }
             var commit = context.bind(batch.buildCommit(wal));
-            if(CommitState.PREPARING0.shouldSkip(commit))
+            if(CommitState.MIGRATING.shouldSkip(commit))
                 context.bind(CommitState.SUBMITTING.createTask(commit, context));
             else
-                context.bind(CommitState.PREPARING0.createTask(commit, context));
+                context.bind(CommitState.MIGRATING.createTask(commit, context));
             context.finish();
             return commit.getStringId();
         } finally {
@@ -166,11 +123,6 @@ public class TypeManager extends EntityContextFactoryAware {
             else
                 throw new BusinessException(ErrorCode.NOT_AN_ENUM_CLASS, klass.getName());
         }
-    }
-
-    @Autowired
-    public void setVersionManager(VersionManager versionManager) {
-        this.versionManager = versionManager;
     }
 
     public Integer getSourceTag(String name) {

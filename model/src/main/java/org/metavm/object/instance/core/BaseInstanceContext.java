@@ -1,10 +1,8 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
-import org.metavm.entity.natives.StatefulNative;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.IndexSource;
 import org.metavm.object.type.Klass;
@@ -460,20 +458,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     @Override
     public void batchRemove(Collection<Instance> instances) {
-        for (Instance instance : instances) {
-            if(instance.tryGetOldId() != null)
-                buffer(instance.getOldId());
-        }
-        for (Instance instance : instances) {
-            if(instance.tryGetOldId() != null)
-                loadTree(instance.getOldId().getTreeId());
-        }
         var removalBatch = getRemovalBatch(instances);
         removalBatch.forEach(i -> remove0(i, removalBatch));
-        for (Instance instance : instances) {
-            if(instance instanceof MvInstance mvInst && mvInst.tryGetOldId() != null)
-                removeForwardingPointer(mvInst, false);
-        }
     }
 
     public boolean remove(Instance instance) {
@@ -604,14 +590,13 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             tail.insertAfter(instance);
             tail = instance;
         }
-        if (instance.tryGetCurrentId() != null) {
+        var id = instance.tryGetId();
+        if (id != null) {
 //            logger.info("Adding instance {} to context, treeId: {}", instance.getId(), instance.getId().tryGetTreeId());
-            if (instanceMap.put(instance.tryGetCurrentId(), instance) != null)
+            if (instanceMap.put(id, instance) != null)
                 logger.warn("Duplicate instance add to context type: {}, ID: {}",
-                        instance.getInstanceType().getTypeDesc(), instance.tryGetCurrentId());
+                        instance.getInstanceType().getTypeDesc(), id);
         }
-        if (instance.tryGetOldId() != null)
-            instanceMap.put(instance.tryGetOldId(), instance);
     }
 
     protected void mapManually(Id id, Instance instance) {
@@ -859,7 +844,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public boolean containsUniqueKey(IndexDef<?> indexDef, Value... values) {
         for (var value : values) {
-            if(value instanceof Reference ref && !ref.isInlineValueReference() && !containsId(ref.getId()))
+            if(value instanceof Reference ref && !ref.isValueReference() && !containsId(ref.getId()))
                 return false ;
         }
         return containsUniqueKey(createIndexKey(indexDef, values));

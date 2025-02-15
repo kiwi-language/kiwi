@@ -59,22 +59,7 @@ public class KlassInput extends MvInput {
     }
 
     @Override
-    public Value readRelocatingInstance() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Value readInstance() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Value readRedirectingInstance() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Value readRedirectingReference() {
         throw new UnsupportedOperationException();
     }
 

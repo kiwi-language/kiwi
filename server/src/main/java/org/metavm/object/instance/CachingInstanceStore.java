@@ -9,6 +9,8 @@ import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.*;
+import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
+import org.metavm.object.instance.persistence.mappers.InstanceMapper;
 import org.metavm.util.ChangeList;
 
 import java.util.*;
@@ -24,8 +26,8 @@ public class CachingInstanceStore implements IInstanceStore {
     }
 
     @Override
-    public void save(ChangeList<InstancePO> diff) {
-        wrapped.save(diff);
+    public void save(long appId, ChangeList<InstancePO> diff) {
+        wrapped.save(appId, diff);
     }
 
     @Override
@@ -39,28 +41,13 @@ public class CachingInstanceStore implements IInstanceStore {
     }
 
     @Override
-    public void saveReferences(ChangeList<ReferencePO> refChanges) {
-        wrapped.saveReferences(refChanges);
-    }
-
-    @Override
-    public void saveIndexEntries(ChangeList<IndexEntryPO> changes) {
-        wrapped.saveIndexEntries(changes);
+    public void saveIndexEntries(long appId, ChangeList<IndexEntryPO> changes) {
+        wrapped.saveIndexEntries(appId, changes);
     }
 
     @Override
     public void saveInstanceLogs(List<InstanceLog> instanceLogs, IInstanceContext context) {
         wrapped.saveInstanceLogs(instanceLogs, context);
-    }
-
-    @Override
-    public ReferencePO getFirstReference(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds) {
-        return wrapped.getFirstReference(appId, targetIds, excludedSourceIds);
-    }
-
-    @Override
-    public List<ReferencePO> getAllStrongReferences(long appId, Set<Id> targetIds, Set<Long> excludedSourceIds) {
-        return wrapped.getAllStrongReferences(appId, targetIds, excludedSourceIds);
     }
 
     @Override
@@ -137,11 +124,6 @@ public class CachingInstanceStore implements IInstanceStore {
     }
 
     @Override
-    public List<Long> getByReferenceTargetId(Id targetId, long startIdExclusive, long limit, IInstanceContext context) {
-        return wrapped.getByReferenceTargetId(targetId, startIdExclusive, limit, context);
-    }
-
-    @Override
     public List<InstancePO> loadForest(Collection<Long> ids, IInstanceContext context) {
         var newIds = new ArrayList<Long>();
         var result = new ArrayList<InstancePO>();
@@ -160,11 +142,6 @@ public class CachingInstanceStore implements IInstanceStore {
     }
 
     @Override
-    public List<InstancePO> scan(List<ScanQuery> queries, IInstanceContext context) {
-        return wrapped.scan(queries, context);
-    }
-
-    @Override
     public List<Long> scan(long appId, long startId, long limit) {
         return wrapped.scan(appId, startId, limit);
     }
@@ -176,5 +153,15 @@ public class CachingInstanceStore implements IInstanceStore {
 
     public WAL getWal() {
         return wal;
+    }
+
+    @Override
+    public InstanceMapper getInstanceMapper(long appId, String table) {
+        return wrapped.getInstanceMapper(appId, table);
+    }
+
+    @Override
+    public IndexEntryMapper getIndexEntryMapper(long appId, String table) {
+        return wrapped.getIndexEntryMapper(appId, table);
     }
 }
