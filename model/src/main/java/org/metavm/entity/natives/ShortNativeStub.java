@@ -52,7 +52,7 @@ public class ShortNativeStub implements NativeBase {
         var shortType = StdKlass.short_.type();
         var valueField = StdField.shortValue.get();
         var data = Map.of(valueField, value);
-        return ClassInstance.create(data, shortType).getReference();
+        return ClassInstance.create(null, data, shortType).getReference();
     }
 
     private static short getValue(Value value) {

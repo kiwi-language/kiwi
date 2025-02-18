@@ -7,12 +7,15 @@ import org.metavm.entity.InstanceQueryBuilder;
 import org.metavm.entity.InstanceQueryField;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.core.mocks.MockInstanceRepository;
 import org.metavm.object.type.TypeDefRepository;
 import org.metavm.object.type.mocks.MockTypeDefRepository;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.MockUtils;
 import org.metavm.util.TestConstants;
+import org.metavm.util.TestUtils;
 
 import java.util.List;
 
@@ -24,9 +27,11 @@ public class InstanceQueryServiceTest extends TestCase {
     private InstanceQueryService instanceQueryService;
     private MockInstanceRepository instanceRepository;
     private TypeDefRepository typeRepository;
+    private long nextTreeId;
 
     @Override
     protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
         typeRepository = new MockTypeDefRepository();
         instanceSearchService = new MemInstanceSearchServiceV2();
@@ -41,8 +46,7 @@ public class InstanceQueryServiceTest extends TestCase {
         var fooNameField = fooTypes.fooNameField();
         var fooQuxField = fooTypes.fooQuxField();
         var fooBazListField = fooTypes.fooBazListField();
-
-        var foo = addInstance(MockUtils.createFoo(fooTypes, true));
+        var foo = addInstance(MockUtils.createFoo(fooTypes, this::nextRootId));
         var qux = foo.getField(fooQuxField);
         var baz = foo.getInstanceArray(fooBazListField).getInstance(0);
 
@@ -74,7 +78,7 @@ public class InstanceQueryServiceTest extends TestCase {
         var fooTypes = MockUtils.createFooTypes(true);
         var fooKlas = fooTypes.fooType();
         var fooNameField = fooTypes.fooNameField();
-        var foo = addInstance(MockUtils.createFoo(fooTypes, true));
+        var foo = addInstance(MockUtils.createFoo(fooTypes, this::nextRootId));
         InstanceQuery query2 = InstanceQueryBuilder.newBuilder(fooKlas)
                 .fields(InstanceQueryField.create(
                         fooNameField,
@@ -92,7 +96,7 @@ public class InstanceQueryServiceTest extends TestCase {
         var fooKlas = fooTypes.fooType();
         var fooNameField = fooTypes.fooNameField();
         var fooQuxField = fooTypes.fooQuxField();
-        var foo = addInstance(MockUtils.createFoo(fooTypes, true));
+        var foo = addInstance(MockUtils.createFoo(fooTypes, this::nextRootId));
         var qux = foo.getField(fooQuxField).resolveObject();
         addInstance(qux);
 
@@ -109,6 +113,10 @@ public class InstanceQueryServiceTest extends TestCase {
         );
         Assert.assertEquals(1, page.total());
         Assert.assertEquals(foo.tryGetTreeId(), page.data().getFirst().tryGetTreeId());
+    }
+
+    private Id nextRootId() {
+        return PhysicalId.of(nextTreeId++, 0);
     }
 
 }

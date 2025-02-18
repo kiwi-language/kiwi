@@ -247,7 +247,7 @@ public abstract class MvInput implements Closeable {
 
     protected <T extends Entity> T getEntity(Class<T> klass, Id id) {
         var entity = ReflectionUtils.allocateInstance(klass);
-        entity.initState(id, 0, 0, false);
+        entity.initState(id, 0, 0, false, false);
         return entity;
     }
 

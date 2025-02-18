@@ -109,7 +109,7 @@ public class WALTest extends TestCase {
             try (var context = newContext()) {
                 var klass = TestUtils.newKlassBuilder("Foo", "Foo").build();
                 context.bind(klass);
-                var inst = ClassInstance.create(Map.of(), klass.getType());
+                var inst = ClassInstance.create(context.allocateRootId(), Map.of(), klass.getType());
                 context.bind(inst);
                 context.finish();
                 return new Id[]{klass.getId(), inst.getId()};
@@ -161,7 +161,7 @@ public class WALTest extends TestCase {
             try (var context = newContext()) {
                 context.loadKlasses();
                 var klass = context.getKlass(klassId);
-                var inst = ClassInstance.create(Map.of(), klass.getType());
+                var inst = ClassInstance.create(context.allocateRootId(), Map.of(), klass.getType());
                 context.bind(inst);
                 context.finish();
                 return inst.getId();

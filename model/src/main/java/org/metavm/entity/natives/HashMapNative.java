@@ -40,7 +40,7 @@ public class HashMapNative extends AbstractMapNative implements StatefulNative {
     @Override
     public Value keySet(CallContext callContext) {
         var keySetKlass = KlassType.create(StdKlass.hashSet.get(), List.of(instance.getInstanceType().getFirstTypeArgument()));
-        var keySet = ClassInstance.allocate(keySetKlass);
+        var keySet = ClassInstance.allocate(TmpId.random(), keySetKlass);
         var setNative = (HashSetNative) NativeMethods.getNativeObject(keySet);
         setNative.HashSet(callContext);
         for (var key : map.keySet()) {

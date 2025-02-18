@@ -1,7 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.entity.NoProxy;
-import org.metavm.entity.natives.NativeBase;
 
 import javax.annotation.Nullable;
 
@@ -9,8 +8,8 @@ public abstract class BaseInstance implements Instance {
 
     protected transient InstanceState state;
 
-    public BaseInstance(@Nullable Id id, long version, long syncVersion, boolean ephemeral) {
-        state = new InstanceState(id, version, syncVersion, ephemeral, this);
+    public BaseInstance(@Nullable Id id, long version, long syncVersion, boolean ephemeral, boolean isNew) {
+        state = new InstanceState(id, version, syncVersion, ephemeral, isNew, this);
     }
 
     @Override
@@ -19,8 +18,8 @@ public abstract class BaseInstance implements Instance {
     }
 
     @NoProxy
-    public void initState(Id id, long version ,long syncVersion, boolean ephemeral) {
-        state = new InstanceState(id, version, syncVersion, ephemeral, this);
+    public void initState(Id id, long version ,long syncVersion, boolean ephemeral, boolean isNew) {
+        state = new InstanceState(id, version, syncVersion, ephemeral, isNew, this);
     }
 
 }

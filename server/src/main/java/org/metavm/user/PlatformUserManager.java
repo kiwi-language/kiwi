@@ -162,8 +162,6 @@ public class PlatformUserManager extends EntityContextFactoryAware {
     public void joinApplication(PlatformUser platformUser, Application app, IInstanceContext platformContext) {
         platformUser.joinApplication(app);
         if (app.getTreeId() != platformContext.getAppId() && app.getTreeId() != Constants.ROOT_APP_ID) {
-            if (app.isIdNull())
-                platformContext.initIds();
             ContextUtil.enterApp(app.getTreeId(), null);
             try (var context = newContext(app.getTreeId())) {
                 var user = context.selectFirstByKey(User.IDX_PLATFORM_USER_ID, Instances.stringInstance(platformUser.getStringId()));

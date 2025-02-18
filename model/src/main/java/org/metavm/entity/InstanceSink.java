@@ -6,8 +6,6 @@ public interface InstanceSink {
 
     void finish();
 
-    void initIds();
-
     void addListener(ContextListener listener);
 
 }

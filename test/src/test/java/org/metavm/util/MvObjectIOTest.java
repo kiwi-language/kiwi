@@ -34,7 +34,6 @@ public class MvObjectIOTest extends TestCase {
                 var foo = new Foo(context.allocateRootId(), "foo", null);
                 foo.setBar(new Bar(context.allocateRootId(), foo, "bar001"));
                 context.bind(foo);
-                context.initIds();
                 var output = new MarkingInstanceOutput();
                 var objOut = context.bind(MvObjectOutputStream.create(output));
                 Flows.invoke(StdMethod.objectOutputStreamWriteObject.get().getRef(),

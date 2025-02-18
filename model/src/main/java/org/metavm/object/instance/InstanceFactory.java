@@ -1,15 +1,13 @@
 package org.metavm.object.instance;
 
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
-import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
@@ -23,16 +21,16 @@ public class InstanceFactory {
     public static final Map<Class<? extends Value>, Method> ALLOCATE_METHOD_MAP = new ConcurrentHashMap<>();
     public static final String ALLOCATE_METHOD_NAME = "allocate";
 
-    public static <T extends Instance> T allocate(Class<T> instanceType, boolean ephemeral) {
-        return allocate(instanceType, null, ephemeral);
+    public static <T extends Instance> T allocate(Class<T> instanceType, boolean ephemeral, boolean isNew) {
+        return allocate(instanceType, null, ephemeral, isNew);
     }
 
-    public static <T extends Instance> T allocate(Class<T> instanceType, Id id, boolean ephemeral) {
+    public static <T extends Instance> T allocate(Class<T> instanceType, Id id, boolean ephemeral, boolean isNew) {
         T instance;
         if (instanceType == ArrayInstance.class)
-            instance = instanceType.cast(new ArrayInstance(id, Types.getAnyArrayType(), ephemeral, null));
+            instance = instanceType.cast(new ArrayInstance(id, Types.getAnyArrayType(), ephemeral));
         else
-            instance = instanceType.cast(new MvClassInstance(id, ClassInstance.uninitializedKlass.getType(), ephemeral, null));
+            instance = instanceType.cast(new MvClassInstance(id, ClassInstance.uninitializedKlass.getType(), ephemeral, isNew));
 //        Method allocateMethod = getAllocateMethod(instanceType, type.getClass());
 //        T instance = instanceType.cast(ReflectUtils.invoke(null, allocateMethod, type));
         return instance;
@@ -51,7 +49,7 @@ public class InstanceFactory {
     }
 
     public static Reference save(InstanceDTO instanceDTO,
-                                 @Nullable InstanceParentRef parentRef,
+                                 @Nullable ClassInstance parent,
                                  IInstanceContext context) {
         if (!instanceDTO.isNew()) {
             var instance = context.get(instanceDTO.parseId());
@@ -62,13 +60,13 @@ public class InstanceFactory {
 //            }
             return ValueFormatter.parseInstance(instanceDTO, context);
         } else {
-            return create(instanceDTO, parentRef, context);
+            return create(instanceDTO, parent, context);
         }
     }
 
     public static Reference create(
             InstanceDTO instanceDTO,
-            @Nullable InstanceParentRef parentRef,
+            @Nullable ClassInstance parent,
             IInstanceContext context) {
         Utils.require(instanceDTO.isNew(),
                 "Id of new instance must be null or zero");
@@ -78,7 +76,8 @@ public class InstanceFactory {
         if (param instanceof ClassInstanceParam classInstanceParam) {
             var classType = (ClassType) type;
             Map<String, InstanceFieldDTO> fieldMap = Utils.toMap(classInstanceParam.fields(), InstanceFieldDTO::fieldId);
-            ClassInstance object = ClassInstance.allocate(classType, parentRef);
+            var id = parent != null ? parent.nextChildId() : context.allocateRootId();
+            ClassInstance object = ClassInstance.allocate(id, classType, parent);
             instance = object;
             classType.forEachField(field -> {
                 var tag = field.getFieldId().toString();
@@ -86,7 +85,7 @@ public class InstanceFactory {
                     var fieldValue = resolveValue(
                             fieldMap.get(tag).value(),
                             field.getPropertyType(),
-                            InstanceParentRef.ofObject(object.getReference(), field.getRawField()),
+                            object,
                             context
                     );
                     object.initField(field.getRawField(), fieldValue);
@@ -97,12 +96,11 @@ public class InstanceFactory {
             object.ensureAllFieldsInitialized();
         } else if (param instanceof ArrayInstanceParam arrayInstanceParam) {
             var arrayType = (ArrayType) type;
-            ArrayInstance array = new ArrayInstance(arrayType, parentRef);
+            ArrayInstance array = new ArrayInstance(arrayType);
             instance = array;
             var elements = Utils.map(
                     arrayInstanceParam.elements(),
-                    v -> resolveValue(v, arrayType.getElementType(),
-                            InstanceParentRef.ofArray(array.getReference()), context)
+                    v -> resolveValue(v, arrayType.getElementType(), parent, context)
             );
             array.addAll(elements);
         } else if (param instanceof ListInstanceParam listInstanceParam) {
@@ -125,7 +123,7 @@ public class InstanceFactory {
     }
 
     public static Value resolveValue(FieldValue rawValue, Type type,
-                                     @Nullable InstanceParentRef parentRef,
+                                     @Nullable ClassInstance parent,
                                      IInstanceContext context) {
         if (rawValue == null) {
             return Instances.nullInstance();
@@ -146,7 +144,7 @@ public class InstanceFactory {
         } else if (rawValue instanceof ReferenceFieldValue referenceFieldValue) {
             return context.get(Id.parse(referenceFieldValue.getId())).getReference();
         } else if (rawValue instanceof InstanceFieldValue instanceFieldValue) {
-            return save(instanceFieldValue.getInstance(), parentRef, context);
+            return save(instanceFieldValue.getInstance(), parent, context);
         } else if (rawValue instanceof ArrayFieldValue arrayFieldValue) {
             if (arrayFieldValue.getId() != null) {
                 ArrayInstance arrayInstance = (ArrayInstance) context.get(Id.parse(arrayFieldValue.getId()));
@@ -155,7 +153,7 @@ public class InstanceFactory {
                         Utils.map(
                                 arrayFieldValue.getElements(),
                                 e -> resolveValue(e, arrayInstance.getInstanceType().getElementType(),
-                                        InstanceParentRef.ofArray(arrayInstance.getReference()),
+                                        parent,
                                         context)
                         )
                 );
@@ -165,9 +163,8 @@ public class InstanceFactory {
                 var elements = Utils.map(
                         arrayFieldValue.getElements(),
                         e -> resolveValue(e, Types.getAnyType(),
-                                InstanceParentRef.ofArray(array.getReference()), context)
+                                parent, context)
                 );
-                array.setParentInternal(parentRef);
                 array.reset(elements);
                 return array.getReference();
             }
@@ -178,7 +175,7 @@ public class InstanceFactory {
                 listNative.clear();
                 Utils.forEach(
                         listFieldValue.getElements(),
-                        e -> listNative.add(resolveValue(e, list.getInstanceType().getFirstTypeArgument(), null, context))
+                        e -> listNative.add(resolveValue(e, list.getInstanceType().getFirstTypeArgument(), parent, context))
                 );
                 return list.getReference();
             } else {
@@ -194,10 +191,9 @@ public class InstanceFactory {
                 var elementType = klass.getTypeArguments().getFirst();
                 var values = Utils.map(
                         listFieldValue.getElements(),
-                        e -> resolveValue(e, elementType, null, context)
+                        e -> resolveValue(e, elementType, parent, context)
                 );
                 var list = Instances.newList(klass, values);
-                list.setParentInternal(parentRef);
                 return list.getReference();
             }
         }

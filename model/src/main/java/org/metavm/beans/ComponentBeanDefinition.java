@@ -54,7 +54,10 @@ public class ComponentBeanDefinition extends BeanDefinition {
     @Override
     protected ClassInstance createBean(BeanDefinitionRegistry registry, IInstanceContext context) {
         var c = getConstructor();
-        return Objects.requireNonNull(Flows.invoke(c.getRef(), ClassInstance.allocate(getKlass().getType()), registry.getFlowArguments(c), context)).resolveObject();
+        return Objects.requireNonNull(Flows.invoke(c.getRef(),
+                ClassInstance.allocate(context.allocateRootId(), getKlass().getType()),
+                registry.getFlowArguments(c),
+                context)).resolveObject();
     }
 
     @Override

@@ -52,7 +52,7 @@ public class FloatNativeStub implements NativeBase {
         var floatType = StdKlass.float_.type();
         var valueField = StdField.floatValue.get();
         var data = Map.of(valueField, value);
-        return ClassInstance.create(data, floatType).getReference();
+        return ClassInstance.create(null, data, floatType).getReference();
     }
 
     private static float getValue(Value value) {

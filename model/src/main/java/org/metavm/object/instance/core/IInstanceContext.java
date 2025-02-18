@@ -94,8 +94,6 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     boolean isFinished();
 
-    void initIds();
-
     long getAppId();
 
     void batchRemove(Collection<Instance> instances);
@@ -256,4 +254,15 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     default Commit getCommit(String id) {
         return getEntity(Commit.class, id);
     }
+
+    @Override
+    default Id allocateRootId(ClassType type) {
+        return EntityRepository.super.allocateRootId(type);
+    }
+
+    @Override
+    default Id allocateRootId() {
+        return InstanceRepository.super.allocateRootId();
+    }
+
 }

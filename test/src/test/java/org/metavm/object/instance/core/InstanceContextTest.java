@@ -61,18 +61,16 @@ public class InstanceContextTest extends TestCase {
                 .id(PhysicalId.of(111L, 0L))
                 .build();
         entityRepository.bind(fooKlass);
-        var tmpId = TmpId.of(10001L);
         String name = "foo";
         Id id;
         try (var context = newContext()) {
-            var instance = ClassInstanceBuilder.newBuilder(fooKlass.getType())
-                    .id(tmpId)
+            id = context.allocateRootId();
+            var instance = ClassInstanceBuilder.newBuilder(fooKlass.getType(), id)
                     .data(Map.of(fooNameField, Instances.stringInstance(name)))
                     .build();
             context.bind(instance);
-            Assert.assertSame(instance, context.get(tmpId));
+            Assert.assertSame(instance, context.get(id));
             context.finish();
-            id = instance.tryGetId();
         }
         try (var context = newContext()) {
             var instance = (ClassInstance) context.get(id);
@@ -93,10 +91,10 @@ public class InstanceContextTest extends TestCase {
             return true;
         });
         try (var context = newContext()) {
-            var foo = MockUtils.createFoo(fooTypes);
+            var foo = MockUtils.createFoo(fooTypes, context::allocateRootId);
             var bars = foo.getField(fooTypes.fooBarsField()).resolveArray();
             var bar001 = bars.getFirst();
-            var baz = ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
+            var baz = ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType(), context.allocateRootId())
                     .data(Map.of(fooTypes.bazBarsField(), new ArrayInstance(fooTypes.barArrayType(), List.of(bar001)).getReference()))
                     .build();
             context.bind(foo);

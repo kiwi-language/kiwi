@@ -158,7 +158,6 @@ public class InstanceContext extends BufferingInstanceContext {
             unfrozen(this::onPatchBuild);
             craw();
             check();
-            initIds();
             var bufferedTrees = buildBufferedTrees();
             var difference = buildDifference(bufferedTrees);
             var entityChange = difference.getEntityChange();
@@ -202,22 +201,6 @@ public class InstanceContext extends BufferingInstanceContext {
                     });
                 }
             });
-        }
-    }
-
-    public void initIds() {
-        try (var ignored = getProfiler().enter("initIds")) {
-            var instancesToInitId =
-                    Utils.filter(this, i -> !i.isIdInitialized() && !i.isEphemeral() && !i.isValue());
-            if (instancesToInitId.isEmpty())
-                return;
-            idInitializer.initializeIds(appId, instancesToInitId);
-            for (var instance : instancesToInitId) {
-                onIdInitialized(instance);
-            }
-//            for (var instance : this) {
-//                instance.forEachReference(Reference::refreshId);
-//            }
         }
     }
 
@@ -493,8 +476,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 root.accept(new StructuralInstanceVisitor() {
                     @Override
                     public Void visitInstance(Instance instance) {
-                        if (instance.tryGetId() != null)
-                            batch.add(instance);
+                        batch.add(instance);
                         super.visitInstance(instance);
                         return null;
                     }

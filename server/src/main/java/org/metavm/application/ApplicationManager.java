@@ -185,7 +185,6 @@ public class ApplicationManager extends EntityContextFactoryAware {
                                 request.adminPassword(),
                                 List.of(role.getStringId())
                         ), platformContext);
-                platformContext.initIds();
             } else
                 owner = platformContext.getEntity(PlatformUser.class, request.creatorId());
             createApp(appId, request.name(), owner, platformContext);

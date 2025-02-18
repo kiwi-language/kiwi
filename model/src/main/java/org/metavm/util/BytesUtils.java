@@ -6,6 +6,7 @@ import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.AnyType;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.rest.dto.TypeKey;
 
@@ -69,7 +70,7 @@ public class BytesUtils {
         private final Id id;
 
         public MockInstance(Id id) {
-            super(AnyType.instance);
+            super(AnyType.instance, false);
             this.id = id;
         }
 
@@ -148,7 +149,7 @@ public class BytesUtils {
         }
 
         @Override
-        public Instance copy() {
+        public Instance copy(Function<ClassType, Id> idSupplier) {
             return null;
         }
 

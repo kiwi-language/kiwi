@@ -251,7 +251,7 @@ public class Method extends Flow implements Property {
                 var instance = result.ret().resolveObject();
                 var uninitializedField = instance.findUninitializedField(declaringType);
                 if (uninitializedField != null) {
-                    var exception = ClassInstance.allocate(StdKlass.runtimeException.get().getType());
+                    var exception = ClassInstance.allocate(TmpId.random(), StdKlass.runtimeException.get().getType());
                     var exceptionNative = new RuntimeExceptionNative(exception);
                     exceptionNative.RuntimeException(Instances.stringInstance(
                                     "Failed to instantiate " + instance.getInstanceType().getTypeDesc() + "，" +

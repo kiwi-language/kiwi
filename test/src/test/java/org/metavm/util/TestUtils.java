@@ -21,7 +21,6 @@ import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.MockSchemaManager;
@@ -37,7 +36,6 @@ import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -239,34 +237,6 @@ public class TestUtils {
                 subFile.delete();
             }
         }
-    }
-
-    public static void initInstanceIds(Instance instance) {
-        initInstanceIds(List.of(instance));
-    }
-
-    public static void initInstanceIds(List<? extends Instance> instances) {
-        initInstanceIds(instances, new MockIdProvider());
-    }
-
-    public static void initInstanceIds(List<? extends Instance> instances, EntityIdProvider idProvider) {
-        var roots = new IdentitySet<Instance>();
-        var visited = new IdentitySet<Instance>();
-        instances.forEach(r -> r.visitGraph(i -> {
-            if (!i.isValue()) {
-                var root = i.getRoot();
-                if (!root.isIdInitialized())
-                    roots.add(root);
-            }
-            return true;
-        }, r1 -> true, visited));
-        roots.forEach(r -> {
-            var treeId = idProvider.allocateOne(TestConstants.APP_ID);
-            var nodeIdRef = new Object() {
-                long nextNodeId;
-            };
-            r.forEachDescendant(instance -> instance.initId(PhysicalId.of(treeId, nodeIdRef.nextNodeId++)));
-        });
     }
 
     private static final Klass mockKlass = TestUtils.newKlassBuilder("TestUtilsMock", "TestUtilsMock").build();

@@ -301,7 +301,7 @@ public class DDLTest extends TestCase {
                         Instances.stringInstance("Currency")));
                 var sft = StaticFieldTable.getInstance(currencyKlass1.getType(), context);
                 var yuan = sft.getEnumConstants().getFirst();
-                var price = ClassInstanceBuilder.newBuilder(priceKlass1.getType())
+                var price = ClassInstanceBuilder.newBuilder(priceKlass1.getType(), context.allocateRootId())
                         .data(Map.of(
                                 priceKlass1.getFieldByName("amount"),
                                 Instances.doubleInstance(100.0),
@@ -314,7 +314,7 @@ public class DDLTest extends TestCase {
                 var priceField = productKlass1.getFieldByName("price");
                 var products = new ArrayList<ClassInstance>();
                 for (int i = 0; i < 16; i++) {
-                    var product = ClassInstanceBuilder.newBuilder(productKlass1.getType())
+                    var product = ClassInstanceBuilder.newBuilder(productKlass1.getType(), context.allocateRootId())
                             .data(Map.of(
                                     nameField,
                                     Instances.stringInstance("Hat" + i),

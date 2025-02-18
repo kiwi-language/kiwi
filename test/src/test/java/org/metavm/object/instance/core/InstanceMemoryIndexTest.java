@@ -48,7 +48,7 @@ public class InstanceMemoryIndexTest extends TestCase {
 
         var name = Instances.stringInstance("foo001");
 
-        var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType())
+        var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType(), TmpId.random())
                 .data(Map.of(nameField, name))
                 .build();
         memIndex.save(foo);

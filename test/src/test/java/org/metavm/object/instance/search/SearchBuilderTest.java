@@ -2,7 +2,6 @@ package org.metavm.object.instance.search;
 
 import junit.framework.TestCase;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.expression.Expressions;
 import org.metavm.util.Constants;
 import org.metavm.util.MockUtils;
 import org.slf4j.Logger;
@@ -22,7 +21,7 @@ public class SearchBuilderTest extends TestCase {
 
     public void test() {
         var fooTypes = MockUtils.createFooTypes(true);
-        var foo = MockUtils.createFoo(fooTypes, true);
+        var foo = MockUtils.createFoo(fooTypes);
         var qux = foo.getClassInstance(fooTypes.fooQuxField());
 
         var condition = new AndSearchCondition(

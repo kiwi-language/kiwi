@@ -5,9 +5,10 @@ import org.junit.Assert;
 import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.object.instance.core.ClassInstanceBuilder;
 import org.metavm.object.type.Klass;
-import org.metavm.util.*;
-
-import java.util.Objects;
+import org.metavm.util.BootstrapUtils;
+import org.metavm.util.Instances;
+import org.metavm.util.TestConstants;
+import org.metavm.util.TestUtils;
 
 public class MetaContextCacheTest extends TestCase {
 
@@ -43,7 +44,7 @@ public class MetaContextCacheTest extends TestCase {
                 Assert.assertTrue(context.containsUniqueKey(Klass.UNIQUE_QUALIFIED_NAME,
                         Instances.stringInstance("Foo")));
                 var fooKlass = context.getKlass(fooKlassId);
-                var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType()).build();
+                var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType(), context.allocateRootId()).build();
                 context.bind(foo);
                 var reg = BeanDefinitionRegistry.getInstance(context);
                 reg.getInterceptors();

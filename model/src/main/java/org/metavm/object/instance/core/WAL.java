@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
@@ -24,6 +25,7 @@ import java.util.function.Consumer;
 
 @NativeEntity(70)
 @Entity
+@Slf4j
 public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextFinishWare, Message {
 
     private static Consumer<WAL> commitHook;

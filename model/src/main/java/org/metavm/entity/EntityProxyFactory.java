@@ -7,10 +7,8 @@ import org.metavm.object.instance.core.BaseInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.InternalException;
 import org.metavm.util.ReflectionUtils;
-import org.metavm.util.TypeReference;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -24,10 +22,6 @@ public class EntityProxyFactory {
 
     private static final Map<Class<?>, Class<?>> PROXY_CLASS_MAP = new ConcurrentHashMap<>();
 
-    public static <T> T getProxy(TypeReference<T> typeRef, Consumer<T> modelSupplier) {
-        return getProxy(typeRef.getType(), null, modelSupplier);
-    }
-
     public static <T> T getProxy(Class<T> type, Consumer<T> initializer) {
         return getProxy(type, null, initializer);
     }
@@ -36,13 +30,6 @@ public class EntityProxyFactory {
                                  @Nullable Id id,
                                  Consumer<T> initializer) {
         return getProxy(type, id, ReflectionUtils::allocateInstance, initializer);
-    }
-
-    public static <T> T getProxy(TypeReference<T> type,
-                                 @Nullable Id id,
-                                 Consumer<T> initializer,
-                                 Function<Class<? extends T>, T> constructor) {
-        return getProxy(type.getType(), id, constructor, initializer);
     }
 
     public static <T> T getProxy(Class<T> type,
@@ -54,10 +41,7 @@ public class EntityProxyFactory {
             ProxyObject proxyInstance =  (ProxyObject) constructor.apply(proxyClass);
             proxyInstance.setHandler(new EntityMethodHandler<>(type, initializer));
             if (proxyInstance instanceof BaseInstance inst)
-                inst.initState(id, 0, 0, false);
-            if(id != null && (proxyInstance instanceof IdInitializing idInitializing)) {
-                idInitializing.initId(id);
-            }
+                inst.initState(id, 0, 0, false, false);
             return type.cast(proxyInstance);
         }
         catch (Exception e) {

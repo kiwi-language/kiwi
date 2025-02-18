@@ -1,7 +1,6 @@
 package org.metavm.entity;
 
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.TypeDef;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.IdentitySet;
@@ -13,8 +12,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 
-import static java.util.Objects.requireNonNull;
-
 public class DefaultIdInitializer implements IdInitializer {
 
     private final EntityIdProvider idProvider;
@@ -23,31 +20,6 @@ public class DefaultIdInitializer implements IdInitializer {
 
     public DefaultIdInitializer(EntityIdProvider idProvider) {
         this.idProvider = idProvider;
-    }
-
-    @Override
-    public void initializeIds(long appId, Collection<? extends Instance> instancesToInitId) {
-        var count = (int) Utils.count(instancesToInitId, Instance::isRoot);
-        var ids = new LinkedList<>(idProvider.allocate(appId, count));
-        var typeDefInstance = new HashMap<TypeDef, Instance>();
-        for (Instance instance : instancesToInitId) {
-            if (instance instanceof TypeDef typeDef)
-                typeDefInstance.put(typeDef, instance);
-        }
-        var sortedInstances = sort(instancesToInitId, typeDefInstance);
-        for (Instance inst : sortedInstances) {
-            var type = inst.getInstanceType();
-            long treeId, nodeId;
-            if (inst.isRoot()) {
-                treeId = requireNonNull(ids.poll());
-                nodeId = 0;
-            } else {
-                var root = inst.getRoot();
-                treeId = root.getTreeId();
-                nodeId = root.nextNodeId();
-            }
-            inst.initId(PhysicalId.of(treeId, nodeId));
-        }
     }
 
     private List<Instance> sort(Collection<? extends Instance> instances, Map<TypeDef, Instance> typeInstance) {

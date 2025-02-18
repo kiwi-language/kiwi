@@ -52,7 +52,7 @@ public class IntegerNativeStub implements NativeBase {
         var intType = StdKlass.integer.type();
         var valueField = StdField.integerValue.get();
         var data = Map.of(valueField, value);
-        return ClassInstance.create(data, intType).getReference();
+        return ClassInstance.create(null, data, intType).getReference();
     }
 
     private static int getValue(Value value) {

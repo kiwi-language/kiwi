@@ -2,6 +2,7 @@ package org.metavm.object.instance;
 
 import junit.framework.TestCase;
 import org.metavm.entity.MockStandardTypesInitializer;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.util.MockUtils;
 import org.metavm.util.TestUtils;
@@ -19,7 +20,7 @@ public class InstanceDTOBuilderTest extends TestCase {
     }
 
     public void test() {
-        var foo = MockUtils.createFoo(MockUtils.createFooTypes(true), true);
+        var foo = MockUtils.createFoo(MockUtils.createFooTypes(true), TmpId::random);
         InstanceDTO instanceDTO = InstanceDTOBuilder.buildDTO(foo.getReference(), 2);
         TestUtils.logJSON(logger, instanceDTO);
     }

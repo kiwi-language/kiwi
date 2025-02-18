@@ -16,13 +16,13 @@ public class IndexSourceBuilderTest extends TestCase {
     public static final Logger logger = LoggerFactory.getLogger(IndexSourceBuilderTest.class);
     @Override
     protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
     }
 
     public void test() {
         var fooTypes = MockUtils.createFooTypes(true);
         var instance = MockUtils.createFoo(fooTypes);
-        TestUtils.initInstanceIds(instance);
         Map<String, Object> source = IndexSourceBuilder.buildSource(APP_ID, instance);
         TestUtils.logJSON(logger, source);
     }

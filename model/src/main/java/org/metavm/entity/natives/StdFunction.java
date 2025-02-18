@@ -34,7 +34,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (args.getFirst() instanceof FunctionValue functionValue) {
                     var samInterface = ((ClassType) func.getTypeArguments().getFirst());
                     var type = Types.createSAMInterfaceImpl(samInterface, functionValue);
-                    return FlowExecResult.of(new MvClassInstance(null, Map.of(), type).getReference());
+                    return FlowExecResult.of(new MvClassInstance(null, Map.of(), type, false).getReference());
                 } else {
                     throw new InternalException("Invalid function instance: " + Instances.getInstancePath(args.getFirst()));
                 }
@@ -88,7 +88,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (type.isInstance(value))
                     return FlowExecResult.of(value);
                 else {
-                    var exception = ClassInstance.allocate(StdKlass.classCastException.type());
+                    var exception = ClassInstance.allocate(TmpId.random(), StdKlass.classCastException.type());
                     var nat = new ClassCastExceptionNative(exception);
                     var msg = value.getValueType().getTypeDesc() + " cannot be cast to " + type.getTypeDesc();
                     nat.ClassCastException(Instances.stringInstance(msg), callContext);
@@ -151,7 +151,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
-                    var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
+                    var npe = ClassInstance.allocate(TmpId.random(), StdKlass.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
                     nat.NullPointerException(ctx);
                     return FlowExecResult.ofException(npe);
@@ -170,7 +170,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
-                    var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
+                    var npe = ClassInstance.allocate(TmpId.random(), StdKlass.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
                     nat.NullPointerException(message, ctx);
                     return FlowExecResult.ofException(npe);
@@ -189,7 +189,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (value.isNotNull())
                     return FlowExecResult.of(value);
                 else {
-                    var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
+                    var npe = ClassInstance.allocate(TmpId.random(), StdKlass.nullPointerException.get().getType());
                     var nat = new NullPointerExceptionNative(npe);
                     var getMethod = messageSupplier.getInstanceType().getMethodByNameAndParamTypes("get", List.of());
                     var getResult = getMethod.execute(messageSupplier.getReference(), List.of(), ctx);
@@ -331,7 +331,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     if (id != null)
                         return FlowExecResult.of(Instances.stringInstance(id));
                 }
-                var npe = ClassInstance.allocate(StdKlass.nullPointerException.get().getType());
+                var npe = ClassInstance.allocate(TmpId.random(), StdKlass.nullPointerException.get().getType());
                 var nat = new NullPointerExceptionNative(npe);
                 nat.NullPointerException(Instances.stringInstance("Object has no ID"), ctx);
                 return FlowExecResult.ofException(npe);
@@ -577,7 +577,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if(index >= 0 && index < length)
                     return FlowExecResult.of(Instances.intInstance(index));
                 else {
-                    var exception = ClassInstance.allocate(StdKlass.indexOutOfBoundsException.type());
+                    var exception = ClassInstance.allocate(TmpId.random(), StdKlass.indexOutOfBoundsException.type());
                     var nat = new IndexOutOfBoundsExceptionNative(exception);
                     nat.IndexOutOfBoundsException(callContext);
                     return FlowExecResult.ofException(exception);
@@ -615,8 +615,9 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             false,
             List.of(ReflectionUtils.getDeclaredMethod(Object.class, "clone", List.of())),
             (func, args, callContext) -> {
-                var clone = args.getFirst().resolveMv().copy();
-                ContextUtil.getEntityContext().bind(clone);
+                var context = ContextUtil.getEntityContext();
+                var clone = args.getFirst().resolveMv().copy(context::allocateRootId);
+                context.bind(clone);
                 return FlowExecResult.of(clone.getReference());
             }
     ),
@@ -639,7 +640,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 var size = ((IntValue) args.get(1)).getValue();
                 var len = ((IntValue) args.get(2)).getValue();
                 if(from < 0 || size < 0 || from + size > len || len < 0) {
-                    var e = ClassInstance.allocate(StdKlass.indexOutOfBoundsException.type());
+                    var e = ClassInstance.allocate(TmpId.random(), StdKlass.indexOutOfBoundsException.type());
                     var nat = new IndexOutOfBoundsExceptionNative(e);
                     nat.IndexOutOfBoundsException(callContext);
                     return FlowExecResult.ofException(e);

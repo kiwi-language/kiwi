@@ -230,7 +230,7 @@ public class InstanceManagerTest extends TestCase {
             try(var context = newContext()) {
                 context.loadKlasses();
                 var klass = context.getKlass(klassId);
-                var inst = ClassInstanceBuilder.newBuilder(klass.getType())
+                var inst = ClassInstanceBuilder.newBuilder(klass.getType(), context.allocateRootId())
                         .data(Map.of(
                                 klass.getFieldByName("name"),
                                 Instances.stringInstance("Leen")
@@ -257,7 +257,7 @@ public class InstanceManagerTest extends TestCase {
                 var inst = (ClassInstance) context.get(instId);
                 Assert.assertTrue(inst.isFieldInitialized(nameField));
                 inst.setField(nameField, Instances.stringInstance("Leen2"));
-                var inst2 = ClassInstanceBuilder.newBuilder(klass.getType())
+                var inst2 = ClassInstanceBuilder.newBuilder(klass.getType(), context.allocateRootId())
                         .data(Map.of())
                         .build();
                 context.bind(inst2);

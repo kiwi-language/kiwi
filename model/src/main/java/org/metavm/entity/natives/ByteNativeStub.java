@@ -52,7 +52,7 @@ public class ByteNativeStub implements NativeBase {
         var byteType = StdKlass.byte_.type();
         var valueField = StdField.byteValue.get();
         var data = Map.of(valueField, value);
-        return ClassInstance.create(data, byteType).getReference();
+        return ClassInstance.create(null, data, byteType).getReference();
     }
 
     private static byte getValue(Value value) {

@@ -7,15 +7,13 @@ import org.metavm.entity.TreeTags;
 import org.metavm.entity.natives.NativeBase;
 import org.metavm.object.instance.rest.InstanceDTO;
 import org.metavm.object.instance.rest.InstanceParam;
-import org.metavm.object.type.Field;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -26,7 +24,6 @@ public abstract class MvInstance extends BaseInstance {
     private Type type;
     private transient boolean loadedFromCache;
     private transient boolean modified;
-    private transient Object mappedEntity;
 
     private @NotNull MvInstance root;
     
@@ -35,12 +32,12 @@ public abstract class MvInstance extends BaseInstance {
 
     private transient NativeBase nativeObject;
 
-    public MvInstance(Type type) {
-        this(null, type, 0L, 0L, false, null);
+    public MvInstance(Type type, boolean isNew) {
+        this(null, type, 0L, 0L, false, isNew);
     }
 
-    public MvInstance(@Nullable Id id, Type type, long version, long syncVersion, boolean ephemeral, @Nullable Consumer<Instance> load) {
-        super(id, version, syncVersion, ephemeral);
+    public MvInstance(@Nullable Id id, Type type, long version, long syncVersion, boolean ephemeral, boolean isNew) {
+        super(id, version, syncVersion, ephemeral, isNew);
         this.type = type;
         root = aggregateRoot = this;
     }
@@ -57,18 +54,6 @@ public abstract class MvInstance extends BaseInstance {
         return state.id;
     }
 
-    public Object getMappedEntity() {
-        return mappedEntity;
-    }
-
-    public void setMappedEntity(Object mappedEntity) {
-        this.mappedEntity = mappedEntity;
-    }
-
-    public boolean isPersisted() {
-        return !isNew();
-    }
-
     public boolean isLoadedFromCache() {
         return loadedFromCache;
     }
@@ -77,30 +62,17 @@ public abstract class MvInstance extends BaseInstance {
         this.loadedFromCache = loadedFromCache;
     }
 
-    public void setParentRef(@Nullable InstanceParentRef parentRef) {
-        if (parentRef != null)
-            setParent(parentRef.parent().get(), parentRef.field());
-    }
-
     @Override
-    public void setParent(Instance parent, @Nullable Field parentField) {
+    public void setParent(Instance parent) {
         if (this.parent != null) {
             if (this.parent.equals(parent))
                 return;
             throw new InternalException("Can not change parent of " + Instances.getInstanceDesc(getReference())
                     + ", current parent: " + this.parent
                     + ", new parent: " + parent
-                    + ", new parentField: " + parentField
             );
         }
         setParentInternal((MvInstance) parent, state.id == null || !state.id.isRoot());
-    }
-
-    public void setParentInternal(@Nullable InstanceParentRef parentRef) {
-        if (parentRef != null)
-            setParentInternal((MvInstance) parentRef.parent().get(), true);
-        else
-            setParentInternal(null, true);
     }
 
     public void setParentInternal(@Nullable MvInstance parent, boolean setRoot) {
@@ -122,33 +94,8 @@ public abstract class MvInstance extends BaseInstance {
         }
     }
 
-    public void clearParent() {
-        this.parent = null;
-    }
-
     public boolean isRoot() {
         return !isValue() && getRoot() == this;
-    }
-
-    public boolean isReferencedByParent() {
-        if(this.parent != null) {
-            var ref = new Object() {
-                boolean referenced;
-            };
-            this.parent.forEachChild(c -> {
-                if(c == this)
-                    ref.referenced = true;
-            });
-            return ref.referenced;
-        }
-        else
-            return false;
-    }
-
-    public void initId(Id id) {
-        if (isIdInitialized())
-            throw new InternalException("id already initialized");
-        super.initId(id);
     }
 
     void ensureMutable() {
@@ -223,7 +170,7 @@ public abstract class MvInstance extends BaseInstance {
             return root = root.getRoot();
     }
 
-    public boolean isChildOf(Instance instance, @Nullable Field parentField) {
+    public boolean isChildOf(Instance instance) {
         return !isRoot() && this.parent == instance;
     }
 
@@ -304,7 +251,7 @@ public abstract class MvInstance extends BaseInstance {
         }
     }
 
-    public abstract Instance copy();
+    public abstract Instance copy(Function<ClassType, Id> idSupplier);
 
     public String getQualifiedTitle() {
         return getInstanceType().getName() + "-" + getTitle();

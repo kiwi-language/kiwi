@@ -15,7 +15,6 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 public class ObjectApplication {
 
     public static void main(String[] args) {
-        System.setProperty("druid.wall.multiStatementAllow", "true");
         SpringApplication.run(ObjectApplication.class);
     }
 

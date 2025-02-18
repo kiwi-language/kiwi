@@ -49,6 +49,7 @@ public class PrimitiveWrapperTest extends TestCase {
                 var fooKlass = context.getKlass(fooKlassId);
                 var elementsField = fooKlass.getFieldByName("elements");
                 var foo = ClassInstance.create(
+                        context.allocateRootId(),
                         Map.of(
                                 elementsField,
                                 new ArrayInstance(

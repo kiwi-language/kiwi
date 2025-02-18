@@ -88,11 +88,6 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         }
     }
 
-    public void initId(Id id) {
-        Utils.require(this.id == null, "id already initialized");
-        this.id = id;
-    }
-
     public <K> T get(IndexMapper<? super T, K> keyMapper, K key) {
         beforeAccess();
         return Utils.safeCall(getNode(keyMapper, key), Node::getValue);
@@ -314,8 +309,4 @@ public class Table<T> extends LinkedList<T> implements IdInitializing, RuntimeGe
         return Map.of(Table.class.getTypeParameters()[0], elementType);
     }
 
-    @Override
-    public void clearId() {
-        this.id = null;
-    }
 }

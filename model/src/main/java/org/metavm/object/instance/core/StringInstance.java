@@ -15,6 +15,7 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.metavm.util.Instances.toJavaString;
 
@@ -379,7 +380,7 @@ public class StringInstance implements CharSequenceNative, ClassInstance {
     }
 
     @Override
-    public Instance copy() {
+    public Instance copy(Function<ClassType, Id> idSupplier) {
         return this;
     }
 

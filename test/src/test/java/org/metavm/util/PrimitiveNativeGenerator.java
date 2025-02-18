@@ -71,7 +71,7 @@ public class PrimitiveNativeGenerator {
                     var {L}Type = StdKlass.{L1}{D}.type();
                     var valueField = StdField.{L1}Value.get();
                     var data = Map.of(valueField, value);
-                    return ClassInstance.create(data, {L}Type).getReference();
+                    return ClassInstance.create(null, data, {L}Type).getReference();
                 }
 
                 private static {L} getValue(Value value) {

@@ -66,6 +66,7 @@ public class StringTest extends TestCase {
                 var sField = fooKlass.getFieldByName("name");
                 var s = stringInstance("Metavm");
                 var foo = ClassInstance.create(
+                        context.allocateRootId(),
                         Map.of(sField, s),
                         fooKlass.getType()
                 );

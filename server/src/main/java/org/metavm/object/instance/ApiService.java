@@ -53,7 +53,7 @@ public class ApiService extends EntityContextFactoryAware {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, null, rawArguments, false, true, context);
-            var self = ClassInstanceBuilder.newBuilder(klass).build();
+            var self = ClassInstanceBuilder.newBuilder(klass, context.allocateRootId(klass)).build();
             var result = execute(r.method, self, r.arguments, request, response, context);
             context.bind(self);
             context.finish();
@@ -653,8 +653,9 @@ public class ApiService extends EntityContextFactoryAware {
         var klassCode = map.get("$class");
         var actualType = klassCode != null ?
                 Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance((String) klassCode))).getType() : type;
+        var id = context.allocateRootId(actualType);
         var r = resolveConstructor(actualType, map, context);
-        var self = ClassInstance.allocate(actualType);
+        var self = ClassInstance.allocate(id, actualType);
         var result = Flows.execute(r.method, self, Utils.map(r.arguments, Value::toStackValue), context);
         context.bind(self);
         if (result.exception() != null)

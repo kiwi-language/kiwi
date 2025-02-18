@@ -47,7 +47,7 @@ public class ExpressionEvaluatorTest extends TestCase {
                 )
         );
 
-        ClassInstance fooInst = ClassInstanceBuilder.newBuilder(fooType.getType())
+        ClassInstance fooInst = ClassInstanceBuilder.newBuilder(fooType.getType(), TmpId.random())
                 .data(
                         Map.of(
                                 fooTypes.fooNameField(),
@@ -58,16 +58,16 @@ public class ExpressionEvaluatorTest extends TestCase {
                                 new ArrayInstance(fooTypes.barChildArrayType()).getReference(),
                                 fooTypes.fooBazListField(),
                                 new ArrayInstance(fooTypes.bazArrayType(), List.of(
-                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
+                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType(), TmpId.random())
                                                 .data(Map.of(
                                                         fooTypes.bazBarsField(),
                                                         new ArrayInstance(fooTypes.barArrayType(), List.of(
-                                                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
+                                                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType(), TmpId.random())
                                                                         .data(Map.of(
                                                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                                                         ))
                                                                         .buildAndGetReference(),
-                                                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
+                                                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType(), TmpId.random())
                                                                         .data(Map.of(
                                                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                                                         ))
@@ -86,18 +86,18 @@ public class ExpressionEvaluatorTest extends TestCase {
     public void testAllMatchListView() {
         var fooTypes = MockUtils.createFooTypes(true);
         var fooType = fooTypes.fooType();
-        var foo = ClassInstanceBuilder.newBuilder(fooType.getType())
+        var foo = ClassInstanceBuilder.newBuilder(fooType.getType(), TmpId.random())
                 .data(Map.of(
                         fooTypes.fooNameField(), Instances.stringInstance("foo"),
                         fooTypes.fooCodeField(), Instances.stringInstance("001"),
                         fooTypes.fooBarsField(),
                         new ArrayInstance(fooTypes.barChildArrayType(), List.of(
-                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
+                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType(), TmpId.random())
                                         .data(Map.of(
                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                         ))
                                         .buildAndGetReference(),
-                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
+                                ClassInstanceBuilder.newBuilder(fooTypes.barType().getType(), TmpId.random())
                                         .data(Map.of(
                                                 fooTypes.barCodeField(), Instances.stringInstance("001")
                                         ))

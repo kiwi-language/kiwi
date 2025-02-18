@@ -10,7 +10,6 @@ import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -37,29 +37,35 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     private final List<ClassInstance> children = new ArrayList<>();
     public InstanceField[] fields;
 
-    public MvClassInstance(Id id, @NotNull ClassType type, long version, long syncVersion,
-                           @Nullable Consumer<Instance> load, @Nullable InstanceParentRef parentRef,
-                           @Nullable Map<Field, ? extends Value> data, boolean ephemeral, boolean initFieldTable,
+    public MvClassInstance(Id id,
+                           @NotNull ClassType type,
+                           long version,
+                           long syncVersion,
+                           @Nullable ClassInstance parent,
+                           @Nullable Map<Field, ? extends Value> data,
+                           boolean ephemeral,
+                           boolean initFieldTable,
+                           boolean isNew,
                            @Nullable ClosureContext closureContext) {
-        super(id, type, version, syncVersion, ephemeral, load);
+        super(id, type, version, syncVersion, ephemeral, isNew);
         this.klass = type.getKlass();
         this.closureContext = closureContext;
         if (klass != uninitializedKlass && initFieldTable)
             fieldTable.initialize();
-        setParentRef(parentRef);
+        if (parent != null) setParent(parent);
         if (data != null)
             reset(data, 0L, 0L);
     }
 
-    public MvClassInstance(Id id, ClassType type, boolean ephemeral, @Nullable Consumer<Instance> load) {
-        super(id, type, 0, 0, ephemeral, load);
+    public MvClassInstance(Id id, ClassType type, boolean ephemeral, boolean isNew) {
+        super(id, type, 0, 0, ephemeral, isNew);
         this.klass = type.getKlass();
         if (klass != uninitializedKlass)
             fieldTable.initialize();
     }
 
-    public MvClassInstance(Id id, Map<Field, Value> data, Klass klass) {
-        super(id, klass.getType(), 0, 0, klass.isEphemeralKlass(), null);
+    public MvClassInstance(Id id, Map<Field, Value> data, Klass klass, boolean isNew) {
+        super(id, klass.getType(), 0, 0, klass.isEphemeralKlass(), isNew);
         this.klass = klass;
         if (klass != uninitializedKlass)
             fieldTable.initialize();
@@ -129,11 +135,8 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
     @Override
     public void forEachMember(Consumer<? super Instance> action) {
-        if (getNativeObject() instanceof StatefulNative statefulNative) {
-            statefulNative.forEachMember(action);
-            return;
-        }
-        children.forEach(action);
+        forEachChild(action);
+        forEachValue(action);
     }
 
     @Override
@@ -143,10 +146,9 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             return;
         }
         forEachField((f, v) -> {
-            if(v instanceof Reference r && (r.isValueReference()))
+            if(v instanceof Reference r && (r.tryGetId() == null))
                 action.accept(r.get());
         });
-        children.forEach(action);
     }
 
     public void forEachReference(Consumer<Reference> action) {
@@ -194,7 +196,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         }
         forEachField((f, v) -> {
             if(v instanceof Reference r) {
-                var r1 = function.apply(r, r.isResolved() && r.get().isChildOf(this, f), f.getType());
+                var r1 = function.apply(r, r.isResolved() && r.get().isChildOf(this), f.getType());
                 if(r1 != r)
                     setField(f, r1);
             }
@@ -528,7 +530,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
 
 //    @Override
     public void writeTree(TreeWriter treeWriter) {
-                treeWriter.writeLine(getInstanceType().getName() + " " + getTitle() + " " + tryGetId());
+        treeWriter.writeLine(getInstanceType().getName() + " " + getTitle() + " " + tryGetId() + " @ " + System.identityHashCode(this));
         treeWriter.indent();
         forEachField((f, v) -> {
             treeWriter.writeLine(f.getName() + ":");
@@ -615,8 +617,14 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     }
 
     @Override
-    public Instance copy() {
-        var copy = ClassInstanceBuilder.newBuilder(getInstanceType()).initFieldTable(false).build();
+    public Instance copy(Function<ClassType, Id> idSupplier) {
+        var type = getInstanceType();
+        var id = isValue() ? null :
+                (isRoot() ? idSupplier.apply(type) : getRoot().nextChildId());
+        var parent = isValue() ? null : (MvClassInstance) getParent();
+        var copy = ClassInstanceBuilder.newBuilder(getInstanceType(), id).initFieldTable(false)
+                .parent(parent)
+                .build();
         copy.initializeFieldsArray();
         for (FieldSubTable subTable : fieldTable.subTables) {
             var st = copy.fieldTable.addSubTable(subTable.type);
@@ -839,7 +847,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     @Override
     public void addChild(ClassInstance child) {
         children.add(child);
-        child.setParent(this, null);
+        child.setParent(this);
     }
 
     @Override

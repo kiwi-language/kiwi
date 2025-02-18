@@ -5,11 +5,11 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.FunctionValue;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.KlassType;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
-import org.metavm.util.MvObjectOutputStream;
 import org.metavm.util.Utils;
 
 import java.util.HashSet;
@@ -40,7 +40,7 @@ public class HashSetNative extends AbstractSetNative {
     @Override
     public Value iterator(CallContext callContext) {
         var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getInstanceType().getFirstTypeArgument()));
-        var it = ClassInstance.allocate(iteratorImplType);
+        var it = ClassInstance.allocate(TmpId.random(), iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);
         return it.getReference();

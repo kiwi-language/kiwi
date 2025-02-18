@@ -3,7 +3,7 @@ package org.metavm.object.instance.core;
 import org.metavm.entity.Identifiable;
 import org.metavm.entity.Tree;
 import org.metavm.object.instance.rest.InstanceParam;
-import org.metavm.object.type.Field;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -84,10 +84,6 @@ public interface Instance extends Message, Identifiable {
         return id != null && !id.isTemporary();
     }
 
-    default void initId(Id id) {
-        this.state().id = id;
-    }
-
     default void forEachDescendant(Consumer<Instance> action) {
         action.accept(this);
         forEachChild(c -> c.forEachDescendant(action));
@@ -129,6 +125,10 @@ public interface Instance extends Message, Identifiable {
 
     default long nextNodeId() {
         return state().nextNodeId++;
+    }
+
+    default Id nextChildId() {
+        return PhysicalId.of(getTreeId(), nextNodeId());
     }
 
     default long getNextNodeId() {
@@ -186,11 +186,11 @@ public interface Instance extends Message, Identifiable {
         return !isEphemeral();
     }
 
-    default boolean isChildOf(Instance instance, Field f) {
+    default boolean isChildOf(Instance instance) {
         return false;
     }
 
-    default void setParent(Instance instance, Field field) {
+    default void setParent(Instance instance) {
         throw new UnsupportedOperationException();
     }
 
@@ -198,7 +198,7 @@ public interface Instance extends Message, Identifiable {
 
     }
 
-    default Instance copy() {
+    default Instance copy(Function<ClassType, Id> idSupplier) {
         return null;
     }
 
@@ -290,10 +290,6 @@ public interface Instance extends Message, Identifiable {
 
     InstanceState state();
 
-    default void clearId() {
-        state().id = null;
-    }
-
     default IInstanceContext getContext() {
         return Objects.requireNonNull(state(), () -> getClass().getName() + " returns a null state").context;
     }
@@ -303,7 +299,7 @@ public interface Instance extends Message, Identifiable {
     }
 
     default void incVersion() {
-        state().incVersion();
+        requireNonNull(state(), () -> "Instance" + this + " is missing state").incVersion();
     }
 
     default @Nullable Instance getNext() {

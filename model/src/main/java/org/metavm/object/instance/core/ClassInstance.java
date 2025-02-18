@@ -4,7 +4,6 @@ import org.metavm.flow.ClosureContext;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.type.*;
-import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.InstanceInput;
 import org.metavm.util.InstanceOutput;
 import org.metavm.util.Instances;
@@ -18,26 +17,16 @@ public interface ClassInstance extends Instance {
 
     Klass uninitializedKlass = KlassBuilder.newBuilder(new NullId(), "Uninitialized", "Uninitialized").build();
 
-    static MvClassInstance create(Map<Field, ? extends Value> data, ClassType type) {
-        return ClassInstanceBuilder.newBuilder(type).data(data).build();
+    static MvClassInstance create(Id id, Map<Field, ? extends Value> data, ClassType type) {
+        return ClassInstanceBuilder.newBuilder(type, id).data(data).build();
     }
 
-    static MvClassInstance allocate(ClassType type) {
-        return ClassInstanceBuilder.newBuilder(type).build();
+    static MvClassInstance allocate(Id id, ClassType type) {
+        return ClassInstanceBuilder.newBuilder(type, id).build();
     }
 
-    static MvClassInstance allocateUninitialized(Id id) {
-        return ClassInstanceBuilder.newBuilder(uninitializedKlass.getType()).id(id).initFieldTable(false).build();
-    }
-
-    static MvClassInstance allocateEmpty(ClassType type) {
-        return ClassInstanceBuilder.newBuilder(type).initFieldTable(false).build();
-    }
-
-    static MvClassInstance allocate(ClassType type, @Nullable InstanceParentRef parentRef) {
-        return ClassInstanceBuilder.newBuilder(type)
-                .parentRef(parentRef)
-                .build();
+    static MvClassInstance allocate(Id id, ClassType type, @Nullable ClassInstance parent) {
+        return ClassInstanceBuilder.newBuilder(type, id).parent(parent).build();
     }
 
     void logFields();

@@ -52,7 +52,7 @@ public class BooleanNativeStub implements NativeBase {
         var booleanType = StdKlass.boolean_.type();
         var valueField = StdField.booleanValue.get();
         var data = Map.of(valueField, value);
-        return ClassInstance.create(data, booleanType).getReference();
+        return ClassInstance.create(null, data, booleanType).getReference();
     }
 
     private static boolean getValue(Value value) {

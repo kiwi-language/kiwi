@@ -1,9 +1,7 @@
 package org.metavm.entity;
 
-import org.metavm.object.instance.core.ClassInstance;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.PhysicalId;
+import org.metavm.object.instance.core.*;
+import org.metavm.object.type.ClassType;
 
 public interface EntityRepository extends EntityProvider {
 
@@ -15,6 +13,12 @@ public interface EntityRepository extends EntityProvider {
 
     default Id allocateRootId() {
         return PhysicalId.of(allocateTreeId(), 0L);
+    }
+
+    default Id allocateRootId(ClassType type) {
+        if (type.isValueType()) return null;
+        else if (type.isEphemeral()) return TmpId.random();
+        else return allocateRootId();
     }
 
 }

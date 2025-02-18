@@ -52,7 +52,7 @@ public class CharacterNativeStub implements NativeBase {
         var charType = StdKlass.character.type();
         var valueField = StdField.characterValue.get();
         var data = Map.of(valueField, value);
-        return ClassInstance.create(data, charType).getReference();
+        return ClassInstance.create(null, data, charType).getReference();
     }
 
     private static char getValue(Value value) {

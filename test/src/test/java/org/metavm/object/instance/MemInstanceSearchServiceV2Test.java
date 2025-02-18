@@ -3,11 +3,14 @@ package org.metavm.object.instance;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.MockStandardTypesInitializer;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.search.AndSearchCondition;
 import org.metavm.object.instance.search.MatchSearchCondition;
 import org.metavm.object.instance.search.SearchQuery;
 import org.metavm.util.MockUtils;
 import org.metavm.util.TestConstants;
+import org.metavm.util.TestUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -17,16 +20,18 @@ import java.util.Set;
 public class MemInstanceSearchServiceV2Test extends TestCase {
 
     private MemInstanceSearchServiceV2 memInstanceSearchServiceV2;
+    private long nextTreeId;
 
     @Override
     protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
         memInstanceSearchServiceV2 = new MemInstanceSearchServiceV2();
     }
 
     public void test() {
         var fooTypes = MockUtils.createFooTypes(true);
-        var foo = MockUtils.createFoo(fooTypes, true);
+        var foo = MockUtils.createFoo(fooTypes, this::nextRootId);
         var fooType = fooTypes.fooType().getType();
         memInstanceSearchServiceV2.bulk(TestConstants.APP_ID, List.of(foo), List.of());
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
@@ -64,7 +69,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
     public void testSearchingSuperClassField() {
         var livingBeingTypes = MockUtils.createLivingBeingTypes(true);
         var humanType = livingBeingTypes.humanType().getType();
-        var human = MockUtils.createHuman(livingBeingTypes, true);
+        var human = MockUtils.createHuman(livingBeingTypes, nextRootId());
         memInstanceSearchServiceV2.bulk(TestConstants.APP_ID, List.of(human), List.of());
         var result = memInstanceSearchServiceV2.search(new SearchQuery(
                 TestConstants.APP_ID,
@@ -81,6 +86,10 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
         assertEquals(1, result.total());
         assertEquals(Objects.requireNonNull(human.tryGetId()), result.data().getFirst());
 
+    }
+
+    private Id nextRootId() {
+        return PhysicalId.of(nextTreeId++, 0);
     }
 
 }

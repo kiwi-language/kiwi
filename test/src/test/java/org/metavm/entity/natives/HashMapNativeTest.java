@@ -6,6 +6,7 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.entity.StdKlass;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.KlassType;
 import org.metavm.object.type.Types;
@@ -32,7 +33,7 @@ public class HashMapNativeTest extends TestCase {
 
     public void testReferenceKey() {
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var map = ClassInstance.allocate(KlassType.create(StdKlass.hashMap.get(),
+            var map = ClassInstance.allocate(TmpId.random(), KlassType.create(StdKlass.hashMap.get(),
                     List.of(
                             ModelDefRegistry.getType(Klass.class),
                             Types.getStringType()

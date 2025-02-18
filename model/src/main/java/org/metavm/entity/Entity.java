@@ -20,8 +20,7 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
     private transient Entity root;
 
     public Entity(@NotNull Id id) {
-        super(id, 0,0 , false);
-        state.setNew();
+        super(id, 0,0 , false, true);
     }
 
     @NoProxy
@@ -77,19 +76,6 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
     }
 
     @Override
-    public final void initId(Id id) {
-        throw new UnsupportedOperationException("Cannot call initId on " + getClass().getName());
-//        if (tryGetPhysicalId() != null)
-//            throw new IllegalStateException("objectId is already initialized");
-//        this.state.id = id;
-    }
-
-    @Override
-    public void clearId() {
-        this.state.id = null;
-    }
-
-    @Override
     public List<Instance> beforeRemove(IInstanceContext context) {
         return List.of();
     }
@@ -121,7 +107,7 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
     }
 
     public final void read(MvInput input, Entity parent) {
-        initState(input.readId(), 0, 0, false);
+        initState(input.readId(), 0, 0, false, false);
         readHeadAndBody(input, parent);
     }
 

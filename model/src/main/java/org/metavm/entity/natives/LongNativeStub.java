@@ -52,7 +52,7 @@ public class LongNativeStub implements NativeBase {
         var longType = StdKlass.long_.type();
         var valueField = StdField.longValue.get();
         var data = Map.of(valueField, value);
-        return ClassInstance.create(data, longType).getReference();
+        return ClassInstance.create(null, data, longType).getReference();
     }
 
     private static long getValue(Value value) {

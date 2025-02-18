@@ -37,23 +37,21 @@ public class MockUtils {
         couponStateType.setSuperType(couponStateEnumKlas);
         var enumNameField = couponStateEnumKlas.getKlass().getFieldByName("name");
         var enumOrdinalField = couponStateEnumKlas.getKlass().getFieldByName("ordinal");
-        var couponNormalState = ClassInstanceBuilder.newBuilder(couponStateType.getType())
+        var couponNormalState = ClassInstanceBuilder.newBuilder(couponStateType.getType(), TmpId.random())
                 .data(Map.of(
                         enumNameField,
                         Instances.stringInstance("NORMAL"),
                         enumOrdinalField,
                         Instances.intInstance(0)
                 ))
-                .id(TmpId.of(Utils.randomNonNegative()))
                 .build();
-        var couponUsedState = ClassInstanceBuilder.newBuilder(couponStateType.getType())
+        var couponUsedState = ClassInstanceBuilder.newBuilder(couponStateType.getType(), TmpId.random())
                 .data(Map.of(
                         enumNameField,
                         Instances.stringInstance("USED"),
                         enumOrdinalField,
                         Instances.intInstance(1)
                 ))
-                .id(TmpId.of(Utils.randomNonNegative()))
                 .build();
         createEnumConstantField(couponNormalState);
         createEnumConstantField(couponUsedState);
@@ -96,7 +94,7 @@ public class MockUtils {
     }
 
     public static ShoppingInstances createShoppingInstances(ShoppingTypes shoppingTypes) {
-        var sku40 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType().getType())
+        var sku40 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType().getType(), TmpId.random())
                 .data(Map.of(
                         shoppingTypes.skuTitleField(),
                         Instances.stringInstance("40"),
@@ -106,7 +104,7 @@ public class MockUtils {
                         Instances.doubleInstance(100)
                 ))
                 .build();
-        var sku41 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType().getType())
+        var sku41 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType().getType(), TmpId.random())
                 .data(Map.of(
                         shoppingTypes.skuTitleField(),
                         Instances.stringInstance("41"),
@@ -116,7 +114,7 @@ public class MockUtils {
                         Instances.doubleInstance(100)
                 ))
                 .build();
-        var sku42 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType().getType())
+        var sku42 = ClassInstanceBuilder.newBuilder(shoppingTypes.skuType().getType(), TmpId.random())
                 .data(Map.of(
                         shoppingTypes.skuTitleField(),
                         Instances.stringInstance("42"),
@@ -126,7 +124,7 @@ public class MockUtils {
                         Instances.doubleInstance(100)
                 ))
                 .build();
-        var product = ClassInstanceBuilder.newBuilder(shoppingTypes.productType().getType())
+        var product = ClassInstanceBuilder.newBuilder(shoppingTypes.productType().getType(), TmpId.random())
                 .data(Map.of(
                         shoppingTypes.productTitleField(),
                         Instances.stringInstance("shoes"),
@@ -135,7 +133,7 @@ public class MockUtils {
                                 List.of(sku40.getReference(), sku41.getReference(), sku42.getReference())).getReference()
                 ))
                 .build();
-        var couponFiveOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
+        var couponFiveOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType(), TmpId.random())
                 .data(Map.of(
                         shoppingTypes.couponTitleField(),
                         Instances.stringInstance("5 Yuan Off"),
@@ -143,7 +141,7 @@ public class MockUtils {
                         Instances.doubleInstance(5)
                 ))
                 .build();
-        var couponTenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
+        var couponTenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType(), TmpId.random())
                 .data(Map.of(
                         shoppingTypes.couponTitleField(),
                         Instances.stringInstance("10 Yuan Off"),
@@ -151,7 +149,7 @@ public class MockUtils {
                         Instances.doubleInstance(10L)
                 ))
                 .build();
-        var couponFifteenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType())
+        var couponFifteenOff = ClassInstanceBuilder.newBuilder(shoppingTypes.couponType().getType(), TmpId.random())
                 .data(Map.of(
                         shoppingTypes.couponTitleField(),
                         Instances.stringInstance("15 Yuan Off"),
@@ -346,8 +344,8 @@ public class MockUtils {
         );
     }
 
-    public static ClassInstance createHuman(LivingBeingTypes livingBeingTypes, boolean initIds) {
-        var human = ClassInstanceBuilder.newBuilder(livingBeingTypes.humanType().getType())
+    public static ClassInstance createHuman(LivingBeingTypes livingBeingTypes, Id id) {
+        var human = ClassInstanceBuilder.newBuilder(livingBeingTypes.humanType().getType(), id)
                 .data(Map.of(
                         livingBeingTypes.livingBeingAgeField(),
                         Instances.longInstance(30L),
@@ -363,17 +361,15 @@ public class MockUtils {
                         Instances.stringInstance("programmer")
                 ))
                 .build();
-        if (initIds)
-            TestUtils.initInstanceIds(human);
         return human;
     }
 
     public static ClassInstance createFoo(FooTypes fooTypes) {
-        return createFoo(fooTypes, false);
+        return createFoo(fooTypes, TmpId::random);
     }
 
-    public static ClassInstance createFoo(FooTypes fooTypes, boolean initIds) {
-        var foo = ClassInstanceBuilder.newBuilder(fooTypes.fooType().getType())
+    public static ClassInstance createFoo(FooTypes fooTypes, Supplier<Id> idSupplier) {
+        var foo = ClassInstanceBuilder.newBuilder(fooTypes.fooType().getType(), idSupplier.get())
                 .data(Map.of(
                         fooTypes.fooNameField(),
                         Instances.stringInstance("foo"),
@@ -381,13 +377,13 @@ public class MockUtils {
                         new ArrayInstance(
                                 fooTypes.barChildArrayType(),
                                 List.of(
-                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
+                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType(), idSupplier.get())
                                                 .data(Map.of(
                                                         fooTypes.barCodeField(),
                                                         Instances.stringInstance("bar001")
                                                 ))
                                                 .buildAndGetReference(),
-                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
+                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType(), idSupplier.get())
                                                 .data(Map.of(
                                                         fooTypes.barCodeField(),
                                                         Instances.stringInstance("bar002")
@@ -396,7 +392,7 @@ public class MockUtils {
                                 )
                         ).getReference(),
                         fooTypes.fooQuxField(),
-                        ClassInstanceBuilder.newBuilder(fooTypes.quxType().getType())
+                        ClassInstanceBuilder.newBuilder(fooTypes.quxType().getType(), idSupplier.get())
                                 .data(
                                         Map.of(
                                                 fooTypes.quxAmountField(),
@@ -408,19 +404,19 @@ public class MockUtils {
                         new ArrayInstance(
                                 fooTypes.bazArrayType(),
                                 List.of(
-                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
+                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType(), idSupplier.get())
                                                 .data(Map.of(
                                                         fooTypes.bazBarsField(),
                                                         new ArrayInstance(
                                                                 fooTypes.barArrayType(),
                                                                 List.of(
-                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType(), idSupplier.get())
                                                                                 .data(Map.of(
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar003")
                                                                                 ))
                                                                                 .buildAndGetReference(),
-                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType(), idSupplier.get())
                                                                                 .data(Map.of(
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar004")
@@ -430,19 +426,19 @@ public class MockUtils {
                                                         ).getReference()
                                                 ))
                                                 .buildAndGetReference(),
-                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType())
+                                        ClassInstanceBuilder.newBuilder(fooTypes.bazType().getType(), idSupplier.get())
                                                 .data(Map.of(
                                                         fooTypes.bazBarsField(),
                                                         new ArrayInstance(
                                                                 fooTypes.barArrayType(),
                                                                 List.of(
-                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType(), idSupplier.get())
                                                                                 .data(Map.of(
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar005")
                                                                                 ))
                                                                                 .buildAndGetReference(),
-                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType())
+                                                                        ClassInstanceBuilder.newBuilder(fooTypes.barType().getType(), idSupplier.get())
                                                                                 .data(Map.of(
                                                                                         fooTypes.barCodeField(),
                                                                                         Instances.stringInstance("bar006")
@@ -456,8 +452,6 @@ public class MockUtils {
                         ).getReference()
                 ))
                 .build();
-        if (initIds)
-            TestUtils.initInstanceIds(foo);
         return foo;
     }
 

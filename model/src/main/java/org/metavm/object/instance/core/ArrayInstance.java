@@ -6,17 +6,13 @@ import org.metavm.entity.NoProxy;
 import org.metavm.object.instance.ArrayListener;
 import org.metavm.object.instance.rest.ArrayInstanceParam;
 import org.metavm.object.instance.rest.InstanceFieldValue;
-import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.ArrayType;
+import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
-import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.*;
 
-import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
+import java.util.function.*;
 
 public class ArrayInstance extends MvInstance implements Iterable<Value> {
 
@@ -28,26 +24,16 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
     private final transient List<ArrayListener> listeners = new ArrayList<>();
 
     public ArrayInstance(ArrayType type) {
-        this(null, type, type.isEphemeral(), null);
+        this(null, type, type.isEphemeral());
     }
 
-    public ArrayInstance(Id id, ArrayType type, boolean ephemeral, @Nullable Consumer<Instance> load) {
-        super(id, type, 0, 0, ephemeral, load);
+    public ArrayInstance(Id id, ArrayType type, boolean ephemeral) {
+        super(id, type, 0, 0, ephemeral, false);
     }
 
     public ArrayInstance(ArrayType type, List<? extends Value> elements) {
-        super(type);
+        super(type, false);
         this.addAll(elements);
-    }
-
-    public ArrayInstance(ArrayType type, @Nullable InstanceParentRef parentRef) {
-        super(type);
-        setParentRef(parentRef);
-    }
-
-    public ArrayInstance(ArrayType type, @Nullable InstanceParentRef parentRef, boolean ephemeral) {
-        super(null, type, 0L, 0L, ephemeral, null);
-        setParentRef(parentRef);
     }
 
     @NoProxy
@@ -418,7 +404,7 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
     }
 
     @Override
-    public ArrayInstance copy() {
+    public ArrayInstance copy(Function<ClassType, Id> idSupplier) {
         var copy = new ArrayInstance(getInstanceType());
         copy.elements.addAll(elements);
         return copy;

@@ -61,7 +61,6 @@ public class BootstrapUtils {
                     var app = new Application(platformContext.allocateRootId(), "demo",
                             new PlatformUser(platformContext.allocateRootId(), "demo", "123456", "demo", List.of()));
                     platformContext.bind(app);
-                    platformContext.initIds();
                     TestConstants.APP_ID = app.getId().getTreeId();
                     try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                         BeanDefinitionRegistry.initialize(context);
@@ -151,7 +150,6 @@ public class BootstrapUtils {
                 var app = new Application(platformContext.allocateRootId(), "demo",
                         new PlatformUser(platformContext.allocateRootId(), "demo", "123456", "demo", List.of()));
                 platformContext.bind(app);
-                platformContext.initIds();
                 TestConstants.APP_ID = app.getId().getTreeId();
                 try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                     BeanDefinitionRegistry.initialize(context);

@@ -14,6 +14,8 @@ import java.util.Map;
 
 public class MockInstanceRepository implements InstanceRepository {
 
+    private int nextTreeId = 1000000;
+
     private final Map<Id, Instance> instanceMap = new HashMap<>();
     private final IdentitySet<Instance> instances = new IdentitySet<>();
 
@@ -70,6 +72,11 @@ public class MockInstanceRepository implements InstanceRepository {
     @Override
     public List<Id> filterAlive(List<Id> ids) {
         return Utils.filter(ids, instanceMap::containsKey);
+    }
+
+    @Override
+    public long allocateTreeId() {
+        return nextTreeId++;
     }
 
 }

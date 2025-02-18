@@ -37,12 +37,11 @@ public class TreeSizeTest extends TestCase {
             var klass = TestUtils.newKlassBuilder("Foo", "Foo").build();
             var nameField = FieldBuilder.newBuilder("name", klass, Types.getStringType()).build();
             var numField = FieldBuilder.newBuilder("num", klass, Types.getLongType()).build();
-            var inst = ClassInstance.create(Map.of(
+            var inst = ClassInstance.create(context.allocateRootId(), Map.of(
                     nameField, Instances.stringInstance("foo"),
                     numField, new LongValue(1)
             ), klass.getType());
             context.bind(inst);
-            context.initIds();
             logTreeSize("klass klass", ModelDefRegistry.getClassType(Klass.class).getKlass());
             logTreeSize("foo klass", klass);
             logTreeSize("foo instance", inst);

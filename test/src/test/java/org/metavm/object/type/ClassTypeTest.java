@@ -58,7 +58,7 @@ public class ClassTypeTest extends TestCase {
 
     public void testIsInstance() {
         var fooTypes = MockUtils.createFooTypes(true);
-        var fooInst = MockUtils.createFoo(fooTypes, true);
+        var fooInst = MockUtils.createFoo(fooTypes);
         Assert.assertTrue(fooTypes.fooType().getType().isInstance(fooInst.getReference()));
     }
 

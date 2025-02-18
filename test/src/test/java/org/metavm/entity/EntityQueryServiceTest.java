@@ -41,11 +41,6 @@ public class EntityQueryServiceTest extends TestCase {
     }
 
     public <T extends Entity> T addEntity(Function<Supplier<Id>, T> creator) {
-//        if (!entityContext.containsModel(entity)) {
-//            entityContext.bind(entity);
-//            entityContext.initIds();
-//        }
-//        instanceSearchService.add(getAppId(), (ClassInstance) entityContext.getInstance(entity));
         return TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
                 var entity = creator.apply(context::allocateRootId);

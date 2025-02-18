@@ -74,6 +74,7 @@ public class VmStack {
             int handlerTop = 0;
             int pc = 0;
             var bytes = code.getCode();
+            var repository = callContext.instanceRepository();
             var fp = 0;
             ClassInstance exception;
 
@@ -88,7 +89,7 @@ public class VmStack {
                                 int typeIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                                 var type = (ClassType) constants[typeIndex];
                                 boolean ephemeral = bytes[pc + 3] == 1;
-                                var instance = ClassInstanceBuilder.newBuilder(type)
+                                var instance = ClassInstanceBuilder.newBuilder(type, repository.allocateRootId(type))
                                         .ephemeral(ephemeral)
                                         .build();
                                 var fieldValues = new LinkedList<Value>();
@@ -118,7 +119,7 @@ public class VmStack {
                                 var instance = stack[--top].resolveMvObject();
                                 instance.fields[field.getRawField().offset].value = value;
                                 if (value instanceof Reference ref)
-                                    ref.get().setParent(instance, field.getRawField());
+                                    ref.get().setParent(instance);
                                 pc += 3;
                             }
                             case Bytecodes.RETURN -> {
@@ -362,7 +363,7 @@ public class VmStack {
                                 var type = (ClassType) constants[typeIndex];
                                 var ephemeral = bytes[pc + 3] == 1;
                                 var unbound = bytes[pc + 4] == 1;
-                                var self = ClassInstanceBuilder.newBuilder(type)
+                                var self = ClassInstanceBuilder.newBuilder(type, repository.allocateRootId(type))
                                         .ephemeral(ephemeral)
                                         .closureContext(type.isLocal() ? new ClosureContext(closureContext, Arrays.copyOfRange(stack, base, top)) : null)
                                         .build();
@@ -374,10 +375,10 @@ public class VmStack {
                             case Bytecodes.NEW_CHILD -> {
                                 var typeIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
                                 var type = (ClassType) constants[typeIndex];
-                                var self = ClassInstanceBuilder.newBuilder(type)
-                                        .closureContext(type.isLocal() ? new ClosureContext(closureContext, Arrays.copyOfRange(stack, base, top)) : null)
-                                        .build();
                                 var parent = stack[--top].resolveObject();
+                                var self = ClassInstanceBuilder.newBuilder(type, parent.getRoot().nextChildId())
+                                        .closureContext(type.isLocal() ? new ClosureContext(closureContext, Arrays.copyOfRange(stack, base, top + 1)) : null)
+                                        .build();
                                 parent.addChild(self);
                                 stack[top++] = self.getReference();
                                 pc += 3;
@@ -435,7 +436,7 @@ public class VmStack {
                                     var functionInterfaceImpl = Types.createFunctionalClass(functionalInterface);
                                     var funcImplKlass = functionInterfaceImpl.getKlass();
                                     var funcField = funcImplKlass.getFieldByName("func");
-                                    stack[top++] = ClassInstance.create(Map.of(funcField, func), functionInterfaceImpl).getReference();
+                                    stack[top++] = ClassInstance.create(TmpId.random(), Map.of(funcField, func), functionInterfaceImpl).getReference();
                                     pc += 6;
                                 }
                             }
@@ -458,7 +459,7 @@ public class VmStack {
                                     stack[top++] = arrayInst.get(index).toStackValue();
                                     pc++;
                                 } else {
-                                    exception = ClassInstance.allocate(StdKlass.indexOutOfBoundsException.type());
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.indexOutOfBoundsException.type());
                                     var nat = new IndexOutOfBoundsExceptionNative(exception);
                                     nat.IndexOutOfBoundsException(callContext);
                                     break except;
@@ -540,7 +541,7 @@ public class VmStack {
                                     stack[top++] = inst;
                                     pc += 3;
                                 } else {
-                                    exception = ClassInstance.allocate(StdKlass.exception.get().getType());
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.exception.get().getType());
                                     var exceptionNative = new ExceptionNative(exception);
                                     exceptionNative.Exception(Instances.stringInstance(
                                             String.format("Can not cast instance '%s' to type '%s'", inst.getTitle(), type.getName())
@@ -555,7 +556,7 @@ public class VmStack {
                             }
                             case Bytecodes.COPY -> {
                                 var sourceInst = stack[--top];
-                                var copy = sourceInst.resolveMv().copy();
+                                var copy = sourceInst.resolveMv().copy(repository::allocateRootId);
                                 stack[top++] = copy.getReference();
                                 pc++;
                             }
@@ -595,7 +596,7 @@ public class VmStack {
                             case Bytecodes.NON_NULL -> {
                                 var inst = stack[top - 1];
                                 if (inst.isNull()) {
-                                    exception = ClassInstance.allocate(StdKlass.nullPointerException.type());
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.nullPointerException.type());
                                     var nat = new NullPointerExceptionNative(exception);
                                     nat.NullPointerException(callContext);
                                     break except;
@@ -644,7 +645,7 @@ public class VmStack {
                                 var v2 = ((IntValue) stack[--top]).value;
                                 var v1 = ((IntValue) stack[--top]).value;
                                 if (v2 == 0) {
-                                    exception = ClassInstance.allocate(StdKlass.arithmeticException.type());
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.arithmeticException.type());
                                     var nat = new ArithmeticExceptionNative(exception);
                                     nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
                                     break except;
@@ -657,7 +658,7 @@ public class VmStack {
                                 var v2 = ((IntValue) stack[--top]).value;
                                 var v1 = ((IntValue) stack[--top]).value;
                                 if (v2 == 0) {
-                                    exception = ClassInstance.allocate(StdKlass.arithmeticException.type());
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.arithmeticException.type());
                                     var nat = new ArithmeticExceptionNative(exception);
                                     nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
                                     break except;
@@ -688,7 +689,7 @@ public class VmStack {
                                 var v2 = ((LongValue) stack[--top]).value;
                                 var v1 = ((LongValue) stack[--top]).value;
                                 if (v2 == 0) {
-                                    exception = ClassInstance.allocate(StdKlass.arithmeticException.type());
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.arithmeticException.type());
                                     var nat = new ArithmeticExceptionNative(exception);
                                     nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
                                     break except;
@@ -701,7 +702,7 @@ public class VmStack {
                                 var v2 = ((LongValue) stack[--top]).value;
                                 var v1 = ((LongValue) stack[--top]).value;
                                 if (v2 == 0) {
-                                    exception = ClassInstance.allocate(StdKlass.arithmeticException.type());
+                                    exception = ClassInstance.allocate(TmpId.random(), StdKlass.arithmeticException.type());
                                     var nat = new ArithmeticExceptionNative(exception);
                                     nat.ArithmeticException(Instances.stringInstance("/ by zero"), callContext);
                                     break except;
@@ -1182,7 +1183,7 @@ public class VmStack {
                             }
                             case Bytecodes.LT_OWNER -> {
                                 var t = (KlassType) stack[--top];
-                                stack[top++] = (Value) Objects.requireNonNull(t.owner);
+                                stack[top++] = Objects.requireNonNull(t.owner);
                                 pc++;
                             }
                             case Bytecodes.LT_ELEMENT -> {

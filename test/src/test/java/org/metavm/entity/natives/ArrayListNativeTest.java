@@ -57,6 +57,7 @@ public class ArrayListNativeTest extends TestCase {
                 var values = new ArrayList<Value>();
                 for (int i = 0; i < size; i++) {
                     var bar = ClassInstance.create(
+                            context.allocateRootId(),
                             Map.of(
                                     barCodeField, Instances.stringInstance(String.format("bar%d", i))
                             ),
@@ -66,7 +67,7 @@ public class ArrayListNativeTest extends TestCase {
                 }
                 var barArrayListType = KlassType.create(StdKlass.arrayList.get(), List.of(barKlass.getType()));
                 var list = Instances.newList(barArrayListType, values);
-                var foo = ClassInstance.create(Map.of(
+                var foo = ClassInstance.create(context.allocateRootId(), Map.of(
                         fooBarsField, list.getReference()
                 ), fooKlass.getType());
                 context.bind(foo);

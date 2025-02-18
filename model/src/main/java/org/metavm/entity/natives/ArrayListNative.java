@@ -61,7 +61,7 @@ public class ArrayListNative extends AbstractListNative implements ListNative, S
 
     public Value iterator(CallContext callContext) {
         var iteratorImplType = KlassType.create(StdKlass.iteratorImpl.get(), List.of(instance.getInstanceType().getFirstTypeArgument()));
-        var it = ClassInstance.allocate(iteratorImplType);
+        var it = ClassInstance.allocate(TmpId.random(), iteratorImplType);
         var itNative = (IteratorImplNative) NativeMethods.getNativeObject(it);
         itNative.IteratorImpl(instance, callContext);
         return it.getReference();
@@ -152,7 +152,7 @@ public class ArrayListNative extends AbstractListNative implements ListNative, S
 
     public static Value of(Klass klass, Value values, CallContext callContext) {
         if(values instanceof Reference r) {
-            var list = ClassInstance.allocate(klass.getType());
+            var list = ClassInstance.allocate(null, klass.getType());
             var listNative = (ArrayListNative) NativeMethods.getNativeObject(list);
             listNative.List(callContext);
             r.resolveArray().forEach(e -> listNative.add(e, callContext));

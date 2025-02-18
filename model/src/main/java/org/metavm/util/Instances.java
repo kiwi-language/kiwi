@@ -109,8 +109,8 @@ public class Instances {
         return arrayInstance(getAnyArrayType(), elements).getReference();
     }
 
-    public static ClassInstance classInstance(Klass type, Map<Field, Value> fields) {
-        return new MvClassInstance(null, fields, type);
+    public static ClassInstance classInstance(Klass type, Map<Field, Value> fields, boolean isNew) {
+        return new MvClassInstance(null, fields, type, isNew);
     }
 
     public static Value serializePrimitive(Object value) {
@@ -476,8 +476,9 @@ public class Instances {
         for (Instance instance : instances) {
             if (tracing)
                 log.trace("Migrating instance {}, tree ID: {}", instance, instance.tryGetTreeId());
-            instance.incVersion();
-            if (instance instanceof MvInstance mvInst && !mvInst.isEnum()) {
+            if (!instance.isValue())
+                instance.incVersion();
+            if (instance instanceof MvInstance mvInst/* && !mvInst.isEnum()*/) {
                 migrate(mvInst, newFields, convertingFields, toChildFields, changingSuperKlasses, toValueKlasses,
                         valueToEntityKlasses, toEnumKlasses, removingChildFields, runMethods, newIndexes, searchEnabledKlasses,
                         commit, context);
@@ -517,7 +518,7 @@ public class Instances {
                 if (k != null) {
                     var value = clsInst.getField(field);
                     if (value instanceof Reference r)
-                        r.get().setParent(clsInst, field);
+                        r.get().setParent(clsInst);
                 }
             }
             for (Klass klass : changingSuperKlasses) {
@@ -527,6 +528,9 @@ public class Instances {
             }
             for (Klass klass : toValueKlasses) {
                 handleEntityToValueConversion((MvClassInstance) clsInst, klass);
+            }
+            for (Klass klass : valueToEntityKlasses) {
+                handleValueToEntityConversion((MvClassInstance) clsInst, klass, context);
             }
             for (Field removingChildField : removingChildFields) {
                 var k = clsInst.getInstanceType().asSuper(removingChildField.getDeclaringType());
@@ -585,12 +589,27 @@ public class Instances {
         }
     }
 
+    private static void handleValueToEntityConversion(MvClassInstance instance, Klass klass, IInstanceContext context) {
+        instance.transformReference((r, isChild, type) -> {
+            if (type.isAssignableFrom(klass.getType())) {
+                if (r.get() instanceof ClassInstance object && object.getInstanceType().asSuper(klass) != null) {
+                    object.setRemoved();
+                    return object.copy(context::allocateRootId).getReference();
+                }
+            }
+            return r;
+        });
+    }
+
     private static void handleEntityToValueConversion(MvClassInstance instance, Klass klass) {
         instance.transformReference((r, isChild, type) -> {
             if (type.isAssignableFrom(klass.getType())) {
                 if (r.get() instanceof ClassInstance object && object.getInstanceType().asSuper(klass) != null) {
-                    object.clearId();
-                    return object.getReference();
+                    if (!object.isRemoved())
+                        object.setRemoved();
+                    var r1 =  object.copy(t -> null).getReference();
+                    Utils.require(r1.tryGetId() == null);
+                    return r1;
                 }
             }
             return r;
@@ -1129,7 +1148,7 @@ public class Instances {
     }
 
     public static MvClassInstance newList(ClassType listType, Iterable<? extends Value> values) {
-        var list = ClassInstance.allocate(listType);
+        var list = ClassInstance.allocate(null, listType);
         var nat = (ArrayListNative) NativeMethods.getNativeObject(list);
         nat.List();
         values.forEach(nat::add);

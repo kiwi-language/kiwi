@@ -263,11 +263,6 @@ public class MockDefContext extends DefContext {
     }
 
     @Override
-    public void initIds() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void addListener(ContextListener listener) {
         throw new UnsupportedOperationException();
     }

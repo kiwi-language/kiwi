@@ -1,21 +1,22 @@
 package org.metavm.object.instance.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
+@Slf4j
 public class InstanceState {
 
     public static InstanceState ephemeral(Instance instance) {
-        return new InstanceState(null, 0L, 0L, true, instance);
+        return new InstanceState(null, 0L, 0L, true, false, instance);
     }
-
 
     @Nullable
     Instance prev;
     @Nullable
     Instance next;
-    public Id id;
+    public final Id id;
     long version;
     long syncVersion;
     @NotNull Instance root;
@@ -39,17 +40,13 @@ public class InstanceState {
     public static final int FLAG_AFTER_CONTEXT_INIT_IDS_NOTIFIED = 128;
     public static final int FLAG_NEW = 256;
 
-    public InstanceState(@Nullable Id id, long version, long syncVersion, boolean ephemeral, Instance instance) {
+    public InstanceState(@Nullable Id id, long version, long syncVersion, boolean ephemeral, boolean isNew, Instance instance) {
         this.version = version;
         this.syncVersion = syncVersion;
         if (ephemeral)
             setEphemeral();
-        if (id != null) {
-            this.id = id;
-            if (id.tryGetTreeId() == null)
-                setNew();
-        } else
-            setNew();
+        this.id = id;
+        if(isNew) setNew();
         this.root = this.instance = instance;
     }
 

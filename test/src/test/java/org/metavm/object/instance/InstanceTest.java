@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.object.instance.core.ArrayInstance;
 import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Field;
 import org.metavm.util.ContextUtil;
@@ -42,7 +43,7 @@ public class InstanceTest extends TestCase {
     private ClassInstance getBarInstance(FooTypes fooTypes) {
         Map<Field, Value> barData = new HashMap<>();
         barData.put(fooTypes.barCodeField(), stringInstance(CONST_BAR_CODE));
-        return ClassInstance.create(barData, fooTypes.barType().getType());
+        return ClassInstance.create(TmpId.random(), barData, fooTypes.barType().getType());
     }
 
     private ClassInstance getFooInstance(FooTypes fooTypes) {
@@ -55,7 +56,7 @@ public class InstanceTest extends TestCase {
                 ).getReference()
         );
         fooData.put(fooTypes.fooBazListField(), new ArrayInstance(fooTypes.bazArrayType()).getReference());
-        return ClassInstance.create(fooData, fooTypes.fooType().getType());
+        return ClassInstance.create(TmpId.random(), fooData, fooTypes.fooType().getType());
     }
 
     public void testFoo() {
@@ -79,7 +80,7 @@ public class InstanceTest extends TestCase {
                 fooTypes.fooBazListField(),
                 new ArrayInstance(fooTypes.bazArrayType()).getReference()
         );
-        var foo = ClassInstance.create(data, fooTypes.fooType().getType());
+        var foo = ClassInstance.create(TmpId.random(), data, fooTypes.fooType().getType());
         var bars = foo.getInstanceArray(fooTypes.fooBarsField());
         var bar = bars.getInstance(0).resolveObject();
         Assert.assertEquals(1, bars.length());

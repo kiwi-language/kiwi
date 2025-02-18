@@ -76,9 +76,8 @@ public class InstanceIOTest extends TestCase {
         fooKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
         var names = new ArrayInstance(stringArrayType, List.of(Instances.stringInstance("foo")));
         Assert.assertTrue(names.getReference().isValueReference());
-        var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType())
+        var foo = ClassInstanceBuilder.newBuilder(fooKlass.getType(), PhysicalId.of(1L, 0L))
                 .data(Map.of(namesField, names.getReference()))
-                .id(PhysicalId.of(1L, 0L))
                 .build();
         var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(foo)), entityMap::get,
                 i -> {}, id -> null);
@@ -97,13 +96,12 @@ public class InstanceIOTest extends TestCase {
         baseKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
         derivedKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
 
-        var inst = ClassInstanceBuilder.newBuilder(derivedKlass.getType())
+        var inst = ClassInstanceBuilder.newBuilder(derivedKlass.getType(), PhysicalId.of(1L, 1L))
                 .data(Map.of(
                         nameField, Instances.stringInstance("foo"),
                         codeField, Instances.longInstance(1)
                 ))
                 .build();
-        inst.initId(PhysicalId.of(1L, 1L));
         var input = new InstanceInput(new ByteArrayInputStream(InstanceOutput.toBytes(inst)), entityMap::get, i -> {
         }, id -> null);
         var recovered = (ClassInstance) input.readSingleMessageGrove();
@@ -140,7 +138,8 @@ public class InstanceIOTest extends TestCase {
                         barCodeField,
                         Instances.stringInstance(barCode)
                 ),
-                barKlass
+                barKlass,
+                false
         );
 
         var quxInst = new MvClassInstance(
@@ -149,7 +148,8 @@ public class InstanceIOTest extends TestCase {
                         quxNameField,
                         Instances.stringInstance("qux001")
                 ),
-                quxKlass
+                quxKlass,
+                false
         );
 
         var fooInst = new MvClassInstance(
@@ -159,22 +159,11 @@ public class InstanceIOTest extends TestCase {
                         barField, barInst.getReference(),
                         quxField, quxInst.getReference()
                 ),
-                fooKlass
+                fooKlass,
+                false
         );
         barInst.setParentInternal(fooInst, true);
-
-        Function<Id, Instance> resolveInst = id -> {
-            var entity = entityMap.get(id);
-            if (entity != null) return entity;
-            if(Objects.equals(id, fooInst.tryGetId()))
-                return ClassInstance.allocateUninitialized(id);
-            else if(Objects.equals(id, barInst.tryGetId()))
-                return ClassInstance.allocateUninitialized(id);
-            else if(Objects.equals(id, quxInst.tryGetId()))
-                return quxInst;
-            else
-                throw new InternalException(String.format("Invalid id %s", id));
-        };
+        Function<Id, Instance> resolveInst = entityMap::get;
         var bytes = InstanceOutput.toBytes(fooInst);
         var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, i -> {}, id -> null);
         var recoveredFooInst = (ClassInstance) input.readSingleMessageGrove();

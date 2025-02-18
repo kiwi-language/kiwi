@@ -4,7 +4,6 @@ import org.metavm.entity.natives.ArrayListNative;
 import org.metavm.object.instance.InstanceFactory;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.*;
-import org.metavm.object.type.rest.dto.InstanceParentRef;
 import org.metavm.util.Instances;
 import org.metavm.util.InternalException;
 import org.metavm.util.Utils;
@@ -56,12 +55,12 @@ public class ValueFormatter {
                 if (!instanceDTO.isNew()) {
                     instance = (ClassInstance) context.get(instanceDTO.parseId());
                 } else {
-                    instance = ClassInstance.allocate(classType);
+                    instance = ClassInstance.allocate(context.allocateRootId(), classType);
                 }
                 classType.foreachField(field -> {
                     FieldValue rawValue = Utils.safeCall(fieldDTOMap.get(field.getRawField().getStringId()), InstanceFieldDTO::value);
                     Value fieldValue = rawValue != null ?
-                            parseOne(rawValue, field.getPropertyType(), InstanceParentRef.ofObject(instance.getReference(), field.getRawField()), context)
+                            parseOne(rawValue, field.getPropertyType(), instance, context)
                             : Instances.nullInstance();
                     fieldValueMap.put(field.getRawField(), fieldValue);
                 });
@@ -88,9 +87,7 @@ public class ValueFormatter {
             List<Value> elements = new ArrayList<>();
             for (FieldValue element : param.elements()) {
                 elements.add(
-                        parseOne(element, arrayType.getElementType(),
-                                InstanceParentRef.ofArray(array.getReference()),
-                                context)
+                        parseOne(element, arrayType.getElementType(), null, context)
                 );
             }
             array.setElements(elements);
@@ -101,9 +98,9 @@ public class ValueFormatter {
     }
 
     private static Value parseOne(FieldValue rawValue, Type type,
-                                  @Nullable InstanceParentRef parentRef, IInstanceContext context) {
+                                  @Nullable ClassInstance parent, IInstanceContext context) {
         Value value = InstanceFactory.resolveValue(
-                rawValue, type, parentRef, context
+                rawValue, type, parent, context
         );
         if (value instanceof Reference r && r.tryGetId() == null && !context.containsInstance(r.get()))
             context.bind(r.get());

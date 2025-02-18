@@ -21,18 +21,16 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
 
     public static final Logger logger = LoggerFactory.getLogger(IndexKeyRT.class);
 
-    private static final Klass DUMMY_TYPE = KlassBuilder.newBuilder(new NullId(), "Dummy", "Dummy").build();
+    private static final Klass DUMMY_TYPE = KlassBuilder.newBuilder(new NullId(), "Dummy", "Dummy").ephemeral(true).build();
 
     public  static final Reference MIN_INSTANCE;
 
     public static final Reference MAX_INSTANCE;
 
     static {
-        var i1 = ClassInstance.allocate(DUMMY_TYPE.getType());
-        i1.initId(new NullId());
+        var i1 = ClassInstance.allocate(new NullId(), DUMMY_TYPE.getType());
         MIN_INSTANCE = new Reference(i1);
-        var i2 = ClassInstance.allocate(DUMMY_TYPE.getType());
-        i2.initId(new MockId(Long.MAX_VALUE));
+        var i2 = ClassInstance.allocate(new MockId(Long.MAX_VALUE), DUMMY_TYPE.getType());
         i2.setSeq(Integer.MAX_VALUE);
         MAX_INSTANCE = new Reference(i2);
     }

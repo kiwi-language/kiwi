@@ -52,7 +52,7 @@ public class DoubleNativeStub implements NativeBase {
         var doubleType = StdKlass.double_.type();
         var valueField = StdField.doubleValue.get();
         var data = Map.of(valueField, value);
-        return ClassInstance.create(data, doubleType).getReference();
+        return ClassInstance.create(null, data, doubleType).getReference();
     }
 
     private static double getValue(Value value) {
