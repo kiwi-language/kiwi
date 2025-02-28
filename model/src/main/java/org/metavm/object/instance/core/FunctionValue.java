@@ -21,11 +21,6 @@ public abstract class FunctionValue implements Value, CallableRef {
     public FunctionValue() {
     }
 
-    @Override
-    public @Nullable Id tryGetId() {
-        return null;
-    }
-
     public abstract FlowExecResult execute(List<? extends Value> arguments, CallContext callContext);
 
     @Override

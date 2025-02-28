@@ -1,7 +1,7 @@
 package org.metavm.entity;
 
+import org.metavm.object.instance.core.EntityReference;
 import org.metavm.object.instance.core.InstanceIndexKey;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.Index;
 import org.metavm.util.Utils;
 
@@ -29,8 +29,8 @@ public record InstanceIndexQuery(
 
     public boolean memoryOnly() {
         return index.isIdNull()
-                || from != null && Utils.anyMatch(from.values(), i -> i instanceof Reference d && !d.isValueReference() && !d.isIdInitialized())
-                || to != null && Utils.anyMatch(to.values(), i -> i instanceof Reference d && !d.isValueReference() && !d.isIdInitialized());
+                || from != null && Utils.anyMatch(from.values(), i -> i instanceof EntityReference d && !d.isIdInitialized())
+                || to != null && Utils.anyMatch(to.values(), i -> i instanceof EntityReference d && !d.isIdInitialized());
     }
 
     @Override

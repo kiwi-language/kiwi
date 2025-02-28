@@ -92,8 +92,7 @@ public class IndexRef implements org.metavm.entity.Reference, Writable {
         }
         else if (instance instanceof Entity entity) {
             var values = getRawIndex().getIndexDef().getValues(entity);
-            if (values.getLast() instanceof Reference ref && ref.tryGetId() == null
-                    && ref.get() instanceof ArrayInstance array) {
+            if (values.getLast() instanceof ValueReference ref && ref.get() instanceof ArrayInstance array) {
                 for (Value element : array.getElements()) {
                     var exceptLast = values.subList(0, values.size() - 1);
                     var fieldValues = new ArrayList<>(exceptLast);

@@ -102,7 +102,7 @@ public class ValueFormatter {
         Value value = InstanceFactory.resolveValue(
                 rawValue, type, parent, context
         );
-        if (value instanceof Reference r && r.tryGetId() == null && !context.containsInstance(r.get()))
+        if (value instanceof ValueReference r && !context.containsInstance(r.get()))
             context.bind(r.get());
         return value;
     }

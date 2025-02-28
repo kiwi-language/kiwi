@@ -31,17 +31,19 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
+    private String name;
     private List<Parameter> parameters = new ArrayList<>();
     private int returnTypeIndex;
     private Code code;
     private Flow flow;
 
-    public Lambda(@NotNull Id id, List<Parameter> parameters, @NotNull Type returnType, Flow flow) {
-        this(id, parameters, flow.getConstantPool().addValue(returnType), flow);
+    public Lambda(@NotNull Id id, String name, List<Parameter> parameters, @NotNull Type returnType, Flow flow) {
+        this(id, name, parameters, flow.getConstantPool().addValue(returnType), flow);
     }
 
-    public Lambda(@NotNull Id id, List<Parameter> parameters, int returnTypeIndex, Flow flow) {
+    public Lambda(@NotNull Id id, String name, List<Parameter> parameters, int returnTypeIndex, Flow flow) {
         super(id);
+        this.name = name;
         this.returnTypeIndex = returnTypeIndex;
         setParameters(parameters);
         this.code = new Code(this);
@@ -51,6 +53,7 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {
+        visitor.visitUTF();
         visitor.visitList(visitor::visitEntity);
         visitor.visitInt();
         Code.visit(visitor);
@@ -76,6 +79,11 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     @Override
     public List<Parameter> getParameters() {
         return Collections.unmodifiableList(parameters);
+    }
+
+    @Override
+    public void addParameter(Parameter parameter) {
+        parameters.add(parameter);
     }
 
     @Override
@@ -168,6 +176,10 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
         return new FunctionType(getParameterTypes(typeMetadata), getReturnType());
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public void forEachReference(Consumer<Reference> action) {
         for (var parameters_ : parameters) action.accept(parameters_.getReference());
@@ -184,6 +196,7 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
         map.put("code", this.getCode().toJson());
         map.put("constantPool", this.getConstantPool().toJson());
         map.put("flow", this.getFlow().getStringId());
+        map.put("name", this.getName());
         map.put("parameterTypes", this.getParameterTypes().stream().map(Type::toJson).toList());
         map.put("minLocals", this.getMinLocals());
     }
@@ -212,6 +225,7 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     @Override
     public void readBody(MvInput input, Entity parent) {
         this.flow = (Flow) parent;
+        this.name = input.readUTF();
         this.parameters = input.readList(() -> input.readEntity(Parameter.class, this));
         this.returnTypeIndex = input.readInt();
         this.code = Code.read(input, this);
@@ -220,6 +234,7 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
     @Generated
     @Override
     public void writeBody(MvOutput output) {
+        output.writeUTF(name);
         output.writeList(parameters, output::writeEntity);
         output.writeInt(returnTypeIndex);
         code.write(output);

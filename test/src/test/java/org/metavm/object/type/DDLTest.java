@@ -347,7 +347,7 @@ public class DDLTest extends TestCase {
             for (String productId : productIds) {
                 var product = (MvClassInstance) context.get(Id.parse(productId));
                 var priceRef = (Reference) product.getField("price");
-                Assert.assertTrue(priceRef.isValueReference());
+                Assert.assertTrue(priceRef instanceof ValueReference);
                 var price = priceRef.resolveObject();
                 Assert.assertTrue(price.getInstanceKlass().isValueKlass());
                 Assert.assertNull(price.tryGetId());
@@ -386,7 +386,7 @@ public class DDLTest extends TestCase {
                 var productInst = (ClassInstance) context.get(Id.parse(productId));
                 var priceRef = (Reference) productInst.getField(priceField);
                 Assert.assertFalse(priceRef.isResolved());
-                Assert.assertFalse(priceRef.isValueReference());
+                Assert.assertFalse(priceRef instanceof ValueReference);
             }
         }
     }
@@ -412,7 +412,7 @@ public class DDLTest extends TestCase {
         try(var context = newContext()) {
             var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
             var priceRef = (Reference) shoesInst.getField("price");
-            Assert.assertFalse(priceRef.isValueReference());
+            Assert.assertFalse(priceRef instanceof ValueReference);
         }
     }
 
@@ -827,7 +827,7 @@ public class DDLTest extends TestCase {
                 List.of(Instances.trueInstance())
             ));
             Assert.assertNotNull(bean);
-            fooServiceId = bean.getId();
+            fooServiceId = ((EntityReference) bean).getId();
         }
         assemble("bean_ddl_after.mv");
         try(var context = newContext()) {

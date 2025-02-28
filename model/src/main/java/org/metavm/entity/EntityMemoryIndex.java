@@ -149,12 +149,8 @@ public class EntityMemoryIndex {
                 return 1;
             if(o2 == MAX_OBJECT)
                 return -1;
-            if (o1 instanceof Reference e1 && o2 instanceof Reference e2) {
-                if (e1.tryGetId() != null && e2.tryGetId() != null)
-                    return Objects.compare(e1.tryGetId(), e2.tryGetId(), Id::compareTo);
-//                if (e1.getTmpId() != null && e2.getTmpId() != null)
-//                    return Long.compare(e1.getTmpId(), e2.getTmpId());
-            }
+            if (o1 instanceof EntityReference e1 && o2 instanceof EntityReference e2)
+                return e1.getId().compareTo(e2.getId());
             return Integer.compare(System.identityHashCode(o1), System.identityHashCode(o2));
         }
 
@@ -292,10 +288,8 @@ public class EntityMemoryIndex {
                         return 1;
                     if (v1 instanceof StringReference s1 && v2 instanceof StringReference s2)
                         return s1.compareTo(s2);
-                    if (v1 instanceof Reference e1 && v2 instanceof Reference e2) {
-                        if (e1.tryGetId() != null && e2.tryGetId() != null)
-                            return Objects.compare(e1.tryGetId(), e2.tryGetId(), Id::compareTo);
-                    }
+                    if (v1 instanceof EntityReference e1 && v2 instanceof EntityReference e2)
+                        return e1.getId().compareTo(e2.getId());
                     if (v1 instanceof Comparable c1 && v2 instanceof Comparable c2) {
                         var cmp = Objects.compare(c1, c2, Comparable::compareTo);
                         if (cmp != 0)

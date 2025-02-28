@@ -48,7 +48,7 @@ public class ConstantExpression extends Expression {
             case CharValue charValue -> "'" + Utils.escape(charValue.getValue()) + "'";
             case PrimitiveValue primitiveValue -> primitiveValue.getValue() + "";
             case StringReference s -> "\"" + Utils.escape(s.getValue()) + "\"";
-            case Reference d -> {
+            case EntityReference d -> {
                 if (relaxedCheck)
                     yield  Constants.ID_PREFIX + Utils.orElse(d.getStringId(), "<uninitializedId>");
                 else

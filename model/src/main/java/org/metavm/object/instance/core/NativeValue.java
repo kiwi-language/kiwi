@@ -4,16 +4,9 @@ import org.metavm.object.instance.rest.FieldValue;
 import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.util.MvOutput;
 
-import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 public interface NativeValue extends Value {
-
-    @Nullable
-    @Override
-    default Id tryGetId() {
-        return null;
-    }
 
     @Override
     default FieldValue toFieldValueDTO() {

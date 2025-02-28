@@ -174,6 +174,7 @@ public class TypeResolverImpl implements TypeResolver {
         var method = Objects.requireNonNull(psiMethod.getUserData(Keys.Method));
         var capturedTypeVar = new CapturedTypeVariable(
                 TmpId.random(),
+                TmpId.randomString(),
                 resolveWildcardType(psiCapturedType.getWildcard(), stage),
                 resolveTypeVariable(psiCapturedType.getTypeParameter()).getVariable().getReference(),
                 method
@@ -423,7 +424,7 @@ public class TypeResolverImpl implements TypeResolver {
                     .struct(TranspileUtils.isStruct(psiClass))
                     .searchable(TranspileUtils.isSearchable(psiClass))
                     .isTemplate(isTemplate)
-                    .declaringKlass(declaringKlass)
+                    .scope(declaringKlass)
                     .isAbstract(psiClass.hasModifierProperty(PsiModifier.ABSTRACT))
                     .sourceTag(tag != -1 ? tag : null)
                     .build();

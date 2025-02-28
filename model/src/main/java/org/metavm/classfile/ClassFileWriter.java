@@ -93,12 +93,14 @@ public class ClassFileWriter {
     }
 
     private void writeLambda(Lambda lambda) {
+        output.writeUTF(lambda.getName());
         output.writeList(lambda.getParameters(), this::writeParameter);
         output.writeInt(lambda.getReturnTypeIndex());
         writeCode(lambda.getCode());
     }
 
     private void writeCapturedTypeVariable(CapturedTypeVariable capturedTypeVariable) {
+        output.writeUTF(capturedTypeVariable.getName());
         output.writeInt(capturedTypeVariable.getUncertainTypeIndex());
         output.writeReference(capturedTypeVariable.getTypeVariableReference());
         output.writeList(capturedTypeVariable.getAttributes(), a -> a.write(output));

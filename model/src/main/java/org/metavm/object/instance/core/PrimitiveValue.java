@@ -31,11 +31,6 @@ public abstract class PrimitiveValue implements Value, Comparable<PrimitiveValue
     }
 
     @Override
-    public @Nullable Id tryGetId() {
-        return null;
-    }
-
-    @Override
     public Object toSearchConditionValue() {
         return getValue();
     }

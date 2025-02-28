@@ -573,7 +573,7 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
 
     @Override
     public Reference createReference(Id id) {
-        return new Reference(id, () -> get(id));
+        return new EntityReference(id, () -> get(id));
     }
 
     @Override

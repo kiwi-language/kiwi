@@ -14,8 +14,6 @@ import org.metavm.flow.Method;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.util.*;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
@@ -82,7 +80,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         this._static = isStatic;
         this.access = access;
         this.state = state;
-        this.type = declaringType.getConstantPool().getType(typeIndex);
+        this.type = typeIndex == -1 ? Types.getAnyType() : declaringType.getConstantPool().getType(typeIndex);
         this.typeIndex = typeIndex;
         this.tag = tag;
         this.sourceTag = sourceTag;

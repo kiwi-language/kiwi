@@ -75,12 +75,6 @@ public class NullValue implements Value {
         return true;
     }
 
-    @Nullable
-    @Override
-    public Id tryGetId() {
-        return null;
-    }
-
     @Override
     public int hashCode() {
         return NullValue.class.hashCode();

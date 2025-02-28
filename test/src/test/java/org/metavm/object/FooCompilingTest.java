@@ -3,6 +3,7 @@ package org.metavm.object;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.autograph.CompilerTestBase;
+import org.metavm.object.instance.core.EntityReference;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.MvClassInstance;
 import org.metavm.object.instance.rest.LoadInstancesByPathsRequest;
@@ -75,7 +76,7 @@ public class FooCompilingTest extends CompilerTestBase {
                 var foo = (MvClassInstance) context.get(id);
                 MatcherAssert.assertThat(page.data().getFirst()[0],
                         InstanceDTOMatcher.of(Instances.stringInstance("Bar001").toDTO()));
-                Assert.assertEquals(page.data().getFirst()[1].id(), Objects.requireNonNull(foo.getField("qux")).getStringId());
+                Assert.assertEquals(page.data().getFirst()[1].id(), ((EntityReference) Objects.requireNonNull(foo.getField("qux"))).getStringId());
             }
         });
     }

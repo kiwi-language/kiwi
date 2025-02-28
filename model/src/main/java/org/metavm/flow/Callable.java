@@ -17,6 +17,8 @@ public interface Callable {
 
     List<Parameter> getParameters();
 
+    void addParameter(Parameter parameter);
+
     @JsonIgnore
     int getInputCount();
 

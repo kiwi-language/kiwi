@@ -6,9 +6,8 @@ import org.metavm.application.rest.dto.AppInvitationDTO;
 import org.metavm.common.ErrorCode;
 import org.metavm.api.Entity;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.*;
 import org.metavm.entity.IndexDef;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
@@ -41,8 +40,8 @@ public class AppInvitation extends org.metavm.entity.Entity {
         return new AppInvitation(platformCtx.allocateRootId(), app, user, invitationDTO.isAdmin());
     }
 
-    private Reference application;
-    private Reference user;
+    private EntityReference application;
+    private EntityReference user;
     private boolean isAdmin;
     private AppInvitationState state = AppInvitationState.INITIAL;
 
@@ -125,8 +124,8 @@ public class AppInvitation extends org.metavm.entity.Entity {
     @Generated
     @Override
     public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.application = (Reference) input.readValue();
-        this.user = (Reference) input.readValue();
+        this.application = (EntityReference) input.readValue();
+        this.user = (EntityReference) input.readValue();
         this.isAdmin = input.readBoolean();
         this.state = AppInvitationState.fromCode(input.read());
     }
@@ -141,6 +140,6 @@ public class AppInvitation extends org.metavm.entity.Entity {
     }
 
     @Override
-    protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
+    protected void buildSource(Map<String, Value> source) {
     }
 }

@@ -29,6 +29,11 @@ public class DummyCallable implements Callable, ConstantScope {
     }
 
     @Override
+    public void addParameter(Parameter parameter) {
+
+    }
+
+    @Override
     public int getInputCount() {
         return 0;
     }

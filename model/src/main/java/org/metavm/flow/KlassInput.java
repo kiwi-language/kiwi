@@ -1,22 +1,20 @@
 package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.*;
+import org.metavm.entity.Attribute;
+import org.metavm.entity.Entity;
+import org.metavm.entity.EntityRepository;
+import org.metavm.entity.GenericDeclaration;
+import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
-import org.metavm.util.DebugEnv;
-import org.metavm.util.Instances;
-import org.metavm.util.MvInput;
-import org.metavm.util.Utils;
+import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
 public class KlassInput extends MvInput {
@@ -70,90 +68,155 @@ public class KlassInput extends MvInput {
         return switch (refType) {
             case SymbolRefs.KLASS -> {
                 var qualName = readUTF();
-                yield new Reference(
-                        TmpId.random(),
-                        () -> {
-                            var klass = Objects.requireNonNull(repository.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(qualName)),
-                                    () -> "Cannot find klass '" + qualName + "'");
-                            if (tracing) log.trace("Resolved class klass {} for name {}", klass.getQualifiedName(), qualName);
-                            return klass;
-                        }
-                );
+                var klass = repository.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(qualName));
+                if (klass == null) {
+                    klass = KlassBuilder.newBuilder(repository.allocateRootId(), "<unknown>", qualName).build();
+                    repository.bind(klass);
+                }
+                yield klass.getReference();
+            }
+            case SymbolRefs.KLASS_TAG -> {
+                var tag = readInt();
+                var klass = repository.selectFirstByKey(Klass.UNIQUE_SOURCE_TAG, Instances.intInstance(tag));
+                if (klass == null) {
+                    klass = KlassBuilder.newBuilder(repository.allocateRootId(), "<unknown>", "<unknown>")
+                            .sourceTag(tag)
+                            .build();
+                    repository.bind(klass);
+                }
+                yield klass.getReference();
             }
             case SymbolRefs.ENCLOSED_KLASS -> {
-                var scopeRef = (Reference) readReference();
+                var scope = (Entity & KlassDeclaration) readReference().get();
                 var name = readUTF();
-                yield new Reference(TmpId.random(),
-                        () -> ((KlassDeclaration) scopeRef.resolveDurable()).getKlassByByName(name));
+                var klass = Utils.find(scope.getKlasses(), k -> k.getName().equals(name));
+                if (klass == null) {
+                    klass = KlassBuilder.newBuilder(scope.getRoot().nextChildId(), name, name)
+                            .scope(scope)
+                            .build();
+                }
+                yield klass.getReference();
             }
             case SymbolRefs.METHOD -> {
-                var klassRef = readReference();
-//                var internalName = readUTF();
-                var index = readInt();
-                yield  new Reference(
-                        TmpId.random(),
-                        () -> ((Klass) klassRef.get()).getMethods().get(index)
-//                        () -> {
-//                            var found = ((Klass) klassRef.get()).findSelfMethod(m -> m.getInternalName().equals(internalName));
-//                            if (found == null)
-//                                throw new NullPointerException("Cannot find method " + internalName + " in klas " + ((Klass)klassRef.get()).getName());
-//                            return found;
-//                        }
-                );
+                var klass = (Klass) readReference().get();
+                var internalName = readUTF();
+                var method = klass.findSelfMethod(m -> {
+                    var itName = m.tryGetInternalName();
+                    if (itName == null) itName = m.getInternalName(null);
+                    return internalName.equals(itName);
+                });
+                if (method == null) {
+                    method = MethodBuilder.newBuilder(klass, "<unknown>").returnTypeIndex(0).build();
+                    method.setInternalName(internalName);
+                }
+                yield method.getReference();
             }
             case SymbolRefs.FIELD -> {
-                var klassRef = readReference();
+                var klass = (Klass) readReference().get();
                 var name = readUTF();
-                yield new Reference(
-                        TmpId.random(),
-                        () -> ((Klass) klassRef.get()).getSelfFieldByName(name)
-                );
+                var field = klass.findSelfInstanceFieldByName(name);
+                if (field == null) {
+                    field = FieldBuilder.newBuilder(name, klass, -1)
+                            .column(new Column(ColumnKind.REFERENCE, "r", 0)).build();
+                }
+                yield field.getReference();
+            }
+            case SymbolRefs.STATIC_FIELD -> {
+                var klass = (Klass) readReference().get();
+                var name = readUTF();
+                var field = klass.findSelfStaticFieldByName(name);
+                if (field == null) {
+                    field = FieldBuilder.newBuilder(name, klass, -1)
+                            .isStatic(true)
+                            .column(new Column(ColumnKind.REFERENCE, "r", 0)).build();
+                }
+                yield field.getReference();
+            }
+            case SymbolRefs.FIELD_TAG -> {
+                var klass = (Klass) readReference().get();
+                var tag = readInt();
+                var field = klass.findSelfInstanceField(f -> Objects.equals(f.getSourceTag(), tag));
+                if (field == null) {
+                    field = FieldBuilder.newBuilder("<unnamed>", klass, -1)
+                            .sourceTag(tag)
+                            .column(new Column(ColumnKind.REFERENCE, "r", 0)).build();
+                }
+                yield field.getReference();
+            }
+            case SymbolRefs.STATIC_FIELD_TAG -> {
+                var klass = (Klass) readReference().get();
+                var tag = readInt();
+                var field = klass.findSelfStaticField(f -> Objects.equals(f.getSourceTag(), tag));
+                if (field == null) {
+                    field = FieldBuilder.newBuilder("<unnamed>", klass, -1)
+                            .isStatic(true)
+                            .sourceTag(tag)
+                            .column(new Column(ColumnKind.REFERENCE, "r", 0)).build();
+                }
+                yield field.getReference();
             }
             case SymbolRefs.INDEX -> {
-                var klassRef = readReference();
+                var klass = (Klass) readReference().get();
                 var name = readUTF();
-                yield new Reference(TmpId.random(),
-                        () -> Utils.findRequired(((Klass) klassRef.resolveDurable()).getIndices(), i -> i.getName().equals(name)));
+                var index = klass.findSelfIndex(idx -> idx.getName().equals(name));
+                if (index == null) {
+                    index = new Index(klass.getRoot().nextChildId(), klass, name, null, false, 0);
+                }
+                yield index.getReference();
             }
             case SymbolRefs.FUNCTION -> {
                 var name = readUTF();
-                yield new Reference(
-                        TmpId.random(),
-                        () -> Objects.requireNonNull(repository.selectFirstByKey(Function.UNIQUE_NAME, Instances.stringInstance(name)),
-                                () -> "Cannot find function '" + name + "'")
-                );
+                var func = repository.selectFirstByKey(Function.UNIQUE_NAME, Instances.stringInstance(name));
+                if (func == null) {
+                    func = FunctionBuilder.newBuilder(repository.allocateRootId(), name).returnTypeIndex(0).build();
+                    repository.bind(func);
+                }
+                yield func.getReference();
             }
             case SymbolRefs.TYPE_VARIABLE -> {
-                var declarationRef = readReference();
+                var declaration = (Entity & GenericDeclaration) readReference().get();
                 var name = readUTF();
-                yield new Reference(TmpId.random(),
-                        () -> ((GenericDeclaration) declarationRef.resolveDurable()).getTypeParameterByName(name));
+                var typeVar = Utils.find(declaration.getTypeParameters(), tv -> tv.getName().equals(name));
+                if (typeVar == null) {
+                    typeVar = new TypeVariable(declaration.getRoot().nextChildId(), name, declaration);
+                }
+                yield typeVar.getReference();
             }
             case SymbolRefs.CAPTURED_TYPE_VARIABLE -> {
-                var scopeRef = readReference();
-                var index = readInt();
-                yield new Reference(TmpId.random(),
-                        () -> ((CapturedTypeScope) scopeRef.resolveDurable()).getCapturedTypeVariables().get(index));
+                var scope = (Entity & CapturedTypeScope) readReference().get();
+                var name = readUTF();
+                var ctv = Utils.find(scope.getCapturedTypeVariables(), t -> t.getName().equals(name));
+                if (ctv == null) {
+                    ctv = new CapturedTypeVariable(scope.getRoot().nextChildId(), name, 0,
+                            new EntityReference(TmpId.random(), () -> {
+                                throw new UnsupportedOperationException();
+                            }),
+                            scope
+                    );
+                }
+                yield ctv.getReference();
             }
             case SymbolRefs.LAMBADA -> {
-                var flowRef = readReference();
-                var index = readInt();
-                yield new Reference(TmpId.random(),
-                        () -> ((Flow) flowRef.resolveDurable()).getLambdas().get(index));
+                var flow = (Flow) readReference().get();
+                var name = readUTF();
+                var lambda = Utils.find(flow.getLambdas(), l -> l.getName().equals(name));
+                if (lambda == null) {
+                    lambda = new Lambda(flow.getRoot().nextChildId(), name, List.of(), 0, flow);
+                }
+                yield lambda.getReference();
             }
             case SymbolRefs.PARAMETER -> {
-                var callableRef = readReference();
+                var callable = (Entity & Callable) readReference().get();
                 var name = readUTF();
-                yield new Reference(TmpId.random(),
-                        () -> ((Callable) callableRef.resolveDurable()).getParameterByName(name));
+                var param = Utils.find(callable.getParameters(), p -> p.getName().equals(name));
+                if (param == null) {
+                    param = new Parameter(callable.getRoot().nextChildId(), name, 0, callable);
+                    callable.addParameter(param);
+                }
+                yield param.getReference();
             }
             default -> throw new IllegalStateException("Invalid symbol reference type: " + refType);
         };
-    }
-
-    @Override
-    public Value readFlaggedReference() {
-        throw new UnsupportedOperationException();
     }
 
     protected  <T extends Entity> T getOrCreateEntity(Class<T> klass) {

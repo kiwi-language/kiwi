@@ -707,5 +707,15 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     protected void buildSource(Map<String, Value> source) {
         super.buildSource(source);
     }
+
+    @Override
+    public void addParameter(Parameter parameter) {
+        parameters.add(parameter);
+    }
+
+    @Override
+    public void addKlass(Klass klass) {
+        addLocalKlass(klass);
+    }
 }
 

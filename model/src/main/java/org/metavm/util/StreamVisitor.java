@@ -39,7 +39,6 @@ public class StreamVisitor {
             case WireTypes.TIME -> visitTime();
             case WireTypes.PASSWORD -> visitPassword();
             case WireTypes.REFERENCE -> visitReference();
-            case WireTypes.FLAGGED_REFERENCE -> visitFlaggedReference();
             case WireTypes.REDIRECTING_REFERENCE -> visitRedirectingReference();
             case WireTypes.REDIRECTING_INSTANCE -> visitRedirectingInstance();
             case WireTypes.INSTANCE -> visitInstance();
@@ -240,11 +239,6 @@ public class StreamVisitor {
         visitValue();
         readId();
         visitValue();
-    }
-
-    protected void visitFlaggedReference() {
-        read();
-        visitReference();
     }
 
     public InstanceInput getInput() {

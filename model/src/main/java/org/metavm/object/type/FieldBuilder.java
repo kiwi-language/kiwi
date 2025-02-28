@@ -53,7 +53,6 @@ public class FieldBuilder {
         this.name = name;
         this.declaringType = declaringType;
         this.type = null;
-        assert typeIndex >= 0;
         this.typeIndex = typeIndex;
     }
 

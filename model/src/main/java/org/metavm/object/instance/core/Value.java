@@ -69,25 +69,6 @@ public interface Value {
         return false;
     }
 
-    @Nullable Id tryGetId();
-
-    default Id getId() {
-        return Objects.requireNonNull(tryGetId());
-    }
-
-    default @Nullable String getStringId() {
-        return Utils.safeCall(tryGetId(), Id::toString);
-    }
-
-    default @Nullable String getStringIdForDTO() {
-//        var id = tryGetId();
-//        if(id instanceof PhysicalId physicalId)
-//            return new TypedPhysicalId(physicalId.isArray(), physicalId.getTreeId(), physicalId.getNodeId(), getType().toTypeKey()).toString();
-//        else
-//            return NncUtils.get(id, Id::toString);
-        return getStringId();
-    }
-
     FieldValue toFieldValueDTO();
 
     String getTitle();
@@ -100,13 +81,13 @@ public interface Value {
     Object toSearchConditionValue();
 
     default InstanceDTO toDTO() {
-        return toDTO(getParam());
+        return toDTO(null, getParam());
     }
 
-    default InstanceDTO toDTO(InstanceParam param) {
+    default InstanceDTO toDTO(@Nullable String id, InstanceParam param) {
         try (var serContext = SerializeContext.enter()) {
             return new InstanceDTO(
-                    getStringIdForDTO(),
+                    id,
                     getValueType().toExpression(serContext),
                     getValueType().getName(),
                     getTitle(),

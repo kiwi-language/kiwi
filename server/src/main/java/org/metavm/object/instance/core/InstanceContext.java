@@ -329,7 +329,7 @@ public class InstanceContext extends BufferingInstanceContext {
                         throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(i.getReference()));
                     }
                     return true;
-                }, r -> r.tryGetId() == null || containsIdSelf(r.getId()), visited);
+                }, r -> !(r instanceof EntityReference er) || containsIdSelf(er.getId()), visited);
             }
         });
     }

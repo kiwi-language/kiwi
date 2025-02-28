@@ -74,7 +74,7 @@ public class VmStack {
             int handlerTop = 0;
             int pc = 0;
             var bytes = code.getCode();
-            var repository = callContext.instanceRepository();
+            var repository = Utils.safeCall(callContext, CallContext::instanceRepository);
             var fp = 0;
             ClassInstance exception;
 

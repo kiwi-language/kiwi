@@ -192,7 +192,7 @@ public class ApiService extends EntityContextFactoryAware {
             }, request, response, type, context);
             if (inst != null) {
                 context.finish();
-                return inst.getStringId();
+                return ((EntityReference) inst).getStringId();
             } else
                 throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE, object);
         }
@@ -238,7 +238,7 @@ public class ApiService extends EntityContextFactoryAware {
               );
             } else {
                 return new SearchResult(
-                        Utils.map(dataPage1.data(), Reference::getStringId),
+                        Utils.map(dataPage1.data(), r -> ((EntityReference) r).getStringId()),
                         dataPage1.total()
                 );
             }
@@ -287,10 +287,10 @@ public class ApiService extends EntityContextFactoryAware {
                             yield Instances.toJavaString(clsInst.getField(StdField.enumName.get()));
                         if (clsInst.isList())
                             yield formatList(clsInst);
-                        else if (asValue || reference.isValueReference())
+                        else if (asValue || reference instanceof ValueReference)
                             yield formatValueObject(clsInst);
                         else
-                            yield reference.getStringId();
+                            yield ((EntityReference) reference).getStringId();
                     }
                     case ArrayInstance array -> {
                         yield formatArray(array);

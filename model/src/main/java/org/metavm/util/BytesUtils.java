@@ -59,8 +59,8 @@ public class BytesUtils {
             return primitiveValue.getValue();
         else if (instance instanceof StringReference)
             return Instances.toJavaString(instance);
-        else if(instance instanceof Reference durableInstance)
-            return durableInstance.getId();
+        else if(instance instanceof EntityReference r)
+            return r.getId();
         else
             throw new InternalException("Can not convert instance: " + instance);
     }

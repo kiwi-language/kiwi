@@ -260,11 +260,6 @@ public class CodeInput extends MvInput  {
     }
 
     @Override
-    public Value readFlaggedReference() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Entity readEntityMessage() {
         throw new UnsupportedOperationException();
     }

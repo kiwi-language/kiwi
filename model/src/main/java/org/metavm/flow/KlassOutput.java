@@ -26,8 +26,14 @@ public class KlassOutput extends MvOutput {
             case Klass klass -> {
                 var scope = klass.getScope();
                 if (scope == null) {
-                    write(SymbolRefs.KLASS);
-                    writeUTF(Objects.requireNonNull(klass.getQualifiedName()));
+                    if (klass.getSourceTag() == null) {
+                        write(SymbolRefs.KLASS);
+                        writeUTF(Objects.requireNonNull(klass.getQualifiedName()));
+                    }
+                    else {
+                        write(SymbolRefs.KLASS_TAG);
+                        writeInt(klass.getSourceTag());
+                    }
                 } else {
                     write(SymbolRefs.ENCLOSED_KLASS);
                     writeReference(((Instance) scope).getReference());
@@ -37,15 +43,18 @@ public class KlassOutput extends MvOutput {
             case Method method -> {
                 write(SymbolRefs.METHOD);
                 writeReference(method.getDeclaringType().getReference());
-//                writeUTF(method.getInternalName(null));
-                int index = method.getDeclaringType().getMethods().indexOf(method);
-                if (tracing) log.trace("Writing method {} with index {}", method.getQualifiedName(), index);
-                writeInt(index);
+                writeUTF(method.getInternalName(null));
             }
             case Field field -> {
-                write(SymbolRefs.FIELD);
-                writeReference(field.getDeclaringType().getReference());
-                writeUTF(field.getName());
+                if (field.getSourceTag() == null) {
+                    write(field.isStatic() ? SymbolRefs.STATIC_FIELD : SymbolRefs.FIELD);
+                    writeReference(field.getDeclaringType().getReference());
+                    writeUTF(field.getName());
+                } else {
+                    write(field.isStatic() ? SymbolRefs.STATIC_FIELD_TAG : SymbolRefs.FIELD_TAG);
+                    writeReference(field.getDeclaringType().getReference());
+                    writeInt(field.getSourceTag());
+                }
             }
             case Index index -> {
                 write(SymbolRefs.INDEX);
@@ -64,12 +73,12 @@ public class KlassOutput extends MvOutput {
             case CapturedTypeVariable capturedTypeVariable -> {
                 write(SymbolRefs.CAPTURED_TYPE_VARIABLE);
                 writeReference(((Instance) capturedTypeVariable.getScope()).getReference());
-                writeInt(capturedTypeVariable.getScope().getCapturedTypeVariables().indexOf(capturedTypeVariable));
+                writeUTF(capturedTypeVariable.getName());
             }
             case Lambda lambda -> {
                 write(SymbolRefs.LAMBADA);
                 writeReference(lambda.getFlow().getReference());
-                writeInt(lambda.getFlow().getLambdas().indexOf(lambda));
+                writeUTF(lambda.getName());
             }
             case Parameter parameter -> {
                 write(SymbolRefs.PARAMETER);

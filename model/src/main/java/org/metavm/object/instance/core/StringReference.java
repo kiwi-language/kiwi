@@ -8,7 +8,7 @@ import org.metavm.object.instance.rest.StringInstanceParam;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
-public class StringReference extends Reference implements Comparable<StringReference> {
+public class StringReference extends ValueReference implements  Comparable<StringReference> {
 
     private final String value;
 

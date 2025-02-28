@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
+import org.metavm.object.instance.core.EntityReference;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
@@ -28,7 +29,7 @@ public class FieldRef implements PropertyRef {
     }
 
     private final ClassType declaringType;
-    private final Reference fieldReference;
+    private final EntityReference fieldReference;
 //    public Field rawField;
 
     public FieldRef(ClassType declaringType, @NotNull Field rawField) {
@@ -39,7 +40,7 @@ public class FieldRef implements PropertyRef {
 
     private FieldRef(ClassType declaringType, Reference fieldReference) {
         this.declaringType = declaringType;
-        this.fieldReference = fieldReference;
+        this.fieldReference = (EntityReference) fieldReference;
     }
 
     public ClassType getDeclaringType() {

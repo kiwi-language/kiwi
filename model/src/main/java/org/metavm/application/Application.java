@@ -9,6 +9,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.HashedValue;
 import org.metavm.entity.SearchField;
+import org.metavm.object.instance.core.EntityReference;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -40,7 +41,7 @@ public class Application extends org.metavm.entity.Entity {
     @EntityField(asTitle = true)
     private String name;
 
-    private Reference owner;
+    private EntityReference owner;
 
     private @Nullable HashedValue secret;
 
@@ -181,7 +182,7 @@ public class Application extends org.metavm.entity.Entity {
     @Override
     public void readBody(MvInput input, org.metavm.entity.Entity parent) {
         this.name = input.readUTF();
-        this.owner = (Reference) input.readValue();
+        this.owner = (EntityReference) input.readValue();
         this.secret = input.readNullable(() -> HashedValue.read(input));
         this.admins = input.readList(() -> (Reference) input.readValue());
         this.state = ApplicationState.fromCode(input.read());

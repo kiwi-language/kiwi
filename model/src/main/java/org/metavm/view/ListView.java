@@ -6,6 +6,7 @@ import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.IndexDef;
+import org.metavm.object.instance.core.EntityReference;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
@@ -39,8 +40,8 @@ public class ListView extends org.metavm.entity.Entity {
     private String code;
     private Reference klassReference;
     private int priority;
-    private List<Reference> visibleFields = new ArrayList<>();
-    private List<Reference> searchableFields = new ArrayList<>();
+    private List<EntityReference> visibleFields = new ArrayList<>();
+    private List<EntityReference> searchableFields = new ArrayList<>();
 
     public ListView(Id id,String code, Klass klass) {
         super(id);
@@ -83,19 +84,19 @@ public class ListView extends org.metavm.entity.Entity {
 
     public void setVisibleFields(Collection<Field> visibleFields) {
         this.visibleFields.clear();
-        this.visibleFields.addAll(Utils.map(visibleFields, Instance::getReference));
+        this.visibleFields.addAll(Utils.map(visibleFields, i -> (EntityReference) i.getReference()));
     }
 
     public void setSearchableFields(Collection<Field> searchableFields) {
         this.searchableFields.clear();
-        this.searchableFields.addAll(Utils.map(searchableFields, Instance::getReference));
+        this.searchableFields.addAll(Utils.map(searchableFields, i -> (EntityReference) i.getReference()));
     }
 
     public ListViewDTO toDTO() {
         return new ListViewDTO(
                 getStringId(),
-                Utils.map(visibleFields, Reference::getStringId),
-                Utils.map(searchableFields, Reference::getStringId)
+                Utils.map(visibleFields, EntityReference::getStringId),
+                Utils.map(searchableFields, EntityReference::getStringId)
         );
     }
 
@@ -112,7 +113,6 @@ public class ListView extends org.metavm.entity.Entity {
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-        action.accept(klassReference);
         for (var visibleFields_ : visibleFields) action.accept(visibleFields_);
         for (var searchableFields_ : searchableFields) action.accept(searchableFields_);
     }
@@ -150,8 +150,8 @@ public class ListView extends org.metavm.entity.Entity {
         this.code = input.readUTF();
         this.klassReference = (Reference) input.readValue();
         this.priority = input.readInt();
-        this.visibleFields = input.readList(() -> (Reference) input.readValue());
-        this.searchableFields = input.readList(() -> (Reference) input.readValue());
+        this.visibleFields = input.readList(() -> (EntityReference) input.readValue());
+        this.searchableFields = input.readList(() -> (EntityReference) input.readValue());
     }
 
     @Generated

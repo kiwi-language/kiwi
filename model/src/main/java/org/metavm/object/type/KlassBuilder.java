@@ -2,7 +2,6 @@ package org.metavm.object.type;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.Attribute;
-import org.metavm.flow.Flow;
 import org.metavm.object.instance.core.Id;
 import org.metavm.util.Utils;
 
@@ -36,8 +35,7 @@ public class KlassBuilder {
     private Integer sourceTag;
     private final List<Attribute> attributes = new ArrayList<>();
     private int since = 0;
-    private @Nullable Flow enclosingFlow;
-    private @Nullable Klass declaringKlass;
+    private @Nullable KlassDeclaration scope;
     private boolean maintenanceDisabled;
 
     private KlassBuilder(Id id, String name, @Nullable String qualifiedName) {
@@ -135,13 +133,8 @@ public class KlassBuilder {
         return this;
     }
 
-    public KlassBuilder enclosingFlow(@Nullable Flow flow) {
-        this.enclosingFlow = flow;
-        return this;
-    }
-
-    public KlassBuilder declaringKlass(@Nullable Klass declaringKlass) {
-        this.declaringKlass = declaringKlass;
+    public KlassBuilder scope(@Nullable KlassDeclaration scope) {
+        this.scope = scope;
         return this;
     }
 
@@ -176,8 +169,7 @@ public class KlassBuilder {
                 desc,
                 isAbstract,
                 isTemplate,
-                enclosingFlow,
-                declaringKlass,
+                scope,
                 typeParameters,
                 tag,
                 sourceTag,

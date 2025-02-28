@@ -1043,7 +1043,7 @@ public class ExpressionResolver {
         enterLambda(expression);
         var returnType = typeResolver.resolveNullable(TranspileUtils.getLambdaReturnType(expression), ResolutionStage.DECLARATION);
         var funcInterface = (ClassType) typeResolver.resolveDeclaration(expression.getFunctionalInterfaceType());
-        var lambda = new Lambda(TmpId.random(), List.of(), returnType, methodGenerator.getMethod());
+        var lambda = new Lambda(TmpId.random(), TmpId.randomString(), List.of(), returnType, methodGenerator.getMethod());
         var parameters = new ArrayList<Parameter>();
         int i = 0;
         for (var psiParameter : expression.getParameterList().getParameters()) {

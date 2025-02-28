@@ -34,7 +34,7 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 if (args.getFirst() instanceof FunctionValue functionValue) {
                     var samInterface = ((ClassType) func.getTypeArguments().getFirst());
                     var type = Types.createSAMInterfaceImpl(samInterface, functionValue);
-                    return FlowExecResult.of(new MvClassInstance(null, Map.of(), type, false).getReference());
+                    return FlowExecResult.of(new MvClassInstance(TmpId.random(), Map.of(), type, false).getReference());
                 } else {
                     throw new InternalException("Invalid function instance: " + Instances.getInstancePath(args.getFirst()));
                 }
@@ -326,11 +326,8 @@ public enum StdFunction implements ValueHolderOwner<Function> {
             List.of(ReflectionUtils.getMethod(Lang.class, "getId", Object.class)),
             (func, args, ctx) -> {
                 var obj = args.getFirst();
-                if (obj instanceof Reference d) {
-                    var id = d.getStringId();
-                    if (id != null)
-                        return FlowExecResult.of(Instances.stringInstance(id));
-                }
+                if (obj instanceof EntityReference r)
+                    return FlowExecResult.of(Instances.stringInstance(r.getStringId()));
                 var npe = ClassInstance.allocate(TmpId.random(), StdKlass.nullPointerException.get().getType());
                 var nat = new NullPointerExceptionNative(npe);
                 nat.NullPointerException(Instances.stringInstance("Object has no ID"), ctx);

@@ -118,8 +118,8 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     public EnumConstantRT getEnumConstant(Id id) {
         assert getKlass().isEnum();
         for (var ec : getKlass().getEnumConstants()) {
-            var ref = (Reference) get(ec);
-            if(id.equals(ref.tryGetId()))
+            var ref = (EntityReference) get(ec);
+            if(id.equals(ref.getId()))
                 return createEnumConstant(ref.resolveObject());
         }
         throw new InternalException("Can not find enum constant with id " + id);

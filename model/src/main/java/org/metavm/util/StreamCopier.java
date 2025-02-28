@@ -199,13 +199,6 @@ public class StreamCopier extends StreamVisitor {
     }
 
     @Override
-    protected void visitFlaggedReference() {
-        var flags = read();
-        output.write(flags);
-        output.writeId(readId());
-    }
-
-    @Override
     public String visitUTF() {
         var utf = readUTF();
         output.writeUTF(utf);

@@ -23,7 +23,7 @@ public interface Instance extends Message, Identifiable {
     Logger log = LoggerFactory.getLogger(Instance.class);
 
     default Reference getReference() {
-        return new Reference(this);
+        return isValue() ? new ValueReference(this) : new EntityReference(this);
     }
 
     void forEachChild(Consumer<? super Instance> action);
@@ -113,14 +113,6 @@ public interface Instance extends Message, Identifiable {
 
     default boolean isValue() {
         return false;
-    }
-
-    default int getSeq() {
-        return state().seq;
-    }
-
-    default void setSeq(int seq) {
-        this.state().seq = seq;
     }
 
     default long nextNodeId() {

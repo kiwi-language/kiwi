@@ -29,10 +29,9 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
 
     static {
         var i1 = ClassInstance.allocate(new NullId(), DUMMY_TYPE.getType());
-        MIN_INSTANCE = new Reference(i1);
+        MIN_INSTANCE = new EntityReference(i1);
         var i2 = ClassInstance.allocate(new MockId(Long.MAX_VALUE), DUMMY_TYPE.getType());
-        i2.setSeq(Integer.MAX_VALUE);
-        MAX_INSTANCE = new Reference(i2);
+        MAX_INSTANCE = new EntityReference(i2);
     }
 
     private final Index index;
@@ -113,16 +112,8 @@ public class IndexKeyRT implements Comparable<IndexKeyRT> {
             return 1;
         if (first instanceof StringReference s1 && second instanceof StringReference s2)
             return s1.compareTo(s2);
-        if(first instanceof Reference d1
-                && second instanceof Reference d2) {
-            if(d1.isNew() && d2.isNew())
-                return Integer.compare(d1.get().getSeq(), d2.get().getSeq());
-            if(d1.isNew())
-                return 1;
-            else if(d2.isNew())
-                return -1;
+        if(first instanceof EntityReference d1 && second instanceof EntityReference d2)
             return d1.getId().compareTo(d2.getId());
-        }
         throw new InternalException("Can not compare instances");
     }
 

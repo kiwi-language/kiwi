@@ -29,10 +29,9 @@ public class MockEntityRepository implements EntityRepository {
     @Override
     public Reference createReference(Id id) {
 
-        return new Reference(id, () -> {
+        return new EntityReference(id, () -> {
             var e = entities.get(id);
             if (e == null) {
-//                entities.forEach((id1, e1) -> log.debug("Entity ID: {}, entity: {}", id1, e1.getClass().getName()));
                 throw new NullPointerException("Cannot find entity for ID " + id);
             }
             return e;

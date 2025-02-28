@@ -146,8 +146,8 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             return;
         }
         forEachField((f, v) -> {
-            if(v instanceof Reference r && (r.tryGetId() == null))
-                action.accept(r.get());
+            if(v instanceof ValueReference vr)
+                action.accept(vr.get());
         });
     }
 
@@ -195,7 +195,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             return;
         }
         forEachField((f, v) -> {
-            if(v instanceof Reference r) {
+            if(v instanceof EntityReference r) {
                 var r1 = function.apply(r, r.isResolved() && r.get().isChildOf(this), f.getType());
                 if(r1 != r)
                     setField(f, r1);

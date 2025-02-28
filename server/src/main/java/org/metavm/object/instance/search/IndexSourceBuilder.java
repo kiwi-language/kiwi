@@ -1,6 +1,5 @@
 package org.metavm.object.instance.search;
 
-import org.metavm.application.Application;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.Field;
@@ -8,7 +7,6 @@ import org.metavm.object.type.Klass;
 import org.metavm.util.Utils;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.metavm.constant.FieldNames.*;
@@ -59,8 +57,10 @@ public class IndexSourceBuilder {
             return null;
         else if (value instanceof PrimitiveValue primitiveValue) {
             return primitiveValue.getValue();
-        } else {
-            return ((Reference) value).tryGetTreeId();
+        } else if (value instanceof StringReference stringReference)
+            return stringReference.getValue();
+        else {
+            return ((EntityReference) value).tryGetTreeId();
         }
     }
 

@@ -531,7 +531,7 @@ public class MockUtils {
                 .isStatic(true)
                 .returnType(new FunctionType(List.of(longFooKlass, longFooKlass), Types.getLongType()))
                 .build();
-        var lambda = new Lambda(fooKlass.nextChildId(), List.of(), Types.getLongType(), getComparatorMethod);
+        var lambda = new Lambda(fooKlass.nextChildId(), TmpId.randomString(), List.of(), Types.getLongType(), getComparatorMethod);
         lambda.setParameters(List.of(
                 new Parameter(fooKlass.nextChildId(), "foo1", longFooKlass, lambda),
                 new Parameter(fooKlass.nextChildId(), "foo2", longFooKlass, lambda)

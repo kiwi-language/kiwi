@@ -43,7 +43,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     private final boolean readonly;
     private final String clientId = ContextUtil.getClientId();
     private final IndexSource indexSource;
-    private int seq;
     private final long startAt = System.currentTimeMillis();
     private long timeout;
     private String description = "unnamed";
@@ -97,7 +96,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     public Reference createReference(Id id) {
-        return new Reference(id, () -> get(id));
+        return new EntityReference(id, () -> get(id));
     }
 
     @Override
@@ -293,7 +292,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     protected Reference allocateInstance(Id id) {
-        return new Reference(id, () -> get(id));
+        return new EntityReference(id, () -> get(id));
     }
 
     @Override
@@ -583,7 +582,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         Utils.require(instance.getNext() == null && instance.getPrev() == null);
         Utils.require(!instance.isRemoved(),
                 () -> String.format("Can not add a removed instance: %d", instance.tryGetTreeId()));
-        instance.setSeq(seq++);
         if (tail == null)
             head = tail = instance;
         else {
@@ -669,10 +667,10 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                     }
                     return true;
                 }, r -> {
-                    if (r.isNew() && r.resolveDurable().getContext() == null) {
+                    if (r instanceof EntityReference er && er.isNew() && r.resolveDurable().getContext() == null) {
                         return true;
                     }
-                    return r.tryGetId() == null || instanceMap.containsKey(r.getId());
+                    return !(r instanceof EntityReference er) || instanceMap.containsKey(er.getId());
                 }, visited);
         }
         return added;
@@ -844,7 +842,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     @Override
     public boolean containsUniqueKey(IndexDef<?> indexDef, Value... values) {
         for (var value : values) {
-            if(value instanceof Reference ref && !ref.isValueReference() && !containsId(ref.getId()))
+            if(value instanceof EntityReference ref && !containsId(ref.getId()))
                 return false ;
         }
         return containsUniqueKey(createIndexKey(indexDef, values));

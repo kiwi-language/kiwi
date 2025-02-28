@@ -20,7 +20,6 @@ public class InstanceState {
     long version;
     long syncVersion;
     @NotNull Instance root;
-    int seq;
     long nextNodeId = 1;
     Instance instance;
     @Nullable MvInstance parent;

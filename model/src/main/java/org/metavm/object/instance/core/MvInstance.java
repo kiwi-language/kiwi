@@ -188,7 +188,7 @@ public abstract class MvInstance extends BaseInstance {
     }
 
     public Object toSearchConditionValue() {
-        return state.id.getTreeId();
+        return Utils.safeCall(state.id, Id::getTreeId);
     }
 
     public void setType(Type type) {

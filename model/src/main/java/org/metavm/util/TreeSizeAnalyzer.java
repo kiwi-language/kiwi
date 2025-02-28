@@ -76,14 +76,6 @@ public class TreeSizeAnalyzer extends StreamCopier {
         numReferences++;
     }
 
-    @Override
-    protected void visitFlaggedReference() {
-        var beforeSize = bout.size();
-        super.visitFlaggedReference();
-        totalReferenceSize += bout.size() - beforeSize;
-        numReferences++;
-    }
-
     public void printResult(IInstanceContext context) {
         var root = Objects.requireNonNull(this.root);
         logger.info("Tree size statistics, total size: {}, total head size: {}, number references:{}, total reference size: {}\n{}",

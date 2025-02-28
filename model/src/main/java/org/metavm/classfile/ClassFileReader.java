@@ -7,7 +7,6 @@ import org.metavm.entity.EntityRepository;
 import org.metavm.entity.GenericDeclaration;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.PhysicalId;
-import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.DebugEnv;
@@ -59,8 +58,8 @@ public class ClassFileReader {
                     PhysicalId.of(repository.allocateTreeId(), 0L);
             klass = KlassBuilder.newBuilder(id, name, qualName)
                     .sourceTag(sourceTag)
+                    .scope(parent)
                     .build();
-            klass.setScope(parent);
             repository.bind(klass);
             if (listener != null) listener.beforeKlassCreate();
         }
@@ -144,6 +143,7 @@ public class ClassFileReader {
         var existing = Utils.find(klass.getMethods(), m -> Objects.equals(m.tryGetInternalName(), internalName));
         Method method;
         if (existing != null) {
+            existing.setName(name);
             existing.setReturnTypeIndex(returnTypeIndex);
             method = existing;
         }
@@ -165,12 +165,21 @@ public class ClassFileReader {
 
     private CapturedTypeVariable readCapturedTypeVariable(CapturedTypeScope scope) {
         var root = ((Entity) scope).getRoot();
-        var ct = new CapturedTypeVariable(
-                root.nextChildId(),
-                input.readInt(),
-                input.readReference(),
-                scope
-        );
+        var name = input.readUTF();
+        var ct = Utils.find(scope.getCapturedTypeVariables(), t -> t.getName().equals(name));
+        if (ct == null) {
+            ct = new CapturedTypeVariable(
+                    root.nextChildId(),
+                    name,
+                    input.readInt(),
+                    input.readReference(),
+                    scope
+            );
+        }
+        else {
+            ct.setUncertainTypeIndex(input.readInt());
+            ct.setTypeVariable(input.readReference());
+        }
         ct.setAttributes(input.readList(() -> Attribute.read(input)));
         return ct;
     }
@@ -217,7 +226,13 @@ public class ClassFileReader {
     }
 
     private Lambda readLambda(Flow flow) {
-        var lambda = new Lambda(flow.getRoot().nextChildId(), List.of(), -1, flow);
+        var name = input.readUTF();
+        var existing = Utils.find(flow.getLambdas(), l -> l.getName().equals(name));
+        Lambda lambda;
+        if (existing == null)
+            lambda = new Lambda(flow.getRoot().nextChildId(), name, List.of(), -1, flow);
+        else
+            lambda = existing;
         lambda.setParameters(input.readList(() -> readParameter(lambda)));
         lambda.setReturnTypeIndex(input.readInt());
         readCode(lambda.getCode());

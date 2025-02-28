@@ -29,6 +29,7 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
+    private String name;
     private CapturedTypeScope scope;
 
     private int uncertainTypeIndex;
@@ -36,16 +37,17 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
 
     private transient ResolutionStage stage = ResolutionStage.INIT;
 
-    public CapturedTypeVariable(@NotNull Id id, @NotNull UncertainType uncertainType,
+    public CapturedTypeVariable(@NotNull Id id, String name, @NotNull UncertainType uncertainType,
                                 @NotNull Reference typeVariable,
                                 @NotNull CapturedTypeScope scope) {
-        this(id, scope.getConstantPool().addValue(uncertainType), typeVariable, scope);
+        this(id, name, scope.getConstantPool().addValue(uncertainType), typeVariable, scope);
     }
 
-    public CapturedTypeVariable(@NotNull Id id, int uncertainTypeIndex,
+    public CapturedTypeVariable(@NotNull Id id, String name, int uncertainTypeIndex,
                                 @NotNull Reference typeVariable,
                                 @NotNull CapturedTypeScope scope) {
         super(id);
+        this.name = name;
         this.scope = scope;
         this.typeVariable = typeVariable;
         this.uncertainTypeIndex = uncertainTypeIndex;
@@ -55,6 +57,7 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
     @Generated
     public static void visitBody(StreamVisitor visitor) {
         TypeDef.visitBody(visitor);
+        visitor.visitUTF();
         visitor.visitInt();
         visitor.visitValue();
     }
@@ -77,6 +80,10 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
 
     public void setUncertainTypeIndex(int uncertainTypeIndex) {
         this.uncertainTypeIndex = uncertainTypeIndex;
+    }
+
+    public void setTypeVariable(Reference typeVariable) {
+        this.typeVariable = typeVariable;
     }
 
     public void setScope(CapturedTypeScope scope) {
@@ -145,6 +152,10 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
         super.acceptChildren(visitor);
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
@@ -162,6 +173,7 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
         map.put("uncertainType", this.getUncertainType().toJson());
         map.put("type", this.getType().toJson());
         map.put("stage", this.getStage().name());
+        map.put("name", this.getName());
         map.put("attributes", this.getAttributes().stream().map(org.metavm.entity.Attribute::toJson).toList());
     }
 
@@ -190,6 +202,7 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
     public void readBody(MvInput input, org.metavm.entity.Entity parent) {
         super.readBody(input, parent);
         this.scope = (CapturedTypeScope) parent;
+        this.name = input.readUTF();
         this.uncertainTypeIndex = input.readInt();
         this.typeVariable = (Reference) input.readValue();
     }
@@ -198,6 +211,7 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
     @Override
     public void writeBody(MvOutput output) {
         super.writeBody(output);
+        output.writeUTF(name);
         output.writeInt(uncertainTypeIndex);
         output.writeValue(typeVariable);
     }

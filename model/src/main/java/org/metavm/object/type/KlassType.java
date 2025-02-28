@@ -6,6 +6,7 @@ import org.metavm.api.Entity;
 import org.metavm.entity.*;
 import org.metavm.flow.Flow;
 import org.metavm.object.instance.ColumnKind;
+import org.metavm.object.instance.core.EntityReference;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.NullValue;
 import org.metavm.object.instance.core.Reference;
@@ -44,7 +45,7 @@ public class KlassType extends ClassType {
     }
 
     public final @Nullable GenericDeclarationRef owner;
-    private final Reference klassReference;
+    private final EntityReference klassReference;
     private final @Nullable List<Type> typeArguments;
     @CopyIgnore
     private transient TypeSubstitutor substitutor;
@@ -63,7 +64,7 @@ public class KlassType extends ClassType {
 
     public KlassType(@Nullable GenericDeclarationRef owner, @NotNull Reference klassReference, List<? extends Type> typeArguments, int typeTag) {
         this.owner = owner;
-        this.klassReference = klassReference;
+        this.klassReference = (EntityReference) klassReference;
         this.typeArguments = typeArguments.isEmpty() ? null : new ArrayList<>(typeArguments);
     }
 

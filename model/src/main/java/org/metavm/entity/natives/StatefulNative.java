@@ -2,6 +2,7 @@ package org.metavm.entity.natives;
 
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
+import org.metavm.object.instance.core.ValueReference;
 import org.metavm.object.type.Type;
 import org.metavm.util.TriConsumer;
 import org.metavm.util.TriFunction;
@@ -27,8 +28,8 @@ public interface StatefulNative {
 
     default void forEachValue(Consumer<? super Instance> action) {
         forEachReference(r -> {
-            if (r.isValueReference())
-                action.accept(r.resolveDurable());
+            if (r instanceof ValueReference vr)
+                action.accept(vr.get());
         });
     }
 

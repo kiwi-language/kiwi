@@ -42,7 +42,7 @@ public class Message extends org.metavm.entity.Entity {
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    private Reference receiver;
+    private EntityReference receiver;
     @EntityField(asTitle = true)
     private String title;
     private MessageKind kind;
@@ -95,7 +95,7 @@ public class Message extends org.metavm.entity.Entity {
         return new MessageDTO(
                 getStringId(),
                 receiver.getStringId(), title, kind.code,
-                target.getStringId(),
+                ((EntityReference) target).getStringId(),
                 read
         );
     }
@@ -144,7 +144,7 @@ public class Message extends org.metavm.entity.Entity {
     @Generated
     @Override
     public void readBody(MvInput input, org.metavm.entity.Entity parent) {
-        this.receiver = (Reference) input.readValue();
+        this.receiver = (EntityReference) input.readValue();
         this.title = input.readUTF();
         this.kind = MessageKind.fromCode(input.read());
         this.read = input.readBoolean();

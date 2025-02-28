@@ -238,7 +238,7 @@ class AsmExpressionResolver {
 
     private Type resolveLambdaExpression(AssemblyParser.LambdaExpressionContext ctx) {
         var returnType = parseType(ctx.typeTypeOrVoid());
-        var lambda = new Lambda(TmpId.random(), List.of(), returnType, this.code.getFlow());
+        var lambda = new Lambda(TmpId.random(), TmpId.randomString(), List.of(), returnType, this.code.getFlow());
         var params = parseParameterList(ctx.lambdaParameters().formalParameterList(), lambda);
         lambda.setParameters(params);
         var code = lambda.getCode();

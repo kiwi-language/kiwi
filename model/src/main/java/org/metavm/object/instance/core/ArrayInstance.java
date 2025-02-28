@@ -235,8 +235,8 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
     @Override
     public void forEachValue(Consumer<? super Instance> action) {
         elements.forEach(e -> {
-            if(e instanceof Reference r && r.isValueReference())
-                action.accept(r.get());
+            if(e instanceof ValueReference vr)
+                action.accept(vr.get());
         });
     }
 
@@ -371,8 +371,8 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
         treeWriter.writeLine(getInstanceType().getName() + " " + tryGetId());
         treeWriter.indent();
         for (Value element : elements) {
-            if(element instanceof Reference r && r.isValueReference())
-                r.get().writeTree(treeWriter);
+            if(element instanceof ValueReference vr)
+                vr.get().writeTree(treeWriter);
             else
                 treeWriter.writeLine(element.getTitle());
         }

@@ -2,7 +2,6 @@ package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 
@@ -48,7 +47,7 @@ public abstract class DefContext implements IInstanceContext, TypeRegistry {
         var type = getPrimitiveType(javaType);
         if (type != null)
             return type;
-        if (javaType instanceof Class<?> k && (Value.class == k || Reference.class == k))
+        if (javaType instanceof Class<?> k && (Value.class == k || EntityReference.class == k))
             return AnyType.instance;
         if (BiUnion.isNullable(javaType))
             return Types.getNullableType(getType(BiUnion.getUnderlyingType(javaType)));

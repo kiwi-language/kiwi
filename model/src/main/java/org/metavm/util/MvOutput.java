@@ -4,10 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.entity.Entity;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.IdTag;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.Type;
 
 import java.io.IOException;
@@ -98,7 +96,7 @@ public abstract class MvOutput extends OutputStream {
     }
 
     public void writeReference(Reference reference) {
-        writeId(reference.getId());
+        writeId(((EntityReference) reference).getId());
     }
 
     protected OutputStream getOut() {

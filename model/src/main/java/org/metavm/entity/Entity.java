@@ -192,4 +192,8 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
         return treeId != null ? PhysicalId.of(treeId, nextNodeId()) : TmpId.random();
     }
 
+    @Override
+    public EntityReference getReference() {
+        return new EntityReference(this);
+    }
 }

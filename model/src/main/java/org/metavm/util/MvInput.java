@@ -188,7 +188,6 @@ public abstract class MvInput implements Closeable {
             case WireTypes.BOOLEAN -> new BooleanValue(readBoolean());
             case WireTypes.TIME -> new TimeValue(readLong());
             case WireTypes.PASSWORD -> new PasswordValue(readUTF());
-            case WireTypes.FLAGGED_REFERENCE -> readFlaggedReference();
             case WireTypes.REFERENCE -> readReference();
             case WireTypes.INSTANCE -> readInstance();
             case WireTypes.VALUE_INSTANCE -> readValueInstance();
@@ -242,8 +241,6 @@ public abstract class MvInput implements Closeable {
     }
 
     public abstract Reference readReference();
-
-    public abstract Value readFlaggedReference();
 
     protected <T extends Entity> T getEntity(Class<T> klass, Id id) {
         var entity = ReflectionUtils.allocateInstance(klass);

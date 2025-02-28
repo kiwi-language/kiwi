@@ -182,8 +182,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
             @Nullable String desc,
             boolean isAbstract,
             boolean isTemplate,
-            @Nullable Flow enclosingFlow,
-            @Nullable Klass scope,
+            @Nullable KlassDeclaration scope,
             List<TypeVariable> typeParameters,
             long tag,
             @Nullable Integer sourceTag,
@@ -209,10 +208,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         setSuperType(superType, true);
         setInterfaces(interfaces, true);
         resetRank();
-        if (enclosingFlow != null)
-            enclosingFlow.addLocalKlass(this);
         if (scope != null)
-            scope.addInnerKlass(this);
+            scope.addKlass(this);
         closure = new Closure(this);
         resetRank();
         if (superType != null)
@@ -686,6 +683,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     public List<Klass> getKlasses() {
         return Collections.unmodifiableList(klasses);
+    }
+
+    @Override
+    public void addKlass(Klass klass) {
+        addInnerKlass(klass);
     }
 
     public void setKlasses(List<Klass> klasses) {

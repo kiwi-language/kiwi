@@ -136,15 +136,8 @@ public class InstanceInput extends MvInput {
         return resolveInstance(readId());
     }
 
-    public Reference readFlaggedReference() {
-        var flags = read();
-        var ref = resolveInstance(readId());
-        ref.setFlags(flags);
-        return ref;
-    }
-
     private Reference resolveInstance(Id id) {
-        return new Reference(id, () -> resolver.apply(id));
+        return new EntityReference(id, () -> resolver.apply(id));
     }
 
     private final StreamVisitor skipper = new StreamVisitor(this);
@@ -172,7 +165,7 @@ public class InstanceInput extends MvInput {
         var type = this.readType();
         var instance = type instanceof ArrayType arrayType ?
                 new ArrayInstance(arrayType) :
-                ClassInstanceBuilder.newBuilder((ClassType) type, null).initFieldTable(false).build();
+                ClassInstanceBuilder.newBuilder((ClassType) type, type.isValueType() ? null : TmpId.random()).initFieldTable(false).build();
         instance.readRecord(this);
         addValue.accept(instance);
         return instance.getReference();

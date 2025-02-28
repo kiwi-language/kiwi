@@ -71,9 +71,9 @@ public class Instances {
 
     public static <T extends Reference> List<T> sort(List<T> instances, boolean desc) {
         if (desc)
-            instances.sort((i1, i2) -> Utils.compareId(i2.tryGetTreeId(), i1.tryGetTreeId()));
+            instances.sort((i1, i2) -> Utils.compareId(((EntityReference) i2).tryGetTreeId(), ((EntityReference) i1).tryGetTreeId()));
         else
-            instances.sort((i1, i2) -> Utils.compareId(i1.tryGetTreeId(), i2.tryGetTreeId()));
+            instances.sort((i1, i2) -> Utils.compareId(((EntityReference) i1).tryGetTreeId(), ((EntityReference) i2).tryGetTreeId()));
         return instances;
     }
 
@@ -86,10 +86,7 @@ public class Instances {
     }
 
     public static int compare(Instance instance1, Instance instance2) {
-        if (instance1.isIdInitialized() && instance2.isIdInitialized())
-            return instance1.getId().compareTo(instance2.getId());
-        else
-            return Integer.compare(instance1.getSeq(), instance2.getSeq());
+        return instance1.getId().compareTo(instance2.getId());
     }
 
     public static boolean isAnyNull(Value... instances) {
@@ -608,7 +605,7 @@ public class Instances {
                     if (!object.isRemoved())
                         object.setRemoved();
                     var r1 =  object.copy(t -> null).getReference();
-                    Utils.require(r1.tryGetId() == null);
+                    Utils.require(r1 instanceof ValueReference);
                     return r1;
                 }
             }

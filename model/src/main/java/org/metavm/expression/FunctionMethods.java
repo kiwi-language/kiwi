@@ -99,7 +99,7 @@ public class FunctionMethods {
     }
 
     public static LongValue GET_ID(Value instance) {
-        if(instance instanceof Reference d)
+        if(instance instanceof EntityReference d)
             return Instances.longInstance(Utils.orElse(d.tryGetTreeId(), 0L));
         else
             return Instances.longInstance(0L);
