@@ -11,7 +11,6 @@ import java.util.Map;
 public class ApiServiceTest extends TestCase {
 
     private TypeManager typeManager;
-    private InstanceManager instanceManager;
     private SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
 
@@ -23,13 +22,11 @@ public class ApiServiceTest extends TestCase {
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
         schedulerAndWorker = bootResult.schedulerAndWorker();
-        instanceManager = managers.instanceManager();
     }
 
     @Override
     protected void tearDown() throws Exception {
         apiClient = null;
-        instanceManager = null;
         schedulerAndWorker = null;
         typeManager = null;
     }

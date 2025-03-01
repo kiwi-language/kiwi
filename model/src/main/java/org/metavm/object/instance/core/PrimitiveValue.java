@@ -1,12 +1,9 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.object.instance.rest.PrimitiveFieldValue;
-import org.metavm.object.instance.rest.PrimitiveInstanceParam;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.util.MvOutput;
 
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 public abstract class PrimitiveValue implements Value, Comparable<PrimitiveValue> {
@@ -20,14 +17,6 @@ public abstract class PrimitiveValue implements Value, Comparable<PrimitiveValue
     @Override
     public boolean isPrimitive() {
         return true;
-    }
-
-    @Override
-    public PrimitiveInstanceParam getParam() {
-        return new PrimitiveInstanceParam(
-                getValueType().getKind().code(),
-                getValue()
-        );
     }
 
     @Override
@@ -50,15 +39,6 @@ public abstract class PrimitiveValue implements Value, Comparable<PrimitiveValue
     @Override
     public int hashCode() {
         return Objects.hash(getValue(), getValueType());
-    }
-
-    @Override
-    public PrimitiveFieldValue toFieldValueDTO() {
-        return new PrimitiveFieldValue(
-                getTitle(),
-                getValueType().getKind().code(),
-                getValue()
-        );
     }
 
     @Override

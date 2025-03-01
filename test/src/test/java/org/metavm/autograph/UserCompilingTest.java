@@ -5,7 +5,6 @@ import org.junit.Assert;
 import org.metavm.application.rest.dto.ApplicationCreateRequest;
 import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.rest.InstanceQueryDTO;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -81,19 +80,9 @@ public class UserCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(0, platformUserApplications.size());
 
                 // test platform user view list
-                var platformUserList = instanceManager.query(
-                        new InstanceQueryDTO(
-                                userKlass,
-                                null,
-                                null,
-                                List.of(),
-                                1,
-                                20,
-                                false,
-                                false,
-                                List.of()
-                        )
-                ).page().data();
+                var platformUserList = apiClient.search(
+                        userKlass, Map.of(), 1, 20
+                ).page();
                 Assert.assertEquals(1, platformUserList.size());
                 // test platform user view update
 //                var platformUser1 = platformUserList.getFirst();
@@ -162,21 +151,11 @@ public class UserCompilingTest extends CompilerTestBase {
 
                 // query the latest message
                 waitForAllTasksDone();
-                var messageList = instanceManager.query(
-                        new InstanceQueryDTO(
-                                "org.metavm.message.LabMessage",
-                                null,
-                                "receiver = $$" + anotherPlatformUserId,
-                                List.of(),
-                                1,
-                                20,
-                                false,
-                                false,
-                                List.of()
-                        )
-                ).page().data();
+                var messageList = apiClient.search("org.metavm.message.LabMessage",
+                        Map.of("receiver", anotherPlatformUserId),
+                        1, 20).page();
                 Assert.assertEquals(1, messageList.size());
-                var messageId = requireNonNull(messageList.getFirst());
+                var messageId = (String) requireNonNull(messageList.getFirst());
                 var message = getObject(messageId);
                 // check that the message is not read
                 Assert.assertFalse(message.getBoolean("read"));
@@ -221,20 +200,13 @@ public class UserCompilingTest extends CompilerTestBase {
 
                 // test application view list
                 waitForAllTasksDone();
-                var applicationList = instanceManager.query(
-                        new InstanceQueryDTO(
-                                userApplicationKlass,
-                                null,
-                                null,
-                                List.of(),
-                                1,
-                                20,
-                                false,
-                                false,
-                                List.of()
-                        )
-                ).page().data();
-                Assert.assertEquals(1, applicationList.size());
+                var applicationList = apiClient.search(
+                        userApplicationKlass,
+                        Map.of(),
+                        1,
+                        20
+                );
+                Assert.assertEquals(1, applicationList.total());
 
                 // create an ordinary user
                 var userId = doInTransaction(() -> apiClient.newInstance(

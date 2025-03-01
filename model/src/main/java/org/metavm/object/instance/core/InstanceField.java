@@ -3,11 +3,12 @@ package org.metavm.object.instance.core;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.SerializeContext;
-import org.metavm.object.instance.rest.InstanceFieldDTO;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Type;
-import org.metavm.util.*;
+import org.metavm.util.BusinessException;
+import org.metavm.util.Instances;
+import org.metavm.util.InternalException;
+import org.metavm.util.MvOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,18 +123,6 @@ public class InstanceField implements IInstanceField {
 
     public boolean isArray() {
         return type.isArray();
-    }
-
-    public InstanceFieldDTO toDTO() {
-        try(var serContext = SerializeContext.enter()) {
-            return new InstanceFieldDTO(
-                    serContext.getStringId(field),
-                    field.getName(),
-                    type.getConcreteType().getCategory().code(),
-                    type.isArray(),
-                    getValue().toFieldValueDTO()
-            );
-        }
     }
 
     @Override

@@ -1,7 +1,5 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.object.instance.rest.PrimitiveFieldValue;
-import org.metavm.object.type.PrimitiveKind;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
@@ -28,15 +26,6 @@ public class PasswordValue extends PrimitiveValue {
     public void write(MvOutput output) {
         output.write(WireTypes.PASSWORD);
         output.writeUTF(value);
-    }
-
-    @Override
-    public PrimitiveFieldValue toFieldValueDTO() {
-        return new PrimitiveFieldValue(
-                "******",
-                PrimitiveKind.PASSWORD.code(),
-                null
-        );
     }
 
     @Override

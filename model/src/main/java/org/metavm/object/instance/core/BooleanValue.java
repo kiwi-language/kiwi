@@ -1,6 +1,5 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.object.instance.rest.PrimitiveFieldValue;
 import org.metavm.object.type.PrimitiveType;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
@@ -61,11 +60,6 @@ public class BooleanValue extends PrimitiveValue {
     @Override
     public <R> R accept(ValueVisitor<R> visitor) {
         return visitor.visitBooleanValue(this);
-    }
-
-    @Override
-    public PrimitiveFieldValue toFieldValueDTO() {
-        return value ? PrimitiveFieldValue.TRUE : PrimitiveFieldValue.FALSE;
     }
 
     @Override

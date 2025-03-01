@@ -1,12 +1,8 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.object.instance.rest.InstanceParam;
-import org.metavm.object.instance.rest.NullFieldValue;
 import org.metavm.object.type.NullType;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
-
-import javax.annotation.Nullable;
 
 public class NullValue implements Value {
 
@@ -27,11 +23,6 @@ public class NullValue implements Value {
 
     @Override
     public Object toSearchConditionValue() {
-        return null;
-    }
-
-    @Override
-    public InstanceParam getParam() {
         return null;
     }
 
@@ -63,11 +54,6 @@ public class NullValue implements Value {
     @Override
     public boolean isNull() {
         return true;
-    }
-
-    @Override
-    public NullFieldValue toFieldValueDTO() {
-        return NullFieldValue.instance;
     }
 
     @Override

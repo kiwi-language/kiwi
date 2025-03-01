@@ -2,11 +2,8 @@ package org.metavm.object.instance.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.entity.SerializeContext;
 import org.metavm.entity.TreeTags;
 import org.metavm.entity.natives.NativeBase;
-import org.metavm.object.instance.rest.InstanceDTO;
-import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
 import org.metavm.util.*;
@@ -228,28 +225,6 @@ public abstract class MvInstance extends BaseInstance {
     }
 
     public abstract void transformReference(TriFunction<Reference, Boolean, Type, Reference> function);
-
-    public abstract InstanceParam getParam();
-
-    public String getStringIdForDTO() {
-        return getStringId();
-    }
-
-    public InstanceDTO toDTO() {
-        return toDTO(getParam());
-    }
-
-    protected InstanceDTO toDTO(InstanceParam param) {
-        try (var serContext = SerializeContext.enter()) {
-            return new InstanceDTO(
-                    getStringIdForDTO(),
-                    getInstanceType().toExpression(serContext),
-                    getInstanceType().getName(),
-                    getTitle(),
-                    param
-            );
-        }
-    }
 
     public abstract Instance copy(Function<ClassType, Id> idSupplier);
 

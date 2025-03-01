@@ -1,10 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.InstanceParam;
-import org.metavm.object.instance.rest.StringFieldValue;
-import org.metavm.object.instance.rest.StringInstanceParam;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
@@ -47,18 +43,8 @@ public class StringReference extends ValueReference implements  Comparable<Strin
     }
 
     @Override
-    public FieldValue toFieldValueDTO() {
-        return new StringFieldValue(value);
-    }
-
-    @Override
     public String getTitle() {
         return value;
-    }
-
-    @Override
-    public InstanceParam getParam() {
-        return new StringInstanceParam(value);
     }
 
     @Override

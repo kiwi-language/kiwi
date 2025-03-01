@@ -8,7 +8,6 @@ import org.metavm.flow.ClosureContext;
 import org.metavm.flow.Flows;
 import org.metavm.flow.MethodRef;
 import org.metavm.object.instance.IndexKeyRT;
-import org.metavm.object.instance.rest.*;
 import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -516,19 +515,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         return field(klass.getField(fieldId));
     }
 
-    @Override
-    public InstanceParam getParam() {
-        if (isList()) {
-            var elements = Instances.toJavaList(this);
-            return new ListInstanceParam(
-                    false,
-                    Utils.map(elements, Value::toFieldValueDTO)
-            );
-        } else
-            return new ClassInstanceParam(Utils.filterByTypeAndMap(fieldTable, InstanceField.class, InstanceField::toDTO));
-    }
-
-//    @Override
     public void writeTree(TreeWriter treeWriter) {
         treeWriter.writeLine(getInstanceType().getName() + " " + getTitle() + " " + tryGetId() + " @ " + System.identityHashCode(this));
         treeWriter.indent();
@@ -544,21 +530,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     @Override
     public <R> R accept(InstanceVisitor<R> visitor) {
         return visitor.visitClassInstance(this);
-    }
-
-    //    @Override
-    public FieldValue toFieldValueDTO() {
-                if (isValue() || isList()) {
-            return new InstanceFieldValue(
-                    getTitle(),
-                    toDTO()
-            );
-        } else {
-            return new ReferenceFieldValue(
-                    getTitle(),
-                    requireNonNull(this.getStringIdForDTO(), "Id required"),
-                    getInstanceType().toExpression());
-        }
     }
 
     public boolean isList() {

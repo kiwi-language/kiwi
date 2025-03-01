@@ -1,17 +1,10 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.util.MvOutput;
 
 import java.util.function.Consumer;
 
 public interface NativeValue extends Value {
-
-    @Override
-    default FieldValue toFieldValueDTO() {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     default String getTitle() {
@@ -28,11 +21,6 @@ public interface NativeValue extends Value {
 
     @Override
     default Object toSearchConditionValue() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    default InstanceParam getParam() {
         throw new UnsupportedOperationException();
     }
 

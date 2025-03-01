@@ -17,7 +17,6 @@ import org.metavm.entity.*;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.NameAndType;
-import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.core.Id;
@@ -25,9 +24,6 @@ import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.log.InstanceLogService;
 import org.metavm.object.instance.persistence.MockSchemaManager;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
-import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.InstanceFieldValue;
-import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.*;
 import org.metavm.task.*;
 import org.slf4j.Logger;
@@ -177,14 +173,6 @@ public class TestUtils {
         }
     }
 
-    public static String getId(FieldValue fieldValue) {
-        return switch (fieldValue) {
-            case ReferenceFieldValue refValue -> refValue.getId();
-            case InstanceFieldValue instanceValue -> instanceValue.getInstance().id();
-            default -> throw new InternalException("Can not get id from value: " + fieldValue);
-        };
-    }
-
     public static void doInTransactionWithoutResult(Runnable action) {
         MockTransactionUtils.doInTransactionWithoutResult(action);
     }
@@ -250,12 +238,10 @@ public class TestUtils {
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         var transactionOps = new MockTransactionOperations();
         var typeManager = new TypeManager(entityContextFactory, new BeanManager(), new MockSchemaManager(bootResult.mapperRegistry()));
-        var instanceManager = new InstanceManager(entityContextFactory, bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
         var scheduler = new Scheduler(entityContextFactory, transactionOps);
         var worker = new Worker(entityContextFactory, transactionOps, new DirectTaskRunner(), bootResult.metaContextCache());
         return new CommonManagers(
                 typeManager,
-                instanceManager,
                 scheduler,
                 worker
         );

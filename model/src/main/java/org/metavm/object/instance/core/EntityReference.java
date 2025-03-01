@@ -3,10 +3,6 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.flow.ClosureContext;
-import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.InstanceDTO;
-import org.metavm.object.instance.rest.InstanceParam;
-import org.metavm.object.instance.rest.ReferenceFieldValue;
 import org.metavm.object.type.Type;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
@@ -58,14 +54,6 @@ public class EntityReference implements Reference {
     }
 
     @Override
-    public FieldValue toFieldValueDTO() {
-        return new ReferenceFieldValue(
-                getTitle(),
-                id.toString(),
-                getValueType().toExpression());
-    }
-
-    @Override
     public String getTitle() {
         return "Reference-" + id;
     }
@@ -84,11 +72,6 @@ public class EntityReference implements Reference {
     @Override
     public Object toSearchConditionValue() {
         return getStringId();
-    }
-
-    @Override
-    public InstanceParam getParam() {
-        return get().getParam();
     }
 
     @Override
@@ -162,8 +145,4 @@ public class EntityReference implements Reference {
         return r instanceof ClassInstance obj ? obj.getClosureContext() : null;
     }
 
-    @Override
-    public InstanceDTO toDTO() {
-        return toDTO(id.toString(), getParam());
-    }
 }

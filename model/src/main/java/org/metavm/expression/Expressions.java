@@ -281,50 +281,8 @@ public class Expressions {
         }
     }
 
-    public static String constantToExpression(FieldValue fieldValue) {
-        if (fieldValue instanceof NullFieldValue)
-            return "null";
-        if (fieldValue instanceof PrimitiveFieldValue primitiveFieldValue) {
-            Object value = primitiveFieldValue.getValue();
-            if (value instanceof String str) {
-                return "'" + str + "'";
-            } else if (primitiveFieldValue.getPrimitiveKind() == PrimitiveKind.TIME.code()) {
-                return String.format("TIME(%d)", (long) primitiveFieldValue.getValue());
-            } else {
-                return value.toString();
-            }
-        }
-        if(fieldValue instanceof NeverFieldValue)
-            return "never";
-        if (fieldValue instanceof ReferenceFieldValue refFieldValue) {
-            return Constants.ID_PREFIX + refFieldValue.getId();
-        }
-        if (fieldValue instanceof ArrayFieldValue arrayFieldValue) {
-            return "[" + Utils.join(arrayFieldValue.getElements(), Expressions::constantToExpression) + "]";
-        }
-        if (fieldValue instanceof ExpressionFieldValue exprFieldValue) {
-            return exprFieldValue.getExpression();
-        }
-        throw new InternalException("Can not convert value '" + fieldValue + "' to expression");
-    }
-
-    public static @Nullable String getAlias(Expression expression) {
-        return expression instanceof AsExpression asExpression ? asExpression.getAlias() : null;
-    }
-
     public static Expression never() {
         return new NeverExpression();
-    }
-
-    public InternalException notContextExpression(Expression expression, EvaluationContext context) {
-        return new InternalException(expression + " is not a context expression of " + context);
-    }
-
-    public static String parseIdFromConstantVar(String var) {
-        if (var.startsWith(Constants.ID_PREFIX)) {
-            return var.substring(Constants.ID_PREFIX.length());
-        }
-        throw new InternalException("Path item '" + var + "' does not represent an identity");
     }
 
     public static String deEscapeDoubleQuoted(String escaped) {

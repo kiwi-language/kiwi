@@ -1,10 +1,7 @@
 package org.metavm.util;
 
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.AnyType;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
@@ -93,10 +90,6 @@ public class BytesUtils {
             return false;
         }
 
-        public FieldValue toFieldValueDTO() {
-            return null;
-        }
-
         @Override
         public String getTitle() {
             return null;
@@ -141,11 +134,6 @@ public class BytesUtils {
         @Override
         public void writeBody(MvOutput output) {
 
-        }
-
-        @Override
-        public InstanceParam getParam() {
-            return null;
         }
 
         @Override

@@ -1,18 +1,10 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.entity.NoProxy;
-import org.metavm.entity.SerializeContext;
 import org.metavm.flow.ClosureContext;
-import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.InstanceDTO;
-import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.Type;
 import org.metavm.util.Instances;
 import org.metavm.util.MvOutput;
-import org.metavm.util.Utils;
-
-import javax.annotation.Nullable;
-import java.util.Objects;
 
 public interface Value {
 
@@ -69,8 +61,6 @@ public interface Value {
         return false;
     }
 
-    FieldValue toFieldValueDTO();
-
     String getTitle();
 
 
@@ -79,24 +69,6 @@ public interface Value {
     void write(MvOutput output);
 
     Object toSearchConditionValue();
-
-    default InstanceDTO toDTO() {
-        return toDTO(null, getParam());
-    }
-
-    default InstanceDTO toDTO(@Nullable String id, InstanceParam param) {
-        try (var serContext = SerializeContext.enter()) {
-            return new InstanceDTO(
-                    id,
-                    getValueType().toExpression(serContext),
-                    getValueType().getName(),
-                    getTitle(),
-                    param
-            );
-        }
-    }
-
-    InstanceParam getParam();
 
     @NoProxy
     <R> R accept(ValueVisitor<R> visitor);

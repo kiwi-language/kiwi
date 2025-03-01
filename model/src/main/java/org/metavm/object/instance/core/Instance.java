@@ -2,7 +2,6 @@ package org.metavm.object.instance.core;
 
 import org.metavm.entity.Identifiable;
 import org.metavm.entity.Tree;
-import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
 import org.metavm.util.*;
@@ -151,16 +150,6 @@ public interface Instance extends Message, Identifiable {
     }
 
     String getTitle();
-
-//    public InstanceDTO toDTO() {
-//        return null;
-//    }
-
-//    void write(MvOutput output);
-
-    default InstanceParam getParam() {
-        return null;
-    }
 
     default boolean isEphemeral() {
         return state().isEphemeral() || getInstanceType().isEphemeral();

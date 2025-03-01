@@ -4,8 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.ClassInstanceWrap;
-import org.metavm.object.instance.rest.InstanceQueryDTO;
-import org.metavm.util.BusinessException;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.TestUtils;
@@ -194,22 +192,19 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         var qualifiedInspectionStateId = typeManager.getEnumConstantId(qualityInspectionStateKlass, "QUALIFIED");
         var initialBizStateId = typeManager.getEnumConstantId("org.metavm.manufacturing.storage.InventoryBizState", "INITIAL");
         // query the inventory object by condition
-        var queryResp = instanceManager.query(
-                new InstanceQueryDTO(
-                        inventoryKlass,
-                        null,
-                        String.format("material = $$%s and position = $$%s and qualityInspectionState = $$%s and bizState = $$%s",
-                                material.id(), position.id(), qualifiedInspectionStateId, initialBizStateId),
-                        List.of(),
-                        1,
-                        20,
-                        false,
-                        false,
-                        List.of()
-                )
-        );
-        Assert.assertEquals(1, queryResp.page().total());
-        var queriedInventory = queryResp.page().data().getFirst();
+        var queryResp = apiClient.search(
+                inventoryKlass,
+                Map.of(
+                        "material", material.id(),
+                        "position", position.id(),
+                        "qualityInspectionState", qualifiedInspectionStateId,
+                        "bizState", initialBizStateId
+                ),
+                1,
+                20
+        ) ;
+        Assert.assertEquals(1, queryResp.total());
+        var queriedInventory = queryResp.page().getFirst();
         Assert.assertEquals(inventoryId, queriedInventory);
 
         // decrease the inventory by 100 and asserts that the inventory is removed

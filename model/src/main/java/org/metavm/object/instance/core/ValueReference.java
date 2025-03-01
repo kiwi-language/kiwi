@@ -1,8 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.flow.ClosureContext;
-import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.Type;
 import org.metavm.util.MvOutput;
 
@@ -26,11 +24,6 @@ public class ValueReference implements Reference {
     }
 
     @Override
-    public FieldValue toFieldValueDTO() {
-        return null;
-    }
-
-    @Override
     public String getTitle() {
         return instance.getTitle();
     }
@@ -47,11 +40,6 @@ public class ValueReference implements Reference {
 
     @Override
     public Object toSearchConditionValue() {
-        return null;
-    }
-
-    @Override
-    public InstanceParam getParam() {
         return null;
     }
 

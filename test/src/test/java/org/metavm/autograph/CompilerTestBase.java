@@ -9,7 +9,6 @@ import org.metavm.entity.MetaContextCache;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.ApiService;
-import org.metavm.object.instance.InstanceManager;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.instance.persistence.MockSchemaManager;
@@ -43,7 +42,6 @@ public abstract class CompilerTestBase extends TestCase  {
     protected TypeClient typeClient;
     protected ExecutorService executor;
     protected TypeManager typeManager;
-    protected InstanceManager instanceManager;
     protected AllocatorStore allocatorStore;
     protected ColumnStore columnStore;
     protected TypeTagStore typeTagStore;
@@ -77,8 +75,6 @@ public abstract class CompilerTestBase extends TestCase  {
         metaContextCache = bootResult.metaContextCache();
         var instanceQueryService = new InstanceQueryService(bootResult.instanceSearchService());
         typeManager = new TypeManager(bootResult.entityContextFactory(), new BeanManager(), new MockSchemaManager(bootResult.mapperRegistry()));
-        instanceManager = new InstanceManager(entityContextFactory,
-                bootResult.instanceStore(), instanceQueryService, bootResult.metaContextCache());
         typeClient = new MockTypeClient(typeManager, executor, new MockTransactionOperations());
         FlowSavingContext.initConfig();
         var entityQueryService = new EntityQueryService(bootResult.instanceSearchService());
@@ -112,7 +108,6 @@ public abstract class CompilerTestBase extends TestCase  {
         executor = null;
         typeManager = null;
         schedulerAndWorker = null;
-        instanceManager = null;
         allocatorStore = null;
         columnStore = null;
         typeTagStore = null;

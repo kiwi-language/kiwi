@@ -4,8 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.NoProxy;
 import org.metavm.object.instance.ArrayListener;
-import org.metavm.object.instance.rest.ArrayInstanceParam;
-import org.metavm.object.instance.rest.InstanceFieldValue;
 import org.metavm.object.type.ArrayType;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Type;
@@ -280,14 +278,6 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
     }
 
     //    @Override
-    public ArrayInstanceParam getParam() {
-        return new ArrayInstanceParam(
-                false,
-                Utils.map(elements, Value::toFieldValueDTO)
-        );
-    }
-
-//    @Override
     public <R> void acceptReferences(ValueVisitor<R> visitor) {
         elements.forEach(visitor::visit);
     }
@@ -347,11 +337,6 @@ public class ArrayInstance extends MvInstance implements Iterable<Value> {
     @Override
     public ArrayType getInstanceType() {
         return (ArrayType) super.getInstanceType();
-    }
-
-//    @Override
-    public InstanceFieldValue toFieldValueDTO() {
-        return new InstanceFieldValue(getTitle(), toDTO());
     }
 
     public void clear() {

@@ -1,7 +1,6 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.entity.NativeObject;
-import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.util.MvOutput;
 
 import javax.annotation.Nullable;
@@ -25,12 +24,6 @@ public interface NativeEphemeralObject extends NativeObject {
     @Override
     default String getTitle() {
         return toString();
-    }
-
-
-    @Override
-    default InstanceParam getParam() {
-        throw new UnsupportedOperationException();
     }
 
 

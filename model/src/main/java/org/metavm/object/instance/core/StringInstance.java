@@ -4,8 +4,6 @@ import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.CallContext;
 import org.metavm.entity.natives.CharSequenceNative;
 import org.metavm.flow.ClosureContext;
-import org.metavm.object.instance.rest.InstanceParam;
-import org.metavm.object.instance.rest.StringInstanceParam;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
@@ -217,11 +215,6 @@ public class StringInstance implements CharSequenceNative, ClassInstance {
     @Override
     public Instance getRoot() {
         return this;
-    }
-
-    @Override
-    public InstanceParam getParam() {
-        return new StringInstanceParam(toJavaString(getReference()));
     }
 
     @Override

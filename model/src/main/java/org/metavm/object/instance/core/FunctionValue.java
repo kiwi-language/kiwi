@@ -6,9 +6,6 @@ import org.metavm.flow.CallableRef;
 import org.metavm.flow.ClosureContext;
 import org.metavm.flow.Code;
 import org.metavm.flow.FlowExecResult;
-import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.rest.FieldValue;
-import org.metavm.object.instance.rest.InstanceParam;
 import org.metavm.object.type.FunctionType;
 import org.metavm.object.type.TypeMetadata;
 
@@ -29,17 +26,7 @@ public abstract class FunctionValue implements Value, CallableRef {
 //    public abstract Frame createFrame(FlowStack stack, List<Instance> arguments);
 
     @Override
-    public FieldValue toFieldValueDTO() {
-        return null;
-    }
-
-    @Override
     public String getTitle() {
-        return null;
-    }
-
-    @Override
-    public InstanceParam getParam() {
         return null;
     }
 
