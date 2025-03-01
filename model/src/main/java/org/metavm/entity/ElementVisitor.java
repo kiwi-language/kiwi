@@ -881,4 +881,7 @@ public abstract class ElementVisitor<R> {
     }
 
 
+    public R visitDupNode2(Dup2Node node) {
+        return visitNode(node);
+    }
 }

@@ -1,6 +1,5 @@
 package org.metavm.object.type;
 
-import org.checkerframework.checker.initialization.qual.NotOnlyInitialized;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;

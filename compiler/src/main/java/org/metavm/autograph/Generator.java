@@ -10,8 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.*;
 import java.util.LinkedList;
+import java.util.*;
 
 import static java.util.Objects.requireNonNull;
 import static org.metavm.util.Utils.ifNotNull;
@@ -138,10 +138,7 @@ public class Generator extends VisitorBase {
         requireNonNull(psiMethod.getBody(), "body is missing from method " +
                 TranspileUtils.getMethodQualifiedName(psiMethod)).accept(this);
         Node lastNode;
-        if (psiMethod.isConstructor()) {
-            builder.getThis();
-            builder.createReturn();
-        } else if (method.getReturnType().isVoid() &&
+        if (method.getReturnType().isVoid() &&
                 ((lastNode = method.getCode().getLastNode()) == null || !lastNode.isExit())) {
             builder.createVoidReturn();
         }
@@ -379,19 +376,13 @@ public class Generator extends VisitorBase {
     @Override
     public void visitReturnStatement(PsiReturnStatement statement) {
         var trySection = builder().currentTrySection();
-        if (Flows.isConstructor(builder().getMethod())) {
+        if (statement.getReturnValue() != null) {
+            resolveExpression(statement.getReturnValue());
             Utils.ifNotNull(trySection, tb -> tb.handleReturn(builder()));
-            builder().getThis();
             builder().createReturn();
         } else {
-            if (statement.getReturnValue() != null) {
-                resolveExpression(statement.getReturnValue());
-                Utils.ifNotNull(trySection, tb -> tb.handleReturn(builder()));
-                builder().createReturn();
-            } else {
-                Utils.ifNotNull(trySection, tb -> tb.handleExit(builder()));
-                builder().createVoidReturn();
-            }
+            Utils.ifNotNull(trySection, tb -> tb.handleExit(builder()));
+            builder().createVoidReturn();
         }
     }
 

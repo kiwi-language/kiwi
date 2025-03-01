@@ -1,0 +1,8 @@
+
+class Lab {
+
+    static func test(v: int) {
+        var i = v
+    }
+
+}

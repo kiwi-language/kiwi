@@ -1,0 +1,27 @@
+
+class Product {
+
+    private var inventory: Product.Inventory
+
+    init(quantity: int) {
+        this.inventory = this.new Product.Inventory(quantity)
+    }
+
+    func getInventory() -> Product.Inventory {
+        return this.inventory
+    }
+
+    class Inventory {
+        private var quantity: int
+
+        init(quantity: int) {
+            this.quantity = quantity
+        }
+
+        func getQuantity() -> int {
+            return this.quantity
+        }
+
+    }
+
+}

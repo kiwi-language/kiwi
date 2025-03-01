@@ -1,0 +1,12 @@
+
+class SmallIntFoo {
+
+    static func addShorts(s1: short, s2: short) -> short {
+        return s1 + s2
+    }
+
+    static func addShortAndDouble(s: short, d: double) -> double {
+        return (s as double) + d
+    }
+
+}

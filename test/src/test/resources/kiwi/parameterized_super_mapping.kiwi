@@ -1,0 +1,21 @@
+abstract class Base<E> {
+
+    var length: int
+
+    init(length: int) {
+        this.length = length
+    }
+
+    func isEmpty() -> boolean {
+        return this.length == 0
+    }
+
+}
+
+class Sub: Base<string> {
+
+    init(length: int) {
+        super(length)
+    }
+
+}

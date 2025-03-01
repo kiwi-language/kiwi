@@ -1,0 +1,35 @@
+import org.metavm.api.Index
+
+class Product {
+
+    private static var nameIdx: Index<string, Product>
+
+    private static func __nameIdx__() -> Index<string, Product> {
+        return new Index<string, Product>("nameIdx", true, (p: Product) -> string {
+            return p.getName()
+        })
+    }
+
+
+    private var name: string
+
+    init(name: string) {
+        this.name = name
+    }
+
+    func getName() -> string {
+        return this.name
+    }
+
+}
+
+@Component
+class ProductService {
+
+    init() {}
+
+    func  findByName(name: string) -> Product|null {
+        return Product.nameIdx.getFirst(name)
+    }
+
+}

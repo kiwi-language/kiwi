@@ -1,0 +1,24 @@
+import java.lang.Iterable
+import java.util.List
+
+class Utils {
+
+    static func findGt(list: List<int>, value: int) -> int|null {
+        var lambda = (v: int) -> boolean {
+            return v > value
+        }
+        return Utils.find<int>(list, lambda)
+    }
+
+    static func find<T>(iterable: Iterable<[never, T]>, test: (T) -> boolean) ->  T|null {
+        var it = iterable.iterator()!!
+        while (it.hasNext()) {
+            var next: T = it.next()!!
+            if (test(next)) {
+                return next
+            }
+        }
+        return null
+    }
+
+}

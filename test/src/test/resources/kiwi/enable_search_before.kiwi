@@ -1,0 +1,14 @@
+
+class SearchEnableFoo {
+
+    private var name: string
+
+    init(name: string) {
+        this.name = name
+    }
+
+    func getName() -> string {
+        return this.name
+    }
+
+}

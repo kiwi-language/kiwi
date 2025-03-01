@@ -1,0 +1,177 @@
+import org.metavm.api.Index
+
+class Product: Versioned {
+
+    static func findByName(name: string) -> Product|null {
+        return Product.nameIdx.getFirst(name)
+    }
+
+    private var name: string
+    private var price: double
+    private var inventory: Inventory
+    private var available: boolean
+    private var description: string|null
+    private var manufacturer: any
+    private static var nameIdx: Index<string, Product>
+
+    private static func __nameIdx__() -> Index<string, Product> {
+        return new Index<string, Product>("nameIdx", true, (p: Product) -> string {
+            return p.getName()
+        })
+    }
+
+    init(name: string, price: double, quantity: int, description: string|null, manufacturer: any) {
+        super()
+        this.name = name
+        this.price = price
+        this.inventory = this.new Inventory(quantity)
+        this.description = description
+        this.manufacturer = manufacturer
+    }
+
+    func getName() -> string {
+        return this.name
+    }
+
+    func setName(name: string) {
+        this.name = name
+    }
+
+    func getPrice() -> double {
+        return this.price
+    }
+
+    func setPrice(price: double) {
+        this.price = price
+    }
+
+    func getInventory() -> Inventory {
+        return this.inventory
+    }
+
+    func setInventory(inventory: Inventory) {
+        this.inventory = inventory
+    }
+
+    func isAvailable() -> boolean {
+        return this.available
+    }
+
+    func setAvailable(available: boolean) {
+        this.available = available
+    }
+
+    func getDescription() -> string|null {
+        return this.description
+    }
+
+    func setDescription(description: string|null) {
+        this.description= description
+    }
+
+    private func __available__() -> boolean {
+        return true
+    }
+
+    private func __price__(price: int) -> double {
+        return price as double
+    }
+
+    private func __Versioned__() -> Versioned {
+        return new Versioned()
+    }
+
+    func getManufacturer() -> any {
+        return this.manufacturer
+    }
+
+    func setManufacturer(manufacturer: any) {
+        this.manufacturer = manufacturer
+    }
+
+}
+
+class Inventory {
+    private var quantity: int
+
+    init(quantity: int) {
+        this.quantity = quantity
+    }
+
+    func getQuantity() -> int {
+        return this.quantity
+    }
+
+    func setQuantity(quantity: int) {
+        this.quantity = quantity
+    }
+
+}
+
+class Versioned {
+
+    private var version: Version
+
+    init() {
+        this.version = new Version(0, 0)
+    }
+
+    func getVersion() -> Version {
+        return this.version
+    }
+
+    func setVersion(version: Version) {
+        this.version = version
+    }
+
+}
+
+value class Version {
+    private val majorVersion: int
+    private val minorVersion: int
+
+    init(majorVersion: int, minorVersion: int) {
+        this.majorVersion = majorVersion
+        this.minorVersion = minorVersion
+    }
+
+    func getMajorVersion() -> int{
+        return this.majorVersion
+    }
+
+    func getMinorVersion() -> int {
+        return this.minorVersion
+    }
+
+}
+
+class Box<T> {
+    private var item: T
+    private var count: int
+
+    init(item: T, count: int) {
+        this.item = item
+        this.count = count
+    }
+
+    func getItem() -> T {
+        return this.item
+    }
+
+    func setItem(item: T) {
+        this.item = item
+    }
+
+    func getCount() -> int {
+        return this.count
+    }
+
+    func setCount(count: int) {
+        this.count = count
+    }
+
+    private func __count__() -> int {
+        return 1
+    }
+
+}

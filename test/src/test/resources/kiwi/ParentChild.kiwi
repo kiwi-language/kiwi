@@ -1,0 +1,48 @@
+import java.util.List
+import java.util.ArrayList
+
+class Child {
+    private var name: string
+    private var next: Child|null
+
+    init(name: string) {
+        this.name = name
+        this.next = null
+    }
+
+    func getName() -> string {
+        return this.name
+    }
+
+    func getNext() -> Child|null {
+        return this.next
+    }
+
+    func setNext(next: Child|null) {
+        this.next = next
+    }
+
+}
+
+class Parent {
+
+    private val children: ArrayList<Child>
+
+    init() {
+        this.children = new ArrayList<Child>()
+        this.children.add(this.new Child("child001"))
+    }
+
+    func getChildren() -> List<Child> {
+        return new ArrayList<Child>(this.children)
+    }
+
+    func test() {
+        var child1 = this.children.getFirst()
+        var child2 = new Child("Child002")
+        child2.setNext(child1)
+        this.children.add(child2)
+        this.children.clear()
+    }
+
+}

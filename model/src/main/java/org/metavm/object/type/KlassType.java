@@ -129,8 +129,6 @@ public class KlassType extends ClassType {
     @Override
     public void write(MvOutput output) {
         if (owner == null && typeArguments == null) {
-            if (getKlass().getName().equals("$2"))
-                throw new RuntimeException("Writing local class without owner " + System.identityHashCode(this));
             output.write(WireTypes.CLASS_TYPE);
             output.writeReference(klassReference);
         } else {

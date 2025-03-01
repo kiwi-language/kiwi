@@ -1,0 +1,92 @@
+import org.metavm.api.Index
+
+@Component
+class Lab {
+
+    init() {}
+
+    func  getFieldValue(field: Field) -> any|null {
+        var fieldValue = FieldValue.fieldIdx.getFirst(field)
+        if(fieldValue == null) {
+            return null
+        } else {
+            return fieldValue!!.getValue()
+        }
+    }
+
+    func setFieldValue(field: Field,  v: any|null) {
+        var fieldValue = FieldValue.fieldIdx.getFirst(field)
+        if(fieldValue == null) {
+            new FieldValue(field).setValue(v)
+        } else {
+            fieldValue!!.setValue(v)
+        }
+    }
+
+}
+
+class Field {
+
+    private var name: string
+    private deleted var value: any|null
+
+    init(name: string) {
+        this.name = name
+    }
+
+    func getName() -> string {
+        return this.name
+    }
+
+    func setName(name: string) {
+        this.name = name
+    }
+
+    func __run__() {
+        new FieldValue(this).setValue(this.value)
+    }
+
+}
+
+value class IdxFieldValueField {
+
+    private val field: Field
+
+    init(field: Field) {
+        this.field = field
+    }
+
+}
+
+class FieldValue {
+
+
+    private static val fieldIdx: Index<Field, FieldValue>
+
+    private static func __fieldIdx__() -> Index<Field, FieldValue> {
+        return new Index<Field, FieldValue>("fieldIdx", true, (v: FieldValue) -> Field {
+            return v.getField()
+        })
+    }
+
+    private var field: Field
+    private var  value: any|null
+
+    init(field: Field) {
+        this.field = field
+        this.value = null
+    }
+
+    func getValue() -> any|null {
+        return this.value
+    }
+
+    func setValue(v: any|null){
+        this.value = v
+    }
+
+    func getField() -> Field {
+        return this.field
+    }
+
+}

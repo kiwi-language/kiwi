@@ -16,6 +16,7 @@ import org.metavm.util.Utils;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TransferQueue;
 
 @Slf4j
 public class ClassFileReader {
@@ -93,6 +94,8 @@ public class ClassFileReader {
 
     private TypeVariable readTypeVariable(GenericDeclaration genericDeclaration) {
         var name = input.readUTF();
+        if (tracing)
+            log.trace("Reading type variable: {}", name);
         var typeVariable = Utils.find(genericDeclaration.getTypeParameters(), tv -> tv.getName().equals(name));
         if (typeVariable == null) {
             var root = ((Entity) genericDeclaration).getRoot();
@@ -107,7 +110,8 @@ public class ClassFileReader {
         constantPool.clear();
         var numEntries = input.readInt();
         for (int i = 0; i < numEntries; i++) {
-            constantPool.addEntry(readConstant());
+            var c = readConstant();
+            constantPool.addEntry(c);
         }
     }
 
@@ -118,8 +122,8 @@ public class ClassFileReader {
     private Method readMethod(Klass klass) {
         var tracing = this.tracing;
         var internalName = input.readUTF();
-        if (tracing) log.trace("Reading method {}", internalName);
         var name = input.readUTF();
+        if (tracing) log.trace("Reading method {}", name);
         var returnTypeIndex = input.readInt();
         var existing = Utils.find(klass.getMethods(), m -> Objects.equals(m.tryGetInternalName(), internalName));
         Method method;
@@ -214,9 +218,9 @@ public class ClassFileReader {
             if(initializer.getCode().getNodes().isEmpty())
                 initializer.getCode().rebuildNodes();
             var nodes = initializer.getCode().getNodes();
-            var ldc = (LoadConstantNode) nodes.get(1);
-            var ldc1 = (LoadConstantNode) nodes.get(2);
-            var func = nodes.get(3);
+            var ldc = (LoadConstantNode) nodes.get(2);
+            var ldc1 = (LoadConstantNode) nodes.get(3);
+            var func = nodes.get(4);
             var name = ((StringReference) ldc.getValue()).getValue();
             var unique = ((IntValue) ldc1.getValue()).getValue() != 0;
             Method keyComputeMethod;
@@ -273,6 +277,8 @@ public class ClassFileReader {
 
     private Parameter readParameter(Callable callable) {
         var name = input.readUTF();
+        if (tracing)
+            log.trace("Reading parameter: {}", name);
         var typeIndex = input.readInt();
         var param = Utils.find(callable.getParameters(), p -> p.getName().equals(name));
         if (param == null) {
@@ -288,6 +294,8 @@ public class ClassFileReader {
         code.setMaxLocals(input.readInt());
         code.setMaxStack(input.readInt());
         code.setCode(input.readBytes());
+        if (tracing)
+            log.trace("Read code ({} bytes)", code.getCode().length);
     }
 
 }

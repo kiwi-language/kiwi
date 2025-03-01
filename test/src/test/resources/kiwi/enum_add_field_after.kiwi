@@ -1,0 +1,33 @@
+enum Currency {
+
+    YUAN(0.14),
+    DOLLAR(1.0),
+    POUND(1.32)
+
+;
+    
+
+    private val rate: double
+
+    init(rate: double) {
+        this.rate = rate
+    }
+
+    func getRate() -> double {
+        return this.rate
+    }
+
+    private func __rate__() -> double {
+        if(this == Currency.YUAN) {
+            return 0.14
+        }
+        if(this == Currency.DOLLAR) {
+            return 1.0
+        }
+        if(this == Currency.POUND) {
+            return 1.32
+        }
+        return 0
+    }
+
+}

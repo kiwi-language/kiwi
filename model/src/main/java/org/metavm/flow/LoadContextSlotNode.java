@@ -8,6 +8,7 @@ import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.Type;
+import org.metavm.object.type.Types;
 
 import java.util.Map;
 import java.util.Objects;
@@ -28,7 +29,7 @@ public class LoadContextSlotNode extends Node {
     }
 
     public static Node read(CodeInput input, String name) {
-        return new LoadContextSlotNode(name, (Type) input.readConstant(), input.getPrev(), input.getCode(), input.readShort(), input.readShort());
+        return new LoadContextSlotNode(name, Types.getAnyType(), input.getPrev(), input.getCode(), input.readShort(), input.readShort());
     }
 
     @Override

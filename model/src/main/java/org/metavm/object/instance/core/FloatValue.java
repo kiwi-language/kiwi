@@ -148,12 +148,12 @@ public class FloatValue extends NumberValue {
 
     @Override
     public void writeTree(TreeWriter treeWriter) {
-        treeWriter.write(value + "D");
+        treeWriter.write(value + "F");
     }
 
     @Override
     public String toString() {
-        return value + "D";
+        return value + "F";
     }
 
     //    @Override

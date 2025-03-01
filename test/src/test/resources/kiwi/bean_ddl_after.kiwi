@@ -1,0 +1,75 @@
+abstract class BaseService {
+
+    protected val idService: IdService
+
+    init(idService: IdService) {
+        this.idService = idService
+    }
+
+}
+
+value class IdxFooServiceAllFlags {
+
+    private val allFlags: boolean
+
+    init(allFlags: boolean) {
+        this.allFlags = allFlags
+    }
+
+}
+
+@Component
+class FooService: BaseService {
+
+    private val allFlags: boolean
+    private val barService: BarService
+
+    init(idService: IdService, barService: BarService) {
+        super(idService)
+        this.allFlags = true
+        this.barService = barService
+    }
+
+    func idxAllFlags() -> IdxFooServiceAllFlags {
+        return new IdxFooServiceAllFlags(this.allFlags)
+    }
+
+}
+
+@Component
+class BarService: BaseService {
+
+    private var allFlags: boolean
+
+    init(idService: IdService) {
+        super(idService)
+        this.allFlags = true
+    }
+
+    func idxAllFlags() -> IdxBarServiceAllFlags {
+        return new IdxBarServiceAllFlags(this.allFlags)
+    }
+
+}
+
+value class IdxBarServiceAllFlags {
+
+    private val allFlags: boolean
+
+    init(allFlags: boolean) {
+        this.allFlags = allFlags
+    }
+
+}
+
+interface IdService {
+
+}
+
+@Component
+class IdServiceImpl: IdService {
+
+    init() {}
+
+}
+

@@ -45,6 +45,14 @@ public abstract class MvOutput extends OutputStream {
         }
     }
 
+    public void write(byte @NotNull [] bytes, int offset, int length) {
+        try {
+            out.write(bytes, offset, length);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void writeShort(int s) {
         write(s >> 8 & 0xff);
         write(s & 0xff);

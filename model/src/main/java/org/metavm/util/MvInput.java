@@ -85,7 +85,7 @@ public abstract class MvInput implements Closeable {
     }
 
     public int readShort() {
-        return read() << 8 | read();
+        return (short) (read() << 8 | read());
     }
 
     public int readInt() {

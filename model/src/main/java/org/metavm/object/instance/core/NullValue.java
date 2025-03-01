@@ -43,7 +43,7 @@ public class NullValue implements Value {
 
     @Override
     public void writeTree(TreeWriter treeWriter) {
-
+        treeWriter.write("null");
     }
 
     @Override

@@ -96,7 +96,7 @@ public class KlassTest extends TestCase {
         Assert.assertEquals(constructor.getFlags(), m1.getFlags());
         Assert.assertEquals(constructor.getConstantPool().size(), m1.getConstantPool().size());
         Assert.assertArrayEquals(constructor.getCode().getCode(), m1.getCode().getCode());
-        Assert.assertEquals(k.getType(), m1.getReturnType());
+        Assert.assertEquals(Types.getVoidType(), m1.getReturnType());
         Assert.assertEquals(constructor.getParameters().size(), m1.getParameters().size());
 
         var getComparatorMethod = fooKlass.getMethod(m -> m.getName().equals("getComparator"));

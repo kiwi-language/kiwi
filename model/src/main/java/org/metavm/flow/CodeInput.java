@@ -100,7 +100,7 @@ public class CodeInput extends MvInput  {
             case Bytecodes.NE -> NeNode.read(this, name);
             case Bytecodes.GE -> GeNode.read(this, name);
             case Bytecodes.GT -> GtNode.read(this, name);
-            case Bytecodes.LT -> LoadTypeNode.read(this, name);
+            case Bytecodes.LT -> LtNode.read(this, name);
             case Bytecodes.LE -> LeNode.read(this, name);
             case Bytecodes.GET_STATIC_FIELD -> GetStaticFieldNode.read(this, name);
             case Bytecodes.GET_STATIC_METHOD -> GetStaticMethodNode.read(this, name);
@@ -203,6 +203,7 @@ public class CodeInput extends MvInput  {
             case Bytecodes.LT_DECLARING_TYPE -> LoadDeclaringTypeNode.read(this, name);
             case Bytecodes.LT_CURRENT_FLOW -> LoadCurrentFlowNode.read(this, name);
             case Bytecodes.LT_ANCESTOR -> LoadAncestorTypeNode.read(this, name);
+            case Bytecodes.DUP2 -> Dup2Node.read(this, name);
             default -> throw new IllegalStateException("Unrecognized bytecode: " + code);
         };
         node.setOffset(offset);

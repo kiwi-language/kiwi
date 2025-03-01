@@ -1,7 +1,8 @@
 package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.asm.AssemblerFactory;
+import org.metavm.compiler.CompilationTask;
+import org.metavm.compiler.CompilerTestUtils;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.*;
@@ -179,7 +180,7 @@ public class MockUtils {
     }
 
     public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/mv/Shopping.mv", typeManager, schedulerAndWorker);
+        assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/Shopping.kiwi", typeManager, schedulerAndWorker);
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var productKlass = context.getKlassByQualifiedName("Product");
@@ -220,7 +221,7 @@ public class MockUtils {
     }
 
     public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/mv/LivingBeing.mv", typeManager, schedulerAndWorker);
+        assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/LivingBeing.kiwi", typeManager, schedulerAndWorker);
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var livingBeingKlass = context.getKlassByQualifiedName("LivingBeing");
@@ -257,9 +258,16 @@ public class MockUtils {
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             context.loadKlasses();
-            var assembler = AssemblerFactory.createWithStandardTypes();
-            assembler.assemble(List.of(source));
-            assembler.generateClasses(TestConstants.TARGET);
+//            var assembler = AssemblerFactory.createWithStandardTypes();
+//            assembler.assemble(List.of(source));
+//            assembler.generateClasses(TestConstants.TARGET);
+
+            var task = new CompilationTask(List.of(source), TestConstants.TARGET);
+            task.parse();
+            CompilerTestUtils.enterStandard(task.getProject());
+            task.analyze();
+            task.generate();
+
             FlowSavingContext.initConfig();
 //            var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
 //            NncUtils.writeFile("/Users/leen/workspace/object/test.json", NncUtils.toPrettyJsonString(request));
@@ -532,6 +540,7 @@ public class MockUtils {
             Nodes.argument(factoryMethod, 0);
             Nodes.argument(factoryMethod, 1);
             Nodes.newObject(code, pKlass, false, false);
+            Nodes.dup(code);
             Nodes.invokeMethod(pKlass.getMethod(MethodRef::isConstructor), code);
             Nodes.ret(code);
         }
@@ -589,6 +598,7 @@ public class MockUtils {
             }
             var code = nameIdxInitializer.getCode();
             Nodes.newObject(code, indexType, false, false);
+            Nodes.dup(code);
             Nodes.loadConstant(Instances.stringInstance("nameIdx"), code);
             Nodes.loadConstant(Instances.intInstance(true), code);
             Nodes.lambda(lambda1, code);

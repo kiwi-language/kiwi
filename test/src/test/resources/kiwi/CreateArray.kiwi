@@ -1,0 +1,8 @@
+
+class Utils {
+
+    static func createArray() -> any[] {
+        return new any[]
+    }
+
+}

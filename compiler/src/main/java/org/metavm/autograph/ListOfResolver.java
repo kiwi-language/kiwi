@@ -50,6 +50,7 @@ public class ListOfResolver implements MethodCallResolver {
         var arrayListKlass = StdKlass.arrayList.get();
         var arrayListType = new KlassType(null, arrayListKlass, List.of(listType.getFirstTypeArgument()));
         methodGenerator.createNew(arrayListType, false, true);
+        methodGenerator.createDup();
         var constructor = new MethodRef(arrayListType, arrayListKlass.getDefaultConstructor(), List.of());
         var list = methodGenerator.createInvokeMethod(constructor);
         var expressions = methodCallExpression.getArgumentList().getExpressions();

@@ -1,0 +1,6 @@
+
+class Box<T> {
+
+    private var value: T
+
+}

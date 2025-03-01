@@ -1,0 +1,40 @@
+class Product {
+    private var name: string
+    private var kind: Product.Kind
+
+    init(name: string, kind: string) {
+        this.name = name
+        this.kind = this.new Product.Kind(kind)
+    }
+
+    func getName() -> string {
+        return this.name
+    }
+
+    func setName(name: string) {
+        this.name = name
+    }
+
+    func  getKind() -> Product.Kind {
+        return this.kind
+    }
+
+    func setKind(kind: Product.Kind) {
+        this.kind = kind
+    }
+
+    @Tag(1)
+    class Kind {
+        private val name: string
+
+        init(name: string) {
+            this.name = name
+        }
+
+        func getName() -> string {
+            return this.name
+        }
+
+    }
+
+}

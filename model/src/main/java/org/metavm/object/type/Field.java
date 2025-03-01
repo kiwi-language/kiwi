@@ -468,7 +468,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     public static final int FLAG_READONLY = 4;
     public static final int FLAG_TRANSIENT = 8;
     public static final int FLAG_LAZY = 16;
-    private static final int FLAG_ENUM_CONSTANT = 32;
+    public static final int FLAG_ENUM_CONSTANT = 32;
 
     public int getFlags() {
         int flags = 0;

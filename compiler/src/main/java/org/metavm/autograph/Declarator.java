@@ -274,7 +274,7 @@ public class Declarator extends VisitorBase {
 
     private Type getReturnType(PsiMethod method) {
         if(method.isConstructor())
-            return resolveType(TranspileUtils.createTemplateType(requireNonNull(method.getContainingClass())));
+            return Types.getVoidType();
         else
             return resolveNullableType(method.getReturnType());
     }

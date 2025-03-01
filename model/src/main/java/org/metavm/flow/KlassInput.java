@@ -1,10 +1,7 @@
 package org.metavm.flow;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.Attribute;
-import org.metavm.entity.Entity;
-import org.metavm.entity.EntityRepository;
-import org.metavm.entity.GenericDeclaration;
+import org.metavm.entity.*;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;

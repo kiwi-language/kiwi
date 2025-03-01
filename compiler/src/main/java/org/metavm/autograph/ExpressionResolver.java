@@ -703,6 +703,7 @@ public class ExpressionResolver {
                 resolve(qualifier, context);
                 methodGenerator.createNewChild(type);
             }
+            methodGenerator.createDup();
             Utils.map(
                     requireNonNull(expression.getArgumentList()).getExpressions(),
                     expr -> resolve(expr, context)

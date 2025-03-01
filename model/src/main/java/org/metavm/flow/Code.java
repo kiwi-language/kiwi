@@ -137,6 +137,7 @@ public class Code implements Element, LocalKey, Struct {
     public void writeCode(CodeWriter writer) {
         writer.writeln(" {");
         writer.indent();
+        writer.writeln("max locals: " + maxLocals + ", max stack: " + maxStack);
         nodes.forEach(node -> node.write(writer));
         writer.unindent();
         writer.writeln("}");

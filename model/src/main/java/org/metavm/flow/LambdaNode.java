@@ -53,8 +53,12 @@ public class LambdaNode extends Node {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("(" + Utils.join(getLambda().getParameters(), Parameter::getText, ", ") + ")");
-        writer.write(": " + getLambda().getReturnType().getName());
+//        writer.write("lambda: (" + Utils.join(getLambda().getParameters(), Parameter::getText, ", ") + ")");
+//        writer.write(" -> " + getLambda().getReturnType().getName());
+        writer.writeln();
+        writer.indent();
+        getLambda().writeCode(writer);
+        writer.unindent();
     }
 
     public Lambda getLambda() {

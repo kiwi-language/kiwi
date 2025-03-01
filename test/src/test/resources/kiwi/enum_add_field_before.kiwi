@@ -1,0 +1,11 @@
+enum Currency {
+
+    YUAN,
+    DOLLAR,
+    POUND
+
+;
+
+    init() {}
+
+}

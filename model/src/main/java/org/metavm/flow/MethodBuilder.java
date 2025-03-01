@@ -142,12 +142,8 @@ public class MethodBuilder {
                 state
         );
         if (returnTypeIndex == -1) {
-            if (returnType == null) {
-                if (isConstructor)
-                    returnType = declaringType.getType();
-                else
-                    returnType = Utils.orElse(Types.getVoidType(), Types::getVoidType);
-            }
+            if (returnType == null)
+                returnType = Types.getVoidType();
             method.setReturnTypeIndex(method.getConstantPool().addValue(returnType));
         }
         method.setAttributes(attributes);

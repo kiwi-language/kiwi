@@ -31,7 +31,7 @@ public class FunctionNode extends Node {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("call " + functionType.toExpression());
+        writer.write("call " + functionType.getText());
     }
 
     @Override

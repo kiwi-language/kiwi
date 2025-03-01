@@ -16,6 +16,7 @@
         <module>lab</module>
         <module>test</module>
         <module>assembly</module>
+        <module>kcompiler</module>
     </modules>
 
     <parent>

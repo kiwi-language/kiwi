@@ -713,9 +713,16 @@ public class VmStack {
                             }
                             case Bytecodes.DOUBLE_ADD -> {
                                 var v2 = (DoubleValue) stack[--top];
-                                var v1 = (DoubleValue) stack[--top];
-                                stack[top++] = new DoubleValue(v1.value + v2.value);
-                                pc++;
+                                var v0 = stack[--top];
+                                try {
+                                    var v1 = (DoubleValue) v0;
+                                    stack[top++] = new DoubleValue(v1.value + v2.value);
+                                    pc++;
+                                }
+                                catch (ClassCastException e) {
+                                    log.error("Float value {}", ((FloatValue) v0).value);
+                                    throw e;
+                                }
                             }
                             case Bytecodes.DOUBLE_SUB -> {
                                 var v2 = (DoubleValue) stack[--top];
@@ -1044,7 +1051,8 @@ public class VmStack {
                             }
                             case Bytecodes.STORE -> {
                                 var index = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                stack[base + index] = stack[--top];
+                                var v = stack[--top];
+                                stack[base + index] = v;
                                 pc += 3;
                             }
                             case Bytecodes.LOAD -> {
@@ -1104,6 +1112,13 @@ public class VmStack {
                             }
                             case Bytecodes.DUP -> {
                                 stack[top] = stack[top++ - 1];
+                                pc++;
+                            }
+                            case Bytecodes.DUP2 -> {
+                                var v1 = stack[top - 2];
+                                var v2 = stack[top = 1];
+                                stack[top++] = v1;
+                                stack[top++] = v2;
                                 pc++;
                             }
                             case Bytecodes.POP -> {

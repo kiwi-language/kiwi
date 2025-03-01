@@ -717,5 +717,12 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     public void addKlass(Klass klass) {
         addLocalKlass(klass);
     }
+
+    public void rebuildNodes() {
+        if (code != null)
+            code.rebuildNodes();
+        lambdas.forEach(l -> l.getCode().rebuildNodes());
+    }
+
 }
 

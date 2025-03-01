@@ -62,7 +62,7 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testUtils() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/mv/Utils.mv", typeManager, schedulerAndWorker);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/Utils.kiwi", typeManager, schedulerAndWorker);
         var contains = (boolean) callMethod("Utils", "test", List.of(
                 List.of("a", "b", "c"), List.of("d", "b")
         ));
@@ -75,14 +75,14 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testGenericOverloading() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/mv/GenericOverloading.mv", typeManager, schedulerAndWorker);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/GenericOverloading.kiwi", typeManager, schedulerAndWorker);
         var subId = saveInstance("Sub", Map.of());
         var result = (boolean) callMethod(subId, "test<string>", List.of("abc"));
         Assert.assertTrue(result);
     }
 
     public void testLambda() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/mv/Lambda.mv", typeManager, schedulerAndWorker);
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/Lambda.kiwi", typeManager, schedulerAndWorker);
         var result = (int) callMethod("Utils", "findGt", List.of(
                 List.of(1, 2, 3), 2
         ));
@@ -111,7 +111,7 @@ public class InstanceManagerTest extends TestCase {
     }
 
 //    public void testRemoveNonPersistedChild() {
-//        final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/mv/ParentChild.mv";
+//        final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/kiwi/ParentChild.kiwi";
 //        MockUtils.assemble(parentChildMasm, typeManager, schedulerAndWorker);
 //        var parentId = saveInstance("Parent", Map.of());
 //        callMethod(parentId, "test", List.of());

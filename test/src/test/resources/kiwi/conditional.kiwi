@@ -1,0 +1,42 @@
+class Base {
+
+    init() {}
+
+    func speak() -> string {
+        return "Base"
+    }
+
+}
+
+class Sub1: Base {
+
+    init() {}
+
+    func speak() -> string {
+        return "sub1"
+    }
+
+}
+
+class Sub2: Base {
+
+    init() {}
+
+    func speak() -> string {
+        return "sub2"
+    }
+
+}
+
+class Conditional {
+
+    static func test(v: int) -> int {
+        return v > 0 ? v : -v
+    }
+
+    static func test1(v: int) -> string {
+        var sub = v > 0 ? new Sub1() : new Sub2()
+        return sub.speak()
+    }
+
+}

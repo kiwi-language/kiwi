@@ -1,8 +1,0 @@
-
-public class Utils {
-
-    public static any[] createArray() {
-        return new any[];
-    }
-
-}

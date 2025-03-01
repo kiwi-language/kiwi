@@ -16,6 +16,7 @@ public class Nodes {
     public static RaiseNode raiseWithMessage(String message, Code code) {
         var type = StdKlass.runtimeException.type();
         Nodes.newObject(code, type, true, true);
+        Nodes.dup(code);
         loadConstant(Instances.stringInstance(message), code);
         var constructor = type.resolveMethod(type.getName(), List.of(Types.getNullableStringType()), List.of(), false);
         invokeMethod(constructor, code);

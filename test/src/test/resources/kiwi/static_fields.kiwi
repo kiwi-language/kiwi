@@ -1,0 +1,39 @@
+class UpdateStaticFoo {
+
+    private static var value: int
+
+    static {
+        UpdateStaticFoo.value = 0
+    }
+
+    static func set(value: int) {
+        UpdateStaticFoo.value = value
+    }
+
+    static func get() -> int {
+        return UpdateStaticFoo.value
+    }
+
+}
+
+enum Option {
+
+    opt1(0),
+
+;
+
+    private var value: int
+
+    init(value: int) {
+        this.value = value
+    }
+
+    func getValue() -> int {
+        return this.value
+    }
+
+    func setValue(value: int) {
+        this.value = value
+    }
+
+}

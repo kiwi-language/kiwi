@@ -1,5 +1,0 @@
-
-class Node<T> {
-    private string label;
-    private T value;
-}

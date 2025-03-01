@@ -74,6 +74,7 @@ public class BeanManagerTest extends TestCase {
                         false,
                         false
                 );
+                Nodes.dup(factoryMethod.getCode());
                 Nodes.argument(factoryMethod, 0);
                 Nodes.invokeMethod(constructor.getRef(), factoryMethod.getCode());
                 Nodes.ret(factoryMethod.getCode());

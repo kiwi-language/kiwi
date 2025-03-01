@@ -1,0 +1,63 @@
+import java.lang.IllegalStateException
+
+class Product {
+
+    private var name: string
+    private var kind: ProductKind
+
+    init(name: string, kind: ProductKind) {
+        this.name = name
+        this.kind = kind
+    }
+
+    func getName() -> string {
+        return this.name
+    }
+
+    func setName(name: string) {
+        this.name = name
+    }
+
+    func getKind() -> ProductKind {
+        return this.kind
+    }
+
+    func setKind(kind: ProductKind) {
+        this.kind = kind
+    }
+
+}
+
+enum ProductKind {
+
+    DEFAULT(0),
+    VIRTUAL(1),
+    HOTEL(2)
+
+;
+
+    private val code: int
+    private deleted var name: string
+
+    init(code: int) {
+        this.code = code
+    }
+
+    func getCode() -> int {
+        return this.code
+    }
+
+    static func __map__(kind: ProductKind) -> ProductKind {
+        var values = ProductKind.values()
+        var i = 0
+        while (i < values.length) {
+            var name = values[i].name()!!
+            if(equals(name, kind.name)) {
+                return values[i]
+            }
+            i = i + 1
+        }
+        throw new IllegalStateException(concat("Can not find an enum constant of for: ProductKind name: ", kind.name))
+    }
+
+}

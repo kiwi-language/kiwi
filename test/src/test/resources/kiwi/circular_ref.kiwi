@@ -1,0 +1,37 @@
+import java.io.ObjectOutputStream
+import java.io.ObjectInputStream
+
+class Foo {
+
+    private var bar: Bar
+
+    init() {
+        this.bar = this.new Bar(this)
+    }
+
+    func getBar() -> Bar {
+        return this.bar
+    }
+
+    private func writeObject(s: ObjectOutputStream) {
+    }
+
+    private func readObject(s: ObjectInputStream) {
+         this.bar = new Bar(this)
+    }
+
+}
+
+class Bar {
+
+    private var foo: Foo
+
+    init(foo: Foo) {
+        this.foo = foo
+    }
+
+    func getFoo() -> Foo {
+        return this.foo
+    }
+
+}

@@ -1,0 +1,80 @@
+class Product {
+    private var name: string
+    private var price: int
+    private var inventory: Inventory
+    private var manufacturer: string
+
+    init(name: string, price: int, inventory: Inventory, manufacturer: string) {
+        this.name = name
+        this.price = price
+        this.inventory = inventory
+        this.manufacturer = manufacturer
+    }
+
+    func getName() -> string {
+        return this.name
+    }
+
+    func setName(name: string) {
+        this.name = name
+    }
+
+    func getPrice() -> int {
+        return this.price
+    }
+
+    func setPrice(price: int) {
+        this.price = price
+    }
+
+    func getInventory() -> Inventory {
+        return this.inventory
+    }
+
+    func setInventory(inventory: Inventory) {
+        this.inventory = inventory
+    }
+
+    func getManufacturer() -> string {
+        return this.manufacturer
+    }
+
+    func setManufacturer(manufacturer: string) {
+        this.manufacturer = manufacturer
+    }
+
+}
+
+class Inventory {
+    private var quantity: int
+
+    init(quantity: int) {
+        this.quantity = quantity
+    }
+
+    func getQuantity() -> int {
+        return this.quantity
+    }
+
+    func setQuantity(quantity: int) {
+        this.quantity = quantity
+    }
+
+}
+
+class Box<T> {
+    private var item: T
+
+    init(item: T) {
+        this.item = item
+    }
+
+    func getItem() -> T {
+        return this.item
+    }
+
+    func setItem(item: T) {
+        this.item = item
+    }
+
+}

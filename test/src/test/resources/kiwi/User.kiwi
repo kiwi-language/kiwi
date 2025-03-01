@@ -1,0 +1,14 @@
+class PlatformUser {
+    var loginName: string
+    var passwd: password
+}
+
+@Searchable
+class Application {
+    var name: string
+    private var owner: PlatformUser
+
+    func getOwner() -> PlatformUser {
+        return this.owner
+    }
+}

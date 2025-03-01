@@ -1,0 +1,100 @@
+import java.util.List
+import java.util.ArrayList
+
+class LivingBeing {
+
+    private var age: int
+    private var extra: any|null
+    private var offsprings: List<LivingBeing>
+    private var ancestors: List<LivingBeing>
+
+    init(age: int, extra: any|null) {
+        this.age = age
+        this.extra = extra
+        this.offsprings = new ArrayList<LivingBeing>()
+        this.ancestors = new ArrayList<LivingBeing>()
+    }
+
+    func getAge() -> int {
+        return this.age
+    }
+
+    func getExtra() -> any|null {
+        return this.extra
+    }
+
+    func getOffsprings() -> List<LivingBeing> {
+        return new ArrayList<LivingBeing>(this.offsprings)
+    }
+
+    func getAncestors() -> List<LivingBeing> {
+        return new ArrayList<LivingBeing>(this.ancestors)
+    }
+
+    func addOffspring(offspring: LivingBeing) {
+        this.offsprings.add(offspring)
+    }
+
+    func addAncestor(ancestor: LivingBeing) {
+        this.ancestors.add(ancestor)
+    }
+
+    func makeSound() -> string {
+        return "Gu gu gu gu"
+    }
+
+}
+
+class Animal: LivingBeing {
+
+    private var intelligence: int
+
+    init(age: int, extra: any|null, intelligence: int) {
+        super(age, extra)
+        this.intelligence = intelligence
+    }
+
+    func getIntelligence() -> int {
+        return this.intelligence
+    }
+
+    func makeSound() -> string {
+        return "Howl~"
+    }
+
+}
+
+class Human: Animal, Sentient {
+
+    private var occupation: string
+    private var thinking: boolean
+
+    init(age: int, extra: any|null, intelligence: int, occupation: string) {
+        super(age, extra, intelligence)
+        this.occupation = occupation
+        this.thinking = false
+    }
+
+   func getOccupation() -> string {
+        return this.occupation
+   }
+
+   func isThinking() -> boolean {
+        return this.thinking
+   }
+
+   func makeSound() -> string {
+        return "I am a human being"
+   }
+
+   func think() {
+        this.thinking = true
+   }
+
+}
+
+interface Sentient {
+
+    func think()
+
+}

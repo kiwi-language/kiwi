@@ -1,0 +1,10 @@
+import java.util.TreeSet
+import java.lang.Integer
+
+class TreeSetLab {
+
+    static func create() -> TreeSet<Integer> {
+        return new TreeSet<Integer>()
+    }
+
+}

@@ -54,7 +54,8 @@ public class ApiService extends EntityContextFactoryAware {
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, null, rawArguments, false, true, context);
             var self = ClassInstanceBuilder.newBuilder(klass, context.allocateRootId(klass)).build();
-            var result = execute(r.method, self, r.arguments, request, response, context);
+            execute(r.method, self, r.arguments, request, response, context);
+            var result = self.getReference();
             context.bind(self);
             context.finish();
             return (String) formatInstance(result, false);

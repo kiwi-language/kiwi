@@ -1,0 +1,73 @@
+import java.lang.IllegalStateException
+
+class Product {
+    private var name: string
+    private var kind: ProductKind
+
+    init(name: string, kind: ProductKind) {
+        this.name = name
+        this.kind = kind
+    }
+
+    func getName() -> string {
+        return this.name
+    }
+
+    func setName(name: string) {
+        this.name = name
+    }
+
+    func getKind() -> ProductKind {
+        return this.kind
+    }
+
+    func setKind(kind: ProductKind ) {
+        this.kind = kind
+    }
+
+    func isDefaultKind() -> boolean {
+        return this.kind.isDefault()
+    }
+
+}
+
+enum ProductKind {
+
+    DEFAULT(0),
+    HOTEL(1),
+    VIRTUAL(2)
+
+;
+
+    private val code: int
+    private deleted var name: string
+
+    init(code: int) {
+        this.code = code
+    }
+
+    func getCode() -> int {
+        return this.code
+    }
+
+    func isDefault() -> boolean {
+        return this == ProductKind.DEFAULT
+    }
+
+    static func __map__(kind: ProductKind ) -> ProductKind {
+        if(kind.ordinal != -1) {
+            return kind
+        }
+        var values = ProductKind.values()
+        var i = 0
+        while (i < values.length) {
+            var name = values[i].name()!!
+            if(equals(name, kind.name)) {
+                return values[i]
+            }
+            i = i + 1
+        }
+        throw new IllegalStateException(concat("Failed to map enum constant: ", kind.name))
+    }
+
+}

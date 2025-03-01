@@ -1,0 +1,9 @@
+import java.util.List
+
+class Utils {
+
+    static func size(strings: List<string>) -> int {
+        return strings.size()
+    }
+
+}

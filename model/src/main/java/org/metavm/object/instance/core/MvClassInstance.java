@@ -427,10 +427,8 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     }
 
     private void setFieldInternal(Field field, Value value, boolean checkMutability) {
-                Utils.require(field.getDeclaringType().isAssignableFrom(klass),
-                () -> "Field " + field.getQualifiedName() + " is not defined in klass " + klass.getTypeDesc()
-                        + " with super type " + klass.getSuperType() + ", super equals: "
-                        + (field.getDeclaringType() == requireNonNull(klass.getSuperType()).getKlass()));
+        Utils.require(field.getDeclaringType().isAssignableFrom(klass),
+                () -> "Field " + field.getQualifiedName() + " is not defined in klass " + klass.getTypeDesc());
         if (checkMutability && field.isReadonly())
             throw new BusinessException(ErrorCode.CAN_NOT_MODIFY_READONLY_FIELD, field.getQualifiedName());
         setModified();

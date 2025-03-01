@@ -1,0 +1,15 @@
+class Base {
+
+    func isEmpty() -> boolean {
+        return false
+    }
+
+}
+
+class Foo: Base {
+
+    func isEmpty() -> boolean {
+        return true
+    }
+
+}

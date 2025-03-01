@@ -1,0 +1,33 @@
+package org.metavm.compiler.syntax;
+
+import org.metavm.compiler.element.*;
+import org.metavm.compiler.type.PrimitiveType;
+import org.metavm.compiler.type.Type;
+import org.metavm.compiler.type.Types;
+
+import javax.lang.model.element.VariableElement;
+
+public abstract class Expr extends Node {
+
+    private Element element;
+    private Type type = PrimitiveType.NEVER;
+
+    public Element getElement() {
+        return element;
+    }
+
+    public void setElement(Element element) {
+        this.element = element;
+        if (element instanceof ValueElement v)
+            type = v.getType();
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+}

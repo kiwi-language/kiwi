@@ -1,0 +1,11 @@
+
+class Assign {
+
+    static func test(v: int) -> int {
+        var i: int
+        var j: int
+        i = j = v
+        return i + j
+    }
+
+}

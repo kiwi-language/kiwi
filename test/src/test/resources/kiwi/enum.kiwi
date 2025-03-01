@@ -1,0 +1,20 @@
+
+enum Option {
+
+    op1(1),
+    op2(2),
+    op3(3)
+
+;
+
+    private val code: int
+
+    init(code: int) {
+        this.code = code
+    }
+
+    func code() -> int {
+        return this.code
+    }
+
+}

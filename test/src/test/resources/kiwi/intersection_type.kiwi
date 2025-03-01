@@ -1,0 +1,40 @@
+
+interface Greet {
+
+    func greet(name: string) -> string
+
+}
+
+class Base {
+
+    var name: string
+
+    init(name: string) {
+        this.name = name
+    }
+
+}
+
+class Sub: Base, Greet {
+
+    init(name: string) {
+        super(name)
+    }
+
+    func greet(name: string) -> string {
+        return concat("Hello ", name)
+    }
+
+}
+
+class Lab {
+
+    static func test() -> string {
+        return greet(new Sub("Kiwi"))
+    }
+
+    static func greet(o: Base & Greet) -> string {
+        return o.greet(o.name)
+    }
+
+}

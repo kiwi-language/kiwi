@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 public class DDLTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(DDLTest.class);
-    public static final String SRC_DIR = "/Users/leen/workspace/object/test/src/test/resources/mv/";
+    public static final String SRC_DIR = "/Users/leen/workspace/object/test/src/test/resources/kiwi/";
 
     private TypeManager typeManager;
     private EntityContextFactory entityContextFactory;
@@ -58,7 +58,7 @@ public class DDLTest extends TestCase {
     }
 
     public void testDDL() {
-        assemble("ddl_before.mv");
+        assemble("ddl_before.kiwi");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "inventory", Map.of(
@@ -76,7 +76,7 @@ public class DDLTest extends TestCase {
         var boxId = saveInstance("Box<Inventory>", Map.of(
                 "item", inventoryId
         ));
-        var commitId = assemble("ddl_after.mv", false);
+        var commitId = assemble("ddl_after.kiwi", false);
         var hatId = saveInstance("Product", Map.of(
                 "name", "Hat",
                 "inventory", Map.of(
@@ -153,7 +153,7 @@ public class DDLTest extends TestCase {
 //            );
 //        }
 //        logger.info("Deploying rollback metadata");
-//        assemble("ddl_rollback.mv", false);
+//        assemble("ddl_rollback.kiwi", false);
 //        TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, schedulerAndWorker);
 //        try(var context = newContext()) {
 //            var invInst = context.get(newInventorId);
@@ -200,7 +200,7 @@ public class DDLTest extends TestCase {
     }
 
     public void testCheck() {
-        assemble("ddl_before.mv");
+        assemble("ddl_before.kiwi");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "inventory", Map.of(
@@ -212,7 +212,7 @@ public class DDLTest extends TestCase {
         var shoes = apiClient.getObject(shoesId);
         Assert.assertEquals(100, shoes.get("price"));
         try {
-            assemble("ddl_after_failed.mv", false);
+            assemble("ddl_after_failed.kiwi", false);
             Assert.fail("Should have thrown exception");
         } catch (BusinessException e) {
             Assert.assertEquals(
@@ -224,7 +224,7 @@ public class DDLTest extends TestCase {
     }
 
 //    public void testDDLRollback() {
-//        assemble("ddl_before.mv");
+//        assemble("ddl_before.kiwi");
 //        var shoesId = saveInstance("Product", Map.of(
 //                "name", "Shoes",
 //                "inventory", Map.of(
@@ -251,7 +251,7 @@ public class DDLTest extends TestCase {
 //                "price", 20,
 //                "manufacturer", "AppEase"
 //        ));
-//        var commitId = assemble("ddl_after.mv", false);
+//        var commitId = assemble("ddl_after.kiwi", false);
 //        Field availableField;
 //        try(var context = newContext()) {
 //            var commit = context.getEntity(Commit.class, commitId);
@@ -276,7 +276,7 @@ public class DDLTest extends TestCase {
 //    }
 
     public void testEntityToValueConversion() {
-        assemble("value_ddl_before.mv");
+        assemble("value_ddl_before.kiwi");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
@@ -292,7 +292,7 @@ public class DDLTest extends TestCase {
                     "price", priceId
             )));
         }
-        assemble("value_ddl_after.mv", false);
+        assemble("value_ddl_after.kiwi", false);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var productKlass1 = context.getKlassByQualifiedName("Product");
@@ -360,7 +360,7 @@ public class DDLTest extends TestCase {
             var price = (ClassInstanceWrap) product.get("price");
             Assert.assertNull(price.get("$id"));
         }
-        var commitId = assemble("value_ddl_before.mv", false);
+        var commitId = assemble("value_ddl_before.kiwi", false);
         TestUtils.runTasks(1, 16, schedulerAndWorker);
         var shoes1 = apiClient.getObject(shoesId);
         var price1 = shoes1.get("price");
@@ -392,7 +392,7 @@ public class DDLTest extends TestCase {
     }
 
     public void testRollbackEntityToValueConversion() {
-        assemble("value_ddl_before.mv");
+        assemble("value_ddl_before.kiwi");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "price", Map.of(
@@ -400,7 +400,7 @@ public class DDLTest extends TestCase {
                         "currency", "YUAN"
                 )
         ));
-        var commitId = assemble("value_ddl_after.mv", false);
+        var commitId = assemble("value_ddl_after.kiwi", false);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var commit = context.getCommit(commitId);
@@ -417,7 +417,7 @@ public class DDLTest extends TestCase {
     }
 
 //    public void testRollbackValueToEntityConversion() {
-//        assemble("value_ddl_after.mv");
+//        assemble("value_ddl_after.kiwi");
 //        var shoesId = saveInstance("Product", Map.of(
 //                "name", "Shoes",
 //                "price", Map.of(
@@ -425,7 +425,7 @@ public class DDLTest extends TestCase {
 //                        "currency", "YUAN"
 //                )
 //        ));
-//        var commitId = assemble("value_ddl_before.mv", false);
+//        var commitId = assemble("value_ddl_before.kiwi", false);
 //        TestUtils.doInTransactionWithoutResult(() -> {
 //            try(var context = newContext()) {
 //                var commit = context.getCommit(commitId);
@@ -460,7 +460,7 @@ public class DDLTest extends TestCase {
 //    }
 
 //    public void testEntityToEnumConversion() {
-//        assemble("enum_ddl_before.mv");
+//        assemble("enum_ddl_before.kiwi");
 //        var shoesId = saveInstance("Product", Map.of(
 //                "name", "Shoes",
 //                "kind", Map.of(
@@ -469,7 +469,7 @@ public class DDLTest extends TestCase {
 //                )
 //        ));
 //        var kindId0 = apiClient.getObject(shoesId).getString("kind");
-//        assemble("enum_ddl_after.mv", false);
+//        assemble("enum_ddl_after.kiwi", false);
 //        TestUtils.waitForDDLCompleted(schedulerAndWorker);
 //        var isDefaultProduct = TestUtils.doInTransaction(() -> apiClient.callMethod(shoesId, "isDefaultKind", List.of()));
 //        Assert.assertEquals(true, isDefaultProduct);
@@ -484,7 +484,7 @@ public class DDLTest extends TestCase {
 //        catch (BusinessException e) {
 //            Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
 //        }
-//        assemble("enum_ddl_rollback.mv");
+//        assemble("enum_ddl_rollback.kiwi");
 //        try (var context = newContext()) {
 //            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
 //            var kind = shoesInst.getField("kind").resolveObject();
@@ -502,7 +502,7 @@ public class DDLTest extends TestCase {
 //    }
 
     public void testEnumConversionRollback() {
-        assemble("enum_ddl_before.mv");
+        assemble("enum_ddl_before.kiwi");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "kind", Map.of(
@@ -511,7 +511,7 @@ public class DDLTest extends TestCase {
                 )
         ));
         var kindId = apiClient.getObject(shoesId).getString("kind");
-        var commitId = assemble("enum_ddl_after.mv", false);
+        var commitId = assemble("enum_ddl_after.kiwi", false);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var commit = context.getCommit(commitId);
@@ -531,7 +531,7 @@ public class DDLTest extends TestCase {
     }
 
 //    public void testValueToChildConversion() {
-//        assemble("value_to_child_ddl_before.mv");
+//        assemble("value_to_child_ddl_before.kiwi");
 //        var shoesId = saveInstance("Product", Map.of(
 //                "name", "shoes",
 //                "price", Map.of(
@@ -539,7 +539,7 @@ public class DDLTest extends TestCase {
 //                        "currency", "YUAN"
 //                )
 //        ));
-//        assemble("value_to_child_ddl_after.mv");
+//        assemble("value_to_child_ddl_after.kiwi");
 //        try(var context = newContext()) {
 //            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
 //            var priceRef = (Reference) shoesInst.getField("price");
@@ -548,7 +548,7 @@ public class DDLTest extends TestCase {
 //            Assert.assertNotNull(price.tryGetId());
 //            Assert.assertEquals(price.getTreeId(), shoesInst.getTreeId());
 //        }
-//        assemble("value_to_child_ddl_before.mv");
+//        assemble("value_to_child_ddl_before.kiwi");
 //        try(var context = newContext()) {
 //            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
 //            var priceRef = (Reference) shoesInst.getField("price");
@@ -561,13 +561,13 @@ public class DDLTest extends TestCase {
 //    }
 
 //    public void testChildToEnumConversion() {
-//        assemble("child_to_enum_ddl_before.mv");
+//        assemble("child_to_enum_ddl_before.kiwi");
 //        var shoesId = saveInstance("Product", Map.of(
 //                "name", "shoes",
 //                "kind", "DEFAULT"
 //        ));
 //        var kindId = apiClient.getObject(shoesId).getString("kind");
-//        assemble("child_to_enum_ddl_after.mv");
+//        assemble("child_to_enum_ddl_after.kiwi");
 //        var defaultKindId = typeManager.getEnumConstantId("ProductKind", "DEFAULT");
 //        try(var context = newContext()) {
 //            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
@@ -581,7 +581,7 @@ public class DDLTest extends TestCase {
 //                Assert.assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
 //            }
 //        }
-//        assemble("child_to_enum_ddl_rollback.mv");
+//        assemble("child_to_enum_ddl_rollback.kiwi");
 //        var kindId1 = apiClient.getObject(shoesId).getString("kind");
 //        var kind = apiClient.getObject(kindId1);
 //        Assert.assertEquals("DEFAULT", kind.getString("name"));
@@ -589,14 +589,14 @@ public class DDLTest extends TestCase {
 //    }
 
 //    public void testChildToEnumConversionAbortion() {
-//        assemble("child_to_enum_ddl_before.mv");
+//        assemble("child_to_enum_ddl_before.kiwi");
 //        var shoesId = saveInstance("Product", Map.of(
 //                "name", "shoes",
 //                "kind", "DEFAULT"
 //        ));
 //        var shoes = apiClient.getObject(shoesId);
 //        var kindId = shoes.getString("kind");
-//        var commitId = assemble("child_to_enum_ddl_after.mv", false);
+//        var commitId = assemble("child_to_enum_ddl_after.kiwi", false);
 //        TestUtils.doInTransactionWithoutResult(() -> {
 //            try(var context = newContext()) {
 //                var commit = context.getCommit(commitId);
@@ -610,12 +610,12 @@ public class DDLTest extends TestCase {
 //    }
 
 //    public void testEnumToChildConversionAbortion() {
-//        assemble("enum_to_child_ddl.mv");
+//        assemble("enum_to_child_ddl.kiwi");
 //        var shoesId = saveInstance("Product", Map.of(
 //                "name", "shoes",
 //                "kind", "DEFAULT"
 //        ));
-//        var commitId = assemble("child_to_enum_ddl_rollback.mv", false);
+//        var commitId = assemble("child_to_enum_ddl_rollback.kiwi", false);
 //        TestUtils.doInTransactionWithoutResult(() -> {
 //            try(var context = newContext()) {
 //                var commit = context.getCommit(commitId);
@@ -629,7 +629,7 @@ public class DDLTest extends TestCase {
 //    }
 
     public void testValueToEnumConversion() {
-        assemble("value_to_enum_ddl_before.mv");
+        assemble("value_to_enum_ddl_before.kiwi");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "kind", Map.of(
@@ -637,12 +637,12 @@ public class DDLTest extends TestCase {
                         "code", 0
                 )
         ));
-        assemble("value_to_enum_ddl_after.mv");
+        assemble("value_to_enum_ddl_after.kiwi");
         var shoes = apiClient.getObject(shoesId);
         var kind = shoes.get("kind");
         MatcherAssert.assertThat(kind, CoreMatchers.instanceOf(String.class));
         Assert.assertEquals("DEFAULT", kind);
-        assemble("value_to_enum_ddl_rollback.mv");
+        assemble("value_to_enum_ddl_rollback.kiwi");
         var shoes1 = apiClient.getObject(shoesId);
         var kind1 = shoes1.get("kind");
         MatcherAssert.assertThat(kind1, CoreMatchers.instanceOf(ClassInstanceWrap.class));
@@ -651,7 +651,7 @@ public class DDLTest extends TestCase {
     }
 
     public void testAbortingValueToEnumConversion() {
-        assemble("value_to_enum_ddl_before.mv");
+        assemble("value_to_enum_ddl_before.kiwi");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "kind", Map.of(
@@ -659,7 +659,7 @@ public class DDLTest extends TestCase {
                         "code", 0
                 )
         ));
-        var commitId = assemble("value_to_enum_ddl_after.mv", false);
+        var commitId = assemble("value_to_enum_ddl_after.kiwi", false);
         doInContext(context -> {
            var commit = context.getCommit(commitId);
            commit.cancel();
@@ -672,13 +672,13 @@ public class DDLTest extends TestCase {
     }
 
     public void testAbortingEnumToValueConversion() {
-        assemble("enum_to_value_ddl.mv");
+        assemble("enum_to_value_ddl.kiwi");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
                 "kind", "DEFAULT"
                 )
         );
-        var commitId = assemble("value_to_enum_ddl_rollback.mv", false);
+        var commitId = assemble("value_to_enum_ddl_rollback.kiwi", false);
         doInContext(context -> {
             var commit = context.getCommit(commitId);
             commit.cancel();
@@ -690,13 +690,13 @@ public class DDLTest extends TestCase {
     }
 
 //    public void testChildFieldRemoval() {
-//        assemble("remove_child_field_ddl_before.mv");
+//        assemble("remove_child_field_ddl_before.kiwi");
 //        var shoesId = saveInstance("Product", Map.of(
 //                "name", "shoes",
 //                "quantity", 100
 //        ));
 //        var inventoryId = apiClient.getObject(shoesId).getString("inventory");
-//        assemble("remove_child_field_ddl_after.mv");
+//        assemble("remove_child_field_ddl_after.kiwi");
 //        try {
 //            apiClient.getObject(inventoryId);
 //            Assert.fail("Should have been removed");
@@ -707,13 +707,13 @@ public class DDLTest extends TestCase {
 //    }
 
 //    public void testCancelChildFieldRemoval() {
-//        assemble("remove_child_field_ddl_before.mv");
+//        assemble("remove_child_field_ddl_before.kiwi");
 //        var shoesId = saveInstance("Product", Map.of(
 //                "name", "shoes",
 //                "quantity", 100
 //        ));
 //        var inventoryId = apiClient.getObject(shoesId).getString("inventory");
-//        assemble("remove_child_field_ddl_after.mv", false);
+//        assemble("remove_child_field_ddl_after.kiwi", false);
 //        TestUtils.waitForDDLState(CommitState.SUBMITTING, schedulerAndWorker);
 //        saveInstance("Box<Inventory>", Map.of(
 //                "item", inventoryId
@@ -727,7 +727,7 @@ public class DDLTest extends TestCase {
 
 //    public void testRaceCondition() throws InterruptedException {
 //        try {
-//            assemble("ddl_before.mv");
+//            assemble("ddl_before.kiwi");
 //            var shoesId = saveInstance("Product", Map.of(
 //                    "name", "Shoes",
 //                    "inventory", Map.of(
@@ -745,7 +745,7 @@ public class DDLTest extends TestCase {
 //                ));
 //                boxIds.add(boxId);
 //            }
-//            assemble("ddl_after.mv", false);
+//            assemble("ddl_after.kiwi", false);
 //            TestUtils.waitForDDLState(CommitState.SETTING_REFERENCE_FLAGS, schedulerAndWorker);
 //            var newInventoryId = TestUtils.doInTransaction(() -> {
 //                try (var context = newContext()) {
@@ -812,7 +812,7 @@ public class DDLTest extends TestCase {
 //    }
 
     public void testCreateBeans() {
-        assemble("bean_ddl_before.mv");
+        assemble("bean_ddl_before.kiwi");
         try (var context = newContext()) {
             var klass = context.getKlassByQualifiedName("FooService");
             Assert.assertEquals(BeanKinds.COMPONENT, klass.getAttribute(AttributeNames.BEAN_KIND));
@@ -829,7 +829,7 @@ public class DDLTest extends TestCase {
             Assert.assertNotNull(bean);
             fooServiceId = ((EntityReference) bean).getId();
         }
-        assemble("bean_ddl_after.mv");
+        assemble("bean_ddl_after.kiwi");
         try(var context = newContext()) {
             var fooService = (ClassInstance) context.get(fooServiceId);
             Assert.assertTrue(fooService.getField("barService").isNotNull());
@@ -838,8 +838,8 @@ public class DDLTest extends TestCase {
     }
 
     public void testEnumAddField() {
-        assemble("enum_add_field_before.mv");
-        assemble("enum_add_field_after.mv");
+        assemble("enum_add_field_before.kiwi");
+        assemble("enum_add_field_after.kiwi");
         try(var context = newContext()) {
             var currencyKlass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance("Currency"));
             Assert.assertNotNull(currencyKlass);
@@ -850,30 +850,30 @@ public class DDLTest extends TestCase {
     }
 
     public void testCustomRunner() {
-        assemble("custom_runner_before.mv");
+        assemble("custom_runner_before.kiwi");
         var fieldId = TestUtils.doInTransaction(() -> apiClient.saveInstance("Field", Map.of(
                 "name", "count"
         )));
         TestUtils.doInTransaction(() -> apiClient.callMethod(fieldId, "setValue", List.of(1)));
         var value = apiClient.getObject(fieldId).get("value");
         Assert.assertEquals(1, value);
-        assemble("custom_runner_after.mv");
+        assemble("custom_runner_after.kiwi");
         var value1 = TestUtils.doInTransaction(() -> apiClient.callMethod("lab", "getFieldValue", List.of(fieldId)));
         Assert.assertEquals(value, value1);
     }
 
     public void testAddIndex() {
-        assemble("add_index_before.mv");
+        assemble("add_index_before.kiwi");
         var id = saveInstance("Product", Map.of("name", "Shoes"));
-        assemble("add_index_after.mv");
+        assemble("add_index_after.kiwi");
         Assert.assertEquals(id, callMethod("productService", "findByName", List.of("Shoes")));
     }
 
     public void testEnablingSearch() {
         var className = "SearchEnableFoo";
-        assemble("enable_search_before.mv");
+        assemble("enable_search_before.kiwi");
         var id = saveInstance(className, Map.of("name", "foo"));
-        assemble("enable_search_after.mv");
+        assemble("enable_search_after.kiwi");
         var page = search(className, Map.of("name", "foo"), 1, 20).page();
         Assert.assertEquals(1, page.size());
         Assert.assertEquals(id, page.getFirst());

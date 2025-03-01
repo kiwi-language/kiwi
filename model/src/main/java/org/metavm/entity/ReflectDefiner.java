@@ -121,7 +121,6 @@ public class ReflectDefiner {
                 }
                 var constructor = MethodBuilder.newBuilder(klass, javaClass.getSimpleName())
                         .id(getId.apply(javaConstructor))
-                        .returnType(klass.getType())
                         .isNative(true)
                         .isConstructor(true)
                         .build();

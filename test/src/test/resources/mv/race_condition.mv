@@ -1,9 +1,0 @@
-import java.util.List;
-
-class Utils {
-
-    public static int size(List<string> strings) {
-        return strings.size();
-    }
-
-}

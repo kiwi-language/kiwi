@@ -1,0 +1,56 @@
+class Product {
+    private var name: string
+    private var price: Price
+
+    init(name: string, price: Price) {
+        this.name = name
+        this.price = price
+    }
+
+    func getName() -> string {
+        return this.name
+    }
+
+    func setName(name: string) {
+        this.name = name
+    }
+
+    func getPrice() -> Price {
+        return this.price
+    }
+
+    func setPrice(price: Price) {
+        this.price = price
+    }
+
+}
+
+class Price {
+    private val amount: double
+    private val currency: Currency
+
+    init(amount: double, currency: Currency) {
+        this.amount = amount
+        this.currency = currency
+    }
+
+    func getAmount() -> double {
+        return this.amount
+    }
+
+    func getCurrency() -> Currency {
+        return this.currency
+    }
+
+}
+
+enum Currency {
+    YUAN,
+    DOLLAR,
+    POUND
+
+;
+
+    init() {}
+
+}

@@ -1,0 +1,22 @@
+
+class Base {
+
+    init() {}
+
+    func test<T>(v: T) -> boolean {
+        return false
+    }
+
+}
+
+class Sub: Base {
+
+    init() {
+        super()
+    }
+
+    func test<T>(v: T) -> boolean {
+        return true
+    }
+
+}

@@ -54,10 +54,12 @@ public class ComponentBeanDefinition extends BeanDefinition {
     @Override
     protected ClassInstance createBean(BeanDefinitionRegistry registry, IInstanceContext context) {
         var c = getConstructor();
-        return Objects.requireNonNull(Flows.invoke(c.getRef(),
-                ClassInstance.allocate(context.allocateRootId(), getKlass().getType()),
+        var instance = ClassInstance.allocate(context.allocateRootId(), getKlass().getType());
+        Flows.invoke(c.getRef(),
+                instance,
                 registry.getFlowArguments(c),
-                context)).resolveObject();
+                context);
+        return instance;
     }
 
     @Override
@@ -66,7 +68,8 @@ public class ComponentBeanDefinition extends BeanDefinition {
     }
 
     private Method getConstructor() {
-        return Utils.findRequired(getKlass().getMethods(), Method::isConstructor);
+        return Utils.findRequired(getKlass().getMethods(), Method::isConstructor,
+                () -> "Cannot find constructor in class " + getKlass().getQualifiedName());
     }
 
     @Override

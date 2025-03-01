@@ -1,6 +1,6 @@
 //package org.metavm.ddl;
 //
-//import org.metavm.asm.AssemblerFactory;
+//import org.metavm.compiler.AssemblerFactory;
 //import org.metavm.entity.*;
 //import org.metavm.flow.FlowSavingContext;
 //import org.metavm.flow.KlassOutput;
@@ -104,7 +104,7 @@
 //    }
 //
 //    private @Nullable Klass tryBuildInitializerKlass(Klass klass) {
-//        var asmFile = "/initializers/" + Objects.requireNonNull(klass.getQualifiedName()).replace('.', '/') + ".mv";
+//        var asmFile = "/initializers/" + Objects.requireNonNull(klass.getQualifiedName()).replace('.', '/') + ".kiwi";
 //        try(var input = Klass.class.getResourceAsStream(asmFile)) {
 //            if(input == null)
 //                return null;

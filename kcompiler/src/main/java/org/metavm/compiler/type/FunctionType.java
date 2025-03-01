@@ -1,0 +1,113 @@
+package org.metavm.compiler.type;
+
+import org.jetbrains.annotations.NotNull;
+import org.metavm.compiler.element.ConstantTags;
+import org.metavm.compiler.element.ElementTable;
+import org.metavm.compiler.element.ElementWriter;
+import org.metavm.compiler.element.Func;
+import org.metavm.compiler.syntax.FunctionTypeNode;
+import org.metavm.compiler.syntax.TypeNode;
+import org.metavm.compiler.util.List;
+import org.metavm.util.MvOutput;
+
+import javax.annotation.Nullable;
+
+
+public final class FunctionType implements Type, Comparable<FunctionType> {
+    private final List<Type> parameterTypes;
+    private final Type returnType;
+    private Closure closure = Closure.of(this);
+
+    FunctionType(
+            List<Type> parameterTypes,
+            Type returnType
+    ) {
+        this.parameterTypes = parameterTypes;
+        this.returnType = returnType;
+    }
+
+    @Override
+    public void write(ElementWriter writer) {
+        writer.write("(");
+        writer.writeTypes(parameterTypes);
+        writer.write(") -> ");
+        writer.writeType(returnType);
+    }
+
+    @Override
+    public boolean isAssignableFrom(Type type) {
+        type = type.getUpperBound();
+        if (type == this || type == PrimitiveType.NEVER)
+            return true;
+        if (type instanceof FunctionType that) {
+            return returnType.isAssignableFrom(that.returnType)
+                    && that.parameterTypes.matches(this.parameterTypes, Type::isAssignableFrom);
+        } else
+            return false;
+    }
+
+    @Override
+    public <R> R accept(TypeVisitor<R> visitor) {
+        return visitor.visitFunctionType(this);
+    }
+
+    @Override
+    public int getTag() {
+        return TypeTags.TAG_FUNCTION;
+    }
+
+    @Override
+    public String getInternalName(@Nullable Func current) {
+        return "(" +
+                parameterTypes.map(t -> t.getInternalName(current)).join(",") + ")->"
+                + returnType.getInternalName(current)
+                ;
+    }
+
+    @Override
+    public TypeNode makeNode() {
+        return new FunctionTypeNode(parameterTypes.map(Type::makeNode), returnType.makeNode());
+    }
+
+    @Override
+    public Closure getClosure() {
+        return closure;
+    }
+
+    @Override
+    public int compareTo(@NotNull FunctionType o) {
+        if (this == o)
+            return 0;
+        var r = Types.instance.compare(returnType, o.returnType);
+        if (r != 0)
+            return r;
+        return Types.instance.compareTypes(o.parameterTypes, parameterTypes);
+    }
+
+    public List<Type> getParameterTypes() {
+        return parameterTypes;
+    }
+
+    public Type getReturnType() {
+        return returnType;
+    }
+
+    @Override
+    public String toString() {
+        return "FunctionType[" +
+                "parameterTypes=" + parameterTypes + ", " +
+                "returnType=" + returnType + ']';
+    }
+
+    @Override
+    public void write(MvOutput output) {
+        output.write(ConstantTags.FUNCTION_TYPE);
+        output.writeList(parameterTypes, t -> t.write(output));
+        returnType.write(output);
+    }
+
+    @Override
+    public ElementTable getTable() {
+        return ElementTable.empty;
+    }
+}

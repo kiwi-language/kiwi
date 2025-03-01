@@ -81,18 +81,18 @@ public class Bytecodes {
     public static final int DUP_X2 = 86;
     public static final int LOAD_PARENT = 87;
     public static final int NEW_CHILD = 88;
-    public static final int LONG_TO_DOUBLE = 89;
-    public static final int DOUBLE_TO_LONG = 90;
-    public static final int DOUBLE_ADD = 91;
-    public static final int DOUBLE_SUB = 92;
-    public static final int DOUBLE_MUL = 93;
-    public static final int DOUBLE_DIV = 94;
-    public static final int DOUBLE_REM = 95;
-    public static final int DOUBLE_NEG = 96;
-    public static final int INT_TO_DOUBLE = 97;
+    public static final int INT_TO_LONG = 89;
+    public static final int INT_TO_FLOAT = 90;
+    public static final int INT_TO_DOUBLE = 91;
+    public static final int LONG_TO_INT = 92;
+    public static final int LONG_TO_FLOAT = 93;
+    public static final int LONG_TO_DOUBLE = 94;
+    public static final int FLOAT_TO_INT = 95;
+    public static final int FLOAT_TO_LONG = 96;
+    public static final int FLOAT_TO_DOUBLE = 97;
     public static final int DOUBLE_TO_INT = 98;
-    public static final int INT_TO_LONG = 99;
-    public static final int LONG_TO_INT = 100;
+    public static final int DOUBLE_TO_LONG = 99;
+    public static final int DOUBLE_TO_FLOAT = 100;
     public static final int INT_ADD = 101;
     public static final int INT_SUB = 102;
     public static final int INT_MUL = 103;
@@ -117,12 +117,12 @@ public class Bytecodes {
     public static final int FLOAT_REM = 122;
     public static final int FLOAT_NEG = 123;
     public static final int FLOAT_COMPARE = 124;
-    public static final int FLOAT_TO_INT = 125;
-    public static final int FLOAT_TO_LONG = 126;
-    public static final int FLOAT_TO_DOUBLE = 127;
-    public static final int INT_TO_FLOAT = 128;
-    public static final int LONG_TO_FLOAT = 129;
-    public static final int DOUBLE_TO_FLOAT = 130;
+    public static final int DOUBLE_ADD = 125;
+    public static final int DOUBLE_SUB = 126;
+    public static final int DOUBLE_MUL = 127;
+    public static final int DOUBLE_DIV = 128;
+    public static final int DOUBLE_REM = 129;
+    public static final int DOUBLE_NEG = 130;
     public static final int INT_TO_SHORT = 131;
     public static final int INT_TO_BYTE = 132;
     public static final int INT_TO_CHAR = 133;
@@ -163,6 +163,7 @@ public class Bytecodes {
     public static final int LT_DECLARING_TYPE = 168;
     public static final int LT_CURRENT_FLOW = 169;
     public static final int LT_ANCESTOR = 170;
+    public static final int DUP2 = 171;
 
     private static final String[] names = new String[256];
 

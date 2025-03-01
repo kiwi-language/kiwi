@@ -34,14 +34,23 @@ public class MockStandardTypesInitializer {
         );
         var enumTypeParam = new TypeVariable(TmpId.random(), "E",
                 DummyGenericDeclaration.INSTANCE);
-        var enumType = newKlassBuilder(Enum.class)
+        var enumClass = newKlassBuilder(Enum.class)
                 .source(ClassSource.BUILTIN)
                 .typeParameters(enumTypeParam)
                 .build();
-        enumTypeParam.setBounds(List.of(enumType.getType()));
-        FieldBuilder.newBuilder("name", enumType, Types.getStringType()).build();
-        FieldBuilder.newBuilder("ordinal", enumType, Types.getIntType()).build();
-        StdKlass.enum_.set(enumType);
+        enumTypeParam.setBounds(List.of(enumClass.getType()));
+        FieldBuilder.newBuilder("name", enumClass, Types.getStringType()).build();
+        FieldBuilder.newBuilder("ordinal", enumClass, Types.getIntType()).build();
+
+        MethodBuilder.newBuilder(enumClass, "Enum")
+                .isConstructor(true)
+                .parameters(
+                        new NameAndType("name", Types.getNullableStringType()),
+                        new NameAndType("ordinal", Types.getIntType())
+                )
+                .build();
+
+        StdKlass.enum_.set(enumClass);
         StdKlass.entity.set(newKlassBuilder(Entity.class)
                 .source(ClassSource.BUILTIN)
                 .build());

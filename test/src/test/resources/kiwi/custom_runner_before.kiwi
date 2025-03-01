@@ -1,0 +1,27 @@
+class Field {
+
+    private var name: string
+    private var value: any|null
+
+    init(name: string) {
+       this.name = name
+       this.value = null
+    }
+
+    func getName() -> string {
+       return this.name
+    }
+
+    func setName(name: string) {
+       this.name = name
+    }
+
+    func getValue() -> any|null {
+        return this.value
+    }
+
+    func setValue(v: any|null) {
+        this.value = v
+    }
+
+}

@@ -5,6 +5,7 @@ import org.metavm.api.lang.EmailUtils;
 import org.metavm.api.lang.*;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.DefContext;
+import org.metavm.entity.StdField;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.StdMethod;
 import org.metavm.flow.FlowExecResult;
@@ -643,6 +644,21 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                     return FlowExecResult.ofException(e);
                 }
                 return FlowExecResult.of(Instances.intInstance(from));
+            }
+    ),
+    enumValueOf(
+            "T|null enumValueOf<T>(T[] values, string name)",
+            false,
+            List.of(),
+            (func, args, callContext) -> {
+                var values = args.getFirst().resolveArray();
+                var name = (StringReference) args.get(1);
+                for (Value value : values) {
+                    var inst = value.resolveObject();
+                    if (inst.getField(StdField.enumName.get()).equals(name))
+                        return FlowExecResult.of(value);
+                }
+                return FlowExecResult.of(Instances.nullInstance());
             }
     ),
     ;

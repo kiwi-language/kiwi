@@ -1,0 +1,43 @@
+class Base1 {
+
+    private var value1: int
+
+    init(value1: int) {
+        this.value1 = value1
+    }
+
+    func getValue1() -> int {
+        return this.value1
+    }
+
+}
+
+class Base2: Base1 {
+
+     private var value2: int
+
+     init(value1: int, value2: int) {
+         super(value1)
+         this.value2 = value2
+     }
+
+     func getValue2() -> int {
+         return this.value2
+     }
+
+}
+
+class Derived: Base2 {
+
+    private var value3: int
+
+    init(value1: int, value2: int, value3: int) {
+        super(value1, value2)
+        this.value3 = value3
+    }
+
+    func getValue3() -> int {
+        return this.value3
+    }
+
+}
