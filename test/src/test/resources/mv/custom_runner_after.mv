@@ -1,10 +1,12 @@
+import org.metavm.api.Index;
+
 @Component
 class Lab {
 
     public Lab() {}
 
     public any|null getFieldValue(Field field) {
-        var fieldValue = selectFirst(FieldValue.uniqueIdxField, field);
+        var fieldValue = FieldValue.fieldIdx.getFirst(field);
         if(fieldValue == null) {
             return null;
         }
@@ -14,7 +16,7 @@ class Lab {
     }
 
     public void setFieldValue(Field field, any|null value) {
-        var fieldValue = selectFirst(FieldValue.uniqueIdxField, field);
+        var fieldValue = FieldValue.fieldIdx.getFirst(field);
         if(fieldValue == null) {
             new FieldValue(field).setValue(value);
         }
@@ -60,6 +62,15 @@ record IdxFieldValueField {
 
 class FieldValue {
 
+
+    private static Index<Field, FieldValue> fieldIdx;
+
+    private static Index<Field, FieldValue> __fieldIdx__() {
+        return new Index<Field, FieldValue>("fieldIdx", true, (FieldValue v) : Field -> {
+            return v.getField();
+        });
+    }
+
     private readonly Field field;
     private any|null value;
 
@@ -76,8 +87,8 @@ class FieldValue {
         this.value = value;
     }
 
-    public IdxFieldValueField uniqueIdxField() {
-        return new IdxFieldValueField(this.field);
+    public Field getField() {
+        return this.field;
     }
 
 }

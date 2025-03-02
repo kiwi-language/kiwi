@@ -485,18 +485,6 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSelect(AssemblyParser.SelectContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSelect(AssemblyParser.SelectContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterForControl(AssemblyParser.ForControlContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -996,18 +984,6 @@ public class AssemblyParserBaseListener implements AssemblyParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitLambdaBody(AssemblyParser.LambdaBodyContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterIndexDeclaration(AssemblyParser.IndexDeclarationContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitIndexDeclaration(AssemblyParser.IndexDeclarationContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

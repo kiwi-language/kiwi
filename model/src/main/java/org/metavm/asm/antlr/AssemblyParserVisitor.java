@@ -245,12 +245,6 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitAllocatorField(AssemblyParser.AllocatorFieldContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link AssemblyParser#select}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitSelect(AssemblyParser.SelectContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#forControl}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -502,12 +496,6 @@ public interface AssemblyParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitLambdaBody(AssemblyParser.LambdaBodyContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link AssemblyParser#indexDeclaration}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitIndexDeclaration(AssemblyParser.IndexDeclarationContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link AssemblyParser#indexField}.
 	 * @param ctx the parse tree

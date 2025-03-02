@@ -28,7 +28,7 @@ class Utils {
     }
 
     public static <T> boolean containsAny(Iterable<[never, T]> iterable, T value1, T value2) {
-        var list = unew ArrayList<T>();
+        var list = new ArrayList<T>();
         list.add(value1);
         list.add(value2);
         return Utils.<T>containsAny(iterable, list);

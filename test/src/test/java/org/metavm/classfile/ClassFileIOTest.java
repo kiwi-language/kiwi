@@ -2,11 +2,14 @@ package org.metavm.classfile;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.entity.MockStandardTypesInitializer;
+import org.metavm.entity.StdKlass;
 import org.metavm.entity.mocks.MockEntityRepository;
 import org.metavm.flow.KlassInput;
 import org.metavm.flow.KlassOutput;
 import org.metavm.object.type.Types;
 import org.metavm.util.MockUtils;
+import org.metavm.util.TestUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,22 +17,27 @@ import java.io.ByteArrayOutputStream;
 public class ClassFileIOTest extends TestCase {
 
 
+    @Override
+    protected void setUp() throws Exception {
+        TestUtils.ensureStringKlassInitialized();
+        MockStandardTypesInitializer.init();
+    }
+
     public void test() {
         var testKlasses = MockUtils.createTestKlasses();
         var fooKlass = testKlasses.getFirst();
-        var nameIndexKlass = testKlasses.get(1);
-        var supplierKlass = testKlasses.get(2);
+        var supplierKlass = testKlasses.get(1);
 
         var bout = new ByteArrayOutputStream();
         var writer = new ClassFileWriter(new KlassOutput(bout));
         writer.write(fooKlass);
-        writer.write(nameIndexKlass);
         writer.write(supplierKlass);
 
         var repo = new MockEntityRepository();
+        repo.bind(StdKlass.index.get());
+
         var reader = new ClassFileReader(new KlassInput(new ByteArrayInputStream(bout.toByteArray()), repo), repo, null);
         var fooKlass1 = reader.read();
-        var nameIndexKlass1 = reader.read();
         var supplierKlass1 = reader.read();
 
         Assert.assertEquals(fooKlass.getName(), fooKlass1.getName());
@@ -43,13 +51,12 @@ public class ClassFileIOTest extends TestCase {
         Assert.assertEquals(Types.getLongType(), lambda.getReturnType());
 
         var nameIndex = fooKlass1.getIndices().getFirst();
-        Assert.assertEquals("nameIndex", nameIndex.getName());
+        Assert.assertEquals("nameIdx", nameIndex.getName());
         Assert.assertEquals(Types.getStringType(), nameIndex.getType());
 
         var typeVariable = fooKlass1.getTypeParameters().getFirst();
         Assert.assertEquals("T", typeVariable.getName());
 
-        Assert.assertEquals(nameIndexKlass.getName(), nameIndexKlass1.getName());
         Assert.assertEquals(supplierKlass.getName(), supplierKlass1.getName());
 
         var itKlass = fooKlass1.getInterfaces().getFirst().getKlass();

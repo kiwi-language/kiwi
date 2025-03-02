@@ -2,7 +2,6 @@ package org.metavm.asm;
 
 import org.antlr.v4.runtime.Token;
 import org.metavm.asm.antlr.AssemblyParser;
-import org.metavm.entity.StdKlass;
 import org.metavm.entity.natives.StdFunction;
 import org.metavm.expression.Expression;
 import org.metavm.expression.Expressions;
@@ -14,9 +13,7 @@ import org.metavm.util.InternalException;
 import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -70,16 +67,12 @@ class AsmExpressionResolver {
             return resolvePostfix(ctx.expression(0), ctx.postfix);
         if (ctx.arguments() != null)
             return resolveFunctionCall(ctx.IDENTIFIER().getText(), ctx.arguments());
-        if (ctx.NEW() != null || ctx.UNEW() != null || ctx.ENEW() != null)
+        if (ctx.NEW() != null)
             return resolveNew(ctx);
         if (ctx.lambdaExpression() != null)
             return resolveLambdaExpression(ctx.lambdaExpression());
-        if (ctx.select() != null)
-            return resolveSelect(ctx.select());
         if (ctx.castType != null)
             return resolveCast(ctx.expression(0), ctx.castType);
-        if (ctx.allocator() != null)
-            return resolveAllocate(ctx.allocator());
         throw new IllegalStateException("Unrecognized expression: " + ctx.getText());
     }
 
@@ -91,22 +84,6 @@ class AsmExpressionResolver {
             return type.getUnderlyingType();
         }
         throw new IllegalStateException("Unrecognized postfix " + postfix.getText());
-    }
-
-    private Type resolveSelect(AssemblyParser.SelectContext ctx) {
-        var klass = requireNonNull(findKlass(ctx.qualifiedName().getText()));
-        var indexName = ctx.IDENTIFIER().getText();
-        var index = requireNonNull(klass.findSelfIndex(i -> i.getName().equals(indexName)),
-                () -> "Cannot find index with name " + indexName + " class " + klass.getTypeDesc());
-        Utils.map(ctx.expression(), this::resolve0);
-        if (ctx.SELECT() != null) {
-            Nodes.select(index, code);
-            return new KlassType(null, StdKlass.arrayList.get(), List.of(index.getDeclaringType().getType()));
-        }
-        else {
-            Nodes.selectFirst(index, code);
-            return Types.getNullableType(index.getDeclaringType().getType());
-        }
     }
 
     private Type resolveCast(AssemblyParser.ExpressionContext operand, AssemblyParser.TypeTypeContext type) {
@@ -207,35 +184,6 @@ class AsmExpressionResolver {
         return castType;
     }
 
-    private Type resolveAllocate(AssemblyParser.AllocatorContext allocator) {
-        var type = (ClassType) parseClassType(allocator.classOrInterfaceType());
-        var field2expression = new HashMap<String, AssemblyParser.ExpressionContext>();
-        if(allocator.allocatorFieldList() != null) {
-            var fields = allocator.allocatorFieldList().allocatorField();
-            for (AssemblyParser.AllocatorFieldContext field : fields) {
-                field2expression.put(field.IDENTIFIER().getText(), field.expression());
-            }
-        }
-        type.foreachField(field -> {
-            var fieldValue = field2expression.get(field.getName());
-            if(fieldValue != null)
-                resolve0(fieldValue);
-            else {
-                var value = Objects.requireNonNull(Instances.getDefaultValue(field.getPropertyType()),
-                        () -> "Value for field '" + field.getName() + "' is missing in the allocate expression");
-                Nodes.loadConstant(value, code);
-            }
-        });
-        new AddObjectNode(
-                code.nextNodeName("addObject"),
-                false,
-                type,
-                code.getLastNode(),
-                code
-        );
-        return type;
-    }
-
     private Type resolveLambdaExpression(AssemblyParser.LambdaExpressionContext ctx) {
         var returnType = parseType(ctx.typeTypeOrVoid());
         var lambda = new Lambda(TmpId.random(), TmpId.randomString(), List.of(), returnType, this.code.getFlow());
@@ -264,7 +212,7 @@ class AsmExpressionResolver {
         }
         else {
             var type = (ClassType) parseClassType(creator.classOrInterfaceType());
-            Nodes.newObject(code, type, ctx.UNEW() != null, ctx.ENEW() != null);
+            Nodes.newObject(code, type, false, false);
             List<AssemblyParser.ExpressionContext> arguments =
                     Utils.getOrElse(
                             creator.arguments().expressionList(),
@@ -345,6 +293,7 @@ class AsmExpressionResolver {
     private Type resolveLiteral(AssemblyParser.LiteralContext literal) {
         var text = literal.getText();
         org.metavm.object.instance.core.Value value;
+        Type type = null;
         if(literal.integerLiteral() != null) {
             if(text.endsWith("l") || text.endsWith("L"))
                 value = Instances.longInstance(Long.parseLong(text.substring(0, text.length() - 1)));
@@ -357,18 +306,20 @@ class AsmExpressionResolver {
                 value = Instances.doubleInstance(Double.parseDouble(text.substring(0, text.length() - 1)));
             else
                 value = Instances.doubleInstance(Double.parseDouble(text));
-        } else if (literal.BOOL_LITERAL() != null)
+        } else if (literal.BOOL_LITERAL() != null) {
             value = Instances.intInstance(Boolean.parseBoolean(text));
-        else if (literal.CHAR_LITERAL() != null)
+            type = Types.getBooleanType();
+        } else if (literal.CHAR_LITERAL() != null) {
             value = Instances.intInstance(Expressions.deEscapeChar(text));
-        else if(literal.STRING_LITERAL() != null)
+            type = Types.getCharType();
+        } else if(literal.STRING_LITERAL() != null)
             value = Instances.stringInstance(Expressions.deEscapeDoubleQuoted(text));
         else if(literal.NULL() != null)
             value = Instances.nullInstance();
         else
             throw new IllegalStateException("Unrecognized literal: " + text);
         Nodes.loadConstant(value, code);
-        return value.getValueType();
+        return type != null ? type : value.getValueType();
     }
 
     private Type resolveBop(AssemblyParser.ExpressionContext ctx) {

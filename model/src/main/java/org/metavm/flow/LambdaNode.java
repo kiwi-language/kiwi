@@ -31,7 +31,8 @@ public class LambdaNode extends Node {
     }
 
     public static Node read(CodeInput input, String name) {
-        return new LambdaNode(name, input.getPrev(), input.getCode(), (LambdaRef) input.readConstant(), (ClassType) input.readConstant());
+        return new LambdaNode(name, input.getPrev(), input.getCode(), (LambdaRef) input.readConstant(),
+                (ClassType) input.readNullable(input::readConstant));
     }
 
     @Override
@@ -69,12 +70,7 @@ public class LambdaNode extends Node {
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.LAMBDA);
         output.writeConstant(lambda);
-        if(functionalInterface != null) {
-            output.writeBoolean(true);
-            output.writeConstant(functionalInterface);
-        }
-        else
-            output.writeBoolean(false);
+        output.writeNullable(functionalInterface, output::writeConstant);
     }
 
     @Override

@@ -1,5 +1,15 @@
+import org.metavm.api.Index;
 
 class Product {
+
+    private static Index<string, Product> nameIdx;
+
+    private static Index<string, Product> __nameIdx__() {
+        return new Index<string, Product>("nameIdx", true, (Product p) : string -> {
+            return p.getName();
+        });
+    }
+
 
     private string name;
 
@@ -11,10 +21,6 @@ class Product {
         return this.name;
     }
 
-    public string uniqueIdxName() {
-        return this.name;
-    }
-
 }
 
 @Component
@@ -23,7 +29,7 @@ class ProductService {
     public ProductService() {}
 
     public Product|null findByName(string name) {
-        return selectFirst(Product.uniqueIdxName, name);
+        return Product.nameIdx.getFirst(name);
     }
 
 }

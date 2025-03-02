@@ -92,6 +92,32 @@ public class MockStandardTypesInitializer {
                         .typeParameters(new TypeVariable(TmpId.random(), "T", DummyGenericDeclaration.INSTANCE))
                         .build()
         );
+        var indexKlass = newKlassBuilder(org.metavm.api.Index.class)
+                .source(ClassSource.BUILTIN)
+                .typeParameters(
+                        new TypeVariable(TmpId.random(), "K", DummyGenericDeclaration.INSTANCE),
+                        new TypeVariable(TmpId.random(), "V", DummyGenericDeclaration.INSTANCE)
+                )
+                .build();
+        StdKlass.index.set(indexKlass);
+        MethodBuilder.newBuilder(indexKlass, "Index")
+                .isConstructor(true)
+                .parameters(
+                        new NameAndType("name", Types.getStringType()),
+                        new NameAndType("unique", Types.getBooleanType()),
+                        new NameAndType("keyComputer",
+                                new FunctionType(
+                                        List.of(indexKlass.getTypeParameters().getLast().getType()),
+                                        indexKlass.getTypeParameters().getFirst().getType()
+                                )
+                        )
+                )
+                .isNative(true)
+                .build();
+        MethodBuilder.newBuilder(indexKlass, "getFirst")
+                .parameters(new NameAndType("key", indexKlass.getTypeParameters().getFirst().getType()))
+                .returnType(Types.getNullableType(indexKlass.getTypeParameters().getLast().getType()))
+                .build();
     }
 
     private static KlassBuilder newKlassBuilder(Class<?> javaClass) {

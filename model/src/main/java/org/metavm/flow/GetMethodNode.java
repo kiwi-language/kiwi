@@ -114,4 +114,8 @@ public class GetMethodNode extends Node {
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
     }
+
+    public MethodRef getMethodRef() {
+        return methodRef;
+    }
 }

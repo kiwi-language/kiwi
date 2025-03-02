@@ -1,15 +1,15 @@
-record IdxFooServiceAllFlags {
-
-    private readonly boolean allFlags;
-
-    public IdxFooServiceAllFlags(boolean allFlags) {
-        this.allFlags = allFlags;
-    }
-
-}
+import org.metavm.api.Index;
 
 @Component
 class FooService {
+
+    private static Index<boolean, FooService> allFlagsIdx;
+
+    private static Index<boolean, FooService> __allFlagsIdx__() {
+        return new Index<boolean, FooService>("allFlags", false, (FooService s) : boolean -> {
+            return s.getAllFlags();
+        });
+    }
 
     private readonly boolean allFlags;
 
@@ -17,8 +17,8 @@ class FooService {
         this.allFlags = true;
     }
 
-    public IdxFooServiceAllFlags idxAllFlags() {
-        return new IdxFooServiceAllFlags(this.allFlags);
+    public boolean getAllFlags() {
+        return this.allFlags;
     }
 
 }

@@ -1,12 +1,11 @@
 package org.metavm.classfile;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.entity.Attribute;
-import org.metavm.entity.Entity;
-import org.metavm.entity.EntityRepository;
-import org.metavm.entity.GenericDeclaration;
+import org.metavm.entity.*;
 import org.metavm.flow.*;
+import org.metavm.object.instance.core.IntValue;
 import org.metavm.object.instance.core.PhysicalId;
+import org.metavm.object.instance.core.StringReference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.DebugEnv;
@@ -82,9 +81,9 @@ public class ClassFileReader {
         klass.setFields(input.readList(() -> readField(klassF)));
         klass.setStaticFields(input.readList(() -> readField(klassF)));
         klass.setMethods(input.readList(() -> readMethod(klassF)));
-        klass.setIndices(input.readList(() -> readIndex(klassF)));
         klass.setKlasses(input.readList(() -> readKlass(klassF)));
         klass.setAttributes(input.readList(() -> Attribute.read(input)));
+        klass.setIndices(Utils.mapAndFilter(klass.getStaticFields(), this::addIndex, Objects::nonNull));
         if (listener != null) {
             if (klass.isNew()) listener.onKlassCreate(klass);
             else listener.onKlassUpdate(klass);
@@ -102,24 +101,6 @@ public class ClassFileReader {
         typeVariable.setBoundIndexes(input.readList(input::readInt));
         typeVariable.setAttributes(input.readList(() -> Attribute.read(input)));
         return typeVariable;
-    }
-
-    private Index readIndex(Klass klass) {
-        var name = input.readUTF();
-        var typeIndex = input.readInt();
-        var unique = input.readBoolean();
-        var existing = Utils.find(klass.getIndices(), i -> i.getName().equals(name));
-        Index index;
-        if (existing != null) {
-            existing.setTypeIndex(typeIndex);
-            existing.setUnique(unique);
-            index = existing;
-        }
-        else
-            index = new Index(klass.getRoot().nextChildId(), klass, name, null, unique, typeIndex);
-        index.setMethod(input.readNullable(input::readReference));
-        if (listener != null) listener.onIndexRead(index);
-        return index;
     }
 
     private void readConstantPool(ConstantPool constantPool) {
@@ -223,6 +204,57 @@ public class ClassFileReader {
             else listener.onFieldUpdate(field);
         }
         return field;
+    }
+
+    private Index addIndex(Field field) {
+        var type = field.getType().getUnderlyingType();
+        if (type instanceof ClassType classType && classType.getKlass() == StdKlass.index.get()) {
+            var initializer = Objects.requireNonNull(field.getInitializer());
+            var keyType = classType.getTypeArguments().getFirst();
+            if(initializer.getCode().getNodes().isEmpty())
+                initializer.getCode().rebuildNodes();
+            var nodes = initializer.getCode().getNodes();
+            var ldc = (LoadConstantNode) nodes.get(1);
+            var ldc1 = (LoadConstantNode) nodes.get(2);
+            var func = nodes.get(3);
+            var name = ((StringReference) ldc.getValue()).getValue();
+            var unique = ((IntValue) ldc1.getValue()).getValue() != 0;
+            Method keyComputeMethod;
+            switch (func) {
+                case LambdaNode lambdaNode -> {
+                    var lambda = lambdaNode.getLambda();
+                    if(lambda.getCode().getNodes().isEmpty())
+                        lambda.getCode().rebuildNodes();
+                    var invokeNode1 = (InvokeNode) lambda.getCode().getNodes().get(1);
+                    keyComputeMethod = (Method) invokeNode1.getFlowRef().getRawFlow();
+                }
+                case GetStaticMethodNode getStaticMethodNode ->
+                        keyComputeMethod = getStaticMethodNode.getMethodRef().getRawFlow();
+                case GetMethodNode getMethodNode -> keyComputeMethod = getMethodNode.getMethodRef().getRawFlow();
+                default -> throw new IllegalStateException("Unrecognized function node: " + func);
+            }
+            var klass = field.getDeclaringType();
+            var existing = klass.findSelfIndex(idx -> idx.getName().equals(name));
+
+            if (existing == null) {
+                return new Index(
+                        klass.nextChildId(),
+                        klass,
+                        name,
+                        null,
+                        unique,
+                        keyType,
+                        keyComputeMethod
+                );
+            } else {
+                existing.setUnique(unique);
+                existing.setType(keyType);
+                existing.setMethod(keyComputeMethod);
+                return existing;
+            }
+        }
+        else
+            return null;
     }
 
     private Lambda readLambda(Flow flow) {

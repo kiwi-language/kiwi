@@ -155,15 +155,6 @@ public class KlassInput extends MvInput {
                 }
                 yield field.getReference();
             }
-            case SymbolRefs.INDEX -> {
-                var klass = (Klass) readReference().get();
-                var name = readUTF();
-                var index = klass.findSelfIndex(idx -> idx.getName().equals(name));
-                if (index == null) {
-                    index = new Index(klass.getRoot().nextChildId(), klass, name, null, false, 0);
-                }
-                yield index.getReference();
-            }
             case SymbolRefs.FUNCTION -> {
                 var name = readUTF();
                 var func = repository.selectFirstByKey(Function.UNIQUE_NAME, Instances.stringInstance(name));

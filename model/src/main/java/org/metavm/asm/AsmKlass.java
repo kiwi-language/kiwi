@@ -22,7 +22,6 @@ final class AsmKlass implements AsmScope, AsmGenericDeclaration {
     int enumConstantOrdinal;
     final Set<Method> visitedMethods = new HashSet<>();
     final Set<Field> visitedFields = new HashSet<>();
-    final Set<Index> visitedIndices = new HashSet<>();
     final Set<Klass> visitedInnerKlasses = new LinkedHashSet<>();
 
     AsmKlass(

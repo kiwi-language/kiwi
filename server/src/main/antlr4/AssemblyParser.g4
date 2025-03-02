@@ -96,7 +96,6 @@ memberDeclaration
 //    | genericMethodDeclaration
     | fieldDeclaration
     | constructorDeclaration
-    | indexDeclaration
     | classDeclaration
 //    | genericConstructorDeclaration
     ;
@@ -185,8 +184,6 @@ allocatorFieldList: allocatorField (',' allocatorField)*;
 
 allocatorField: IDENTIFIER ':' expression;
 
-select: (SELECT | SELECT_FIRST) '(' qualifiedName '.' IDENTIFIER (',' expression)* ')';
-
 forControl
     : loopVariableDeclarators? ';' expression? ';' forUpdate=loopVariableUpdates?
     ;
@@ -273,9 +270,7 @@ expression
     | THIS '(' expressionList? ')'
     | SUPER '(' expressionList? ')'
     | expression '[' expression ']'
-    | (NEW | UNEW | ENEW) creator
-    | ALLOCATE allocator
-    | select
+    | NEW creator
     | '(' castType=typeType ')' expression
     | expression postfix=('++' | '--' | '!!')
     | prefix=('+'|'-'|'++'|'--') expression
@@ -426,8 +421,6 @@ lambdaParameters
 lambdaBody
     : block
     ;
-
-indexDeclaration: INDEX typeType IDENTIFIER;
 
 indexField: IDENTIFIER ':' expression ';';
 

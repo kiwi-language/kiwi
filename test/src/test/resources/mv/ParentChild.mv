@@ -34,7 +34,7 @@ class Parent {
     }
 
     public List<Child> getChildren() {
-        return unew ArrayList<Child>(this.children);
+        return new ArrayList<Child>(this.children);
     }
 
     public void test() {

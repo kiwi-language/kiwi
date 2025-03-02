@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.metavm.classfile.ClassFileReader;
 import org.metavm.classfile.ClassFileWriter;
 import org.metavm.entity.EntityRegistry;
+import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.SerializeContext;
 import org.metavm.entity.StdKlass;
 import org.metavm.entity.mocks.MockEntityRepository;
@@ -26,13 +27,13 @@ public class KlassTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         TestUtils.ensureStringKlassInitialized();
+        MockStandardTypesInitializer.init();
     }
 
     public void testIO() {
         var testKlasses = MockUtils.createTestKlasses();
         var fooKlass = testKlasses.getFirst();
-        var nameIndexKlass = testKlasses.get(1);
-        var supplierKlass = testKlasses.get(2);
+        var supplierKlass = testKlasses.get(1);
 
 //        Assert.assertFalse(factoryMethod.getRef().isParameterized());
         byte[] bytes;
@@ -46,10 +47,10 @@ public class KlassTest extends TestCase {
 
         var repo = new MockEntityRepository();
         repo.bind(StdKlass.string.get());
+        repo.bind(StdKlass.index.get());
 
         var reader = new ClassFileReader(new KlassInput(new ByteArrayInputStream(bytes), repo), repo, null);
         var k = reader.read();
-        var nk = reader.read();
         reader.read();
         Objects.requireNonNull(k);
 
@@ -105,23 +106,19 @@ public class KlassTest extends TestCase {
         var l = m2.getLambdas().getFirst();
         Assert.assertEquals(lambda.getCode().length(), l.getCode().length());
 
-        Assert.assertEquals(fooKlass.getIndices().size(), k.getIndices().size());
+        Assert.assertEquals(1, k.getIndices().size());
         for (Constraint constraint : k.getIndices()) {
             Assert.assertSame(k, constraint.getDeclaringType());
         }
-        var index = fooKlass.getIndices().getFirst();
         var idx = k.getIndices().getFirst();
-        Assert.assertEquals(index.getName(), idx.getName());
-        Assert.assertEquals(nameIndexKlass.isEphemeralKlass(), nk.isEphemeralKlass());
+        Assert.assertEquals("nameIdx", idx.getName());
     }
 
     public void testInstanceIO() {
         var testKlasses = MockUtils.createTestKlasses();
         var fooKlass = testKlasses.getFirst();
-        var nameIndexKlass = testKlasses.get(1);
-        var supplierKlass = testKlasses.get(2);
+        var supplierKlass = testKlasses.get(1);
 
-        Assert.assertNotNull(nameIndexKlass.tryGetId());
         Assert.assertNotNull(supplierKlass.tryGetId());
 
         var repo = new MockEntityRepository();
@@ -139,10 +136,8 @@ public class KlassTest extends TestCase {
         );
         var k1 = in.readEntity(Klass.class, null);
         var k2 = in.readEntity(Klass.class, null);
-        var k3 = in.readEntity(Klass.class, null);
         Assert.assertEquals(fooKlass.getName(), k1.getName());
-        Assert.assertEquals(nameIndexKlass.getName(), k2.getName());
-        Assert.assertEquals(supplierKlass.getName(), k3.getName());
+        Assert.assertEquals(supplierKlass.getName(), k2.getName());
 
         var ref = new Object() {
             int klassCount;
@@ -175,8 +170,7 @@ public class KlassTest extends TestCase {
         };
         visitor.visitEntity();
         visitor.visitEntity();
-        visitor.visitEntity();
-        Assert.assertEquals(3, ref.klassCount);
+        Assert.assertEquals(2, ref.klassCount);
         log.info("Reference count: {}", ref.referenceCount);
         log.info("Method count: {}", ref.methodCount);
         log.info("ClassType count: {}", ref.classTypeCount);

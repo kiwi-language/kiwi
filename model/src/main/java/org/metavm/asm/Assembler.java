@@ -108,7 +108,6 @@ public class Assembler {
         visit(units, new ImportParser());
         visit(units, new AsmInit());
         visit(units, new AsmDeclarator());
-        visit(units, new IndexDefiner());
         visit(units, new Preprocessor());
         visit(units, new AsmGenerator());
         try (var ignored = SerializeContext.enter()) {
@@ -496,6 +495,13 @@ public class Assembler {
             });
             Utils.exclude(klass.getStaticFields(), classInfo.visitedFields::contains).forEach(klass::removeField);
             klass.setKlasses(new ArrayList<>(classInfo.visitedInnerKlasses));
+            for (Field field : klass.getStaticFields()) {
+                var n = "__" + field.getName() + "__";
+                var initializer = klass.findSelfMethod(m -> m.getName().equals(n) && m.getParameters().isEmpty() && m.isStatic());
+                if (initializer != null) {
+                    field.setInitializer(initializer);
+                }
+            }
             klass.rebuildMethodTable();
             exitScope();
         }
@@ -647,21 +653,6 @@ public class Assembler {
             return super.visitTypeParameter(ctx);
         }
 
-        @Override
-        public Void visitIndexDeclaration(AssemblyParser.IndexDeclarationContext ctx) {
-            var klass = ((AsmKlass) scope).getKlass();
-            var name = ctx.IDENTIFIER().getText();
-            var index = klass.findSelfIndex(idx -> idx.getName().equals(name));
-            var type = parseType(ctx.typeType(), scope, getCompilationUnit());
-            var mods = currentMods();
-            if (index == null)
-                index = new Index(TmpId.random(), klass, name, null, mods.contains("unique"), type, null);
-            else
-                index.setType(type);
-            setAttribute(ctx, AsmAttributeKey.index, index);
-            return null;
-        }
-
         private Set<String> currentMods() {
             return requireNonNull(modsStack.peek());
         }
@@ -676,49 +667,6 @@ public class Assembler {
             return Access.PACKAGE;
         }
 
-    }
-
-    private class IndexDefiner extends VisitorBase {
-
-        @Override
-        public void visitTypeDef(String name, TypeCategory typeCategory, boolean isStruct, @Nullable AssemblyParser.TypeTypeContext superType, @Nullable AssemblyParser.TypeListContext interfaces, @Nullable AssemblyParser.TypeParametersContext typeParameters, List<AssemblyParser.AnnotationContext> annotations, ParserRuleContext ctx, Runnable processBody) {
-            super.visitTypeDef(name, typeCategory, isStruct, superType, interfaces, typeParameters, annotations, ctx, processBody);
-            var classInfo = getAttribute(ctx, AsmAttributeKey.classInfo);
-            var klass = classInfo.getKlass();
-            var removedIndices = Utils.exclude(klass.getAllIndices(), classInfo.visitedIndices::contains);
-            removedIndices.forEach(klass::removeConstraint);
-        }
-
-        @Override
-        protected void visitFunction(String name, @Nullable AssemblyParser.TypeParametersContext typeParameters, @Nullable AssemblyParser.FormalParameterListContext formalParameterList, @Nullable AssemblyParser.TypeTypeOrVoidContext returnType, @Nullable AssemblyParser.BlockContext block, ParserRuleContext ctx, boolean isConstructor, Runnable processBody) {
-            super.visitFunction(name, typeParameters, formalParameterList, returnType, block, ctx, isConstructor, processBody);
-            var methodInfo = getAttribute(ctx, AsmAttributeKey.methodInfo);
-            var method = methodInfo.getCallable();
-            var classInfo = Objects.requireNonNull(methodInfo.parent());
-            var klass = method.getDeclaringType();
-            if(!isConstructor
-                    && (name.startsWith("idx") || name.startsWith("uniqueIdx"))
-                    && method.getParameters().isEmpty()
-                    && !method.getReturnType().isVoid()
-                    && !method.isStatic()) {
-                Index index = Utils.find(klass.getAllIndices(), idx -> Objects.equals(idx.getName(), name));
-                var keyType = method.getReturnType();
-                if (index == null) {
-                    index = new Index(
-                            TmpId.random(),
-                            klass,
-                            name,
-                            "",
-                            name.startsWith("uniqueIdx"),
-                            keyType,
-                            method
-                    );
-                } else {
-                    index.setName(name);
-                }
-                classInfo.visitedIndices.add(index);
-            }
-        }
     }
 
     private class Preprocessor extends VisitorBase {

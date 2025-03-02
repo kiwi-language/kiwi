@@ -501,6 +501,15 @@ public class MockUtils {
             Nodes.this_(code);
             Nodes.ret(code);
         }
+        var getNameMethod = MethodBuilder.newBuilder(fooKlass, "getName")
+                .returnType(Types.getStringType())
+                .build();
+        {
+            var code = getNameMethod.getCode();
+            Nodes.this_(code);
+            Nodes.getField(nameField.getRef(), code);
+            Nodes.ret(code);
+        }
         var getMethod = MethodBuilder.newBuilder(fooKlass, "get")
                 .returnType(typeParam.getType())
                 .build();
@@ -560,33 +569,40 @@ public class MockUtils {
             Nodes.lambda(lambda, code);
             Nodes.ret(code);
         }
-        var nameIndexKlass = TestUtils.newKlassBuilder("NameIndex", "NameIndex").ephemeral(true).build();
-        var indexNameField = FieldBuilder.newBuilder("name", nameIndexKlass, Types.getStringType()).build();
-        var nameIndexConstructor = MethodBuilder.newBuilder(nameIndexKlass, "NameIndex")
-                .isConstructor(true)
-                .parameters(new NameAndType("name", Types.getStringType()))
+        var indexType = KlassType.create(StdKlass.index.get(), List.of(Types.getStringType(), fooKlass.getType()));
+        var nameIdxInitializer = MethodBuilder.newBuilder(fooKlass, "__nameIdx__")
+                .isStatic(true)
+                .returnType(indexType)
                 .build();
         {
-            var code = nameIndexConstructor.getCode();
-            Nodes.this_(code);
-            Nodes.argument(nameIndexConstructor, 0);
-            Nodes.setField(indexNameField.getRef(), code);
-            Nodes.this_(code);
+            var lambda1 = new Lambda(fooKlass.nextChildId(),
+                    "nameIdxLambda1",
+                    List.of(),
+                    Types.getStringType(),
+                    nameIdxInitializer);
+            lambda1.addParameter(new Parameter(fooKlass.nextChildId(), "foo", fooKlass.getType(), lambda1));
+            {
+                var lambdaCode = lambda1.getCode();
+                Nodes.load(0, fooKlass.getType(), lambdaCode);
+                Nodes.invokeVirtual(getNameMethod.getRef(), lambdaCode);
+                Nodes.ret(lambdaCode);
+            }
+            var code = nameIdxInitializer.getCode();
+            Nodes.newObject(code, indexType, false, false);
+            Nodes.loadConstant(Instances.stringInstance("nameIdx"), code);
+            Nodes.loadConstant(Instances.intInstance(true), code);
+            Nodes.lambda(lambda1, code);
+            var indexConstructor = StdKlass.index.get().getMethod(m ->
+                    m.isConstructor() && m.getParameters().size() == 3 &&
+                            m.getParameters().getLast().getType() instanceof FunctionType
+                    );
+            Nodes.invokeSpecial(indexConstructor.getRef(), code);
             Nodes.ret(code);
         }
-        var nameIndexMethod = MethodBuilder.newBuilder(fooKlass, "nameIndex")
-                .parameters(new NameAndType("name", Types.getStringType()))
-                .returnType(nameIndexKlass.getType())
+        var nameIdxField = FieldBuilder.newBuilder("nameIdx", fooKlass, indexType)
+                .isStatic(true)
+                .initializer(nameIdxInitializer)
                 .build();
-        {
-            var code = nameIndexMethod.getCode();
-            Nodes.argument(nameIndexMethod, 0);
-            Nodes.newObject(code, nameIndexKlass.getType(), true, true);
-            Nodes.invokeMethod(nameIndexConstructor.getRef(), code);
-            Nodes.ret(code);
-        }
-        var index = new Index(fooKlass.nextChildId(), fooKlass, "nameIndex", "", true,
-                Types.getStringType(), nameIndexMethod);
         var getByNameMethod = MethodBuilder.newBuilder(fooKlass, "getByName")
                 .isStatic(true)
                 .parameters(new NameAndType("name", Types.getStringType()))
@@ -595,13 +611,14 @@ public class MockUtils {
         {
             var code = getByNameMethod.getCode();
             Nodes.argument(getByNameMethod, 0);
-            Nodes.selectFirst(index, code);
+            Nodes.getStaticField(nameIdxField, code);
+            var getFirstMethod = StdKlass.index.get().getMethod(m -> m.getName().equals("getFirst"));
+            Nodes.invokeVirtual(getFirstMethod.getRef(), code);
             Nodes.nonNull(code);
             Nodes.ret(code);
         }
         fooKlass.emitCode();
-        nameIndexKlass.emitCode();
-        return List.of(fooKlass, nameIndexKlass, supplierKlass);
+        return List.of(fooKlass, supplierKlass);
 
     }
 }

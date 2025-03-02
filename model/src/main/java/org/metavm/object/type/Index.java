@@ -44,12 +44,6 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
         this.typeIndex = declaringKlass.getConstantPool().addValue(type);
     }
 
-    public Index(@NotNull Id id, Klass declaringKlass, String name, String message, boolean unique, int typeIndex) {
-        super(id, declaringKlass, name, message);
-        this.unique = unique;
-        this.typeIndex = typeIndex;
-    }
-
     @Generated
     public static void visitBody(StreamVisitor visitor) {
         Constraint.visitBody(visitor);

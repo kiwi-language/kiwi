@@ -35,7 +35,7 @@ struct MyList<T> {
     }
 
     public List<Node<T>> getNodes() {
-        return unew ArrayList<Node<T>>(this.nodes);
+        return new ArrayList<Node<T>>(this.nodes);
     }
 
 }

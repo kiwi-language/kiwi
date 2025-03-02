@@ -113,4 +113,8 @@ public class LoadConstantNode extends Node {
     public void forEachChild(Consumer<? super Instance> action) {
         super.forEachChild(action);
     }
+
+    public Value getValue() {
+        return value;
+    }
 }

@@ -2,6 +2,7 @@ package org.metavm.object.instance.core;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.util.MvOutput;
+import org.metavm.util.Utils;
 import org.metavm.util.WireTypes;
 
 public class StringReference extends ValueReference implements  Comparable<StringReference> {
@@ -45,6 +46,11 @@ public class StringReference extends ValueReference implements  Comparable<Strin
     @Override
     public String getTitle() {
         return value;
+    }
+
+    @Override
+    public void writeTree(TreeWriter treeWriter) {
+        treeWriter.write("\"" + Utils.escape(value) + "\"");
     }
 
     @Override

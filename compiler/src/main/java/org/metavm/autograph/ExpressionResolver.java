@@ -272,7 +272,7 @@ public class ExpressionResolver {
     }
 
     private boolean isBoolExpression(PsiExpression psiExpression) {
-        return psiExpression.getType() == PsiType.BOOLEAN;
+        return psiExpression.getType() == PsiType.BOOLEAN && !(psiExpression instanceof PsiLiteralExpression);
     }
 
     private Node resolveThis(PsiThisExpression expression) {

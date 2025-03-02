@@ -3,6 +3,7 @@ package org.metavm.entity;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.ValueObject;
 import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.NameAndType;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
@@ -169,6 +170,22 @@ public class ReflectDefiner {
                 if (Modifier.isPublic(field.getModifiers()) && Modifier.isStatic(field.getModifiers())
                         || fieldWhitelist.contains(field))
                     defineField(field, klass);
+            }
+            if (javaClass == org.metavm.api.Index.class) {
+                MethodBuilder.newBuilder(klass, "Index")
+                        .isConstructor(true)
+                        .isNative(true)
+                        .parameters(
+                                new NameAndType("name", Types.getStringType()),
+                                new NameAndType("unique", Types.getBooleanType()),
+                                new NameAndType("keyComputer", new FunctionType(
+                                        List.of(
+                                                klass.getTypeParameters().getLast().getType()
+                                        ),
+                                        klass.getTypeParameters().getFirst().getType()
+                                ))
+                        )
+                        .build();
             }
             if (staticInitialValues.isEmpty())
                 return new ReflectDefineResult(klass, null);

@@ -21,7 +21,7 @@ struct Product {
     }
 
     public List<SKU> getSkuList() {
-        return unew ArrayList<SKU>(this.skuList);
+        return new ArrayList<SKU>(this.skuList);
     }
 
     public void setSkuList(List<SKU> skuList) {
@@ -172,7 +172,7 @@ class Order {
     }
 
     public List<Coupon> getCoupons() {
-        return unew ArrayList<Coupon>(this.coupons);
+        return new ArrayList<Coupon>(this.coupons);
     }
 
 }

@@ -40,7 +40,6 @@ public class ClassFileWriter {
         output.writeList(klass.getFields(), this::writeField);
         output.writeList(klass.getStaticFields(), this::writeField);
         output.writeList(klass.getMethods(), this::writeMethod);
-        output.writeList(klass.getIndices(), this::writeIndex);
         output.writeList(klass.getKlasses(), this::writeKlass);
         output.writeList(klass.getAttributes(), a -> a.write(output));
     }
