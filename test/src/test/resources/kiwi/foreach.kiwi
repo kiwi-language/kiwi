@@ -1,0 +1,19 @@
+import java.util.List
+
+class ForeachLab {
+
+    static fn sumList(list: List<int>) -> int {
+        var sum = 0
+        for (i in list)
+            sum += i
+        return sum
+    }
+
+    static fn sumArray(list: int[]) -> int {
+        var sum = 0
+        for (i in list)
+            sum += i
+        return sum
+    }
+
+}

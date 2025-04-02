@@ -24,7 +24,7 @@ public class ElementWriter {
         writeln();
     }
 
-    public void write(SymName name) {
+    public void write(Name name) {
         write(name.toString());
     }
 
@@ -46,7 +46,7 @@ public class ElementWriter {
     }
 
     public void writeType(Type type) {
-        type.write(this);
+        type.writeType(this);
     }
 
     public void writeTypes(List<? extends Type> types) {

@@ -1,0 +1,26 @@
+package arrayinitializer
+
+class ArrayInitializerFoo {
+
+    priv static val array: any[][] = new any[][] {new any[] {"MetaVM"}, new any[] {6, 6, 6}}
+    static val array2: any[] = new any[] {1, 2, 3}
+
+    static fn test() -> bool {
+        var sum: int = 0
+        {
+            var i: int = 0
+            while (i < array[1].length) {
+                {
+                    sum += array[1][i] as int
+                }
+                i++
+            }
+        }
+        for (o in array2) {
+            sum += o as int
+        }
+        return sum == 24
+    }
+
+}
+

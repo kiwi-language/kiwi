@@ -575,7 +575,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
         if (isStatic()) modifiers.add("static");
         if (isReadonly()) modifiers.add("readonly");
         if (isTransient) modifiers.add("transient");
-        writer.writeln(String.join(" ", modifiers) + " " + name + ":" + getType().getTypeDesc());
+        writer.writeln(String.join(" ", modifiers) + " var " + name + ": " + getType().getTypeDesc());
     }
 
     @Override

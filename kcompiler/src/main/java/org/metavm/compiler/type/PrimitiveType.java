@@ -6,7 +6,6 @@ import org.metavm.compiler.element.Func;
 import org.metavm.compiler.syntax.PrimitiveTypeNode;
 import org.metavm.compiler.syntax.TypeNode;
 import org.metavm.compiler.syntax.TypeTag;
-import org.metavm.object.type.SymbolRefs;
 import org.metavm.util.MvOutput;
 import org.metavm.util.NamingUtils;
 
@@ -23,42 +22,83 @@ public enum PrimitiveType implements Type {
         public Type toStackType() {
             return INT;
         }
+
+        @Override
+        public boolean widensTo(PrimitiveType that) {
+            return that == SHORT || that == INT || that == LONG || that == FLOAT || that == DOUBLE;
+        }
     },
     SHORT(SHORT_TYPE, TAG_SHORT) {
         @Override
         public Type toStackType() {
             return INT;
         }
+
+        @Override
+        public boolean widensTo(PrimitiveType that) {
+            return that == INT || that == LONG || that == FLOAT || that == DOUBLE;
+        }
+
     },
-    INT(INT_TYPE, TAG_INT),
-    LONG(LONG_TYPE, TAG_LONG),
-    FLOAT(FLOAT_TYPE, TAG_FLOAT),
+    INT(INT_TYPE, TAG_INT) {
+
+        @Override
+        public boolean widensTo(PrimitiveType that) {
+            return that == LONG || that == FLOAT || that == DOUBLE;
+        }
+
+    },
+    LONG(LONG_TYPE, TAG_LONG) {
+
+        @Override
+        public boolean widensTo(PrimitiveType that) {
+            return that == FLOAT || that == DOUBLE;
+        }
+
+    },
+    FLOAT(FLOAT_TYPE, TAG_FLOAT) {
+
+        @Override
+        public boolean widensTo(PrimitiveType that) {
+            return that == DOUBLE;
+        }
+    },
     DOUBLE(DOUBLE_TYPE, TAG_DOUBLE),
     CHAR(CHAR_TYPE, TAG_CHAR) {
         @Override
         public Type toStackType() {
             return INT;
         }
+
+        @Override
+        public boolean widensTo(PrimitiveType that) {
+            return that == INT || that == LONG || that == FLOAT || that == DOUBLE;
+        }
     },
-    BOOLEAN(BOOLEAN_TYPE, TAG_BOOLEAN) {
+    BOOL(BOOLEAN_TYPE, TAG_BOOL) {
         @Override
         public Type toStackType() {
             return INT;
         }
-    },
-    STRING(STRING_TYPE, TAG_STRING) {
-        @Override
-        public void write(MvOutput output) {
-            output.write(CLASS_TYPE);
-            output.write(SymbolRefs.KLASS);
-            output.writeUTF("java.lang.String");
-        }
 
         @Override
-        public String getInternalName(@Nullable Func current) {
-            return "java.lang.String";
+        public String getInternalName(@org.jetbrains.annotations.Nullable Func current) {
+            return "Boolean";
         }
     },
+//    STRING(STRING_TYPE, TAG_STRING) {
+//        @Override
+//        public void write(MvOutput output) {
+//            output.write(CLASS_TYPE);
+//            output.write(SymbolRefs.KLASS);
+//            output.writeUTF("java.lang.String");
+//        }
+//
+//        @Override
+//        public String getInternalName(@Nullable Func current) {
+//            return "java.lang.String";
+//        }
+//    },
     VOID(VOID_TYPE, TAG_VOID) {
         @Override
         public boolean isVoid() {
@@ -92,9 +132,8 @@ public enum PrimitiveType implements Type {
         return false;
     }
 
-
     @Override
-    public void write(ElementWriter writer) {
+    public void writeType(ElementWriter writer) {
         writer.write(name().toLowerCase());
     }
 
@@ -129,7 +168,7 @@ public enum PrimitiveType implements Type {
         return this == PrimitiveType.BYTE || this == PrimitiveType.SHORT
                 || this == PrimitiveType.INT || this == PrimitiveType.LONG
                 || this == PrimitiveType.FLOAT || this == PrimitiveType.DOUBLE
-                || this == PrimitiveType.CHAR || this == PrimitiveType.BOOLEAN;
+                || this == PrimitiveType.CHAR || this == PrimitiveType.BOOL;
     }
 
     @Override

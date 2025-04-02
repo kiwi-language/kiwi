@@ -1,18 +1,21 @@
 package org.metavm.compiler.element;
 
+import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.generate.Code;
 import org.metavm.compiler.type.Type;
 
 public interface Variable extends ValueElement {
 
-     SymName getName();
+     Name getName();
 
-    void setName(SymName name);
+    void setName(Name name);
 
     Type getType();
 
-    void load(Code code);
+    void setType(Type type);
 
-    void store(Code code);
+    void load(Code code, Env env);
+
+    void store(Code code, Env env);
 
 }

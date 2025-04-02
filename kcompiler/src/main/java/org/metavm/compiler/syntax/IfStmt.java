@@ -28,7 +28,7 @@ public final class IfStmt extends Stmt {
         writer.write(") ");
         writer.write(body);
         if (else_ != null) {
-            writer.write(" ");
+            writer.write(" else ");
             writer.write(else_);
         }
     }

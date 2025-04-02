@@ -6,6 +6,4 @@ enum Currency {
 
 ;
 
-    init() {}
-
 }

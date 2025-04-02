@@ -1,6 +1,6 @@
 package org.metavm.compiler.syntax;
 
-import org.metavm.compiler.element.SymName;
+import org.metavm.compiler.element.Name;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public class SyntaxWriter {
         writeln();
     }
 
-    void write(SymName name) {
+    void write(Name name) {
         write(name.toString());
     }
 

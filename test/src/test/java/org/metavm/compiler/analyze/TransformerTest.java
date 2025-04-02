@@ -17,11 +17,11 @@ public class TransformerTest extends TestCase {
         var transformer = new Lower(proj);
         file.accept(transformer);
         var classDecl = file.getClassDeclarations().find(
-                decl -> decl instanceof ClassDecl c && c.name().value().toString().equals("CouponState")
+                decl -> decl instanceof ClassDecl c && c.name().toString().equals("CouponState")
         );
         Assert.assertNotNull(classDecl);
         var clazz = classDecl.getElement();
-        Assert.assertEquals(ClassTag.ENUM, clazz.getTag());
+        Assert.assertEquals(ClassTag.ENUM, clazz.getClassTag());
         log.debug("{}", classDecl.getText());
     }
 

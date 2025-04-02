@@ -53,6 +53,18 @@ public class KiwiParserBaseListener implements KiwiParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterTopLevTypeDecl(KiwiParser.TopLevTypeDeclContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTopLevTypeDecl(KiwiParser.TopLevTypeDeclContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterTypeDeclaration(KiwiParser.TypeDeclarationContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -437,6 +449,18 @@ public class KiwiParserBaseListener implements KiwiParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterLoopVariable(KiwiParser.LoopVariableContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLoopVariable(KiwiParser.LoopVariableContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterLoopVariableDeclarators(KiwiParser.LoopVariableDeclaratorsContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -485,13 +509,13 @@ public class KiwiParserBaseListener implements KiwiParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterNewExpr(KiwiParser.NewExprContext ctx) { }
+	@Override public void enterAnonClassExpr(KiwiParser.AnonClassExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitNewExpr(KiwiParser.NewExprContext ctx) { }
+	@Override public void exitAnonClassExpr(KiwiParser.AnonClassExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -701,6 +725,18 @@ public class KiwiParserBaseListener implements KiwiParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterRange(KiwiParser.RangeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitRange(KiwiParser.RangeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterBitor(KiwiParser.BitorContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -792,6 +828,30 @@ public class KiwiParserBaseListener implements KiwiParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitIsExpr(KiwiParser.IsExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterIsSuffix(KiwiParser.IsSuffixContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitIsSuffix(KiwiParser.IsSuffixContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTypePtn(KiwiParser.TypePtnContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTypePtn(KiwiParser.TypePtnContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -1001,18 +1061,6 @@ public class KiwiParserBaseListener implements KiwiParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterMethodCall(KiwiParser.MethodCallContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitMethodCall(KiwiParser.MethodCallContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterLiteral(KiwiParser.LiteralContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1073,37 +1121,61 @@ public class KiwiParserBaseListener implements KiwiParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterArrayKind(KiwiParser.ArrayKindContext ctx) { }
+	@Override public void enterUnionType(KiwiParser.UnionTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitArrayKind(KiwiParser.ArrayKindContext ctx) { }
+	@Override public void exitUnionType(KiwiParser.UnionTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterClassOrInterfaceType(KiwiParser.ClassOrInterfaceTypeContext ctx) { }
+	@Override public void enterIntersectionType(KiwiParser.IntersectionTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitClassOrInterfaceType(KiwiParser.ClassOrInterfaceTypeContext ctx) { }
+	@Override public void exitIntersectionType(KiwiParser.IntersectionTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTypeArguments(KiwiParser.TypeArgumentsContext ctx) { }
+	@Override public void enterPostfixType(KiwiParser.PostfixTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTypeArguments(KiwiParser.TypeArgumentsContext ctx) { }
+	@Override public void exitPostfixType(KiwiParser.PostfixTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTypeSuffix(KiwiParser.TypeSuffixContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTypeSuffix(KiwiParser.TypeSuffixContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterAtomicType(KiwiParser.AtomicTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitAtomicType(KiwiParser.AtomicTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -1116,6 +1188,78 @@ public class KiwiParserBaseListener implements KiwiParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitPrimitiveType(KiwiParser.PrimitiveTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterFunctionType(KiwiParser.FunctionTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFunctionType(KiwiParser.FunctionTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterUncertainType(KiwiParser.UncertainTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitUncertainType(KiwiParser.UncertainTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterArrayKind(KiwiParser.ArrayKindContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitArrayKind(KiwiParser.ArrayKindContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterClassType(KiwiParser.ClassTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitClassType(KiwiParser.ClassTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterClassTypePart(KiwiParser.ClassTypePartContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitClassTypePart(KiwiParser.ClassTypePartContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTypeArguments(KiwiParser.TypeArgumentsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTypeArguments(KiwiParser.TypeArgumentsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -1164,6 +1308,30 @@ public class KiwiParserBaseListener implements KiwiParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitLambdaParameters(KiwiParser.LambdaParametersContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLambdaParameterList(KiwiParser.LambdaParameterListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLambdaParameterList(KiwiParser.LambdaParameterListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLambdaParameter(KiwiParser.LambdaParameterContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLambdaParameter(KiwiParser.LambdaParameterContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

@@ -1,0 +1,19 @@
+class FieldInit {
+
+    priv static var DEFAULT_FLAG = true
+
+    priv var flag = DEFAULT_FLAG
+
+    fn getFlag() -> bool {
+        return flag
+    }
+
+    static fn getDefaultFlag() -> bool {
+        return DEFAULT_FLAG
+    }
+
+    static fn setDefaultFlag(flag: bool) {
+        DEFAULT_FLAG = flag
+    }
+
+}

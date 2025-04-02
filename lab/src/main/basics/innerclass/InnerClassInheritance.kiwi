@@ -1,0 +1,35 @@
+package innerclass
+
+class InnerClassInheritance<E>: java.io.Serializable {
+
+    priv val value: string
+
+    init(value: string) {
+        this.value = value
+    }
+
+    fn getValue() -> string {
+        return Inner2(0).getValue()
+    }
+
+    fn inner2(index: int) -> InnerClassInheritance<E>.Inner2 {
+        return Inner2(index)
+    }
+
+    priv class Inner1 {
+
+        fn getValue() -> string {
+            return value
+        }
+
+    }
+
+    priv class Inner2: Inner1 {
+
+        init(index: int) {
+        }
+
+    }
+
+}
+

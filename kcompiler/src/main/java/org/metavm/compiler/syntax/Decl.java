@@ -11,6 +11,7 @@ public abstract class Decl<T extends Element> extends Node {
     }
 
     public void setElement(T element) {
+        element.setNode(this);
         this.element = element;
     }
 }

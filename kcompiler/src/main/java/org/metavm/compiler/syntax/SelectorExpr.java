@@ -1,12 +1,14 @@
 package org.metavm.compiler.syntax;
 
+import org.metavm.compiler.element.Name;
+
 import java.util.function.Consumer;
 
 public final class SelectorExpr extends Expr {
     private final Expr x;
-    private final Ident sel;
+    private final Name sel;
 
-    public SelectorExpr(Expr x, Ident sel) {
+    public SelectorExpr(Expr x, Name sel) {
         this.x = x;
         this.sel = sel;
     }
@@ -15,7 +17,7 @@ public final class SelectorExpr extends Expr {
     public void write(SyntaxWriter writer) {
         x.write(writer);
         writer.write(".");
-        sel.write(writer);
+        writer.write(sel);
     }
 
     @Override
@@ -26,14 +28,13 @@ public final class SelectorExpr extends Expr {
     @Override
     public void forEachChild(Consumer<Node> action) {
         action.accept(x);
-        action.accept(sel);
     }
 
     public Expr x() {
         return x;
     }
 
-    public Ident sel() {
+    public Name sel() {
         return sel;
     }
 

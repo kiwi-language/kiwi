@@ -2,17 +2,21 @@ package org.metavm.compiler.element;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.compiler.type.Type;
+import org.metavm.compiler.type.TypeSubst;
 import org.metavm.compiler.type.Types;
 import org.metavm.compiler.util.List;
+import org.metavm.util.MvOutput;
+import org.metavm.util.WireTypes;
 
 import javax.annotation.Nullable;
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 
-public class FreeFunc extends Func implements Comparable<FreeFunc> {
+public class FreeFunc extends Func implements FreeFuncRef, Comparable<FreeFunc> {
 
-    private @Nullable FreeFuncInst instance;
+    private final Map<List<Type>, FreeFuncInst> instances = new HashMap<>();
 
-    public FreeFunc(SymName name) {
+    public FreeFunc(Name name) {
         super(name);
     }
 
@@ -22,13 +26,13 @@ public class FreeFunc extends Func implements Comparable<FreeFunc> {
     }
 
     @Override
-    public SymName getQualifiedName() {
+    public Name getQualName() {
         return getName();
     }
 
     @Override
     public Object getInternalName(@Nullable Func current) {
-        return getQualifiedName();
+        return getQualName();
     }
 
     @Override
@@ -36,29 +40,29 @@ public class FreeFunc extends Func implements Comparable<FreeFunc> {
         var r = getName().compareTo(o.getName());
         if (r != 0)
             return r;
-        return Types.instance.compareTypes(getParameterTypes(), o.getParameterTypes());
+        return Types.instance.compareTypes(getParamTypes(), o.getParamTypes());
     }
 
-    public void initInstance() {
-        assert instance == null;
-        instance = new FreeFuncInst(
-                this,
-                List.into(getTypeParameters()),
-                getParameterTypes(),
-                getReturnType()
-        );
-    }
-
-    public FreeFuncInst getInstance() {
-        return Objects.requireNonNull(instance);
-    }
-
-    public FreeFuncInst getInstance(List<Type> typeArguments) {
-        return getInstance().getInstance(typeArguments);
+    public FreeFuncRef getInst(List<Type> typeArguments) {
+        if (typeArguments.equals(getParamTypes()))
+            return this;
+        var subst = new TypeSubst(getTypeParams(), typeArguments);
+        return instances.computeIfAbsent(typeArguments, k ->
+                new FreeFuncInst(this, typeArguments,
+                        getParamTypes().map(t -> t.accept(subst)),
+                        getRetType().accept(subst)
+                ));
     }
 
     @Override
     public String toString() {
         return "FreeFunction " + getName();
+    }
+
+    @Override
+    public void write(MvOutput output) {
+        output.write(WireTypes.FUNCTION_REF);
+        Elements.writeReference(this, output);
+        output.writeList(getTypeParams(), t -> t.write(output));
     }
 }

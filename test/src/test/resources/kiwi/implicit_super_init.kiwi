@@ -1,0 +1,12 @@
+
+class Base {
+    priv var value = 1
+
+    fn getValue() -> int {
+        return value
+    }
+}
+
+class Sub: Base {
+
+}

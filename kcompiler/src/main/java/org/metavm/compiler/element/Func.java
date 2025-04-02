@@ -1,76 +1,82 @@
 package org.metavm.compiler.element;
 
 import org.metavm.compiler.generate.Code;
+import org.metavm.compiler.type.FuncType;
 import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Type;
+import org.metavm.compiler.type.Types;
 import org.metavm.compiler.util.List;
 
 import java.util.function.Consumer;
 
-public abstract class Func implements Executable, Element, ClassScope, GenericDeclaration {
+public abstract class Func extends ElementBase implements FuncRef, Executable, Element, ClassScope, GenericDecl, ConstPoolOwner {
 
-    private SymName name;
-    private List<TypeVariable> typeParameters = List.nil();
-    private List<Parameter> parameters = List.nil();
-    private Type returnType = PrimitiveType.VOID;
+    private Name name;
+    private List<TypeVar> typeParams = List.nil();
+    private List<Param> params = List.nil();
+    private Type retType = PrimitiveType.VOID;
     private List<Lambda> lambdas = List.nil();
     private List<Clazz> classes = List.nil();
-    protected final ConstantPool constantPool = new ConstantPool();
+    protected final ConstPool constPool = new ConstPool();
     private final Code code = new Code(this);
 
-    public Func(SymName name) {
+    public Func(Name name) {
         this.name = name;
     }
 
-    public SymName getName() {
+    public Name getName() {
         return name;
     }
 
-    public void setName(SymName name) {
+    public void setName(Name name) {
         this.name = name;
     }
 
-    public List<TypeVariable> getTypeParameters() {
-        return typeParameters;
+    public List<TypeVar> getTypeParams() {
+        return typeParams;
     }
 
     @Override
-    public void addTypeParameter(TypeVariable typeVariable) {
-        typeParameters = typeParameters.append(typeVariable);
+    public void addTypeParam(TypeVar typeVar) {
+        typeParams = typeParams.append(typeVar);
     }
 
     @Override
-    public List<Parameter> getParameters() {
-        return parameters;
+    public List<Param> getParams() {
+        return params;
     }
 
-    public List<Type> getParameterTypes() {
-        return parameters.map(Parameter::getType);
+    public List<Type> getParamTypes() {
+        return params.map(Param::getType);
     }
 
-    public void setParameters(List<Parameter> parameters) {
-        this.parameters = parameters;
+    public void setParams(List<Param> params) {
+        this.params = params;
     }
 
-    public void setReturnType(Type returnType) {
-        this.returnType = returnType;
-    }
-
-    @Override
-    public Type getReturnType() {
-        return returnType;
+    public void setRetType(Type retType) {
+        this.retType = retType;
     }
 
     @Override
-    public void addParameter(Parameter parameter) {
-        parameters = parameters.append(parameter);
+    public Type getRetType() {
+        return retType;
+    }
+
+    @Override
+    public void addParam(Param param) {
+        params = params.append(param);
+    }
+
+    public FuncType getType() {
+        return Types.instance.getFuncType(getParamTypes(), retType);
     }
 
     public List<Lambda> getLambdas() {
         return lambdas;
     }
 
-    void addLambda(Lambda lambda) {
+    public void addLambda(Lambda lambda) {
         lambdas = lambdas.append(lambda);
     }
 
@@ -86,8 +92,8 @@ public abstract class Func implements Executable, Element, ClassScope, GenericDe
 
     @Override
     public void forEachChild(Consumer<Element> action) {
-        typeParameters.forEach(action);
-        parameters.forEach(action);
+        typeParams.forEach(action);
+        params.forEach(action);
         lambdas.forEach(action);
         classes.forEach(action);
     }
@@ -95,20 +101,20 @@ public abstract class Func implements Executable, Element, ClassScope, GenericDe
 
     @Override
     public void write(ElementWriter writer) {
-        if (!typeParameters.isEmpty()) {
+        if (!typeParams.isEmpty()) {
             writer.write("<");
-            writer.write(typeParameters);
+            writer.write(typeParams);
             writer.write("> ");
         }
         writer.write(name);
         writer.write("(");
-        writer.write(parameters);
+        writer.write(params);
         writer.write(") -> ");
-        writer.writeType(returnType);
+        writer.writeType(retType);
     }
 
-    public ConstantPool getConstantPool() {
-        return constantPool;
+    public ConstPool getConstPool() {
+        return constPool;
     }
 
     public Code getCode() {
@@ -119,6 +125,8 @@ public abstract class Func implements Executable, Element, ClassScope, GenericDe
         return 0;
     }
 
-    public abstract FuncInst getInstance();
-
+    @Override
+    public List<Type> getTypeArgs() {
+        return List.into(typeParams);
+    }
 }

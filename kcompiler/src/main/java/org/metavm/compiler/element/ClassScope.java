@@ -8,5 +8,5 @@ public interface ClassScope {
 
     void addClass(Clazz clazz);
 
-    SymName getQualifiedName();
+    Name getQualName();
 }

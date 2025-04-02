@@ -1,10 +1,9 @@
 package org.metavm.compiler.element;
 
+import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.generate.Code;
-import org.metavm.compiler.type.ClassType;
-import org.metavm.compiler.type.FunctionType;
-import org.metavm.compiler.type.Type;
-import org.metavm.compiler.type.TypeSubstitutor;
+import org.metavm.compiler.type.*;
 import org.metavm.compiler.util.List;
 import org.metavm.util.MvOutput;
 
@@ -12,27 +11,27 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public final class MethodInst implements FuncInst, Constant, MemberRef {
-    private final ClassType declaringType;
+@Slf4j
+public final class MethodInst extends ElementBase implements MethodRef, FuncInst, Constant, MemberRef {
+    private final ClassType declType;
     private final Method method;
-    private final List<Type> typeArguments;
-    private final FunctionType type;
-    private final Map<List<Type>, MethodInst> instances = new HashMap<>();
+    private final List<Type> typeArgs;
+    private FuncType type;
+    private final Map<List<Type>, MethodInst> insts = new HashMap<>();
+    private final TypeSubst subst;
 
-
-    public MethodInst(ClassType declaringType,
+    public MethodInst(ClassType declType,
                       Method method,
-                      List<Type> typeArguments,
-                      FunctionType type) {
-        this.declaringType = declaringType;
+                      List<Type> typeArgs) {
+        this.declType = declType;
         this.method = method;
-        this.typeArguments = typeArguments;
-        this.type = type;
-        instances.put(typeArguments, this);
+        this.typeArgs = typeArgs;
+        subst = new TypeSubst(method.getTypeParams(), typeArgs);
+        this.type = computeType();
     }
 
     @Override
-    public SymName getName() {
+    public Name getName() {
         return method.getName();
     }
 
@@ -47,48 +46,43 @@ public final class MethodInst implements FuncInst, Constant, MemberRef {
 
     @Override
     public void write(ElementWriter writer) {
-        writer.writeType(declaringType);
+        writer.writeType(declType);
         writer.write(".");
-        if (!typeArguments.isEmpty()) {
-            writer.write("<");
-            writer.writeTypes(typeArguments);
-            writer.write(">");
-        }
         writer.write(method.getName());
+        writer.write("<");
+        writer.writeTypes(typeArgs);
+        writer.write(">");
         writer.write("(");
-        writer.writeTypes(type.getParameterTypes());
+        writer.writeTypes(type.getParamTypes());
         writer.write(") -> ");
-        writer.writeType(type.getReturnType());
+        writer.writeType(type.getRetType());
     }
 
-    public ClassType getDeclaringType() {
-        return declaringType;
+    public ClassType getDeclType() {
+        return declType;
     }
 
-    public Method getFunction() {
+    public Method getFunc() {
         return method;
     }
 
-    public List<Type> getTypeArguments() {
-        return typeArguments;
+    public List<Type> getTypeArgs() {
+        return typeArgs;
     }
 
-    public List<Type> getParameterTypes() {
-        return type.getParameterTypes();
+    public List<Type> getParamTypes() {
+        return type.getParamTypes();
     }
 
-    public Type getReturnType() {
-        return type.getReturnType();
+    public Type getRetType() {
+        return type.getRetType();
     }
 
-    public MethodInst getInstance(List<Type> typeArguments) {
-        if (typeArguments.isEmpty())
+    public FuncRef getInst(List<Type> typeArguments) {
+        if (typeArguments.equals(getTypeArgs()))
             return this;
-        var subst = new TypeSubstitutor(this.typeArguments, typeArguments);
-        return instances.computeIfAbsent(typeArguments, k ->
-                new MethodInst(declaringType, method, typeArguments,
-                        (FunctionType) type.accept(subst)
-                ));
+        return insts.computeIfAbsent(typeArguments, k ->
+                new MethodInst(declType, method, typeArguments));
     }
 
     @Override
@@ -99,9 +93,9 @@ public final class MethodInst implements FuncInst, Constant, MemberRef {
     @Override
     public void write(MvOutput output) {
         output.write(ConstantTags.METHOD_REF);
-        declaringType.write(output);
+        declType.write(output);
         Elements.writeReference(method, output);
-        output.writeList(typeArguments, t -> t.write(output));
+        output.writeList(typeArgs, t -> t.write(output));
     }
 
     public boolean isStatic() {
@@ -112,33 +106,46 @@ public final class MethodInst implements FuncInst, Constant, MemberRef {
         return method.getAccess();
     }
 
-    public boolean isConstructor() {
-        return method.isConstructor();
+    public boolean isInit() {
+        return method.isInit();
+    }
+
+    public void onMethodTypeChange() {
+        type = computeType();
+        insts.values().forEach(MethodInst::onMethodTypeChange);
+    }
+
+    private FuncType computeType() {
+        return (FuncType) method.getType().accept(declType.getSubstitutor()).accept(subst);
     }
 
     @Override
-    public Type getType() {
+    public FuncType getType() {
         return type;
     }
 
     @Override
-    public void load(Code code) {
-        if (isStatic())
+    public void load(Code code, Env env) {
+        if (method == ArrayType.appendMethod)
+            throw new UnsupportedOperationException();
+        else if (isStatic())
             code.getStaticMethod(this);
         else
             code.getMethod(this);
     }
 
     @Override
-    public void store(Code code) {
-        throw new AnalysisException("Cannot assign to a method: " + method.getQualifiedName());
+    public void store(Code code, Env env) {
+        throw new AnalysisException("Cannot assign to a method: " + method.getQualName());
     }
 
     @Override
-    public void invoke(Code code) {
-        if (isStatic())
+    public void invoke(Code code, Env env) {
+        if (method == ArrayType.appendMethod)
+            code.arrayAdd();
+        else if (isStatic())
             code.invokeStatic(this);
-        else if(getAccess() == Access.PRIVATE || isConstructor())
+        else if(getAccess() == Access.PRIVATE || isInit())
             code.invokeSpecial(this);
         else
             code.invokeVirtual(this);

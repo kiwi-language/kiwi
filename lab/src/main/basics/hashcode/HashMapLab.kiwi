@@ -1,0 +1,65 @@
+package hashcode
+
+import java.util.HashMap
+import java.util.HashSet
+import java.util.List
+import java.util.Map
+
+@Component
+class HashMapLab {
+
+    priv val map: Map<any, any> = HashMap<any, any>()
+
+    fn put(key: any, value: any) {
+        map.put(key, value)
+    }
+
+    fn get(key: any) -> any? {
+        return map.get(key)
+    }
+
+    fn bazPut(name: string, extra: any, value: any) {
+        map.put(HashCodeBaz(name, extra), value)
+    }
+
+    fn bazGet(name: string, extra: any) -> any? {
+        return map.get(HashCodeBaz(name, extra))
+    }
+
+    fn listPut(elements: List<any>, value: any) {
+        map.put(elements, value)
+    }
+
+    fn listGet(elements: List<any>) -> any? {
+        return map.get(elements)
+    }
+
+    fn setPut(elements: List<any>, value: any) {
+        map.put(HashSet<any>(elements), value)
+    }
+
+    fn setGet(elements: List<any>) -> any {
+        return map.get(HashSet<any>(elements))
+    }
+
+    fn mapPut(entries: List<MapEntry>, value: any) {
+        map.put(createMap(entries), value)
+    }
+
+    fn mapGet(entries: List<MapEntry>) -> any {
+        return map.get(createMap(entries))
+    }
+
+    priv fn createMap(entries: List<MapEntry>) -> Map<any, any> {
+        var m = HashMap<any, any>()
+        var i: int = 0
+        var list = entries
+        while (i < list.size()) {
+            var entry = list.get(i++)
+            m.put(entry.key(), entry.value())
+        }
+        return m
+    }
+
+}
+

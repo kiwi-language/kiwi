@@ -1,25 +1,25 @@
 package org.metavm.compiler.syntax;
 
-import org.metavm.compiler.element.SymName;
+import org.metavm.compiler.element.Name;
 import org.metavm.compiler.util.List;
 
 import java.util.function.Consumer;
 
 public class Annotation extends Node {
 
-    private SymName name;
+    private Name name;
     private List<Attribute> attributes;
 
-    public Annotation(SymName name, List<Attribute> attributes) {
+    public Annotation(Name name, List<Attribute> attributes) {
         this.name = name;
         this.attributes = attributes;
     }
 
-    public SymName getName() {
+    public Name getName() {
         return name;
     }
 
-    public void setName(SymName name) {
+    public void setName(Name name) {
         this.name = name;
     }
 
@@ -47,19 +47,19 @@ public class Annotation extends Node {
     }
 
     public static class Attribute {
-        private SymName name;
+        private Name name;
         private Expr value;
 
-        public Attribute(SymName name, Expr value) {
+        public Attribute(Name name, Expr value) {
             this.name = name;
             this.value = value;
         }
 
-        public SymName getName() {
+        public Name getName() {
             return name;
         }
 
-        public void setName(SymName name) {
+        public void setName(Name name) {
             this.name = name;
         }
 

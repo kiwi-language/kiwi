@@ -4,27 +4,27 @@ import java.lang.RuntimeException
 
 @Searchable
 class Product {
-    private var name: string
-    private val skuList: ArrayList<SKU>
+    priv var name: string
+    priv val skuList: ArrayList<SKU>
 
     init(name: string, skuList: List<SKU>) {
         this.name = name
-        this.skuList = new ArrayList<SKU>(skuList)
+        this.skuList = ArrayList<SKU>(skuList)
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func setName(name: string) {
+    fn setName(name: string) {
         this.name = name
     }
 
-    func getSkuList() -> List<SKU> {
-        return new ArrayList<SKU>(this.skuList)
+    fn getSkuList() -> List<SKU> {
+        return ArrayList<SKU>(this.skuList)
     }
 
-    func setSkuList(skuList: List<SKU>) {
+    fn setSkuList(skuList: List<SKU>) {
         this.skuList.clear()
         this.skuList.addAll(skuList)
     }
@@ -33,9 +33,9 @@ class Product {
 
 class SKU {
 
-    private var name: string
-    private var price: double
-    private var quantity: int
+    priv var name: string
+    priv var price: double
+    priv var quantity: int
 
     init(name: string, price: double, quantity: int) {
         this.name = name
@@ -43,14 +43,14 @@ class SKU {
         this.quantity = quantity
     }
 
-    func decQuantity(quantity: int) {
+    fn decQuantity(quantity: int) {
         if (this.quantity < quantity) {
-            throw new RuntimeException("Out of inventory")
+            throw RuntimeException("Out of inventory")
         }
         this.quantity = this.quantity - quantity
     }
 
-    func buy(quantity: int, coupons: List<Coupon>) -> Order {
+    fn buy(quantity: int, coupons: List<Coupon>) -> Order {
         this.decQuantity(quantity)
         var size = coupons.size()
         var i = 0
@@ -61,39 +61,39 @@ class SKU {
             i = i + 1
             totalDiscount = totalDiscount + discount
         }
-        return new Order(this.name, quantity, this.price * (quantity as double) - totalDiscount, this, coupons)
+        return Order(this.name, quantity, this.price * (quantity as double) - totalDiscount, this, coupons)
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func setName(name: string) {
+    fn setName(name: string) {
         this.name = name
     }
 
-    func getPrice() -> double {
+    fn getPrice() -> double {
         return this.price
     }
 
-    func setPrice(price: double) {
+    fn setPrice(price: double) {
         this.price = price
     }
 
-    func getQuantity() -> int {
+    fn getQuantity() -> int {
         return this.quantity
     }
 
-    func setQuantity(quantity: int) {
+    fn setQuantity(quantity: int) {
         this.quantity = quantity
     }
 
 }
 
 class Coupon {
-    private val name: string
-    private val discount: double
-    private var state: CouponState
+    priv val name: string
+    priv val discount: double
+    priv var state: CouponState
 
     init(name: string, discount: double) {
         this.name = name
@@ -101,21 +101,21 @@ class Coupon {
         this.state = CouponState.NORMAL
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func getDiscount() -> double {
+    fn getDiscount() -> double {
         return this.discount
     }
 
-    func getState() -> CouponState {
+    fn getState() -> CouponState {
         return this.state
     }
 
-    func use() -> double {
+    fn use() -> double {
         if(this.state == CouponState.USED) {
-            throw new RuntimeException("Coupon already used")
+            throw RuntimeException("Coupon already used")
         }
         this.state = CouponState.USED
         return this.discount
@@ -129,51 +129,48 @@ enum CouponState {
 
 ;
 
-    init() {
-    }
-
 }
 
 @Searchable
 class Order {
-    private val code: string
-    private val quantity: int
-    private val price: double
-    private val sku: SKU
-    private val coupons: List<Coupon>
-    private val orderTime: time
+    priv val code: string
+    priv val quantity: int
+    priv val price: double
+    priv val sku: SKU
+    priv val coupons: List<Coupon>
+    priv val orderTime: time
 
     init(code: string, quantity: int, price: double, sku: SKU, coupons: List<Coupon>) {
         this.code = code
         this.quantity = quantity
         this.price = price
         this.sku = sku
-        this.coupons = new ArrayList<Coupon>(coupons)
+        this.coupons = ArrayList<Coupon>(coupons)
         this.orderTime = now()
     }
 
-    func getCode() -> string {
+    fn getCode() -> string {
         return this.code
     }
 
-    func getQuantity() -> int {
+    fn getQuantity() -> int {
         return this.quantity
     }
 
-    func getPrice() -> double {
+    fn getPrice() -> double {
         return this.price
     }
 
-    func getSku() -> SKU {
+    fn getSku() -> SKU {
         return this.sku
     }
 
-    func getTime() -> time {
+    fn getTime() -> time {
         return this.orderTime
     }
 
-    func getCoupons() -> List<Coupon> {
-        return new ArrayList<Coupon>(this.coupons)
+    fn getCoupons() -> List<Coupon> {
+        return ArrayList<Coupon>(this.coupons)
     }
 
 }

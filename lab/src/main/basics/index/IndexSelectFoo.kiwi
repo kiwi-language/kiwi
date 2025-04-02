@@ -1,0 +1,23 @@
+package index
+
+import org.metavm.api.Index
+
+class IndexSelectFoo {
+
+    static val nameIndex: Index<string, IndexSelectFoo> = Index<string, IndexSelectFoo>(false, (f) -> f.name)
+    priv var name: string
+
+    init(name: string) {
+        this.name = name
+    }
+
+    fn setName(name: string) {
+        this.name = name
+    }
+
+    static fn findByName(name: string) -> IndexSelectFoo? {
+        return nameIndex.getFirst(name)
+    }
+
+}
+

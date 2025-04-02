@@ -1,11 +1,14 @@
 package org.metavm.flow;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.metavm.api.Entity;
 import org.metavm.entity.ElementVisitor;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
+import org.metavm.object.type.Type;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -21,8 +24,14 @@ public class TryEnterNode extends Node {
         super(name, null, previous, code);
     }
 
+
+    public TryEnterNode(String name, Node previous, Code code, Node handler) {
+        super(name, null, previous, code);
+        this.handler = handler;
+    }
+
     public static Node read(CodeInput input, String name) {
-        return new TryEnterNode(name, input.getPrev(), input.getCode());
+        return new TryEnterNode(name, input.getPrev(), input.getCode(), input.readLabel());
     }
 
     @Override
@@ -43,7 +52,7 @@ public class TryEnterNode extends Node {
     @Override
     public void writeCode(CodeOutput output) {
         output.write(Bytecodes.TRY_ENTER);
-        output.writeShort(handler.getOffset());
+        output.writeShort(handler.getOffset() - getOffset());
     }
 
     @Override

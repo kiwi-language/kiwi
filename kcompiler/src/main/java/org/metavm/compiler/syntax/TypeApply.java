@@ -1,25 +1,43 @@
 package org.metavm.compiler.syntax;
 
-
+import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.element.Element;
 import org.metavm.compiler.util.List;
 
-import java.util.Objects;
 import java.util.function.Consumer;
 
-public final class TypeApply extends Node {
-    private final Name clazz;
-    private final List<TypeNode> typeArguments;
+@Slf4j
+public class TypeApply extends Expr {
 
-    public TypeApply(Name clazz, List<TypeNode> typeArguments) {
-        this.clazz = clazz;
-        this.typeArguments = typeArguments;
+    private Expr expr;
+    private List<TypeNode> args;
+
+    public TypeApply(Expr expr, List<TypeNode> args) {
+        this.expr = expr;
+        this.args = args;
+    }
+
+    public Expr getExpr() {
+        return expr;
+    }
+
+    public void setExpr(Expr expr) {
+        this.expr = expr;
+    }
+
+    public List<TypeNode> getArgs() {
+        return args;
+    }
+
+    public void setArgs(List<TypeNode> args) {
+        this.args = args;
     }
 
     @Override
     public void write(SyntaxWriter writer) {
-        writer.write(clazz);
+        writer.write(expr);
         writer.write("<");
-        writer.write(typeArguments);
+        writer.write(args);
         writer.write(">");
     }
 
@@ -30,37 +48,13 @@ public final class TypeApply extends Node {
 
     @Override
     public void forEachChild(Consumer<Node> action) {
-        action.accept(clazz);
-        typeArguments.forEach(action);
-    }
-
-    public Name clazz() {
-        return clazz;
-    }
-
-    public List<TypeNode> typeArguments() {
-        return typeArguments;
+        action.accept(expr);
+        args.forEach(action);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj == null || obj.getClass() != this.getClass()) return false;
-        var that = (TypeApply) obj;
-        return Objects.equals(this.clazz, that.clazz) &&
-                Objects.equals(this.typeArguments, that.typeArguments);
+    public void setElement(Element element) {
+        super.setElement(element);
+        expr.setElement(element);
     }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(clazz, typeArguments);
-    }
-
-    @Override
-    public String toString() {
-        return "ParameterizedTypeNode[" +
-                "clazz=" + clazz + ", " +
-                "typeArguments=" + typeArguments + ']';
-    }
-
 }

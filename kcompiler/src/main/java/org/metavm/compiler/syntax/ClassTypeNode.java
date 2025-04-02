@@ -13,9 +13,9 @@ import java.util.function.Consumer;
 
 public final class ClassTypeNode extends TypeNode {
 
-    private Node expr;
+    private Expr expr;
 
-    public ClassTypeNode(Node expr) {
+    public ClassTypeNode(Expr expr) {
         this.expr = expr;
     }
 
@@ -50,33 +50,36 @@ public final class ClassTypeNode extends TypeNode {
             throw new ResolutionException("Invalid class type " + expr.getText());
     }
 
-    private Object resolveExpr(Node expr, Env env) {
-        if (expr instanceof Ident name) {
-            var element = env.lookupFirst(name.value(), EnumSet.of(ResolveKind.TYPE, ResolveKind.PACKAGE));
+    private Object resolveExpr(Expr expr, Env env) {
+        if (expr instanceof Ident ref) {
+            var element = env.lookupFirst(ref.getName(), EnumSet.of(ResolveKind.TYPE, ResolveKind.PACKAGE));
             if (element == null)
-                throw new ResolutionException("Symbol " + name.getText() + " not found");
-            if (element instanceof Clazz clazz)
-                return clazz.getType();
+                throw new ResolutionException("Symbol " + ref.getText() + " not found");
+            if (element instanceof ClassType ct)
+                return ct;
             else
                 return element;
-        } else if (expr instanceof QualifiedName qualName) {
-            var name = qualName.getIdent().value();
-            var scope = resolveExpr(qualName.getQualifier(), env);
+        } else if (expr instanceof SelectorExpr qualName) {
+            var name = qualName.sel();
+            var scope = resolveExpr(qualName.x(), env);
             if (scope instanceof Package pkg) {
-                var clazz = pkg.findClass(name);
+                var clazz = pkg.getTable().lookupFirst(name, e -> e instanceof Clazz);
                 if (clazz != null)
-                    return clazz.getType();
-                throw new ResolutionException("Class " + expr.getText() + " not found");
+                    return clazz;
+                var subPkg = pkg.getTable().lookupFirst(name, e -> e instanceof Package);
+                if (subPkg != null)
+                    return subPkg;
+                throw new ResolutionException("Symbol " + expr.getText() + " not found");
             }
             else if (scope instanceof ClassType owner) {
                 var clazz = owner.getClazz().getClass(name);
-                return clazz.getType(owner, clazz.getTypeParameters());
+                return clazz.getInst(owner, clazz.getTypeParams());
             }
         } else if (expr instanceof TypeApply typeApply) {
-            var clazz = (ClassType) resolveExpr(typeApply.clazz(), env);
-            return clazz.getClazz().getType(
+            var clazz = (ClassType) resolveExpr(typeApply.getExpr(), env);
+            return clazz.getClazz().getInst(
                     clazz.getOwner(),
-                    typeApply.typeArguments().map(env::resolveType)
+                    typeApply.getArgs().map(env::resolveType)
             );
         }
         throw new ResolutionException("Invalid class name " + expr.getText() + " (class: " + expr.getClass().getName() + ")");

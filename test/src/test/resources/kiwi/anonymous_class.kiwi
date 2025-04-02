@@ -1,0 +1,23 @@
+import java.util.Iterator
+
+class AnonymousClassLab {
+
+    val value: int
+
+    init(value: int) {
+        this.value = value
+    }
+
+    static fn test() -> int {
+        return new AnonymousClassLab(1) {
+            fn getValue() -> int {
+                return 1
+            }
+        }.getValue()
+    }
+
+    fn getValue() -> int {
+        return 0
+    }
+
+}

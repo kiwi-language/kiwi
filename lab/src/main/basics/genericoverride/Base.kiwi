@@ -1,0 +1,10 @@
+package genericoverride
+
+class Base {
+
+    fn containsAny<T>(iterable: Iterable<[never, T]>, values: Iterable<[never, T]>) -> bool {
+        return false
+    }
+
+}
+

@@ -1,13 +1,18 @@
 package org.metavm.compiler.analyze;
 
-import org.metavm.compiler.element.*;
+import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.element.Clazz;
+import org.metavm.compiler.element.Method;
 import org.metavm.compiler.element.Package;
+import org.metavm.compiler.element.Name;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Types;
 import org.metavm.compiler.util.List;
+import org.metavm.util.Utils;
 
+@Slf4j
 public class TypeResolver extends StructuralNodeVisitor {
 
     private final Env env = new Env();
@@ -23,31 +28,44 @@ public class TypeResolver extends StructuralNodeVisitor {
 
     @Override
     public Void visitBlock(Block block) {
-        try (var ignored = env.enterScope()) {
+        try (var ignored = env.enterScope(block)) {
             return super.visitBlock(block);
         }
     }
 
     @Override
+    public Void visitNewArrayExpr(NewArrayExpr newArrayExpr) {
+        super.visitNewArrayExpr(newArrayExpr);
+        newArrayExpr.setType(Types.instance.getArrayType(newArrayExpr.elementType().getType()));
+        return null;
+    }
+
+    @Override
     public Void visitFile(File file) {
-        try (var scope = env.enterScope()) {
+        try (var scope = env.enterScope(file)) {
             var prevPkg = pkg;
             pkg = file.getPackage();
             for (Import imp : file.getImports()) {
                 imp.getElements().forEach(scope::add);
             }
-            pkg.getClasses().forEach(scope::add);
+            file.getPackage().getRoot().getPackages().forEach(scope::add);
+            enterPackage(pkg, scope);
+            enterPackage(pkg.getRoot().subPackage("java").subPackage("lang"), scope);
             super.visitFile(file);
             pkg = prevPkg;
             return null;
         }
     }
 
+    private void enterPackage(Package pkg, Scope scope) {
+        pkg.getClasses().forEach(scope::add);
+    }
+
     @Override
     public Void visitLocalVarDecl(LocalVarDecl localVarDecl) {
         super.visitLocalVarDecl(localVarDecl);
         var v = localVarDecl.getElement();
-        var t = localVarDecl.type();
+        var t = localVarDecl.getType();
         if (t != null)
             v.setType(t.getType());
         return null;
@@ -57,7 +75,8 @@ public class TypeResolver extends StructuralNodeVisitor {
     public Void visitFieldDecl(FieldDecl fieldDecl) {
         super.visitFieldDecl(fieldDecl);
         var field = fieldDecl.getElement();
-        field.setType(fieldDecl.type().getType());
+        if (fieldDecl.getType() != null)
+            field.setType(fieldDecl.getType().getType());
         return null;
     }
 
@@ -65,61 +84,73 @@ public class TypeResolver extends StructuralNodeVisitor {
     public Void visitParamDecl(ParamDecl paramDecl) {
         super.visitParamDecl(paramDecl);
         var param = paramDecl.getElement();
-        param.setType(paramDecl.type().getType());
+        if (paramDecl.getType() != null)
+            param.setType(paramDecl.getType().getType());
+        else
+            param.setType(PrimitiveType.ANY);
         return null;
     }
 
     @Override
     public Void visitMethodDecl(MethodDecl methodDecl) {
-        try (var scope = env.enterScope()) {
+        try (var scope = env.enterScope(methodDecl)) {
             var method = methodDecl.getElement();
-            method.getTypeParameters().forEach(scope::add);
-            super.visitMethodDecl(methodDecl);
-            var ret = methodDecl.returnType();
-            method.setReturnType(ret != null ? ret.getType() : PrimitiveType.VOID);
+            method.getTypeParams().forEach(scope::add);
+            methodDecl.getTypeParameters().forEach(tp -> tp.accept(this));
+            methodDecl.getParams().forEach(p -> p.accept(this));
+            if (methodDecl.returnType() != null) {
+                methodDecl.returnType().accept(this);
+                method.setRetType(methodDecl.returnType().getType());
+            }
+            else
+                method.setRetType(PrimitiveType.VOID);
+            Utils.safeCall(methodDecl.body(), b -> b.accept(this));
             return null;
         }
     }
 
     @Override
+    public Void visitReturnStmt(RetStmt retStmt) {
+        retStmt.setType(env.currentExecutable().getRetType());
+        return super.visitReturnStmt(retStmt);
+    }
+
+    @Override
     public Void visitLambdaExpr(LambdaExpr lambdaExpr) {
-        try (var ignored = env.enterScope()) {
-            super.visitLambdaExpr(lambdaExpr);
-            var lambda = (Lambda) lambdaExpr.getElement();
-            var retType = lambdaExpr.returnType();
-            if (retType != null)
-                lambda.setReturnType(retType.getType());
-            return null;
+        try (var ignored = env.enterScope(lambdaExpr)) {
+            return super.visitLambdaExpr(lambdaExpr);
         }
     }
 
     @Override
     public Void visitClassDecl(ClassDecl classDecl) {
-        try (var scope = env.enterScope()) {
+        try (var scope = env.enterScope(classDecl)) {
             var clazz = classDecl.getElement();
-            clazz.getTypeParameters().forEach(scope::add);
+            clazz.getTypeParams().forEach(scope::add);
             clazz.getClasses().forEach(scope::add);
             if (clazz.isEnum()) {
                 var enumClass = pkg.getRoot().subPackage("java").subPackage("lang")
                         .getClass("Enum");
-                clazz.setInterfaces(List.of(enumClass.getType(List.of(clazz.getType()))));
+                clazz.setInterfaces(List.of(enumClass.getInst(List.of(clazz))));
                 classDecl.enumConstants().forEach(ec -> ec.accept(this));
                 for (Method method : clazz.getMethods()) {
-                    if (method.getName() == SymName.from("values") && method.isStatic() && method.getParameters().isEmpty()) {
-                        method.setReturnType(Types.instance.getArrayType(clazz.getType()));
+                    if (method.getName() == Name.from("values") && method.isStatic() && method.getParams().isEmpty()) {
+                        method.setRetType(Types.instance.getArrayType(clazz));
                     }
-                    else if (method.getName() == SymName.from("valueOf") && method.isStatic() &&
-                            method.getParameterTypes().equals(List.of(Types.instance.getNullableString()))) {
-                        method.setReturnType(Types.instance.getNullableType(clazz.getType()));
+                    else if (method.getName() == Name.from("valueOf") && method.isStatic() &&
+                            method.getParamTypes().equals(List.of(Types.instance.getNullableString()))) {
+                        method.setRetType(Types.instance.getNullableType(clazz));
                     }
                 }
             } else {
-                classDecl.getImplements().forEach(t -> t.accept(this));
-                clazz.setInterfaces(classDecl.getImplements().map(t -> {
-                    var it = (ClassType) t.getType();
-                    it.getClazz().getClasses().forEach(scope::add);
-                    return it;
-                }));
+                if (classDecl.getImplements().nonEmpty()) {
+                    classDecl.getImplements().forEach(t -> t.accept(this));
+                    clazz.setInterfaces(classDecl.getImplements().map(t -> {
+                        var it = (ClassType) t.getType();
+                        it.getClazz().getClasses().forEach(scope::add);
+                        return it;
+                    }));
+                }
                 classDecl.getTypeParameters().forEach(tv -> tv.accept(this));
             }
             classDecl.getMembers().forEach(m -> m.accept(this));

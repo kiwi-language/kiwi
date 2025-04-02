@@ -1,0 +1,20 @@
+package hashcode
+
+class HashCodeBar {
+
+    priv var name: string
+
+    init(name: string) {
+        this.name = name
+    }
+
+    fn getName() -> string {
+        return name
+    }
+
+    fn setName(name: string) {
+        this.name = name
+    }
+
+}
+

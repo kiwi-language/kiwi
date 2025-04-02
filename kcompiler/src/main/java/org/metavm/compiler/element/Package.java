@@ -1,21 +1,23 @@
 package org.metavm.compiler.element;
 
+import org.metavm.compiler.util.List;
+
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class Package implements ClassScope, Element {
+public class Package extends ElementBase implements ClassScope, Element {
     private Project project;
-    private SymName name;
+    private Name name;
     private final @Nullable Package parent;
 
-    private final Map<SymName, Clazz> classes = new HashMap<>();
-    private final Map<SymName, FreeFunc> functions = new HashMap<>();
-    private final Map<SymName, Package> packages = new HashMap<>();
+    private final Map<Name, Clazz> classes = new HashMap<>();
+    private final Map<Name, FreeFunc> functions = new HashMap<>();
+    private final Map<Name, Package> packages = new HashMap<>();
 
     private final ElementTable table = new ElementTable();
 
-    public Package(SymName name, @Nullable Package parent, Project project) {
+    public Package(Name name, @Nullable Package parent, Project project) {
         this.name = name;
         this.parent = parent;
         this.project = project;
@@ -23,17 +25,17 @@ public class Package implements ClassScope, Element {
             parent.addPackage(this);
     }
 
-    public SymName getName() {
+    public Name getName() {
         return name;
     }
 
-    public void setName(SymName name) {
+    public void setName(Name name) {
         this.name = name;
     }
 
-    public SymName getQualifiedName() {
+    public Name getQualName() {
         if (parent != null) {
-            var parentQn = parent.getQualifiedName();
+            var parentQn = parent.getQualName();
             if (!parentQn.isEmpty())
                 return parentQn.concat("." + name);
         }
@@ -53,19 +55,19 @@ public class Package implements ClassScope, Element {
         this.project = project;
     }
 
-    public Clazz findClass(SymName name) {
+    public Clazz findClass(Name name) {
         return classes.get(name);
     }
 
     public Clazz getClass(String name) {
-        return getClass(SymNameTable.instance.get(name));
+        return getClass(NameTable.instance.get(name));
     }
 
-    public Clazz getClass(SymName name) {
-        return Objects.requireNonNull(classes.get(name), () -> "Class " + name + " not found in package " + getQualifiedName());
+    public Clazz getClass(Name name) {
+        return Objects.requireNonNull(classes.get(name), () -> "Class " + name + " not found in package " + getQualName());
     }
 
-    public Package findPackage(SymName name) {
+    public Package findPackage(Name name) {
         return packages.get(name);
     }
 
@@ -88,31 +90,34 @@ public class Package implements ClassScope, Element {
         table.add(pkg);
     }
 
-    public FreeFunc getFunction(SymName name) {
+    public FreeFunc getFunction(Name name) {
         return Objects.requireNonNull(functions.get(name), () -> "Function " + name + " not found in package " + name);
     }
 
     public Package subPackage(String name) {
-        var symName = SymNameTable.instance.get(name);
+        var symName = NameTable.instance.get(name);
         return subPackage(symName);
     }
 
-    public Package subPackage(SymName name) {
+    public Package subPackage(Name name) {
         var pkg = packages.get(name);
         if (pkg != null)
             return pkg;
         return new Package(name, this, project);
     }
 
-    public  Package getPackage(SymName name) {
+    public  Package getPackage(Name name) {
         return Objects.requireNonNull(packages.get(name),
-                () -> "Package '" + getPackageName(getQualifiedName(), name)  + "' not found");
+                () -> "Package '" + getPackageName(getQualName(), name)  + "' not found");
+    }
+
+    public Collection<Package> getPackages() {
+        return packages.values();
     }
 
     public void addFunction(FreeFunc function) {
-        function.initInstance();
         functions.put(function.getName(), function);
-        table.add(function.getInstance());
+        table.add(function);
     }
 
     @Override
@@ -156,7 +161,7 @@ public class Package implements ClassScope, Element {
         return "package " + (name.isEmpty() ? "<default>" : name);
     }
 
-    public static SymName getPackageName(SymName parentName, SymName name) {
+    public static Name getPackageName(Name parentName, Name name) {
         return parentName.isEmpty() ? name : parentName.concat("." + name);
     }
 

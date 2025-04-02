@@ -1,8 +1,6 @@
 class Base {
 
-    init() {}
-
-    func speak() -> string {
+    fn speak() -> string {
         return "Base"
     }
 
@@ -10,9 +8,7 @@ class Base {
 
 class Sub1: Base {
 
-    init() {}
-
-    func speak() -> string {
+    fn speak() -> string {
         return "sub1"
     }
 
@@ -20,9 +16,7 @@ class Sub1: Base {
 
 class Sub2: Base {
 
-    init() {}
-
-    func speak() -> string {
+    fn speak() -> string {
         return "sub2"
     }
 
@@ -30,12 +24,12 @@ class Sub2: Base {
 
 class Conditional {
 
-    static func test(v: int) -> int {
+    static fn test(v: int) -> int {
         return v > 0 ? v : -v
     }
 
-    static func test1(v: int) -> string {
-        var sub = v > 0 ? new Sub1() : new Sub2()
+    static fn test1(v: int) -> string {
+        var sub = v > 0 ? Sub1() : Sub2()
         return sub.speak()
     }
 

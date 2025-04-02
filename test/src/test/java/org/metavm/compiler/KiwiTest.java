@@ -1,59 +1,27 @@
 package org.metavm.compiler;
 
-import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.entity.EntityContextFactory;
-import org.metavm.flow.FlowSavingContext;
 import org.metavm.flow.Flows;
-import org.metavm.object.instance.ApiService;
-import org.metavm.object.instance.InstanceQueryService;
-import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.Klass;
-import org.metavm.object.type.TypeManager;
-import org.metavm.util.*;
+import org.metavm.util.Instances;
+import org.metavm.util.TestConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class KiwiTest extends TestCase {
+public class KiwiTest extends KiwiTestBase {
 
     public static final Logger logger = LoggerFactory.getLogger(KiwiTest.class);
-
-    private EntityContextFactory entityContextFactory;
-    private TypeManager typeManager;
-    private SchedulerAndWorker schedulerAndWorker;
-    private ApiClient apiClient;
-
-    @Override
-    protected void setUp() throws Exception {
-        var bootResult = BootstrapUtils.bootstrap();
-        typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
-        entityContextFactory = bootResult.entityContextFactory();
-        schedulerAndWorker = bootResult.schedulerAndWorker();
-        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache(),
-                new InstanceQueryService(bootResult.instanceSearchService())));
-    }
-
-    @Override
-    protected void tearDown() throws Exception {
-        entityContextFactory = null;
-        typeManager = null;
-        schedulerAndWorker = null;
-        apiClient = null;
-    }
 
     public void testParentChild() {
         deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/ParentChild.kiwi");
     }
 
     public void testMyList() {
-//        assemble(List.of(source));
         deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/List.kiwi");
     }
 
@@ -68,7 +36,7 @@ public class KiwiTest extends TestCase {
     }
 
     public void testUtils() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/Utils.kiwi");
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/util/Utils.kiwi");
     }
 
     public void testGenericOverloading() {
@@ -77,6 +45,8 @@ public class KiwiTest extends TestCase {
 
     public void testLambda() {
         deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/Lambda.kiwi");
+        var r = callMethod("Utils", "findGt", List.of(List.of(1, 2, 3), 1));
+        Assert.assertEquals(2, r);
     }
 
     public void testAssign() {
@@ -127,17 +97,17 @@ public class KiwiTest extends TestCase {
 
     public void testTreeSet() {
         deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/tree_set.kiwi");
-        var id = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("TreeSetLab", "create", List.of()));
+        var id = (String) callMethod("TreeSetLab", "create", List.of());
         var elements = List.of(5,4,3,2,1);
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "addAll", List.of(elements)));
-        var containsAll = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "containsAll", List.of(elements)));
+        callMethod(id, "addAll", List.of(elements));
+        var containsAll = (boolean) callMethod(id, "containsAll", List.of(elements));
         Assert.assertTrue(containsAll);
-        var removed = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "remove", List.of(1)));
+        var removed = (boolean) callMethod(id, "remove", List.of(1));
         Assert.assertTrue(removed);
-        var first = TestUtils.doInTransaction(() -> apiClient.callMethod(id, "first", List.of()));
+        var first = callMethod(id, "first", List.of());
         Assert.assertEquals(2, first);
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "retainAll", List.of(List.of(5, 3, 2))));
-        var size = (int) TestUtils.doInTransaction(() -> apiClient.callMethod(id, "size", List.of()));
+        callMethod(id, "retainAll", List.of(List.of(5, 3, 2)));
+        var size = (int) callMethod(id, "size", List.of());
         Assert.assertEquals(3, size);
     }
 
@@ -151,6 +121,13 @@ public class KiwiTest extends TestCase {
                 2,
                 callMethod(id, "getValue2", List.of())
         );
+    }
+
+    public void testImplicitSuperInit() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/implicit_super_init.kiwi");
+        var id = saveInstance("Sub", Map.of());
+        var r = callMethod(id, "getValue", List.of());
+        Assert.assertEquals(1, r);
     }
 
     public void testCircularReference() {
@@ -183,45 +160,103 @@ public class KiwiTest extends TestCase {
         }
     }
 
-    private void compile(List<String> sources) {
-//        assembler.assemble(sources);
-//        assembler.generateClasses(TestConstants.TARGET);
-        var task = new CompilationTask(sources, TestConstants.TARGET);
-        task.parse();
-        CompilerTestUtils.enterStandard(task.getProject());
-        task.analyze();
-        task.generate();
+    public void testFieldInitializer() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/field_init.kiwi");
+        var id = saveInstance("FieldInit", Map.of());
+        var r = callMethod(id, "getFlag", List.of());
+        Assert.assertEquals(true, r);
+
+        callMethod("FieldInit", "setDefaultFlag", List.of(false));
+        var id1 = saveInstance("FieldInit", Map.of());
+        var r1 = callMethod(id1, "getFlag", List.of());
+        Assert.assertEquals(false, r1);
     }
 
-    private String saveInstance(String className, Map<String, Object> fields) {
-        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, fields));
+    public void testImplicitInit() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/implicit_init.kiwi");
+        var id = saveInstance("ImplicitInit", Map.of());
+        var value = callMethod(id, "getValue", List.of());
+        Assert.assertEquals(1, value);
     }
 
-    private Object callMethod(String qualifier, String methodName,List<Object> arguments) {
-        return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    public void testMultiFiles() {
+        deploy(List.of(
+                "/Users/leen/workspace/object/test/src/test/resources/kiwi/multi_files.kiwi",
+                "/Users/leen/workspace/object/test/src/test/resources/kiwi/util/Utils.kiwi"
+                )
+        );
+        var value = callMethod("Lab", "test", List.of());
+        Assert.assertEquals(true, value);
     }
 
-    private ClassInstanceWrap getObject(String id) {
-        return apiClient.getObject(id);
+    public void testForeach() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/foreach.kiwi");
+        var r = callMethod("ForeachLab", "sumList", List.of(List.of(1, 2, 3)));
+        Assert.assertEquals(6, r);
+        var r1 = callMethod("ForeachLab", "sumArray", List.of(List.of(1, 2, 3)));
+        Assert.assertEquals(6, r1);
     }
 
-    private void deploy(String source) {
-        FlowSavingContext.initConfig();
-        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            context.loadKlasses();
-//            var assembler = AssemblerFactory.createWithStandardTypes();
-            compile(List.of(source));
-            ContextUtil.setAppId(TestConstants.APP_ID);
-            TestUtils.doInTransaction(() -> {
-                try(var input = new FileInputStream(TestConstants.TARGET + "/target.mva")) {
-                    typeManager.deploy(input);
-                    return null;
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            TestUtils.waitForDDLPrepared(schedulerAndWorker);
-        }
+    public void testBreak() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/break.kiwi");
+        var r = callMethod("BreakFoo", "contains", List.of(List.of(1, 2, 3), 2, 3));
+        Assert.assertEquals(true, r);
+        var r1 = callMethod("BreakFoo", "contains", List.of(List.of(1, 2, 3), 2, 1));
+        Assert.assertEquals(false, r1);
+    }
+
+    public void testRange() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/range.kiwi");
+        var r = callMethod("RangeLab", "sum", List.of(10));
+        Assert.assertEquals(45, r);
+    }
+
+    public void testContinue() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/continue.kiwi");
+        var r = callMethod("ContinueFoo", "avgEven", List.of(List.of(1, 2, 3, 4 ,5)));
+        Assert.assertEquals(3, r);
+    }
+
+    public void testAnonymousClass() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/anonymous_class.kiwi");
+        var r = callMethod("AnonymousClassLab", "test", List.of());
+        Assert.assertEquals(1, r);
+    }
+
+    public void testInnerClass() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/inner_class.kiwi");
+        var id = saveInstance("InnerClassLab", Map.of("value", 1));
+        var r = callMethod(id, "getValue", List.of());
+        assertEquals(1, r);
+    }
+
+    public void testLocalClass() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/local_class.kiwi");
+        var r = callMethod("LocalClassFoo", "test", List.of());
+        assertEquals(1, r);
+    }
+
+    public void testNew() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/new.kiwi");
+        var id = (String) callMethod("Foo", "test", List.of());
+        var r = callMethod(id, "getValue", List.of());
+        assertEquals(1, r);
+    }
+
+    public void testBindingVar() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/binding_var.kiwi");
+        var r = callMethod("BindingVarLab", "test", List.of("Hello"));
+        assertEquals("Hello", r);
+        var r1 = callMethod("BindingVarLab", "test", List.of(1));
+        assertEquals("Kiwi", r1);
+        var r2 = callMethod("BindingVarLab", "lengthEquals", List.of("Cute", "Kiwi"));
+        assertEquals(true, r2);
+    }
+
+    public void testMethodRef() {
+        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/method_ref.kiwi");
+        var r = callMethod("Lab", "test", List.of("Kiwi"));
+        Assert.assertEquals("Hello, Kiwi", r);
     }
 
 }

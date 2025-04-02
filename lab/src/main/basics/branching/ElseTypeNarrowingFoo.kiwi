@@ -1,0 +1,26 @@
+package branching
+
+class ElseTypeNarrowingFoo {
+
+    static fn test(foo: Foo?) -> int {
+        var f: Foo?
+        if ((f = foo) == null) return 0
+        else return f!!.value
+    }
+
+    class Foo {
+
+        priv val value: int
+
+        fn value() -> int {
+            return value
+        }
+
+        init(value: int) {
+            this.value = value
+        }
+
+    }
+
+}
+

@@ -11,36 +11,36 @@ public class ClosureTest extends TestCase {
         var proj = new Project();
         var pkg = proj.getRootPackage();
 
-        var speakClass = new Clazz(ClassTag.INTERFACE, SymName.from("Speak"), Access.PUBLIC, pkg);
-        var baseClass = new Clazz(ClassTag.CLASS, SymName.from("Base"), Access.PUBLIC, pkg);
-        baseClass.setInterfaces(List.of(speakClass.getType()));
+        var speakClass = new Clazz(ClassTag.INTERFACE, Name.from("Speak"), Access.PUBLIC, pkg);
+        var baseClass = new Clazz(ClassTag.CLASS, Name.from("Base"), Access.PUBLIC, pkg);
+        baseClass.setInterfaces(List.of(speakClass));
 
-        var comparableClass = new Clazz(ClassTag.INTERFACE, SymName.from("Comparable"), Access.PUBLIC, pkg);
-        new TypeVariable(SymName.from("T"), PrimitiveType.ANY, comparableClass);
+        var comparableClass = new Clazz(ClassTag.INTERFACE, Name.from("Comparable"), Access.PUBLIC, pkg);
+        new TypeVar(Name.from("T"), PrimitiveType.ANY, comparableClass);
 
-        var fooClass = new Clazz(ClassTag.CLASS, SymName.from("Foo"), Access.PUBLIC, pkg);
-        var comparableType = comparableClass.getType(List.of(fooClass.getType()));
-        fooClass.setInterfaces(List.of(baseClass.getType(), comparableType));
+        var fooClass = new Clazz(ClassTag.CLASS, Name.from("Foo"), Access.PUBLIC, pkg);
+        var comparableType = comparableClass.getInst(List.of(fooClass));
+        fooClass.setInterfaces(List.of(baseClass, comparableType));
 
         Assert.assertEquals(0, speakClass.getRank());
         Assert.assertEquals(0, comparableClass.getRank());
         Assert.assertEquals(1, baseClass.getRank());
         Assert.assertEquals(2, fooClass.getRank());
 
-        var cl = fooClass.getType().getClosure();
+        var cl = fooClass.getClosure();
 
         Assert.assertEquals(
-                List.of(fooClass.getType(), baseClass.getType(), comparableType, speakClass.getType()),
+                List.of(fooClass, baseClass, comparableType, speakClass),
                 cl.getTypes()
         );
 
-        Assert.assertEquals(List.of(fooClass.getType()), cl.min().getTypes());
-        Assert.assertEquals(fooClass.getType(), cl.toType());
+        Assert.assertEquals(List.of(fooClass), cl.min().getTypes());
+        Assert.assertEquals(fooClass, cl.toType());
 
-        Assert.assertTrue(speakClass.getType().isAssignableFrom(baseClass.getType()));
+        Assert.assertTrue(speakClass.isAssignableFrom(baseClass));
 
         Assert.assertEquals(
-                Types.instance.getIntersectionType(List.of(baseClass.getType(), comparableType)),
+                Types.instance.getIntersectionType(List.of(baseClass, comparableType)),
                 cl.tail().toType()
         );
     }

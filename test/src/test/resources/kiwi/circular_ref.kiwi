@@ -3,34 +3,30 @@ import java.io.ObjectInputStream
 
 class Foo {
 
-    private var bar: Bar
+    priv var bar = Bar(this)
 
-    init() {
-        this.bar = this.new Bar(this)
-    }
-
-    func getBar() -> Bar {
+    fn getBar() -> Bar {
         return this.bar
     }
 
-    private func writeObject(s: ObjectOutputStream) {
+    priv fn writeObject(s: ObjectOutputStream) {
     }
 
-    private func readObject(s: ObjectInputStream) {
-         this.bar = new Bar(this)
+    priv fn readObject(s: ObjectInputStream) {
+         this.bar = Bar(this)
     }
 
 }
 
 class Bar {
 
-    private var foo: Foo
+    priv var foo: Foo
 
     init(foo: Foo) {
         this.foo = foo
     }
 
-    func getFoo() -> Foo {
+    fn getFoo() -> Foo {
         return this.foo
     }
 

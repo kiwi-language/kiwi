@@ -1,0 +1,10 @@
+package conditional
+
+class BooleanConditionalFoo {
+
+    static fn test(v: int) -> bool {
+        return v > 0 ? v == 10 : -v == 10
+    }
+
+}
+

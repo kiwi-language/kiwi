@@ -1,26 +1,26 @@
 class Product {
 
-    private var name: string
-    private var kind: ProductKind
+    priv var name: string
+    priv var kind: ProductKind
 
     init(name: string, kind: ProductKind) {
         this.name = name
         this.kind = kind
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func setName(name: string) {
+    fn setName(name: string) {
         this.name = name
     }
 
-    func getKind() -> ProductKind {
+    fn getKind() -> ProductKind {
         return this.kind
     }
 
-    func setKind(kind: ProductKind) {
+    fn setKind(kind: ProductKind) {
         this.kind = kind
     }
 
@@ -34,13 +34,13 @@ enum ProductKind {
 
 ;
 
-    private val code: int
+    priv val code: int
 
     init(code: int) {
         this.code = code
     }
 
-    func getCode() -> int {
+    fn getCode() -> int {
         return this.code
     }
 

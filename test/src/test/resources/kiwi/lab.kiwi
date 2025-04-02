@@ -1,7 +1,7 @@
 
 class Lab {
 
-    static func test(v: int) {
+    static fn test(v: int) {
         var i = v
     }
 

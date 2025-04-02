@@ -1,0 +1,16 @@
+package innerclass
+
+abstract class InnerExtendsEnclosing<E> {
+
+    abstract fn foo() -> bool
+
+    priv class Inner<E>: InnerExtendsEnclosing<E> {
+
+        fn foo() -> bool {
+            return true
+        }
+
+    }
+
+}
+

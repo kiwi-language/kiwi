@@ -2,13 +2,13 @@
 @Searchable
 class SearchEnableFoo {
 
-    private var name: string
+    priv var name: string
 
     init(name: string) {
         this.name = name
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 

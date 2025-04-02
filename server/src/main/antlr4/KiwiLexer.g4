@@ -3,7 +3,7 @@ lexer grammar KiwiLexer;
 // keywords
 
 ABSTRACT:           'abstract';
-BOOLEAN:            'boolean';
+BOOL:               'bool';
 CASE:               'case';
 DEFAULT:            'default';
 CATCH:              'catch';
@@ -29,9 +29,9 @@ CHAR:               'char';
 INTERFACE:          'interface';
 NATIVE:             'native';
 NEW:                'new';
-PRIVATE:            'private';
-PROTECTED:          'protected';
-PUBLIC:             'public';
+PRIV:               'priv';
+PROT:               'prot';
+PUB:                'pub';
 RETURN:             'return';
 STATIC:             'static';
 SUPER:              'super';
@@ -42,15 +42,20 @@ THROWS:             'throws';
 TRY:                'try';
 VOID:               'void';
 WHILE:              'while';
+DO:                 'do';
 ANY:                'any';
 NEVER:              'never';
 DELETED:            'deleted';
-FUNC:               'func';
+FN:                 'fn';
 VALUE:              'value';
 VAL:                'val';
 VAR:                'var';
 AS:                 'as';
 INIT:               'init';
+IN:                 'in';
+CONTINUE:           'continue';
+BREAK:              'break';
+TEMP:               'temp';
 
 // Operators
 
@@ -78,7 +83,6 @@ BITAND:             '&';
 BITOR:              '|';
 CARET:              '^';
 MOD:                '%';
-
 ADD_ASSIGN:         '+=';
 SUB_ASSIGN:         '-=';
 MUL_ASSIGN:         '*=';
@@ -108,8 +112,6 @@ DOT:                '.';
 ARROW:              '->';
 COLONCOLON:         '::';
 
-// Additional symbols not defined in the lexical specification
-
 AT:                 '@';
 ELLIPSIS:           '...';
 
@@ -120,7 +122,7 @@ HEX_LITERAL:        '0' [xX] [0-9a-fA-F] ([0-9a-fA-F_]* [0-9a-fA-F])? [lL]?;
 OCT_LITERAL:        '0' '_'* [0-7] ([0-7_]* [0-7])? [lL]?;
 BINARY_LITERAL:     '0' [bB] [01] ([01_]* [01])? [lL]?;
 
-FLOAT_LITERAL:      (Digits '.' Digits? | '.' Digits) ExponentPart? [fFdD]?
+FLOAT_LITERAL:      Digits '.' Digits ExponentPart? [fFdD]?
              |       Digits (ExponentPart [fFdD]? | [fFdD])
              ;
 

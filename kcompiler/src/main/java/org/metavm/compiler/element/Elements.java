@@ -1,5 +1,6 @@
 package org.metavm.compiler.element;
 
+import org.metavm.compiler.type.Types;
 import org.metavm.object.type.SymbolRefs;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.MvOutput;
@@ -12,11 +13,16 @@ public class Elements {
         var tracing = DebugEnv.traceClassFileIO;
         switch (element) {
             case Clazz klass -> {
+                if (klass == Types.instance.getStringClass()) {
+                    output.write(SymbolRefs.KLASS);
+                    output.writeUTF("java.lang.String");
+                    return;
+                }
                 var scope = klass.getScope();
                 if (scope instanceof Package) {
 //                    if (klass.getSourceTag() == null) {
                         output.write(SymbolRefs.KLASS);
-                        output.writeUTF(Objects.requireNonNull(klass.getQualifiedName()).toString());
+                        output.writeUTF(Objects.requireNonNull(klass.getQualName()).toString());
 //                    }
 //                    else {
 //                        buffer.write(SymbolRefs.KLASS_TAG);
@@ -30,13 +36,13 @@ public class Elements {
             }
             case Method method -> {
                 output.write(SymbolRefs.METHOD);
-                writeReference(method.getDeclaringClass(), output);
+                writeReference(method.getDeclClass(), output);
                 output.writeUTF(method.getInternalName(null));
             }
             case Field field -> {
 //                if (field.getSourceTag() == null) {
                     output.write(field.isStatic() ? SymbolRefs.STATIC_FIELD : SymbolRefs.FIELD);
-                    writeReference(field.getDeclaringClass(), output);
+                    writeReference(field.getDeclClass(), output);
                     output.writeUTF(field.getName().toString());
 //                } else {
 //                    buffer.write(field.isStatic() ? SymbolRefs.STATIC_FIELD_TAG : SymbolRefs.FIELD_TAG);
@@ -44,19 +50,19 @@ public class Elements {
 //                    buffer.writeVarInt(field.getSourceTag());
 //                }
             }
-            case EnumConstant enumConstant -> {
+            case EnumConst enumConst -> {
                 output.write(SymbolRefs.STATIC_FIELD);
-                writeReference(enumConstant.getDeclaringClass(), output);
-                output.writeUTF(enumConstant.getName().toString());
+                writeReference(enumConst.getDeclaringClass(), output);
+                output.writeUTF(enumConst.getName().toString());
             }
             case FreeFunc function -> {
                 output.write(SymbolRefs.FUNCTION);
                 output.writeUTF(function.getName().toString());
             }
-            case TypeVariable typeVariable -> {
+            case TypeVar typeVar -> {
                 output.write(SymbolRefs.TYPE_VARIABLE);
-                writeReference((Element) typeVariable.getGenericDeclaration(), output);
-                output.writeUTF(typeVariable.getName().toString());
+                writeReference((Element) typeVar.getGenericDeclaration(), output);
+                output.writeUTF(typeVar.getName().toString());
             }
 //            case CapturedTypeVariable capturedTypeVariable -> {
 //                buffer.write(SymbolRefs.CAPTURED_TYPE_VARIABLE);
@@ -68,10 +74,10 @@ public class Elements {
                 writeReference(lambda.getFunction(), output);
                 output.writeUTF(lambda.getName().toString());
             }
-            case Parameter parameter -> {
+            case Param param -> {
                 output.write(SymbolRefs.PARAMETER);
-                writeReference(parameter.getExecutable(), output);
-                output.writeUTF(parameter.getName().toString());
+                writeReference(param.getExecutable(), output);
+                output.writeUTF(param.getName().toString());
             }
             default -> throw new IllegalStateException("Unrecognized reference target: " + element);
         }

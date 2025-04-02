@@ -380,17 +380,17 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
     }
 
     public void writeCode(CodeWriter writer) {
-        writer.writeln(
-                "Flow "
+        writer.write(
+                "fn "
                         + name
-                        + " (" + Utils.join(parameters, Parameter::getText, ", ")
+                        + "(" + Utils.join(parameters, Parameter::getText, ", ")
                         + ")"
-                        + ": " + getReturnType().getName()
+                        + " -> " + getReturnType().getName()
         );
         if (isCodePresent())
             getCode().writeCode(writer);
         else
-            writer.write(";");
+            writer.writeln();
     }
 
     @JsonIgnore

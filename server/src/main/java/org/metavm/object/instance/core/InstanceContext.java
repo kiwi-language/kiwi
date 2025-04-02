@@ -4,6 +4,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.*;
 import org.metavm.event.EventQueue;
+import org.metavm.flow.Method;
 import org.metavm.object.instance.ContextPlugin;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.StoreTreeSource;
@@ -326,6 +327,10 @@ public class InstanceContext extends BufferingInstanceContext {
                     if (i.isRemoved()) {
                         if(DebugEnv.recordPath)
                             logger.info("Reference path: {}", Utils.join(DebugEnv.path));
+                        for (Method method : StdKlass.string.get().getMethods()) {
+                            logger.debug("{}", method.getQualifiedSignature());
+
+                        }
                         throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(i.getReference()));
                     }
                     return true;

@@ -2,11 +2,12 @@ package org.metavm.compiler.syntax;
 
 import lombok.extern.slf4j.Slf4j;
 import org.antlr.v4.runtime.Token;
-import org.metavm.compiler.element.SymName;
-import org.metavm.compiler.element.SymNameTable;
+import org.metavm.compiler.element.Name;
+import org.metavm.compiler.element.NameTable;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.Traces;
 import org.metavm.expression.Expressions;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 
@@ -18,20 +19,20 @@ public class AstBuilder {
     public static File build(CompilationUnitContext ctx) {
         var pkgDecl = ctx.packageDeclaration() != null ? buildPackageDecl(ctx.packageDeclaration()) : null;
         var imports = List.from(ctx.importDeclaration(), AstBuilder::buildImport);
-        var decls = List.from(ctx.typeDeclaration(), AstBuilder::buildClassDecl);
+        var decls = List.from(ctx.topLevTypeDecl(), decl -> buildClassDecl(decl.typeDeclaration(),
+                List.from(decl.classOrInterfaceModifier(), AstBuilder::buildModifier)));
         return new File(pkgDecl, imports, decls);
     }
 
     private static Import buildImport(ImportDeclarationContext ctx) {
-        return new Import((QualifiedName) buildQualifiedName(ctx.qualifiedName()));
+        return new Import((SelectorExpr) buildQualifiedName(ctx.qualifiedName()));
     }
 
     private static PackageDecl buildPackageDecl(PackageDeclarationContext ctx) {
         return new PackageDecl(buildQualifiedName(ctx.qualifiedName()));
     }
 
-    private static ClassDecl buildClassDecl(TypeDeclarationContext ctx) {
-        var mods = List.from(ctx.classOrInterfaceModifier(), AstBuilder::buildModifier);
+    private static ClassDecl buildClassDecl(TypeDeclarationContext ctx, List<Modifier> mods) {
         if (ctx.classDeclaration() != null)
             return buildClassDecl(ctx.classDeclaration(), mods);
         if (ctx.enumDeclaration() != null)
@@ -47,7 +48,7 @@ public class AstBuilder {
                 mods.anyMatch(mod -> mod.tag() == ModifierTag.VALUE) ? ClassTag.VALUE : ClassTag.CLASS,
                 List.from(ctx.annotation(), AstBuilder::buildAnnotation),
                 mods,
-                buildIdent(ctx.identifier()),
+                buildName(ctx.identifier()),
                 null,
                 impls,
                 buildTypeVariableDeclList(ctx.typeParameters()),
@@ -62,19 +63,19 @@ public class AstBuilder {
     private static Annotation buildAnnotation(AnnotationContext ctx) {
         List<Annotation.Attribute> attrs;
         if (ctx.expression() != null)
-            attrs = List.of(new Annotation.Attribute(SymName.from("value"), buildExpr(ctx.expression())));
+            attrs = List.of(new Annotation.Attribute(Name.from("value"), buildExpr(ctx.expression())));
         else if (ctx.elementValuePairs() != null) {
             attrs = List.from(
                     ctx.elementValuePairs().elementValuePair(),
                     p -> new Annotation.Attribute(
-                            SymName.from(p.identifier().getText()),
+                            Name.from(p.identifier().getText()),
                             buildExpr(p.expression())
                     )
             );
         }
         else
             attrs = List.nil();
-        return new Annotation(SymName.from(ctx.identifier().getText()), attrs);
+        return new Annotation(Name.from(ctx.identifier().getText()), attrs);
     }
 
     private static ClassDecl buildEnumDecl(EnumDeclarationContext ctx, List<Modifier> mods) {
@@ -82,7 +83,7 @@ public class AstBuilder {
                 ClassTag.ENUM,
                 List.from(ctx.annotation(), AstBuilder::buildAnnotation),
                 mods,
-                buildIdent(ctx.identifier()),
+                buildName(ctx.identifier()),
                 null,
                 buildTypeList(ctx.typeList()),
                 List.nil(),
@@ -99,7 +100,7 @@ public class AstBuilder {
 
     private static TypeVariableDecl buildTypeVariableDecl(TypeParameterContext ctx) {
         return new TypeVariableDecl(
-                buildIdent(ctx.identifier()),
+                buildName(ctx.identifier()),
                 ctx.type() != null ? buildType(ctx.type()) : null
         );
     }
@@ -109,7 +110,7 @@ public class AstBuilder {
                 ClassTag.INTERFACE,
                 List.from(ctx.annotation(), AstBuilder::buildAnnotation),
                 mods,
-                buildIdent(ctx.identifier()),
+                buildName(ctx.identifier()),
                 null,
                 buildTypeList(ctx.typeList()),
                 buildTypeVariableDeclList(ctx.typeParameters()),
@@ -118,11 +119,12 @@ public class AstBuilder {
         );
     }
 
-    private static EnumConstantDecl buildEnumConstant(EnumConstantContext ctx) {
-        return new EnumConstantDecl(buildIdent(ctx.identifier()),
+    private static EnumConstDecl buildEnumConstant(EnumConstantContext ctx) {
+        return new EnumConstDecl(buildName(ctx.identifier()),
                     ctx.arguments() != null && ctx.arguments().expressionList() != null ?
                             List.from(ctx.arguments().expressionList().expression(), AstBuilder::buildExpr) :
-                            List.nil()
+                            List.nil(),
+                ctx.classBody() != null ? buildAnonymousClass(ctx.classBody(), null) : null
         );
     }
 
@@ -141,8 +143,8 @@ public class AstBuilder {
                 return buildFieldDecl(memberDecl.fieldDeclaration(), mods);
             else if (memberDecl.methodDeclaration() != null)
                 return buildMethodDecl(memberDecl.methodDeclaration(), mods);
-            else if (memberDecl.classDeclaration() != null)
-                return buildClassDecl(memberDecl.classDeclaration(), mods);
+            else if (memberDecl.typeDeclaration() != null)
+                return buildClassDecl(memberDecl.typeDeclaration(), mods);
             else if (memberDecl.constructorDeclaration() != null)
                 return buildConstructorDecl(memberDecl.constructorDeclaration(), mods);
         }
@@ -161,13 +163,11 @@ public class AstBuilder {
         throw new ParsingException("Invalid class member declaration: " + ctx.getText());
     }
 
-
-
     private static MethodDecl buildMethodDecl(MethodDeclarationContext ctx, List<Modifier> mods) {
         return new MethodDecl(
                 mods,
                 buildTypeVariableDeclList(ctx.typeParameters()),
-                buildIdent(ctx.identifier()),
+                buildName(ctx.identifier()),
                 buildParams(ctx.formalParameters().formalParameterList()),
                 ctx.typeOrVoid() != null ? buildType(ctx.typeOrVoid()) : null,
                 ctx.methodBody() != null ? buildBlock(ctx.methodBody().block()) : null
@@ -178,7 +178,7 @@ public class AstBuilder {
         return new MethodDecl(
                 mods,
                 buildTypeVariableDeclList(ctx.typeParameters()),
-                buildIdent(ctx.identifier()),
+                buildName(ctx.identifier()),
                 buildParams(ctx.formalParameters().formalParameterList()),
                 ctx.typeOrVoid() != null ? buildType(ctx.typeOrVoid()) : null,
                 null
@@ -189,7 +189,7 @@ public class AstBuilder {
         return new MethodDecl(
                 mods,
                 List.nil(),
-                new Ident(SymNameTable.instance.init),
+                NameTable.instance.init,
                 buildParams(ctx.formalParameters().formalParameterList()),
                 null,
                 ctx.constructorBody != null ? buildBlock(ctx.constructorBody) : null
@@ -202,16 +202,30 @@ public class AstBuilder {
                 List.nil();
     }
 
+    private static List<ParamDecl> buildLambdaParams(LambdaParametersContext ctx) {
+        if (ctx.identifier() != null)
+            return List.of(new ParamDecl(null, buildName(ctx.identifier())));
+        else if (ctx.lambdaParameterList() != null)
+            return List.from(ctx.lambdaParameterList().lambdaParameter(), AstBuilder::buildLambdaParam);
+        else
+            return List.of();
+    }
+
     private static FieldDecl buildFieldDecl(FieldDeclarationContext ctx, List<Modifier> mods) {
         return new FieldDecl(
                 mods,
-                buildType(ctx.type()),
-                buildIdent(ctx.identifier())
+                Utils.safeCall(ctx.type(), AstBuilder::buildType),
+                buildName(ctx.identifier()),
+                Utils.safeCall(ctx.expression(), AstBuilder::buildExpr)
         );
     }
 
     private static ParamDecl buildParam(FormalParameterContext ctx) {
-        return new ParamDecl(buildType(ctx.type()), buildIdent(ctx.identifier()));
+        return new ParamDecl(buildType(ctx.type()), buildName(ctx.identifier()));
+    }
+
+    private static ParamDecl buildLambdaParam(LambdaParameterContext ctx) {
+        return new ParamDecl(Utils.safeCall(ctx.type(), AstBuilder::buildType), buildName(ctx.identifier()));
     }
 
     private static TypeNode buildType(TypeOrVoidContext ctx) {
@@ -222,78 +236,108 @@ public class AstBuilder {
     }
 
     private static TypeNode buildType(TypeContext ctx) {
+        return buildUnionType(ctx.unionType());
+    }
+
+    private static TypeNode buildUnionType(UnionTypeContext ctx) {
+        var it = ctx.intersectionType().iterator();
+        var type = buildIntersectionType(it.next());
+        if (it.hasNext()) {
+            var alternatives = List.<TypeNode>builder();
+            alternatives.append(type);
+            while (it.hasNext()) {
+                alternatives.append(buildIntersectionType(it.next()));
+            }
+            return new UnionTypeNode(alternatives.build());
+        }
+        else
+            return type;
+    }
+
+    private static TypeNode buildIntersectionType(IntersectionTypeContext ctx) {
+        var it = ctx.postfixType().iterator();
+        var type = buildPostfixType(it.next());
+        if (it.hasNext()) {
+            var alternatives = List.<TypeNode>builder();
+            alternatives.append(type);
+            while (it.hasNext()) {
+                alternatives.append(buildPostfixType(it.next()));
+            }
+            return new IntersectionTypeNode(alternatives.build());
+        }
+        else
+            return type;
+    }
+
+    private static TypeNode buildPostfixType(PostfixTypeContext ctx) {
+        var type = buildAtomicType(ctx.atomicType());
+        for (var suffix : ctx.typeSuffix()) {
+            if (suffix.QUESTION() != null)
+                type = new UnionTypeNode(List.of(type, new PrimitiveTypeNode(TypeTag.NULL)));
+            else if (suffix.arrayKind() != null)
+                type = new ArrayTypeNode(type);
+            else
+                throw new ParsingException("Invalid type suffix: " + suffix.getText());
+        }
+        return type;
+    }
+
+    private static TypeNode buildAtomicType(AtomicTypeContext ctx) {
         if (ctx.primitiveType() != null)
             return buildPrimitiveType(ctx.primitiveType());
-        if (ctx.ANY() != null)
-            return new PrimitiveTypeNode(TypeTag.ANY);
-        if (ctx.NEVER() != null)
-            return new PrimitiveTypeNode(TypeTag.NEVER);
-        if (ctx.classOrInterfaceType() != null)
-            return buildClassType(ctx.classOrInterfaceType());
-        if (ctx.arrayKind() != null)
-            return new ArrayTypeNode(buildType(ctx.type(0)));
-        if (!ctx.BITOR().isEmpty())
-            return new UnionTypeNode(List.from(ctx.type(), AstBuilder::buildType));
-        if (!ctx.BITAND().isEmpty())
-            return new IntersectionTypeNode(List.from(ctx.type(), AstBuilder::buildType));
-        if (ctx.ARROW() != null) {
-            List<TypeNode> paramTypes = ctx.type().size() > 1 ?
-                    List.from(ctx.type().subList(0, ctx.type().size() - 1), AstBuilder::buildType) : List.nil();
-            var returnType = buildType(ctx.type().getLast());
-            return new FunctionTypeNode(paramTypes, returnType);
+        if (ctx.classType() != null)
+            return buildClassType(ctx.classType());
+        if (ctx.functionType() != null)
+            return buildFunctionType(ctx.functionType());
+        if (ctx.uncertainType() != null)
+            return buildUncertainType(ctx.uncertainType());
+        throw new ParsingException("Invalid type: " + ctx.getText());
+    }
+
+    private static TypeNode buildUncertainType(UncertainTypeContext ctx) {
+        return new UncertainTypeNode(buildType(ctx.type(0)), buildType(ctx.type(1)));
+    }
+
+    private static TypeNode buildFunctionType(FunctionTypeContext ctx) {
+        var it = ctx.type().iterator();
+        var paramTypes = List.<TypeNode>builder();
+        if (!it.hasNext())
+            throw new ParsingException("Invalid function type: " + ctx.getText());
+        for(;;) {
+            var type = buildType(it.next());
+            if (it.hasNext())
+                paramTypes.append(type);
+            else
+                return new FunctionTypeNode(paramTypes.build(), type);
         }
-        if (ctx.LBRACK() != null)
-            return new UncertainTypeNode(buildType(ctx.type(0)), buildType(ctx.type(1)));
-        throw new ParsingException("Invalid type expression: " + ctx.getText());
     }
 
     private static TypeNode buildPrimitiveType(PrimitiveTypeContext ctx) {
-        if (ctx.BYTE() != null)
-            return new PrimitiveTypeNode(TypeTag.BYTE);
-        if (ctx.SHORT() != null)
-            return new PrimitiveTypeNode(TypeTag.SHORT);
-        if (ctx.INT() != null)
-            return new PrimitiveTypeNode(TypeTag.INT);
-        if (ctx.LONG() != null)
-            return new PrimitiveTypeNode(TypeTag.LONG);
-        if (ctx.DOUBLE() != null)
-            return new PrimitiveTypeNode(TypeTag.DOUBLE);
-        if (ctx.CHAR() != null)
-            return new PrimitiveTypeNode(TypeTag.CHAR);
-        if (ctx.BOOLEAN() != null)
-            return new PrimitiveTypeNode(TypeTag.BOOLEAN);
-        if (ctx.NULL() != null)
-            return new PrimitiveTypeNode(TypeTag.NULL);
-        if (ctx.STRING() != null)
-            return new PrimitiveTypeNode(TypeTag.STRING);
-        if (ctx.TIME() != null)
-            return new PrimitiveTypeNode(TypeTag.TIME);
-        if (ctx.PASSWORD() != null)
-            return new PrimitiveTypeNode(TypeTag.PASSWORD);
-        throw new ParsingException("Unrecognized primitive type: " + ctx.getText());
+        return new PrimitiveTypeNode(TypeTag.valueOf(ctx.getText().toUpperCase()));
     }
 
-    private static TypeNode buildClassType(ClassOrInterfaceTypeContext ctx) {
-        Node expr = buildQualifiedName(ctx.qualifiedName());
-        if (ctx.typeArguments() != null) {
-            expr = new TypeApply(
-                    (Name) expr,
-                    List.from(ctx.typeArguments().type(), AstBuilder::buildType)
-            );
+    private static TypeNode buildClassType(ClassTypeContext ctx) {
+        var it = ctx.classTypePart().iterator();
+        var firstPart = it.next();
+        Expr expr = new Ident(buildName(firstPart.identifier()));
+        if (firstPart.typeArguments() != null)
+            expr = new TypeApply(expr, buildTypeArguments(firstPart.typeArguments()));
+        while (it.hasNext()) {
+            var part = it.next();
+            expr = new SelectorExpr(expr, buildName(part.identifier()));
+            if (part.typeArguments() != null) {
+                expr = new TypeApply(expr, buildTypeArguments(part.typeArguments()));
+            }
         }
         return new ClassTypeNode(expr);
     }
 
-    private static Ident buildIdent(IdentifierContext node) {
-        return new Ident(getSymName(node.getText()));
+    private static Name buildName(IdentifierContext node) {
+        return getSymName(node.getText());
     }
 
     private static Modifier buildModifier(ClassOrInterfaceModifierContext ctx) {
         return Modifier.fromText(ctx.getText());
-    }
-
-    private static BlockStmt buildBlockStmt(BlockContext ctx) {
-        return new BlockStmt(buildBlock(ctx));
     }
 
     private static Block buildBlock(BlockContext ctx) {
@@ -301,21 +345,42 @@ public class AstBuilder {
     }
 
     private static Stmt buildStmt(StatementContext ctx) {
+        if (ctx.DO() != null)
+            return new DoWhileStmt(buildExpr(ctx.parExpression().expression()), buildStmt(ctx.statement(0)));
         if (ctx.WHILE() != null)
-            return new WhileStmt(buildExpr(ctx.parExpression().expression()), buildBlockStmt(ctx.block(0)));
+            return new WhileStmt(buildExpr(ctx.parExpression().expression()), buildStmt(ctx.statement(0)));
         if (ctx.IF() != null) {
             return new IfStmt(
-                    buildExpr(ctx.parExpression().expression()), buildBlockStmt(ctx.block(0)),
-                    ctx.ELSE() != null ? buildBlockStmt(ctx.block(1)) : null
+                    buildExpr(ctx.parExpression().expression()), buildStmt(ctx.statement(0)),
+                    ctx.ELSE() != null ? buildStmt(ctx.statement(1)) : null
+            );
+        }
+        if (ctx.TRY() != null) {
+            return new TryStmt(
+                    buildBlock(ctx.block()),
+                    List.from(ctx.catchClause(), AstBuilder::buildCatcher)
+            );
+        }
+        if (ctx.FOR() != null) {
+            var forCtl = ctx.forControl();
+            var loopVar = forCtl.loopVariable();
+            return new ForeachStmt(
+                    new LocalVarDecl(
+                            Utils.safeCall(loopVar.type(), AstBuilder::buildType),
+                            buildName(loopVar.identifier()),
+                            null
+                    ),
+                    buildExpr(forCtl.expression()),
+                    buildStmt(ctx.statement(0))
             );
         }
         if (ctx.RETURN() != null)
-            return new ReturnStmt(ctx.expression() == null ? null : buildExpr(ctx.expression()));
+            return new RetStmt(ctx.expression() == null ? null : buildExpr(ctx.expression()));
         if (ctx.statementExpression != null)
             return new ExprStmt(buildExpr(ctx.statementExpression));
         if (ctx.localVariableDeclaration() != null) {
             var declCtx = ctx.localVariableDeclaration();
-            var name = buildIdent(declCtx.identifier());
+            var name = buildName(declCtx.identifier());
             var decl = new LocalVarDecl(declCtx.type() != null ? buildType(declCtx.type()) : null,  name,
                     declCtx.expression() != null ? buildExpr(declCtx.expression()) : null);
             return new DeclStmt(decl);
@@ -324,7 +389,22 @@ public class AstBuilder {
             return new ThrowStmt(buildExpr(ctx.expression()));
         if (ctx.getText().equals(";"))
             return new EmptyStmt();
+        if (ctx.block() != null)
+            return new BlockStmt(buildBlock(ctx.block()));
+        if (ctx.BREAK() != null)
+            return new BreakStmt(Utils.safeCall(ctx.identifier(), AstBuilder::buildName));
+        if (ctx.CONTINUE() != null)
+            return new ContinueStmt(Utils.safeCall(ctx.identifier(), AstBuilder::buildName));
+        if (ctx.COLON() != null)
+            return new LabeledStmt(buildName(ctx.identifier()), buildStmt(ctx.statement(0)));
         throw new ParsingException("Invalid statement: " + ctx.getText());
+    }
+
+    private static Catcher buildCatcher(CatchClauseContext ctx) {
+        return new Catcher(
+                new LocalVarDecl(buildType(ctx.type()), buildName(ctx.identifier()), null),
+                buildBlock(ctx.block())
+        );
     }
 
     private static Modifier buildModifier(ModifierContext ctx) {
@@ -361,17 +441,24 @@ public class AstBuilder {
         var it = ctx.conjunction().iterator();
         var expr = buildConjunction(it.next());
         while (it.hasNext()) {
-            expr = new BinaryExpr(BinOp.AND, expr, buildConjunction(it.next()));
+            expr = new BinaryExpr(BinOp.OR, expr, buildConjunction(it.next()));
         }
         return expr;
     }
 
     private static Expr buildConjunction(ConjunctionContext ctx) {
-        var it = ctx.bitor().iterator();
-        var expr = buildBitor(it.next());
+        var it = ctx.range().iterator();
+        var expr = buildRange(it.next());
         while (it.hasNext()) {
-            expr = new BinaryExpr(BinOp.AND, expr, buildBitor(it.next()));
+            expr = new BinaryExpr(BinOp.AND, expr, buildRange(it.next()));
         }
+        return expr;
+    }
+
+    private static Expr buildRange(RangeContext ctx) {
+        var expr = buildBitor(ctx.bitor(0));
+        if (ctx.ELLIPSIS() != null)
+            expr = new RangeExpr(expr, buildBitor(ctx.bitor(1)));
         return expr;
     }
 
@@ -420,8 +507,14 @@ public class AstBuilder {
 
     private static Expr buildIsExpr(IsExprContext ctx) {
         var expr = buildShift(ctx.shift());
-        for (var type : ctx.type()) {
-            expr = new IsExpr(expr, buildType(type));
+        for (var sfx : ctx.isSuffix()) {
+            if (sfx.type() != null)
+                expr = new IsExpr(expr, buildType(sfx.type()), null);
+            else {
+                var type = buildType(sfx.typePtn().type());
+                var var = new LocalVarDecl(type, buildName(sfx.typePtn().identifier()), null);
+                expr = new IsExpr(expr, type, var);
+            }
         }
         return expr;
     }
@@ -482,18 +575,20 @@ public class AstBuilder {
             if (suffix.op != null)
                 expr = new PostfixExpr(parsePostfixOp(suffix.op), expr);
             else if (suffix.callSuffix() != null) {
-                expr = new CallExpr(
+                expr = new Call(
                         expr,
-                        buildTypeArguments(suffix.callSuffix().typeArguments()),
                         buildExprList(suffix.callSuffix().arguments().expressionList())
                 );
             }
-            else if (suffix.newExpr() != null)
-                expr = buildNew(suffix.newExpr(), expr);
             else if (suffix.indexingSuffix() != null)
                 expr = new IndexExpr(expr, buildExpr(suffix.indexingSuffix().expression()));
-            else if (suffix.selectorSuffix() != null)
-                expr = new SelectorExpr(expr, buildIdent(suffix.selectorSuffix().identifier()));
+            else if (suffix.selectorSuffix() != null) {
+                var ident = suffix.selectorSuffix().THIS() != null ?
+                        Name.this_() :
+                        buildName(suffix.selectorSuffix().identifier());
+                expr = new SelectorExpr(expr, ident);
+            } else if (suffix.typeArguments() != null)
+              expr = new TypeApply(expr, buildTypeArguments(suffix.typeArguments()));
             else
                 throw new ParsingException("Invalid postfix expression: " + ctx.getText());
         }
@@ -504,17 +599,17 @@ public class AstBuilder {
         if (ctx.LPAREN() != null)
             return buildExpr(ctx.expression());
         else if (ctx.THIS() != null)
-            return new RefExpr(new Ident(SymName.this_()));
+            return new Ident(Name.this_());
         else if (ctx.SUPER() != null)
-            return new RefExpr(new Ident(SymName.super_()));
-        else if (ctx.newExpr() != null)
-            return buildNew(ctx.newExpr(), null);
+            return new Ident(Name.super_());
+        else if (ctx.anonClassExpr() != null)
+            return buildAnonymousClassExpr(ctx.anonClassExpr());
         else if (ctx.newArray() != null)
             return buildNewArray(ctx.newArray());
         else if (ctx.literal() != null)
             return buildLiteral(ctx.literal());
         else if (ctx.identifier() != null)
-            return new RefExpr(buildIdent(ctx.identifier()));
+            return new Ident(buildName(ctx.identifier()));
         else if (ctx.lambdaExpression() != null)
             return buildLambdaExpr(ctx.lambdaExpression());
         else
@@ -523,9 +618,9 @@ public class AstBuilder {
 
     private static LambdaExpr buildLambdaExpr(LambdaExpressionContext ctx) {
         return new LambdaExpr(
-                buildParams(ctx.lambdaParameters().formalParameterList()),
-                buildType(ctx.typeOrVoid()),
-                buildBlock(ctx.lambdaBody().block())
+                buildLambdaParams(ctx.lambdaParameters()),
+                Utils.safeCall(ctx.typeOrVoid(), AstBuilder::buildType),
+                ctx.lambdaBody() != null ? buildBlock(ctx.lambdaBody().block()) : buildExpr(ctx.expression())
         );
     }
 
@@ -537,12 +632,25 @@ public class AstBuilder {
         return ctx != null ? List.from(ctx.expression(), AstBuilder::buildExpr) : List.nil();
     }
 
-    private static Expr buildNew(NewExprContext ctx, @Nullable Expr owner) {
-        return new NewExpr(
-                owner,
-                buildClassType(ctx.classOrInterfaceType()),
+    private static Expr buildAnonymousClassExpr(AnonClassExprContext ctx) {
+        return new AnonClassExpr(
                 ctx.arguments().expressionList() != null ?
-                        List.from(ctx.arguments().expressionList().expression(), AstBuilder::buildExpr) : List.nil()
+                        List.from(ctx.arguments().expressionList().expression(), AstBuilder::buildExpr) : List.nil(),
+                buildAnonymousClass(ctx.classBody(), ctx.classType())
+        );
+    }
+
+    private static ClassDecl buildAnonymousClass(ClassBodyContext bodyCtx, @Nullable ClassTypeContext baseTypeCtx) {
+        return new ClassDecl(
+                ClassTag.CLASS,
+                List.nil(),
+                List.nil(),
+                NameTable.instance.empty,
+                null,
+                baseTypeCtx != null ? List.of(buildClassType(baseTypeCtx)) :  List.nil(),
+                List.nil(),
+                List.nil(),
+                List.from(bodyCtx.classBodyDeclaration(), AstBuilder::buildClassMember)
         );
     }
 
@@ -550,7 +658,11 @@ public class AstBuilder {
         return new NewArrayExpr(
                 buildType(ctx.type()),
                 ctx.arrayKind().R() != null,
-                List.nil()
+                ctx.arrayInitializer() != null ?
+                        List.from(
+                                ctx.arrayInitializer().variableInitializer(),
+                                v -> buildExpr(v.expression())
+                        ) : List.nil()
         );
     }
 
@@ -666,17 +778,17 @@ public class AstBuilder {
             return Double.parseDouble(text);
     }
 
-    private static Name buildQualifiedName(QualifiedNameContext ctx) {
+    private static Expr buildQualifiedName(QualifiedNameContext ctx) {
         var it = ctx.identifier().iterator();
-        Name name = buildIdent(it.next());
+        Expr expr = new Ident(buildName(it.next()));
         while (it.hasNext()) {
-            name = new QualifiedName(name, buildIdent(it.next()));
+            expr = new SelectorExpr(expr, buildName(it.next()));
         }
-        return name;
+        return expr;
     }
 
-    private static SymName getSymName(String text) {
-        return SymNameTable.instance.get(text);
+    private static Name getSymName(String text) {
+        return NameTable.instance.get(text);
     }
 
 }

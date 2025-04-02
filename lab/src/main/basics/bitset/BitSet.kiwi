@@ -1,0 +1,25 @@
+package bitset
+
+class BitSet {
+
+    priv val bits = new long[]
+
+    init(n: int) {
+        var i = 0
+        var len = ((n - 1) >> 6) + 1
+        while (i < len) {
+            bits.append(0)
+            i++
+        }
+    }
+
+    fn setBit(i: int) {
+        bits[i >> 6] |= 1 << i
+    }
+
+    fn isClear(i: int) -> bool {
+        return (bits[i >> 6] & (1 << i)) == 0
+    }
+
+}
+

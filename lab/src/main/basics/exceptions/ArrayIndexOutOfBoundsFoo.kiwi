@@ -1,0 +1,10 @@
+package exceptions
+
+class ArrayIndexOutOfBoundsFoo {
+
+    static fn test(index: int) {
+        throw ArrayIndexOutOfBoundsException(index)
+    }
+
+}
+

@@ -1,0 +1,26 @@
+package anonymous_class
+
+class AnonymousClassWithArgs {
+
+    static fn test(value: int) -> int {
+        return new Base(value) {
+
+        }.getValue()
+    }
+
+    abstract class Base {
+
+        priv val value: int
+
+        init(value: int) {
+            this.value = value
+        }
+
+        fn getValue() -> int {
+            return value
+        }
+
+    }
+
+}
+

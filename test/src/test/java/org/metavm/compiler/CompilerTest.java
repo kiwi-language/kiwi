@@ -3,6 +3,7 @@ package org.metavm.compiler;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.compiler.util.List;
+import org.metavm.compiler.util.MockEnter;
 import org.metavm.ddl.CommitState;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceQueryService;
@@ -44,7 +45,7 @@ public class CompilerTest extends TestCase {
         var source = "/Users/leen/workspace/object/test/src/test/resources/kiwi/Shopping.kiwi";
         var task = new CompilationTask(List.of(source), TestConstants.TARGET);
         task.parse();
-        CompilerTestUtils.enterStandard(task.getProject());
+        MockEnter.enterStandard(task.getProject());
         task.analyze();
         task.generate();
         deploy();

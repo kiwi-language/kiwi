@@ -1,6 +1,5 @@
 package org.metavm.compiler.syntax;
 
-import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class WhileStmt extends Stmt {

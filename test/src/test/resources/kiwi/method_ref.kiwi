@@ -1,0 +1,27 @@
+
+class Lab {
+
+    static fn test(name: string) -> string {
+        val foo = Foo(name)
+        return greet(foo.getName)
+    }
+
+    priv static fn greet(f: () -> string) -> string {
+        return "Hello, " + f()
+    }
+
+}
+
+class Foo {
+
+    val name: string
+
+    init(name: string) {
+        this.name = name
+    }
+
+    fn getName() -> string {
+        return name
+    }
+
+}

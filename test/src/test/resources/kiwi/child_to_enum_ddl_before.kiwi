@@ -1,37 +1,37 @@
 class Product {
-    private var name: string
-    private var kind: Product.Kind
+    priv var name: string
+    priv var kind: Product.Kind
 
     init(name: string, kind: string) {
         this.name = name
-        this.kind = this.new Product.Kind(kind)
+        this.kind = this.Product.Kind(kind)
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func setName(name: string) {
+    fn setName(name: string) {
         this.name = name
     }
 
-    func  getKind() -> Product.Kind {
+    fn  getKind() -> Product.Kind {
         return this.kind
     }
 
-    func setKind(kind: Product.Kind) {
+    fn setKind(kind: Product.Kind) {
         this.kind = kind
     }
 
     @Tag(1)
     class Kind {
-        private val name: string
+        priv val name: string
 
         init(name: string) {
             this.name = name
         }
 
-        func getName() -> string {
+        fn getName() -> string {
             return this.name
         }
 

@@ -32,24 +32,8 @@ public abstract class AbstractNodeVisitor<R> implements NodeVisitor<R> {
         return visitExpr(prefixExpr);
     }
 
-    public R visitTypeApply(TypeApply typeApply) {
-        return visitNode(typeApply);
-    }
-
-    public R visitNewExpr(NewExpr newExpr) {
-        return visitExpr(newExpr);
-    }
-
     public R visitNewArrayExpr(NewArrayExpr newArrayExpr) {
         return visitExpr(newArrayExpr);
-    }
-
-    public R visitName(Name name) {
-        return visitNode(name);
-    }
-
-    public R visitIdent(Ident ident) {
-        return visitName(ident);
     }
 
     public R visitModifier(Modifier modifier) {
@@ -96,8 +80,8 @@ public abstract class AbstractNodeVisitor<R> implements NodeVisitor<R> {
         return visitStmt(emptyStmt);
     }
 
-    public R visitEnumConstantDecl(EnumConstantDecl enumConstantDecl) {
-        return visitDecl(enumConstantDecl);
+    public R visitEnumConstDecl(EnumConstDecl enumConstDecl) {
+        return visitDecl(enumConstDecl);
     }
 
     public R visitExprStmt(ExprStmt exprStmt) {
@@ -144,8 +128,8 @@ public abstract class AbstractNodeVisitor<R> implements NodeVisitor<R> {
         return visitTypeNode(primitiveTypeNode);
     }
 
-    public R visitReturnStmt(ReturnStmt returnStmt) {
-        return visitStmt(returnStmt);
+    public R visitReturnStmt(RetStmt retStmt) {
+        return visitStmt(retStmt);
     }
 
     public R visitSelectorExpr(SelectorExpr selectorExpr) {
@@ -200,17 +184,13 @@ public abstract class AbstractNodeVisitor<R> implements NodeVisitor<R> {
         return visitNode(imp);
     }
 
-    public R visitRefExpr(RefExpr refExpr) {
-        return visitExpr(refExpr);
-    }
-
-    public R visitQualifiedName(QualifiedName qualifiedName) {
-        return visitName(qualifiedName);
+    public R visitIdent(Ident ident) {
+        return visitExpr(ident);
     }
 
     @Override
-    public R visitCallExpr(CallExpr callExpr) {
-        return visitExpr(callExpr);
+    public R visitCall(Call call) {
+        return visitExpr(call);
     }
 
     @Override
@@ -221,5 +201,55 @@ public abstract class AbstractNodeVisitor<R> implements NodeVisitor<R> {
     @Override
     public R visitCondExpr(CondExpr condExpr) {
         return visitExpr(condExpr);
+    }
+
+    @Override
+    public R visitForeachStmt(ForeachStmt foreachStmt) {
+        return visitStmt(foreachStmt);
+    }
+
+    @Override
+    public R visitBreakStmt(BreakStmt breakStmt) {
+        return visitStmt(breakStmt);
+    }
+
+    @Override
+    public R visitContinueStmt(ContinueStmt continueStmt) {
+        return visitStmt(continueStmt);
+    }
+
+    @Override
+    public R visitLabeledStmt(LabeledStmt labeledStmt) {
+        return visitStmt(labeledStmt);
+    }
+
+    @Override
+    public R visitRangeExpr(RangeExpr rangeExpr) {
+        return visitExpr(rangeExpr);
+    }
+
+    @Override
+    public R visitDoWhileStmt(DoWhileStmt doWhileStmt) {
+        return visitStmt(doWhileStmt);
+    }
+
+    @Override
+    public R visitAnonClassExpr(AnonClassExpr anonClassExpr) {
+        return visitExpr(anonClassExpr);
+    }
+
+    @Override
+    public R visitCatcher(Catcher catcher) {
+        return visitNode(catcher);
+    }
+
+    @Override
+    public R visitTryStmt(TryStmt tryStmt) {
+        return visitStmt(tryStmt);
+    }
+
+    @Override
+    public R visitTypeApply(TypeApply typeApply) {
+        return visitExpr(typeApply);
     }
 }

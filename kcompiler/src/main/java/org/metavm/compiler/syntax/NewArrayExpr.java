@@ -34,6 +34,7 @@ public final class NewArrayExpr extends Expr {
     @Override
     public void forEachChild(Consumer<Node> action) {
         action.accept(elementType);
+        elements.forEach(action);
     }
 
     public TypeNode elementType() {

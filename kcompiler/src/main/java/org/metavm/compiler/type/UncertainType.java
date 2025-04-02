@@ -21,7 +21,7 @@ public final class UncertainType implements Type, Comparable<UncertainType> {
     }
 
     @Override
-    public void write(ElementWriter writer) {
+    public void writeType(ElementWriter writer) {
         writer.write("[");
         writer.writeType(lowerBound);
         writer.write(", ");

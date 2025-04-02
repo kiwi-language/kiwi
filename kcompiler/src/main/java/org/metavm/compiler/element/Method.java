@@ -2,36 +2,60 @@ package org.metavm.compiler.element;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.compiler.type.Types;
+import org.metavm.compiler.analyze.Env;
+import org.metavm.compiler.generate.Code;
+import org.metavm.compiler.type.*;
 import org.metavm.compiler.util.List;
+import org.metavm.util.MvOutput;
 
 import javax.annotation.Nullable;
-
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.metavm.flow.Method.*;
 
 @Slf4j
-public class Method extends Func implements Member, Executable, Comparable<Method> {
+public class Method extends Func implements MethodRef, Member, Executable, Comparable<Method> {
 
     private Access access;
-    private final Clazz declaringClass;
+    private final Clazz declClass;
     private boolean static_;
     private boolean abstract_;
-    private boolean constructor;
+    private boolean init;
+    private final Map<List<Type>, MethodInst> insts = new HashMap<>();
 
-    public Method(String name, Access access, boolean static_, boolean abstract_, boolean constructor, Clazz declaringClass) {
-        this(SymNameTable.instance.get(name), access, static_, abstract_, constructor, declaringClass);
+    public Method(String name, Access access, boolean static_, boolean abstract_, boolean init, Clazz declClass) {
+        this(NameTable.instance.get(name), access, static_, abstract_, init, declClass);
     }
 
-    public Method(SymName name, Access access, boolean static_, boolean abstract_, boolean constructor, Clazz declaringClass) {
+    public Method(Name name, Access access, boolean static_, boolean abstract_, boolean init, Clazz declClass) {
         super(name);
         this.access = access;
         this.static_ = static_;
         this.abstract_ = abstract_;
-        this.constructor = constructor;
-        this.declaringClass = declaringClass;
-        declaringClass.addMethod(this);
+        this.init = init;
+        this.declClass = declClass;
+        declClass.addMethod(this);
+    }
+
+    @Override
+    public ClassType getDeclType() {
+        return declClass;
+    }
+
+    @Override
+    public void load(Code code, Env env) {
+        if (this == ArrayType.appendMethod)
+            throw new UnsupportedOperationException();
+        else if (isStatic())
+            code.getStaticMethod(this);
+        else
+            code.getMethod(this);
+    }
+
+    @Override
+    public void store(Code code, Env env) {
+        throw new AnalysisException("Cannot assign to a method: " + getQualName());
     }
 
     @Override
@@ -39,12 +63,24 @@ public class Method extends Func implements Member, Executable, Comparable<Metho
         return access;
     }
 
+    @Override
+    public void invoke(Code code, Env env) {
+        if (this == ArrayType.appendMethod)
+            code.arrayAdd();
+        else if (isStatic())
+            code.invokeStatic(this);
+        else if(getAccess() == Access.PRIVATE || isInit())
+            code.invokeSpecial(this);
+        else
+            code.invokeVirtual(this);
+    }
+
     public void setAccess(Access access) {
         this.access = access;
     }
 
-    public Clazz getDeclaringClass() {
-        return declaringClass;
+    public Clazz getDeclClass() {
+        return declClass;
     }
 
     @Override
@@ -61,32 +97,32 @@ public class Method extends Func implements Member, Executable, Comparable<Metho
         super.write(writer);
     }
 
-    public SymName getQualifiedName() {
-        return declaringClass.getName().concat("." + getName());
+    public Name getQualName() {
+        return declClass.getName().concat("." + getName());
     }
 
     public String getInternalName(@Nullable Func current) {
         if (current == this)
             return "this";
-        return declaringClass.getQualifiedName() + "." + getLegacyName() + "(" +
-                getParameters().map(p -> p.getType().getInternalName(this)).join(",") + ")";
+        return declClass.getQualName() + "." + getLegacyName() + "(" +
+                getParams().map(p -> p.getType().getInternalName(this)).join(",") + ")";
     }
 
-    public SymName getLegacyName() {
-        return isConstructor() ? getDeclaringClass().getName() :  getName();
+    public Name getLegacyName() {
+        return isInit() ? getDeclClass().getName() :  getName();
     }
 
     @Override
     public int compareTo(@NotNull Method o) {
         if (this == o)
             return 0;
-        var r = declaringClass.compareTo(o.declaringClass);
+        var r = declClass.compareTo(o.declClass);
         if (r != 0)
             return r;
         r = getName().compareTo(o.getName());
         if (r != 0)
             return r;
-        return Types.instance.compareTypes(getParameterTypes(), o.getParameterTypes());
+        return Types.instance.compareTypes(getParamTypes(), o.getParamTypes());
     }
 
     public boolean isStatic() {
@@ -95,7 +131,7 @@ public class Method extends Func implements Member, Executable, Comparable<Metho
 
     public int getFlags() {
         int flags = super.getFlags();
-        if(constructor) flags |= FLAG_CONSTRUCTOR;
+        if(init) flags |= FLAG_CONSTRUCTOR;
         if(abstract_) flags |= FLAG_ABSTRACT;
         if(static_) flags |= FLAG_STATIC;
 //        if(hidden) flags |= FLAG_HIDDEN;
@@ -103,9 +139,19 @@ public class Method extends Func implements Member, Executable, Comparable<Metho
     }
 
     @Override
-    public MethodInst getInstance() {
-        return (MethodInst) Objects.requireNonNull(declaringClass.getType().getTable().lookupFirst(getName(),
-                e -> e instanceof MethodInst m && m.getFunction() == this));
+    public void addParam(Param param) {
+        super.addParam(param);
+        for (var instance : insts.values()) {
+            instance.onMethodTypeChange();
+        }
+    }
+
+    @Override
+    public void setParams(List<Param> params) {
+        super.setParams(params);
+        for (var instance : insts.values()) {
+            instance.onMethodTypeChange();
+        }
     }
 
     public boolean hasBody() {
@@ -124,12 +170,13 @@ public class Method extends Func implements Member, Executable, Comparable<Metho
         this.abstract_ = abstract_;
     }
 
-    public boolean isConstructor() {
-        return constructor;
+    @Override
+    public boolean isInit() {
+        return init;
     }
 
-    public void setConstructor(boolean constructor) {
-        this.constructor = constructor;
+    public void setInit(boolean init) {
+        this.init = init;
     }
 
     public List<Attribute> getAttributes() {
@@ -138,6 +185,22 @@ public class Method extends Func implements Member, Executable, Comparable<Metho
 
     public List<CapturedType> getCapturedTypeVariables() {
         return List.nil();
+    }
+
+    @Override
+    public void write(MvOutput output) {
+        output.write(ConstantTags.METHOD_REF);
+        this.getDeclType().write(output);
+        Elements.writeReference(this, output);
+        output.writeList(getTypeParams(), t -> t.write(output));
+    }
+
+    @Override
+    public FuncRef getInst(List<Type> typeArguments) {
+        if (typeArguments.equals(getTypeParams()))
+            return this;
+        return insts.computeIfAbsent(typeArguments, k ->
+                new MethodInst(declClass, this, typeArguments));
     }
 
 }

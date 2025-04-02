@@ -1,7 +1,7 @@
 
 interface Greet {
 
-    func greet(name: string) -> string
+    fn greet(name: string) -> string
 
 }
 
@@ -18,10 +18,10 @@ class Base {
 class Sub: Base, Greet {
 
     init(name: string) {
-        super(name)
+        super.init(name)
     }
 
-    func greet(name: string) -> string {
+    fn greet(name: string) -> string {
         return concat("Hello ", name)
     }
 
@@ -29,11 +29,11 @@ class Sub: Base, Greet {
 
 class Lab {
 
-    static func test() -> string {
-        return greet(new Sub("Kiwi"))
+    static fn test() -> string {
+        return greet(Sub("Kiwi"))
     }
 
-    static func greet(o: Base & Greet) -> string {
+    static fn greet(o: Base & Greet) -> string {
         return o.greet(o.name)
     }
 

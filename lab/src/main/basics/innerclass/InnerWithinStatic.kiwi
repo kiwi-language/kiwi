@@ -1,0 +1,35 @@
+package innerclass
+
+import java.util.Iterator
+import java.util.NoSuchElementException
+
+abstract class InnerWithinStatic<E> {
+
+    abstract fn iterator() -> Iterator<E>
+
+    static fn test() -> bool {
+        return SubList<any>().iterator().hasNext()
+    }
+
+    priv class SubList<E>: InnerWithinStatic<E> {
+
+        fn iterator() -> Iterator<E> {
+            return MyIterator()
+        }
+
+        priv class MyIterator: Iterator<E> {
+
+            fn hasNext() -> bool {
+                return false
+            }
+
+            fn next() -> E {
+                throw NoSuchElementException()
+            }
+
+        }
+
+    }
+
+}
+

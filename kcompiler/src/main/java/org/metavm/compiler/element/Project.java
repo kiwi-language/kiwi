@@ -6,14 +6,31 @@ import org.metavm.compiler.syntax.*;
 import java.util.function.Consumer;
 
 @Slf4j
-public class Project implements Element {
+public class Project extends ElementBase implements Element {
 
-    private final Package rootPackage = new Package(SymNameTable.instance.empty, null, this);
+    private final Package rootPackage = new Package(NameTable.instance.empty, null, this);
 
     public Package getRootPackage() {
         return rootPackage;
     }
 
+    public Package getPackage(String qualname) {
+        var splits = qualname.split("\\.");
+        var pkg = rootPackage;
+        for (String split : splits) {
+            pkg = pkg.subPackage(split);
+        }
+        return pkg;
+    }
+
+    public Clazz getClass(String qualName) {
+        var splits = qualName.split("\\.");
+        var pkg = getRootPackage();
+        for (int i = 0; i < splits.length - 1; i++) {
+            pkg = pkg.subPackage(splits[i]);
+        }
+        return pkg.getClass(splits[splits.length - 1]);
+    }
 
     public Clazz classForName(String name) {
         var splits = name.split("\\.");
@@ -21,29 +38,29 @@ public class Project implements Element {
         for (int i = 0; i < splits.length - 1; i++) {
             pkg = pkg.subPackage(splits[i]);
         }
-        return pkg.getClass(SymNameTable.instance.get(splits[splits.length - 1]));
+        return pkg.getClass(NameTable.instance.get(splits[splits.length - 1]));
     }
 
-    public Package getOrCreatePackage(Name qualifiedName) {
+    public Package getOrCreatePackage(Expr qualifiedName) {
         if (qualifiedName instanceof Ident name)
-            return rootPackage.subPackage(name.value());
-        else if (qualifiedName instanceof QualifiedName selectorExpr)
-            return getOrCreatePackage(selectorExpr.getQualifier()).subPackage(selectorExpr.getIdent().value());
+            return rootPackage.subPackage(name.getName());
+        else if (qualifiedName instanceof SelectorExpr selectorExpr)
+            return getOrCreatePackage(selectorExpr.x()).subPackage(selectorExpr.sel());
         else
             throw new ParsingException("Invalid package name " + qualifiedName.getText());
     }
 
-    public Package getPackage(Name qualifiedName) {
+    public Package getPackage(Expr qualifiedName) {
         if (qualifiedName instanceof Ident name)
-            return rootPackage.getPackage(name.value());
-        else if (qualifiedName instanceof QualifiedName selectorExpr)
-            return getPackage(selectorExpr.getQualifier()).getPackage(selectorExpr.getIdent().value());
+            return rootPackage.getPackage(name.getName());
+        else if (qualifiedName instanceof SelectorExpr selectorExpr)
+            return getPackage(selectorExpr.x()).getPackage(selectorExpr.sel());
         else
             throw new ParsingException("Invalid package name: " + qualifiedName.getText());
     }
 
     @Override
-    public SymName getName() {
+    public Name getName() {
         throw new UnsupportedOperationException();
     }
 
@@ -64,7 +81,7 @@ public class Project implements Element {
 
     public void traceClasses() {
         rootPackage.forEachPackage(pkg -> {
-            log.trace("Package: {}", pkg.getQualifiedName());
+            log.trace("Package: {}", pkg.getQualName());
             for (Clazz aClass : pkg.getClasses()) {
                 log.trace("Class: {}", aClass.getName());
             }

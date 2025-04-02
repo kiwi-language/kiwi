@@ -44,6 +44,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.jetbrains.intellij.deps.fastutil</groupId>
+            <artifactId>intellij-deps-fastutil</artifactId>
+            <version>8.5.8-11</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>

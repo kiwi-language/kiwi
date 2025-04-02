@@ -7,17 +7,17 @@ enum Currency {
 ;
     
 
-    private val rate: double
+    priv val rate: double
 
     init(rate: double) {
         this.rate = rate
     }
 
-    func getRate() -> double {
+    fn getRate() -> double {
         return this.rate
     }
 
-    private func __rate__() -> double {
+    priv fn __rate__() -> double {
         if(this == Currency.YUAN) {
             return 0.14
         }

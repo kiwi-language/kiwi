@@ -1,0 +1,16 @@
+package exception
+
+class CatchUnionExceptionType {
+
+    static val array: int[] = new int[] {1, 2, 3}
+
+    static fn get(index: int) -> int {
+        try {
+            return array[index]
+        } catch (e: IndexOutOfBoundsException|NullPointerException) {
+            return -1
+        }
+    }
+
+}
+

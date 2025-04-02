@@ -1,0 +1,10 @@
+package instanceof_
+
+class InstanceOfFoo<T> {
+
+    static fn isInstance(o: any) -> bool {
+        return o is InstanceOfFoo<[never, any]>
+    }
+
+}
+

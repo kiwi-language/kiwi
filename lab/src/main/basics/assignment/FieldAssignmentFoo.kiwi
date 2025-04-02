@@ -1,0 +1,16 @@
+package assignment
+
+class FieldAssignmentFoo {
+
+    priv var value: int = 0
+
+    static fn setValue(foo: FieldAssignmentFoo, value: int) {
+        foo.value = value
+    }
+
+    fn getValue() -> int {
+        return value
+    }
+
+}
+

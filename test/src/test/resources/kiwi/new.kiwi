@@ -1,0 +1,19 @@
+
+
+class Foo {
+
+    val value: int
+
+    init(value: int) {
+        this.value = value
+    }
+
+    static fn test() -> Foo {
+        return Foo(1)
+    }
+
+    fn getValue() -> int {
+        return value
+    }
+
+}

@@ -23,7 +23,7 @@ public final class UnionType implements Type, Comparable<UnionType> {
     }
 
     @Override
-    public void write(ElementWriter writer) {
+    public void writeType(ElementWriter writer) {
         writer.writeTypes(alternatives, "|");
     }
 

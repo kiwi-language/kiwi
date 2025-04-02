@@ -9,15 +9,15 @@ import javax.annotation.Nullable;
 
 public interface Executable extends Element {
 
-    List<Parameter> getParameters();
+    List<Param> getParams();
 
-    Type getReturnType();
+    Type getRetType();
 
-    void addParameter(Parameter parameter);
+    void addParam(Param param);
 
-    SymName getQualifiedName();
+    Name getQualName();
 
     @Nullable Code getCode();
 
-    ConstantPool getConstantPool();
+    ConstPool getConstPool();
 }

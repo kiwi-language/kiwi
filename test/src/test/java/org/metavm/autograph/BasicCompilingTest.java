@@ -2,11 +2,8 @@ package org.metavm.autograph;
 
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
-import org.metavm.entity.StdKlass;
-import org.metavm.object.instance.core.ArrayInstanceWrap;
-import org.metavm.object.instance.core.ClassInstanceWrap;
-import org.metavm.object.instance.core.RemovalFailureException;
-import org.metavm.object.type.*;
+import org.metavm.object.type.Klass;
+import org.metavm.object.type.MetadataState;
 import org.metavm.task.SynchronizeSearchTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -25,98 +22,60 @@ public class BasicCompilingTest extends CompilerTestBase {
         compile(SOURCE_ROOT);
         submit(() -> {
             processCapturedType();
-            processGenericOverride();
             processValueTypes();
-            processInterceptor();
-            processEnums();
             processRemovedField();
             processTypeNarrowing();
-            processHash();
             processSorting();
-            processInnerClassFoo();
-            processWarehouse();
-            processInstanceOf();
-            processAsterisk();
             processDefaultMethod();
-            processBranching();
             processTryCatch();
-            processLambda();
             processTemplateMethod();
-            processAnonymousClass();
-            processInnerWithinStatic();
             processClassObject();
             processMyCollection();
-            processBreak();
-            processContinue();
-            processDoWhile();
-            processInnerExtendsOwner();
             processNullable();
-            processArray();
             processArrayUtils();
             processReflectNewArray();
             processStringBuilder();
-            processInnerClassInheritance();
             processStdStaticField();
             processMax();
             processCheckIndex();
             processClone();
-            processBitSet();
             processCatchUnchecked();
             processCaptureTypeCast();
             processString();
             processOverride();
             processCapturedFunctionCall();
-            processCompoundAssignment();
             processDynamicOverride();
             processPrimitiveStaticFields();
-            processStaticAnonymousClass();
             processObjects();
             processCustomObjectIO();
-            processUnaryAndPrefix();
-            processFieldAssignment();
             processLocalClass();
             processLocalClassNameConflict();
-            processAnonymousClassSuperclassField();
             processBitNot();
             processPrefixOnParenthesized();
-            processArrayIndexOutOfBounds();
             processModifyVariableInWhileCondition();
             processNullableLoopField();
             processMultiLevelInheritance();
-            processInnerCallsExternal();
             processPrimitiveUtilMethods();
-            processMultiLevelInnerClass();
-            processReturnInLambda();
             processShiftAssignment();
             processCapturedTypesInFieldInitializer();
             processNewObject();
             processLoopWithinTry();
-            processBooleanConditional();
-            processElseTypeNarrowing();
             processSwitchExpression();
             processMultiply();
             processForeach();
             processTypePatternSwitch();
             processTypePatternSwitchExpression();
             processEmptyMethod();
-            processMethodCallWithinLambda();
-            processArrayInitializer();
-            processInnerClassExtension();
-            processIndexSelect();
             processGenericObjectIO();
             processPrimitiveConversion();
             processInt();
-            processUnboxing();
             processFloat();
             processSmallInt();
             processFallThroughSwitch();
             processSparseSwitch();
             processStringSwitch();
-            processIndex();
             processSearch();
             processCharReplace();
-            processAnonymousClassWithField();
-            processCatchUnionExceptionType();
             processGetStatic();
             processBooleanCompare();
             processPrimitiveCompare();
@@ -124,13 +83,10 @@ public class BasicCompilingTest extends CompilerTestBase {
             processNumber();
             processSerializable();
             processSwitchPatternGuard();
-            processAnonymousClassWithArgs();
-            processEnumConstantImpl();
             processTrySectionBreak();
             processVariableInitializerTypeWidening();
             processInnerClassTypeCapture();
             processLocalClassTypeCapture();
-            processEnumField();
         });
     }
 
@@ -161,19 +117,6 @@ public class BasicCompilingTest extends CompilerTestBase {
                 apiClient.callMethod("wildcard_capture.BoundCaptureFoo", "test", List.of())
         );
         Assert.assertEquals(-1 ,result);
-    }
-
-    private void processGenericOverride() {
-        var subId = saveInstance("genericoverride.Sub", Map.of());
-        var result = callMethod(
-                subId,
-                "containsAny<string>",
-                List.of(
-                        List.of("a", "b", "c"),
-                        List.of("c", "d")
-                )
-        );
-        Assert.assertEquals(true, result);
     }
 
     private void processValueTypes() {
@@ -232,19 +175,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals("YUAN", webPrice.getString("kind"));
     }
 
-    private void processInterceptor() {
-        var user = (ClassInstanceWrap) TestUtils.doInTransaction(
-                () -> apiClient.callMethod("userService", "getUserByName", List.of("leen"))
-        );
-        var tel =  user.getString("telephone");
-        Assert.assertEquals("123******12", tel);
-    }
-
-    private void processEnums() {
-        var kind = (String) callMethod("enums.ProductKind", "fromCode", List.of(0));
-        Assert.assertEquals("DEFAULT", kind);
-    }
-
     private void processRemovedField() {
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var klass = context.getKlassByQualifiedName("removal.RemovedFieldFoo");
@@ -258,85 +188,6 @@ public class BasicCompilingTest extends CompilerTestBase {
             var fooKlass = context.getKlassByQualifiedName("typenarrowing.TypeNarrowingFoo");
             Assert.assertEquals(0, fooKlass.getErrors().size());
         }
-    }
-
-    private void processHash() {
-        processHashMap();
-        processHashSet();
-    }
-
-    private void processHashMap() {
-        var fooId = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
-                "name", "Foo"
-        )));
-        callMethod("hashMapLab", "put", List.of(fooId, "Foo"));
-        var foo2Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
-                "name", "Foo"
-        )));
-        var result = callMethod("hashMapLab", "get", List.of(foo2Id));
-        Assert.assertEquals("Foo", result);
-
-        // Test entity without a defined hashCode method
-        var barId = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeBar", Map.of(
-                "name", "Bar"
-        )));
-        callMethod("hashMapLab", "put", List.of(barId, "Bar"));
-        var result2 = callMethod("hashMapLab", "get", List.of(barId));
-        Assert.assertEquals("Bar", result2);
-
-        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var bazKlass = context.getKlassByQualifiedName("hashcode.HashCodeBaz");
-            Assert.assertTrue(bazKlass.isValueKlass());
-        }
-
-        // Test value object
-        callMethod("hashMapLab", "bazPut", List.of("Baz", fooId, "Baz"));
-        var result3 = callMethod("hashMapLab", "bazGet", List.of("Baz", fooId));
-        Assert.assertEquals("Baz", result3);
-        var result4 = callMethod("hashMapLab", "bazGet", List.of("Baz1", fooId));
-        Assert.assertNull(result4);
-
-        // Test list
-        callMethod("hashMapLab", "listPut", List.of(List.of(fooId, barId), "List"));
-        var result5 = callMethod("hashMapLab", "listGet", List.of(List.of(fooId, barId)));
-        Assert.assertEquals("List", result5);
-
-        // Test set
-        callMethod("hashMapLab", "setPut", List.of(List.of("Hello", "World"), "Set"));
-        var result6 = callMethod("hashMapLab", "setGet", List.of(List.of("World", "Hello")));
-        Assert.assertEquals("Set", result6);
-        var result7 = callMethod("hashMapLab", "setGet", List.of(List.of("World")));
-        Assert.assertNull(result7);
-
-        // Test map
-        var entries = List.of(Map.of("key", "name", "value", "leen"), Map.of("key", "age", "value", 30));
-        callMethod("hashMapLab", "mapPut", List.of(entries, "Map"));
-        var result8 = callMethod("hashMapLab", "mapGet", List.of(entries));
-        Assert.assertEquals("Map", result8);
-        var result9 = callMethod("hashMapLab", "setGet", List.of(List.of("World")));
-        Assert.assertNull(result9);
-    }
-
-    private void processHashSet() {
-        callMethod("hashSetLab", "add", List.of("Hello"));
-        var contains = callMethod("hashSetLab", "contains", List.of("Hello"));
-        Assert.assertEquals(true, contains);
-
-        var foo1Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
-                "name", "Foo"
-        )));
-        callMethod("hashSetLab", "add", List.of(foo1Id));
-
-        var foo2Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
-                "name", "Foo"
-        )));
-        var contains1 = callMethod("hashSetLab", "contains", List.of(foo2Id));
-        Assert.assertEquals(true, contains1);
-        var foo3Id = TestUtils.doInTransaction(() -> apiClient.saveInstance("hashcode.HashCodeFoo", Map.of(
-                "name", "Foo1"
-        )));
-        var contains2 = callMethod("hashSetLab", "contains", List.of(foo3Id));
-        Assert.assertEquals(false, contains2);
     }
 
     private void processSorting() {
@@ -357,56 +208,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(List.of(foo1Id, foo2Id), foos2);
     }
 
-    private void processInnerClassFoo() {
-        var id = (String) TestUtils.doInTransaction(() ->
-                apiClient.saveInstance("innerclass.InnerClassFoo<string, string>", Map.of())
-        );
-        TestUtils.doInTransaction(() -> apiClient.callMethod(id, "addEntry", List.of("name", "leen")));
-        var entryId = (String) callMethod(id, "first", List.of());
-        var entry = apiClient.getObject(entryId);
-        Assert.assertEquals("name", entry.get("key"));
-        Assert.assertEquals("leen", entry.get("value"));
-    }
-
-    private void processWarehouse() {
-        var warehouseId = (String) TestUtils.doInTransaction(() ->
-                apiClient.callMethod("warehouseService", "createWarehouse", List.of("w1"))
-        );
-        var containerId = (String) TestUtils.doInTransaction(() ->
-                apiClient.callMethod("warehouseService", "createContainer", List.of(warehouseId, "c1"))
-        );
-        var itemId = (String) TestUtils.doInTransaction(() ->
-                apiClient.callMethod("warehouseService", "createItem", List.of(containerId, "i1"))
-        );
-        var itemType = callMethod(itemId, "getType", List.of());
-        var itemContainer = callMethod(itemId, "getContainer", List.of());
-        var itemWarehouse = callMethod(itemId, "getWarehouse", List.of());
-        Assert.assertEquals("i1", itemType);
-        Assert.assertEquals(containerId, itemContainer);
-        Assert.assertEquals(warehouseId, itemWarehouse);
-    }
-
-    private void processInstanceOf() {
-        var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("instanceof_.InstanceOfFoo<any>", Map.of()));
-        boolean result = (boolean) TestUtils.doInTransaction(() -> apiClient.callMethod("instanceof_.InstanceOfFoo<string>",
-                "isInstance", List.of(id)));
-        Assert.assertTrue(result);
-    }
-
-    private void processAsterisk() {
-        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
-            var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
-                    Instances.stringInstance("asterisk.AsteriskTypeFoo")));
-            var method = klass.getMethodByName("getInstance");
-            var serializableKlass = StdKlass.serializable.get();
-            var expectedType = Types.getNullableType(KlassType.create(
-                    klass,
-                    List.of(new UncertainType(Types.getNeverType(), serializableKlass.getType()))
-            ));
-            Assert.assertEquals(expectedType, method.getReturnType());
-        }
-    }
-
     private void processDefaultMethod() {
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID))  {
             var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME,
@@ -417,20 +218,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         var fooId = TestUtils.doInTransaction(() -> apiClient.saveInstance("defaultmethod.Foo", Map.of()));
         var result = callMethod(fooId, "foo", List.of());
         Assert.assertEquals(0, result);
-    }
-
-    private void processBranching() {
-        var result = TestUtils.doInTransaction(
-                () -> apiClient.callMethod("branching.BranchingFoo", "getOrDefault", List.of(1, 2))
-        );
-        Assert.assertEquals(1L, result);
-        var result1 = TestUtils.doInTransaction(
-                () -> apiClient.callMethod("branching.BranchingFoo", "getOrDefault2", Arrays.asList(0, 2))
-        );
-        Assert.assertEquals(2L, result1);
-        Assert.assertTrue(
-                (boolean) callMethod("branching.BranchingFoo", "testIsNameNotNull", List.of())
-        );
     }
 
     private void processTryCatch() {
@@ -450,52 +237,12 @@ public class BasicCompilingTest extends CompilerTestBase {
         callMethod(id, "print", List.of());
     }
 
-    private void processLambda() {
-        var r = (Integer) TestUtils.doInTransaction(
-                () -> apiClient.callMethod("lambda.LambdaFoo", "compare", List.of(1, 2))
-        );
-        Assert.assertNotNull(r);
-        Assert.assertEquals(-1, r.intValue());
-    }
-
     private void processTemplateMethod() {
         var r = (Integer) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("templatemethod.TemplateMethodFoo", "compare", List.of("s1", "s2"))
         );
         Assert.assertNotNull(r);
         Assert.assertEquals(-1, r.intValue());
-    }
-
-    private void processAnonymousClass() {
-        var id = (String) TestUtils.doInTransaction(() ->
-                apiClient.callMethod("anonymous_class.AnonymousClassFoo",
-                        "create<string, any>",
-                        Map.of(
-                                "entries", List.of(
-                                        Map.of(
-                                                "key", "name",
-                                                "value", "leen"
-                                        ),
-                                        Map.of(
-                                                "key", "age",
-                                                "value", 32
-                                        ),
-                                        Map.of(
-                                                "key", "height",
-                                                "value", 172.0
-                                        )
-                                )
-                        ))
-        );
-        var r = callMethod(id, "concatKeys", List.of());
-        Assert.assertEquals("name,age,height", r);
-    }
-
-    private void processInnerWithinStatic() {
-        var r = (boolean) TestUtils.doInTransaction(
-                () -> apiClient.callMethod("innerclass.InnerWithinStatic<any>", "test", List.of())
-        );
-        Assert.assertFalse(r);
     }
 
     private void processClassObject() {
@@ -510,49 +257,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("mycollection.MyCollection<string>", Map.of()));
         var size = (int) callMethod(id, "size", List.of());
         Assert.assertEquals(0, size);
-    }
-
-    private void processBreak() {
-        var found = (boolean) TestUtils.doInTransaction(
-                () -> apiClient.callMethod("break_.BreakFoo", "contains",
-                        List.of(List.of(List.of(1,2,3), List.of(4,5,6), List.of(7,8,9)), 5)
-                )
-        );
-        Assert.assertTrue(found);
-
-        var inRange = (boolean) TestUtils.doInTransaction(() ->
-                apiClient.callMethod("break_.BreakFoo", "isWithinRange",
-                        List.of(3, 1, 5))
-        );
-        Assert.assertTrue(inRange);
-    }
-
-    private void processContinue() {
-        var index = (int) TestUtils.doInTransaction(() -> apiClient.callMethod(
-                "continue_.ContinueFoo", "oddIndexOf",
-                List.of(List.of(1,1,2,2,3,3), 2)
-        ));
-        Assert.assertEquals(3, index);
-    }
-
-    private void processDoWhile() {
-        var sum = (int) TestUtils.doInTransaction(() ->
-                apiClient.callMethod("dowhile.DoWhileFoo", "sum", List.of(1, 5))
-        );
-        Assert.assertEquals(15, sum);
-
-        var sum1 = (int) TestUtils.doInTransaction(() ->
-                apiClient.callMethod("dowhile.DoWhileFoo", "sum", List.of(1, 1))
-        );
-        Assert.assertEquals(1, sum1);
-    }
-
-    private void processInnerExtendsOwner() {
-        var id = TestUtils.doInTransaction(() -> apiClient.saveInstance(
-                "innerclass.InnerExtendsEnclosing.Inner<string>", Map.of()
-        ));
-        var r = (boolean) callMethod(id, "foo", List.of());
-        Assert.assertTrue(r);
     }
 
     private void processNullable() {
@@ -571,32 +275,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         catch (BusinessException e) {
             Assert.assertSame(ErrorCode.FLOW_EXECUTION_FAILURE, e.getErrorCode());
         }
-    }
-
-    private void processArray() {
-        var id = TestUtils.doInTransaction(() -> apiClient.saveInstance("array.ArrayFoo", Map.of()));
-        var v = callMethod(id, "get", List.of(0));
-        Assert.assertNull(v);
-        callMethod(id, "set", List.of(0, "metavm"));
-        var v1 = callMethod(id, "get", List.of(0));
-        Assert.assertEquals("metavm", v1);
-
-        var v2 = (int) callMethod(id, "getInt", List.of(0));
-        Assert.assertEquals(0, v2);
-        callMethod(id, "setInt", List.of(0, 1));
-        var v3 = (int) callMethod(id, "getInt", List.of(0));
-        Assert.assertEquals(1, v3);
-
-        var v4 = callMethod(id, "getMulti", List.of(0, 0));
-        Assert.assertNull(v4);
-        callMethod(id, "setMulti", List.of(0, 0, "metavm"));
-        var v5 = callMethod(id, "getMulti", List.of(0, 0));
-        Assert.assertEquals("metavm", v5);
-
-        var v6 = callMethod(id, "getInitialized", List.of(0, 0));
-        Assert.assertEquals("metavm", v6);
-        var v7 = callMethod(id, "getInitialized", List.of(2, 2));
-        Assert.assertEquals(6, v7);
     }
 
     private void processArrayUtils() {
@@ -645,16 +323,6 @@ public class BasicCompilingTest extends CompilerTestBase {
                 apiClient.callMethod("stringbuilder.StringBuilderFoo", "build",
                         List.of(List.of("MetaVM", "is", 'a', "masterpiece"))));
         Assert.assertEquals("MetaVM is a masterpiece", s);
-    }
-
-    private void processInnerClassInheritance() {
-        var id = TestUtils.doInTransaction(() ->
-                apiClient.saveInstance("innerclass.InnerClassInheritance<string>", Map.of("value", "MetaVM"))
-        );
-        var value = TestUtils.doInTransaction(() ->
-                apiClient.callMethod(id, "getValue", List.of())
-        );
-        Assert.assertEquals("MetaVM", value);
     }
 
     private void processStdStaticField() {
@@ -707,17 +375,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals("MetaVM", cloneValue);
     }
 
-    private void processBitSet() {
-        var id = TestUtils.doInTransaction(() ->
-                apiClient.saveInstance("bitset.BitSet", Map.of("n", 20))
-        );
-        var r1 = (boolean) callMethod(id, "isClear", List.of(10));
-        Assert.assertTrue(r1);
-        callMethod(id, "setBit", List.of(10));
-        var r2 = (boolean) callMethod(id, "isClear", List.of(10));
-        Assert.assertFalse(r2);
-    }
-
     private void processCatchUnchecked() {
         var v0 = TestUtils.doInTransaction(() -> apiClient.callMethod("trycatch.UncheckedExceptionFoo", "get",
                 List.of(1)));
@@ -755,16 +412,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         );
     }
 
-    private void processCompoundAssignment() {
-        var id = TestUtils.doInTransaction(() ->
-                apiClient.saveInstance("assignment.CompoundAssignmentFoo", Map.of("size", 4))
-        );
-        var s = (int) TestUtils.doInTransaction(() ->
-                apiClient.callMethod(id, "decrementSize", List.of(1))
-        );
-        Assert.assertEquals(3, s);
-    }
-
     private void processDynamicOverride() {
         Assert.assertTrue((boolean) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("override.DynamicOverride", "test", List.of())));
@@ -774,13 +421,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         var v = (int) TestUtils.doInTransaction(() ->
                 apiClient.callMethod("static_.PrimitiveStaticFieldsFoo", "getMaxInt", List.of()));
         Assert.assertEquals(Integer.MAX_VALUE, v);
-    }
-
-    private void processStaticAnonymousClass() {
-        Assert.assertFalse(
-                (boolean) TestUtils.doInTransaction(() ->
-                        apiClient.callMethod("anonymous_class.StaticAnonymousClassFoo", "test", List.of()))
-        );
     }
 
     private void processObjects() {
@@ -811,22 +451,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(id2, callMethod(id, "get", List.of(3)));
     }
 
-    private void processUnaryAndPrefix() {
-        var klass = "assignment.UnaryAndPrefixFoo";
-        Assert.assertEquals(0, callMethod(klass, "getAndIncrement", List.of()));
-        Assert.assertEquals(2, callMethod(klass, "incrementAndGet", List.of()));
-        Assert.assertEquals(2, callMethod(klass, "getAndDecrement", List.of()));
-        Assert.assertEquals(0, callMethod(klass, "decrementAndGet", List.of()));
-    }
-
-    private void processFieldAssignment() {
-        var className = "assignment.FieldAssignmentFoo";
-        var id = saveInstance(className, Map.of());
-        callMethod(className, "setValue", List.of(id, 1));
-        var foo = getObject(id);
-        Assert.assertEquals(1, foo.get("value"));
-    }
-
     private void processLocalClass() {
         var klassName = "local_class.LocalClassFoo";
         Assert.assertEquals(
@@ -838,11 +462,6 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processLocalClassNameConflict() {
         var className = "local_class.LocalClassNameConflictFoo";
         graphql.Assert.assertNotNull(callMethod(className, "test", List.of()));
-    }
-
-    private void processAnonymousClassSuperclassField() {
-        var className = "anonymous_class.SuperclassFieldFoo";
-        Assert.assertEquals(0, callMethod(className, "test", List.of()));
     }
 
     private void processBitNot() {
@@ -863,18 +482,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         );
     }
 
-    private void processArrayIndexOutOfBounds() {
-        var klassName = "exceptions.ArrayIndexOutOfBoundsFoo";
-        try {
-            callMethod(klassName, "test", List.of(1));
-            Assert.fail();
-        }
-        catch (BusinessException e) {
-            Assert.assertSame(ErrorCode.FLOW_EXECUTION_FAILURE, e.getErrorCode());
-            Assert.assertEquals("Array index out of range: 1", e.getMessage());
-        }
-    }
-
     private void processModifyVariableInWhileCondition() {
         var klassName = "loops.ModifyVariableInWhileCondition";
         Assert.assertEquals(100, (int) callMethod(klassName, "test", List.of(200)));
@@ -889,14 +496,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         var klassName = "objectio.MultiLevelInheritance";
         var id = saveInstance(klassName, Map.of());
         Assert.assertEquals(1, (int) callMethod(id, "getModCount", List.of()));
-    }
-
-    private void processInnerCallsExternal() {
-        var klassName = "innerclass.InnerCallsExternal";
-        Assert.assertEquals(
-                1,
-                callMethod(klassName, "test", List.of(1))
-        );
     }
 
     private void processPrimitiveUtilMethods() {
@@ -928,22 +527,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(
                 Double.doubleToRawLongBits(d),
                 callMethod(klassName, "doubleToRawLongBits", List.of(d))
-        );
-    }
-
-    private void processMultiLevelInnerClass() {
-        var className = "innerclass.MultiLevelInnerFoo";
-        Assert.assertEquals(
-                1,
-                callMethod(className, "test", List.of(1))
-        );
-    }
-
-    private void processReturnInLambda() {
-        var className = "lambda.ReturnInLambda";
-        Assert.assertEquals(
-                -1,
-                callMethod(className, "test", List.of("a", "b"))
         );
     }
 
@@ -984,20 +567,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(15, callMethod(className, "sum", List.of(5)));
     }
 
-    private void processBooleanConditional() {
-        var className = "conditional.BooleanConditionalFoo";
-        Assert.assertTrue((boolean) callMethod(className, "test", List.of(10)));
-    }
-
-    private void processElseTypeNarrowing() {
-        var className = "branching.ElseTypeNarrowingFoo";
-        var fooClassName = className + ".Foo";
-        var foo = saveInstance(fooClassName, Map.of("value", 1));
-        Assert.assertEquals(
-                1, callMethod(className, "test", List.of(foo))
-        );
-    }
-
     private void processSwitchExpression() {
         var klassName = "switchexpr.SwitchExpressionFoo";
         var currencyKlassName = klassName + ".Currency";
@@ -1032,32 +601,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         callMethod(klassName, "test", List.of());
     }
 
-    private void processMethodCallWithinLambda() {
-        Assert.assertTrue((boolean) callMethod("lambda.MethodCallWithinLambda", "test", List.of()));
-    }
-
-    private void processArrayInitializer() {
-        Assert.assertTrue(
-                (boolean) callMethod("arrayinitializer.ArrayInitializerFoo", "test", List.of())
-        );
-    }
-
-    private void processInnerClassExtension() {
-        var sum = callMethod(
-                "innerclass.InnerClassExtension",
-                "sum",
-                List.of(1,2,3,4)
-        );
-        Assert.assertEquals(10, sum);
-    }
-
-    private void processIndexSelect() {
-        var className = "index.IndexSelectFoo";
-        var id = saveInstance(className, Map.of("name", "foo"));
-        var found = (String) callMethod(className, "findByName", List.of("foo"));
-        Assert.assertEquals(id, found);
-    }
-
     private void processGenericObjectIO() {
         var className = "objectio.GenericObjectIOFoo<string>";
         var id = saveInstance(className, Map.of("value", "foo"));
@@ -1089,11 +632,6 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processInt() {
         var className = "primitives.IntFoo";
         Assert.assertEquals(3, (int) callMethod(className, "add", List.of(1 ,2)));
-    }
-
-    private void processUnboxing() {
-        var className = "boxing.UnboxingFoo";
-        Assert.assertTrue((boolean) callMethod(className, "gt", List.of(1)));
     }
 
     private void processFloat() {
@@ -1131,26 +669,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(3, callMethod(className, "test", List.of("MetaVM")));
     }
 
-    private void processIndex() {
-        var barClass = "index.Bar";
-        var barId = saveInstance(barClass, Map.of("code", "bar001"));
-        var fooClass = "index.Foo";
-        var fooId = saveInstance(fooClass, Map.of("name", "foo", "seq", 3, "bar", barId));
-        try {
-            saveInstance(fooClass, Map.of("name", "foo", "seq", 3, "bar", barId));
-            Assert.fail("Duplicate key error is expected");
-        } catch (Exception ignored) {}
-        Assert.assertEquals(fooId, callMethod(fooClass, "findByName", List.of("foo")));
-        Assert.assertEquals(1L, (long) callMethod(fooClass, "countBySeq", List.of(0, 5)));
-        var list = (ArrayInstanceWrap) callMethod(fooClass, "queryBySeq", List.of(0, 5));
-        Assert.assertNotNull(list);
-        Assert.assertEquals(1, list.size());
-        Assert.assertEquals(fooId, list.getFirst());
-        Assert.assertEquals(fooId, callMethod(fooClass, "findByBar", List.of(barId)));
-        Assert.assertEquals(fooId, callMethod(fooClass, "findByNameAndSeq", List.of("foo", 3)));
-        Assert.assertEquals(fooId, callMethod("fooService", "findByDesc", List.of("foo-3-bar001")));
-    }
-
     private void processSearch() {
         var className = "search.SearchFoo";
         var id = saveInstance(className, Map.of("name", "foo", "seq", 100));
@@ -1166,16 +684,6 @@ public class BasicCompilingTest extends CompilerTestBase {
                 "MacBook_Pro",
                 callMethod(className, "replaceWhiteSpace", List.of("MacBook Pro"))
         );
-    }
-
-    private void processAnonymousClassWithField() {
-        var className = "anonymous_class.AnonymousClassWithField";
-        Assert.assertEquals("MetaVM", callMethod(className, "test", List.of("MetaVM")));
-    }
-
-    private void processCatchUnionExceptionType() {
-        var className = "exception.CatchUnionExceptionType";
-        Assert.assertEquals(-1, callMethod(className, "get", List.of(3)));
     }
 
     private void processGetStatic() {
@@ -1239,16 +747,6 @@ public class BasicCompilingTest extends CompilerTestBase {
         Assert.assertEquals(-1, callMethod(className, "test", List.of("MetaVM")));
     }
 
-    private void processEnumConstantImpl() {
-        var className = "enums.EnumConstantImplFoo";
-        Assert.assertEquals("Option 1", callMethod(className, "getOptionDesc", List.of("op1")));
-    }
-
-    private void processAnonymousClassWithArgs() {
-        var className = "anonymous_class.AnonymousClassWithArgs";
-        Assert.assertEquals(1, callMethod(className, "test", List.of(1)));
-    }
-
     private void processTrySectionBreak() {
         var klassName = "trycatch.TrySectionBreakFoo";
         Assert.assertEquals(Integer.MAX_VALUE, callMethod(klassName, "testReturn", List.of(1, 0)));
@@ -1274,11 +772,6 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processLocalClassTypeCapture() {
         var className = "wildcard_capture.LocalClassTypeCapture";
         Assert.assertEquals("MetaVM", callMethod(className, "test", List.of("MetaVM")));
-    }
-
-    private void processEnumField() {
-        var className = "enums.EnumFieldFoo";
-        Assert.assertEquals("op1", callMethod(className, "getOp1Message", List.of()));
     }
 
 }

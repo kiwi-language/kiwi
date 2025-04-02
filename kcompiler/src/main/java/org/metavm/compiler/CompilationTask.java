@@ -9,7 +9,7 @@ import org.metavm.compiler.antlr.KiwiParser;
 import org.metavm.compiler.element.Clazz;
 import org.metavm.compiler.element.Project;
 import org.metavm.compiler.generate.ClassFileWriter;
-import org.metavm.compiler.generate.Generator;
+import org.metavm.compiler.generate.Gen;
 import org.metavm.compiler.syntax.AstBuilder;
 import org.metavm.compiler.syntax.ClassDecl;
 import org.metavm.compiler.syntax.File;
@@ -51,7 +51,14 @@ public class CompilationTask {
         for (File file : files) {
             ImportResolver.resolve(file, project);
             file.accept(new TypeResolver());
-            file.accept(new Attr());
+        }
+        for (File file : files) {
+            file.accept(new IdentAttr());
+        }
+        for (File file : files) {
+            file.accept(new Attr(project));
+        }
+        for (File file : files) {
             file.accept(new Lower(project));
         }
         return project;
@@ -60,7 +67,7 @@ public class CompilationTask {
     public void generate() {
         Utils.clearDirectory(buildDir);
         for (File file : files) {
-            var gen = new Generator();
+            var gen = new Gen(project);
             file.accept(gen);
             for (ClassDecl classDeclaration : file.getClassDeclarations()) {
                 writeClassFile(classDeclaration.getElement());
@@ -74,7 +81,7 @@ public class CompilationTask {
     }
 
     private void writeClassFile(Clazz klass) {
-        var path = buildDir + '/' + requireNonNull(klass.getQualifiedName()).toString().replace('.', '/') + ".mvclass";
+        var path = buildDir + '/' + requireNonNull(klass.getQualName()).toString().replace('.', '/') + ".mvclass";
         var bout = new ByteArrayOutputStream();
         var output = new KlassOutput(bout);
         var writer = new ClassFileWriter(output);

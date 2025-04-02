@@ -6,10 +6,20 @@ import java.util.function.Consumer;
 public final class IsExpr extends Expr {
     private final Expr expr;
     private final TypeNode checkType;
+    private LocalVarDecl var;
 
-    public IsExpr(Expr expr, TypeNode checkType) {
+    public IsExpr(Expr expr, TypeNode checkType, LocalVarDecl var) {
         this.expr = expr;
         this.checkType = checkType;
+        this.var = var;
+    }
+
+    public LocalVarDecl getVar() {
+        return var;
+    }
+
+    public void setVar(LocalVarDecl var) {
+        this.var = var;
     }
 
     @Override
@@ -17,6 +27,10 @@ public final class IsExpr extends Expr {
         writer.write(expr);
         writer.write(" instanceof ");
         writer.write(checkType);
+        if (var != null) {
+            writer.write(" ");
+            writer.write(var.getName().toString());
+        }
     }
 
     @Override
@@ -28,6 +42,8 @@ public final class IsExpr extends Expr {
     public void forEachChild(Consumer<Node> action) {
         action.accept(expr);
         action.accept(checkType);
+        if (var != null)
+            action.accept(var);
     }
 
     public Expr getExpr() {

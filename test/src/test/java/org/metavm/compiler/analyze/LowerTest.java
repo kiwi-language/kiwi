@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.compiler.CompilerTestUtils;
-import org.metavm.compiler.element.SymName;
+import org.metavm.compiler.element.Name;
 import org.metavm.compiler.syntax.MethodDecl;
 
 @Slf4j
@@ -17,7 +17,7 @@ public class LowerTest extends TestCase {
         file.accept(new Lower(proj));
 
         var classDecl = file.getClassDeclarations().getFirst();
-        var initDecl = classDecl.getMembers().find(e -> e instanceof MethodDecl m && m.name().value() == SymName.init());
+        var initDecl = classDecl.getMembers().find(e -> e instanceof MethodDecl m && m.name() == Name.init());
         Assert.assertNotNull(initDecl);
 
         log.debug("{}", file.getText());

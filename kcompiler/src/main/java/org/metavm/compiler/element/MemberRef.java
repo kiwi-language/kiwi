@@ -1,17 +1,21 @@
 package org.metavm.compiler.element;
 
+import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.generate.Code;
+import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.type.Type;
 
 public interface MemberRef {
 
-    SymName getName();
+    ClassType getDeclType();
 
-    void load(Code code);
+    Name getName();
 
-    void store(Code code);
+    void load(Code code, Env env);
 
-    void invoke(Code code);
+    void store(Code code, Env env);
+
+    void invoke(Code code, Env env);
 
     Type getType();
 

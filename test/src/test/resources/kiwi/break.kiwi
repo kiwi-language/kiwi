@@ -1,0 +1,14 @@
+class BreakFoo {
+
+    static fn contains(list: int[], value: int, limit: int) -> bool {
+        var i = 0
+        for(e in list) {
+            if (i++ >= limit)
+                break
+            if (value == e)
+                return true
+        }
+        return false
+    }
+
+}

@@ -4,11 +4,11 @@ import org.metavm.object.type.Klass
 
 class InstanceOfFoo {
 
-    func isInstance(o: any) -> boolean {
+    fn isInstance(o: any) -> bool {
         return o is InstanceOfFoo
     }
 
-    func isKlassInstance(o: any) -> boolean {
+    fn isKlassInstance(o: any) -> bool {
         return o is Klass
     }
 

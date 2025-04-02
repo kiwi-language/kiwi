@@ -4,17 +4,17 @@ import java.util.function.Consumer;
 
 public class PackageDecl extends Node {
 
-    private Name name;
+    private Expr name;
 
-    public PackageDecl(Name name) {
+    public PackageDecl(Expr name) {
         this.name = name;
     }
 
-    public Name getName() {
+    public Expr getName() {
         return name;
     }
 
-    public void setName(Name name) {
+    public void setName(Expr name) {
         this.name = name;
     }
 

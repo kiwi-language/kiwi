@@ -3,6 +3,7 @@ package org.metavm.compiler.syntax;
 import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Type;
+import org.metavm.compiler.type.Types;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -54,6 +55,8 @@ public final class PrimitiveTypeNode extends TypeNode {
 
     @Override
     protected Type actualResolve(Env env) {
+        if (tag == TypeTag.STRING)
+            return Types.instance.getStringType();
         return PrimitiveType.valueOf(tag.name());
     }
 }

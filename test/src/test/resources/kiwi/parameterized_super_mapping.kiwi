@@ -6,7 +6,7 @@ abstract class Base<E> {
         this.length = length
     }
 
-    func isEmpty() -> boolean {
+    fn isEmpty() -> bool {
         return this.length == 0
     }
 
@@ -15,7 +15,7 @@ abstract class Base<E> {
 class Sub: Base<string> {
 
     init(length: int) {
-        super(length)
+        super.init(length)
     }
 
 }

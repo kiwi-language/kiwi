@@ -2,7 +2,7 @@ package org.metavm.compiler.element;
 
 import org.jetbrains.annotations.NotNull;
 import org.metavm.compiler.generate.Code;
-import org.metavm.compiler.type.FunctionType;
+import org.metavm.compiler.type.FuncType;
 import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Type;
 import org.metavm.compiler.type.Types;
@@ -12,62 +12,61 @@ import org.metavm.util.WireTypes;
 
 import java.util.function.Consumer;
 
-public class Lambda implements Executable, ValueElement, Constant {
+public class Lambda extends ElementBase implements Executable, ValueElement, Constant {
 
-    private final SymName name;
-    private List<Parameter> parameters = List.nil();
-    private Type returnType = PrimitiveType.NEVER;
-    private final Executable enclosing;
-    private final Func function;
-    private final Code code;
+    private final Name name;
+    private List<Param> params = List.nil();
+    private Type retType = PrimitiveType.NEVER;
+    private Func function;
+    private Code code;
 
-    public Lambda(SymName name, Executable enclosing, Func function) {
+    public Lambda(Name name) {
         this.name = name;
-        this.enclosing = enclosing;
-        this.function = function;
-        code = new Code(this);
-        function.addLambda(this);
-    }
-
-    public Executable getEnclosing() {
-        return enclosing;
     }
 
     public Func getFunction() {
         return function;
     }
 
-    @Override
-    public List<Parameter> getParameters() {
-        return parameters;
+    public void attachTo(Func function) {
+        assert this.function == null : "Lambda is already attached";
+        this.function = function;
+        function.addLambda(this);
+        code = new Code(this);
     }
 
     @Override
-    public Type getReturnType() {
-        return returnType;
-    }
-
-    public void setReturnType(Type returnType) {
-        this.returnType = returnType;
+    public List<Param> getParams() {
+        return params;
     }
 
     @Override
-    public void addParameter(Parameter parameter) {
-        parameters = parameters.append(parameter);
+    public Type getRetType() {
+        return retType;
+    }
+
+    public void setRetType(Type retType) {
+        this.retType = retType;
     }
 
     @Override
-    public SymName getQualifiedName() {
-        return function.getQualifiedName().concat(".<lambda>");
+    public void addParam(Param param) {
+        params = params.append(param);
     }
 
     @Override
-    public ConstantPool getConstantPool() {
-        return function.getConstantPool();
+    public Name getQualName() {
+//        return function.getQualifiedName().concat(".<lambda>");
+        return Name.from("<lambda>");
     }
 
     @Override
-    public SymName getName() {
+    public ConstPool getConstPool() {
+        return function.getConstPool();
+    }
+
+    @Override
+    public Name getName() {
         return name;
     }
 
@@ -78,7 +77,7 @@ public class Lambda implements Executable, ValueElement, Constant {
 
     @Override
     public void forEachChild(Consumer<Element> action) {
-        parameters.forEach(action);
+        params.forEach(action);
     }
 
     @Override
@@ -91,14 +90,14 @@ public class Lambda implements Executable, ValueElement, Constant {
     }
 
     @Override
-    public FunctionType getType() {
-        return Types.instance.getFunctionType(getParameters().map(LocalVariable::getType), returnType);
+    public FuncType getType() {
+        return Types.instance.getFuncType(getParams().map(LocalVar::getType), retType);
     }
 
     @Override
     public void write(MvOutput output) {
         output.write(WireTypes.LAMBDA_REF);
-        function.getInstance().write(output);
+        function.write(output);
         Elements.writeReference(this, output);
     }
 }

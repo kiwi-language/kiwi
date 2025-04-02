@@ -1,0 +1,74 @@
+package anonymous_class
+
+import java.util.ArrayList
+import java.util.Iterator
+import java.util.List
+
+class AnonymousClassFoo<K, V> {
+
+    priv val entries: List<Entry> = ArrayList<Entry>()
+
+    static fn create<K, V>(entries: List<EntryDTO<K, V>>) -> AnonymousClassFoo<K, V> {
+        var foo = AnonymousClassFoo<K, V>()
+        for (entry in entries) {
+            foo.Entry(entry.key(), entry.value())
+        }
+        return foo
+    }
+
+    fn keysSnapshot() -> Iterable<K> {
+        var a0 = ArrayList<Entry>(entries)
+        return new Iterable<K>() {
+
+            fn iterator() -> Iterator<K> {
+                return new Iterator<K>() {
+
+                    priv val i: Iterator<Entry> = a0.iterator()
+
+                    fn hasNext() -> bool {
+                        return i.hasNext()
+                    }
+
+                    fn next() -> K {
+                        return i.next().key()
+                    }
+
+                }
+            }
+
+        }
+    }
+
+    fn concatKeys() -> string {
+        var it = keysSnapshot().iterator()
+        var r = ""
+        while (it.hasNext()) {
+            if (!r.isEmpty()) r = r + ","
+            r = r + it.next()
+        }
+        return r
+    }
+
+    class Entry {
+
+        priv val key: K
+        priv val value: V
+
+        init(key: K, value: V) {
+            this.key = key
+            this.value = value
+            entries.add(this)
+        }
+
+        fn key() -> K {
+            return key
+        }
+
+        fn value() -> V {
+            return value
+        }
+
+    }
+
+}
+

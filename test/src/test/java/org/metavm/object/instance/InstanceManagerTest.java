@@ -62,13 +62,14 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testUtils() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/Utils.kiwi", typeManager, schedulerAndWorker);
-        var contains = (boolean) callMethod("Utils", "test", List.of(
+        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/util/Utils.kiwi", typeManager, schedulerAndWorker);
+        var className = "util.Utils";
+        var contains = (boolean) callMethod(className, "test", List.of(
                 List.of("a", "b", "c"), List.of("d", "b")
         ));
         Assert.assertTrue(contains);
 
-        var contains2 = (boolean) callMethod("Utils", "test2", List.of(
+        var contains2 = (boolean) callMethod(className, "test2", List.of(
            List.of("a", "b", "c"), "d", "b")
         );
         Assert.assertTrue(contains2);

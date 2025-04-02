@@ -1,0 +1,20 @@
+package hashcode
+
+import java.util.HashSet
+import java.util.Set
+
+@Component
+class HashSetLab {
+
+    priv val set: Set<any> = HashSet<any>()
+
+    fn add(object: any) -> bool {
+        return set.add(object)
+    }
+
+    fn contains(object: any) -> bool {
+        return set.contains(object)
+    }
+
+}
+

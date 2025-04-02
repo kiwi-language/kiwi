@@ -8,71 +8,58 @@ import org.metavm.compiler.type.*;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.Traces;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.Function;
 
 @Slf4j
 public class Attr extends StructuralNodeVisitor {
 
-    private final Env env = new Env();
+    private final Project project;
 
-    @Override
-    public Void visitDeclStmt(DeclStmt declStmt) {
-        env.currentScope().add(declStmt.getDecl().getElement());
-        return super.visitDeclStmt(declStmt);
+    public Attr(Project project) {
+        this.project = project;
     }
 
     @Override
-    public Void visitBlock(Block block) {
-        try (var ignored = env.enterScope()) {
-            return super.visitBlock(block);
+    public Void visitForeachStmt(ForeachStmt foreachStmt) {
+        var varDecl = foreachStmt.getVar();
+        var v = varDecl.getElement();
+        var expr = foreachStmt.getExpr();
+        attrExpr(expr, PrimitiveType.ANY).resolve();
+        if (expr.getType() instanceof ClassType type) {
+            var iterableClass = project.getRootPackage().subPackage("java")
+                    .subPackage("lang").getClass("Iterable");
+            var iterableType = Objects.requireNonNull(type.asSuper(iterableClass),
+                    () -> "Foreach expression type '" + type.getTypeText() + "' is not an iterable type");
+            var varType = iterableType.getTypeArguments().head();
+            v.setType(varType);
         }
+        else if (expr.getType() instanceof ArrayType arrayType)
+            v.setType(arrayType.getElementType());
+        else
+            throw new AnalysisException("Cannot iterate over type: " + expr.getType().getTypeText());
+        foreachStmt.getBody().accept(this);
+        return null;
     }
 
     @Override
-    public Void visitFile(File file) {
-        try (var scope = env.enterScope()) {
-            for (Import imp : file.getImports()) {
-                imp.getElements().forEach(scope::add);
-            }
-            enterPackage(file.getPackage().getRoot(), scope);
-            if (!file.getPackage().isRoot())
-                enterPackage(file.getPackage(), scope);
-            return super.visitFile(file);
-        }
-    }
-
-    private void enterPackage(Package pkg, Scope scope) {
-        pkg.getClasses().forEach(scope::add);
-        pkg.getFunctions().forEach(f -> scope.add(f.getInstance()));
+    public Void visitPackageDecl(PackageDecl packageDecl) {
+        return null;
     }
 
     @Override
-    public Void visitClassDecl(ClassDecl classDecl) {
-        try (var scope = env.enterScope()) {
-            var clazz = classDecl.getElement();
-            clazz.getTypeParameters().forEach(scope::add);
-            scope.addAll(clazz.getType().getTable());
-            return super.visitClassDecl(classDecl);
-        }
-    }
-
-    @Override
-    public Void visitMethodDecl(MethodDecl methodDecl) {
-        try (var scope = env.enterScope()) {
-            var method = methodDecl.getElement();
-            method.getTypeParameters().forEach(scope::add);
-            method.getParameters().forEach(scope::add);
-            return super.visitMethodDecl(methodDecl);
-        }
+    public Void visitImport(Import imp) {
+        return null;
     }
 
     @Override
     public Void visitLocalVarDecl(LocalVarDecl localVarDecl) {
-        super.visitLocalVarDecl(localVarDecl);
-        if (localVarDecl.type() == null) {
-            var v = localVarDecl.getElement();
-            var initial = localVarDecl.initial();
+        var v = localVarDecl.getElement();
+        var initial = localVarDecl.getInitial();
+        if (initial != null)
+            attrExpr(initial, v.getType()).resolve();
+        if (localVarDecl.getType() == null) {
             if (initial == null)
                 throw new AnalysisException("Auto variable must have initial value");
             v.setType(initial.getType());
@@ -80,15 +67,151 @@ public class Attr extends StructuralNodeVisitor {
         return null;
     }
 
-
     @Override
-    public Void visitExpr(Expr expr) {
-        attrExpr(expr).resolve();
+    public Void visitFieldDecl(FieldDecl fieldDecl) {
+        var field = fieldDecl.getElement();
+        var initial = fieldDecl.getInitial();
+        if (initial != null)
+            attrExpr(initial, field.getType()).resolve();
+        if (fieldDecl.getType() == null) {
+            if (initial == null)
+                throw new AnalysisException("Auto variable must have initial value");
+            field.setType(initial.getType());
+        }
         return null;
     }
 
-    private Resolver attrExpr(Expr expr) {
-        return expr.accept(new ExprAttr());
+    @Override
+    public Void visitEnumConstDecl(EnumConstDecl enumConstDecl) {
+        for (Expr argument : enumConstDecl.getArguments())
+            attrExpr(argument, PrimitiveType.ANY).resolve();
+        var clazz = enumConstDecl.getElement().getDeclaringClass();
+        var argTypes = enumConstDecl.getArguments().map(Expr::getType);
+        var init = Objects.requireNonNull(resolveInit(clazz, argTypes));
+        if (enumConstDecl.getDecl() != null) {
+            enumConstDecl.getDecl().accept(this);
+            init = createAnonClassInit(enumConstDecl.getDecl(), init);
+        }
+        enumConstDecl.setInit(init);
+        return null;
+    }
+
+    @Override
+    public Void visitReturnStmt(RetStmt retStmt) {
+        if (retStmt.result() != null)
+            attrExpr(retStmt.result(), retStmt.getType()).resolve();
+        return null;
+    }
+
+    @Override
+    public Void visitExprStmt(ExprStmt exprStmt) {
+        attrExpr(exprStmt.expr(), PrimitiveType.ANY).resolve();
+        return null;
+    }
+
+    @Override
+    public Void visitExpr(Expr expr) {
+        throw new IllegalStateException("Unhandled expression: " + expr.getText());
+    }
+
+    @Override
+    public Void visitTypeNode(TypeNode typeNode) {
+        return null;
+    }
+
+    @Override
+    public Void visitIfStmt(IfStmt ifStmt) {
+        attrExpr(ifStmt.cond(), PrimitiveType.BOOL).resolve();
+        ifStmt.body().accept(this);
+        if (ifStmt.else_() != null)
+            ifStmt.else_().accept(this);
+        return null;
+    }
+
+    @Override
+    public Void visitWhileStmt(WhileStmt whileStmt) {
+        attrExpr(whileStmt.cond(), PrimitiveType.BOOL).resolve();
+        whileStmt.body().accept(this);
+        return null;
+    }
+
+    @Override
+    public Void visitDoWhileStmt(DoWhileStmt doWhileStmt) {
+        doWhileStmt.body().accept(this);
+        attrExpr(doWhileStmt.cond(), PrimitiveType.BOOL).resolve();
+        return null;
+    }
+
+    @Override
+    public Void visitThrowStmt(ThrowStmt throwStmt) {
+        attrExpr(throwStmt.expr(), PrimitiveType.ANY).resolve();
+        return null;
+    }
+
+    private Resolver attrExpr(Expr expr, Type type) {
+        if (expr.getStatus() == ExprStatus.RESOLVED)
+            return new ImmediateResolver(expr.getElement());
+        if (expr.getStatus() == ExprStatus.RESOLVING)
+            throw new AnalysisException("Circular reference");
+        if (expr instanceof LambdaExpr lambdaExpr) {
+            if (type instanceof FuncType funcType)
+                lambdaExpr.setTargetType(funcType);
+        }
+        var resolver = expr.accept(new ExprAttr());
+        expr.setStatus(ExprStatus.RESOLVED);
+        return resolver;
+    }
+
+    private void ensureElementTyped(Element element) {
+        if (element instanceof Variable variable && variable.getType() instanceof DeferredType) {
+            var templateVar = variable instanceof FieldInst fieldInst ? fieldInst.field() : variable;
+            var varDecl = (VariableDecl<?>) templateVar.getNode();
+            attrExpr(Objects.requireNonNull(varDecl.getInitial()), Types.instance.getNullableAny());
+            templateVar.setType(Objects.requireNonNull(varDecl.getInitial()).getType());
+        }
+    }
+
+    private MethodRef createAnonClassInit(ClassDecl classDecl, @Nullable MethodRef superInit) {
+        var clazz = classDecl.getElement();
+        var init = new Method(
+                Name.init(),
+                Access.PUBLIC,
+                false,
+                false,
+                true,
+                clazz
+        );
+        MethodDecl initDecl;
+        if (clazz.getInterfaces().getFirst().isInterface()) {
+            initDecl = NodeMaker.methodDecl(init, List.of());
+        }
+        else {
+            Objects.requireNonNull(superInit);
+            var i = 0;
+            var paramDecls = List.<ParamDecl>builder();
+            var superCallArgs = List.<Expr>builder();
+            for (Type parameterType : superInit.getParamTypes()) {
+                var name = Name.from("p" + i++);
+                var param = new Param(name, parameterType, init);
+                paramDecls.append(NodeMaker.paramDecl(param));
+                superCallArgs.append(NodeMaker.ref(param));
+            }
+            var superVar = Objects.requireNonNull(clazz.getTable().lookupFirst(Name.super_(),
+                    e -> e instanceof BuiltinVariable
+            ));
+            initDecl = NodeMaker.methodDecl(init, List.of(
+                    NodeMaker.exprStmt(NodeMaker.callExpr(
+                            NodeMaker.selectorExpr(
+                                    NodeMaker.ref(superVar),
+                                    superInit
+                            ),
+                            superCallArgs.build()
+                    ))
+            ));
+        }
+        clazz.onMethodAdded(init);
+        classDecl.setMembers(classDecl.getMembers().prepend(initDecl));
+        return init;
     }
 
     private class ExprAttr extends AbstractNodeVisitor<Resolver> {
@@ -96,6 +219,19 @@ public class Attr extends StructuralNodeVisitor {
         @Override
         public Resolver visitNode(Node node) {
             throw new RuntimeException("Unhandled expression class: " + node.getClass().getName());
+        }
+
+        @Override
+        public Resolver visitRangeExpr(RangeExpr rangeExpr) {
+            rangeExpr.getMin().accept(this).resolve();
+            rangeExpr.getMax().accept(this).resolve();
+            rangeExpr.setType(Types.instance.getArrayType(PrimitiveType.INT));
+            return new NullResolver();
+        }
+
+        @Override
+        public Resolver visitIdent(Ident ident) {
+            return new PendingResolver(ident, ident.getCandidates());
         }
 
         @Override
@@ -119,7 +255,7 @@ public class Attr extends StructuralNodeVisitor {
         @Override
         public Resolver visitIsExpr(IsExpr isExpr) {
             isExpr.getExpr().accept(this).resolve();
-            isExpr.setType(PrimitiveType.BOOLEAN);
+            isExpr.setType(PrimitiveType.BOOL);
             return new NullResolver();
         }
 
@@ -146,10 +282,10 @@ public class Attr extends StructuralNodeVisitor {
 
         @Override
         public Resolver visitBinaryExpr(BinaryExpr binaryExpr) {
-            binaryExpr.x().accept(this).resolve();
-            binaryExpr.y().accept(this).resolve();
-            var xType = binaryExpr.x().getType();
-            var yType = binaryExpr.y().getType();
+            binaryExpr.lhs().accept(this).resolve(e -> e instanceof Variable v ? v : null);
+            binaryExpr.rhs().accept(this).resolve(e -> e instanceof Variable v ? v : null);
+            var xType = binaryExpr.lhs().getType();
+            var yType = binaryExpr.rhs().getType();
             var type = binaryExpr.op().getType(xType, yType);
             binaryExpr.setType(type);
             return new NullResolver();
@@ -164,9 +300,9 @@ public class Attr extends StructuralNodeVisitor {
                 case Long ignored -> PrimitiveType.LONG;
                 case Float ignored -> PrimitiveType.FLOAT;
                 case Double ignored -> PrimitiveType.DOUBLE;
-                case Boolean ignored -> PrimitiveType.BOOLEAN;
+                case Boolean ignored -> PrimitiveType.BOOL;
                 case Character ignored -> PrimitiveType.CHAR;
-                case String ignored -> PrimitiveType.STRING;
+                case String ignored -> Types.instance.getStringType();
                 case null -> PrimitiveType.NULL;
                 default -> throw new IllegalStateException("Unrecognized literal: " + literal);
             };
@@ -175,30 +311,50 @@ public class Attr extends StructuralNodeVisitor {
         }
 
         @Override
-        public Resolver visitNewExpr(NewExpr newExpr) {
-            var type = (ClassType) newExpr.type().getType();
-            if (newExpr.owner() != null)
-                newExpr.owner().accept(this).resolve();
-            var argTypes = newExpr.arguments().map(e -> {
-                e.accept(this).resolve();
-                return e.getType();
-            });
+        public Resolver visitAnonClassExpr(AnonClassExpr anonClassExpr) {
+            var type = anonClassExpr.getDecl().getElement();
+            anonClassExpr.getDecl().accept(Attr.this);
+            var argTypes = anonClassExpr.getArguments().map(this::resolveArgumentType);
             var table  = type.getTable();
-            var resolved = (MethodInst) table.lookupFirst(SymName.init(), e ->
-                    e instanceof MethodInst m && m.isConstructor() && resolveFunction(m, List.nil(), argTypes) != null
+            var resolved = (MethodRef) table.lookupFirst(Name.init(), e ->
+                    e instanceof MethodRef m && m.isInit() && resolveFunc(m, argTypes) != null
             );
+            if (anonClassExpr.getDecl() != null)
+                resolved = createAnonClassInit(anonClassExpr.getDecl(), resolved);
             if (resolved == null)
-                throw new AnalysisException("Can not resolve constructor invocation " + newExpr.getText());
-            newExpr.setElement(resolved);
-            newExpr.setType(type);
+                throw new AnalysisException("Can not resolve constructor invocation " + anonClassExpr.getText());
+            completeArgumentResolution(anonClassExpr.getArguments(), resolved.getType().getParamTypes());
+            anonClassExpr.setElement(resolved);
+            anonClassExpr.setType(type);
             return new NullResolver();
+        }
+
+
+        private Type resolveArgumentType(Expr argument) {
+            if (argument instanceof LambdaExpr lambdaExpr)
+               return lambdaExpr.getElement().getType();
+            else {
+                argument.accept(this).resolve();
+                return argument.getType();
+            }
+        }
+
+        private void completeArgumentResolution(List<Expr> args, List<Type> paramTypes) {
+            var paramTypeIt = paramTypes.iterator();
+            for (var arg : args) {
+                var paramType = paramTypeIt.next();
+                if (arg instanceof LambdaExpr lambdaExpr) {
+                    attrExpr(lambdaExpr, paramType).resolve();
+                }
+            }
         }
 
         @Override
         public Resolver visitAssignExpr(AssignExpr assignExpr) {
             assignExpr.lhs().accept(this).resolve();
-            assignExpr.rhs().accept(this).resolve();
-            assignExpr.setType(assignExpr.lhs().getType());
+            var type = assignExpr.lhs().getType();
+            attrExpr(assignExpr.rhs(), type).resolve();
+            assignExpr.setType(type);
             return new NullResolver();
         }
 
@@ -214,52 +370,75 @@ public class Attr extends StructuralNodeVisitor {
         @Override
         public Resolver visitSelectorExpr(SelectorExpr selectorExpr) {
             var e = selectorExpr.x().accept(this).resolve(e0 ->
-                    e0 instanceof Clazz || e0 instanceof Variable ? e0 : null
+                    e0 instanceof ClassType || e0 instanceof Variable ? e0 : null
             );
             var table = switch (e) {
-                case Clazz clazz -> clazz.getType().getTable();
+                case ClassType ct -> ct.getTable();
                 case Package pkg -> pkg.getTable();
                 case null, default -> selectorExpr.x().getType().getTable();
             };
-            var candidates = table.lookupAll(selectorExpr.sel().value());
+            var candidates = table.lookupAll(selectorExpr.sel());
             return new PendingResolver(selectorExpr, candidates);
         }
 
         @Override
-        public Resolver visitCallExpr(CallExpr callExpr) {
-            var funcResolver = callExpr.getFunc().accept(this);
-            var typeArgs = callExpr.getTypeArguments().map(TypeNode::getType);
-            var argTypes = callExpr.getArguments().map(arg -> {
-                arg.accept(this).resolve();
-                return arg.getType();
-            });
+        public Resolver visitTypeApply(TypeApply typeApply) {
+            var r = typeApply.getExpr().accept(this);
+            return new Resolver() {
+                @Override
+                Element resolve() {
+                    return resolve(e -> e);
+                }
+
+                @Override
+                Element resolve(Function<Element, Element> mapper) {
+                    return r.resolve(e -> {
+                        if (e instanceof GenericDecl genDecl
+                                && genDecl.getTypeParams().size() == typeApply.getArgs().size()) {
+                            var resolved = mapper.apply(genDecl.getInst(typeApply.getArgs().map(TypeNode::getType)));
+                            if (resolved != null) {
+                                typeApply.setElement(resolved);
+                                return resolved;
+                            }
+                        }
+                        return null;
+                    });
+                }
+            };
+        }
+
+        @Override
+        public Resolver visitCall(Call call) {
+            var funcResolver = call.getFunc().accept(this);
+            var argTypes = call.getArguments().map(this::resolveArgumentType);
             var func = (ValueElement) funcResolver.resolve(
-                    e -> e instanceof ValueElement v ? resolveFunction(v, typeArgs, argTypes) : null
+                    e -> {
+                        if (e instanceof ValueElement v)
+                            return resolveFunc(v, argTypes);
+                        else if (e instanceof ClassType ct)
+                            return resolveInit(ct, argTypes);
+                        return null;
+                    }
             );
-            var funcType = (FunctionType) func.getType();
-            callExpr.setElement(func);
-            callExpr.setType(funcType.getReturnType());
+            var funcType = (FuncType) call.getFunc().getType();
+            completeArgumentResolution(call.getArguments(), funcType.getParamTypes());
+            if (func != null)
+                call.setElement(func);
             return new NullResolver();
         }
 
         @Override
         public Resolver visitLambdaExpr(LambdaExpr lambdaExpr) {
-            try (var scope = env.enterScope()) {
-                var lambda = lambdaExpr.getElement();
-                lambdaExpr.setType(env.types().getFunctionType(
-                        lambda.getParameters().map(Parameter::getType),
-                        lambda.getReturnType()
-                ));
-                lambda.getParameters().forEach(scope::add);
-                lambdaExpr.forEachChild(e -> e.accept(Attr.this));
-                return new ImmediateResolver(lambda);
-            }
-        }
-
-        @Override
-        public Resolver visitRefExpr(RefExpr refExpr) {
-            var e = env.getTable().lookupAll(refExpr.getName().value());
-            return new PendingResolver(refExpr, e);
+            var lambda = lambdaExpr.getElement();
+            lambdaExpr.setType(Types.instance.getFuncType(
+                    lambda.getParams().map(Param::getType),
+                    lambda.getRetType()
+            ));
+            if (lambdaExpr.body() instanceof Expr expr)
+                attrExpr(expr, lambda.getRetType()).resolve();
+            else
+                lambdaExpr.body().accept(Attr.this);
+            return new ImmediateResolver(lambda);
         }
 
     }
@@ -276,6 +455,7 @@ public class Attr extends StructuralNodeVisitor {
         private final Element resolved;
 
         private ImmediateResolver(Element resolved) {
+            ensureElementTyped(resolved);
             this.resolved = resolved;
         }
 
@@ -291,7 +471,7 @@ public class Attr extends StructuralNodeVisitor {
 
     }
 
-    private class PendingResolver extends Resolver{
+    private class PendingResolver extends Resolver {
         private final Iterable<Element> candidates;
         private final Expr expr;
 
@@ -302,6 +482,7 @@ public class Attr extends StructuralNodeVisitor {
 
         public Element resolve(Function<Element, Element> mapper) {
             for (Element candidate : candidates) {
+                ensureElementTyped(candidate);
                 Element resolved;
                 if ((resolved = mapper.apply(candidate)) != null) {
                     onResolved(resolved);
@@ -313,6 +494,7 @@ public class Attr extends StructuralNodeVisitor {
 
         Element resolve() {
             var resolved = Objects.requireNonNull(candidates.iterator().next());
+            ensureElementTyped(resolved);
             onResolved(resolved);
             return resolved;
         }
@@ -337,26 +519,47 @@ public class Attr extends StructuralNodeVisitor {
 
     }
 
-    private Element resolveFunction(ValueElement element, List<Type> typeArguments, List<Type> argumentTypes) {
+    private Element resolveFunc(ValueElement element, List<Type> argumentTypes) {
         if (Traces.traceAttr) {
-            log.trace("Checking applicable of element {} with argument types: {}",
-                    element, argumentTypes.map(Type::getText).join(", "));
+            log.trace("Checking applicable of element {}, type: {}, with argument types: {}",
+                    element.getName(),element.getType().getTypeText(), argumentTypes.map(Type::getTypeText).join(", "));
         }
-        if (typeArguments.isEmpty()) {
-            if (element.getType() instanceof FunctionType functionType &&
-                functionType.getParameterTypes().matches(argumentTypes, Type::isAssignableFrom))
-                return element;
-            else
-                return null;
+        if (element.getType() instanceof FuncType funcType &&
+            funcType.getParamTypes().matches(argumentTypes, this::isApplicable))
+            return element;
+        else
+            return null;
+    }
+
+    private MethodRef resolveInit(ClassType type, List<Type> argumentTypes) {
+        var inits = type.getTable().lookupAll(
+                Name.init(),
+                i -> i instanceof MethodRef m && m.getDeclType().getClazz() == type.getClazz()
+        );
+        if (Traces.traceAttr) {
+            log.trace("Resolving constructor. class: {}, arg types: [{}]",
+                    type.getTypeText(),
+                    argumentTypes.map(Type::getTypeText).join(", ")
+            );
         }
-        else if (element instanceof FuncInst func) {
-            if (func.getFunction().getTypeParameters().size() == typeArguments.size()) {
-                var m = func.getInstance(typeArguments);
-                if (m.getParameterTypes().matches(argumentTypes, Type::isAssignableFrom))
-                    return m;
+        for (var init : inits) {
+            var m = (MethodRef) init;
+            if (Traces.traceAttr) {
+                log.trace("Trying init: {}", init.getText());
+            }
+            if (m.getParamTypes().matches(argumentTypes, this::isApplicable)) {
+                return m;
             }
         }
         return null;
+    }
+
+    private boolean isApplicable(Type parameterType, Type argumentType) {
+        if (parameterType.isAssignableFrom(argumentType))
+            return true;
+        if (parameterType instanceof PrimitiveType pt1 && argumentType instanceof PrimitiveType pt2)
+            return pt2.widensTo(pt1);
+        return false;
     }
 
 }
