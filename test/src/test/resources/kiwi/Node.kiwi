@@ -1,5 +1,5 @@
 
 class Node<T> {
-    private var label: string
-    private var value: T
+    priv var label: string
+    priv var value: T
 }

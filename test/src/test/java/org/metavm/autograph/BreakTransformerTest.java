@@ -12,15 +12,6 @@ public class BreakTransformerTest extends TestCase {
         transform(file);
     }
 
-
-    public void test2() {
-        var source = "/Users/leen/workspace/object/lab/src/main/basics/break_/BreakFoo.java";
-        var file = TranspileTestTools.getPsiJavaFile(source);
-        transform(file);
-        var output = "/Users/leen/workspace/object/lab/src/main/tmp/break2/BreakFoo.java";
-        Utils.writeFile(output, file.getText().replace("package break_;", "package break2;"));
-    }
-
     private void transform(PsiJavaFile file) {
         TranspileTestTools.executeCommand(() -> {
             file.accept(new BodyNormalizer());

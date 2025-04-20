@@ -162,6 +162,16 @@ public class ArrayListNative extends AbstractListNative implements ListNative, S
             throw new BusinessException(ErrorCode.ILLEGAL_ARGUMENT);
     }
 
+    public static Value of(Klass klass, Value e1, Value e2, Value e3, CallContext callContext) {
+        var list = ClassInstance.allocate(TmpId.random(), KlassType.create(StdKlass.arrayList.get(), List.of(Types.getAnyType())));
+        var listNative = (ArrayListNative) NativeMethods.getNativeObject(list);
+        listNative.List(callContext);
+        listNative.add(e1, callContext);
+        listNative.add(e2, callContext);
+        listNative.add(e3, callContext);
+        return list.getReference();
+    }
+
     public Value isEmpty(CallContext callContext) {
         return Instances.intInstance(list.isEmpty());
     }

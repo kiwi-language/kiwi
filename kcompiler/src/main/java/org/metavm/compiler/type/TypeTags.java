@@ -10,19 +10,18 @@ public class TypeTags {
     public static final int TAG_BYTE = 7;
     public static final int TAG_SHORT = 8;
     public static final int TAG_CHAR = 9;
-    public static final int TAG_BOOLEAN = 10;
+    public static final int TAG_BOOL = 10;
     public static final int TAG_STRING = 11;
     public static final int TAG_VOID = 12;
     public static final int TAG_NULL = 13;
     public static final int TAG_TIME = 14;
     public static final int TAG_PASSWORD = 15;
-    public static final int TAG_CLASS = 1 << 15;
-    public static final int TAG_ARRAY = 1 << 16;
-    public static final int TAG_FUNCTION = 1 << 17;
-    public static final int TAG_UNION = 1 << 18;
-    public static final int TAG_INTERSECTION = 1 << 19;
-    public static final int TAG_UNCERTAIN = 1 << 20;
-
-    public static final int TAG_ANY = 1 << 11;
+    public static final int TAG_CLASS = 16;
+    public static final int TAG_ARRAY = 17;
+    public static final int TAG_FUNCTION = 18;
+    public static final int TAG_UNION = 19;
+    public static final int TAG_INTERSECTION = 20;
+    public static final int TAG_UNCERTAIN = 21;
+    public static final int TAG_ANY = 22;
 
 }

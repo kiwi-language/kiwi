@@ -1,0 +1,31 @@
+package anonymous_class
+
+import java.util.Iterator
+
+class AnonymousClassWithField {
+
+    static fn iterator(s: string) -> Iterator<string> {
+        return new Iterator<string>() {
+
+            priv val value: string = s
+            priv var read: bool = false
+
+            fn hasNext() -> bool {
+                return !read
+            }
+
+            fn next() -> string {
+                if (read) throw IllegalStateException() else read = true
+                return value
+            }
+
+        }
+    }
+
+    static fn test(s: string) -> string {
+        var it = iterator(s)
+        return it.hasNext() ? it.next() : null
+    }
+
+}
+

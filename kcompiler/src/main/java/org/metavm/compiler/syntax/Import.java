@@ -11,25 +11,25 @@ import java.util.function.Consumer;
 @Slf4j
 public class Import extends Node {
 
-    private QualifiedName name;
+    private SelectorExpr name;
 
     private List<Element> elements;
 
-    public Import(QualifiedName name) {
+    public Import(SelectorExpr name) {
         this.name = name;
     }
 
-    public QualifiedName getName() {
+    public SelectorExpr getName() {
         return name;
     }
 
-    public void setName(QualifiedName name) {
+    public void setName(SelectorExpr name) {
         this.name = name;
     }
 
     public void resolve(Project project) {
-        var pkg = project.getPackage(name.getQualifier());
-        elements = List.of(pkg.getClass(name.getIdent().value()));
+        var pkg = project.getPackage(name.x());
+        elements = List.of(pkg.getClass(name.sel()));
     }
 
     public List<Element> getElements() {

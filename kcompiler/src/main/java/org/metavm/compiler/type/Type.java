@@ -7,9 +7,9 @@ import javax.annotation.Nullable;
 
 public interface Type extends Constant {
 
-    void write(ElementWriter writer);
+    void writeType(ElementWriter writer);
 
-    default String getText() {
+    default String getTypeText() {
         var w = new ElementWriter();
         w.writeType(this);
         return w.toString();

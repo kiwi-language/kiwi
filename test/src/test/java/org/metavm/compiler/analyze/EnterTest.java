@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.compiler.CompilerTestUtils;
 import org.metavm.compiler.element.Project;
-import org.metavm.compiler.element.SymNameTable;
+import org.metavm.compiler.element.NameTable;
 import org.metavm.compiler.syntax.AstBuilder;
 import org.metavm.compiler.util.List;
 
@@ -25,12 +25,12 @@ public class EnterTest extends TestCase {
         var classes = pkg.getClasses();
         Assert.assertEquals(5, classes.size());
 
-        var productClass =  pkg.getClass(SymNameTable.instance.get("Product"));
+        var productClass =  pkg.getClass(NameTable.instance.get("Product"));
         Assert.assertEquals("Product", productClass.getName().toString());
         Assert.assertEquals(2, productClass.getFields().size());
         Assert.assertEquals(5, productClass.getMethods().size());
 
-        var couponStateClass = pkg.getClass(SymNameTable.instance.get("CouponState"));
+        var couponStateClass = pkg.getClass(NameTable.instance.get("CouponState"));
         Assert.assertEquals("CouponState", couponStateClass.getName().toString());
         Assert.assertEquals(2, couponStateClass.getEnumConstants().size());
     }

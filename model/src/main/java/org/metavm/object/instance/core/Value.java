@@ -92,7 +92,7 @@ public interface Value {
     }
 
     default Instance resolveDurable(){
-        return ((Reference) this).get();
+    return ((Reference) this).get();
     }
 
     default MvInstance resolveMv() {

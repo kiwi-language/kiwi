@@ -25,7 +25,7 @@ public final class IntersectionType implements Type, Comparable<IntersectionType
     }
 
     @Override
-    public void write(ElementWriter writer) {
+    public void writeType(ElementWriter writer) {
         writer.writeTypes(bounds, " & ");
     }
 

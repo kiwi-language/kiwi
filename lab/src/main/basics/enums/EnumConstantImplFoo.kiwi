@@ -1,0 +1,32 @@
+package enums
+
+class EnumConstantImplFoo {
+
+    static fn getOptionDesc(option: Option) -> string {
+        return option.getDesc()
+    }
+
+    enum Option {
+
+        op1() {
+
+            fn getDesc() -> string {
+                return "Option 1"
+            }
+
+        },
+        op2() {
+
+            fn getDesc() -> string {
+                return "Option 2"
+            }
+
+        },
+        ;
+
+        abstract fn getDesc() -> string
+
+    }
+
+}
+

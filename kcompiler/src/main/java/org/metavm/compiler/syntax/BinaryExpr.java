@@ -4,22 +4,22 @@ import java.util.function.Consumer;
 
 public final class BinaryExpr extends Expr {
     private final BinOp op;
-    private final Expr x;
-    private final Expr y;
+    private final Expr lhs;
+    private final Expr rhs;
 
-    public BinaryExpr(BinOp op, Expr x, Expr y) {
+    public BinaryExpr(BinOp op, Expr lhs, Expr rhs) {
         this.op = op;
-        this.x = x;
-        this.y = y;
+        this.lhs = lhs;
+        this.rhs = rhs;
     }
 
     @Override
     public void write(SyntaxWriter writer) {
-        writer.write(x);
+        writer.write(lhs);
         writer.write(" ");
         writer.write(op.op());
         writer.write(" ");
-        writer.write(y);
+        writer.write(rhs);
     }
 
     @Override
@@ -29,28 +29,28 @@ public final class BinaryExpr extends Expr {
 
     @Override
     public void forEachChild(Consumer<Node> action) {
-        action.accept(x);
-        action.accept(y);
+        action.accept(lhs);
+        action.accept(rhs);
     }
 
     public BinOp op() {
         return op;
     }
 
-    public Expr x() {
-        return x;
+    public Expr lhs() {
+        return lhs;
     }
 
-    public Expr y() {
-        return y;
+    public Expr rhs() {
+        return rhs;
     }
 
     @Override
     public String toString() {
         return "BinaryExpr[" +
                 "op=" + op + ", " +
-                "x=" + x + ", " +
-                "y=" + y + ']';
+                "lhs=" + lhs + ", " +
+                "rhs=" + rhs + ']';
     }
 
 }

@@ -2,14 +2,14 @@ package org.metavm.compiler.element;
 
 public interface Member extends Element {
 
-    SymName getName();
+    Name getName();
 
-    void setName(SymName name);
+    void setName(Name name);
 
     Access getAccess();
 
     void setAccess(Access access);
 
-    Clazz getDeclaringClass();
+    Clazz getDeclClass();
 
 }

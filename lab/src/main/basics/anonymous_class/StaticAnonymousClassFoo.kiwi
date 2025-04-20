@@ -1,0 +1,26 @@
+package anonymous_class
+
+import java.util.Iterator
+
+class StaticAnonymousClassFoo {
+
+    static fn iterator() -> Iterator<string> {
+        return new Iterator<string>() {
+
+            fn hasNext() -> bool {
+                return false
+            }
+
+            fn next() -> string {
+                throw IllegalStateException()
+            }
+
+        }
+    }
+
+    static fn test() -> bool {
+        return iterator().hasNext()
+    }
+
+}
+

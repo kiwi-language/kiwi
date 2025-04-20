@@ -1,0 +1,31 @@
+package innerclass
+
+class InnerCallsExternal {
+
+    priv val value: int
+
+    init(value: int) {
+        this.value = value
+    }
+
+    fn getValue() -> int {
+        return value
+    }
+
+    static fn test(value: int) -> int {
+        var o = InnerCallsExternal(value)
+        return o.Inner().value
+    }
+
+    class Inner {
+
+        priv val value: int
+
+        init() {
+            this.value = getValue()
+        }
+
+    }
+
+}
+

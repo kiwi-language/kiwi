@@ -493,6 +493,13 @@ public class Method extends Flow implements Property {
     }
 
     @Override
+    public void writeCode(CodeWriter writer) {
+        if (isStatic())
+            writer.write("static ");
+        super.writeCode(writer);
+    }
+
+    @Override
     protected void buildSource(Map<String, Value> source) {
         super.buildSource(source);
     }

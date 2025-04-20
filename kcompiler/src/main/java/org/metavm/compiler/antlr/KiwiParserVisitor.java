@@ -29,6 +29,12 @@ public interface KiwiParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitImportDeclaration(KiwiParser.ImportDeclarationContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link KiwiParser#topLevTypeDecl}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTopLevTypeDecl(KiwiParser.TopLevTypeDeclContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link KiwiParser#typeDeclaration}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -221,6 +227,12 @@ public interface KiwiParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitForControl(KiwiParser.ForControlContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link KiwiParser#loopVariable}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLoopVariable(KiwiParser.LoopVariableContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link KiwiParser#loopVariableDeclarators}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -245,11 +257,11 @@ public interface KiwiParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitLoopVariableUpdate(KiwiParser.LoopVariableUpdateContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link KiwiParser#newExpr}.
+	 * Visit a parse tree produced by {@link KiwiParser#anonClassExpr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitNewExpr(KiwiParser.NewExprContext ctx);
+	T visitAnonClassExpr(KiwiParser.AnonClassExprContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KiwiParser#newArray}.
 	 * @param ctx the parse tree
@@ -353,6 +365,12 @@ public interface KiwiParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitConjunction(KiwiParser.ConjunctionContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link KiwiParser#range}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitRange(KiwiParser.RangeContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link KiwiParser#bitor}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -400,6 +418,18 @@ public interface KiwiParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitIsExpr(KiwiParser.IsExprContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#isSuffix}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitIsSuffix(KiwiParser.IsSuffixContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#typePtn}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypePtn(KiwiParser.TypePtnContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KiwiParser#shift}.
 	 * @param ctx the parse tree
@@ -503,12 +533,6 @@ public interface KiwiParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitIdentifier(KiwiParser.IdentifierContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link KiwiParser#methodCall}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitMethodCall(KiwiParser.MethodCallContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link KiwiParser#literal}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -539,29 +563,77 @@ public interface KiwiParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitType(KiwiParser.TypeContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link KiwiParser#arrayKind}.
+	 * Visit a parse tree produced by {@link KiwiParser#unionType}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitArrayKind(KiwiParser.ArrayKindContext ctx);
+	T visitUnionType(KiwiParser.UnionTypeContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link KiwiParser#classOrInterfaceType}.
+	 * Visit a parse tree produced by {@link KiwiParser#intersectionType}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitClassOrInterfaceType(KiwiParser.ClassOrInterfaceTypeContext ctx);
+	T visitIntersectionType(KiwiParser.IntersectionTypeContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link KiwiParser#typeArguments}.
+	 * Visit a parse tree produced by {@link KiwiParser#postfixType}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitTypeArguments(KiwiParser.TypeArgumentsContext ctx);
+	T visitPostfixType(KiwiParser.PostfixTypeContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#typeSuffix}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypeSuffix(KiwiParser.TypeSuffixContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#atomicType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAtomicType(KiwiParser.AtomicTypeContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KiwiParser#primitiveType}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitPrimitiveType(KiwiParser.PrimitiveTypeContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#functionType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFunctionType(KiwiParser.FunctionTypeContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#uncertainType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitUncertainType(KiwiParser.UncertainTypeContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#arrayKind}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrayKind(KiwiParser.ArrayKindContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#classType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitClassType(KiwiParser.ClassTypeContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#classTypePart}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitClassTypePart(KiwiParser.ClassTypePartContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#typeArguments}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypeArguments(KiwiParser.TypeArgumentsContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KiwiParser#modifier}.
 	 * @param ctx the parse tree
@@ -586,6 +658,18 @@ public interface KiwiParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitLambdaParameters(KiwiParser.LambdaParametersContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#lambdaParameterList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLambdaParameterList(KiwiParser.LambdaParameterListContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KiwiParser#lambdaParameter}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLambdaParameter(KiwiParser.LambdaParameterContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KiwiParser#lambdaBody}.
 	 * @param ctx the parse tree

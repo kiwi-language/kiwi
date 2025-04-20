@@ -1,16 +1,18 @@
 package org.metavm.compiler.syntax;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.element.Lambda;
+import org.metavm.compiler.type.FuncType;
+import org.metavm.compiler.util.List;
 
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
 
+@Slf4j
 public final class LambdaExpr extends Expr {
     private final List<ParamDecl> params;
     @Nullable
-    private final TypeNode returnType;
+    private TypeNode returnType;
     private final Node body;
     private Lambda element;
 
@@ -45,7 +47,8 @@ public final class LambdaExpr extends Expr {
     @Override
     public void forEachChild(Consumer<Node> action) {
         params.forEach(action);
-        action.accept(returnType);
+        if (returnType != null)
+            action.accept(returnType);
         action.accept(body);
     }
 
@@ -76,5 +79,26 @@ public final class LambdaExpr extends Expr {
 
     public void setElement(Lambda lambda) {
         this.element = lambda;
+    }
+
+    @Nullable
+    public TypeNode getReturnType() {
+        return returnType;
+    }
+
+    public void setTargetType(FuncType targetType) {
+        var lambda = getElement();
+        if (returnType == null) {
+            returnType = targetType.makeNode();
+            lambda.setRetType(targetType.getRetType());
+        }
+        var paramTypeIt = targetType.getParamTypes().iterator();
+        for (ParamDecl paramDecl : params) {
+            var paramType = paramTypeIt.next();
+            if (paramDecl.getType() == null) {
+                paramDecl.setType(paramType.makeNode());
+                paramDecl.getElement().setType(paramType);
+            }
+        }
     }
 }

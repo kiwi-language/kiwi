@@ -1,0 +1,40 @@
+package branching
+
+class BranchingFoo {
+
+    static fn getOrDefault(value: long?, defaultValue: long?) -> long? {
+        var v: long?
+        return (v = value) != null && v!! > 0 ? v : defaultValue
+    }
+
+    static fn getOrDefault2(value: long?, defaultValue: long?) -> long? {
+        var result: long?
+        if (value != null && value!! > 0) result = value
+        else result = defaultValue
+        return result
+    }
+
+    static fn isNameNotNull(foo: Foo) -> bool {
+        return foo != null && foo.name != null
+    }
+
+    static fn testIsNameNotNull() -> bool {
+        return isNameNotNull(Foo("foo"))
+    }
+
+    static class Foo {
+
+        priv val name: string
+
+        fn name() -> string {
+            return name
+        }
+
+        init(name: string) {
+            this.name = name
+        }
+
+    }
+
+}
+

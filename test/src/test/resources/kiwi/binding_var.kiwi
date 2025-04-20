@@ -1,0 +1,20 @@
+class BindingVarLab {
+
+    priv static val s = "Kiwi"
+
+    static fn test(o: any) -> string  {
+        if (o is string s && s.length() > 4)
+            return s
+        else if (!(o is int i) || i == 0)
+            return s
+        else
+            return 0
+    }
+
+    static fn lengthEquals(o1: any, o2: any) -> bool {
+        if (o1 is string s1 && o2 is string s2)
+            return s1.length() == s2.length()
+        return false
+    }
+
+}

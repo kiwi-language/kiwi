@@ -1,0 +1,22 @@
+package anonymous_class
+
+class EntryDTO<K, V> {
+
+    priv val key: K
+    priv val value: V
+
+    fn key() -> K {
+        return key
+    }
+
+    fn value() -> V {
+        return value
+    }
+
+    init(key: K, value: V) {
+        this.key = key
+        this.value = value
+    }
+
+}
+

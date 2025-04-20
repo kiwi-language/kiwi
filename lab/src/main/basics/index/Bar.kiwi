@@ -1,0 +1,20 @@
+package index
+
+class Bar {
+
+    priv var code: string
+
+    init(code: string) {
+        this.code = code
+    }
+
+    fn getCode() -> string {
+        return code
+    }
+
+    fn setCode(code: string) {
+        this.code = code
+    }
+
+}
+

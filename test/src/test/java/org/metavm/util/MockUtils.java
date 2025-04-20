@@ -2,7 +2,7 @@ package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.CompilationTask;
-import org.metavm.compiler.CompilerTestUtils;
+import org.metavm.compiler.util.MockEnter;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.*;
@@ -264,7 +264,7 @@ public class MockUtils {
 
             var task = new CompilationTask(List.of(source), TestConstants.TARGET);
             task.parse();
-            CompilerTestUtils.enterStandard(task.getProject());
+            MockEnter.enterStandard(task.getProject());
             task.analyze();
             task.generate();
 

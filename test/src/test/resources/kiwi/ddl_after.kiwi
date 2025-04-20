@@ -2,107 +2,103 @@ import org.metavm.api.Index
 
 class Product: Versioned {
 
-    static func findByName(name: string) -> Product|null {
+
+    static fn findByName(name: string) -> Product? {
         return Product.nameIdx.getFirst(name)
     }
 
-    private var name: string
-    private var price: double
-    private var inventory: Inventory
-    private var available: boolean
-    private var description: string|null
-    private var manufacturer: any
-    private static var nameIdx: Index<string, Product>
+    priv var name: string
+    priv var price: double
+    priv var inventory: Inventory
+    priv var available: bool
+    priv var description: string?
+    priv var manufacturer: any
 
-    private static func __nameIdx__() -> Index<string, Product> {
-        return new Index<string, Product>("nameIdx", true, (p: Product) -> string {
-            return p.getName()
-        })
-    }
+    priv static var nameIdx = Index<string, Product>(true, p -> p.name)
 
-    init(name: string, price: double, quantity: int, description: string|null, manufacturer: any) {
-        super()
+    init(name: string, price: double, quantity: int, description: string?, manufacturer: any) {
+        super.init()
         this.name = name
         this.price = price
-        this.inventory = this.new Inventory(quantity)
+        this.inventory = Inventory(quantity)
         this.description = description
         this.manufacturer = manufacturer
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func setName(name: string) {
+    fn setName(name: string) {
         this.name = name
     }
 
-    func getPrice() -> double {
+    fn getPrice() -> double {
         return this.price
     }
 
-    func setPrice(price: double) {
+    fn setPrice(price: double) {
         this.price = price
     }
 
-    func getInventory() -> Inventory {
+    fn getInventory() -> Inventory {
         return this.inventory
     }
 
-    func setInventory(inventory: Inventory) {
+    fn setInventory(inventory: Inventory) {
         this.inventory = inventory
     }
 
-    func isAvailable() -> boolean {
+    fn isAvailable() -> bool {
         return this.available
     }
 
-    func setAvailable(available: boolean) {
+    fn setAvailable(available: bool) {
         this.available = available
     }
 
-    func getDescription() -> string|null {
+    fn getDescription() -> string? {
         return this.description
     }
 
-    func setDescription(description: string|null) {
+    fn setDescription(description: string?) {
         this.description= description
     }
 
-    private func __available__() -> boolean {
+    priv fn __available__() -> bool {
         return true
     }
 
-    private func __price__(price: int) -> double {
+    priv fn __price__(price: int) -> double {
         return price as double
     }
 
-    private func __Versioned__() -> Versioned {
-        return new Versioned()
+    priv fn __Versioned__() -> Versioned {
+        return Versioned()
     }
 
-    func getManufacturer() -> any {
+    fn getManufacturer() -> any {
         return this.manufacturer
     }
 
-    func setManufacturer(manufacturer: any) {
+    fn setManufacturer(manufacturer: any) {
         this.manufacturer = manufacturer
     }
 
 }
 
 class Inventory {
-    private var quantity: int
+    priv var quantity: int
 
     init(quantity: int) {
         this.quantity = quantity
     }
 
-    func getQuantity() -> int {
+    fn getQuantity() -> int {
         return this.quantity
     }
 
-    func setQuantity(quantity: int) {
+    fn setQuantity(quantity: int) {
         this.quantity = quantity
     }
 
@@ -110,67 +106,63 @@ class Inventory {
 
 class Versioned {
 
-    private var version: Version
+    priv var version = Version(0, 0)
 
-    init() {
-        this.version = new Version(0, 0)
-    }
-
-    func getVersion() -> Version {
+    fn getVersion() -> Version {
         return this.version
     }
 
-    func setVersion(version: Version) {
+    fn setVersion(version: Version) {
         this.version = version
     }
 
 }
 
 value class Version {
-    private val majorVersion: int
-    private val minorVersion: int
+    priv val majorVersion: int
+    priv val minorVersion: int
 
     init(majorVersion: int, minorVersion: int) {
         this.majorVersion = majorVersion
         this.minorVersion = minorVersion
     }
 
-    func getMajorVersion() -> int{
+    fn getMajorVersion() -> int{
         return this.majorVersion
     }
 
-    func getMinorVersion() -> int {
+    fn getMinorVersion() -> int {
         return this.minorVersion
     }
 
 }
 
 class Box<T> {
-    private var item: T
-    private var count: int
+    priv var item: T
+    priv var count: int
 
     init(item: T, count: int) {
         this.item = item
         this.count = count
     }
 
-    func getItem() -> T {
+    fn getItem() -> T {
         return this.item
     }
 
-    func setItem(item: T) {
+    fn setItem(item: T) {
         this.item = item
     }
 
-    func getCount() -> int {
+    fn getCount() -> int {
         return this.count
     }
 
-    func setCount(count: int) {
+    fn setCount(count: int) {
         this.count = count
     }
 
-    private func __count__() -> int {
+    priv fn __count__() -> int {
         return 1
     }
 

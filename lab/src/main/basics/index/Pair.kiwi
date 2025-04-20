@@ -1,0 +1,22 @@
+package index
+
+value class Pair<T1, T2> {
+
+    priv val first: T1
+    priv val second: T2
+
+    fn first() -> T1 {
+        return first
+    }
+
+    fn second() -> T2 {
+        return second
+    }
+
+    init(first: T1, second: T2) {
+        this.first = first
+        this.second = second
+    }
+
+}
+

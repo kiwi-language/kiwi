@@ -1,25 +1,26 @@
 package org.metavm.compiler.syntax;
 
-import org.metavm.compiler.element.TypeVariable;
+import org.metavm.compiler.element.Name;
+import org.metavm.compiler.element.TypeVar;
 
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
-public class TypeVariableDecl extends Decl<TypeVariable>  {
+public class TypeVariableDecl extends Decl<TypeVar>  {
 
-    private Ident name;
+    private Name name;
     private @Nullable TypeNode bound;
 
-    public TypeVariableDecl(Ident name, @Nullable TypeNode bound) {
+    public TypeVariableDecl(Name name, @Nullable TypeNode bound) {
         this.name = name;
         this.bound = bound;
     }
 
-    public Ident getName() {
+    public Name getName() {
         return name;
     }
 
-    public void setName(Ident name) {
+    public void setName(Name name) {
         this.name = name;
     }
 
@@ -48,7 +49,6 @@ public class TypeVariableDecl extends Decl<TypeVariable>  {
 
     @Override
     public void forEachChild(Consumer<Node> action) {
-        action.accept(name);
         if (bound != null)
             action.accept(bound);
     }

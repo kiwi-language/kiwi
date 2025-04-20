@@ -1,0 +1,16 @@
+package assignment
+
+class CompoundAssignmentFoo {
+
+    priv var size: int
+
+    init(size: int) {
+        this.size = size
+    }
+
+    fn decrementSize(delta: int) -> int {
+        return size -= delta
+    }
+
+}
+

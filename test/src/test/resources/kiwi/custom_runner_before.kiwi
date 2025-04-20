@@ -1,26 +1,26 @@
 class Field {
 
-    private var name: string
-    private var value: any|null
+    priv var name: string
+    priv var value: any|null
 
     init(name: string) {
        this.name = name
        this.value = null
     }
 
-    func getName() -> string {
+    fn getName() -> string {
        return this.name
     }
 
-    func setName(name: string) {
+    fn setName(name: string) {
        this.name = name
     }
 
-    func getValue() -> any|null {
+    fn getValue() -> any|null {
         return this.value
     }
 
-    func setValue(v: any|null) {
+    fn setValue(v: any|null) {
         this.value = v
     }
 

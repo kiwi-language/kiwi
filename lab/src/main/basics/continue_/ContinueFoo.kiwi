@@ -1,0 +1,15 @@
+package continue_
+
+class ContinueFoo {
+
+    static fn oddIndexOf(values: int[], v: int) -> int {
+        for (i in 0...values.length) {
+            if (i % 2 == 0) continue
+            if (values[i] == v) return i
+            if (i > 100) break
+        }
+        return -1
+    }
+
+}
+

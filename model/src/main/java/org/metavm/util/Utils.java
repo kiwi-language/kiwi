@@ -289,7 +289,7 @@ public class Utils {
         try (var writer = new FileWriter(path)) {
             writer.write(Long.toString(l));
         } catch (IOException e) {
-            throw new InternalException("Failed to write to file '" + path + "'");
+            throw new InternalException("Failed to write to file '" + path + "'", e);
         }
     }
 

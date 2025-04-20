@@ -1,0 +1,28 @@
+package enums
+
+enum EnumFieldFoo {
+
+    op1(1, "op1"),
+    ;
+    priv val code: int
+    priv val message: string
+
+    init(code: int, message: string) {
+        this.code = code
+        this.message = message
+    }
+
+    fn code() -> int {
+        return code
+    }
+
+    fn message() -> string {
+        return message
+    }
+
+    static fn getOp1Message() -> string {
+        return op1.message
+    }
+
+}
+

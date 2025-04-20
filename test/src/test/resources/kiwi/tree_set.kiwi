@@ -3,8 +3,8 @@ import java.lang.Integer
 
 class TreeSetLab {
 
-    static func create() -> TreeSet<Integer> {
-        return new TreeSet<Integer>()
+    static fn create() -> TreeSet<Integer> {
+        return TreeSet<Integer>()
     }
 
 }

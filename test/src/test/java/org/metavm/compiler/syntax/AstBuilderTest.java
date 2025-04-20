@@ -21,7 +21,7 @@ public class AstBuilderTest extends TestCase {
         var k = Utils.find(file.getClassDeclarations(), c -> c.tag() == ClassTag.ENUM);
         Assert.assertEquals(3, file.getImports().size());
         Assert.assertNotNull(k);
-        Assert.assertEquals("CouponState", k.name().value().toString());
+        Assert.assertEquals("CouponState", k.name().toString());
         Assert.assertEquals(2, k.enumConstants().size());
         log.debug("{}", file.getText());
     }

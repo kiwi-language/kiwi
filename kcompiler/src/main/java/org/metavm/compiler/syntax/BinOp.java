@@ -49,7 +49,7 @@ public enum BinOp {
     GE(">=", EnumSet.of(COMPARISON)) {
         @Override
         public Type getType(Type firstType, Type secondType) {
-            return PrimitiveType.BOOLEAN;
+            return PrimitiveType.BOOL;
         }
 
         @Override
@@ -61,7 +61,7 @@ public enum BinOp {
     LT("<", EnumSet.of(COMPARISON)) {
         @Override
         public Type getType(Type firstType, Type secondType) {
-            return PrimitiveType.BOOLEAN;
+            return PrimitiveType.BOOL;
         }
 
         @Override
@@ -74,7 +74,7 @@ public enum BinOp {
     LE("<=", EnumSet.of(COMPARISON)) {
         @Override
         public Type getType(Type firstType, Type secondType) {
-            return PrimitiveType.BOOLEAN;
+            return PrimitiveType.BOOL;
         }
 
         @Override
@@ -87,7 +87,7 @@ public enum BinOp {
     EQ("==", EnumSet.of(COMPARISON)) {
         @Override
         public Type getType(Type firstType, Type secondType) {
-            return PrimitiveType.BOOLEAN;
+            return PrimitiveType.BOOL;
         }
 
         @Override
@@ -99,7 +99,7 @@ public enum BinOp {
     NE("!=", EnumSet.of(COMPARISON)) {
         @Override
         public Type getType(Type firstType, Type secondType) {
-            return PrimitiveType.BOOLEAN;
+            return PrimitiveType.BOOL;
         }
 
         @Override

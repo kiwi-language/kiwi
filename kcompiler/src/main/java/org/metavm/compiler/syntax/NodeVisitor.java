@@ -18,15 +18,7 @@ public interface NodeVisitor<R> {
 
     R visitPrefixExpr(PrefixExpr prefixExpr);
 
-    R visitTypeApply(TypeApply typeApply);
-
-    R visitNewExpr(NewExpr newExpr);
-
     R visitNewArrayExpr(NewArrayExpr newArrayExpr);
-
-    R visitName(Name name);
-
-    R visitIdent(Ident ident);
 
     R visitModifier(Modifier modifier);
 
@@ -50,7 +42,7 @@ public interface NodeVisitor<R> {
 
     R visitEmptyStmt(EmptyStmt emptyStmt);
 
-    R visitEnumConstantDecl(EnumConstantDecl enumConstantDecl);
+    R visitEnumConstDecl(EnumConstDecl enumConstDecl);
 
     R visitExprStmt(ExprStmt exprStmt);
 
@@ -74,7 +66,7 @@ public interface NodeVisitor<R> {
 
     R visitPrimitiveTypeNode(PrimitiveTypeNode primitiveTypeNode);
 
-    R visitReturnStmt(ReturnStmt returnStmt);
+    R visitReturnStmt(RetStmt retStmt);
 
     R visitSelectorExpr(SelectorExpr selectorExpr);
 
@@ -102,13 +94,31 @@ public interface NodeVisitor<R> {
 
     R visitImport(Import imp);
 
-    R visitRefExpr(RefExpr refExpr);
+    R visitIdent(Ident ident);
 
-    R visitQualifiedName(QualifiedName qualifiedName);
-
-    R visitCallExpr(CallExpr callExpr);
+    R visitCall(Call call);
 
     R visitAnnotation(Annotation annotation);
 
     R visitCondExpr(CondExpr condExpr);
+
+    R visitForeachStmt(ForeachStmt foreachStmt);
+
+    R visitBreakStmt(BreakStmt breakStmt);
+
+    R visitContinueStmt(ContinueStmt continueStmt);
+
+    R visitLabeledStmt(LabeledStmt labeledStmt);
+
+    R visitRangeExpr(RangeExpr rangeExpr);
+
+    R visitDoWhileStmt(DoWhileStmt doWhileStmt);
+
+    R visitAnonClassExpr(AnonClassExpr anonClassExpr);
+
+    R visitTryStmt(TryStmt tryStmt);
+
+    R visitCatcher(Catcher catcher);
+
+    R visitTypeApply(TypeApply typeApply);
 }

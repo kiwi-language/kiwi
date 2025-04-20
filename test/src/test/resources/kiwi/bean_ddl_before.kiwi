@@ -3,22 +3,8 @@ import org.metavm.api.Index
 @Component
 class FooService {
 
-    private static val allFlagsIdx: Index<boolean, FooService>
+    priv static val allFlagsIdx = Index<bool, FooService>(false, s -> s.allFlags)
 
-    private static  func __allFlagsIdx__() -> Index<boolean, FooService> {
-        return new Index<boolean, FooService>("allFlags", false, (s: FooService) -> boolean {
-            return s.getAllFlags()
-        })
-    }
-
-    private val allFlags:boolean
-
-    public init() {
-        this.allFlags = true
-    }
-
-    public func getAllFlags() -> boolean {
-        return this.allFlags
-    }
+    priv val allFlags = true
 
 }

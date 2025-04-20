@@ -1,0 +1,22 @@
+package interceptors
+
+import org.metavm.api.Interceptor
+import org.metavm.api.entity.HttpRequest
+import org.metavm.api.entity.HttpResponse
+
+@Component
+class TelephoneMaskInterceptor: Interceptor {
+
+    fn before(request: HttpRequest?, response: HttpResponse?) {
+    }
+
+    fn after(request: HttpRequest?, response: HttpResponse?, result: any?) -> any? {
+        if (equals(request!!.getRequestURI(), "/api/user-service/get-user-by-name")) {
+            var user = result!! as UserDTO
+            var tel = user.telephone()
+            return UserDTO(user.name(), tel.substring(0, 3) + "******" + tel.substring(9))
+        } else return result
+    }
+
+}
+

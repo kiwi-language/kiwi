@@ -1,0 +1,40 @@
+package innerclass
+
+class MultiLevelInnerFoo {
+
+    static fn test(value: int) -> int {
+        return MultiLevelInnerFoo().Sub(value).getInner().getValue()
+    }
+
+    class External {
+
+        priv val value: int
+
+        init(value: int) {
+            this.value = value
+        }
+
+        class Inner {
+
+            fn getValue() -> int {
+                return External.this.value
+            }
+
+        }
+
+    }
+
+    class Sub: External {
+
+        init(value: int) {
+            super.init(value)
+        }
+
+        fn getInner() -> MultiLevelInnerFoo.External.Inner {
+            return Inner()
+        }
+
+    }
+
+}
+

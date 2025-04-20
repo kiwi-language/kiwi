@@ -38,6 +38,16 @@ public interface KiwiParserListener extends ParseTreeListener {
 	 */
 	void exitImportDeclaration(KiwiParser.ImportDeclarationContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KiwiParser#topLevTypeDecl}.
+	 * @param ctx the parse tree
+	 */
+	void enterTopLevTypeDecl(KiwiParser.TopLevTypeDeclContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#topLevTypeDecl}.
+	 * @param ctx the parse tree
+	 */
+	void exitTopLevTypeDecl(KiwiParser.TopLevTypeDeclContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KiwiParser#typeDeclaration}.
 	 * @param ctx the parse tree
 	 */
@@ -358,6 +368,16 @@ public interface KiwiParserListener extends ParseTreeListener {
 	 */
 	void exitForControl(KiwiParser.ForControlContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KiwiParser#loopVariable}.
+	 * @param ctx the parse tree
+	 */
+	void enterLoopVariable(KiwiParser.LoopVariableContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#loopVariable}.
+	 * @param ctx the parse tree
+	 */
+	void exitLoopVariable(KiwiParser.LoopVariableContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KiwiParser#loopVariableDeclarators}.
 	 * @param ctx the parse tree
 	 */
@@ -398,15 +418,15 @@ public interface KiwiParserListener extends ParseTreeListener {
 	 */
 	void exitLoopVariableUpdate(KiwiParser.LoopVariableUpdateContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link KiwiParser#newExpr}.
+	 * Enter a parse tree produced by {@link KiwiParser#anonClassExpr}.
 	 * @param ctx the parse tree
 	 */
-	void enterNewExpr(KiwiParser.NewExprContext ctx);
+	void enterAnonClassExpr(KiwiParser.AnonClassExprContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link KiwiParser#newExpr}.
+	 * Exit a parse tree produced by {@link KiwiParser#anonClassExpr}.
 	 * @param ctx the parse tree
 	 */
-	void exitNewExpr(KiwiParser.NewExprContext ctx);
+	void exitAnonClassExpr(KiwiParser.AnonClassExprContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KiwiParser#newArray}.
 	 * @param ctx the parse tree
@@ -578,6 +598,16 @@ public interface KiwiParserListener extends ParseTreeListener {
 	 */
 	void exitConjunction(KiwiParser.ConjunctionContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KiwiParser#range}.
+	 * @param ctx the parse tree
+	 */
+	void enterRange(KiwiParser.RangeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#range}.
+	 * @param ctx the parse tree
+	 */
+	void exitRange(KiwiParser.RangeContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KiwiParser#bitor}.
 	 * @param ctx the parse tree
 	 */
@@ -657,6 +687,26 @@ public interface KiwiParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitIsExpr(KiwiParser.IsExprContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#isSuffix}.
+	 * @param ctx the parse tree
+	 */
+	void enterIsSuffix(KiwiParser.IsSuffixContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#isSuffix}.
+	 * @param ctx the parse tree
+	 */
+	void exitIsSuffix(KiwiParser.IsSuffixContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#typePtn}.
+	 * @param ctx the parse tree
+	 */
+	void enterTypePtn(KiwiParser.TypePtnContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#typePtn}.
+	 * @param ctx the parse tree
+	 */
+	void exitTypePtn(KiwiParser.TypePtnContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KiwiParser#shift}.
 	 * @param ctx the parse tree
@@ -828,16 +878,6 @@ public interface KiwiParserListener extends ParseTreeListener {
 	 */
 	void exitIdentifier(KiwiParser.IdentifierContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link KiwiParser#methodCall}.
-	 * @param ctx the parse tree
-	 */
-	void enterMethodCall(KiwiParser.MethodCallContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link KiwiParser#methodCall}.
-	 * @param ctx the parse tree
-	 */
-	void exitMethodCall(KiwiParser.MethodCallContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link KiwiParser#literal}.
 	 * @param ctx the parse tree
 	 */
@@ -888,35 +928,55 @@ public interface KiwiParserListener extends ParseTreeListener {
 	 */
 	void exitType(KiwiParser.TypeContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link KiwiParser#arrayKind}.
+	 * Enter a parse tree produced by {@link KiwiParser#unionType}.
 	 * @param ctx the parse tree
 	 */
-	void enterArrayKind(KiwiParser.ArrayKindContext ctx);
+	void enterUnionType(KiwiParser.UnionTypeContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link KiwiParser#arrayKind}.
+	 * Exit a parse tree produced by {@link KiwiParser#unionType}.
 	 * @param ctx the parse tree
 	 */
-	void exitArrayKind(KiwiParser.ArrayKindContext ctx);
+	void exitUnionType(KiwiParser.UnionTypeContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link KiwiParser#classOrInterfaceType}.
+	 * Enter a parse tree produced by {@link KiwiParser#intersectionType}.
 	 * @param ctx the parse tree
 	 */
-	void enterClassOrInterfaceType(KiwiParser.ClassOrInterfaceTypeContext ctx);
+	void enterIntersectionType(KiwiParser.IntersectionTypeContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link KiwiParser#classOrInterfaceType}.
+	 * Exit a parse tree produced by {@link KiwiParser#intersectionType}.
 	 * @param ctx the parse tree
 	 */
-	void exitClassOrInterfaceType(KiwiParser.ClassOrInterfaceTypeContext ctx);
+	void exitIntersectionType(KiwiParser.IntersectionTypeContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link KiwiParser#typeArguments}.
+	 * Enter a parse tree produced by {@link KiwiParser#postfixType}.
 	 * @param ctx the parse tree
 	 */
-	void enterTypeArguments(KiwiParser.TypeArgumentsContext ctx);
+	void enterPostfixType(KiwiParser.PostfixTypeContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link KiwiParser#typeArguments}.
+	 * Exit a parse tree produced by {@link KiwiParser#postfixType}.
 	 * @param ctx the parse tree
 	 */
-	void exitTypeArguments(KiwiParser.TypeArgumentsContext ctx);
+	void exitPostfixType(KiwiParser.PostfixTypeContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#typeSuffix}.
+	 * @param ctx the parse tree
+	 */
+	void enterTypeSuffix(KiwiParser.TypeSuffixContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#typeSuffix}.
+	 * @param ctx the parse tree
+	 */
+	void exitTypeSuffix(KiwiParser.TypeSuffixContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#atomicType}.
+	 * @param ctx the parse tree
+	 */
+	void enterAtomicType(KiwiParser.AtomicTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#atomicType}.
+	 * @param ctx the parse tree
+	 */
+	void exitAtomicType(KiwiParser.AtomicTypeContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KiwiParser#primitiveType}.
 	 * @param ctx the parse tree
@@ -927,6 +987,66 @@ public interface KiwiParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitPrimitiveType(KiwiParser.PrimitiveTypeContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#functionType}.
+	 * @param ctx the parse tree
+	 */
+	void enterFunctionType(KiwiParser.FunctionTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#functionType}.
+	 * @param ctx the parse tree
+	 */
+	void exitFunctionType(KiwiParser.FunctionTypeContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#uncertainType}.
+	 * @param ctx the parse tree
+	 */
+	void enterUncertainType(KiwiParser.UncertainTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#uncertainType}.
+	 * @param ctx the parse tree
+	 */
+	void exitUncertainType(KiwiParser.UncertainTypeContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#arrayKind}.
+	 * @param ctx the parse tree
+	 */
+	void enterArrayKind(KiwiParser.ArrayKindContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#arrayKind}.
+	 * @param ctx the parse tree
+	 */
+	void exitArrayKind(KiwiParser.ArrayKindContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#classType}.
+	 * @param ctx the parse tree
+	 */
+	void enterClassType(KiwiParser.ClassTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#classType}.
+	 * @param ctx the parse tree
+	 */
+	void exitClassType(KiwiParser.ClassTypeContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#classTypePart}.
+	 * @param ctx the parse tree
+	 */
+	void enterClassTypePart(KiwiParser.ClassTypePartContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#classTypePart}.
+	 * @param ctx the parse tree
+	 */
+	void exitClassTypePart(KiwiParser.ClassTypePartContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#typeArguments}.
+	 * @param ctx the parse tree
+	 */
+	void enterTypeArguments(KiwiParser.TypeArgumentsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#typeArguments}.
+	 * @param ctx the parse tree
+	 */
+	void exitTypeArguments(KiwiParser.TypeArgumentsContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KiwiParser#modifier}.
 	 * @param ctx the parse tree
@@ -967,6 +1087,26 @@ public interface KiwiParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitLambdaParameters(KiwiParser.LambdaParametersContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#lambdaParameterList}.
+	 * @param ctx the parse tree
+	 */
+	void enterLambdaParameterList(KiwiParser.LambdaParameterListContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#lambdaParameterList}.
+	 * @param ctx the parse tree
+	 */
+	void exitLambdaParameterList(KiwiParser.LambdaParameterListContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KiwiParser#lambdaParameter}.
+	 * @param ctx the parse tree
+	 */
+	void enterLambdaParameter(KiwiParser.LambdaParameterContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#lambdaParameter}.
+	 * @param ctx the parse tree
+	 */
+	void exitLambdaParameter(KiwiParser.LambdaParameterContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KiwiParser#lambdaBody}.
 	 * @param ctx the parse tree

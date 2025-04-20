@@ -1,22 +1,34 @@
 package org.metavm.compiler.element;
 
+import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.generate.Code;
 import org.metavm.compiler.type.ClassType;
-import org.metavm.compiler.type.FunctionType;
+import org.metavm.compiler.type.FuncType;
 import org.metavm.compiler.type.Type;
 
 import java.util.function.Consumer;
 
-public record FieldInst(ClassType declaringType, Field field, Type type) implements FieldRef {
+public final class FieldInst extends ElementBase implements FieldRef {
+    private final ClassType declaringType;
+    private final Field field;
+    private Type type;
+
+    public FieldInst(ClassType declaringType, Field field, Type type) {
+        this.declaringType = declaringType;
+        this.field = field;
+        this.type = type;
+        field.addInstance(this);
+    }
+
     @Override
-    public SymName getName() {
+    public Name getName() {
         return field.getName();
     }
 
     @Override
-    public void invoke(Code code) {
-        load(code);
-        code.call((FunctionType) getType());
+    public void invoke(Code code, Env env) {
+        load(code, env);
+        code.call((FuncType) getType());
     }
 
     @Override
@@ -25,12 +37,12 @@ public record FieldInst(ClassType declaringType, Field field, Type type) impleme
     }
 
     @Override
-    public ClassType getDeclaringType() {
+    public ClassType getDeclType() {
         return declaringType;
     }
 
     @Override
-    public void setName(SymName name) {
+    public void setName(Name name) {
         throw new UnsupportedOperationException();
     }
 
@@ -40,7 +52,12 @@ public record FieldInst(ClassType declaringType, Field field, Type type) impleme
     }
 
     @Override
-    public Element getElement() {
+    public void setType(Type type) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Field getElement() {
         return field;
     }
 
@@ -51,6 +68,10 @@ public record FieldInst(ClassType declaringType, Field field, Type type) impleme
 
     @Override
     public void forEachChild(Consumer<Element> action) {
+    }
+
+    public void onFieldTypeChange() {
+        type = field.getType().accept(declaringType.getSubstitutor());
     }
 
     @Override
@@ -65,6 +86,14 @@ public record FieldInst(ClassType declaringType, Field field, Type type) impleme
     @Override
     public String toString() {
         return "FieldInst " + getText();
+    }
+
+    public Field field() {
+        return field;
+    }
+
+    public Type type() {
+        return type;
     }
 
 }

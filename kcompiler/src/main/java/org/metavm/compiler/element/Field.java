@@ -1,30 +1,34 @@
 package org.metavm.compiler.element;
 
+import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.generate.Code;
 import org.metavm.compiler.type.ClassType;
-import org.metavm.compiler.type.FunctionType;
+import org.metavm.compiler.type.FuncType;
 import org.metavm.compiler.type.Type;
+import org.metavm.compiler.util.List;
 
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 import static org.metavm.object.type.Field.FLAG_STATIC;
 
-public final class Field implements Member, FieldRef {
+public final class Field extends ElementBase implements Member, FieldRef {
 
-    private SymName name;
+    private Name name;
     private Type type;
     private Access access;
     private boolean static_;
     private boolean deleted;
     private Integer sourceTag;
     private final Clazz declaringClass;
+    private @Nullable Method initializer;
+    private List<FieldInst> instances = List.nil();
 
     public Field(String name, Type type, Access access, boolean static_, Clazz declaringClass) {
-        this(SymNameTable.instance.get(name), type, access, static_, false, declaringClass);
+        this(NameTable.instance.get(name), type, access, static_, false, declaringClass);
     }
 
-    public Field(SymName name, Type type, Access access, boolean static_, boolean deleted, Clazz declaringClass) {
+    public Field(Name name, Type type, Access access, boolean static_, boolean deleted, Clazz declaringClass) {
         this.name = name;
         this.type = type;
         this.access = access;
@@ -35,23 +39,23 @@ public final class Field implements Member, FieldRef {
     }
 
     @Override
-    public SymName getName() {
+    public Name getName() {
         return name;
     }
 
     @Override
-    public void invoke(Code code) {
-        load(code);
-        code.call((FunctionType) type);
+    public void invoke(Code code, Env env) {
+        load(code, env);
+        code.call((FuncType) type);
     }
 
     @Override
-    public ClassType getDeclaringType() {
-        return null;
+    public ClassType getDeclType() {
+        return declaringClass;
     }
 
     @Override
-    public void setName(SymName name) {
+    public void setName(Name name) {
         this.name = name;
     }
 
@@ -66,6 +70,7 @@ public final class Field implements Member, FieldRef {
 
     public void setType(Type type) {
         this.type = type;
+        instances.forEach(FieldInst::onFieldTypeChange);
     }
 
     public Access getAccess() {
@@ -76,7 +81,7 @@ public final class Field implements Member, FieldRef {
         this.access = access;
     }
 
-    public Clazz getDeclaringClass() {
+    public Clazz getDeclClass() {
         return declaringClass;
     }
 
@@ -143,12 +148,21 @@ public final class Field implements Member, FieldRef {
         this.deleted = deleted;
     }
 
-    public @Nullable MethodInst getInitializer() {
-        return (MethodInst) declaringClass.getType().getTable().lookupFirst(
-                SymName.from("__" + name.toString() + "__"),
-                e -> e instanceof MethodInst m && m.getParameterTypes().isEmpty()
-                        && m.isStatic() == static_ && type.isAssignableFrom(m.getReturnType())
-        );
+    public @Nullable Method getInitializer() {
+        return initializer;
+//        return (MethodInst) declaringClass.getType().getTable().lookupFirst(
+//                SymName.from("__" + name.toString() + "__"),
+//                e -> e instanceof MethodInst m && m.getParameterTypes().isEmpty()
+//                        && m.isStatic() == static_ && type.isAssignableFrom(m.getReturnType())
+//        );
+    }
+
+    public void setInitializer(@Nullable Method initializer) {
+        this.initializer = initializer;
+    }
+
+    void addInstance(FieldInst fieldInst) {
+        instances = instances.prepend(fieldInst);
     }
 
 }

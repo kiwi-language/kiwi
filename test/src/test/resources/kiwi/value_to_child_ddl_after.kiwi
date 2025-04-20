@@ -1,51 +1,51 @@
 class Product {
-    private var name: string
-    private var price: Price
+    priv var name: string
+    priv var price: Price
 
     init(name: string, price: Price) {
         this.name = name
         this.price = price
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func setName(name: string) {
+    fn setName(name: string) {
         this.name = name
     }
 
-    func getPrice() -> Price {
+    fn getPrice() -> Price {
         return this.price
     }
 
-    func setPrice(price: Price) {
+    fn setPrice(price: Price) {
         this.price = price
     }
 }
 
 class Price {
-    private var amount: double
-    private var currency: Currency
+    priv var amount: double
+    priv var currency: Currency
 
     init(amount: double, currency: Currency) {
         this.amount = amount
         this.currency = currency
     }
 
-    func getAmount() -> double {
+    fn getAmount() -> double {
         return this.amount
     }
 
-    func setAmount(amount: double) {
+    fn setAmount(amount: double) {
         this.amount = amount
     }
 
-    func getCurrency() -> Currency {
+    fn getCurrency() -> Currency {
         return this.currency
     }
 
-    func setCurrency(currency: Currency) {
+    fn setCurrency(currency: Currency) {
         this.currency = currency
     }
 
@@ -58,6 +58,4 @@ enum Currency {
 
 ;
 
-    init() {
-    }
 }

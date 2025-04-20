@@ -68,7 +68,7 @@ public final class FunctionTypeNode extends TypeNode {
 
     @Override
     protected Type actualResolve(Env env) {
-        return env.types().getFunctionType(
+        return env.types().getFuncType(
                 parameterTypes.map(env::resolveType),
                 env.resolveType(returnType)
         );

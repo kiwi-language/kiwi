@@ -1,0 +1,28 @@
+package hashcode
+
+class HashCodeFoo {
+
+    priv var name: string
+
+    init(name: string) {
+        this.name = name
+    }
+
+    fn getName() -> string {
+        return name
+    }
+
+    fn setName(name: string) {
+        this.name = name
+    }
+
+    fn hashCode() -> int {
+        return name.hashCode()
+    }
+
+    fn equals(obj: any?) -> bool {
+        return obj is HashCodeFoo that && name.equals(that.name)
+    }
+
+}
+

@@ -9,6 +9,7 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.flow.Flows;
 import org.metavm.flow.KlassInput;
+import org.metavm.flow.Method;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.WAL;
@@ -89,6 +90,8 @@ public class TypeManager extends EntityContextFactoryAware {
             var klasses = Types.sortKlassesByTopology(batch.getKlasses());
             for (Klass klass : klasses) {
                 klass.resetHierarchy();
+//                rebuildNodes(klass);
+//                logger.debug("{}", klass.getText());
             }
             beanManager.createBeans(klasses, BeanDefinitionRegistry.getInstance(context), context);
             for (Klass newClass : batch.getNewKlasses()) {
@@ -103,6 +106,17 @@ public class TypeManager extends EntityContextFactoryAware {
         }
     }
 
+    private void rebuildNodes(Klass clazz) {
+        for (Method method : clazz.getMethods()) {
+            method.rebuildNodes();
+            for (Klass klass : method.getKlasses()) {
+                rebuildNodes(klass);
+            }
+        }
+        for (Klass klass : clazz.getKlasses()) {
+            rebuildNodes(klass);
+        }
+    }
     private void readKlass(InputStream in, SaveTypeBatch batch) {
         var klassIn = new KlassInput(in, batch.getContext());
         var reader = new ClassFileReader(klassIn, batch.getContext(), batch);

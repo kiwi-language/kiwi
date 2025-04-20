@@ -2,6 +2,7 @@ package org.metavm.compiler.element;
 
 import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Type;
+import org.metavm.compiler.type.Types;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
@@ -15,9 +16,9 @@ public record LiteralValue(Object value) implements Constant {
             case Long ignored -> PrimitiveType.LONG;
             case Float ignored  -> PrimitiveType.FLOAT;
             case Double ignored -> PrimitiveType.DOUBLE;
-            case String ignored -> PrimitiveType.STRING;
+            case String ignored -> Types.instance.getStringType();
             case Character ignored -> PrimitiveType.CHAR;
-            case Boolean ignored -> PrimitiveType.BOOLEAN;
+            case Boolean ignored -> PrimitiveType.BOOL;
             case null -> PrimitiveType.NULL;
             default -> throw new RuntimeException("Unexpected constant: " + value);
         };

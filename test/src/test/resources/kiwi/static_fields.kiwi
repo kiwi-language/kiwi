@@ -1,16 +1,16 @@
 class UpdateStaticFoo {
 
-    private static var value: int
+    priv static var value: int
 
     static {
         UpdateStaticFoo.value = 0
     }
 
-    static func set(value: int) {
+    static fn set(value: int) {
         UpdateStaticFoo.value = value
     }
 
-    static func get() -> int {
+    static fn get() -> int {
         return UpdateStaticFoo.value
     }
 
@@ -22,17 +22,17 @@ enum Option {
 
 ;
 
-    private var value: int
+    priv var value: int
 
     init(value: int) {
         this.value = value
     }
 
-    func getValue() -> int {
+    fn getValue() -> int {
         return this.value
     }
 
-    func setValue(value: int) {
+    fn setValue(value: int) {
         this.value = value
     }
 

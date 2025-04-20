@@ -1,7 +1,7 @@
 
 class Utils {
 
-    static func createArray() -> any[] {
+    static fn createArray() -> any[] {
         return new any[]
     }
 

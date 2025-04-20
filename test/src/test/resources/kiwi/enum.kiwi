@@ -7,13 +7,13 @@ enum Option {
 
 ;
 
-    private val code: int
+    priv val code: int
 
     init(code: int) {
         this.code = code
     }
 
-    func code() -> int {
+    fn code() -> int {
         return this.code
     }
 

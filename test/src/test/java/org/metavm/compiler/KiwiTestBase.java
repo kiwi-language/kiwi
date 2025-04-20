@@ -1,0 +1,87 @@
+package org.metavm.compiler;
+
+import junit.framework.TestCase;
+import org.metavm.compiler.util.MockEnter;
+import org.metavm.entity.EntityContextFactory;
+import org.metavm.flow.FlowSavingContext;
+import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.InstanceQueryService;
+import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.type.TypeManager;
+import org.metavm.util.*;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+public abstract class KiwiTestBase extends TestCase  {
+
+    EntityContextFactory entityContextFactory;
+    private TypeManager typeManager;
+    private SchedulerAndWorker schedulerAndWorker;
+    private ApiClient apiClient;
+
+    @Override
+    protected void setUp() throws Exception {
+        var bootResult = BootstrapUtils.bootstrap();
+        typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
+        entityContextFactory = bootResult.entityContextFactory();
+        schedulerAndWorker = bootResult.schedulerAndWorker();
+        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache(),
+                new InstanceQueryService(bootResult.instanceSearchService())));
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        entityContextFactory = null;
+        typeManager = null;
+        schedulerAndWorker = null;
+        apiClient = null;
+    }
+
+    String saveInstance(String className, Map<String, Object> fields) {
+        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, fields));
+    }
+
+    Object callMethod(String qualifier, String methodName, List<Object> arguments) {
+        return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    }
+
+    ClassInstanceWrap getObject(String id) {
+        return apiClient.getObject(id);
+    }
+
+    void deploy(String source) {
+        deploy(List.of(source));
+    }
+
+    void deploy(List<String> sources) {
+        FlowSavingContext.initConfig();
+        try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            context.loadKlasses();
+//            var assembler = AssemblerFactory.createWithStandardTypes();
+            compile(sources);
+            ContextUtil.setAppId(TestConstants.APP_ID);
+            TestUtils.doInTransaction(() -> {
+                try(var input = new FileInputStream(TestConstants.TARGET + "/target.mva")) {
+                    typeManager.deploy(input);
+                    return null;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            TestUtils.waitForDDLPrepared(schedulerAndWorker);
+        }
+    }
+
+    private void compile(List<String> sources) {
+//        assembler.assemble(sources);
+//        assembler.generateClasses(TestConstants.TARGET);
+        var task = new CompilationTask(sources, TestConstants.TARGET);
+        task.parse();
+        MockEnter.enterStandard(task.getProject());
+        task.analyze();
+        task.generate();
+    }
+}

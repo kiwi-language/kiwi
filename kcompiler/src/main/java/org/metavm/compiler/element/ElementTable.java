@@ -17,12 +17,12 @@ public class ElementTable {
         empty.freeze();
     }
 
-    private final MultiMap<SymName, Element> map = new MultiMap<>();
+    private final MultiMap<Name, Element> map = new MultiMap<>();
     private boolean frozen;
 
     public void add(Element element) {
         ensureNotFrozen();
-        if (Traces.traceAttr)
+        if (Traces.traceEntering)
             log.trace("Entering element {}", element);
         map.put(element.getName(), element);
     }
@@ -34,12 +34,12 @@ public class ElementTable {
 
     public void addAll(ElementTable that) {
         ensureNotFrozen();
-        if (Traces.traceAttr) {
+        if (Traces.traceEntering) {
             var elements = new ArrayList<Element>();
             that.map.forEach((k, e) -> {
                 elements.add(e);
             });
-            log.error("Entering all elements {}", elements);
+            log.trace("Entering all elements {}", elements);
         }
         map.putAll(that.map);
     }
@@ -50,22 +50,22 @@ public class ElementTable {
     }
 
     public @Nullable Element lookupFirst(String name) {
-        return lookupFirst(SymNameTable.instance.get(name));
+        return lookupFirst(NameTable.instance.get(name));
     }
 
-    public @Nullable Element lookupFirst(SymName name) {
+    public @Nullable Element lookupFirst(Name name) {
         return map.getFirst(name, e -> true);
     }
 
-    public @Nullable Element lookupFirst(SymName name, Predicate<Element> filter) {
+    public @Nullable Element lookupFirst(Name name, Predicate<Element> filter) {
         return map.getFirst(name, filter);
     }
 
-    public Iterable<Element> lookupAll(SymName name) {
+    public Iterable<Element> lookupAll(Name name) {
         return map.get(name, e -> true);
     }
 
-    public Iterable<Element> lookupAll(SymName name, Predicate<Element> filter) {
+    public Iterable<Element> lookupAll(Name name, Predicate<Element> filter) {
         return map.get(name, filter);
     }
 
@@ -74,8 +74,8 @@ public class ElementTable {
     }
 
     private void ensureNotFrozen() {
-        if (frozen)
-            throw new IllegalStateException("Element table is frozen");
+//        if (frozen)
+//            throw new IllegalStateException("Element table is frozen");
     }
 
     @Override

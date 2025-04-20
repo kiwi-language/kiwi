@@ -59,6 +59,9 @@ public class Generator extends VisitorBase {
         if (tracing)
             logger.trace("Emitting code for klass {}", klass.getTypeDesc());
         klass.emitCode();
+        if (Objects.equals(psiClass.getName(), "IndexSelectFoo")) {
+            logger.debug("{}", psiClass.getText());
+        }
     }
 
     private void enterClass(ClassInfo classInfo) {

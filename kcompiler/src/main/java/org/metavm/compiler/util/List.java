@@ -7,10 +7,7 @@ import org.metavm.util.Utils;
 import javax.annotation.Nullable;
 import java.lang.reflect.Array;
 import java.util.*;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 
 public class List<E> extends AbstractCollection<E> implements java.util.List<E> {
 
@@ -402,7 +399,6 @@ public class List<E> extends AbstractCollection<E> implements java.util.List<E> 
         }
         return false;
     }
-
     public boolean allMatch(Predicate<? super  E> filter) {
         for (var l = this; l.nonEmpty(); l = l.tail) {
             if (!filter.test(l.head))
@@ -411,12 +407,25 @@ public class List<E> extends AbstractCollection<E> implements java.util.List<E> 
         return true;
     }
 
+    public boolean nonMatch(Predicate<? super  E> filter) {
+        return allMatch(e -> !filter.test(e));
+    }
     @Override
     public void forEach(Consumer<? super E> action) {
         if (tail == null)
             return;
         action.accept(head);
         tail.forEach(action);
+    }
+
+    public <T> void forEach(List<T> that, BiConsumer<? super E, ? super T> action) {
+        var l1 = this;
+        var l2 = that;
+        while (l1.nonEmpty() && l2.nonEmpty()) {
+            action.accept(l1.head, l2.head);
+            l1 = l1.tail;
+            l2 = l2.tail;
+        }
     }
 
     public void forEachBackwards(Consumer<? super E> action) {

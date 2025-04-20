@@ -1,0 +1,60 @@
+package innerclass
+
+class Warehouse<T> {
+
+    priv var location: T
+
+    init(location: T) {
+        this.location = location
+    }
+
+    fn getLocation() -> T {
+        return location
+    }
+
+    fn setLocation(location: T) {
+        this.location = location
+    }
+
+    class Container<C> {
+
+        priv val id: C
+
+        init(id: C) {
+            this.id = id
+        }
+
+        fn getId() -> C {
+            return id
+        }
+
+        fn getWarehouse() -> Warehouse<T> {
+            return Warehouse.this
+        }
+
+        class Item<I> {
+
+            priv val type: I
+
+            init(type: I) {
+                this.type = type
+            }
+
+            fn getType() -> I {
+                return type
+            }
+
+            fn getContainer() -> Warehouse<T>.Container<C> {
+                return Container.this
+            }
+
+            fn getWarehouse() -> Warehouse<T> {
+                return Warehouse.this
+            }
+
+        }
+
+    }
+
+}
+

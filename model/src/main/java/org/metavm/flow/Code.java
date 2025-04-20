@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Generated;
 import org.metavm.entity.*;
 import org.metavm.object.instance.core.Reference;
+import org.metavm.object.type.Klass;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
@@ -137,6 +138,9 @@ public class Code implements Element, LocalKey, Struct {
     public void writeCode(CodeWriter writer) {
         writer.writeln(" {");
         writer.indent();
+        for (Klass klass : getFlow().getKlasses()) {
+            klass.writeCode(writer);
+        }
         writer.writeln("max locals: " + maxLocals + ", max stack: " + maxStack);
         nodes.forEach(node -> node.write(writer));
         writer.unindent();
@@ -185,7 +189,7 @@ public class Code implements Element, LocalKey, Struct {
     }
 
     public void rebuildNodes() {
-        assert nodes.isEmpty();
+        assert nodes.isEmpty() : "Executable " + callable +  " is not reset ";
         new CodeInput(this).readNodes();
     }
 

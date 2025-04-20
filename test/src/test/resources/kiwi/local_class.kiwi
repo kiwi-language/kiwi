@@ -1,0 +1,11 @@
+
+class LocalClassFoo {
+
+    static fn test() -> int {
+        val foo = new LocalClassFoo() {
+            val value: int = 1
+        }
+        return foo.value
+    }
+
+}

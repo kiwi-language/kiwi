@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Type;
@@ -7,8 +8,10 @@ import org.metavm.compiler.type.Types;
 
 import javax.lang.model.element.VariableElement;
 
+@Slf4j
 public abstract class Expr extends Node {
 
+    private ExprStatus status = ExprStatus.NONE;
     private Element element;
     private Type type = PrimitiveType.NEVER;
 
@@ -28,6 +31,14 @@ public abstract class Expr extends Node {
 
     public void setType(Type type) {
         this.type = type;
+    }
+
+    public ExprStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ExprStatus status) {
+        this.status = status;
     }
 
 }

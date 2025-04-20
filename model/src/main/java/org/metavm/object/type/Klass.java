@@ -1924,6 +1924,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         for (Method method : methods) {
             method.writeCode(writer);
         }
+        for (Klass klass : klasses) {
+            klass.writeCode(writer);
+        }
         writer.unindent();
         writer.writeln("}");
     }

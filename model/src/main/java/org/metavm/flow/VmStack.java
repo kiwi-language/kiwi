@@ -82,7 +82,7 @@ public class VmStack {
                 var b = bytes[pc] & 0xff;
                 try {
 //                    if(DebugEnv.flag)
-//                    log.debug("Executing bytecode {} at {}, top: {}, callable: {}", Bytecodes.getBytecodeName(b), pc, top, callableRef);
+//                        log.debug("Executing bytecode {} at {}, top: {}, callable: {}", Bytecodes.getBytecodeName(b), pc, top, callableRef);
                     except: {
                         switch (b) {
                             case Bytecodes.ADD_OBJECT -> {
@@ -127,11 +127,11 @@ public class VmStack {
                                 Arrays.fill(stack, base, base + code.getFrameSize(), null);
                                 if (fp == 0)
                                     return FlowExecResult.of(v);
-                                stack[base] = v;
                                 var frame = frames[--fp];
                                 frames[fp] = null;
+                                stack[frame.top] = v;
                                 pc = frame.pc;
-                                top = base + 1;
+                                top = frame.top + 1;
                                 base = frame.base;
                                 callableRef = frame.callableRef;
                                 code = callableRef.getCode();
@@ -396,7 +396,7 @@ public class VmStack {
                                 pc += 3;
                             }
                             case Bytecodes.TRY_ENTER -> {
-                                var handler = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
+                                var handler = pc + ((bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff);
                                 exceptionHandlers[handlerTop++] = new ExceptionHandler(fp, handler);
                                 pc += 3;
                             }
@@ -714,15 +714,9 @@ public class VmStack {
                             case Bytecodes.DOUBLE_ADD -> {
                                 var v2 = (DoubleValue) stack[--top];
                                 var v0 = stack[--top];
-                                try {
-                                    var v1 = (DoubleValue) v0;
-                                    stack[top++] = new DoubleValue(v1.value + v2.value);
-                                    pc++;
-                                }
-                                catch (ClassCastException e) {
-                                    log.error("Float value {}", ((FloatValue) v0).value);
-                                    throw e;
-                                }
+                                var v1 = (DoubleValue) v0;
+                                stack[top++] = new DoubleValue(v1.value + v2.value);
+                                pc++;
                             }
                             case Bytecodes.DOUBLE_SUB -> {
                                 var v2 = (DoubleValue) stack[--top];
@@ -1116,7 +1110,7 @@ public class VmStack {
                             }
                             case Bytecodes.DUP2 -> {
                                 var v1 = stack[top - 2];
-                                var v2 = stack[top = 1];
+                                var v2 = stack[top - 1];
                                 stack[top++] = v1;
                                 stack[top++] = v2;
                                 pc++;

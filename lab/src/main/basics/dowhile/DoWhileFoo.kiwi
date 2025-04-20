@@ -1,0 +1,16 @@
+package dowhile
+
+class DoWhileFoo {
+
+    static fn sum(from: int, to: int) -> int {
+        var sum = 0
+        var v = from
+        do {
+            sum += v
+            v++
+        } while (v <= to)
+        return sum
+    }
+
+}
+

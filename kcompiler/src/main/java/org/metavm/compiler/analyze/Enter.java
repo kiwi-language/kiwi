@@ -17,7 +17,7 @@ import static org.metavm.compiler.util.Traces.traceEntering;
 public class Enter {
 
     private final Project project;
-
+    private int nextLambdaId = 0;
 
     public Enter(Project project) {
         this.project = project;
@@ -52,35 +52,57 @@ public class Enter {
         @Override
         public Void visitClassDecl(ClassDecl classDecl) {
             if (traceEntering)
-                log.trace("Entering class {}", classDecl.name().value());
+                log.trace("Entering class {}", classDecl.name());
+            var scope = (ClassScope) currentElement();
+            var name = classDecl.isAnonymous() ?
+                    Name.from("$" + scope.getClasses().size()) : classDecl.name();
+            var mods = parseModifiers(classDecl.mods());
             var clazz = new Clazz(
                     ClassTag.valueOf(classDecl.tag().name()),
-                    classDecl.name().value(),
+                    name,
                     parseAccess(classDecl.mods()),
-                    (ClassScope) currentElement()
+                    scope
             );
+            if (mods.temp)
+                clazz.setEphemeral(true);
+            if (mods.static_)
+                clazz.setStatic(true);
             if (clazz.isEnum())
                 enterEnumMethods(clazz);
             classDecl.setElement(clazz);
             enterElement(clazz);
             super.visitClassDecl(classDecl);
             exitElement();
+            if (!clazz.isInterface() && !classDecl.isAnonymous() && clazz.getMethods().nonMatch(Method::isInit)) {
+                var initDecl = NodeMaker.methodDecl(
+                        new Method(
+                                Name.init(),
+                                Access.PUBLIC,
+                                false,
+                                false,
+                                true,
+                                clazz
+                        ),
+                        List.of()
+                );
+                classDecl.setMembers(classDecl.getMembers().prepend(initDecl));
+            }
             return null;
         }
 
         private void enterEnumMethods(Clazz clazz) {
             assert clazz.isEnum();
-            new Method(SymName.from("values"), Access.PUBLIC, true, false, false, clazz);
-            var valueOfMethod = new Method(SymName.from("valueOf"), Access.PUBLIC, true, false, false, clazz);
-            new Parameter(SymName.from("name"), Types.instance.getNullableString(), valueOfMethod);
+            new Method(Name.from("values"), Access.PUBLIC, true, false, false, clazz);
+            var valueOfMethod = new Method(Name.from("valueOf"), Access.PUBLIC, true, false, false, clazz);
+            new Param(Name.from("name"), Types.instance.getNullableString(), valueOfMethod);
         }
 
         @Override
         public Void visitFieldDecl(FieldDecl fieldDecl) {
             var mods = parseModifiers(fieldDecl.mods());
             var field = new Field(
-                    fieldDecl.name().value(),
-                    PrimitiveType.NEVER,
+                    fieldDecl.getName(),
+                    DeferredType.instance,
                     mods.access,
                     mods.static_,
                     mods.deleted,
@@ -97,15 +119,15 @@ public class Enter {
             var mods = parseModifiers(methodDecl.mods());
             var clazz = (Clazz) currentElement();
             var method = new Method(
-                    methodDecl.name().value(),
+                    methodDecl.name(),
                     mods.access,
                     mods.static_,
                     mods.abstract_ || clazz.isInterface(),
-                    methodDecl.name().value() == SymName.init(),
+                    methodDecl.name() == Name.init(),
                     clazz
             );
             if (traceEntering)
-                log.trace("Entering method {}", method.getQualifiedName());
+                log.trace("Entering method {}", method.getQualName());
             methodDecl.setElement(method);
             enterElement(method);
             super.visitMethodDecl(methodDecl);
@@ -114,31 +136,38 @@ public class Enter {
         }
 
         @Override
-        public Void visitEnumConstantDecl(EnumConstantDecl enumConstantDecl) {
+        public Void visitEnumConstDecl(EnumConstDecl enumConstDecl) {
             var clazz = (Clazz) currentElement();
-
-            var ec = new EnumConstant(
-                    enumConstantDecl.getName().value(),
+            var type = clazz;
+            super.visitEnumConstDecl(enumConstDecl);
+            if (enumConstDecl.getDecl() != null) {
+                var anonClass = enumConstDecl.getDecl().getElement();
+                anonClass.setInterfaces(List.of(clazz));
+                anonClass.setStatic(true);
+                type = anonClass;
+            }
+            var ec = new EnumConst(
+                    enumConstDecl.getName(),
                     clazz.getEnumConstants().size(),
-                    clazz
+                    clazz,
+                    type
             );
             if (traceEntering)
                 log.trace("Entering enum constant {}", ec.getQualifiedName());
-            enumConstantDecl.setElement(ec);
-            super.visitEnumConstantDecl(enumConstantDecl);
+            enumConstDecl.setElement(ec);
             return null;
         }
 
         @Override
         public Void visitParamDecl(ParamDecl paramDecl) {
             var exe = (Executable) currentElement();
-            var param = new Parameter(
-                    paramDecl.name().value(),
+            var param = new Param(
+                    paramDecl.getName(),
                     PrimitiveType.NEVER,
                     exe
             );
             if (traceEntering) {
-                log.trace("Entering parameter {}", param.getQualifiedName());
+                log.trace("Entering parameter {}", param.getQualName());
             }
             paramDecl.setElement(param);
             return super.visitParamDecl(paramDecl);
@@ -147,8 +176,7 @@ public class Enter {
         @Override
         public Void visitLocalVarDecl(LocalVarDecl localVarDecl) {
             var exe = currentExecutable();
-            var code = Objects.requireNonNull(exe.getCode());
-            var variable = new LocalVariable(localVarDecl.name().value(), PrimitiveType.NEVER, exe);
+            var variable = new LocalVar(localVarDecl.getName(), DeferredType.instance, exe);
             localVarDecl.setElement(variable);
             if (traceEntering) {
                 log.trace("Entering local variable {}", variable.getName());
@@ -158,10 +186,10 @@ public class Enter {
 
         @Override
         public Void visitTypeVariableDecl(TypeVariableDecl typeVariableDecl) {
-            var typeVar = new TypeVariable(
-                    typeVariableDecl.getName().value(),
+            var typeVar = new TypeVar(
+                    typeVariableDecl.getName(),
                     PrimitiveType.ANY,
-                    (GenericDeclaration) currentElement()
+                    (GenericDecl) currentElement()
             );
             typeVariableDecl.setElement(typeVar);
             if (traceEntering) {
@@ -172,13 +200,7 @@ public class Enter {
 
         @Override
         public Void visitLambdaExpr(LambdaExpr lambdaExpr) {
-            var encl = (Executable) currentElement();
-            var func = switch (encl) {
-                case Func f -> f;
-                case Lambda l -> l.getFunction();
-                default -> throw new RuntimeException("Invalid enclosing element of lambda: " + encl);
-            };
-            var lambda = new Lambda(SymName.from("lambda" + func.getLambdas().size()), encl, func);
+            var lambda = new Lambda(Name.from("lambda" + nextLambdaId++));
             lambdaExpr.setElement(lambda);
             enterElement(lambda);
             super.visitLambdaExpr(lambdaExpr);
@@ -200,9 +222,9 @@ public class Enter {
 
         private Access parseAccess(List<Modifier> modifiers) {
             var tags = Utils.mapToSet(modifiers, Modifier::tag);
-            if (tags.contains(ModifierTag.PUBLIC)) return Access.PUBLIC;
-            if (tags.contains(ModifierTag.PROTECTED)) return Access.PROTECTED;
-            if (tags.contains(ModifierTag.PRIVATE)) return Access.PRIVATE;
+            if (tags.contains(ModifierTag.PUB)) return Access.PUBLIC;
+            if (tags.contains(ModifierTag.PROT)) return Access.PROTECTED;
+            if (tags.contains(ModifierTag.PRIV)) return Access.PRIVATE;
             return Access.PACKAGE;
         }
 
@@ -221,19 +243,21 @@ public class Enter {
         var abstract_ = false;
         var deleted = false;
         var readonly = false;
+        var temp = false;
         var access = Access.PUBLIC;
         for (Modifier mod : mods) {
             switch (mod.tag()) {
-                case PUBLIC -> access = Access.PUBLIC;
-                case PRIVATE ->  access = Access.PRIVATE;
-                case PROTECTED -> access = Access.PROTECTED;
+                case PUB -> access = Access.PUBLIC;
+                case PRIV ->  access = Access.PRIVATE;
+                case PROT -> access = Access.PROTECTED;
                 case STATIC -> static_ = true;
                 case READONLY -> readonly = true;
                 case ABSTRACT -> abstract_ = true;
                 case DELETED ->  deleted = true;
+                case TEMP ->  temp = true;
             }
         }
-        return new Modifiers(static_, abstract_, deleted, readonly, access);
+        return new Modifiers(static_, abstract_, deleted, readonly, temp, access);
     }
 
 
@@ -242,6 +266,7 @@ public class Enter {
             boolean abstract_,
             boolean deleted,
             boolean readonly,
+            boolean temp,
             Access access
     ) {
 

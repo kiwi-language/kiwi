@@ -1,0 +1,51 @@
+package break_
+
+class BreakFoo {
+
+    static fn contains(es: any[][], o: any) -> bool {
+        val size: int = es.length
+        var i: int = 0
+        found: {
+            if (o == null) {
+                {
+                    while (i < es.length) {
+                        {
+                            var j: int = 0
+                            while (j < es[i].length) {
+                                if (es[i][j] == null) break found
+                                j++
+                            }
+                        }
+                        i++
+                    }
+                }
+            }
+            else {
+                {
+                    while (i < es.length) {
+                        {
+                            var j: int = 0
+                            while (j < es[i].length) {
+                                if (equals(o, es[i][j])) break found
+                                j++
+                            }
+                        }
+                        i++
+                    }
+                }
+            }
+            return false
+        }
+        return true
+    }
+
+    static fn isWithinRange(v: int, min: int, max: int) -> bool {
+        out: if (v >= min) {
+            if (v >= max) break out
+            return true
+        }
+        return false
+    }
+
+}
+

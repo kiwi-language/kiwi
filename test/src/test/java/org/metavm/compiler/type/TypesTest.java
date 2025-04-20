@@ -8,8 +8,8 @@ public class TypesTest extends TestCase {
 
     public void test() {
         var types = Types.instance;
-        var ft1 = types.getFunctionType(List.of(PrimitiveType.STRING, PrimitiveType.STRING), PrimitiveType.INT);
-        var ft2 = types.getFunctionType(List.of(PrimitiveType.STRING, PrimitiveType.STRING), PrimitiveType.INT);
+        var ft1 = types.getFuncType(List.of(Types.instance.getStringType(), Types.instance.getStringType()), PrimitiveType.INT);
+        var ft2 = types.getFuncType(List.of(Types.instance.getStringType(), Types.instance.getStringType()), PrimitiveType.INT);
         Assert.assertSame(ft1, ft2);
 
         var ut1 = types.getUnionType(List.of(PrimitiveType.NULL, PrimitiveType.INT));
@@ -20,8 +20,8 @@ public class TypesTest extends TestCase {
 
     public void testSort() {
         Assert.assertEquals(
-                List.of(PrimitiveType.STRING, PrimitiveType.NULL),
-                Types.instance.sorted(List.of(PrimitiveType.STRING, PrimitiveType.NULL))
+                List.of(PrimitiveType.NULL, Types.instance.getStringType()),
+                Types.instance.sorted(List.of(Types.instance.getStringType(), PrimitiveType.NULL))
         );
     }
 

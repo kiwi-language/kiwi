@@ -1,0 +1,46 @@
+package array
+
+
+class ArrayFoo {
+
+    priv val array: any?[] = new any?[] {null, null, null, null, null}
+    priv val ints: int[] = new int[] {0, 0, 0, 0, 0}
+    priv val multi: any?[][] = new any?[][] {
+        new any?[] {null, null, null, null, null},
+        new any?[] {null, null, null, null, null},
+        new any?[] {null, null, null, null, null},
+        new any?[] {null, null, null, null, null},
+        new any?[] {null, null, null, null, null}
+    }
+    priv val initialized: any[][] = new any[][] {new any[] {"metavm", "is", "the future"}, new any[] {1, 2, 3}, new any[] {4, 5, 6}}
+
+    fn get(i: int) -> any {
+        return array[i]
+    }
+
+    fn set(i: int, value: any) {
+        array[i] = value
+    }
+
+    fn getInt(i: int) -> int {
+        return ints[i]
+    }
+
+    fn setInt(i: int, v: int) {
+        ints[i] = v
+    }
+
+    fn getMulti(i: int, j: int) -> any {
+        return multi[i][j]
+    }
+
+    fn setMulti(i: int, j: int, v: any) {
+        multi[i][j] = v
+    }
+
+    fn getInitialized(i: int, j: int) -> any {
+        return initialized[i][j]
+    }
+
+}
+

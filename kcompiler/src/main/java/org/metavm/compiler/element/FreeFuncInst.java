@@ -1,24 +1,20 @@
 package org.metavm.compiler.element;
 
-import org.metavm.compiler.type.FunctionType;
+import org.metavm.compiler.type.FuncType;
 import org.metavm.compiler.type.Type;
-import org.metavm.compiler.type.TypeSubstitutor;
 import org.metavm.compiler.type.Types;
 import org.metavm.compiler.util.List;
 import org.metavm.util.MvOutput;
 import org.metavm.util.WireTypes;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Consumer;
 
-public final class FreeFuncInst implements FuncInst, Constant {
+public final class FreeFuncInst extends ElementBase implements FreeFuncRef, FuncInst, Constant {
     private final FreeFunc function;
     private final List<Type> typeArguments;
     private final List<Type> parameterTypes;
     private final Type returnType;
-    private final FunctionType type;
-    private final Map<List<Type>, FreeFuncInst> instances = new HashMap<>();
+    private final FuncType type;
 
     public FreeFuncInst(FreeFunc function, List<Type> typeArguments,
                         List<Type> parameterTypes,
@@ -28,7 +24,7 @@ public final class FreeFuncInst implements FuncInst, Constant {
         this.typeArguments = typeArguments;
         this.parameterTypes = parameterTypes;
         this.returnType = returnType;
-        this.type = Types.instance.getFunctionType(parameterTypes, returnType);
+        this.type = Types.instance.getFuncType(parameterTypes, returnType);
     }
 
     @Override
@@ -39,7 +35,7 @@ public final class FreeFuncInst implements FuncInst, Constant {
     }
 
     @Override
-    public SymName getName() {
+    public Name getName() {
         return function.getName();
     }
 
@@ -55,12 +51,10 @@ public final class FreeFuncInst implements FuncInst, Constant {
 
     @Override
     public void write(ElementWriter writer) {
-        if (!typeArguments.isEmpty()) {
-            writer.write("<");
-            writer.writeTypes(typeArguments);
-            writer.write(">");
-        }
         writer.write(function.getName());
+        writer.write("<");
+        writer.writeTypes(typeArguments);
+        writer.write(">");
         writer.write("(");
         writer.writeTypes(parameterTypes);
         writer.write(") -> ");
@@ -68,35 +62,28 @@ public final class FreeFuncInst implements FuncInst, Constant {
     }
 
     @Override
-    public FunctionType getType() {
+    public FuncType getType() {
         return type;
     }
 
-    public FreeFunc getFunction() {
+    public FreeFunc getFunc() {
         return function;
     }
 
     @Override
-    public FreeFuncInst getInstance(List<Type> typeArguments) {
-        if (typeArguments.isEmpty())
-            return this;
-        var subst = new TypeSubstitutor(this.typeArguments, typeArguments);
-        return instances.computeIfAbsent(typeArguments, k ->
-                new FreeFuncInst(function, typeArguments,
-                        parameterTypes.map(t -> t.accept(subst)),
-                        returnType.accept(subst)
-                ));
+    public FuncRef getInst(List<Type> typeArguments) {
+        throw new UnsupportedOperationException();
     }
 
-    public List<Type> getTypeArguments() {
+    public List<Type> getTypeArgs() {
         return typeArguments;
     }
 
-    public List<Type> getParameterTypes() {
+    public List<Type> getParamTypes() {
         return parameterTypes;
     }
 
-    public Type getReturnType() {
+    public Type getRetType() {
         return returnType;
     }
 

@@ -2,23 +2,23 @@ import java.util.List
 import java.util.ArrayList
 
 class Child {
-    private var name: string
-    private var next: Child|null
+    priv var name: string
+    priv var next: Child?
 
     init(name: string) {
         this.name = name
         this.next = null
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func getNext() -> Child|null {
+    fn getNext() -> Child? {
         return this.next
     }
 
-    func setNext(next: Child|null) {
+    fn setNext(next: Child?) {
         this.next = next
     }
 
@@ -26,20 +26,19 @@ class Child {
 
 class Parent {
 
-    private val children: ArrayList<Child>
+    priv val children = ArrayList<Child>()
 
     init() {
-        this.children = new ArrayList<Child>()
-        this.children.add(this.new Child("child001"))
+        this.children.add(Child("child001"))
     }
 
-    func getChildren() -> List<Child> {
-        return new ArrayList<Child>(this.children)
+    fn getChildren() -> List<Child> {
+        return ArrayList<Child>(this.children)
     }
 
-    func test() {
+    fn test() {
         var child1 = this.children.getFirst()
-        var child2 = new Child("Child002")
+        var child2 = Child("Child002")
         child2.setNext(child1)
         this.children.add(child2)
         this.children.clear()

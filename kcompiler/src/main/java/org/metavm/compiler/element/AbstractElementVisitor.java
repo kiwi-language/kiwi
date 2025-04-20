@@ -1,5 +1,7 @@
 package org.metavm.compiler.element;
 
+import org.metavm.compiler.type.ClassInst;
+
 public abstract class AbstractElementVisitor<R> implements ElementVisitor<R> {
 
     @Override
@@ -33,8 +35,8 @@ public abstract class AbstractElementVisitor<R> implements ElementVisitor<R> {
     }
 
     @Override
-    public R visitParameter(Parameter parameter) {
-        return visitElement(parameter);
+    public R visitParam(Param param) {
+        return visitElement(param);
     }
 
     @Override
@@ -43,8 +45,8 @@ public abstract class AbstractElementVisitor<R> implements ElementVisitor<R> {
     }
 
     @Override
-    public R visitTypeVariable(TypeVariable typeVariable) {
-        return visitElement(typeVariable);
+    public R visitTypeVariable(TypeVar typeVar) {
+        return visitElement(typeVar);
     }
 
     @Override
@@ -53,8 +55,8 @@ public abstract class AbstractElementVisitor<R> implements ElementVisitor<R> {
     }
 
     @Override
-    public R visitEnumConstant(EnumConstant enumConstant) {
-        return visitElement(enumConstant);
+    public R visitEnumConstant(EnumConst enumConst) {
+        return visitElement(enumConst);
     }
 
     @Override
@@ -78,7 +80,7 @@ public abstract class AbstractElementVisitor<R> implements ElementVisitor<R> {
     }
 
     @Override
-    public R visitLengthField(LengthField lengthField) {
-        return visitElement(lengthField);
+    public R visitClassInst(ClassInst classInst) {
+        return visitElement(classInst);
     }
 }

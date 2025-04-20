@@ -1,6 +1,7 @@
 package org.metavm.compiler.type;
 
-import org.metavm.compiler.element.TypeVariable;
+import org.metavm.compiler.analyze.DeferredType;
+import org.metavm.compiler.element.TypeVar;
 
 public abstract class AbstractTypeVisitor<R> implements TypeVisitor<R> {
 
@@ -20,8 +21,8 @@ public abstract class AbstractTypeVisitor<R> implements TypeVisitor<R> {
     }
 
     @Override
-    public R visitFunctionType(FunctionType functionType) {
-        return visitType(functionType);
+    public R visitFunctionType(FuncType funcType) {
+        return visitType(funcType);
     }
 
     @Override
@@ -35,12 +36,17 @@ public abstract class AbstractTypeVisitor<R> implements TypeVisitor<R> {
     }
 
     @Override
-    public R visitTypeVariable(TypeVariable typeVariable) {
-        return visitType(typeVariable);
+    public R visitTypeVariable(TypeVar typeVar) {
+        return visitType(typeVar);
     }
 
     @Override
-    public R visitClassType(ClassType classType) {
-        return visitType(classType);
+    public R visitClassType(ClassType classTypeInst) {
+        return visitType(classTypeInst);
+    }
+
+    @Override
+    public R visitDeferredType(DeferredType deferredType) {
+        return visitType(deferredType);
     }
 }

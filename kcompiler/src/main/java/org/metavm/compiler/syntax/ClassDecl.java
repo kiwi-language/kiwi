@@ -2,6 +2,8 @@ package org.metavm.compiler.syntax;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.element.Clazz;
+import org.metavm.compiler.element.Name;
+import org.metavm.compiler.element.NameTable;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.Traces;
 
@@ -12,24 +14,24 @@ import java.util.function.Consumer;
 public final class ClassDecl extends Decl<Clazz> {
     private final ClassTag tag;
     private final List<Modifier> mods;
-    private List<Annotation> annotations;
-    private final Ident name;
+    private final List<Annotation> annotations;
+    private final Name name;
     @Nullable
     private TypeNode extends_;
     private List<TypeNode> implements_;
     private final List<TypeVariableDecl> typeParameters;
-    private final List<EnumConstantDecl> enumConstants;
+    private final List<EnumConstDecl> enumConstants;
     private List<Node> members;
 
     public ClassDecl(
             ClassTag tag,
             List<Annotation> annotations,
             List<Modifier> mods,
-            Ident name,
+            Name name,
             @Nullable TypeNode ext,
             List<TypeNode> impls,
             List<TypeVariableDecl> typeParameters,
-            List<EnumConstantDecl> enumConstants,
+            List<EnumConstDecl> enumConstants,
             List<Node> members
     ) {
         this.tag = tag;
@@ -46,6 +48,10 @@ public final class ClassDecl extends Decl<Clazz> {
         }
     }
 
+    public boolean isAnonymous() {
+        return name == NameTable.instance.empty;
+    }
+
     @Override
     public void write(SyntaxWriter writer) {
         for (Modifier mod : mods) {
@@ -54,7 +60,7 @@ public final class ClassDecl extends Decl<Clazz> {
         }
         writer.write(tag.name().toLowerCase());
         writer.write(" ");
-        name.write(writer);
+        writer.write(name);
         writer.write(" ");
         if (extends_ != null) {
             writer.write("extends ");
@@ -64,6 +70,10 @@ public final class ClassDecl extends Decl<Clazz> {
             writer.write("implements ");
             writer.write(implements_);
         }
+        writeBody(writer);
+    }
+
+    public void writeBody(SyntaxWriter writer) {
         writer.writeln(" {");
         writer.indent();
         for (var ec : enumConstants) {
@@ -84,12 +94,18 @@ public final class ClassDecl extends Decl<Clazz> {
     @Override
     public void forEachChild(Consumer<Node> action) {
         mods.forEach(action);
-        action.accept(name);
         if (extends_ != null) action.accept(extends_);
         implements_.forEach(action);
         typeParameters.forEach(action);
         enumConstants.forEach(action);
-        members.forEach(action);
+        members.forEach(m -> {
+            if (m instanceof FieldDecl fieldDecl)
+                action.accept(fieldDecl);
+        });
+        members.forEach(m -> {
+            if (!(m instanceof FieldDecl))
+                action.accept(m);
+        });
     }
 
     public ClassTag tag() {
@@ -100,7 +116,7 @@ public final class ClassDecl extends Decl<Clazz> {
         return mods;
     }
 
-    public Ident name() {
+    public Name name() {
         return name;
     }
 
@@ -126,7 +142,7 @@ public final class ClassDecl extends Decl<Clazz> {
         return typeParameters;
     }
 
-    public List<EnumConstantDecl> enumConstants() {
+    public List<EnumConstDecl> enumConstants() {
         return enumConstants;
     }
 

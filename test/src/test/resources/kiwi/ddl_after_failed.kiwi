@@ -1,8 +1,8 @@
 class Product {
-    private var name: string
-    private var price: int
-    private var quantity: int
-    private var description: string
+    priv var name: string
+    priv var price: int
+    priv var quantity: int
+    priv var description: string
 
     init(name: string, price: int, quantity: int, description: string) {
         this.name = name
@@ -11,51 +11,51 @@ class Product {
         this.description = description
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func setName(name: string) {
+    fn setName(name: string) {
         this.name = name
     }
 
-    func getPrice() -> int {
+    fn getPrice() -> int {
         return this.price
     }
 
-    func setPrice(price: int) {
+    fn setPrice(price: int) {
         this.price = price
     }
 
-    func getQuantity() -> int {
+    fn getQuantity() -> int {
         return this.quantity
     }
 
-    func setQuantity(quantity: int) {
+    fn setQuantity(quantity: int) {
         this.quantity = quantity
     }
 
-    func getDescription() -> string {
+    fn getDescription() -> string {
         return this.description
     }
 
-    func setDescription(description: string) {
+    fn setDescription(description: string) {
         this.description= description
     }
 }
 
 class Box<T> {
-    private var item: T
+    priv var item: T
 
     init(item: T) {
         this.item = item
     }
 
-    func getItem() -> T {
+    fn getItem() -> T {
         return this.item
     }
 
-    func setItem(item: T) {
+    fn setItem(item: T) {
         this.item = item
     }
 

@@ -1,0 +1,64 @@
+package index
+
+import org.metavm.api.Index
+import java.util.List
+
+class Foo {
+
+    priv static val nameIndex: Index<string, Foo> = Index<string, Foo>(true, (a0) -> a0.getName())
+    priv static val seqIndex: Index<int, Foo> = Index<int, Foo>(false, (f) -> f.seq)
+    priv static val barIndex: Index<Bar, Foo> = Index<Bar, Foo>(false, (a0) -> a0.getBar())
+    static val nameSeqIndex: Index<Pair<string, int>, Foo> = Index<Pair<string, int>, Foo>(false, (f) -> Pair<string, int>(f.name, f.seq))
+    static val descIndex: Index<string, Foo> = Index<string, Foo>(false, (f) -> f.getName() + "-" + f.getSeq() + "-" + f.getBar().getCode())
+    priv var name: string
+    priv var seq: int = 0
+    priv val bar: Bar
+
+    init(name: string, seq: int, bar: Bar) {
+        this.name = name
+        this.seq = seq
+        this.bar = bar
+    }
+
+    fn getName() -> string {
+        return name
+    }
+
+    fn setName(name: string) {
+        this.name = name
+    }
+
+    fn getSeq() -> int {
+        return seq
+    }
+
+    fn setSeq(seq: int) {
+        this.seq = seq
+    }
+
+    fn getBar() -> Bar {
+        return bar
+    }
+
+    static fn findByName(name: string) -> Foo? {
+        return nameIndex.getFirst(name)
+    }
+
+    static fn countBySeq(min: int, max: int) -> long {
+        return seqIndex.count(min, max)
+    }
+
+    static fn queryBySeq(min: int, max: int) -> List<Foo> {
+        return seqIndex.query(min, max)
+    }
+
+    static fn findByBar(bar: Bar) -> Foo? {
+        return barIndex.getFirst(bar)
+    }
+
+    static fn findByNameAndSeq(name: string, seq: int) -> Foo? {
+        return nameSeqIndex.getFirst(Pair<string, int>(name, seq))
+    }
+
+}
+

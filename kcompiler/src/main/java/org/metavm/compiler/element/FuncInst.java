@@ -1,18 +1,17 @@
 package org.metavm.compiler.element;
 
-import org.metavm.compiler.syntax.Expr;
 import org.metavm.compiler.type.Type;
 import org.metavm.compiler.util.List;
 
 public interface FuncInst extends ValueElement, Constant {
-    Func getFunction();
+    Func getFunc();
 
-    FuncInst getInstance(List<Type> typeArguments);
+    FuncRef getInst(List<Type> typeArguments);
 
-    List<Type> getParameterTypes();
+    List<Type> getParamTypes();
 
-    Type getReturnType();
+    Type getRetType();
 
-    List<Type> getTypeArguments();
+    List<Type> getTypeArgs();
 
 }

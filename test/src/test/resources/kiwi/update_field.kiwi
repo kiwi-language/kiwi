@@ -1,12 +1,8 @@
 class UpdateFieldFoo {
 
-    private var value: int
+    priv var value = 0
 
-    init() {
-        this.value = 0
-    }
-
-    static func update(foo: UpdateFieldFoo|null, value: int) {
+    static fn update(foo: UpdateFieldFoo?, value: int) {
         if(foo != null) {
             foo!!.value = value
         }

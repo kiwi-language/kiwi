@@ -383,7 +383,10 @@ public class TestUtils {
                 .returnType(PrimitiveType.booleanType)
                 .parameters(new NameAndType("o", Types.getNullableAnyType()))
                 .build();
-
+        MethodBuilder.newBuilder(klass, "isEmpty")
+                .isNative(true)
+                .returnType(PrimitiveType.booleanType)
+                .build();
         klass.resetHierarchy();
     }
 

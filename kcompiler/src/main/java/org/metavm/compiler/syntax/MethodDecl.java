@@ -1,15 +1,17 @@
 package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.element.Method;
+import org.metavm.compiler.element.Name;
 import org.metavm.compiler.util.List;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class MethodDecl extends Decl<Method> {
     private final List<Modifier> mods;
     private final List<TypeVariableDecl> typeParameters;
-    private final Ident name;
+    private final Name name;
     private List<ParamDecl> params;
     @Nullable
     private final TypeNode returnType;
@@ -19,7 +21,7 @@ public final class MethodDecl extends Decl<Method> {
     public MethodDecl(
             List<Modifier> mods,
             List<TypeVariableDecl> typeParameters,
-            Ident name,
+            Name name,
             List<ParamDecl> params,
             @Nullable TypeNode returnType,
             @Nullable Block body
@@ -38,6 +40,8 @@ public final class MethodDecl extends Decl<Method> {
             writer.write(mods, " ");
             writer.write(" ");
         }
+        if (name != Name.init())
+            writer.write("func ");
         writer.write(name);
         if (typeParameters.nonEmpty()) {
             writer.write("<");
@@ -67,7 +71,6 @@ public final class MethodDecl extends Decl<Method> {
     public void forEachChild(Consumer<Node> action) {
         mods.forEach(action);
         typeParameters.forEach(action);
-        action.accept(name);
         params.forEach(action);
         if (returnType != null) action.accept(returnType);
         if (body != null) action.accept(body);
@@ -77,8 +80,12 @@ public final class MethodDecl extends Decl<Method> {
         return mods;
     }
 
-    public Ident name() {
+    public Name name() {
         return name;
+    }
+
+    public List<TypeVariableDecl> getTypeParameters() {
+        return typeParameters;
     }
 
     public List<ParamDecl> getParams() {
@@ -99,5 +106,17 @@ public final class MethodDecl extends Decl<Method> {
         return body;
     }
 
+    public boolean isInit() {
+        return name == Name.init();
+    }
+
+    public boolean isPrimaryInit() {
+        if (isInit()) {
+            var stmts = Objects.requireNonNull(this.body).getStmts();
+            return stmts.isEmpty() || !Nodes.isSelfInitCall(stmts.getFirst());
+        }
+        else
+            return false;
+    }
 
 }

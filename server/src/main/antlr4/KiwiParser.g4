@@ -3,16 +3,16 @@ parser grammar KiwiParser;
 options {tokenVocab=KiwiLexer;}
 
 compilationUnit
-    : packageDeclaration? importDeclaration* typeDeclaration+
+    : packageDeclaration? importDeclaration* topLevTypeDecl+
     ;
 
 packageDeclaration: PACKAGE qualifiedName;
 
 importDeclaration: IMPORT qualifiedName;
 
-typeDeclaration
-    : classOrInterfaceModifier*
-     (classDeclaration | enumDeclaration | interfaceDeclaration )
+topLevTypeDecl: classOrInterfaceModifier* typeDeclaration;
+
+typeDeclaration: (classDeclaration | enumDeclaration | interfaceDeclaration )
     ;
 
 classDeclaration
@@ -45,7 +45,7 @@ enumConstants
     ;
 
 enumConstant
-    : identifier arguments?
+    : identifier arguments? classBody?
     ;
 
 enumBodyDeclarations
@@ -70,11 +70,11 @@ interfaceMemberDeclaration
     ;
 
 interfaceMethodDeclaration
-    : interfaceMethodModifier* FUNC identifier typeParameters? formalParameters ('->' typeOrVoid)? (THROWS qualifiedNameList)?
+    : interfaceMethodModifier* FN identifier typeParameters? formalParameters ('->' typeOrVoid)? (THROWS qualifiedNameList)?
     ;
 
 interfaceMethodModifier
-    : PUBLIC
+    : PUB
     | ABSTRACT
     | DEFAULT
     | STATIC
@@ -89,14 +89,14 @@ memberDeclaration
 //    | genericMethodDeclaration
     | fieldDeclaration
     | constructorDeclaration
-    | classDeclaration
+    | typeDeclaration
 //    | genericConstructorDeclaration
     ;
 
-fieldDeclaration: (VAR | VAL) identifier ':' type;
+fieldDeclaration: (VAR | VAL) identifier (':' type)? ('=' expression)?;
 
 methodDeclaration
-    :  FUNC identifier typeParameters? formalParameters ('->' typeOrVoid)? methodBody?
+    :  FN identifier typeParameters? formalParameters ('->' typeOrVoid)? methodBody?
     ;
 
 constructorDeclaration
@@ -140,23 +140,28 @@ block
     ;
 
 statement
-    : WHILE parExpression block
-    | FOR '(' forControl ')'  block
-    | IF parExpression block (ELSE block)?
-    | TRY block catchClause
+    : WHILE parExpression statement
+    | DO statement WHILE parExpression
+    | FOR '(' forControl ')' statement
+    | IF parExpression statement (ELSE statement)?
+    | TRY block catchClause+
     | SWITCH '{' branchCase* '}'
     | RETURN expression?
     | THROW expression
+    | BREAK identifier?
+    | CONTINUE identifier?
+    | identifier ':' statement
     | SEMI
     | statementExpression=expression
     | localVariableDeclaration
+    | block
     ;
 
 localVariableDeclaration: (VAR | VAL) identifier (':' type)? ('=' expression)?;
 
-forControl
-    : loopVariableDeclarators? ';' expression? ';' forUpdate=loopVariableUpdates?
-    ;
+forControl: loopVariable IN expression;
+
+loopVariable: identifier (':' type)?;
 
 loopVariableDeclarators
     : loopVariableDeclarator (',' loopVariableDeclarator)*
@@ -170,9 +175,9 @@ loopVariableUpdates: loopVariableUpdate (',' loopVariableUpdate)*;
 
 loopVariableUpdate: identifier '=' expression;
 
-newExpr: NEW typeArguments? classOrInterfaceType arguments;
+anonClassExpr: NEW classType arguments classBody;
 
-newArray: NEW type arrayKind;
+newArray: NEW type arrayKind arrayInitializer?;
 
 arrayInitializer
     : '{' (variableInitializer (',' variableInitializer)* (',')? )? '}'
@@ -183,7 +188,7 @@ variableInitializer
     | expression
     ;
 
-catchClause: CATCH '{' catchFields? '}';
+catchClause: CATCH '(' identifier ':' type ')' block;
 
 catchFields: catchField (',' catchField)*;
 
@@ -261,7 +266,9 @@ ternary: disjunction ('?' disjunction ':' ternary)?;
 
 disjunction: conjunction ('||' conjunction)*;
 
-conjunction: bitor ('&&' bitor)*;
+conjunction: range ('&&' range)*;
+
+range: bitor (ELLIPSIS bitor)?;
 
 bitor: bitand ('|' bitand)*;
 
@@ -275,13 +282,17 @@ equalitySuffix: op=('=='|'!=') relational;
 
 relational: isExpr relationalSuffix*;
 
-relationalSuffix: op=('<'|'>'|'<='|'>') isExpr;
+relationalSuffix: op=('<'|'>'|'<='|'>'|'>=') isExpr;
 
-isExpr: shift (IS type)*;
+isExpr: shift isSuffix*;
+
+isSuffix: (IS (typePtn | type));
+
+typePtn: type identifier;
 
 shift: additive shiftSuffix*;
 
-shiftSuffix: '>' '>' |'<' '<' | '>' '>' '>'  additive;
+shiftSuffix: ('>' '>' |'<' '<' | '>' '>' '>')  additive;
 
 additive: multiplicative additiveSuffix*;
 
@@ -299,35 +310,30 @@ prefixOp: op=('~'|'-'|'+'|'++'|'--'|'!');
 
 postfixExpr: primaryExpr postfixSuffix*;
 
-postfixSuffix: op=('++' | '--' | '!!') | callSuffix | '.' newExpr | indexingSuffix | selectorSuffix;
+postfixSuffix: op=('++' | '--' | '!!') | callSuffix | '.' anonClassExpr | indexingSuffix | selectorSuffix | typeArguments;
 
-callSuffix: typeArguments? arguments;
+callSuffix: arguments;
 
 indexingSuffix: '[' expression ']';
 
-selectorSuffix: '.' identifier ;
+selectorSuffix: '.' (identifier | THIS) ;
 
 primaryExpr
     : '(' expression ')'
     | THIS
     | SUPER
-    | newExpr
+    | anonClassExpr
     | newArray
     | literal
     | identifier
     | lambdaExpression
-    | NEW
     ;
 
 arguments
     : '(' expressionList? ')'
     ;
 
-identifier: IDENTIFIER | VALUE;
-
-methodCall
-    : identifier typeArguments? '(' expressionList? ')'
-    ;
+identifier: IDENTIFIER | VALUE | INIT | TEMP;
 
 literal
     : integerLiteral
@@ -353,28 +359,20 @@ floatLiteral
 
 typeOrVoid: VOID | type;
 
-type
-    : classOrInterfaceType
-    | primitiveType
-    | ANY
-    | NEVER
-    | type ('|' type)+
-    | type ('&' type)+
-    | type arrayKind
-    | '(' (type (',' type)*)? ')' '->' type
-    | '[' type ',' type ']'
-    ;
+type: unionType;
 
-arrayKind: R | RW;
+unionType: intersectionType ('|' intersectionType)*;
 
-classOrInterfaceType: qualifiedName typeArguments?;
+intersectionType: postfixType ('&' postfixType)*;
 
-typeArguments
-    : '<' type (',' type)* '>'
-    ;
+postfixType: atomicType typeSuffix*;
+
+typeSuffix: arrayKind | '?';
+
+atomicType: classType | primitiveType | functionType | uncertainType;
 
 primitiveType
-    : BOOLEAN
+    : BOOL
     | BYTE
     | SHORT
     | INT
@@ -386,6 +384,22 @@ primitiveType
     | NULL
     | VOID
     | CHAR
+    | ANY
+    | NEVER
+    ;
+
+functionType: '(' (type (',' type)*)? ')' '->' type;
+
+uncertainType: '[' type ',' type ']';
+
+arrayKind: R | RW;
+
+classType: classTypePart ('.' classTypePart)*;
+
+classTypePart: identifier typeArguments?;
+
+typeArguments
+    : '<' type (',' type)* '>'
     ;
 
 modifier
@@ -395,22 +409,27 @@ modifier
     ;
 
 classOrInterfaceModifier
-    : PUBLIC
-    | PROTECTED
-    | PRIVATE
+    : PUB
+    | PROT
+    | PRIV
     | STATIC
     | ABSTRACT
     | VALUE
+    | TEMP
     ;
 
 lambdaExpression
-    : lambdaParameters '->' typeOrVoid lambdaBody
+    : lambdaParameters '->' (typeOrVoid? lambdaBody | expression)
     ;
 
-// Java8
 lambdaParameters
-    : '(' formalParameterList? ')'
+    : '(' lambdaParameterList? ')' | identifier
     ;
+
+lambdaParameterList
+    : lambdaParameter (',' lambdaParameter)*;
+
+lambdaParameter: identifier (':' type)?;
 
 // Java8
 lambdaBody

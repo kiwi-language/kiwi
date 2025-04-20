@@ -1,0 +1,10 @@
+
+class ImplicitInit {
+
+    priv var value = 1
+
+    fn getValue() -> int {
+        return value
+    }
+
+}

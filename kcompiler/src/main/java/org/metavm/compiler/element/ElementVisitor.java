@@ -1,5 +1,7 @@
 package org.metavm.compiler.element;
 
+import org.metavm.compiler.type.ClassInst;
+
 public interface ElementVisitor<R> {
 
     R visitElement(Element element);
@@ -16,15 +18,15 @@ public interface ElementVisitor<R> {
 
     R visitLambda(Lambda lambda);
 
-    R visitParameter(Parameter parameter);
+    R visitParam(Param param);
 
     R visitLocalVariable(Variable variable);
 
-    R visitTypeVariable(TypeVariable typeVariable);
+    R visitTypeVariable(TypeVar typeVar);
 
     R visitFunction(FreeFunc function);
 
-    R visitEnumConstant(EnumConstant enumConstant);
+    R visitEnumConstant(EnumConst enumConst);
 
     R visitFieldInst(FieldInst fieldInst);
 
@@ -34,5 +36,5 @@ public interface ElementVisitor<R> {
 
     R visitFunctionInst(FreeFuncInst functionInst);
 
-    R visitLengthField(LengthField lengthField);
+    R visitClassInst(ClassInst classInst);
 }

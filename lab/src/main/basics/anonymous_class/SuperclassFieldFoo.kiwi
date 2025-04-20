@@ -1,0 +1,34 @@
+package anonymous_class
+
+import java.util.Iterator
+
+class Base {
+
+    var value: int = 0
+
+}
+
+class SuperclassFieldFoo: Base {
+
+    fn getValue() -> int {
+        return new Iterator<string>() {
+
+            priv var v: int = value
+
+            fn hasNext() -> bool {
+                return false
+            }
+
+            fn next() -> string {
+                return null
+            }
+
+        }.v
+    }
+
+    static fn test() -> int {
+        return SuperclassFieldFoo().getValue()
+    }
+
+}
+

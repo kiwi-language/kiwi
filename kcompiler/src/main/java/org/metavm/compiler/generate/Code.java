@@ -1,13 +1,12 @@
 package org.metavm.compiler.generate;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.element.*;
-import org.metavm.compiler.syntax.TypeTag;
 import org.metavm.compiler.type.*;
 import org.metavm.compiler.util.Buffer;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.Traces;
-import org.metavm.flow.Bytecodes;
 import org.metavm.util.MvOutput;
 import org.metavm.util.Utils;
 
@@ -19,7 +18,7 @@ import static org.metavm.flow.Bytecodes.*;
 @Slf4j
 public class Code {
     private final Executable executable;
-    private final ConstantPool constantPool;
+    private final ConstPool constPool;
     private final Buffer buffer = new Buffer();
     private int pc;
     private State state = new State();
@@ -30,25 +29,44 @@ public class Code {
 
     public Code(Executable executable) {
         this.executable = executable;
-        constantPool = executable.getConstantPool();
+        constPool = executable.getConstPool();
     }
 
-    public void loadThis() {
+    public void loadThis(Env env) {
         if (executable instanceof Method method) {
-            var self = new LocalVariable(SymNameTable.instance.this_, method.getDeclaringClass().getType(), method);
-            self.setIndex(0);
-            self.load(this);
+            code(LOAD);
+            index(0);
+            state.push(method.getDeclClass());
         } else {
-            int i = -1;
-            var e = executable;
-            while (e instanceof Lambda l) {
-                i++;
-                e = l.getFunction();
-            }
-            assert i >= 0;
-            var method = (Method) e;
-            loadContextSlot(i, new LocalVariable(SymNameTable.instance.this_, method.getDeclaringClass().getType(), method));
+           var method = env.currentMethod();
+            code(LOAD_CONTEXT_SLOT);
+            index(env.getContextIndex(method));
+            index(0);
+            state.push(method.getDeclClass());
         }
+    }
+
+    public void loadParent(int index, ClassType type) {
+        code(LOAD_PARENT);
+        index(index);
+        state.pop();
+        state.push(type);
+    }
+
+    public void reset(@Nullable Type top) {
+        state = new State();
+        if (top != null)
+            state.push(top);
+        alive = true;
+    }
+
+    public void tryEnter() {
+        code(TRY_ENTER);
+        index(0);
+    }
+
+    public void tryExit() {
+        code(TRY_EXIT);
     }
 
     public void is(Type type) {
@@ -56,10 +74,15 @@ public class Code {
         constant(type);
     }
 
-    public void load(LocalVariable v) {
+    public void load(LocalVar v) {
+        load(v.getIndex(), v.getType());
+    }
+
+    public void load(int index, Type type) {
         code(LOAD);
-        index(v.getIndex());
-        state.push(v.getType());
+        index(index);
+        state.push(type);
+
     }
 
     public void store(int v) {
@@ -75,32 +98,32 @@ public class Code {
         state.push(field.getType().toStackType());
     }
 
-    public void invokeVirtual(MethodInst method) {
+    public void invokeVirtual(MethodRef method) {
         code(INVOKE_VIRTUAL);
         constant(method);
-        state.pop(method.getParameterTypes().size() + 1);
-        pushReturnType(method.getReturnType());
+        state.pop(method.getParamTypes().size() + 1);
+        pushReturnType(method.getRetType());
     }
 
-    public void invokeStatic(MethodInst method) {
+    public void invokeStatic(MethodRef method) {
         code(INVOKE_STATIC);
         constant(method);
-        state.pop(method.getParameterTypes().size());
-        pushReturnType(method.getReturnType());
+        state.pop(method.getParamTypes().size());
+        pushReturnType(method.getRetType());
     }
 
-    public void invokeSpecial(MethodInst method) {
+    public void invokeSpecial(MethodRef method) {
         code(INVOKE_SPECIAL);
         constant(method);
-        state.pop(method.getParameterTypes().size() + 1);
-        pushReturnType(method.getReturnType());
+        state.pop(method.getParamTypes().size() + 1);
+        pushReturnType(method.getRetType());
     }
 
-    public void call(FunctionType type) {
+    public void call(FuncType type) {
         code(FUNC);
         constant(type);
-        state.pop(1 + type.getParameterTypes().size());
-        pushReturnType(type.getReturnType());
+        state.pop(1 + type.getParamTypes().size());
+        pushReturnType(type.getRetType());
     }
 
     private void pushReturnType(Type retType) {
@@ -119,17 +142,24 @@ public class Code {
     public void newChild(ClassType type) {
         code(NEW_CHILD);
         constant(type);
+        state.pop();
         state.push(type);
     }
 
+//    int lastCode = -1;
+
     public void code(int code) {
+//        if (lastCode != -1)
+//            log.debug("{}: {}", Bytecodes.getBytecodeName(lastCode), top());
+//        lastCode = code;
+        assert isAlive();
         resolvePendingJumps();
         buffer.put(code);
         pc++;
     }
 
     private void constant(Constant constant) {
-        buffer.putShort(constantPool.put(constant));
+        buffer.putShort(constPool.put(constant));
         pc += 2;
     }
 
@@ -145,7 +175,7 @@ public class Code {
         pc += 2;
     }
 
-    private void index(int pc, int index) {
+    public void index(int pc, int index) {
         buffer.put(pc, index >> 8);
         buffer.put(pc + 1, index);
     }
@@ -154,11 +184,15 @@ public class Code {
         return executable;
     }
 
-    public void loadContextSlot(int contextIndex, LocalVariable v) {
+    public void loadContextSlot(int contextIndex, LocalVar v) {
+        loadContextSlot(contextIndex, v.getIndex(), v.getType());
+    }
+
+    public void loadContextSlot(int contextIndex, int index, Type type) {
         code(LOAD_CONTEXT_SLOT);
         index(contextIndex);
-        index(v.getIndex());
-        state.push(v.getType());
+        index(index);
+        state.push(type);
     }
 
     public void storeContextSlot(int contextIndex, int index) {
@@ -188,19 +222,22 @@ public class Code {
 
     public void cast(Type type) {
         var sourceType = state.peek();
-        if (sourceType.isPrimitive() &&  type.isPrimitive()) {
-            var sourceCode = sourceType.toStackType().getTag() - TypeTags.TAG_INT;
-            var targetCode = type.getTag() - TypeTags.TAG_INT;
-            var offset = targetCode > sourceCode ? targetCode - 1 : sourceCode;
-            var code = INT_TO_LONG + 3 * sourceCode + offset;
-            code(code);
-        }
+        if (sourceType.isPrimitive() &&  type.isPrimitive())
+            cast(sourceType.toStackType().getTag(), type.toStackType().getTag());
         else {
             code(CAST);
             constant( type);
         }
         state.pop();
         state.push( type);
+    }
+
+    public void cast(int sourceTag, int targetTag) {
+        var sourceCode = sourceTag - TypeTags.TAG_INT;
+        var targetCode = targetTag - TypeTags.TAG_INT;
+        var offset = targetCode > sourceCode ? targetCode - 1 : sourceCode;
+        var code = INT_TO_LONG + 3 * sourceCode + offset;
+        code(code);
     }
 
     public void mul(Type type) {
@@ -316,8 +353,9 @@ public class Code {
                 ldc(1.0);
                 code(DOUBLE_ADD);
             }
-            default -> throw new RuntimeException("Cannot perform dec on value of type " + type.getText());
+            default -> throw new RuntimeException("Cannot perform dec on value of type " + type.getTypeText());
         }
+        state.pop();
     }
 
     public void dec(Type type) {
@@ -338,8 +376,9 @@ public class Code {
                 ldc(1.0);
                 code(DOUBLE_SUB);
             }
-            default -> throw new RuntimeException("Cannot perform dec on value of type " + type.getText());
+            default -> throw new RuntimeException("Cannot perform dec on value of type " + type.getTypeText());
         }
+        state.pop();
     }
 
     public void gt() {
@@ -475,7 +514,7 @@ public class Code {
             case TypeTags.TAG_FLOAT -> FLOAT_NEG;
             case TypeTags.TAG_LONG -> LONG_NEG;
             case TypeTags.TAG_INT, TypeTags.TAG_SHORT, TypeTags.TAG_BYTE -> INT_NEG;
-            default -> throw new RuntimeException("Cannot negate value of type: " + type.getText());
+            default -> throw new RuntimeException("Cannot negate value of type: " + type.getTypeText());
         };
         code(code);
     }
@@ -494,7 +533,7 @@ public class Code {
                 ldc(-1);
                 code(INT_BIT_XOR);
             }
-            default -> throw new RuntimeException("Cannot negate value of type: " + type.getText());
+            default -> throw new RuntimeException("Cannot negate value of type: " + type.getTypeText());
         }
     }
 
@@ -504,23 +543,24 @@ public class Code {
         state.push(t.getUnderlyingType());
     }
 
-    public void invokeFunction(FreeFuncInst func) {
+    public void invokeFunction(FreeFuncRef func) {
         code(INVOKE_FUNCTION);
         constant(func);
-        var retType = func.getReturnType();
-        if (retType != PrimitiveType.VOID)
-            state.push(retType.toStackType());
+        state.pop(func.getType().getParamTypes().size());
+        pushReturnType(func.getRetType());
     }
 
-    public void getMethod(MethodInst method) {
+    public void getMethod(MethodRef method) {
         assert !method.isStatic();
         code(GET_METHOD);
+        constant(method);
         state.push(method.getType());
     }
 
-    public void getStaticMethod(MethodInst method) {
+    public void getStaticMethod(MethodRef method) {
         assert method.isStatic();
         code(GET_STATIC_METHOD);
+        constant(method);
         state.push(method.getType());
     }
 
@@ -556,7 +596,7 @@ public class Code {
         for (var c = pendingJumps; c != null; c = c.next()) {
             index(c.pc() + 1, pc - c.pc());
             if (Traces.traceGeneration)
-                log.trace("Connecting branch {} to {}", c.pc(), pc);
+                log.trace("Connecting branch {} to {}, branch top: {}", c.pc(), pc, c.state.top);
             if (alive)
                 state.join(c.state());
             else {
@@ -568,20 +608,13 @@ public class Code {
     }
 
     public Chain branch(int opcode, int offset) {
-        Chain next;
-        if (opcode == GOTO) {
-            alive = false;
-//            next = pendingJumps;
-//            pendingJumps = null;
-        }
-        else {
-            next = null;
-        }
         var pc = this.pc;
         code(opcode);
         index(offset);
         if (opcode != GOTO)
             state.pop();
+        else
+            alive = false;
         return new Chain(pc, state.copy(), null);
     }
 
@@ -604,7 +637,7 @@ public class Code {
     }
 
     public boolean isAlive() {
-        return alive;
+        return alive || pendingJumps != null;
     }
 
     public void dup2() {
@@ -628,10 +661,18 @@ public class Code {
         return state.peek();
     }
 
-    public void newLocal(LocalVariable variable) {
+    public void newLocal(LocalVar variable) {
         if (Traces.traceGeneration)
             log.trace("New local: {}", variable.getName());
-        variable.setIndex(maxLocals++);
+        variable.setIndex(nextLocal());
+    }
+
+    public void setMaxLocals(int maxLocals) {
+        this.maxLocals = maxLocals;
+    }
+
+    public int nextLocal() {
+        return maxLocals++;
     }
 
     public void newArray(Type type) {
@@ -690,7 +731,7 @@ public class Code {
         }
 
         public void join(State that) {
-            Utils.require(top == that.top);
+            Utils.require(top == that.top, "top not equal. current top: " + top + ", joined top: " + that.top);
             for (int i = 0; i < top; i++) {
                 var type1 = stack[i];
                 var type2 = that.stack[i];
@@ -710,6 +751,18 @@ public class Code {
         public int top() {
             return top;
         }
+
+        public void printStack() {
+            for (int i = 0; i < top; i++) {
+                log.trace("{}", stack[i].getTypeText());
+            }
+        }
+
+    }
+
+    /** @noinspection unused*/
+    public void printStack() {
+        state.printStack();
     }
 
     public record Chain(int pc, State state, @Nullable Chain next) {
@@ -725,4 +778,5 @@ public class Code {
         }
 
     }
+
 }

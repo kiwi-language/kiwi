@@ -1,9 +1,9 @@
 package org.metavm.compiler.syntax;
 
 public enum ModifierTag {
-    PUBLIC,
-    PRIVATE,
-    PROTECTED,
+    PUB,
+    PRIV,
+    PROT,
     STATIC,
     READONLY,
     TRANSIENT,
@@ -13,4 +13,5 @@ public enum ModifierTag {
     DELETED,
     ABSTRACT,
     VALUE,
+    TEMP,
 }

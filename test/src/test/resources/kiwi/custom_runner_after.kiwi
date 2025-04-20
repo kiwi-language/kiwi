@@ -3,9 +3,7 @@ import org.metavm.api.Index
 @Component
 class Lab {
 
-    init() {}
-
-    func  getFieldValue(field: Field) -> any|null {
+    fn  getFieldValue(field: Field) -> any? {
         var fieldValue = FieldValue.fieldIdx.getFirst(field)
         if(fieldValue == null) {
             return null
@@ -14,10 +12,10 @@ class Lab {
         }
     }
 
-    func setFieldValue(field: Field,  v: any|null) {
+    fn setFieldValue(field: Field,  v: any?) {
         var fieldValue = FieldValue.fieldIdx.getFirst(field)
         if(fieldValue == null) {
-            new FieldValue(field).setValue(v)
+            FieldValue(field).setValue(v)
         } else {
             fieldValue!!.setValue(v)
         }
@@ -27,30 +25,30 @@ class Lab {
 
 class Field {
 
-    private var name: string
-    private deleted var value: any|null
+    priv var name: string
+    priv deleted var value: any?
 
     init(name: string) {
         this.name = name
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func setName(name: string) {
+    fn setName(name: string) {
         this.name = name
     }
 
-    func __run__() {
-        new FieldValue(this).setValue(this.value)
+    fn __run__() {
+        FieldValue(this).setValue(this.value)
     }
 
 }
 
 value class IdxFieldValueField {
 
-    private val field: Field
+    priv val field: Field
 
     init(field: Field) {
         this.field = field
@@ -60,32 +58,25 @@ value class IdxFieldValueField {
 
 class FieldValue {
 
+    priv static val fieldIdx = Index<Field, FieldValue>(true, v -> v.field)
 
-    private static val fieldIdx: Index<Field, FieldValue>
-
-    private static func __fieldIdx__() -> Index<Field, FieldValue> {
-        return new Index<Field, FieldValue>("fieldIdx", true, (v: FieldValue) -> Field {
-            return v.getField()
-        })
-    }
-
-    private var field: Field
-    private var  value: any|null
+    priv var field: Field
+    priv var  value: any?
 
     init(field: Field) {
         this.field = field
         this.value = null
     }
 
-    func getValue() -> any|null {
+    fn getValue() -> any? {
         return this.value
     }
 
-    func setValue(v: any|null){
+    fn setValue(v: any?){
         this.value = v
     }
 
-    func getField() -> Field {
+    fn getField() -> Field {
         return this.field
     }
 

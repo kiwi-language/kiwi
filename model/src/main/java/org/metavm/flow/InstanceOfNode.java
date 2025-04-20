@@ -33,7 +33,7 @@ public class InstanceOfNode extends Node {
 
     @Override
     public void writeContent(CodeWriter writer) {
-        writer.write("instanceof");
+        writer.write("instanceof " + targetType.getTypeDesc());
     }
 
     @Override

@@ -1,0 +1,27 @@
+package lambda
+
+import java.util.List
+
+class MethodCallWithinLambda {
+
+    fn print(list: List<any>) {
+        forEach<any>(list, (e) -> print0(e))
+    }
+
+    priv fn forEach<E>(list: List<E>, action: ([E, any]) -> void) {
+        for (e in list) {
+            action(e)
+        }
+    }
+
+    priv fn print0(o: any) {
+        print(o)
+    }
+
+    static fn test() -> bool {
+        MethodCallWithinLambda().print(List.of<any>("a", "b", "c"))
+        return true
+    }
+
+}
+

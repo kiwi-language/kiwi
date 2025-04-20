@@ -1,0 +1,10 @@
+package asterisk
+
+import java.io.Serializable
+
+interface AsteriskTypeFoo<T: Serializable> {
+
+    fn getInstance() -> AsteriskTypeFoo<[never, Serializable]>
+
+}
+

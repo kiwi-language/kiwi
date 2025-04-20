@@ -1,9 +1,7 @@
 
 class Base {
 
-    init() {}
-
-    func test<T>(v: T) -> boolean {
+    fn test<T>(v: T) -> bool {
         return false
     }
 
@@ -12,10 +10,10 @@ class Base {
 class Sub: Base {
 
     init() {
-        super()
+        super.init()
     }
 
-    func test<T>(v: T) -> boolean {
+    fn test<T>(v: T) -> bool {
         return true
     }
 

@@ -1,0 +1,16 @@
+
+class ContinueFoo {
+
+    static fn avgEven(array: int[]) -> int {
+        var sum = 0
+        var count = 0
+        for (e in array) {
+            if (e % 2 == 1)
+                continue
+            sum += e
+            count++
+        }
+        return sum / count
+    }
+
+}

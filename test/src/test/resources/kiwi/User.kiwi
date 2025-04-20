@@ -6,9 +6,9 @@ class PlatformUser {
 @Searchable
 class Application {
     var name: string
-    private var owner: PlatformUser
+    priv var owner: PlatformUser
 
-    func getOwner() -> PlatformUser {
+    fn getOwner() -> PlatformUser {
         return this.owner
     }
 }

@@ -1,18 +1,19 @@
 package org.metavm.compiler.element;
 
+import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.generate.Code;
 import org.metavm.compiler.type.Type;
 
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
-public final class BuiltinVariable implements Variable {
+public final class BuiltinVariable extends ElementBase implements Variable {
 
-    private final SymName name;
+    private final Name name;
     private final Element element;
-    private final Type type;
+    private Type type;
 
-    public BuiltinVariable(SymName name, @Nullable Element element,  Type type) {
+    public BuiltinVariable(Name name, @Nullable Element element, Type type) {
         this.name = name;
         this.element = element;
         this.type = type;
@@ -36,12 +37,12 @@ public final class BuiltinVariable implements Variable {
     }
 
     @Override
-    public SymName getName() {
+    public Name getName() {
         return name;
     }
 
     @Override
-    public void setName(SymName name) {
+    public void setName(Name name) {
         throw new UnsupportedOperationException();
     }
 
@@ -55,17 +56,22 @@ public final class BuiltinVariable implements Variable {
     }
 
     @Override
-    public void load(Code code) {
-        code.loadThis();
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override
-    public void store(Code code) {
+    public void load(Code code, Env env) {
+        code.loadThis(env);
+    }
+
+    @Override
+    public void store(Code code, Env env) {
 
     }
 
     @Override
     public String toString() {
-        return  name + ": " + type.getText();
+        return  name + ": " + type.getTypeText();
     }
 }

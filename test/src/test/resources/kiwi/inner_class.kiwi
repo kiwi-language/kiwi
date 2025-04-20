@@ -1,0 +1,22 @@
+
+class InnerClassLab {
+
+    val value: int
+
+    init(value: int) {
+        this.value = value
+    }
+
+    fn getValue() -> int {
+        return this.Entry().getValue()
+    }
+
+    class Entry {
+
+        fn getValue() -> int {
+            return value
+        }
+
+    }
+
+}

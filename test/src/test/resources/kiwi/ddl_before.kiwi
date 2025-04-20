@@ -1,8 +1,8 @@
 class Product {
-    private var name: string
-    private var price: int
-    private var inventory: Inventory
-    private var manufacturer: string
+    priv var name: string
+    priv var price: int
+    priv var inventory: Inventory
+    priv var manufacturer: string
 
     init(name: string, price: int, inventory: Inventory, manufacturer: string) {
         this.name = name
@@ -11,69 +11,69 @@ class Product {
         this.manufacturer = manufacturer
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func setName(name: string) {
+    fn setName(name: string) {
         this.name = name
     }
 
-    func getPrice() -> int {
+    fn getPrice() -> int {
         return this.price
     }
 
-    func setPrice(price: int) {
+    fn setPrice(price: int) {
         this.price = price
     }
 
-    func getInventory() -> Inventory {
+    fn getInventory() -> Inventory {
         return this.inventory
     }
 
-    func setInventory(inventory: Inventory) {
+    fn setInventory(inventory: Inventory) {
         this.inventory = inventory
     }
 
-    func getManufacturer() -> string {
+    fn getManufacturer() -> string {
         return this.manufacturer
     }
 
-    func setManufacturer(manufacturer: string) {
+    fn setManufacturer(manufacturer: string) {
         this.manufacturer = manufacturer
     }
 
 }
 
 class Inventory {
-    private var quantity: int
+    priv var quantity: int
 
     init(quantity: int) {
         this.quantity = quantity
     }
 
-    func getQuantity() -> int {
+    fn getQuantity() -> int {
         return this.quantity
     }
 
-    func setQuantity(quantity: int) {
+    fn setQuantity(quantity: int) {
         this.quantity = quantity
     }
 
 }
 
 class Box<T> {
-    private var item: T
+    priv var item: T
 
     init(item: T) {
         this.item = item
     }
 
-    func getItem() -> T {
+    fn getItem() -> T {
         return this.item
     }
 
-    func setItem(item: T) {
+    fn setItem(item: T) {
         this.item = item
     }
 

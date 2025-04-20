@@ -1,0 +1,10 @@
+BASEDIR=$(dirname "$0")
+#mvn clean install -DskipTests
+cd $BASEDIR/kcompiler
+mvn compile assembly:single
+#cp $BASEDIR/compiler/target/ $BASEDIR/src/main/java
+cp target/metavm-kcompiler-1.0-SNAPSHOT-jar-with-dependencies.jar $HOME/develop/kiwi/bin/kiwi.jar
+cd -
+
+#cd $BASEDIR/assembly/target
+#java -jar --enable-preview assembly-1.0-SNAPSHOT.jar

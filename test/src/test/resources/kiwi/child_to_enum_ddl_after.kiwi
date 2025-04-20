@@ -1,27 +1,27 @@
 import java.lang.IllegalStateException
 
 class Product {
-    private var name: string
-    private var kind: ProductKind
+    priv var name: string
+    priv var kind: ProductKind
 
     init(name: string, kind: ProductKind) {
         this.name = name
         this.kind = kind
     }
 
-    func getName() -> string {
+    fn getName() -> string {
         return this.name
     }
 
-    func setName(name: string) {
+    fn setName(name: string) {
         this.name = name
     }
 
-    func getKind() -> ProductKind {
+    fn getKind() -> ProductKind {
         return this.kind
     }
 
-    func setKind(kind: ProductKind) {
+    fn setKind(kind: ProductKind) {
         this.kind = kind
     }
 
@@ -37,12 +37,9 @@ enum ProductKind {
 ;
 
 
-    private deleted var name: string
+    priv deleted var name: string
 
-    init() {
-    }
-
-    static func __map__(kind: ProductKind) -> ProductKind {
+    static fn __map__(kind: ProductKind) -> ProductKind {
         var i = 0
         var values = ProductKind.values()
         while (i < values.length) {
@@ -52,7 +49,7 @@ enum ProductKind {
            }
            i = i + 1
         }
-        throw new IllegalStateException(concat("Failed to find an enum constant for: ", kind.name))
+        throw IllegalStateException(concat("Failed to find an enum constant for: ", kind.name))
     }
 
 }

@@ -1,0 +1,11 @@
+package index
+
+@Component
+class FooService {
+
+    fn findByDesc(desc: string) -> Foo? {
+        return Foo.descIndex.getFirst(desc)
+    }
+
+}
+

@@ -3,43 +3,43 @@ import java.util.ArrayList
 
 class LivingBeing {
 
-    private var age: int
-    private var extra: any|null
-    private var offsprings: List<LivingBeing>
-    private var ancestors: List<LivingBeing>
+    priv var age: int
+    priv var extra: any?
+    priv var offsprings: List<LivingBeing>
+    priv var ancestors: List<LivingBeing>
 
-    init(age: int, extra: any|null) {
+    init(age: int, extra: any?) {
         this.age = age
         this.extra = extra
-        this.offsprings = new ArrayList<LivingBeing>()
-        this.ancestors = new ArrayList<LivingBeing>()
+        this.offsprings = ArrayList<LivingBeing>()
+        this.ancestors = ArrayList<LivingBeing>()
     }
 
-    func getAge() -> int {
+    fn getAge() -> int {
         return this.age
     }
 
-    func getExtra() -> any|null {
+    fn getExtra() -> any|null {
         return this.extra
     }
 
-    func getOffsprings() -> List<LivingBeing> {
-        return new ArrayList<LivingBeing>(this.offsprings)
+    fn getOffsprings() -> List<LivingBeing> {
+        return ArrayList<LivingBeing>(this.offsprings)
     }
 
-    func getAncestors() -> List<LivingBeing> {
-        return new ArrayList<LivingBeing>(this.ancestors)
+    fn getAncestors() -> List<LivingBeing> {
+        return ArrayList<LivingBeing>(this.ancestors)
     }
 
-    func addOffspring(offspring: LivingBeing) {
+    fn addOffspring(offspring: LivingBeing) {
         this.offsprings.add(offspring)
     }
 
-    func addAncestor(ancestor: LivingBeing) {
+    fn addAncestor(ancestor: LivingBeing) {
         this.ancestors.add(ancestor)
     }
 
-    func makeSound() -> string {
+    fn makeSound() -> string {
         return "Gu gu gu gu"
     }
 
@@ -47,18 +47,18 @@ class LivingBeing {
 
 class Animal: LivingBeing {
 
-    private var intelligence: int
+    priv var intelligence: int
 
     init(age: int, extra: any|null, intelligence: int) {
-        super(age, extra)
+        super.init(age, extra)
         this.intelligence = intelligence
     }
 
-    func getIntelligence() -> int {
+    fn getIntelligence() -> int {
         return this.intelligence
     }
 
-    func makeSound() -> string {
+    fn makeSound() -> string {
         return "Howl~"
     }
 
@@ -66,28 +66,28 @@ class Animal: LivingBeing {
 
 class Human: Animal, Sentient {
 
-    private var occupation: string
-    private var thinking: boolean
+    priv var occupation: string
+    priv var thinking: bool
 
     init(age: int, extra: any|null, intelligence: int, occupation: string) {
-        super(age, extra, intelligence)
+        super.init(age, extra, intelligence)
         this.occupation = occupation
         this.thinking = false
     }
 
-   func getOccupation() -> string {
+   fn getOccupation() -> string {
         return this.occupation
    }
 
-   func isThinking() -> boolean {
+   fn isThinking() -> bool {
         return this.thinking
    }
 
-   func makeSound() -> string {
+   fn makeSound() -> string {
         return "I am a human being"
    }
 
-   func think() {
+   fn think() {
         this.thinking = true
    }
 
@@ -95,6 +95,6 @@ class Human: Animal, Sentient {
 
 interface Sentient {
 
-    func think()
+    fn think()
 
 }

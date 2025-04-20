@@ -1,6 +1,5 @@
 package innerclass.service;
 
-import innerclass.Warehouse;
 import org.metavm.api.Component;
 
 import java.util.List;

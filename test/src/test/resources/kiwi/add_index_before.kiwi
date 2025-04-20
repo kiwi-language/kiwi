@@ -1,13 +1,13 @@
 
 class Product {
 
-    private var name: string
+    priv var name: string
 
-    public init(name: string) {
+    pub init(name: string) {
         this.name = name
     }
 
-    public func getName() -> string {
+    pub fn getName() -> string {
         return this.name
     }
 

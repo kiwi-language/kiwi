@@ -2,19 +2,19 @@ import java.util.List
 import java.util.ArrayList
 
 class Node<T> {
-    private var label: string
-    private var value: T
+    priv var label: string
+    priv var value: T
 
     init(label: string, value:T) {
         this.label = label
         this.value = value
     }
 
-    func getLabel() -> string {
+    fn getLabel() -> string {
         return this.label
     }
 
-    func getValue() -> T {
+    fn getValue() -> T {
         return this.value
     }
 
@@ -22,20 +22,20 @@ class Node<T> {
 
 class MyList<T> {
 
-    private var label: string
-    private val nodes: ArrayList<Node<T>>
+    priv var label: string
+    priv val nodes: ArrayList<Node<T>>
 
     init(label: string, nodes: List<Node<T>>) {
         this.label = label
-        this.nodes = new ArrayList<Node<T>>(nodes)
+        this.nodes = ArrayList<Node<T>>(nodes)
     }
 
-    func getLabel() -> string {
+    fn getLabel() -> string {
         return this.label
     }
 
-    func getNodes() -> List<Node<T>> {
-        return new ArrayList<Node<T>>(this.nodes)
+    fn getNodes() -> List<Node<T>> {
+        return ArrayList<Node<T>>(this.nodes)
     }
 
 }

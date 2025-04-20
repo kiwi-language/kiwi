@@ -1,0 +1,8 @@
+
+class StringLab {
+
+    static fn isEmpty(a: string) -> bool {
+        return a.isEmpty()
+    }
+
+}

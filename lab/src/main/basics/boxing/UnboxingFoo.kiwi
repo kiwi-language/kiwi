@@ -1,0 +1,10 @@
+package boxing
+
+class UnboxingFoo {
+
+    static fn gt(l: long) -> bool {
+        return l > 0
+    }
+
+}
+

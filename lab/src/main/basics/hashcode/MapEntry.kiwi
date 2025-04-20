@@ -1,0 +1,22 @@
+package hashcode
+
+value class MapEntry {
+
+    priv val key: any
+    priv val value: any
+
+    fn key() -> any {
+        return key
+    }
+
+    fn value() -> any {
+        return value
+    }
+
+    init(key: any, value: any) {
+        this.key = key
+        this.value = value
+    }
+
+}
+

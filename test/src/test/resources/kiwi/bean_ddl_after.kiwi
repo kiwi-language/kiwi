@@ -1,6 +1,6 @@
 abstract class BaseService {
 
-    protected val idService: IdService
+    prot val idService: IdService
 
     init(idService: IdService) {
         this.idService = idService
@@ -10,9 +10,9 @@ abstract class BaseService {
 
 value class IdxFooServiceAllFlags {
 
-    private val allFlags: boolean
+    priv val allFlags: bool
 
-    init(allFlags: boolean) {
+    init(allFlags: bool) {
         this.allFlags = allFlags
     }
 
@@ -21,17 +21,17 @@ value class IdxFooServiceAllFlags {
 @Component
 class FooService: BaseService {
 
-    private val allFlags: boolean
-    private val barService: BarService
+    priv val allFlags: bool
+    priv val barService: BarService
 
     init(idService: IdService, barService: BarService) {
-        super(idService)
+        super.init(idService)
         this.allFlags = true
         this.barService = barService
     }
 
-    func idxAllFlags() -> IdxFooServiceAllFlags {
-        return new IdxFooServiceAllFlags(this.allFlags)
+    fn idxAllFlags() -> IdxFooServiceAllFlags {
+        return IdxFooServiceAllFlags(this.allFlags)
     }
 
 }
@@ -39,24 +39,24 @@ class FooService: BaseService {
 @Component
 class BarService: BaseService {
 
-    private var allFlags: boolean
+    priv var allFlags: bool
 
     init(idService: IdService) {
-        super(idService)
+        super.init(idService)
         this.allFlags = true
     }
 
-    func idxAllFlags() -> IdxBarServiceAllFlags {
-        return new IdxBarServiceAllFlags(this.allFlags)
+    fn idxAllFlags() -> IdxBarServiceAllFlags {
+        return IdxBarServiceAllFlags(this.allFlags)
     }
 
 }
 
 value class IdxBarServiceAllFlags {
 
-    private val allFlags: boolean
+    priv val allFlags: bool
 
-    init(allFlags: boolean) {
+    init(allFlags: bool) {
         this.allFlags = allFlags
     }
 
@@ -68,8 +68,6 @@ interface IdService {
 
 @Component
 class IdServiceImpl: IdService {
-
-    init() {}
 
 }
 

@@ -9,25 +9,25 @@ import org.metavm.util.WireTypes;
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
-public class CapturedType implements Element, Type {
+public class CapturedType extends ElementBase implements Element, Type {
 
-    private final TypeVariable typeVariable;
+    private final TypeVar typeVar;
     private final UncertainType uncertainType;
     private @Nullable Closure closure;
 
-    public CapturedType(TypeVariable typeVariable, UncertainType uncertainType) {
-        this.typeVariable = typeVariable;
+    public CapturedType(TypeVar typeVar, UncertainType uncertainType) {
+        this.typeVar = typeVar;
         this.uncertainType = uncertainType;
     }
 
     @Override
     public void write(MvOutput output) {
         output.write(WireTypes.CAPTURED_TYPE);
-        Elements.writeReference(typeVariable, output);
+        Elements.writeReference(typeVar, output);
     }
 
     @Override
-    public SymName getName() {
+    public Name getName() {
         return null;
     }
 
@@ -47,8 +47,13 @@ public class CapturedType implements Element, Type {
     }
 
     @Override
-    public String getText() {
-        return Element.super.getText();
+    public void writeType(ElementWriter writer) {
+
+    }
+
+    @Override
+    public String getTypeText() {
+        return super.getText();
     }
 
     @Override
@@ -95,8 +100,8 @@ public class CapturedType implements Element, Type {
         return closure;
     }
 
-    public TypeVariable getTypeVariable() {
-        return typeVariable;
+    public TypeVar getTypeVariable() {
+        return typeVar;
     }
 
     public UncertainType getUncertainType() {

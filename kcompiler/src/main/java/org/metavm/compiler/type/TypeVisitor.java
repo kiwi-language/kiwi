@@ -1,6 +1,7 @@
 package org.metavm.compiler.type;
 
-import org.metavm.compiler.element.TypeVariable;
+import org.metavm.compiler.analyze.DeferredType;
+import org.metavm.compiler.element.TypeVar;
 
 public interface TypeVisitor<R> {
 
@@ -15,11 +16,13 @@ public interface TypeVisitor<R> {
 
     R visitIntersectionType(IntersectionType intersectionType);
 
-    R visitFunctionType(FunctionType functionType);
+    R visitFunctionType(FuncType funcType);
 
     R visitArrayType(ArrayType arrayType);
 
     R visitUnionType(UnionType unionType);
 
-    R visitTypeVariable(TypeVariable typeVariable);
+    R visitTypeVariable(TypeVar typeVar);
+
+    R visitDeferredType(DeferredType deferredType);
 }

@@ -20,7 +20,7 @@ public class ClassFileWriter {
     private static final boolean tracing = false;
 
     private final MvOutput output;
-    private ConstantPool constantPool;
+    private ConstPool constPool;
 
     public ClassFileWriter(OutputStream out) {
         output = new KlassOutput(out);
@@ -32,20 +32,20 @@ public class ClassFileWriter {
 
     private void writeClass(Clazz clazz) {
         if (Traces.traceWritingClassFile)
-            log.trace("Writing class {}", clazz.getQualifiedName());
-        var prevCp = constantPool;
-        constantPool = clazz.getConstantPool();
+            log.trace("Writing class {}", clazz.getQualName());
+        var prevCp = constPool;
+        constPool = clazz.getConstPool();
 
         writeNullable(clazz.getSourceTag(), output::writeInt);
         writeUTF(clazz.getName());
-        writeNullable(clazz.getQualifiedName(), this::writeUTF);
-        constantPool.write(output);
-        write(clazz.getTag().code());
+        writeNullable(clazz.getQualName(), this::writeUTF);
+        constPool.write(output);
+        write(clazz.getClassTag().code());
         writeInt(clazz.getFlags());
         writeInt(clazz.getSince());
         writeNullable(clazz.getSuper(), this::writeConstant);
         writeList(clazz.getInterfaces().filter(ClassType::isInterface), this::writeConstant);
-        writeList(clazz.getTypeParameters(), this::writeTypeVariable);
+        writeList(clazz.getTypeParams(), this::writeTypeVariable);
         writeList(clazz.getFields().filter(f -> !f.isStatic()), this::writeField);
         var staticFields = clazz.getFields().filter(Field::isStatic);
         writeInt(clazz.getEnumConstants().size() + staticFields.size());
@@ -55,51 +55,51 @@ public class ClassFileWriter {
         writeList(clazz.getClasses(), this::writeClass);
         writeList(clazz.getAttributes(), a -> a.write(output));
 
-        constantPool = prevCp;
+        constPool = prevCp;
     }
 
-    private void writeEnumConstant(EnumConstant enumConstant) {
+    private void writeEnumConstant(EnumConst enumConst) {
         if (Traces.traceWritingClassFile) {
             log.trace("Writing enum constant {}. Initializer: {}",
-                    enumConstant.getQualifiedName(), enumConstant.getInitializer());
+                    enumConst.getQualifiedName(), enumConst.getInitializer());
         }
-        writeNullable(enumConstant.getSourceTag(), output::writeInt);
-        writeUTF(enumConstant.getName());
-        writeConstant(enumConstant.getType());
+        writeNullable(enumConst.getSourceTag(), output::writeInt);
+        writeUTF(enumConst.getName());
+        writeConstant(enumConst.getType());
         write(Access.PUBLIC.code());
-        writeInt(enumConstant.getFlags());
-        writeInt(enumConstant.getOrdinal());
-        writeInt(enumConstant.getSince());
-        writeNullable(enumConstant.getInitializer(), m -> Elements.writeReference(m, output));
+        writeInt(enumConst.getFlags());
+        writeInt(enumConst.getOrdinal());
+        writeInt(enumConst.getSince());
+        writeNullable(enumConst.getInitializer(), m -> Elements.writeReference(m, output));
         output.writeBoolean(false);
     }
 
     private void writeMethod(Method method) {
         if (Traces.traceWritingClassFile)
-            log.trace("Writing method {}({})", method.getLegacyName(), method.getParameterTypes().map(Type::getText).join(","));
+            log.trace("Writing method {}({})", method.getLegacyName(), method.getParamTypes().map(Type::getTypeText).join(","));
         var tracing = ClassFileWriter.tracing;
         if (tracing) log.trace("Writing method {}", method.getInternalName(null));
-        var prevCp = constantPool;
-        constantPool = method.getConstantPool();
+        var prevCp = constPool;
+        constPool = method.getConstPool();
         writeUTF(method.getInternalName(null));
         writeUTF(method.getLegacyName());
-        writeConstant(method.getReturnType());
+        writeConstant(method.getRetType());
         writeInt(method.getFlags());
-        constantPool.write(output);
-        writeList(method.getParameters(), this::writeParameter);
-        writeList(method.getTypeParameters(), this::writeTypeVariable);
+        constPool.write(output);
+        writeList(method.getParams(), this::writeParameter);
+        writeList(method.getTypeParams(), this::writeTypeVariable);
         writeList(method.getCapturedTypeVariables(), this::writeCapturedType);
         writeList(method.getLambdas(), this::writeLambda);
         writeList(method.getClasses(), this::writeClass);
         writeList(method.getAttributes(), a -> a.write(output));
         if (method.hasBody()) writeCode(Objects.requireNonNull(method.getCode()));
-        constantPool = prevCp;
+        constPool = prevCp;
     }
 
     private void writeLambda(Lambda lambda) {
         writeUTF(lambda.getName());
-        writeList(lambda.getParameters(), this::writeParameter);
-        writeConstant(lambda.getReturnType());
+        writeList(lambda.getParams(), this::writeParameter);
+        writeConstant(lambda.getRetType());
         writeCode(lambda.getCode());
     }
 
@@ -110,21 +110,21 @@ public class ClassFileWriter {
         output.writeList(capturedType.getAttributes(), a -> a.write(output));
     }
 
-    private void writeParameter(Parameter parameter) {
-        writeUTF(parameter.getName());
-        writeConstant(parameter.getType());
-        writeList(parameter.getAttributes(), a -> a.write(output));
+    private void writeParameter(Param param) {
+        writeUTF(param.getName());
+        writeConstant(param.getType());
+        writeList(param.getAttributes(), a -> a.write(output));
     }
 
     private void writeCode(Code code) {
         code.write(output);
     }
 
-    private void writeTypeVariable(TypeVariable typeVariable) {
-        writeUTF(typeVariable.getName());
+    private void writeTypeVariable(TypeVar typeVar) {
+        writeUTF(typeVar.getName());
         writeInt(1);
-        writeInt(constantPool.put(typeVariable.getBound()));
-        writeList(typeVariable.getAttributes(), a -> a.write(output));
+        writeInt(constPool.put(typeVar.getBound()));
+        writeList(typeVar.getAttributes(), a -> a.write(output));
     }
 
     private void writeField(Field field) {
@@ -136,7 +136,7 @@ public class ClassFileWriter {
         writeInt(field.getOrdinal());
         writeInt(field.getSince());
         var init = field.getInitializer();
-        writeNullable(init, m -> Elements.writeReference(m.getFunction(), output));
+        writeNullable(init, m -> Elements.writeReference(m, output));
         output.writeBoolean(field.isDeleted());
     }
 
@@ -152,7 +152,7 @@ public class ClassFileWriter {
         output.writeList(list, action);
     }
 
-    private void writeUTF(SymName name) {
+    private void writeUTF(Name name) {
         output.writeUTF(name.toString());
     }
 
@@ -165,7 +165,7 @@ public class ClassFileWriter {
     }
 
     private void writeConstant(Constant constant) {
-        writeInt(constantPool.put(constant));
+        writeInt(constPool.put(constant));
     }
 
 }

@@ -1,0 +1,12 @@
+
+class RangeLab {
+
+    static fn sum(n: int) -> int {
+        var sum = 0
+        for (i in 0...n) {
+            sum += i
+        }
+        return sum
+    }
+
+}
