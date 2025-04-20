@@ -1,0 +1,40 @@
+# .github/workflows/ci.yml
+
+name: Java CI with Maven # Give your workflow a descriptive name
+
+# Controls when the workflow will run
+on:
+  push:
+    branches: [ ci ] # Or your default branch (e.g., master) - runs on pushes to main
+  pull_request:
+    branches: [ ci ] # Or your default branch - runs on PRs targeting main
+
+jobs:
+  build_and_test: # Name of the job
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner provided by GitHub
+
+    steps:
+      # Step 1: Check out the code from the repository/PR
+      - name: Checkout code
+        uses: actions/checkout@v4 # Use the standard checkout action
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21' # Specify your project's required Java version
+          distribution: 'temurin' # Or 'adopt', 'zulu', etc.
+          cache: 'maven' # Automatically cache Maven dependencies
+
+      # Step 3: Build and run tests with Maven
+      # The '-B' flag runs Maven in non-interactive (batch) mode
+      # 'verify' lifecycle phase typically includes compilation and running tests
+      - name: Build and test with Maven
+        run: mvn -B verify --file pom.xml
+
+      # Optional: Upload test results (e.g., Surefire reports)
+      # - name: Upload test reports
+      #   if: always() # Run this step even if previous steps fail
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: surefire-reports
+      #     path: target/surefire-reports/
