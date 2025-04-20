@@ -8,17 +8,24 @@ import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.util.BusinessException;
 import org.metavm.util.TestConstants;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class BasicKiwiTest extends KiwiTestBase {
 
     public void testAnonymousClass() {
         deploy(List.of(
-                "/Users/leen/workspace/object/lab/src/main/basics/anonymous_class/AnonymousClassFoo.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/anonymous_class/EntryDTO.kiwi"
+                "kiwi/basics/anonymous_class/AnonymousClassFoo.kiwi",
+                "kiwi/basics/anonymous_class/EntryDTO.kiwi"
         ));
         var id = (String) callMethod("anonymous_class.AnonymousClassFoo",
                         "create<string, any>",
@@ -44,32 +51,32 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testAnonymousClassWithArgs() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/anonymous_class/AnonymousClassWithArgs.kiwi");
+        deploy("kiwi/basics/anonymous_class/AnonymousClassWithArgs.kiwi");
         var className = "anonymous_class.AnonymousClassWithArgs";
         Assert.assertEquals(1, callMethod(className, "test", List.of(1)));
     }
 
     public void testAnonymousClassWithField() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/anonymous_class/AnonymousClassWithField.kiwi");
+        deploy("kiwi/basics/anonymous_class/AnonymousClassWithField.kiwi");
         var className = "anonymous_class.AnonymousClassWithField";
         Assert.assertEquals("MetaVM", callMethod(className, "test", List.of("MetaVM")));
     }
 
     public void testStaticAnonymousClass() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/anonymous_class/StaticAnonymousClassFoo.kiwi");
+        deploy("kiwi/basics/anonymous_class/StaticAnonymousClassFoo.kiwi");
         Assert.assertFalse(
                 (boolean) callMethod("anonymous_class.StaticAnonymousClassFoo", "test", List.of())
         );
     }
 
     public void testAnonymousClassSuperclassField() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/anonymous_class/SuperclassFieldFoo.kiwi");
+        deploy("kiwi/basics/anonymous_class/SuperclassFieldFoo.kiwi");
         var className = "anonymous_class.SuperclassFieldFoo";
         Assert.assertEquals(0, callMethod(className, "test", List.of()));
     }
 
     public void testArray() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/array/ArrayFoo.kiwi");
+        deploy("kiwi/basics/array/ArrayFoo.kiwi");
         var id = saveInstance("array.ArrayFoo", Map.of());
         var v = callMethod(id, "get", List.of(0));
         Assert.assertNull(v);
@@ -96,21 +103,21 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testArrayInitializer() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/arrayinitializer/ArrayInitializerFoo.kiwi");
+        deploy("kiwi/basics/arrayinitializer/ArrayInitializerFoo.kiwi");
         Assert.assertTrue(
                 (boolean) callMethod("arrayinitializer.ArrayInitializerFoo", "test", List.of())
         );
     }
 
     public void testAssignment() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/assignment/CompoundAssignmentFoo.kiwi");
+        deploy("kiwi/basics/assignment/CompoundAssignmentFoo.kiwi");
         var id = saveInstance("assignment.CompoundAssignmentFoo", Map.of("size", 4));
         var s = (int) callMethod(id, "decrementSize", List.of(1));
         Assert.assertEquals(3, s);
     }
 
     public void testFieldAssignment() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/assignment/FieldAssignmentFoo.kiwi");
+        deploy("kiwi/basics/assignment/FieldAssignmentFoo.kiwi");
         var className = "assignment.FieldAssignmentFoo";
         var id = saveInstance(className, Map.of());
         callMethod(className, "setValue", List.of(id, 1));
@@ -119,7 +126,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testUnaryAndPrefix() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/assignment/UnaryAndPrefixFoo.kiwi");
+        deploy("kiwi/basics/assignment/UnaryAndPrefixFoo.kiwi");
         var klass = "assignment.UnaryAndPrefixFoo";
         Assert.assertEquals(0, callMethod(klass, "getAndIncrement", List.of()));
         Assert.assertEquals(2, callMethod(klass, "incrementAndGet", List.of()));
@@ -128,7 +135,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testBitSet() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/bitset/BitSet.kiwi");
+        deploy("kiwi/basics/bitset/BitSet.kiwi");
         var id = saveInstance("bitset.BitSet", Map.of("n", 20));
         var r1 = (boolean) callMethod(id, "isClear", List.of(10));
         Assert.assertTrue(r1);
@@ -138,13 +145,13 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testUnboxing() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/boxing/UnboxingFoo.kiwi");
+        deploy("kiwi/basics/boxing/UnboxingFoo.kiwi");
         var className = "boxing.UnboxingFoo";
         Assert.assertTrue((boolean) callMethod(className, "gt", List.of(1)));
     }
 
     public void testBranching() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/branching/BranchingFoo.kiwi");
+        deploy("kiwi/basics/branching/BranchingFoo.kiwi");
         var result = callMethod("branching.BranchingFoo", "getOrDefault", List.of(1, 2));
         Assert.assertEquals(1L, result);
         var result1 = callMethod("branching.BranchingFoo", "getOrDefault2", Arrays.asList(0, 2));
@@ -155,7 +162,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testElseTypeNarrowing() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/branching/ElseTypeNarrowingFoo.kiwi");
+        deploy("kiwi/basics/branching/ElseTypeNarrowingFoo.kiwi");
         var className = "branching.ElseTypeNarrowingFoo";
         var fooClassName = className + ".Foo";
         var foo = saveInstance(fooClassName, Map.of("value", 1));
@@ -165,7 +172,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testBreak() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/break_/BreakFoo.kiwi");
+        deploy("kiwi/basics/break_/BreakFoo.kiwi");
         var found = (boolean) callMethod("break_.BreakFoo", "contains",
                         List.of(List.of(List.of(1,2,3), List.of(4,5,6), List.of(7,8,9)), 5)
         );
@@ -178,13 +185,13 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testBooleanConditional() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/conditional/BooleanConditionalFoo.kiwi");
+        deploy("kiwi/basics/conditional/BooleanConditionalFoo.kiwi");
         var className = "conditional.BooleanConditionalFoo";
         Assert.assertTrue((boolean) callMethod(className, "test", List.of(10)));
     }
 
     public void testContinue() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/continue_/ContinueFoo.kiwi");
+        deploy("kiwi/basics/continue_/ContinueFoo.kiwi");
         var index = (int) callMethod(
                 "continue_.ContinueFoo", "oddIndexOf",
                 List.of(List.of(1,1,2,2,3,3), 2)
@@ -193,7 +200,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testDoWhile() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/dowhile/DoWhileFoo.kiwi");
+        deploy("kiwi/basics/dowhile/DoWhileFoo.kiwi");
         var sum = (int) callMethod("dowhile.DoWhileFoo", "sum", List.of(1, 5));
         Assert.assertEquals(15, sum);
         var sum1 = (int) callMethod("dowhile.DoWhileFoo", "sum", List.of(1, 1));
@@ -201,31 +208,31 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testEnumConstantImpl() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/enums/EnumConstantImplFoo.kiwi");
+        deploy("kiwi/basics/enums/EnumConstantImplFoo.kiwi");
         var className = "enums.EnumConstantImplFoo";
         Assert.assertEquals("Option 1", callMethod(className, "getOptionDesc", List.of("op1")));
     }
 
     public void testEnumField() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/enums/EnumFieldFoo.kiwi");
+        deploy("kiwi/basics/enums/EnumFieldFoo.kiwi");
         var className = "enums.EnumFieldFoo";
         Assert.assertEquals("op1", callMethod(className, "getOp1Message", List.of()));
     }
 
     public void testEnums() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/enums/ProductKind.kiwi");
+        deploy("kiwi/basics/enums/ProductKind.kiwi");
         var kind = (String) callMethod("enums.ProductKind", "fromCode", List.of(0));
         Assert.assertEquals("DEFAULT", kind);
     }
 
     public void testCatchUnionExceptionType() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/exception/CatchUnionExceptionType.kiwi");
+        deploy("kiwi/basics/exception/CatchUnionExceptionType.kiwi");
         var className = "exception.CatchUnionExceptionType";
         Assert.assertEquals(-1, callMethod(className, "get", List.of(3)));
     }
 
     public void testArrayIndexOutOfBounds() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/exceptions/ArrayIndexOutOfBoundsFoo.kiwi");
+        deploy("kiwi/basics/exceptions/ArrayIndexOutOfBoundsFoo.kiwi");
         var klassName = "exceptions.ArrayIndexOutOfBoundsFoo";
         try {
             callMethod(klassName, "test", List.of(1));
@@ -239,8 +246,8 @@ public class BasicKiwiTest extends KiwiTestBase {
 
     public void testGenericOverride() {
         deploy(List.of(
-                "/Users/leen/workspace/object/lab/src/main/basics/genericoverride/Base.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/genericoverride/Sub.kiwi"
+                "kiwi/basics/genericoverride/Base.kiwi",
+                "kiwi/basics/genericoverride/Sub.kiwi"
         ));
         var subId = saveInstance("genericoverride.Sub", Map.of());
         var result = callMethod(
@@ -256,11 +263,11 @@ public class BasicKiwiTest extends KiwiTestBase {
 
     public void testHashMap() {
         deploy(List.of(
-                "/Users/leen/workspace/object/lab/src/main/basics/hashcode/HashCodeBar.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/hashcode/HashCodeBaz.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/hashcode/HashCodeFoo.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/hashcode/HashMapLab.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/hashcode/MapEntry.kiwi"
+                "kiwi/basics/hashcode/HashCodeBar.kiwi",
+                "kiwi/basics/hashcode/HashCodeBaz.kiwi",
+                "kiwi/basics/hashcode/HashCodeFoo.kiwi",
+                "kiwi/basics/hashcode/HashMapLab.kiwi",
+                "kiwi/basics/hashcode/MapEntry.kiwi"
         ));
         var fooId = saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
@@ -315,8 +322,8 @@ public class BasicKiwiTest extends KiwiTestBase {
 
     public void testHashSet() {
         deploy(List.of(
-                "/Users/leen/workspace/object/lab/src/main/basics/hashcode/HashCodeFoo.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/hashcode/HashSetLab.kiwi"
+                "kiwi/basics/hashcode/HashCodeFoo.kiwi",
+                "kiwi/basics/hashcode/HashSetLab.kiwi"
         ));
         callMethod("hashSetLab", "add", List.of("Hello"));
         var contains = callMethod("hashSetLab", "contains", List.of("Hello"));
@@ -340,7 +347,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testIndexSelect() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/index/IndexSelectFoo.kiwi");
+        deploy("kiwi/basics/index/IndexSelectFoo.kiwi");
         var className = "index.IndexSelectFoo";
         var id = saveInstance(className, Map.of("name", "foo"));
         var found = (String) callMethod(className, "findByName", List.of("foo"));
@@ -349,10 +356,10 @@ public class BasicKiwiTest extends KiwiTestBase {
 
     public void testIndex() {
         deploy(List.of(
-                "/Users/leen/workspace/object/lab/src/main/basics/index/Bar.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/index/Foo.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/index/FooService.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/index/Pair.kiwi"
+                "kiwi/basics/index/Bar.kiwi",
+                "kiwi/basics/index/Foo.kiwi",
+                "kiwi/basics/index/FooService.kiwi",
+                "kiwi/basics/index/Pair.kiwi"
         ));
         var barClass = "index.Bar";
         var barId = saveInstance(barClass, Map.of("code", "bar001"));
@@ -375,8 +382,8 @@ public class BasicKiwiTest extends KiwiTestBase {
 
     public void testWarehouse() {
         deploy(List.of(
-                "/Users/leen/workspace/object/lab/src/main/basics/innerclass/service/WarehouseService.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/innerclass/Warehouse.kiwi"
+                "kiwi/basics/innerclass/service/WarehouseService.kiwi",
+                "kiwi/basics/innerclass/Warehouse.kiwi"
         ));
         var warehouseId = (String) callMethod("warehouseService", "createWarehouse", List.of("w1"));
         var containerId = (String) callMethod("warehouseService", "createContainer", List.of(warehouseId, "c1"));
@@ -390,7 +397,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testInnerCallsExternal() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/innerclass/InnerCallsExternal.kiwi");
+        deploy("kiwi/basics/innerclass/InnerCallsExternal.kiwi");
         var klassName = "innerclass.InnerCallsExternal";
         Assert.assertEquals(
                 1,
@@ -399,7 +406,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testInnerClassExtension() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/innerclass/InnerClassExtension.kiwi");
+        deploy("kiwi/basics/innerclass/InnerClassExtension.kiwi");
         var sum = callMethod(
                 "innerclass.InnerClassExtension",
                 "sum",
@@ -409,7 +416,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testInnerClassFoo() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/innerclass/InnerClassFoo.kiwi");
+        deploy("kiwi/basics/innerclass/InnerClassFoo.kiwi");
         var id = (String) saveInstance("innerclass.InnerClassFoo<string, string>", Map.of());
         callMethod(id, "addEntry", List.of("name", "leen"));
         var entryId = (String) callMethod(id, "first", List.of());
@@ -419,14 +426,14 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testInnerClassInheritance() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/innerclass/InnerClassInheritance.kiwi");
+        deploy("kiwi/basics/innerclass/InnerClassInheritance.kiwi");
         var id = saveInstance("innerclass.InnerClassInheritance<string>", Map.of("value", "MetaVM"));
         var value = callMethod(id, "getValue", List.of());
         Assert.assertEquals("MetaVM", value);
     }
 
     public void testInnerExtendsOwner() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/innerclass/InnerExtendsEnclosing.kiwi");
+        deploy("kiwi/basics/innerclass/InnerExtendsEnclosing.kiwi");
         var id = saveInstance(
                 "innerclass.InnerExtendsEnclosing.Inner<string>", Map.of()
         );
@@ -435,7 +442,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testMultiLevelInnerClass() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/innerclass/MultiLevelInnerFoo.kiwi");
+        deploy("kiwi/basics/innerclass/MultiLevelInnerFoo.kiwi");
         var className = "innerclass.MultiLevelInnerFoo";
         Assert.assertEquals(
                 1,
@@ -444,7 +451,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testInstanceOf() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/instanceof_/InstanceOfFoo.kiwi");
+        deploy("kiwi/basics/instanceof_/InstanceOfFoo.kiwi");
         var id = saveInstance("instanceof_.InstanceOfFoo<any>", Map.of());
         boolean result = (boolean) callMethod("instanceof_.InstanceOfFoo<string>",
                 "isInstance", List.of(id));
@@ -453,9 +460,9 @@ public class BasicKiwiTest extends KiwiTestBase {
 
     public void testInterceptor() {
         deploy(List.of(
-                "/Users/leen/workspace/object/lab/src/main/basics/interceptors/TelephoneMaskInterceptor.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/interceptors/UserDTO.kiwi",
-                "/Users/leen/workspace/object/lab/src/main/basics/interceptors/UserService.kiwi"
+                "kiwi/basics/interceptors/TelephoneMaskInterceptor.kiwi",
+                "kiwi/basics/interceptors/UserDTO.kiwi",
+                "kiwi/basics/interceptors/UserService.kiwi"
         ));
         var user = (ClassInstanceWrap) callMethod("userService", "getUserByName", List.of("leen"));
         var tel =  user.getString("telephone");
@@ -463,19 +470,19 @@ public class BasicKiwiTest extends KiwiTestBase {
     }
 
     public void testLambda() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/lambda/LambdaFoo.kiwi");
+        deploy("kiwi/basics/lambda/LambdaFoo.kiwi");
         var r = (Integer) callMethod("lambda.LambdaFoo", "compare", List.of(1, 2));
         Assert.assertNotNull(r);
         Assert.assertEquals(-1, r.intValue());
     }
 
     public void testMethodCallWithinLambda() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/lambda/MethodCallWithinLambda.kiwi");
+        deploy("kiwi/basics/lambda/MethodCallWithinLambda.kiwi");
         Assert.assertTrue((boolean) callMethod("lambda.MethodCallWithinLambda", "test", List.of()));
     }
 
     public void testReturnInLambda() {
-        deploy("/Users/leen/workspace/object/lab/src/main/basics/lambda/ReturnInLambda.kiwi");
+        deploy("kiwi/basics/lambda/ReturnInLambda.kiwi");
         var className = "lambda.ReturnInLambda";
         Assert.assertEquals(
                 -1,

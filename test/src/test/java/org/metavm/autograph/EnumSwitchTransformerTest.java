@@ -3,6 +3,7 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiJavaFile;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.util.TestUtils;
 import org.metavm.util.Utils;
 
 import java.io.File;
@@ -13,14 +14,14 @@ import java.util.List;
 public class EnumSwitchTransformerTest extends TestCase {
 
     public static final List<String> SOURCES = List.of(
-            "/Users/leen/workspace/object/lab/src/main/tmp1/switch_/EnumSwitchFoo.java"
+            TestUtils.getResourcePath("tmp1/switch_/EnumSwitchFoo.java")
     );
 
     public void test() {
         var units = new ArrayList<Unit>();
         for (String source : SOURCES) {
             units.add(new Unit(TranspileTestTools.getPsiJavaFile(source),
-                    source.replace("/main/tmp1/switch_/", "/main/tmp2/switch_2/")
+                    source.replace("/tmp1/switch_/", "/tmp2/switch_2/")
             ));
         }
         units.forEach(u -> transform(u.file));

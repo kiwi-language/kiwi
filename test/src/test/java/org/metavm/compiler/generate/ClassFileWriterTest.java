@@ -27,142 +27,142 @@ public class ClassFileWriterTest extends TestCase {
     }
 
     public void test() {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/kiwi/Shopping.kiwi";
+        var source = TestUtils.getResourcePath("kiwi/Shopping.kiwi");
         process(source);
     }
 
     public void testEnum() {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/kiwi/enum.kiwi";
+        var source = TestUtils.getResourcePath("kiwi/enum.kiwi");
         process(source);
     }
 
     public void testLambda() {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/kiwi/Lambda.kiwi";
+        var source = TestUtils.getResourcePath("kiwi/Lambda.kiwi");
         process(source);
     }
 
     public void testInnerClass() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/inner_klass.kiwi");
+        process(TestUtils.getResourcePath("kiwi/inner_klass.kiwi"));
     }
 
     public void testInnerClass2() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/inner_class.kiwi");
+        process(TestUtils.getResourcePath("kiwi/inner_class.kiwi"));
     }
 
     public void testGenericOverloading() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/GenericOverloading.kiwi");
+        process(TestUtils.getResourcePath("kiwi/GenericOverloading.kiwi"));
     }
 
     public void testDDL() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/ddl_after.kiwi");
+        process(TestUtils.getResourcePath("kiwi/ddl_after.kiwi"));
     }
 
     public void testEnumConversion() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/value_to_enum_ddl_after.kiwi");
+        process(TestUtils.getResourcePath("kiwi/value_to_enum_ddl_after.kiwi"));
     }
 
     public void testLab() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/lab.kiwi");
+        process(TestUtils.getResourcePath("kiwi/lab.kiwi"));
     }
 
     public void testAssign() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/assign.kiwi");
+        process(TestUtils.getResourcePath("kiwi/assign.kiwi"));
     }
 
     public void testConditional() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/conditional.kiwi");
+        process(TestUtils.getResourcePath("kiwi/conditional.kiwi"));
     }
 
     public void testIntersectionType() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/intersection_type.kiwi");
+        process(TestUtils.getResourcePath("kiwi/intersection_type.kiwi"));
     }
 
     public void testFieldInit() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/field_init.kiwi");
+        process(TestUtils.getResourcePath("kiwi/field_init.kiwi"));
     }
 
     public void testForeach() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/foreach.kiwi");
+        process(TestUtils.getResourcePath("kiwi/foreach.kiwi"));
     }
 
     public void testArrayInitializer() {
-        process("/Users/leen/workspace/object/lab/src/main/basics/arrayinitializer/ArrayInitializerFoo.kiwi");
+        process(TestUtils.getResourcePath("kiwi/basics/arrayinitializer/ArrayInitializerFoo.kiwi"));
     }
 
     public void testBitset() {
-        process("/Users/leen/workspace/object/lab/src/main/basics/bitset/BitSet.kiwi");
+        process(TestUtils.getResourcePath("kiwi/basics/bitset/BitSet.kiwi"));
     }
 
     public void testSmallInt() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/smallint.kiwi");
+        process(TestUtils.getResourcePath("kiwi/smallint.kiwi"));
     }
 
     public void testBranching() {
-        process("/Users/leen/workspace/object/lab/src/main/basics/branching/BranchingFoo.kiwi");
+        process(TestUtils.getResourcePath("kiwi/basics/branching/BranchingFoo.kiwi"));
     }
 
     public void testBreak() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/break.kiwi");
+        process(TestUtils.getResourcePath("kiwi/break.kiwi"));
     }
 
     public void testContinue() {
-        process("/Users/leen/workspace/object/lab/src/main/basics/continue_/ContinueFoo.kiwi");
+        process(TestUtils.getResourcePath("kiwi/basics/continue_/ContinueFoo.kiwi"));
     }
 
     public void testRange() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/range.kiwi");
+        process(TestUtils.getResourcePath("kiwi/range.kiwi"));
     }
 
     public void testAnonymousClass() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/anonymous_class.kiwi");
+        process(TestUtils.getResourcePath("kiwi/anonymous_class.kiwi"));
     }
 
     public void testString() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/string.kiwi");
+        process(TestUtils.getResourcePath("kiwi/string.kiwi"));
     }
 
     public void testLocalClass() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/local_class.kiwi");
+        process(TestUtils.getResourcePath("kiwi/local_class.kiwi"));
     }
 
     public void testNew() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/new.kiwi");
+        process(TestUtils.getResourcePath("kiwi/new.kiwi"));
     }
 
     public void testSuperclassField() {
-        process("/Users/leen/workspace/object/lab/src/main/basics/anonymous_class/SuperclassFieldFoo.kiwi");
+        process(TestUtils.getResourcePath("kiwi/basics/anonymous_class/SuperclassFieldFoo.kiwi"));
     }
 
     public void testDDL2() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/bean_ddl_before.kiwi");
+        process(TestUtils.getResourcePath("kiwi/bean_ddl_before.kiwi"));
     }
 
     public void testTryCatch() {
-        process("/Users/leen/workspace/object/lab/src/main/basics/exception/CatchUnionExceptionType.kiwi");
+        process(TestUtils.getResourcePath("kiwi/basics/exception/CatchUnionExceptionType.kiwi"));
     }
 
     public void testTypePtn() {
-        process("/Users/leen/workspace/object/lab/src/main/basics/hashcode/HashCodeFoo.kiwi");
+        process(TestUtils.getResourcePath("kiwi/basics/hashcode/HashCodeFoo.kiwi"));
     }
 
     public void testBindingVars() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/binding_var.kiwi");
+        process(TestUtils.getResourcePath("kiwi/binding_var.kiwi"));
     }
 
     public void testLowerIndexCreation() {
-        process("/Users/leen/workspace/object/lab/src/main/basics/index/IndexSelectFoo.kiwi");
+        process(TestUtils.getResourcePath("kiwi/basics/index/IndexSelectFoo.kiwi"));
     }
 
     public void testMethodRef() {
-        process("/Users/leen/workspace/object/test/src/test/resources/kiwi/method_ref.kiwi");
+        process(TestUtils.getResourcePath("kiwi/method_ref.kiwi"));
     }
 
     public void testIs() {
-        process("/Users/leen/workspace/object/lab/src/main/basics/instanceof_/InstanceOfFoo.kiwi");
+        process(TestUtils.getResourcePath("kiwi/basics/instanceof_/InstanceOfFoo.kiwi"));
     }
 
     public void testMethodCallWithinLambda() {
-        process("/Users/leen/workspace/object/lab/src/main/basics/lambda/MethodCallWithinLambda.kiwi");
+        process(TestUtils.getResourcePath("kiwi/basics/lambda/MethodCallWithinLambda.kiwi"));
     }
 
     private void process(String source) {

@@ -4,12 +4,11 @@ import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiElement;
 import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.autograph.mocks.ScopeFoo;
 
 public class ActivityAnalyzerTest extends TestCase {
 
     public void test() {
-        var psiFile = TranspileTestTools.getPsiJavaFile(ScopeFoo.class);
+        var psiFile = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.ScopeFoo");
         var qnResolver = new QnResolver();
         psiFile.accept(qnResolver);
         var analyzer = new ActivityAnalyzer();

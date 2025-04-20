@@ -1,10 +1,9 @@
 package org.metavm.autograph.mocks;
 
 import org.metavm.annotation.NativeEntity;
-import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityField;
 import org.metavm.api.Generated;
-import org.metavm.api.NativeApi;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;

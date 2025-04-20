@@ -8,6 +8,7 @@ import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.testFramework.LightVirtualFile;
+import org.metavm.util.TestUtils;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -20,7 +21,7 @@ public class PsiLab {
         var projectEnv = new JavaCoreProjectEnvironment(() -> {}, appEnv);
         var def = LanguageParserDefinitions.INSTANCE.forLanguage(JavaLanguage.INSTANCE);
         var psiManager = PsiManager.getInstance(projectEnv.getProject());
-        var fvp = psiManager.findViewProvider(new LightVirtualFile("PsiFoo.java", readSource()));
+        var fvp = psiManager.findViewProvider(new LightVirtualFile("PsiFoo.java.java", readSource()));
         assert fvp != null;
         var file = (PsiJavaFile) def.createFile(fvp);
 
@@ -29,7 +30,7 @@ public class PsiLab {
         System.out.println(methods);
     }
 
-    public static final String FILE = "/Users/leen/workspace/object/src/test/java/org.metavm/psi/PsiFoo.java";
+    public static final String FILE = TestUtils.getResourcePath("org/metavm/psi/PsiFoo.java");
     public static final char[] buf = new char[8*1024*1024];
 
     private static String readSource() {

@@ -57,6 +57,7 @@ public abstract class KiwiTestBase extends TestCase  {
     }
 
     void deploy(List<String> sources) {
+        sources = TestUtils.getResourcePaths(sources);
         FlowSavingContext.initConfig();
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             context.loadKlasses();
@@ -84,4 +85,6 @@ public abstract class KiwiTestBase extends TestCase  {
         task.analyze();
         task.generate();
     }
+
+
 }

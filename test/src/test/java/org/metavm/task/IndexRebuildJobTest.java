@@ -3,10 +3,10 @@ package org.metavm.task;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.mocks.Bar;
 import org.metavm.mocks.Foo;
 import org.metavm.object.instance.MemInstanceSearchServiceV2;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.*;
 
 public class IndexRebuildJobTest extends TestCase {

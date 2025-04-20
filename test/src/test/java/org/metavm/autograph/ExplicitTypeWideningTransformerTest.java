@@ -3,6 +3,7 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiJavaFile;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.util.TestUtils;
 import org.metavm.util.Utils;
 
 import java.io.File;
@@ -13,15 +14,15 @@ import java.util.List;
 public class ExplicitTypeWideningTransformerTest extends TestCase {
 
     public static final List<String> SOURCES = List.of(
-            "/Users/leen/workspace/object/lab/src/main/tmp1/conversion/ConversionFoo.java",
-            "/Users/leen/workspace/object/lab/src/main/tmp1/conversion/Currency.java"
+            TestUtils.getResourcePath("tmp1/conversion/ConversionFoo.java"),
+            TestUtils.getResourcePath("tmp1/conversion/Currency.java")
     );
 
     public void test() {
         var units = new ArrayList<Unit>();
         for (String source : SOURCES) {
             units.add(new Unit(TranspileTestTools.getPsiJavaFile(source),
-                    source.replace("/main/tmp1/conversion/", "/main/tmp2/conversion2/")
+                    source.replace("/tmp1/conversion/", "/tmp2/conversion2/")
             ));
         }
         units.forEach(u -> transform(u.file));

@@ -3,14 +3,13 @@ package org.metavm.autograph;
 import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiMethod;
-import org.metavm.autograph.mocks.AstWildcardFoo;
 
 import java.util.Objects;
 
 public class AstWildcardLab {
 
     public static void main(String[] args) {
-        var file = TranspileTestTools.getPsiJavaFile(AstWildcardFoo.class);
+        var file = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.AstWildcardFoo");
         file.accept(new Visitor());
     }
 

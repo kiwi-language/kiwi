@@ -1,7 +1,7 @@
 package org.metavm.autograph.mocks;
 
-import org.metavm.api.EntityField;
 import org.metavm.api.Entity;
+import org.metavm.api.EntityField;
 
 import javax.annotation.Nullable;
 

@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 @Slf4j
 public class TypeParserImplTest extends TestCase {
@@ -65,7 +64,7 @@ public class TypeParserImplTest extends TestCase {
 
     public void testParseFunction() {
         var functionSig = "T requireNonNull2<T>(T|null value, java.util.function.Supplier<string> messageSupplier)";
-        var supplierKlass = TestUtils.newKlassBuilder(Supplier.class).build();
+        var supplierKlass = TestUtils.newKlassBuilder("java.util.function.Supplier").build();
         supplierKlass.setTypeParameters(List.of(new TypeVariable(supplierKlass.nextChildId(), "T", DummyGenericDeclaration.INSTANCE)));
         var func = new TypeParserImpl((String name) -> {
             if(name.equals(supplierKlass.getQualifiedName()))

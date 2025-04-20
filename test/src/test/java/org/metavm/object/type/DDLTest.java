@@ -18,6 +18,7 @@ import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ import java.util.function.Consumer;
 public class DDLTest extends TestCase {
 
     public static final Logger logger = LoggerFactory.getLogger(DDLTest.class);
-    public static final String SRC_DIR = "/Users/leen/workspace/object/test/src/test/resources/kiwi/";
+    public static final String SRC_DIR = "kiwi" + File.separator;
 
     private TypeManager typeManager;
     private EntityContextFactory entityContextFactory;

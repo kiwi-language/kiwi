@@ -62,7 +62,7 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testUtils() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/util/Utils.kiwi", typeManager, schedulerAndWorker);
+        MockUtils.assemble("kiwi/util/Utils.kiwi", typeManager, schedulerAndWorker);
         var className = "util.Utils";
         var contains = (boolean) callMethod(className, "test", List.of(
                 List.of("a", "b", "c"), List.of("d", "b")
@@ -76,14 +76,14 @@ public class InstanceManagerTest extends TestCase {
     }
 
     public void testGenericOverloading() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/GenericOverloading.kiwi", typeManager, schedulerAndWorker);
+        MockUtils.assemble("kiwi/GenericOverloading.kiwi", typeManager, schedulerAndWorker);
         var subId = saveInstance("Sub", Map.of());
         var result = (boolean) callMethod(subId, "test<string>", List.of("abc"));
         Assert.assertTrue(result);
     }
 
     public void testLambda() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/Lambda.kiwi", typeManager, schedulerAndWorker);
+        MockUtils.assemble("kiwi/Lambda.kiwi", typeManager, schedulerAndWorker);
         var result = (int) callMethod("Utils", "findGt", List.of(
                 List.of(1, 2, 3), 2
         ));
@@ -110,93 +110,6 @@ public class InstanceManagerTest extends TestCase {
         var reloadedHuman = getObject(humanId);
         Assert.assertTrue(reloadedHuman.getBoolean("thinking"));
     }
-
-//    public void testRemoveNonPersistedChild() {
-//        final var parentChildMasm = "/Users/leen/workspace/object/test/src/test/resources/kiwi/ParentChild.kiwi";
-//        MockUtils.assemble(parentChildMasm, typeManager, schedulerAndWorker);
-//        var parentId = saveInstance("Parent", Map.of());
-//        callMethod(parentId, "test", List.of());
-//        var parent = getObject(parentId);
-//        var children = parent.getArray("children");
-//        Assert.assertEquals(0, children.size());
-//        try {
-//            callMethod(parentId, "test2", List.of());
-//            Assert.fail("Should not be able to delete non-persisted child when it's referenced");
-//        } catch (BusinessException e) {
-//            Assert.assertSame(e.getErrorCode(), ErrorCode.STRONG_REFS_PREVENT_REMOVAL);
-//        }
-//    }
-
-//    public void testRelocation() {
-//        var klassIds = TestUtils.doInTransaction(() -> {
-//            try (var context = newContext()) {
-//                var productKlass = context.bind(TestUtils.newKlassBuilder("Product").build());
-//                var inventoryKlass = context.bind(TestUtils.newKlassBuilder("Inventory").build());
-//                FieldBuilder.newBuilder("inventory", productKlass, Types.getNullableType(inventoryKlass.getType()))
-//                        .isChild(true)
-//                        .build();
-//                FieldBuilder.newBuilder("quantity", inventoryKlass, PrimitiveType.longType)
-//                        .build();
-//                context.finish();
-//                return new Id[]{productKlass.getId(), inventoryKlass.getId()};
-//            }
-//        });
-//        var productKlassId = klassIds[0];
-//        var inventoryKlassId = klassIds[1];
-//        var ids = TestUtils.doInTransaction(() -> {
-//            try (var context = newContext()) {
-//                context.loadKlasses();
-//                var productKlass = context.getKlass(productKlassId);
-//                var inventoryKlass = context.getKlass(inventoryKlassId);
-//                var product = ClassInstance.create(Map.of(), productKlass.getType());
-//                context.bind(product);
-//                var inventory = ClassInstance.create(
-//                        Map.of(
-//                                inventoryKlass.getFieldByName("quantity"),
-//                                Instances.longInstance(0)
-//                        ),
-//                        inventoryKlass.getType()
-//                );
-//                context.bind(inventory);
-//                context.finish();
-//                return new Id[]{product.getId(), inventory.getId()};
-//            }
-//        });
-//        var productId = ids[0];
-//        var inventoryId = ids[1];
-//        TestUtils.doInTransactionWithoutResult(() -> {
-//            try (var context = newContext()) {
-//                context.loadKlasses();
-//                var product = (ClassInstance) context.get(productId);
-//                var inventory = context.get(inventoryId);
-////                context.remove(product);
-//                product.setField(product.getInstanceKlass().getFieldByName("inventory"), inventory.getReference());
-//                context.finish();
-//                Assert.assertEquals(inventory, inventory.getRoot());
-//                Assert.assertEquals(inventory.getTreeId(), inventory.getTreeId());
-//            }
-//        });
-//        TestUtils.doInTransactionWithoutResult(() -> {
-//            try (var context = entityContextFactory.newContext(TestConstants.APP_ID, builder -> builder.relocationEnabled(true))) {
-//                context.loadKlasses();
-//                var product = (ClassInstance) context.get(productId);
-//                var inventory = context.get(inventoryId);
-////                context.remove(product);
-//                context.finish();
-//                Assert.assertEquals(product, inventory.getRoot());
-//                Assert.assertEquals(inventoryId, inventory.getId());
-//            }
-//        });
-////        try (var context = newContext()) {
-////            var inventory = context.get(inventoryId);
-////            try {
-////                inventory.ensureLoaded();
-////                Assert.fail();
-////            } catch (BusinessException e) {
-////                Assert.assertEquals(String.format("Object '%s' not found", inventoryId.toString()), e.getMessage());
-////            }
-////        }
-//    }
 
     public void testIndexQuery() {
         TestUtils.doInTransactionWithoutResult(() -> {

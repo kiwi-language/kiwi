@@ -7,6 +7,7 @@ import org.metavm.autograph.env.IrCoreApplicationEnvironment;
 import org.metavm.autograph.env.IrCoreProjectEnvironment;
 import org.metavm.autograph.env.LightVirtualFileBase;
 import org.metavm.util.InternalException;
+import org.metavm.util.TestUtils;
 import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,11 +22,6 @@ public class TranspileTestTools {
     public static final Logger logger = LoggerFactory.getLogger(TranspileTestTools.class);
 
     private static final String BASE_MOD = "/Users/leen/Library/Java/JavaVirtualMachines/openjdk-18.0.2/Contents/Home/jmods/java.base.jmod";
-    public static final String API_SOURCE_ROOT = "/Users/leen/workspace/object/api/src/main/java/";
-    private static final String TEST_SOURCE_ROOT = "/Users/leen/workspace/object/test/src/test/java/";
-    private static final String SOURCE_ROOT = "/Users/leen/workspace/object/compiler/src/main/java/";
-    private static final String TMP_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/tmp1";
-
     private static final IrCoreApplicationEnvironment APP_ENV;
     private static final IrCoreProjectEnvironment PROJECT_ENV;
     private static final Project PROJECT;
@@ -38,10 +34,12 @@ public class TranspileTestTools {
         }, APP_ENV);
         var javaBaseDir = APP_ENV.getJarFileSystem().findFileByPath(BASE_MOD + "!/classes");
         PROJECT_ENV.addSourcesToClasspath(requireNonNull(javaBaseDir));
-        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(API_SOURCE_ROOT)));
-        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(SOURCE_ROOT)));
-        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(TEST_SOURCE_ROOT)));
-        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(TMP_SOURCE_ROOT)));
+        var targetRoot = TestUtils.getResourcePath("");
+        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(targetRoot)));
+//        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(API_SOURCE_ROOT)));
+//        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(SOURCE_ROOT)));
+//        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(TEST_SOURCE_ROOT)));
+//        PROJECT_ENV.addSourcesToClasspath(requireNonNull(FILE_SYSTEM.findFileByPath(TMP_SOURCE_ROOT)));
         PROJECT = PROJECT_ENV.getProject();
         initTranspilerUtils();
     }
@@ -54,37 +52,24 @@ public class TranspileTestTools {
         return (PsiJavaFile) Objects.requireNonNull(directory.findFile(klass.getSimpleName() + ".java"));
     }
 
-    public static PsiDirectory getDirectory(Package pkg) {
-        return getDirectory(getPackagePath(pkg));
+    public static PsiJavaFile getPsiJavaFileByName(String className) {
+        return getPsiJavaFileByName(className, false);
     }
 
-    public static PsiDirectory getDirectory(String dir) {
-        var file = Objects.requireNonNull(APP_ENV.getLocalFileSystem().findFileByPath(dir));
-        return PsiManager.getInstance(PROJECT).findDirectory(file);
-    }
-
-    public static PsiJavaFile getPsiJavaFile(Class<?> klass) {
-        return getPsiJavaFile(klass, false);
-    }
-
-    public static PsiClass getPsiClass(Class<?> klass) {
-        var file = getPsiJavaFile(klass);
+    public static PsiClass getPsiClass(String className) {
+        var file = getPsiJavaFileByName(className);
         return Utils.findRequired(
                 file.getClasses(),
-                k -> Objects.equals(k.getQualifiedName(), klass.getName())
+                k -> Objects.equals(k.getQualifiedName(), className)
         );
     }
 
-    public static PsiClassType getPsiClassType(Class<?> klass) {
-        return TranspileUtils.getElementFactory().createType(getPsiClass(klass));
+    public static PsiJavaFile getPsiJavaFileByName(String className, boolean writable) {
+        return getPsiJavaFile(getClassFilePath(className), writable);
     }
 
-    public static PsiJavaFile getPsiJavaFile(Class<?> klass, boolean writable) {
-        return getPsiJavaFile(getClassFilePath(klass), writable);
-    }
-
-    private static String getClassFilePath(Class<?> klass) {
-        return TEST_SOURCE_ROOT + klass.getName().replace('.', '/') + ".java";
+    private static String getClassFilePath(String className) {
+        return TestUtils.getResourcePath(className.replace('.', '/') + ".java");
     }
 
     public static void executeCommand(Runnable command) {
@@ -105,10 +90,6 @@ public class TranspileTestTools {
                 null,
                 null
         );
-    }
-
-    private static String getPackagePath(Package pkg) {
-        return TEST_SOURCE_ROOT + pkg.getName().replace('.', '/');
     }
 
     public static PsiJavaFile getPsiJavaFile(String path) {

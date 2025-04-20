@@ -3,12 +3,11 @@ package org.metavm.autograph;
 import com.intellij.psi.PsiModifier;
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.autograph.mocks.DefaultConstructorFoo;
 
 public class DefaultConstructorCreatorTest extends TestCase {
 
     public void test() {
-        var file = TranspileTestTools.getPsiJavaFile(DefaultConstructorFoo.class);
+        var file = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.DefaultConstructorFoo");
         TranspileTestTools.executeCommand((() -> file.accept(new DefaultConstructorCreator())));
         System.out.println(file.getText());
         var klass = file.getClasses()[0];

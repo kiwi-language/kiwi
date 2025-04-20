@@ -36,7 +36,7 @@ public class RaceConditionTest extends TestCase {
     }
 
     public void test() throws InterruptedException {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/race_condition.kiwi",
+        MockUtils.assemble("kiwi/race_condition.kiwi",
                 typeManager, schedulerAndWorker);
         long size = (int) TestUtils.doInTransaction(() -> apiClient.callMethod("Utils", "size", List.of(
                 List.of()

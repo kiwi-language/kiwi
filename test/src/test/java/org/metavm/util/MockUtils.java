@@ -180,7 +180,7 @@ public class MockUtils {
     }
 
     public static ShoppingTypeIds createShoppingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/Shopping.kiwi", typeManager, schedulerAndWorker);
+        assemble("kiwi/Shopping.kiwi", typeManager, schedulerAndWorker);
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var productKlass = context.getKlassByQualifiedName("Product");
@@ -221,7 +221,7 @@ public class MockUtils {
     }
 
     public static LivingBeingTypeIds createLivingBeingTypes(TypeManager typeManager, SchedulerAndWorker schedulerAndWorker) {
-        assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/LivingBeing.kiwi", typeManager, schedulerAndWorker);
+        assemble("kiwi/LivingBeing.kiwi", typeManager, schedulerAndWorker);
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var livingBeingKlass = context.getKlassByQualifiedName("LivingBeing");
@@ -262,7 +262,7 @@ public class MockUtils {
 //            assembler.assemble(List.of(source));
 //            assembler.generateClasses(TestConstants.TARGET);
 
-            var task = new CompilationTask(List.of(source), TestConstants.TARGET);
+            var task = new CompilationTask(List.of(TestUtils.getResourcePath(source)), TestConstants.TARGET);
             task.parse();
             MockEnter.enterStandard(task.getProject());
             task.analyze();
@@ -270,7 +270,6 @@ public class MockUtils {
 
             FlowSavingContext.initConfig();
 //            var request = new BatchSaveRequest(assembler.getAllTypeDefs(), List.of(), true);
-//            NncUtils.writeFile("/Users/leen/workspace/object/test.json", NncUtils.toPrettyJsonString(request));
             var commitId = TestUtils.doInTransaction(() -> {
                 try(var input = new FileInputStream(TestConstants.TARGET + "/target.mva")) {
                     return typeManager.deploy(input);

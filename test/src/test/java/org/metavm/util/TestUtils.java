@@ -31,17 +31,20 @@ import org.slf4j.Logger;
 import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Field;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class TestUtils {
-
-    public static final String TEST_RESOURCE_ROOT = "/Users/leen/workspace/object/src/test/resources";
-
-    public static final String TEST_RESOURCE_TARGET_ROOT = "/Users/leen/workspace/object/target/test-classes";
 
     public static final ObjectMapper INDENT_OBJECT_MAPPER = new ObjectMapper()
             .enable(JsonGenerator.Feature.IGNORE_UNKNOWN)
@@ -151,26 +154,6 @@ public class TestUtils {
 
     public static void writeJson(String path, Object object) {
         writeFile(path, toJSONString(object));
-    }
-
-    public static void clearTestResourceDir(String dirName) {
-        File dir = new File(TEST_RESOURCE_ROOT + "/" + dirName);
-        if (dir.listFiles() != null) {
-            for (File file : Objects.requireNonNull(dir.listFiles())) {
-                if (!file.delete()) {
-                    throw new InternalException("Fail to delete file " + file.getPath());
-                }
-            }
-        }
-
-        File targetDir = new File(TEST_RESOURCE_TARGET_ROOT + "/" + dirName);
-        if (targetDir.listFiles() != null) {
-            for (File file : Objects.requireNonNull(targetDir.listFiles())) {
-                if (!file.delete()) {
-                    throw new InternalException("Fail to delete file " + file.getPath());
-                }
-            }
-        }
     }
 
     public static void doInTransactionWithoutResult(Runnable action) {
@@ -390,4 +373,38 @@ public class TestUtils {
         klass.resetHierarchy();
     }
 
+    public static String getResourcePath(String resourcePath) {
+        // Ensure the path uses forward slashes, standard for resources
+        String normalizedPath = resourcePath.replace('\\', '/');
+        // Remove leading slash if present, as getResource expects a path relative to the root
+        if (normalizedPath.startsWith("/")) {
+            normalizedPath = normalizedPath.substring(1);
+        }
+
+        // Use the class loader of the current class to find the resource
+        URL resourceUrl = TestUtils.class.getClassLoader().getResource(normalizedPath);
+        Objects.requireNonNull(resourceUrl, "Resource not found in classpath: " + normalizedPath);
+
+        try {
+            URI resourceUri = resourceUrl.toURI();
+            // Handle resources potentially inside JAR files (though less common for src/test/resources during tests)
+            // For regular file system resources, this works directly.
+            Path path = Paths.get(resourceUri);
+            return path.toString();
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid URI syntax for resource: " + normalizedPath, e);
+        } catch (java.nio.file.FileSystemNotFoundException e) {
+            // Handle case where the resource might be inside a JAR/ZIP (less common for src/test/resources)
+            // This might require more complex handling depending on how 'deploy' consumes the path.
+            // For now, assume 'deploy' needs a standard file path. If it can handle URLs or InputStreams, that's better.
+            System.err.println("Warning: Resource might be inside a JAR/ZIP, returning URL path: " + resourceUrl.getPath());
+            return resourceUrl.getPath(); // Fallback, might not work if 'deploy' strictly needs a file system path
+        }
+    }
+
+    public static List<String> getResourcePaths(List<String> resourcePaths) {
+        return resourcePaths.stream()
+                .map(TestUtils::getResourcePath)
+                .collect(Collectors.toList());
+    }
 }

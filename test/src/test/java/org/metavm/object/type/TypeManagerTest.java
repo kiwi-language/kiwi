@@ -84,7 +84,7 @@ public class TypeManagerTest extends TestCase {
     }
 
     public void testChangeStaticFields() {
-        MockUtils.assemble("/Users/leen/workspace/object/test/src/test/resources/kiwi/static_fields.kiwi", typeManager, schedulerAndWorker);
+        MockUtils.assemble("kiwi/static_fields.kiwi", typeManager, schedulerAndWorker);
         TestUtils.doInTransaction(() -> apiClient.callMethod("UpdateStaticFoo", "set", List.of(2)));
         metaContextCache.invalidate(TestConstants.APP_ID, null);
         var value = TestUtils.doInTransaction(() -> apiClient.callMethod("UpdateStaticFoo", "get", List.of()));

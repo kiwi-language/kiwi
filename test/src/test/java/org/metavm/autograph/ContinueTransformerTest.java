@@ -1,14 +1,13 @@
 package org.metavm.autograph;
 
 import junit.framework.TestCase;
-import org.metavm.autograph.mocks.ContinueFoo;
 
 import java.io.IOException;
 
 public class ContinueTransformerTest extends TestCase {
 
     public void test() throws IOException {
-        var file = TranspileTestTools.getPsiJavaFile(ContinueFoo.class);
+        var file = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.ContinueFoo");
         TranspileTestTools.executeCommand(
                 () -> {
                     file.accept(new QnResolver());
@@ -23,9 +22,6 @@ public class ContinueTransformerTest extends TestCase {
                 }
         );
         System.out.println(file.getText());
-//        var dest = "/Users/leen/workspace/object/lab/src/main/tmp/continue2/ContinueFoo.java";
-//        NncUtils.writeFile(dest,
-//                file.getText().replace("package org.metavm.autograph.mocks;", "package continue2;"));
     }
 
 

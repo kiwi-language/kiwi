@@ -11,13 +11,14 @@ import org.metavm.compiler.syntax.Import;
 import org.metavm.compiler.type.Types;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.MockEnter;
+import org.metavm.util.TestUtils;
 
 
 @Slf4j
 public class TypeResolverTest extends TestCase {
 
     public void test() {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/kiwi/Shopping.kiwi";
+        var source = TestUtils.getResourcePath("kiwi/Shopping.kiwi");
         var file = CompilerTestUtils.parse(source);
 
         var project = MockEnter.enter(List.of(file));
@@ -45,7 +46,7 @@ public class TypeResolverTest extends TestCase {
     }
 
     public void testTypeVariable() {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/kiwi/box.kiwi";
+        var source = TestUtils.getResourcePath("kiwi/box.kiwi");
         var file = CompilerTestUtils.parse(source);
         MockEnter.enter(List.of(file));
         var typeResolver = new TypeResolver();

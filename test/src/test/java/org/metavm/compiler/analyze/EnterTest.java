@@ -8,13 +8,14 @@ import org.metavm.compiler.element.Project;
 import org.metavm.compiler.element.NameTable;
 import org.metavm.compiler.syntax.AstBuilder;
 import org.metavm.compiler.util.List;
+import org.metavm.util.TestUtils;
 
 
 @Slf4j
 public class EnterTest extends TestCase {
 
     public void test() {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/kiwi/Shopping.kiwi";
+        var source = TestUtils.getResourcePath( "kiwi/Shopping.kiwi");
         var file = AstBuilder.build(CompilerTestUtils.antlrParse(source));
 
         var project = new Project();

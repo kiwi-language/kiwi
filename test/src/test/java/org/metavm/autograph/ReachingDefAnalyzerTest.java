@@ -4,7 +4,6 @@ import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiElement;
 import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.autograph.mocks.ReachingDefFoo;
 
 import java.util.HashSet;
 import java.util.List;
@@ -13,7 +12,7 @@ import java.util.Set;
 public class ReachingDefAnalyzerTest extends TestCase {
 
     public void test() {
-        var psiFile = TranspileTestTools.getPsiJavaFile(ReachingDefFoo.class);
+        var psiFile = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.ReachingDefFoo");
         AstToCfg astToCfg = new AstToCfg();
         psiFile.accept(astToCfg);
         psiFile.accept(new QnResolver());

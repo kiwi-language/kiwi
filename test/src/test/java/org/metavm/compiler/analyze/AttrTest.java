@@ -10,13 +10,14 @@ import org.metavm.compiler.syntax.TypeNode;
 import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Type;
+import org.metavm.util.TestUtils;
 import org.metavm.util.Utils;
 
 @Slf4j
 public class AttrTest extends TestCase {
 
     public void test() {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/kiwi/Shopping.kiwi";
+        var source = TestUtils.getResourcePath( "kiwi/Shopping.kiwi");
         process(source);
     }
 
@@ -43,12 +44,12 @@ public class AttrTest extends TestCase {
     }
 
     public void testLambda() {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/kiwi/Lambda.kiwi";
+        var source = TestUtils.getResourcePath("kiwi/Lambda.kiwi");
         process(source);
     }
 
     public void testDeferredExpr() {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/kiwi/custom_runner_after.kiwi";
+        var source = TestUtils.getResourcePath("kiwi/custom_runner_after.kiwi");
         var file = CompilerTestUtils.parse(source);
 
 //        log.debug("{}", file.getText());
