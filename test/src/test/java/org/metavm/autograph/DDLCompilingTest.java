@@ -9,6 +9,7 @@ import org.metavm.object.type.StaticFieldTable;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
 import org.metavm.util.TestConstants;
+import org.metavm.util.TestUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -16,8 +17,8 @@ import java.util.Map;
 @Slf4j
 public class DDLCompilingTest extends CompilerTestBase {
 
-    public static final String DDL_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/ddl";
-    public static final String DDL2_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/ddl2";
+    public static final String DDL_SOURCE_ROOT = "ddl";
+    public static final String DDL2_SOURCE_ROOT = "ddl2";
 
     public void test() {
         compile(DDL_SOURCE_ROOT);

@@ -5,12 +5,11 @@ import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
-import org.metavm.autograph.mocks.TypeFoo;
 
 public class TypeLab {
 
     public static void main(String[] args) {
-        var psiFile = TranspileTestTools.getPsiJavaFile(TypeFoo.class);
+        var psiFile = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.TypeFoo");
         psiFile.accept(new TypeLabVisitor());
     }
 

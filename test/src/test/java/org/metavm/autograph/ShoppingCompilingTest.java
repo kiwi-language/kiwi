@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class ShoppingCompilingTest extends CompilerTestBase {
 
-    public static final String SHOPPING_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/shopping";
+    public static final String SHOPPING_SOURCE_ROOT = "shopping";
 
     public void testShopping() {
         compileTwice(SHOPPING_SOURCE_ROOT);

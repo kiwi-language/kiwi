@@ -2,12 +2,11 @@ package org.metavm.autograph;
 
 import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiLambdaExpression;
-import org.metavm.autograph.mocks.AstLambdaFoo;
 
 public class LambdaLab {
 
     public static void main(String[] args) {
-        var foo = TranspileTestTools.getPsiClass(AstLambdaFoo.class);
+        var foo = TranspileTestTools.getPsiClass("org.metavm.autograph.mocks.AstLambdaFoo");
         foo.accept(new Visitor());
     }
 

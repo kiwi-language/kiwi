@@ -19,7 +19,7 @@ import static org.metavm.util.TestUtils.doInTransactionWithoutResult;
 @Slf4j
 public class ManufacturingCompilingTest extends CompilerTestBase {
 
-    public static final String SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/manufacturing";
+    public static final String SOURCE_ROOT = "manufacturing";
 
     public static final String USER_NAME = "leen";
     public static final String PASSWORD = "123456";

@@ -1,12 +1,11 @@
 package org.metavm.autograph;
 
 import junit.framework.TestCase;
-import org.metavm.autograph.mocks.FooLoopFoo;
 
 public class ForTransformerTest extends TestCase {
 
     public void test() {
-        var file = TranspileTestTools.getPsiJavaFile(FooLoopFoo.class);
+        var file = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.FooLoopFoo");
         TranspileTestTools.executeCommand(() -> {
             file.accept(new QnResolver());
             file.accept(new ActivityAnalyzer());

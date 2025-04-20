@@ -1,12 +1,11 @@
 package org.metavm.autograph;
 
 import junit.framework.TestCase;
-import org.metavm.autograph.mocks.AstSwitchCoverFoo;
 
 public class DefaultSwitchCaseAppenderTest extends TestCase {
 
     public void test() {
-        var file = TranspileTestTools.getPsiJavaFile(AstSwitchCoverFoo.class);
+        var file = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.AstSwitchCoverFoo");
         TranspileTestTools.executeCommand(() -> {
             file.accept(new QnResolver());
             file.accept(new ActivityAnalyzer());

@@ -4,14 +4,13 @@ import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiJavaParserFacade;
 import com.intellij.psi.PsiMethod;
-import org.metavm.autograph.mocks.ModFoo;
 
 import static org.metavm.autograph.TranspileTestTools.getProject;
 
 public class PsiModLab {
 
     public static void main(String[] args) {
-        var psiFile = TranspileTestTools.getPsiJavaFile(ModFoo.class, true);
+        var psiFile = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.ModFoo", true);
         psiFile.accept(new ModVisitor());
     }
 

@@ -3,14 +3,13 @@ package org.metavm.autograph;
 import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
-import org.metavm.autograph.mocks.GenericFoo;
 
 import java.util.Objects;
 
 public class GenericLab {
 
     public static void main(String[] args) {
-        var foo = TranspileTestTools.getPsiClass(GenericFoo.class);
+        var foo = TranspileTestTools.getPsiClass("org.metavm.autograph.mocks.GenericFoo");
         foo.accept(new Visitor());
     }
 

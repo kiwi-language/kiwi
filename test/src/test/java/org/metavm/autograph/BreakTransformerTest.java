@@ -2,13 +2,11 @@ package org.metavm.autograph;
 
 import com.intellij.psi.PsiJavaFile;
 import junit.framework.TestCase;
-import org.metavm.autograph.mocks.BreakFoo;
-import org.metavm.util.Utils;
 
 public class BreakTransformerTest extends TestCase {
 
     public void test() {
-        var file = TranspileTestTools.getPsiJavaFile(BreakFoo.class);
+        var file = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.BreakFoo");
         transform(file);
     }
 

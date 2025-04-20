@@ -3,14 +3,13 @@ package org.metavm.autograph;
 import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiForeachStatement;
 import junit.framework.TestCase;
-import org.metavm.autograph.mocks.LivenessFoo;
 
 import java.util.Objects;
 
 public class LivenessAnalyzerTest extends TestCase {
 
     public void test() {
-        var file = TranspileTestTools.getPsiJavaFile(LivenessFoo.class);
+        var file = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.LivenessFoo");
         file.accept(new QnResolver());
         file.accept(new ActivityAnalyzer());
         file.accept(new ActivityPrinter());

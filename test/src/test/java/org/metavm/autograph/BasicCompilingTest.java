@@ -15,7 +15,7 @@ public class BasicCompilingTest extends CompilerTestBase {
 
     public static final Logger logger = LoggerFactory.getLogger(BasicCompilingTest.class);
 
-    public static final String SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/basics";
+    public static final String SOURCE_ROOT = "basics";
 
     public void test() {
         compile(SOURCE_ROOT);

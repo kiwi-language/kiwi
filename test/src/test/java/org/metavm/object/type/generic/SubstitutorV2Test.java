@@ -14,8 +14,6 @@ import java.util.List;
 
 public class SubstitutorV2Test extends TestCase {
 
-    public static final String JSON_FILE_PATH = "/Users/leen/workspace/object/test.json";
-
     @Override
     protected void setUp() throws Exception {
         MockStandardTypesInitializer.init();

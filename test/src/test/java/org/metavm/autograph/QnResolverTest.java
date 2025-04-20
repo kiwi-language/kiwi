@@ -4,12 +4,11 @@ import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiElement;
 import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
-import org.metavm.autograph.mocks.QnFoo;
 
 public class QnResolverTest extends TestCase {
 
     public void test() {
-        var psiFile = TranspileTestTools.getPsiJavaFile(QnFoo.class);
+        var psiFile = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.QnFoo");
         psiFile.accept(new QnResolver());
         psiFile.accept(new QnPrinter());
     }

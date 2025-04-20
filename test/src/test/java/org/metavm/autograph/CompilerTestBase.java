@@ -37,7 +37,7 @@ public abstract class CompilerTestBase extends TestCase  {
     protected AuthConfig AUTH_CONFIG;
     protected long APP_ID;
 
-    public static final String HOME = "/Users/leen/workspace/object/test/src/test/resources/home";
+    public static final String HOME = TestUtils.getResourcePath("home");
 
     protected TypeClient typeClient;
     protected ExecutorService executor;
@@ -59,7 +59,7 @@ public abstract class CompilerTestBase extends TestCase  {
     }
 
     protected void setUp0() {
-        AUTH_CONFIG = AuthConfig.fromFile("/Users/leen/workspace/object/test/src/test/resources/auth");
+        AUTH_CONFIG = AuthConfig.fromFile(TestUtils.getResourcePath("auth"));
         TestUtils.clearDirectory(new File(HOME));
         executor = Executors.newSingleThreadExecutor();
         var bootResult = submit(() -> {
@@ -150,7 +150,7 @@ public abstract class CompilerTestBase extends TestCase  {
 
     protected void compile(String sourceRoot) {
         ContextUtil.resetProfiler();
-        new Main(HOME, sourceRoot, TestConstants.TARGET, APP_ID, "__fake_token__", typeClient, allocatorStore, columnStore, typeTagStore).run();
+        new Main(HOME, TestUtils.getResourcePath(sourceRoot), TestConstants.TARGET, APP_ID, "__fake_token__", typeClient, allocatorStore, columnStore, typeTagStore).run();
         submit(() -> TestUtils.waitForDDLPrepared(schedulerAndWorker));
     }
 

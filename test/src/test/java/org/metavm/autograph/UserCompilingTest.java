@@ -20,7 +20,7 @@ import static org.metavm.util.TestUtils.doInTransaction;
 public class UserCompilingTest extends CompilerTestBase {
 
     public static final Logger logger = LoggerFactory.getLogger(UserCompilingTest.class);
-    public static final String USERS_SOURCE_ROOT = "/Users/leen/workspace/object/lab/src/main/users";
+    public static final String USERS_SOURCE_ROOT = "users";
     public static final String userKlass = "org.metavm.user.LabPlatformUser";
     public static final String platformApplicationKlass = "org.metavm.application.PlatformApplication";
     public static final String verificationCodeKlass = "org.metavm.user.LabVerificationCode";

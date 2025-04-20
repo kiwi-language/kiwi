@@ -2,7 +2,6 @@ package org.metavm.autograph;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.metavm.mocks.PipelineFoo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +10,7 @@ public class SubstitutorPipelineTest extends TestCase {
     public static final Logger logger = LoggerFactory.getLogger(SubstitutorPipelineTest.class);
 
     public void test() {
-        var file = TranspileTestTools.getPsiJavaFile(PipelineFoo.class);
+        var file = TranspileTestTools.getPsiJavaFileByName("org.metavm.mocks.PipelineFoo");
         var fooKlass = file.getClasses()[0];
         var fooExtKlass = file.getClasses()[1];
         var cmpKlass = fooKlass.getInterfaces()[0];

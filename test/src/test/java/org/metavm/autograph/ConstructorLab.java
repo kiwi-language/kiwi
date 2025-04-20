@@ -2,12 +2,11 @@ package org.metavm.autograph;
 
 import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.PsiNewExpression;
-import org.metavm.autograph.mocks.ConstructorFoo;
 
 public class ConstructorLab {
 
     public static void main(String[] args) {
-        var file = TranspileTestTools.getPsiJavaFile(ConstructorFoo.class);
+        var file = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.ConstructorFoo");
         file.accept(new Visitor());
     }
 

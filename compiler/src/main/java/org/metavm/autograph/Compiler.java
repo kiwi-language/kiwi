@@ -125,10 +125,6 @@ public class Compiler {
         projectEnv.addSourcesToClasspath(requireNonNull(javaBaseDir));
         projectEnv.addSourcesToClasspath(requireNonNull(fileSystem.findFileByPath(this.sourceRoot)));
 
-//        var apiSource = appEnv.getJarFileSystem().findFileByPath("/Users/leen/workspace/object/api/target/api-1.0-SNAPSHOT.jar!/");
-//        var apiSource = requireNonNull(fileSystem.findFileByPath("/Users/leen/workspace/object/api/target/classes/"));
-//        projectEnv.addSourcesToClasspath(requireNonNull(apiSource));
-//        projectEnv.addSourcesToClasspath(requireNonNull(fileSystem.findFileByPath("/Users/leen/workspace/object/api/src/main/java")));
         try {
             var apiSource = Paths.get(Index.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toFile();
             if (apiSource.getName().endsWith(".jar")) {

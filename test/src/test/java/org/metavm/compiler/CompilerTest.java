@@ -42,7 +42,7 @@ public class CompilerTest extends TestCase {
     }
 
     public void test() {
-        var source = "/Users/leen/workspace/object/test/src/test/resources/kiwi/Shopping.kiwi";
+        var source = TestUtils.getResourcePath("kiwi/Shopping.kiwi");
         var task = new CompilationTask(List.of(source), TestConstants.TARGET);
         task.parse();
         MockEnter.enterStandard(task.getProject());

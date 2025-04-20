@@ -66,8 +66,6 @@ public class InstanceIOTest extends TestCase {
         }
     }
 
-    private static final String BYTE_FILE = "/Users/leen/workspace/object/src/test/resources/bytes/1240104967";
-
     public void testArrayChildField() {
         var fooKlass = TestUtils.newKlassBuilder("Foo").build();
         var stringArrayType = new ArrayType(Types.getStringType(), ArrayKind.DEFAULT);

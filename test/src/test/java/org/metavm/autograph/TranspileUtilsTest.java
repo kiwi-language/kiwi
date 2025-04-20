@@ -5,22 +5,20 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiThisExpression;
 import com.intellij.psi.PsiType;
 import junit.framework.TestCase;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
-import org.metavm.EnumAnnotatedFoo;
 import org.metavm.api.Enum;
-import org.metavm.autograph.mocks.PTypeFoo;
-import org.metavm.autograph.mocks.RecordFoo;
-import org.metavm.autograph.mocks.SignatureFoo;
-import org.metavm.autograph.mocks.TypeFoo;
-import org.metavm.entity.DummyGenericDeclaration;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
 import org.metavm.flow.MethodBuilder;
 import org.metavm.flow.Parameter;
-import org.metavm.object.type.*;
-import org.metavm.util.Utils;
+import org.metavm.object.type.KlassType;
+import org.metavm.object.type.TypeVariable;
+import org.metavm.object.type.Types;
+import org.metavm.object.type.UncertainType;
 import org.metavm.util.ReflectionUtils;
 import org.metavm.util.TestUtils;
+import org.metavm.util.Utils;
 
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +26,7 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
+@Slf4j
 public class TranspileUtilsTest extends TestCase {
 
     @Override
@@ -39,13 +38,13 @@ public class TranspileUtilsTest extends TestCase {
 
     public void testGetTemplateType() {
         Visitor visitor = new Visitor();
-        var foo = TranspileTestTools.getPsiJavaFile(PTypeFoo.class);
+        var foo = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.PTypeFoo");
         foo.accept(visitor);
     }
 
     public void testMatchMethod() {
         var method = ReflectionUtils.getMethod(List.class, "get", int.class);
-        var psiClass = TranspileTestTools.getPsiClass(TypeFoo.class);
+        var psiClass = TranspileTestTools.getPsiClass("org.metavm.autograph.mocks.TypeFoo");
         var psiMethod = Utils.findRequired(psiClass.getMethods(), m -> m.getName().equals("get"));
         Utils.require(TranspileUtils.matchMethod(psiMethod, method));
     }
@@ -63,11 +62,12 @@ public class TranspileUtilsTest extends TestCase {
     }
 
     public void testGetInternalName() {
-        var listClass = Objects.requireNonNull(TranspileUtils.createClassType(SignatureFoo.class).resolve());
+        var psiClass = TranspileTestTools.getPsiClass("org.metavm.autograph.mocks.SignatureFoo");
+        var listClass = Objects.requireNonNull(TranspileUtils.createType(psiClass).resolve());
         var getMethod = Utils.findRequired(listClass.getMethods(), method -> method.getName().equals("add"));
         var sig = TranspileUtils.getInternalName(getMethod);
 
-        var fooType = TestUtils.newKlassBuilder(SignatureFoo.class).build();
+        var fooType = TestUtils.newKlassBuilder("org.metavm.autograph.mocks.SignatureFoo").build();
 
         var addMethod = MethodBuilder.newBuilder(fooType, "add").build();
         var typeVar = new TypeVariable(fooType.nextChildId(), "T", addMethod);
@@ -87,14 +87,15 @@ public class TranspileUtilsTest extends TestCase {
     }
 
     public void testGetInternalNameWithImplicitTypes() {
-        var klass = Objects.requireNonNull(TranspileUtils.createClassType(SignatureFoo.class).resolve());
+        var psiClass = TranspileTestTools.getPsiClass("org.metavm.autograph.mocks.SignatureFoo");
+        var klass = Objects.requireNonNull(TranspileUtils.createType(psiClass).resolve());
         var testMethod = Utils.findRequired(klass.getMethods(), method -> method.getName().equals("test"));
         var internalName = TranspileUtils.getInternalName(testMethod);
         Assert.assertEquals("org.metavm.autograph.mocks.SignatureFoo.test(Any|Null)", internalName);
     }
 
     public void testIsStruct() {
-        var file = TranspileTestTools.getPsiJavaFile(RecordFoo.class);
+        var file = TranspileTestTools.getPsiJavaFileByName("org.metavm.autograph.mocks.RecordFoo");
         Assert.assertTrue(TranspileUtils.isStruct(file.getClasses()[0]));
     }
 
@@ -132,7 +133,7 @@ public class TranspileUtilsTest extends TestCase {
     }
 
     public void testIsAnnotationPresent() {
-        var k = TranspileTestTools.getPsiClass(EnumAnnotatedFoo.class);
+        var k = TranspileTestTools.getPsiClass("org.metavm.EnumAnnotatedFoo");
         Assert.assertTrue(TranspileUtils.isAnnotationPresent(k, Enum.class));
     }
 

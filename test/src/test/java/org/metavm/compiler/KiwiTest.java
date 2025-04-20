@@ -18,46 +18,46 @@ public class KiwiTest extends KiwiTestBase {
     public static final Logger logger = LoggerFactory.getLogger(KiwiTest.class);
 
     public void testParentChild() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/ParentChild.kiwi");
+        deploy("kiwi/ParentChild.kiwi");
     }
 
     public void testMyList() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/List.kiwi");
+        deploy("kiwi/List.kiwi");
     }
 
     public void testShopping() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/Shopping.kiwi");
+        deploy("kiwi/Shopping.kiwi");
         // redeploy
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/Shopping.kiwi");
+        deploy("kiwi/Shopping.kiwi");
     }
 
     public void testLivingBeing() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/LivingBeing.kiwi");
+        deploy("kiwi/LivingBeing.kiwi");
     }
 
     public void testUtils() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/util/Utils.kiwi");
+        deploy("kiwi/util/Utils.kiwi");
     }
 
     public void testGenericOverloading() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/GenericOverloading.kiwi");
+        deploy("kiwi/GenericOverloading.kiwi");
     }
 
     public void testLambda() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/Lambda.kiwi");
+        deploy("kiwi/Lambda.kiwi");
         var r = callMethod("Utils", "findGt", List.of(List.of(1, 2, 3), 1));
         Assert.assertEquals(2, r);
     }
 
     public void testAssign() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/assign.kiwi");
+        deploy("kiwi/assign.kiwi");
         var className = "Assign";
         var r = (int) callMethod(className, "test", List.of(1));
         Assert.assertEquals(2, r);
     }
 
     public void testConditional() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/conditional.kiwi");
+        deploy("kiwi/conditional.kiwi");
         var className = "Conditional";
         var r1 = (int) callMethod(className, "test", List.of(1));
         Assert.assertEquals(1, r1);
@@ -70,13 +70,13 @@ public class KiwiTest extends KiwiTestBase {
     }
 
     public void testIntersectionType() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/intersection_type.kiwi");
+        deploy("kiwi/intersection_type.kiwi");
         var r = callMethod("Lab", "test", List.of());
         Assert.assertEquals("Hello Kiwi", r);
     }
 
     public void testCreateArray() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/CreateArray.kiwi");
+        deploy("kiwi/CreateArray.kiwi");
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var klass = Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance("Utils")));
             var method = klass.getMethod("createArray", List.of());
@@ -88,15 +88,15 @@ public class KiwiTest extends KiwiTestBase {
     }
 
     public void testInstanceOf() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/instanceof.kiwi");
+        deploy("kiwi/instanceof.kiwi");
     }
 
     public void testUpdateField() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/update_field.kiwi");
+        deploy("kiwi/update_field.kiwi");
     }
 
     public void testTreeSet() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/tree_set.kiwi");
+        deploy("kiwi/tree_set.kiwi");
         var id = (String) callMethod("TreeSetLab", "create", List.of());
         var elements = List.of(5,4,3,2,1);
         callMethod(id, "addAll", List.of(elements));
@@ -112,11 +112,11 @@ public class KiwiTest extends KiwiTestBase {
     }
 
     public void testSwapSuper() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/swap_super_before.kiwi");
+        deploy("kiwi/swap_super_before.kiwi");
         var id = saveInstance("Derived", Map.of(
                 "value1", 1, "value2", 2, "value3", 3
         ));
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/swap_super_after.kiwi");
+        deploy("kiwi/swap_super_after.kiwi");
         Assert.assertEquals(
                 2,
                 callMethod(id, "getValue2", List.of())
@@ -124,27 +124,27 @@ public class KiwiTest extends KiwiTestBase {
     }
 
     public void testImplicitSuperInit() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/implicit_super_init.kiwi");
+        deploy("kiwi/implicit_super_init.kiwi");
         var id = saveInstance("Sub", Map.of());
         var r = callMethod(id, "getValue", List.of());
         Assert.assertEquals(1, r);
     }
 
     public void testCircularReference() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/circular_ref.kiwi");
+        deploy("kiwi/circular_ref.kiwi");
         var id = saveInstance("Foo", Map.of());
         getObject(id);
     }
 
     public void testSmallInt() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/smallint.kiwi");
+        deploy("kiwi/smallint.kiwi");
         var className = "SmallIntFoo";
         Assert.assertEquals((short) 3, callMethod(className, "addShorts", List.of(1, 2)));
         Assert.assertEquals(3.0, callMethod(className, "addShortAndDouble", List.of(1, 2)));
     }
 
     public void testInnerKlass() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/inner_klass.kiwi");
+        deploy("kiwi/inner_klass.kiwi");
         var className = "Product";
         var productId = saveInstance(className, Map.of("quantity", 100));
         var product = getObject(productId);
@@ -153,7 +153,7 @@ public class KiwiTest extends KiwiTestBase {
     }
 
     public void testTag() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/tag.kiwi");
+        deploy("kiwi/tag.kiwi");
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             var klass = context.getKlassByQualifiedName("Foo");
             Assert.assertEquals((Integer) 1, klass.getSourceTag());
@@ -161,7 +161,7 @@ public class KiwiTest extends KiwiTestBase {
     }
 
     public void testFieldInitializer() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/field_init.kiwi");
+        deploy("kiwi/field_init.kiwi");
         var id = saveInstance("FieldInit", Map.of());
         var r = callMethod(id, "getFlag", List.of());
         Assert.assertEquals(true, r);
@@ -173,7 +173,7 @@ public class KiwiTest extends KiwiTestBase {
     }
 
     public void testImplicitInit() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/implicit_init.kiwi");
+        deploy("kiwi/implicit_init.kiwi");
         var id = saveInstance("ImplicitInit", Map.of());
         var value = callMethod(id, "getValue", List.of());
         Assert.assertEquals(1, value);
@@ -181,8 +181,8 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testMultiFiles() {
         deploy(List.of(
-                "/Users/leen/workspace/object/test/src/test/resources/kiwi/multi_files.kiwi",
-                "/Users/leen/workspace/object/test/src/test/resources/kiwi/util/Utils.kiwi"
+                "kiwi/multi_files.kiwi",
+                "kiwi/util/Utils.kiwi"
                 )
         );
         var value = callMethod("Lab", "test", List.of());
@@ -190,7 +190,7 @@ public class KiwiTest extends KiwiTestBase {
     }
 
     public void testForeach() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/foreach.kiwi");
+        deploy("kiwi/foreach.kiwi");
         var r = callMethod("ForeachLab", "sumList", List.of(List.of(1, 2, 3)));
         Assert.assertEquals(6, r);
         var r1 = callMethod("ForeachLab", "sumArray", List.of(List.of(1, 2, 3)));
@@ -198,7 +198,7 @@ public class KiwiTest extends KiwiTestBase {
     }
 
     public void testBreak() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/break.kiwi");
+        deploy("kiwi/break.kiwi");
         var r = callMethod("BreakFoo", "contains", List.of(List.of(1, 2, 3), 2, 3));
         Assert.assertEquals(true, r);
         var r1 = callMethod("BreakFoo", "contains", List.of(List.of(1, 2, 3), 2, 1));
@@ -206,45 +206,45 @@ public class KiwiTest extends KiwiTestBase {
     }
 
     public void testRange() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/range.kiwi");
+        deploy("kiwi/range.kiwi");
         var r = callMethod("RangeLab", "sum", List.of(10));
         Assert.assertEquals(45, r);
     }
 
     public void testContinue() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/continue.kiwi");
+        deploy("kiwi/continue.kiwi");
         var r = callMethod("ContinueFoo", "avgEven", List.of(List.of(1, 2, 3, 4 ,5)));
         Assert.assertEquals(3, r);
     }
 
     public void testAnonymousClass() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/anonymous_class.kiwi");
+        deploy("kiwi/anonymous_class.kiwi");
         var r = callMethod("AnonymousClassLab", "test", List.of());
         Assert.assertEquals(1, r);
     }
 
     public void testInnerClass() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/inner_class.kiwi");
+        deploy("kiwi/inner_class.kiwi");
         var id = saveInstance("InnerClassLab", Map.of("value", 1));
         var r = callMethod(id, "getValue", List.of());
         assertEquals(1, r);
     }
 
     public void testLocalClass() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/local_class.kiwi");
+        deploy("kiwi/local_class.kiwi");
         var r = callMethod("LocalClassFoo", "test", List.of());
         assertEquals(1, r);
     }
 
     public void testNew() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/new.kiwi");
+        deploy("kiwi/new.kiwi");
         var id = (String) callMethod("Foo", "test", List.of());
         var r = callMethod(id, "getValue", List.of());
         assertEquals(1, r);
     }
 
     public void testBindingVar() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/binding_var.kiwi");
+        deploy("kiwi/binding_var.kiwi");
         var r = callMethod("BindingVarLab", "test", List.of("Hello"));
         assertEquals("Hello", r);
         var r1 = callMethod("BindingVarLab", "test", List.of(1));
@@ -254,7 +254,7 @@ public class KiwiTest extends KiwiTestBase {
     }
 
     public void testMethodRef() {
-        deploy("/Users/leen/workspace/object/test/src/test/resources/kiwi/method_ref.kiwi");
+        deploy("kiwi/method_ref.kiwi");
         var r = callMethod("Lab", "test", List.of("Kiwi"));
         Assert.assertEquals("Hello, Kiwi", r);
     }
