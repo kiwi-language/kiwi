@@ -1,4 +1,4 @@
-TARGET=/Users/leen/workspace/object/kcompiler/src/main/java/org/metavm/compiler/antlr
+TARGET=/Users/leen/workspace/kiwi/kcompiler/src/main/java/org/metavm/compiler/antlr
 PKG=org.metavm.compiler.antlr
 FILES=(KiwiLexer.g4 KiwiParser.g4)
 antlr4 -v 4.13.2 ${FILES[*]}

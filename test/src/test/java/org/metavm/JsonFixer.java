@@ -15,10 +15,10 @@ import java.util.Objects;
 
 public class JsonFixer {
 
-    public static final String FILE = "/Users/leen/workspace/object/input.json";
+    public static final String FILE = "/Users/leen/workspace/kiwi/input.json";
     //"/Users/leen/workspace/front/src/type/__mocks__/ClassType.json";
 
-    public static final String OUTPUT = "/Users/leen/workspace/object/test.json";
+    public static final String OUTPUT = "/Users/leen/workspace/kiwi/test.json";
 
     private static LinkedList<String> nameStack = new LinkedList<>();
 

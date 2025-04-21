@@ -19,7 +19,7 @@ import java.util.function.Function;
 
 public class BytesUtils {
 
-    public static final String SAVE_DIR = "/Users/leen/workspace/object/src/test/resources/bytes";
+    public static final String SAVE_DIR = "/Users/leen/workspace/kiwi/src/test/resources/bytes";
 
     public static long readFirstLong(byte[] bytes) {
         int b = bytes[0];

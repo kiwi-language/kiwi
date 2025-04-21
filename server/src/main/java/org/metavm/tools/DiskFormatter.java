@@ -1,6 +1,6 @@
 package org.metavm.tools;
 
-import com.zaxxer.hikari.HikariDataSource;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -21,13 +21,13 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@Slf4j
 public class DiskFormatter {
 
     private static final String CONFIG_HOST = "host";
@@ -62,7 +62,7 @@ public class DiskFormatter {
             CONFIG_CLEAR_DB, true,
             CONFIG_DB_USER, "postgres",
             CONFIG_DB_PASSWORD, "85263670",
-            CONFIG_JDBC_URL, "jdbc:postgresql://127.0.0.1:5432/object",
+            CONFIG_JDBC_URL, "jdbc:postgresql://127.0.0.1:5432/kiwi",
             CONFIG_DB_DRIVER, "org.postgresql.Driver",
             CONFIG_REBOOT, true
     );
@@ -87,24 +87,12 @@ public class DiskFormatter {
         return (boolean) CONFIG.get(CONFIG_REBOOT);
     }
 
-    private static void clearDataBases() {
+    private static void clearDatabase() {
         if ((boolean) CONFIG.get(CONFIG_CLEAR_DB)) {
-            try (HikariDataSource dataSource = new HikariDataSource()) {
-                dataSource.setDriverClassName((String) CONFIG.get(CONFIG_DB_DRIVER));
-                dataSource.setJdbcUrl((String) CONFIG.get(CONFIG_JDBC_URL));
-                dataSource.setUsername((String) CONFIG.get(CONFIG_DB_USER));
-                dataSource.setPassword((String) CONFIG.get(CONFIG_DB_PASSWORD));
-                dataSource.setMaximumPoolSize(1);
-
-                try (Connection connection = dataSource.getConnection();
-                     Statement statement = connection.createStatement()) {
-                    statement.execute("delete from instance_2");
-                    statement.execute("delete from index_entry_2");
-                    statement.execute("delete from id_sequence");
-                } catch (SQLException e) {
-                    throw new InternalException("SQL Error", e);
-                }
-            }
+            var url = (String) CONFIG.get(CONFIG_JDBC_URL);
+            var user = (String) CONFIG.get(CONFIG_DB_USER);
+            var passwd = (String) CONFIG.get(CONFIG_DB_PASSWORD);
+            deleteAllUserTables(url, user, passwd);
         }
     }
 
@@ -177,7 +165,7 @@ public class DiskFormatter {
     public static void main(String[] args) {
         clearEs();
         clearRedis();
-        clearDataBases();
+        clearDatabase();
         if (shouldDeleteIdFiles()) {
             deleteIdFiles();
             clearColumnFile();
@@ -188,6 +176,64 @@ public class DiskFormatter {
             Rebooter.reboot();
             System.out.println("Rebooted");
         }
+    }
+
+    public static void deleteAllUserTables(String url, String userName, String password) {
+        try {
+            Class.forName("org.postgresql.Driver");
+        }
+        catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        List<String> tablesToDrop = new ArrayList<>();
+        String listTablesSql = "SELECT table_schema, table_name " +
+                "FROM information_schema.tables " +
+                "WHERE table_type = 'BASE TABLE' " +
+                "AND table_schema NOT IN ('pg_catalog', 'information_schema')";
+
+        try (Connection conn = DriverManager.getConnection(url, userName, password)) {
+
+            System.out.println("Connected to the database.");
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement listStmt = conn.prepareStatement(listTablesSql);
+                 ResultSet rs = listStmt.executeQuery()) {
+
+                System.out.println("Fetching list of user tables...");
+                while (rs.next()) {
+                    String schema = rs.getString("table_schema");
+                    String tableName = rs.getString("table_name");
+                    // Quote schema and table names to handle special characters/keywords/case
+                    tablesToDrop.add(String.format("\"%s\".\"%s\"", schema, tableName));
+                }
+            }
+
+            if (tablesToDrop.isEmpty()) {
+                System.out.println("No user tables found to delete.");
+                conn.rollback(); // Rollback transaction (though nothing happened)
+                return;
+            }
+
+            System.out.println("Found tables to drop: " + tablesToDrop);
+
+            // 3. Drop each table using CASCADE
+            try (Statement dropStmt = conn.createStatement()) {
+                for (String qualifiedTableName : tablesToDrop) {
+                    String dropSql = "DROP TABLE IF EXISTS " + qualifiedTableName + " CASCADE";
+                    System.out.println("Executing: " + dropSql);
+                    dropStmt.addBatch(dropSql); // Use batch for potential efficiency
+                }
+                dropStmt.executeBatch(); // Execute all drop commands
+            }
+
+            conn.commit(); // Commit the transaction if all drops were successful
+            System.out.println("Transaction committed. Tables should be deleted.");
+
+        } catch (SQLException e) {
+            System.err.println("Error during table deletion. Transaction will be rolled back.");
+            throw new RuntimeException(e);
+        }
+
     }
 
 }

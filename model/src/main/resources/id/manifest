@@ -1,0 +1,8 @@
+/id/org.metavm.flow.Function.properties
+/id/org.metavm.flow.Method.properties
+/id/org.metavm.flow.Parameter.properties
+/id/org.metavm.object.type.Field.properties
+/id/org.metavm.object.type.Index.properties
+/id/org.metavm.object.type.Klass.properties
+/id/org.metavm.object.type.StaticFieldTable.properties
+/id/org.metavm.object.type.TypeVariable.properties
