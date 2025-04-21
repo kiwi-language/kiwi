@@ -1,21 +1,14 @@
 package org.metavm.tools;
 
-import org.metavm.entity.*;
-import org.metavm.event.MockEventQueue;
-import org.metavm.object.instance.MockInstanceLogService;
-import org.metavm.object.instance.cache.LocalCache;
-import org.metavm.object.instance.cache.MockCache;
+import org.metavm.entity.ModelDefRegistry;
+import org.metavm.entity.StdIdGenerator;
 import org.metavm.object.type.DirectoryAllocatorStore;
-import org.metavm.object.type.FileColumnStore;
-import org.metavm.object.type.FileTypeTagStore;
 import org.metavm.object.type.StdAllocators;
-import org.metavm.util.MockIdProvider;
-import org.metavm.util.MockTransactionUtils;
 
 public class Rebooter {
 
     public static void reboot() {
-        var saveDir = "/Users/leen/workspace/object/model/src/main/resources";
+        var saveDir = "/Users/leen/workspace/kiwi/model/src/main/resources";
         var allocatorStore = new DirectoryAllocatorStore(saveDir);
 
         ModelDefRegistry.setDefContext(null);

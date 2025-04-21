@@ -3,7 +3,7 @@ Accept: application/json
 Content-Type: application/json
 
 ###
-POST http://localhost:8080/system/init-test
+POST http://localhost:8080/system/init
 
 
 ###

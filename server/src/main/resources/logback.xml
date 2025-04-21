@@ -27,7 +27,7 @@
         <appender-ref ref="STDOUT" />
     </logger>
 
-    <logger name="org.metavm" level="trace" additivity="false">
+    <logger name="org.metavm" level="info" additivity="false">
         <appender-ref ref="STDOUT" />
     </logger>
     <root level="info">

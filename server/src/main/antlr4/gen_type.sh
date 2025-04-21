@@ -1,4 +1,4 @@
-TARGET=/Users/leen/workspace/object/model/src/main/java/org/metavm/object/type/antlr
+TARGET=/Users/leen/workspace/kiwi/model/src/main/java/org/metavm/object/type/antlr
 PKG=org.metavm.object.type.antlr
 FILES=(TypeLexer.g4 TypeParser.g4)
 antlr4 -v 4.13.2 ${FILES[*]}
