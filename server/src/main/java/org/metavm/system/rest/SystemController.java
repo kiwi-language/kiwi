@@ -79,8 +79,8 @@ public class SystemController {
 //        this.ddlManager = ddlManager;
     }
 
-    @PostMapping("/init-test")
-    public Result<Void> initTest(HttpServletRequest request, HttpServletResponse response) {
+    @PostMapping("/init")
+    public Result<Void> init(HttpServletRequest request, HttpServletResponse response) {
         bootstrapController.boot(true);
         var createAppResult = applicationManager.createBuiltin(ApplicationCreateRequest.fromNewUser(APP_NAME, LOGIN_NAME, PASSWD));
         loginController.login(request, response, new LoginRequest(Constants.PLATFORM_APP_ID, LOGIN_NAME, PASSWD));
