@@ -114,7 +114,8 @@ public class ReflectDefiner {
             out:
             for (Constructor<?> javaConstructor : javaClass.getDeclaredConstructors()) {
                 var mod = javaConstructor.getModifiers();
-                if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod) || javaConstructor.isSynthetic())
+                if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod) || javaConstructor.isSynthetic()
+                        || javaConstructor.isAnnotationPresent(Deprecated.class))
                     continue;
                 for (Class<?> parameterType : javaConstructor.getParameterTypes()) {
                     if (parameterType == Charset.class || parameterType == Locale.class) continue out;
@@ -132,7 +133,7 @@ public class ReflectDefiner {
             var isFunctionalInterface = javaClass.isAnnotationPresent(FunctionalInterface.class);
             for (Method javaMethod : javaClass.getDeclaredMethods()) {
                 var mods = javaMethod.getModifiers();
-                if (javaMethod.isSynthetic()
+                if (javaMethod.isSynthetic() || javaMethod.isAnnotationPresent(Deprecated.class)
                         || (!Modifier.isPublic(mods) && !Modifier.isProtected(mods) && !methodWhitelist.contains(javaMethod)))
                     continue;
                 if (isFunctionalInterface) {
@@ -166,7 +167,7 @@ public class ReflectDefiner {
             }
             klass.setKlasses(innerKlasses);
             for (Field field : javaClass.getDeclaredFields()) {
-                if (Modifier.isPublic(field.getModifiers()) && Modifier.isStatic(field.getModifiers())
+                if (Modifier.isPublic(field.getModifiers()) && Modifier.isStatic(field.getModifiers()) && !field.isAnnotationPresent(Deprecated.class)
                         || fieldWhitelist.contains(field))
                     defineField(field, klass);
             }
