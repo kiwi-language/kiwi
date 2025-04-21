@@ -32,9 +32,9 @@ public class SystemController {
 
     public static final String HOST_FILE = DEFAULT_HOME + File.separator + "host";
 
-    public static final String RESULT_JSON_FILE = "/Users/leen/workspace/object/result.json";
+    public static final String RESULT_JSON_FILE = "/Users/leen/workspace/kiwi/result.json";
 
-    public static final String APP_ID_FILE = "/Users/leen/workspace/object/src/test/resources/appId";
+    public static final String APP_ID_FILE = "/Users/leen/workspace/kiwi/src/test/resources/appId";
 
     public static final String METAVM_HOME = "/Users/leen/.metavm";
 

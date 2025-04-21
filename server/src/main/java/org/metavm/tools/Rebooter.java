@@ -15,7 +15,7 @@ import org.metavm.util.MockTransactionUtils;
 public class Rebooter {
 
     public static void reboot() {
-        var saveDir = "/Users/leen/workspace/object/model/src/main/resources";
+        var saveDir = "/Users/leen/workspace/kiwi/model/src/main/resources";
         var allocatorStore = new DirectoryAllocatorStore(saveDir);
 
         ModelDefRegistry.setDefContext(null);

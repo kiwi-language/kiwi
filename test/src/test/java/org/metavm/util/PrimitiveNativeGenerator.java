@@ -6,7 +6,7 @@ import java.util.List;
 
 public class PrimitiveNativeGenerator {
 
-    public static final String dir = "/Users/leen/workspace/object/model/src/main/java/org/metavm/entity/natives";
+    public static final String dir = "/Users/leen/workspace/kiwi/model/src/main/java/org/metavm/entity/natives";
 
     public static final List<Class<?>> classes = List.of(
             byte.class, short.class, int.class, long.class, float.class, double.class, char.class, boolean.class

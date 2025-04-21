@@ -16,9 +16,9 @@ public class Constants {
 
     public static final String PLATFORM_APP_NAME = "platform";
 
-    public final static String RESOURCE_CP_ROOT = "/Users/leen/workspace/object/model/src/main/resources";
+    public final static String RESOURCE_CP_ROOT = "/Users/leen/workspace/kiwi/model/src/main/resources";
 
-    public final static String RESOURCE_TARGET_CP_ROOT = "/Users/leen/workspace/object/model/target/classes";
+    public final static String RESOURCE_TARGET_CP_ROOT = "/Users/leen/workspace/kiwi/model/target/classes";
 
     public static final String DEFAULT_ADMIN_NAME = "admin";
 

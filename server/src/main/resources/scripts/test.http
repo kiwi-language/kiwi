@@ -2,8 +2,7 @@ GET http://localhost:8081/api/instance?typeId=13000&searchText=Test&page=1&pageS
 Accept: application/json
 Content-Type: application/json
 
-###
-POST http://localhost:8080/system/init-test
+###POST http://localhost:8080/system/init-test
 
 
 ###

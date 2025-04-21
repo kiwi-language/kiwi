@@ -35,7 +35,7 @@ public class Compiler {
 
     private final boolean tracing = DebugEnv.traceCompilation;
 
-    public static final String REQUEST_DIR = "/Users/leen/workspace/object/compiler/src/test/resources/requests";
+    public static final String REQUEST_DIR = "/Users/leen/workspace/kiwi/compiler/src/test/resources/requests";
 
     private static final LightVirtualFileBase.MyVirtualFileSystem fileSystem = LightVirtualFileBase.ourFileSystem;
     public static final List<CompileStage> prepareStages = List.of(

@@ -10,7 +10,7 @@ import java.util.*;
 public class MemAllocatorStore implements AllocatorStore {
 
 
-    public static final String DUMP_DIR = "/Users/leen/workspace/object/test/src/test/resources/tmp";
+    public static final String DUMP_DIR = "/Users/leen/workspace/kiwi/test/src/test/resources/tmp";
 
     private long nextId = 10000L;
     private final List<String> fileNames = new ArrayList<>();

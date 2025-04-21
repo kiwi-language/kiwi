@@ -49,7 +49,7 @@ server:
 management.health.elasticsearch.enabled: false
 
 metavm:
-  resource-cp-root: /Users/leen/workspace/object/model/src/main/resources
+  resource-cp-root: /Users/leen/workspace/kiwi/model/src/main/resources
   api:
     verify: true
   token:
