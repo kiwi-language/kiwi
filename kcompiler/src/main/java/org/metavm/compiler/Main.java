@@ -356,7 +356,7 @@ public class Main {
                     }
                     deleteEnv(args[1]);
                 }
-                case "compile" -> {
+                case "build" -> {
                     var sourceRoot = "src";
                     var f = new File(sourceRoot);
                     if (!f.exists() || !f.isDirectory()) {

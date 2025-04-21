@@ -6,6 +6,7 @@ import org.metavm.application.ApplicationManager;
 import org.metavm.application.rest.dto.ApplicationCreateRequest;
 import org.metavm.common.Result;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.persistence.DbInit;
 import org.metavm.system.CacheManager;
 //import org.metavm.system.StoreManager;
 import org.metavm.user.PlatformUserManager;
@@ -53,6 +54,8 @@ public class SystemController {
 
     private final LoginController loginController;
 
+    private final DbInit dbInit;
+
     private final BootstrapController bootstrapController;
 
     private final PlatformUserManager platformUserManager;
@@ -64,7 +67,7 @@ public class SystemController {
 //    private final DDLManager ddlManager;
 
     public SystemController(ApplicationManager applicationManager,
-                            LoginController loginController,
+                            LoginController loginController, DbInit dbInit,
                             BootstrapController bootstrapController,
                             PlatformUserManager platformUserManager,
                             CacheManager cacheManager
@@ -72,6 +75,7 @@ public class SystemController {
             /*, DDLManager ddlManager*/) {
         this.applicationManager = applicationManager;
         this.loginController = loginController;
+        this.dbInit = dbInit;
         this.bootstrapController = bootstrapController;
         this.platformUserManager = platformUserManager;
         this.cacheManager = cacheManager;
@@ -81,6 +85,7 @@ public class SystemController {
 
     @PostMapping("/init")
     public Result<Void> init(HttpServletRequest request, HttpServletResponse response) {
+        dbInit.run();
         bootstrapController.boot(true);
         var createAppResult = applicationManager.createBuiltin(ApplicationCreateRequest.fromNewUser(APP_NAME, LOGIN_NAME, PASSWD));
         loginController.login(request, response, new LoginRequest(Constants.PLATFORM_APP_ID, LOGIN_NAME, PASSWD));

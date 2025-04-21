@@ -15,7 +15,6 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import javax.sql.DataSource;
 import java.io.*;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Type;
@@ -1840,6 +1839,10 @@ public class Utils {
         for (int start = 0; start < records.size(); start += BATCH_SIZE) {
             action.accept(records.subList(start, Math.min(start + BATCH_SIZE, records.size())));
         }
+    }
+
+    public static boolean fileExists(String path) {
+        return Files.exists(Path.of(path));
     }
 
     private static class MyObjectOutput extends ObjectOutputStream {
