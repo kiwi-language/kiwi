@@ -119,7 +119,7 @@ Test the Installation
             }
         
             decrementStock(quantity: int) -> boolean {
-                if (stock >= quantity) { // Note: >= might need escaping depending on context
+                if (stock >= quantity) {
                     stock -= quantity
                     return true
                 }
@@ -143,10 +143,10 @@ Use the Kiwi CLI to deploy your compiled application to the running Kiwi server:
 
     kiwi deploy
 
-The command will prompt you for deployment details. Here are example inputs:
+The command will prompt you for deployment details. Here are the expected inputs:
 
 *   `name: demo`
-*   `password: 123456` (Use a secure password in practice)
+*   `password: 123456`
 *   `application: demo`
 
 Interact with the Application
