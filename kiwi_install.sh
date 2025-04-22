@@ -3,7 +3,7 @@ BASEDIR=$(dirname "$0")
 cd $BASEDIR/kcompiler
 mvn compile assembly:single
 #cp $BASEDIR/compiler/target/ $BASEDIR/src/main/java
-cp target/metavm-kcompiler-1.0-SNAPSHOT-jar-with-dependencies.jar $HOME/develop/kiwi/bin/kiwi.jar
+cp target/metavm-kcompiler-1.0-SNAPSHOT-jar-with-dependencies.jar $HOME/develop/kiwi/bin/compiler.jar
 cd -
 
 #cd $BASEDIR/assembly/target

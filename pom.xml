@@ -17,6 +17,8 @@
         <module>test</module>
         <module>assembly</module>
         <module>kcompiler</module>
+        <module>dist</module>
+        <module>compiler-asm</module>
     </modules>
 
     <parent>
@@ -37,6 +39,12 @@
     </properties>
 
     <repositories>
+        <repository>
+            <id>tencent</id>
+            <url>https://mirrors.cloud.tencent.com/nexus/repository/maven-public</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>true</enabled></snapshots>
+        </repository>
         <repository>
             <id>central</id>
             <name>Central Repository</name>
