@@ -28,6 +28,7 @@ datasource:
 ### Start the server
 
 cd <source_root>/assembly/target
+
 java -jar metavm-assembly-1.0-SNAPSHOT.jar
 
 ### Initialize the server
