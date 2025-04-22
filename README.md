@@ -91,13 +91,17 @@ class Product {
 }
 
 Build the project
+
 kiwi build
 
-Deploy the artifact to the server
+### Deploy the artifact to the server
 
 kiwi deploy
+
 name: demo
+
 password: 123456
+
 application: demo
 
 ### Interact with the application
