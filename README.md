@@ -107,7 +107,7 @@ password: 123456
 application: demo
 
 ### Interact with the application
-Create a product
+- Create a product
 PUT http://localhost:8080/product
 
 {
@@ -115,10 +115,10 @@ PUT http://localhost:8080/product
     price: 10.0
 }
 
-Retrieve the product
+- Retrieve the product
 GET http://localhost:8080/<id>
 
-Decrement the stock
+- Decrement the stock
 POST http://localhost:8080/<id>/decrement-stock
 
 {
