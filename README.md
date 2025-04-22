@@ -33,6 +33,7 @@ java -jar metavm-assembly-1.0-SNAPSHOT.jar
 
 ### Initialize the server
 Issuing the following HTTP request to the server
+
 GET http://localhost:8080/system/init
 
 ### Install the compiler
@@ -40,13 +41,16 @@ GET http://localhost:8080/system/init
 mkdir -p ~/develop/kiwi
 
 In the source root, type the following command:
+
 sh kiwi_install.sh
 
 Add $HOME/develop/kiwi/bin to system PATH
 
 ### Test the installation
 Create a project
+
 mkdir -p kiwi_demo
+
 cd kiwi_demo
 
 Create a kiwi source file src/test.kiwi:
