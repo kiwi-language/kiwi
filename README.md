@@ -1,5 +1,3 @@
-  Kiwi: The Persistent & Distributed Language body { font-family: sans-serif; line-height: 1.6; margin: 2em; } h1, h2, h3 { color: #333; } h1 { border-bottom: 2px solid #eee; padding-bottom: 0.3em; } h2 { border-bottom: 1px solid #eee; padding-bottom: 0.2em; margin-top: 2em; } code { background-color: #f4f4f4; padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; } pre { background-color: #f4f4f4; border: 1px solid #ddd; padding: 1em; border-radius: 4px; overflow-x: auto; /\* Handle long lines \*/ } pre code { background-color: transparent; /\* Avoid double background \*/ padding: 0; } ul, ol { padding-left: 2em; } li { margin-bottom: 0.5em; } .note { background-color: #fff L; border-left: 4px solid #ccc; padding: 0.5em 1em; margin: 1em 0; font-style: italic; } .note strong { font-style: normal; }
-
 Kiwi: The Persistent & Distributed Language
 ===========================================
 
