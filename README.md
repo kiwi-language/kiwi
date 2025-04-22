@@ -11,7 +11,9 @@ Requirement
 - Maven
 
 git clone git@github.com:kiwi-language/kiwi.git
+
 cd kiwi
+
 mvn package
 
 ### Configure datasource
