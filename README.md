@@ -36,7 +36,7 @@ java -jar metavm-assembly-1.0-SNAPSHOT.jar
 ### Initialize the server
 Issuing the following HTTP request to the server
 
-GET http://localhost:8080/system/init
+POST http://localhost:8080/system/init
 
 ### Install the compiler
 
