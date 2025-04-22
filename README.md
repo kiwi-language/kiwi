@@ -1,127 +1,41 @@
 # Kiwi: The Persistent & Distributed Language
 
-Kiwi is an open-source programming language featuring built-in persistence and distribution capabilities,
-streamlining the development of cloud-native applications.
+Kiwi is an open-source programming language designed with built-in persistence and distribution capabilities, aiming to simplify the development of robust, scalable, cloud-native applications.
 
-### How To Build
+## Table of Contents
 
-Requirement
+* [Prerequisites](#prerequisites)
+* [Installation & Setup](#installation--setup)
+    * [1. Build Kiwi Core](#1-build-kiwi-core)
+    * [2. Configure Datasource (PostgreSQL)](#2-configure-datasource-postgresql)
+    * [3. Start the Kiwi Server](#3-start-the-kiwi-server)
+    * [4. Initialize the Server](#4-initialize-the-server)
+    * [5. Install the Kiwi Compiler Tools](#5-install-the-kiwi-compiler-tools)
+* [Your First Kiwi Application](#your-first-kiwi-application)
+    * [1. Create Project Structure](#1-create-project-structure)
+    * [2. Write Kiwi Code](#2-write-kiwi-code)
+    * [3. Build the Project](#3-build-the-project)
+    * [4. Deploy to Server](#4-deploy-to-server)
+    * [5. Interact via HTTP](#5-interact-via-http)
 
-- JDK 21+
-- Maven
+## Prerequisites
 
+Before you begin, ensure you have the following installed:
+
+* JDK 21 or later
+* Apache Maven
+* Git
+* PostgreSQL Server
+
+## Installation & Setup
+
+Follow these steps to get the Kiwi server and compiler tools running.
+
+### 1. Build Kiwi Core
+
+Clone the repository and use Maven to build the core components:
+
+```bash
 git clone git@github.com:kiwi-language/kiwi.git
-
 cd kiwi
-
 mvn package
-
-### Configure datasource
-
-Install postgresql. Create a database. And create the Kiwi config file with the datasource config.
-
-Create a kiwi config file /etc/kiwi/kiwi.yml:
-
-datasource:
-    username: <username>
-    password: <password>
-    database: <database>
-
-### Start the server
-
-cd <source_root>/assembly/target
-
-java -jar metavm-assembly-1.0-SNAPSHOT.jar
-
-### Initialize the server
-Issuing the following HTTP request to the server
-
-POST http://localhost:8080/system/init
-
-### Install the compiler
-
-mkdir -p ~/develop/kiwi
-
-In the source root, type the following command:
-
-sh kiwi_install.sh
-
-Add $HOME/develop/kiwi/bin to system PATH
-
-### Test the installation
-Create a project
-
-mkdir -p kiwi_demo
-
-cd kiwi_demo
-
-Create a kiwi source file src/test.kiwi:
-
-
-class Product {
-    priv var name: string
-    priv var price: double
-    priv val stock: int
-
-    init(name: string, price: double, stock: int) {
-        this.name = name
-        this.price = price
-        this.stock = stock
-    }
-
-    getPrice(): double -> {
-        return price
-    }
-
-    getName(): string -> {
-        return name
-    }
-
-    getStock(): int {
-        return stock
-    }
-
-    decrementStock(quantity: int) -> boolean {
-        if (stock >= quantity) {
-            stock -= quantity
-            return true
-        }
-        else
-            return false
-    }
-
-}
-
-Build the project
-
-kiwi build
-
-### Deploy the artifact to the server
-
-kiwi deploy
-
-name: demo
-
-password: 123456
-
-application: demo
-
-### Interact with the application
-- Create a product
-PUT http://localhost:8080/product
-
-{
-    name: "Kiwi Fruit",
-    price: 10.0
-}
-
-- Retrieve the product
-GET http://localhost:8080/<id>
-
-- Decrement the stock
-POST http://localhost:8080/<id>/decrement-stock
-
-{
-    amount: 1
-}
-
