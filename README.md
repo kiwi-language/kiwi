@@ -59,7 +59,7 @@ Start the Server
 Initialize the Server
 ---------------------
 
-Once the server is running, you need to initialize it by sending an HTTP request. Use a tool like `curl` or an API client (like Postman) to send the following:
+Once the server is running, you need to initialize it by sending the following HTTP request.
 
     curl -X POST http://localhost:8080/system/init
 
@@ -114,7 +114,7 @@ Test the Installation
                 return name
             }
         
-            getStock(): int {
+            getStock() -> int {
                 return stock
             }
         
@@ -156,7 +156,7 @@ After deployment, you can interact with your `Product` class via HTTP requests t
 
 ### Create a Product
 
-Send a PUT request to create a new product instance. Ensure the request body is valid JSON.
+Send a PUT request to create a new product instance.
 
     curl -X PUT -H "Content-Type: application/json" -d '{"name": "Kiwi Fruit", "price": 10.0, "stock": 100}' http://localhost:8080/product
 
@@ -170,7 +170,7 @@ Send a GET request using the product's ID:
 
 ### Decrement the Stock
 
-Send a POST request to the product's `decrement-stock` endpoint (derived from the `decrementStock` method). Ensure the request body is valid JSON.
+Send a POST request to the product's `decrement-stock` endpoint (derived from the `decrementStock` method).
 
     curl -X POST -H "Content-Type: application/json" -d '{"quantity": 1}' http://localhost:8080/<id>/decrement-stock
 
