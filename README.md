@@ -55,6 +55,7 @@ cd kiwi_demo
 
 Create a kiwi source file src/test.kiwi:
 
+
 class Product {
     priv var name: string
     priv var price: double
