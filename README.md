@@ -32,7 +32,7 @@ Build From Source
     
         mvn package
 
-4.  Unpack the generated `dist/target/kiwi.zip` archive to a location of your choice. This unpacked directory will be your Kiwi installation directory.
+4.  Unpack the generated `dist/target/kiwi.zip` archive to a location of your choice.
 
 
 Add Kiwi to PATH
