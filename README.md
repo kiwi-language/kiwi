@@ -3,7 +3,16 @@ Kiwi: The Persistent & Distributed Language
 
 Kiwi is an open-source programming language featuring built-in persistence and distribution capabilities, streamlining the development of cloud-native applications.
 
-How To Build
+
+Download Pre-built Release
+--------------------------
+
+You can find the latest official releases on the Kiwi GitHub Releases page:
+
+[**Visit the Kiwi Releases Page**](https://github.com/kiwi-language/kiwi/releases)
+
+
+Build From Source
 ------------
 
 ### Requirements
