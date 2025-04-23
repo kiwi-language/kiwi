@@ -10,8 +10,6 @@ You can find the latest official releases on the Kiwi GitHub Releases page:
 
 [**Visit the Kiwi Releases Page**](https://github.com/kiwi-language/kiwi/releases)
 
-After downloading and unpacking the release, proceed to the "Add Kiwi to PATH" section.
-
 Build From Source
 -----------------
 
@@ -34,10 +32,8 @@ Build From Source
     
         mvn package
 
-    The package will be created at `dist/target/kiwi.zip`.
-    
+4.  Unpack the generated `dist/target/kiwi.zip` archive to a location of your choice. This unpacked directory will be your Kiwi installation directory.
 
-After building, proceed to the "Add Kiwi to PATH" section.
 
 Add Kiwi to PATH
 ----------------
