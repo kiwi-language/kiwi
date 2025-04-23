@@ -54,16 +54,10 @@ Configure Datasource
 Start the Server
 ----------------
 
-1.  Navigate to the assembly target directory within your cloned source code folder:
-    
-        cd <source_root>/assembly/target
-    
-    **Note:** Replace `<source_root>` with the actual path where you cloned the Kiwi repository.
-    
-2.  Execute the server JAR file:
-    
-        java -jar metavm-assembly-1.0-SNAPSHOT.jar
-    
+Start the server using this command:
+
+    kiwi-server start
+
 
 Initialize the Server
 ---------------------
@@ -71,24 +65,6 @@ Initialize the Server
 Once the server is running, you need to initialize it by sending the following HTTP request.
 
     curl -X POST http://localhost:8080/system/init
-
-Install the Compiler
---------------------
-
-1.  Create a directory for the Kiwi development tools (if it doesn't exist):
-    
-        mkdir -p ~/develop/kiwi
-    
-2.  Navigate back to the root directory of your cloned Kiwi source code.
-3.  Run the installation script:
-    
-        sh kiwi_install.sh
-    
-4.  Add the Kiwi compiler's bin directory to your system's PATH environment variable. Edit your shell's configuration file (e.g., `~/.bashrc`, `~/.zshrc`, `~/.profile`) and add this line:
-    
-        export PATH="$HOME/develop/kiwi/bin:$PATH"
-    
-5.  Apply the changes by either restarting your terminal session or sourcing the configuration file (e.g., `source ~/.bashrc`).
 
 Test the Installation
 ---------------------
