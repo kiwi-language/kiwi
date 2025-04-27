@@ -17,6 +17,8 @@
         <module>test</module>
         <module>assembly</module>
         <module>kcompiler</module>
+        <module>dist</module>
+        <module>compiler-asm</module>
     </modules>
 
     <parent>

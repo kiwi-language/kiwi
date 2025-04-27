@@ -1,0 +1,213 @@
+#!/bin/bash
+
+# === Configuration ===
+# Descriptive name for the service (used for PID file, logs, messages)
+APP_NAME="KiwiServer"
+
+# Get the absolute directory where the script resides, handling symlinks
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
+APP_ROOT_DIR=$(readlink -f "$SCRIPT_DIR/..")
+
+# Paths to the JAR file and configuration file
+JAR_FILE="$SCRIPT_DIR/server.jar"
+CONFIG_FILE="$APP_ROOT_DIR/config/kiwi.yml"
+
+LOG_DIR="$APP_ROOT_DIR/logs"
+
+# Ensure log directory exists
+if [ ! -d "$LOG_DIR" ]; then # <-- Checks if the LOG_DIR path is NOT a directory
+    mkdir -p "$LOG_DIR" # <-- Creates the directory (-p ensures parent dirs are also made and no error if it exists)
+    if [ $? -ne 0 ]; then # <-- Checks if the mkdir command failed (e.g., permissions)
+        echo "Error: Could not create log directory: $LOG_DIR" >&2
+        return 1 # <-- Stops the 'start' process if creation failed
+    fi
+fi
+
+# Path for the PID file (stores the process ID of the running server)
+PID_FILE="$SCRIPT_DIR/$APP_NAME.pid"
+
+# Path for the log file (where server output will be redirected)
+LOG_FILE="$LOG_DIR/$APP_NAME.log"
+
+# Java command - adjust if 'java' is not in PATH or you need a specific version
+JAVA_CMD="java"
+
+# Optional Java Virtual Machine arguments (e.g., memory settings)
+# Example: JAVA_OPTS="-Xms512m -Xmx1024m"
+JAVA_OPTS=""
+
+# === Functions ===
+
+# Function to print help message
+show_help() {
+  echo "Usage: kiwi-server {start|stop|restart|status|help}"
+  echo "  start    : Start the $APP_NAME"
+  echo "  stop     : Stop the $APP_NAME"
+  echo "  restart  : Restart the $APP_NAME"
+  echo "  status   : Check if $APP_NAME is running"
+  echo "  help     : Display this help message"
+}
+
+# Function to check if the server is currently running
+# Returns 0 if running, 1 otherwise
+is_running() {
+  if [ -f "$PID_FILE" ]; then
+    # PID file exists, read the PID
+    PID=$(cat "$PID_FILE")
+    # Check if a process with that PID exists
+    if ps -p "$PID" > /dev/null 2>&1; then
+      # Process exists
+      return 0
+    else
+      # Process doesn't exist, likely a stale PID file
+      echo "Warning: Stale PID file found ($PID_FILE). Removing..." >&2
+      rm -f "$PID_FILE"
+      return 1
+    fi
+  else
+    # PID file doesn't exist
+    return 1
+  fi
+}
+
+# Function to start the server
+start_server() {
+  if is_running; then
+    PID=$(cat "$PID_FILE")
+    echo "$APP_NAME is already running (PID: $PID)."
+    return 1
+  fi
+
+  # Check if JAR file exists
+  if [ ! -f "$JAR_FILE" ]; then
+      echo "Error: JAR file not found at $JAR_FILE" >&2
+      return 1
+  fi
+
+  # Check if config file exists (optional, Java app might handle absence)
+  # if [ ! -f "$CONFIG_FILE" ]; then
+  #     echo "Warning: Config file not found at $CONFIG_FILE" >&2
+  # fi
+
+  echo "Starting $APP_NAME..."
+
+  # Construct the command
+  # Use nohup to prevent SIGHUP when the terminal closes
+  # Redirect stdout and stderr to the log file
+  # Run in the background (&)
+  nohup $JAVA_CMD $JAVA_OPTS -jar "$JAR_FILE" -config "$CONFIG_FILE" >> "$LOG_FILE" 2>&1 &
+
+  # Get the PID of the background process
+  PID=$!
+
+  # Check if the process started successfully (briefly)
+  sleep 1
+  if ! ps -p "$PID" > /dev/null 2>&1; then
+      echo "Error: Failed to start $APP_NAME. Check $LOG_FILE for details." >&2
+      # Clean up potential nohup.out if redirection failed early
+      [ -f "nohup.out" ] && rm "nohup.out"
+      return 1
+  fi
+
+  # Save the PID to the PID file
+  echo $PID > "$PID_FILE"
+  echo "$APP_NAME started successfully (PID: $PID). Output logged to $LOG_FILE"
+  # Clean up potential nohup.out if redirection worked
+  [ -f "nohup.out" ] && rm "nohup.out"
+  return 0
+}
+
+# Function to stop the server
+stop_server() {
+  if ! is_running; then
+    echo "$APP_NAME is not running."
+    # If PID file was stale and removed by is_running, we still report not running.
+    return 1
+  fi
+
+  PID=$(cat "$PID_FILE")
+  echo "Stopping $APP_NAME (PID: $PID)..."
+
+  # Send SIGTERM (15) first, allowing graceful shutdown
+  kill -15 "$PID"
+
+  # Wait for the process to terminate
+  WAIT_SECONDS=30 # Max time to wait for graceful shutdown
+  COUNT=0
+  while ps -p "$PID" > /dev/null 2>&1; do
+    if [ $COUNT -lt $WAIT_SECONDS ]; then
+      printf "."
+      sleep 1
+      ((COUNT++))
+    else
+      echo "\n$APP_NAME (PID: $PID) did not stop gracefully after $WAIT_SECONDS seconds. Sending SIGKILL (9)."
+      kill -9 "$PID" # Force kill
+      sleep 1 # Give OS time to process kill
+      break
+    fi
+  done
+
+  # Check if it finally stopped
+  if ps -p "$PID" > /dev/null 2>&1; then
+      echo "\nError: Failed to stop $APP_NAME (PID: $PID)." >&2
+      return 1
+  else
+      echo "\n$APP_NAME stopped successfully."
+      # Remove the PID file only after confirming the process is gone
+      rm -f "$PID_FILE"
+      return 0
+  fi
+}
+
+# Function to show the status
+show_status() {
+  if is_running; then
+    PID=$(cat "$PID_FILE")
+    echo "$APP_NAME is running (PID: $PID)."
+    # Optional: Show uptime or other info if available
+    # ps -p $PID -o etime=
+  else
+    echo "$APP_NAME is not running."
+  fi
+  return 0
+}
+
+# === Main Logic ===
+
+# Check if any argument is provided
+if [ -z "$1" ]; then
+  show_help
+  exit 1
+fi
+
+# Process the command argument
+case "$1" in
+  start)
+    start_server
+    ;;
+  stop)
+    stop_server
+    ;;
+  restart)
+    echo "Restarting $APP_NAME..."
+    stop_server
+    # Add a small delay to ensure ports are released, etc.
+    sleep 2
+    start_server
+    ;;
+  status)
+    show_status
+    ;;
+  help|--help|-h)
+    show_help
+    ;;
+  *)
+    echo "Error: Invalid command '$1'" >&2
+    show_help
+    exit 1
+    ;;
+esac
+
+# Exit with the status code of the last executed command ($?)
+exit $?

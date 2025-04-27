@@ -1,0 +1,69 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/2.1.1"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/2.1.1 https://maven.apache.org/xsd/assembly-2.1.1.xsd">
+
+    <id>bin</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <includes>
+                <include>org.metavm:metavm-assembly</include>
+            </includes>
+            <outputDirectory>bin</outputDirectory>
+            <outputFileNameMapping>server.jar</outputFileNameMapping>
+            <unpack>false</unpack>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+        </dependencySet>
+
+        <dependencySet>
+            <includes>
+                <include>org.metavm:metavm-compiler-asm</include>
+            </includes>
+            <outputDirectory>bin</outputDirectory>
+            <outputFileNameMapping>compiler.jar</outputFileNameMapping>
+            <unpack>false</unpack>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+        </dependencySet>
+    </dependencySets>
+
+    <fileSets>
+        <fileSet>
+            <directory>src/main/scripts</directory>
+            <outputDirectory>bin</outputDirectory>
+            <includes>
+                <include>kiwi</include>
+                <include>kiwi-server</include>
+            </includes>
+            <fileMode>0755</fileMode>
+            <lineEnding>unix</lineEnding>
+        </fileSet>
+
+        <fileSet>
+            <directory>src/main/scripts</directory>
+            <outputDirectory>bin</outputDirectory>
+            <includes>
+                <include>kiwi.cmd</include>
+                <include>kiwi-server.cmd</include>
+            </includes>
+            <fileMode>0755</fileMode>
+            <lineEnding>dos</lineEnding>
+        </fileSet>
+
+        <fileSet>
+            <directory>src/main/config</directory>
+            <outputDirectory>config</outputDirectory>
+            <includes>
+                <include>kiwi.yml</include>
+            </includes>
+            <fileMode>0644</fileMode>
+        </fileSet>
+    </fileSets>
+</assembly>

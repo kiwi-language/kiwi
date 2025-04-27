@@ -1,0 +1,8 @@
+server:
+  port: 8080
+
+#Data source configuration
+#datasource:
+#  username: <your_postgres_username>
+#  password: <your_postgres_password>
+#  database: <your_kiwi_database_name>
