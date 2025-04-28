@@ -772,10 +772,17 @@ X-App-ID: 1843416869
   "price": 100.0,
   "quantity": 100
 }
+###
+PUT http://localhost:8080/api/org/metavm/applab/car
+Content-Type: application/json
+X-App-ID: 1
+
+{
+}
 
 ###
-GET http://localhost:8080/api/01d2a2f6dd0d00
-X-App-ID: 1843416869
+GET http://localhost:8080/api/01f2d6d6b90700
+X-App-ID: 1
 
 ###
 POST http://localhost:8080/api/01d2a2f6dd0d00/dec-quantity

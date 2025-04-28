@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -19,6 +20,7 @@ import java.io.*;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Type;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,6 +33,7 @@ import java.util.function.*;
 import java.util.regex.Pattern;
 import java.util.stream.*;
 
+@Slf4j
 public class Utils {
 
     public static final int BATCH_SIZE = 3000;
@@ -1939,5 +1942,96 @@ public class Utils {
         else if (count == 1) return s;
         return s + (delimiter + s).repeat(count - 1);
     }
+    /**
+     * Finds all resource URLs with the given name using the specified class's ClassLoader.
+     *
+     * @param resourceName The name of the resource to find (e.g., "config/myconfig.xml").
+     * @param contextClass The class whose ClassLoader should be used for searching.
+     * @return A List of URLs for all found resources. Returns an empty list if none are found.
+     * @throws IOException If an I/O error occurs during the search.
+     */
+    public static List<URL> findAllResourceUrls(String resourceName, Class<?> contextClass) throws IOException {
+        ClassLoader classLoader = contextClass.getClassLoader();
+        // Handle cases where the class loader might be the bootstrap class loader (returns null)
+        if (classLoader == null) {
+            classLoader = ClassLoader.getSystemClassLoader();
+        }
+
+        // It's often better to use the Thread Context ClassLoader in complex environments
+        // ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        // if (contextClassLoader != null) {
+        //     classLoader = contextClassLoader;
+        // }
+
+        if (classLoader == null) {
+            System.err.println("Warning: Could not obtain a suitable ClassLoader.");
+            return Collections.emptyList();
+        }
+
+        Enumeration<URL> resourceUrls = classLoader.getResources(resourceName);
+
+        // Convert Enumeration to List (Java 8+ streams or Collections.list)
+        // return Collections.list(resourceUrls); // Simpler way
+
+        List<URL> urlList = new ArrayList<>();
+        while (resourceUrls.hasMoreElements()) {
+            urlList.add(resourceUrls.nextElement());
+        }
+        return urlList;
+    }
+
+    /**
+     * Finds all resources with the given name and returns an InputStream for each.
+     * Remember to close these streams after use! Best practice is try-with-resources.
+     *
+     * @param resourceName The name of the resource to find.
+     * @param contextClass The class whose ClassLoader should be used.
+     * @return A List of InputStreams for all found resources.
+     * @throws IOException If an I/O error occurs finding resources or opening streams.
+     */
+    public static List<InputStream> findAllResourceStreams(String resourceName, Class<?> contextClass) {
+        try {
+            List<URL> urls = findAllResourceUrls(resourceName, contextClass);
+            List<InputStream> streams = new ArrayList<>();
+            List<IOException> exceptions = new ArrayList<>(); // Collect exceptions
+            for (URL url : urls) {
+                try {
+                    InputStream stream = url.openStream();
+                    if (stream != null) {
+                        streams.add(stream);
+                    } else {
+                        System.err.println("Warning: url.openStream() returned null for: " + url);
+                    }
+                } catch (IOException e) {
+                    // Log or collect exceptions if opening one stream fails
+                    System.err.println("Warning: Failed to open stream for URL: " + url + " - " + e.getMessage());
+                    exceptions.add(e);
+                    // Decide: throw immediately, collect and throw later, or just log and continue?
+                }
+            }
+
+            // Optional: if you want to fail if *any* stream couldn't be opened
+            // if (!exceptions.isEmpty()) {
+            //    IOException compositeException = new IOException("Failed to open one or more resource streams.");
+            //    exceptions.forEach(compositeException::addSuppressed);
+            //    throw compositeException;
+            // }
+
+            return streams;
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // --- Example Usage ---
+
+    public static <E> List<E> toList(Enumeration<E> e) {
+        var list = new ArrayList<E>();
+        while (e.hasMoreElements())
+            list.add(e.nextElement());
+        return list;
+    }
+
 
 }

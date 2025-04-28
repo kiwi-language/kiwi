@@ -1,16 +1,21 @@
 package org.metavm;
 
 
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.PhysicalId;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Lab {
 
     public static void main(String[] args) {
+        var id = Id.parse("0180897a00");
+        System.out.println(id.getTreeId());
+        System.out.println(id.getNodeId());
 
-        System.out.println(Files.exists(Path.of("/etc/kiwi/kiwi.yml")));
 
-
+        System.out.println(PhysicalId.of(100000, 1));
     }
 
 }

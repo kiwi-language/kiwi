@@ -24,7 +24,7 @@ public class DirectoryAllocatorStore implements AllocatorStore {
 
     @Override
     public String getFileName(String typeName) {
-        return ID_FILE_DIR + "/" + typeName + ".properties";
+        return "id/" + typeName + ".properties";
     }
 
     public List<String> getFileNames() {
@@ -65,12 +65,16 @@ public class DirectoryAllocatorStore implements AllocatorStore {
     @Override
     public Properties load(String fileName) {
         Properties properties = new Properties();
-        try (InputStream input = StdAllocator.class.getResourceAsStream(fileName)) {
-            properties.load(input);
-            return properties;
-        } catch (IOException e) {
-            throw new InternalException("fail to load id properties file: " + fileName);
+        var inputs = Utils.findAllResourceStreams(fileName, DirectoryAllocatorStore.class);
+        for (InputStream input : inputs) {
+            try {
+                properties.load(input);
+                input.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
+        return properties;
     }
 
     @Override

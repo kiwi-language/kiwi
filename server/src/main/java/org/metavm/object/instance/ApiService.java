@@ -124,10 +124,13 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private Value doIntercepted(Supplier<Value> action, HttpRequest request, HttpResponse response, Type returnType, IInstanceContext context) {
-        var registry = BeanDefinitionRegistry.getInstance(context);
+        List<ClassInstance> interceptors = List.of();
         var beforeMethod = StdMethod.interceptorBefore.get();
         var afterMethod = StdMethod.interceptorAfter.get();
-        var interceptors = registry.getInterceptors();
+        if (ContextUtil.getAppId() > 2) {
+            var registry = BeanDefinitionRegistry.getInstance(context);
+            interceptors = registry.getInterceptors();
+        }
         var reqInst = (Instance) request;
         var respInst = (Instance) response;
         for (ClassInstance interceptor : interceptors) {

@@ -19,6 +19,7 @@
         <module>kcompiler</module>
         <module>dist</module>
         <module>compiler-asm</module>
+        <module>applab</module>
     </modules>
 
     <parent>

@@ -1,14 +1,15 @@
 package org.metavm.entity;
 
+import com.fasterxml.jackson.databind.deser.impl.CreatorCandidate;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.Entity;
 import org.metavm.api.EntityFlow;
 import org.metavm.api.ValueObject;
 import org.metavm.expression.ExpressionParser;
 import org.metavm.expression.TypeParsingContext;
-import org.metavm.flow.ExpressionValue;
-import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.*;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.ReflectionUtils;
 import org.metavm.util.Utils;
@@ -17,6 +18,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -188,9 +190,18 @@ public final class KlassParser<T> {
                 .typeParameters(Utils.map(javaMethod.getTypeParameters(), this::createTypeVariable))
                 .returnType(returnType)
                 .isConstructor(true)
-                .isNative(true)
+//                .isNative(true)
                 .build();
-        method.setParameters(Utils.map(javaMethod.getParameters(), p -> createParameter(p, method)));
+        Nodes.load(0, returnType, method.getCode());
+        Nodes.ret(method.getCode());
+
+        var params = new ArrayList<Parameter>();
+        for (int i = 0; i < javaMethod.getParameters().length; i++) {
+            if (i == 0 && javaMethod.getParameters()[i].getType() == Id.class)
+                continue;
+            params.add(createParameter(javaMethod.getParameters()[i], method));
+        }
+        method.setParameters(params);
         Utils.biForEach(
                 List.of(javaMethod.getTypeParameters()),
                 method.getTypeParameters(),
