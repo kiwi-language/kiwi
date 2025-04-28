@@ -70,7 +70,7 @@ public class UpgradeSingleton extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_UpgradeSingleton;
+        return (int) __klass__.getTag();
     }
 
     @Generated

@@ -68,7 +68,7 @@ public class PlatformMessage extends Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_PlatformMessage;
+        return (int) __klass__.getTag();
     }
 
     @Generated

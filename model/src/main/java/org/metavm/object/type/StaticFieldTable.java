@@ -182,7 +182,7 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_StaticFieldTable;
+        return (int) __klass__.getTag();
     }
 
     @Generated

@@ -92,7 +92,7 @@ public class IndexFoo extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_IndexFoo;
+        return (int) __klass__.getTag();
     }
 
     @Generated

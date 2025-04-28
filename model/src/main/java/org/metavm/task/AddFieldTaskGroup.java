@@ -102,7 +102,7 @@ public class AddFieldTaskGroup extends TaskGroup {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_AddFieldTaskGroup;
+        return (int) __klass__.getTag();
     }
 
     @Generated

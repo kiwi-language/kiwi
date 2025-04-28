@@ -104,7 +104,7 @@ public class ChangeLog extends org.metavm.entity.Entity implements Message {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_ChangeLog;
+        return (int) __klass__.getTag();
     }
 
     @Generated

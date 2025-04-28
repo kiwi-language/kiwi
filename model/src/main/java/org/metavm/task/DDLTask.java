@@ -155,7 +155,7 @@ public class DDLTask extends ScanTask implements IDDLTask {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_DDLTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

@@ -127,7 +127,7 @@ public abstract class TaskGroup extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_TaskGroup;
+        return (int) __klass__.getTag();
     }
 
     @Generated

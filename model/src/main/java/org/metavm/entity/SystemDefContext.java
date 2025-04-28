@@ -72,7 +72,9 @@ public class SystemDefContext extends DefContext implements DefMap, IInstanceCon
     }
 
     public int getTypeTag(Class<?> javaClass) {
-        return typeTagStore.getTypeTag(javaClass.getName());
+//        return typeTagStore.getTypeTag(javaClass.getName());
+        var tag = EntityRegistry.map.get(javaClass.getSimpleName());
+        return tag != null ? tag : typeTagStore.getTypeTag(javaClass.getName());
     }
 
     @Override

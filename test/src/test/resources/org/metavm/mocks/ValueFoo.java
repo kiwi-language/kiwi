@@ -70,7 +70,7 @@ public class ValueFoo extends Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_ValueFoo;
+        return (int) __klass__.getTag();
     }
 
     @Generated

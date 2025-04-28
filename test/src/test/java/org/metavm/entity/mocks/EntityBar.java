@@ -65,7 +65,7 @@ public class EntityBar extends Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_EntityBar;
+        return (int) __klass__.getTag();
     }
 
     @Generated

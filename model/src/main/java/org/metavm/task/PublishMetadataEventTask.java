@@ -124,7 +124,7 @@ public class PublishMetadataEventTask extends Task {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_PublishMetadataEventTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

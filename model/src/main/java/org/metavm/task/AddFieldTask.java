@@ -103,7 +103,7 @@ public class AddFieldTask extends ScanByClassTask {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_AddFieldTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

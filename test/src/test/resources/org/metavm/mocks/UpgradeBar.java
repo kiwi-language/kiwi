@@ -76,7 +76,7 @@ public class UpgradeBar extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_UpgradeBar;
+        return (int) __klass__.getTag();
     }
 
     @Generated

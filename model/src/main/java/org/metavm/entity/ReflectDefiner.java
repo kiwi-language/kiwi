@@ -100,6 +100,7 @@ public class ReflectDefiner {
                     .kind(kind)
                     .isAbstract(Modifier.isAbstract(javaClass.getModifiers()))
                     .maintenanceDisabled()
+//                    .sourceTag(EntityRegistry.map.get(javaClass.getSimpleName()))
                     .build();
             addKlass.accept(javaClass, klass);
             if (javaClass == Entity.class)

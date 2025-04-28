@@ -92,7 +92,7 @@ public abstract class DynamicTaskGroup extends TaskGroup {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_DynamicTaskGroup;
+        return (int) __klass__.getTag();
     }
 
     @Generated

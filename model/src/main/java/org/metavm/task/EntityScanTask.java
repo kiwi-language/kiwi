@@ -112,7 +112,7 @@ public abstract class EntityScanTask<T> extends ScanTask {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_EntityScanTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

@@ -119,7 +119,7 @@ public class SynchronizeSearchTask extends Task {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_SynchronizeSearchTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

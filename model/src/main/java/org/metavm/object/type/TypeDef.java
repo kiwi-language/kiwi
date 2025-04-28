@@ -71,7 +71,7 @@ public abstract class TypeDef extends AttributedElement implements ITypeDef {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_TypeDef;
+        return (int) __klass__.getTag();
     }
 
     @Generated

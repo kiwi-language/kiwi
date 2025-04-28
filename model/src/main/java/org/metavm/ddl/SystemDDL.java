@@ -90,7 +90,7 @@ public class SystemDDL extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_SystemDDL;
+        return (int) __klass__.getTag();
     }
 
     @Generated

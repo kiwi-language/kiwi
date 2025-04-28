@@ -209,7 +209,7 @@ public class WAL extends org.metavm.entity.Entity implements LoadAware, ContextF
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_WAL;
+        return (int) __klass__.getTag();
     }
 
     @Generated

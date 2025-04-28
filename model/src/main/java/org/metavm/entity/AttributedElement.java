@@ -108,7 +108,7 @@ public abstract class AttributedElement extends Entity implements Element {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_AttributedElement;
+        return (int) __klass__.getTag();
     }
 
     @Generated

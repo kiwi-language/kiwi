@@ -75,7 +75,7 @@ public class Human extends Animal {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Human;
+        return (int) __klass__.getTag();
     }
 
     @Generated

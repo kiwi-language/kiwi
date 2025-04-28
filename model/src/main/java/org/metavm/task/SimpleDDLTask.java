@@ -113,7 +113,7 @@ public class SimpleDDLTask extends Task implements IDDLTask {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_SimpleDDLTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

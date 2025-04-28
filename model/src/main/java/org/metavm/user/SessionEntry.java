@@ -91,7 +91,7 @@ public class SessionEntry extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_SessionEntry;
+        return (int) __klass__.getTag();
     }
 
     @Generated

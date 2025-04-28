@@ -194,7 +194,7 @@ public class CapturedTypeVariable extends TypeDef implements LoadAware {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_CapturedTypeVariable;
+        return (int) __klass__.getTag();
     }
 
     @Generated

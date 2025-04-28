@@ -74,7 +74,7 @@ public class Animal extends LivingBeing {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Animal;
+        return (int) __klass__.getTag();
     }
 
     @Generated

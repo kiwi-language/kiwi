@@ -92,7 +92,7 @@ public abstract class GlobalTask extends EntityScanTask<Application> {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_GlobalTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

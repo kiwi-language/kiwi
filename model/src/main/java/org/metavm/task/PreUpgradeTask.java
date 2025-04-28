@@ -178,7 +178,7 @@ public class PreUpgradeTask extends ScanTask  implements RemovalAware {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_PreUpgradeTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

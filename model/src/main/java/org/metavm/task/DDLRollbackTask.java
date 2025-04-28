@@ -82,7 +82,7 @@ public class DDLRollbackTask extends Task {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_DDLRollbackTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

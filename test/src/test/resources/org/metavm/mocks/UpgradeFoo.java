@@ -113,7 +113,7 @@ public class UpgradeFoo extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_UpgradeFoo;
+        return (int) __klass__.getTag();
     }
 
     @Generated

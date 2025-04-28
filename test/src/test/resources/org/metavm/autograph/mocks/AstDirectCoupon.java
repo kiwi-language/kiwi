@@ -84,7 +84,7 @@ public class AstDirectCoupon extends org.metavm.entity.Entity implements AstCoup
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_AstDirectCoupon;
+        return (int) __klass__.getTag();
     }
 
     @Generated

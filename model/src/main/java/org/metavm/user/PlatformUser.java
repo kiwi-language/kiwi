@@ -106,7 +106,7 @@ public class PlatformUser extends User {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_PlatformUser;
+        return (int) __klass__.getTag();
     }
 
     @Generated

@@ -336,7 +336,7 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Commit;
+        return (int) __klass__.getTag();
     }
 
     @Generated

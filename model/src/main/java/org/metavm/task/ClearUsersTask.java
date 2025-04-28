@@ -100,7 +100,7 @@ public class ClearUsersTask extends Task {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_ClearUsersTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

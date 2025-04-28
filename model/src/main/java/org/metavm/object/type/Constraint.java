@@ -129,7 +129,7 @@ public abstract class Constraint extends org.metavm.entity.Entity implements  Cl
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Constraint;
+        return (int) __klass__.getTag();
     }
 
     @Generated

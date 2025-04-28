@@ -80,7 +80,7 @@ public class AstBranchFoo extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_AstBranchFoo;
+        return (int) __klass__.getTag();
     }
 
     @Generated

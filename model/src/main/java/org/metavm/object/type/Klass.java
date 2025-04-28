@@ -2026,7 +2026,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Klass;
+        return (int) __klass__.getTag();
     }
 
     @Generated

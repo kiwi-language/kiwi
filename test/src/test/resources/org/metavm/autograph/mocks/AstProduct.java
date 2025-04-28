@@ -125,7 +125,7 @@ public class AstProduct extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_AstProduct;
+        return (int) __klass__.getTag();
     }
 
     @Generated

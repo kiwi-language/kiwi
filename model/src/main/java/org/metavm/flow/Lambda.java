@@ -218,7 +218,7 @@ public class Lambda extends Entity implements Callable, ITypeDef, Element {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Lambda;
+        return (int) __klass__.getTag();
     }
 
     @Generated

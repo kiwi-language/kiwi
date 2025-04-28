@@ -149,6 +149,7 @@ public final class KlassParser<T> {
         var entityType = javaClass.getAnnotation(Entity.class);
         return KlassBuilder.newBuilder(getId.apply(javaClass), javaClass.getSimpleName(), javaClass.getName())
                 .kind(ClassKind.fromTypeCategory(getTypeCategory()))
+//                .sourceTag(EntityRegistry.map.get(javaClass.getSimpleName()))
                 .source(ClassSource.BUILTIN)
                 .typeParameters(Utils.map(javaClass.getTypeParameters(), this::createTypeVariable))
                 .tag(defContext.getTypeTag(javaClass))

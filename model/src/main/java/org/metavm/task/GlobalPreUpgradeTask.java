@@ -111,7 +111,7 @@ public class GlobalPreUpgradeTask extends GlobalTask {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_GlobalPreUpgradeTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

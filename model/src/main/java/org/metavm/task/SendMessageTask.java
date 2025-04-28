@@ -93,7 +93,7 @@ public class SendMessageTask extends Task {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_SendMessageTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

@@ -91,7 +91,7 @@ public class GlobalKlassTagAssigner extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_GlobalKlassTagAssigner;
+        return (int) __klass__.getTag();
     }
 
     @Generated

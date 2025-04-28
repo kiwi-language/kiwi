@@ -200,7 +200,7 @@ public class Foo extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Foo;
+        return (int) __klass__.getTag();
     }
 
     @Generated

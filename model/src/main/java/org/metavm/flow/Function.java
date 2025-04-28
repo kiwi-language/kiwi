@@ -182,7 +182,7 @@ public class Function extends Flow implements GlobalKey {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Function;
+        return (int) __klass__.getTag();
     }
 
     @Generated

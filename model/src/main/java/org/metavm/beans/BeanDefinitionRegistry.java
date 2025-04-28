@@ -211,7 +211,7 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_BeanDefinitionRegistry;
+        return (int) __klass__.getTag();
     }
 
     @Generated

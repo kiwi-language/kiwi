@@ -136,7 +136,7 @@ public class CheckConstraint extends Constraint {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_CheckConstraint;
+        return (int) __klass__.getTag();
     }
 
     @Generated

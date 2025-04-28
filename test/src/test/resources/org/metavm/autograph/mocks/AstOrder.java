@@ -91,7 +91,7 @@ public class AstOrder extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_AstOrder;
+        return (int) __klass__.getTag();
     }
 
     @Generated

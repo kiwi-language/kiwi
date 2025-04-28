@@ -93,7 +93,7 @@ public class AstExceptionFoo extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_AstExceptionFoo;
+        return (int) __klass__.getTag();
     }
 
     @Generated

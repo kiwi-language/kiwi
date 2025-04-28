@@ -634,7 +634,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Field;
+        return (int) __klass__.getTag();
     }
 
     @Generated

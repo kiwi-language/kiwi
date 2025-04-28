@@ -92,7 +92,7 @@ public class TestTask extends Task {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_TestTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

@@ -186,7 +186,7 @@ public class Index extends Constraint implements LocalKey, ITypeDef {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Index;
+        return (int) __klass__.getTag();
     }
 
     @Generated

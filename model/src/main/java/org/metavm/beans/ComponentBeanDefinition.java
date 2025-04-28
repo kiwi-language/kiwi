@@ -105,7 +105,7 @@ public class ComponentBeanDefinition extends BeanDefinition {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_ComponentBeanDefinition;
+        return (int) __klass__.getTag();
     }
 
     @Generated

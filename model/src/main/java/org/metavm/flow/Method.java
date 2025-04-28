@@ -466,7 +466,7 @@ public class Method extends Flow implements Property {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Method;
+        return (int) __klass__.getTag();
     }
 
     @Generated

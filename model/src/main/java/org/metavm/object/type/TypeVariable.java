@@ -219,7 +219,7 @@ public class TypeVariable extends TypeDef implements LocalKey, GlobalKey, LoadAw
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_TypeVariable;
+        return (int) __klass__.getTag();
     }
 
     @Generated

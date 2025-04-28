@@ -89,7 +89,7 @@ public class UpgradeValue extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_UpgradeValue;
+        return (int) __klass__.getTag();
     }
 
     @Generated

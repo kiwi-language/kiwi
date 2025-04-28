@@ -104,7 +104,7 @@ public class CloseAllSessionsTask extends Task {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_CloseAllSessionsTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

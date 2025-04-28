@@ -82,7 +82,7 @@ public class DummyTypeVariable extends TypeVariable {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_DummyTypeVariable;
+        return (int) __klass__.getTag();
     }
 
     @Generated

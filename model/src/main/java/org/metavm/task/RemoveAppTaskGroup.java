@@ -87,7 +87,7 @@ public class RemoveAppTaskGroup extends TaskGroup {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_RemoveAppTaskGroup;
+        return (int) __klass__.getTag();
     }
 
     @Generated

@@ -99,7 +99,7 @@ public class ClearInvitationTask extends Task {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_ClearInvitationTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

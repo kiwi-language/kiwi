@@ -85,7 +85,7 @@ public class IndexRebuildGlobalTask extends GlobalTask {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_IndexRebuildGlobalTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

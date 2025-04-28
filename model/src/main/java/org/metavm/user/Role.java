@@ -106,7 +106,7 @@ public class Role extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Role;
+        return (int) __klass__.getTag();
     }
 
     public void setDeleted(boolean deleted) {

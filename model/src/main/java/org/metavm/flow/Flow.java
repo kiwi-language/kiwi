@@ -659,7 +659,7 @@ public abstract class Flow extends AttributedElement implements GenericDeclarati
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Flow;
+        return (int) __klass__.getTag();
     }
 
     @Generated

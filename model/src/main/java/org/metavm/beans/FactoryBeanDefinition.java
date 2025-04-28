@@ -102,7 +102,7 @@ public class FactoryBeanDefinition extends BeanDefinition {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_FactoryBeanDefinition;
+        return (int) __klass__.getTag();
     }
 
     @Generated

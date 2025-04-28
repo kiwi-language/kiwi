@@ -171,7 +171,7 @@ public class Parameter extends AttributedElement implements LocalKey, ITypeDef {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_Parameter;
+        return (int) __klass__.getTag();
     }
 
     @Generated

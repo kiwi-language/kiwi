@@ -85,7 +85,7 @@ public class IndexRebuildTask extends ScanTask {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_IndexRebuildTask;
+        return (int) __klass__.getTag();
     }
 
     @Generated

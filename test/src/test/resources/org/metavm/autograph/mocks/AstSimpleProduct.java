@@ -86,7 +86,7 @@ public class AstSimpleProduct extends org.metavm.entity.Entity {
 
     @Override
     public int getEntityTag() {
-        return EntityRegistry.TAG_AstSimpleProduct;
+        return (int) __klass__.getTag();
     }
 
     @Generated
