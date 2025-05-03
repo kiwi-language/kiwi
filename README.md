@@ -15,7 +15,7 @@ Build From Source
 
 ### Requirements
 
-*   JDK 21+
+*   JDK 23
 *   Maven
 
 ### Steps
@@ -80,6 +80,10 @@ Configure Datasource
 
 Start the Server
 ----------------
+
+### Requirements
+
+*   JDK 23
 
 Start the server using this command (assuming the `bin` directory is in your PATH):
 
