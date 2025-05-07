@@ -37,6 +37,8 @@ public class KlassBuilder {
     private int since = 0;
     private @Nullable KlassDeclaration scope;
     private boolean maintenanceDisabled;
+    private boolean javaNative;
+    private Class<?> javaClass;
 
     private KlassBuilder(Id id, String name, @Nullable String qualifiedName) {
         this.id = id;
@@ -143,6 +145,17 @@ public class KlassBuilder {
         return this;
     }
 
+    public KlassBuilder javaNative(boolean javaNative) {
+        this.javaNative = javaNative;
+        return this;
+    }
+
+    public KlassBuilder javaClass(Class<?> javaClass) {
+        this.javaClass = javaClass;
+        return this;
+    }
+
+
     public Klass build() {
         Utils.require(!done, "Build has already been invoked");
         done = true;
@@ -174,7 +187,9 @@ public class KlassBuilder {
                 tag,
                 sourceTag,
                 since,
-                maintenanceDisabled);
+                javaNative,
+                maintenanceDisabled,
+                javaClass);
         klass.setAttributes(attributes);
         return klass;
     }

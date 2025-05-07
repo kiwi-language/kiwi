@@ -11,4 +11,6 @@ public @interface EntityFlow {
 
     String value() default "";
 
+    boolean javaNative() default false;
+
 }

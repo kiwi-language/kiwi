@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -654,25 +655,41 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private ClassInstance createObject(Map<?, ?> map, ClassType type, IInstanceContext context) {
-        var klassCode = map.get("$class");
-        var actualType = klassCode != null ?
-                Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance((String) klassCode))).getType() : type;
-        var id = context.allocateRootId(actualType);
-        var r = resolveConstructor(actualType, map, context);
-        var self = ClassInstance.allocate(id, actualType);
-        var result = Flows.execute(r.method, self, Utils.map(r.arguments, Value::toStackValue), context);
-        context.bind(self);
-        if (result.exception() != null)
-            throw new InternalException("Failed to instantiate " + type.getTypeDesc() + " with value " + map
-                    + ": " + ThrowableNative.getMessage(result.exception()));
-        var updateMap = new HashMap<String, Object>();
-        map.forEach((k, v) -> {
-            if (k instanceof String s)
-                updateMap.put(s, v);
-        });
-        r.method.getRawFlow().getParameters().forEach(p -> updateMap.remove(p.getName()));
-        updateObject(self, updateMap, context);
-        return self;
+        if (type.getKlass().isJavaNative()) {
+            return createNativeEntity(map, type, context);
+        }
+        else {
+            var klassCode = map.get("$class");
+            var actualType = klassCode != null ?
+                    Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance((String) klassCode))).getType() : type;
+            var id = context.allocateRootId(actualType);
+            var r = resolveConstructor(actualType, map, context);
+            var self = ClassInstance.allocate(id, actualType);
+            var result = Flows.execute(r.method, self, Utils.map(r.arguments, Value::toStackValue), context);
+            context.bind(self);
+            if (result.exception() != null)
+                throw new InternalException("Failed to instantiate " + type.getTypeDesc() + " with value " + map
+                        + ": " + ThrowableNative.getMessage(result.exception()));
+            var updateMap = new HashMap<String, Object>();
+            map.forEach((k, v) -> {
+                if (k instanceof String s)
+                    updateMap.put(s, v);
+            });
+            r.method.getRawFlow().getParameters().forEach(p -> updateMap.remove(p.getName()));
+            updateObject(self, updateMap, context);
+            return self;
+        }
+    }
+
+    private ClassInstance createNativeEntity(Map<?, ?> map, ClassType type, IInstanceContext context) {
+//        throw new UnsupportedOperationException("Creating native entity: " + type.getKlass().getJavaClass().getName());
+        try {
+            var javaClass = type.getKlass().getJavaClass();
+            var c = javaClass.getConstructor(Id.class);
+            return (ClassInstance) c.newInstance(context.allocateRootId(type));
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void updateObject(ClassInstance instance, Object json, IInstanceContext context) {

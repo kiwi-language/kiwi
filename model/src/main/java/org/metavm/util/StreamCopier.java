@@ -108,9 +108,9 @@ public class StreamCopier extends StreamVisitor {
 
     @Override
     public void visitEntity() {
-        var tag = read();
+        var tag = readInt();
         var id = readId();
-        output.write(tag);
+        output.writeInt(tag);
         output.writeId(id);
         visitEntityBody(tag, id);
     }

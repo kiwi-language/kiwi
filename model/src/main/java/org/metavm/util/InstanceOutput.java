@@ -77,7 +77,7 @@ public class InstanceOutput extends MvOutput {
 
     @Override
     public void writeEntity(Entity entity) {
-        write(entity.getEntityTag());
+        writeInt(entity.getEntityTag());
         super.writeEntity(entity);
     }
 }

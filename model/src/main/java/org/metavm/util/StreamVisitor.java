@@ -489,7 +489,7 @@ public class StreamVisitor {
     }
 
     public void visitEntity() {
-        visitEntityBody(read(), readId());
+        visitEntityBody(readInt(), readId());
     }
 
     public void visitEntityBody(int tag, Id id) {

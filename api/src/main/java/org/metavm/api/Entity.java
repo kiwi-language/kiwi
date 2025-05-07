@@ -21,4 +21,6 @@ public @interface Entity {
 
     int since() default 0;
 
+    boolean javaNative() default false;
+
 }

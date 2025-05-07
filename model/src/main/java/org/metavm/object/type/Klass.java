@@ -8,29 +8,21 @@ import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.natives.NativeBase;
 import org.metavm.expression.Var;
 import org.metavm.flow.Error;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.util.*;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.StreamVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.*;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -108,6 +100,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     private List<Error> errors = new ArrayList<>();
     private boolean error;
 
+    private boolean javaNative;
+
     // For unit test. Do not remove
     @SuppressWarnings("unused")
     @Nullable
@@ -166,6 +160,7 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     private transient Klass arrayKlass;
 
     private transient Klass componentKlass;
+    private transient Class<?> javaClass;
 
     public Klass(
             @NotNull Id id,
@@ -187,7 +182,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
             long tag,
             @Nullable Integer sourceTag,
             int since,
-            boolean methodTableBuildDisabled) {
+            boolean javaNative,
+            boolean methodTableBuildDisabled,
+            Class<?> javaClass) {
         super(id);
         this.name = name;
         this.qualifiedName = qualifiedName;
@@ -204,7 +201,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         this.since = since;
         this.scope = scope;
         this.fieldCount = superType != null ? superType.getKlass().getFieldCount() : 0;
+        this.javaNative = javaNative;
         this.methodTableBuildDisabled = methodTableBuildDisabled;
+        this.javaClass = javaClass;
         setSuperType(superType, true);
         setInterfaces(interfaces, true);
         resetRank();
@@ -2120,6 +2119,14 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
     @Override
     protected void buildSource(Map<String, Value> source) {
         super.buildSource(source);
+    }
+
+    public boolean isJavaNative() {
+        return javaNative;
+    }
+
+    public Class<?> getJavaClass() {
+        return javaClass;
     }
 }
 

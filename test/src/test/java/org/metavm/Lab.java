@@ -10,12 +10,12 @@ import java.nio.file.Path;
 public class Lab {
 
     public static void main(String[] args) {
-        var id = Id.parse("0180897a00");
+        var id = Id.parse("01c09a0c02");
         System.out.println(id.getTreeId());
         System.out.println(id.getNodeId());
 
 
-        System.out.println(PhysicalId.of(100000, 1));
+        System.out.println(PhysicalId.of(100000, 2));
     }
 
 }

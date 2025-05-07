@@ -1,15 +1,16 @@
 package org.metavm.entity;
 
-import com.fasterxml.jackson.databind.deser.impl.CreatorCandidate;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.Entity;
 import org.metavm.api.EntityFlow;
 import org.metavm.api.ValueObject;
 import org.metavm.expression.ExpressionParser;
 import org.metavm.expression.TypeParsingContext;
-import org.metavm.flow.*;
+import org.metavm.flow.ExpressionValue;
+import org.metavm.flow.MethodBuilder;
+import org.metavm.flow.Nodes;
+import org.metavm.flow.Parameter;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.ReflectionUtils;
 import org.metavm.util.Utils;
@@ -149,7 +150,7 @@ public final class KlassParser<T> {
 
     private Klass createKlass() {
         var entityType = javaClass.getAnnotation(Entity.class);
-        return KlassBuilder.newBuilder(getId.apply(javaClass), javaClass.getSimpleName(), javaClass.getName())
+        var klass = KlassBuilder.newBuilder(getId.apply(javaClass), javaClass.getSimpleName(), javaClass.getName())
                 .kind(ClassKind.fromTypeCategory(getTypeCategory()))
 //                .sourceTag(EntityRegistry.map.get(javaClass.getSimpleName()))
                 .source(ClassSource.BUILTIN)
@@ -159,7 +160,11 @@ public final class KlassParser<T> {
                 .ephemeral(entityType != null && entityType.ephemeral())
                 .searchable(entityType != null && entityType.searchable())
                 .maintenanceDisabled()
+                .javaNative(entityType != null && entityType.javaNative())
+                .javaClass(javaClass)
                 .build();
+        EntityRegistry.onKlassParsed(klass);
+        return klass;
     }
 
     private TypeVariable createTypeVariable(java.lang.reflect.TypeVariable<?> javaTypeVariable) {
@@ -213,12 +218,15 @@ public final class KlassParser<T> {
     private org.metavm.flow.Method createMethod(Method javaMethod) {
         var returnType = defContext.getNullableType(javaMethod.getGenericReturnType());
         var klass = def.klass;
+        var anno = javaMethod.getAnnotation(EntityFlow.class);
         var method = MethodBuilder.newBuilder(klass, javaMethod.getName())
                 .id(getId.apply(javaMethod))
                 .typeParameters(Utils.map(javaMethod.getTypeParameters(), this::createTypeVariable))
                 .returnType(returnType)
                 .isNative(true)
+                .javaNative(anno.javaNative())
                 .build();
+        method.setJavaMethod(javaMethod);
         method.setParameters(Utils.map(javaMethod.getParameters(), p -> createParameter(p, method)));
         Utils.biForEach(
                 List.of(javaMethod.getTypeParameters()),

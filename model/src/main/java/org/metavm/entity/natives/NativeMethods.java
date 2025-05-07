@@ -27,6 +27,9 @@ public class NativeMethods {
 
     public static @NotNull FlowExecResult invoke(Method method, @Nullable Value self, List<? extends Value> arguments, CallContext callContext) {
         try {
+            if (method.isJavaNative()) {
+                return JavaNativeInvoker.invoke(method, self, arguments, callContext);
+            }
             if (method.isStatic()) {
                 Object[] args = new Object[2 + arguments.size()];
                 args[0] = method.getDeclaringType();

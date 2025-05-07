@@ -1,27 +1,31 @@
 package org.metavm.applab;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.metavm.api.Entity;
 import org.metavm.api.EntityFlow;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
-import org.metavm.task.TaskManager;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
+import org.metavm.util.StreamVisitor;
 
 import java.util.Map;
 import java.util.function.Consumer;
 
-@Entity
+@Entity(javaNative = true)
 public class Car extends org.metavm.entity.Entity {
 
     private static Klass __klass__;
 
-    @EntityFlow
-    public Car() {
-        super(TmpId.random());
+//    @EntityFlow
+    public Car(Id id) {
+        super(id);
+    }
+
+    @EntityFlow(javaNative = true)
+    public String greet() {
+        return "Hello";
     }
 
     @Nullable
@@ -74,4 +78,8 @@ public class Car extends org.metavm.entity.Entity {
     public Klass getInstanceKlass() {
         return __klass__;
     }
+
+    public static void visitBody(StreamVisitor visitor) {
+    }
+
 }

@@ -5,7 +5,6 @@ import org.metavm.entity.Attribute;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TmpId;
 import org.metavm.object.type.*;
-import org.metavm.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +22,7 @@ public class MethodBuilder {
     private boolean isConstructor;
     private boolean isAbstract;
     private boolean isNative;
+    private boolean javaNative;
     private boolean isSynthetic;
     private Access access = Access.PUBLIC;
     private Type returnType;
@@ -46,6 +46,11 @@ public class MethodBuilder {
 
     public MethodBuilder isNative(boolean isNative) {
         this.isNative = isNative;
+        return this;
+    }
+
+    public MethodBuilder javaNative(boolean javaNative) {
+        this.javaNative = javaNative;
         return this;
     }
 
@@ -132,6 +137,7 @@ public class MethodBuilder {
                 isConstructor,
                 isAbstract,
                 isNative,
+                javaNative,
                 isSynthetic,
                 parameters,
                 returnTypeIndex,

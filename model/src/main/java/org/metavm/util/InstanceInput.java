@@ -246,7 +246,7 @@ public class InstanceInput extends MvInput {
 
     @Override
     public <T extends Entity> T readEntity(Class<T> klass, Entity parent) {
-        var tag = read();
+        var tag = readInt();
         //noinspection unchecked
         klass = (Class<T>) EntityRegistry.getEntityClass(tag);
         var entity = super.readEntity(klass, parent);

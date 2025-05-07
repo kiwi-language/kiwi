@@ -2,6 +2,7 @@ package org.metavm.entity;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.annotation.NativeEntity;
+import org.metavm.object.type.Klass;
 import org.metavm.util.ReflectionUtils;
 import org.metavm.util.StreamVisitor;
 
@@ -15,23 +16,29 @@ import java.util.Objects;
 @Slf4j
 public class EntityRegistry {
 
-    public static final Class<?>[] classes = new Class[255];
+    public static final Class<?>[] classes = new Class[1024];
     private static final Map<String, Class<?>> name2class = new HashMap<>();
-    public static final MethodHandle[] visitBodyHandles = new MethodHandle[255];
+    public static final MethodHandle[] visitBodyHandles = new MethodHandle[1024];
+
+    private final Map<Integer, MethodHandle> handlesMap = new HashMap<>();
 
     static {
         var klasses = EntityUtils.getModelClasses();
         for (Class<?> clazz : klasses) {
-            var entity = clazz.getAnnotation(NativeEntity.class);
+            var nativeEntity = clazz.getAnnotation(NativeEntity.class);
             int treeTag;
-            if (entity != null && (treeTag = entity.value()) != -1) {
-                var visitHandle = ReflectionUtils.getMethodHandle(MethodHandles.lookup(), clazz,
-                        "visitBody", void.class, List.of(StreamVisitor.class), true);
+            if (nativeEntity != null && (treeTag = nativeEntity.value()) != -1) {
+                var visitHandle = getVisitBodyHandle(clazz);
                 visitBodyHandles[treeTag] = visitHandle;
                 classes[treeTag] = clazz;
                 name2class.put(clazz.getName(), clazz);
             }
         }
+    }
+
+    private static MethodHandle getVisitBodyHandle(Class<?> clazz) {
+        return ReflectionUtils.getMethodHandle(MethodHandles.lookup(), clazz,
+                "visitBody", void.class, List.of(StreamVisitor.class), true);
     }
 
     public static Class<? extends org.metavm.entity.Entity> getEntityClass(int treeTag) {
@@ -45,6 +52,14 @@ public class EntityRegistry {
 
     public static MethodHandle getVisitBodyHandle(int treeTag) {
         return visitBodyHandles[treeTag];
+    }
+
+    public static void onKlassParsed(Klass klass) {
+        if (klass.isJavaNative()) {
+            var tag = (int) klass.getTag();
+            classes[tag] = klass.getJavaClass();
+            visitBodyHandles[tag] = getVisitBodyHandle(klass.getJavaClass());
+        }
     }
 
 // Generated. Do not modify. See generate_entity_registry.groovy

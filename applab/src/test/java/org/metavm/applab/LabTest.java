@@ -2,15 +2,13 @@ package org.metavm.applab;
 
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.junit.Assert;
 import org.metavm.entity.*;
 import org.metavm.event.MockEventQueue;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
-import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.MockInstanceLogService;
-import org.metavm.object.instance.search.InstanceSearchServiceImpl;
 import org.metavm.object.type.DirectoryAllocatorStore;
 import org.metavm.object.type.FileColumnStore;
 import org.metavm.object.type.FileTypeTagStore;
@@ -24,7 +22,10 @@ import java.util.Map;
 @Slf4j
 public class LabTest extends TestCase {
 
-    public void test() {
+    private ApiService apiService;
+
+    @Override
+    protected void setUp() throws Exception {
         var instCtxFactory = new InstanceContextFactory(
                 new MemInstanceStore(),
                 new MockEventQueue()
@@ -41,19 +42,42 @@ public class LabTest extends TestCase {
                 new FileTypeTagStore("")
         );
         boot.boot();
-
-        var apiService = new ApiService(
+        apiService = new ApiService(
                 entityContextFactory,
                 new MetaContextCache(entityContextFactory),
-            null
+                null
         );
+    }
 
-        MockTransactionUtils.doInTransactionWithoutResult(() -> {
-            var id = apiService.saveInstance("org.metavm.applab.Car", Map.of(),
-                    new HttpRequestImpl("PUT", "", List.of(), List.of()),
-                    new HttpResponseImpl());
-            log.debug("id: {}", id);
-        });
+    @Override
+    protected void tearDown() throws Exception {
+        apiService = null;
+    }
+
+    public void test() {
+        var id = saveInstance("org.metavm.applab.Car", Map.of());
+        var msg = callMethod(id, "greet", List.of());
+        Assert.assertEquals("Hello", msg);
+
+    }
+
+    private Object callMethod(String qualifier, String method, List<Object> args) {
+        return MockTransactionUtils.doInTransaction(() ->
+                apiService.handleMethodCall(qualifier, method, args,
+                        new HttpRequestImpl("POST", "", List.of(), List.of()),
+                        new HttpResponseImpl()
+                )
+        );
+    }
+
+    private String saveInstance(String className, Map<String, Object> map) {
+        return MockTransactionUtils.doInTransaction(() ->
+                apiService.saveInstance(className, map,
+                        new HttpRequestImpl("PUT", "", List.of(), List.of()),
+                        new HttpResponseImpl()
+
+                )
+        );
     }
 
 }

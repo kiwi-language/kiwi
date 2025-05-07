@@ -51,9 +51,10 @@ public class Method extends Flow implements Property {
     private boolean isConstructor;
     private boolean isAbstract;
     private boolean hidden;
-
+    private boolean javaNative;
     private transient String nativeName;
     private transient volatile MethodHandle nativeHandle;
+    private transient volatile java.lang.reflect.Method javaMethod;
 
     public Method(@NotNull Id id,
                   @NotNull Klass declaringType,
@@ -61,6 +62,7 @@ public class Method extends Flow implements Property {
                   boolean isConstructor,
                   boolean isAbstract,
                   boolean isNative,
+                  boolean javaNative,
                   boolean isSynthetic,
                   List<NameAndType> parameters,
                   int returnTypeIndex,
@@ -74,6 +76,7 @@ public class Method extends Flow implements Property {
             throw new BusinessException(ErrorCode.STATIC_FLOW_CAN_NOT_BE_ABSTRACT);
         this.declaringType = declaringType;
         setTypeParameters(typeParameters);
+        this.javaNative = javaNative;
         this._static = isStatic;
         this.isConstructor = isConstructor;
         this.isAbstract = isAbstract;
@@ -499,8 +502,20 @@ public class Method extends Flow implements Property {
         super.writeCode(writer);
     }
 
+    public boolean isJavaNative() {
+        return javaNative;
+    }
+
     @Override
     protected void buildSource(Map<String, Value> source) {
         super.buildSource(source);
+    }
+
+    public java.lang.reflect.Method getJavaMethod() {
+        return javaMethod;
+    }
+
+    public void setJavaMethod(java.lang.reflect.Method javaMethod) {
+        this.javaMethod = javaMethod;
     }
 }
