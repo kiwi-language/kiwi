@@ -1,11 +1,7 @@
-class Product {
-    priv var name: string
+class Product(
+    priv var name: string,
     priv var inventory: Inventory
-
-    init(name: string, quantity: int) {
-        this.name = name
-        this.inventory = this.Inventory(quantity)
-    }
+) {
 
     fn getName() -> string {
         return this.name
@@ -25,12 +21,7 @@ class Product {
 
 }
 
-class Inventory {
-    priv var quantity: int
-
-    init(quantity: int) {
-        this.quantity = quantity
-    }
+class Inventory(priv var quantity: int) {
 
     fn getQuantity() -> int {
         return this.quantity
@@ -42,12 +33,7 @@ class Inventory {
 
 }
 
-class Box<T> {
-    priv val item: T
-
-    init(item: T) {
-        this.item = item
-    }
+class Box<T>(priv val item: T) {
 
     fn getItem() -> T {
         return this.item

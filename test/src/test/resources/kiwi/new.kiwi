@@ -1,12 +1,6 @@
 
 
-class Foo {
-
-    val value: int
-
-    init(value: int) {
-        this.value = value
-    }
+class Foo(val value: int) {
 
     static fn test() -> Foo {
         return Foo(1)

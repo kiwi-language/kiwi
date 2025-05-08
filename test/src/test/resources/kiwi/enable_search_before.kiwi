@@ -1,11 +1,5 @@
 
-class SearchEnableFoo {
-
-    priv var name: string
-
-    init(name: string) {
-        this.name = name
-    }
+class SearchEnableFoo(priv var name: string) {
 
     fn getName() -> string {
         return this.name

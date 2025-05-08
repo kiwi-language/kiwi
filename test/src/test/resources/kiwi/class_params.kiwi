@@ -1,0 +1,2 @@
+class Foo(priv var name: string) {
+}

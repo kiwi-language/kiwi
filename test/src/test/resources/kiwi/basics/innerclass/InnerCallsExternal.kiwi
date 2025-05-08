@@ -1,12 +1,6 @@
 package innerclass
 
-class InnerCallsExternal {
-
-    priv val value: int
-
-    init(value: int) {
-        this.value = value
-    }
+class InnerCallsExternal(priv val value: int) {
 
     fn getValue() -> int {
         return value
@@ -19,11 +13,7 @@ class InnerCallsExternal {
 
     class Inner {
 
-        priv val value: int
-
-        init() {
-            this.value = getValue()
-        }
+        priv val value = getValue()
 
     }
 

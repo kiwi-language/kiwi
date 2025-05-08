@@ -1,12 +1,6 @@
 package hashcode
 
-class HashCodeFoo {
-
-    priv var name: string
-
-    init(name: string) {
-        this.name = name
-    }
+class HashCodeFoo(priv var name: string) {
 
     fn getName() -> string {
         return name

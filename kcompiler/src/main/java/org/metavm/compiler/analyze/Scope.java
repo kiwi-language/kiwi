@@ -19,22 +19,28 @@ public class Scope implements Closeable {
     private final @Nullable Scope parent;
     private List<Object> entered = List.nil();
     private final ElementTable table;
+    private final Element element;
 
-    public Scope(Node node, ElementTable table, Env env, @Nullable Scope parent) {
+    public Scope(@Nullable Node node, @Nullable Element element, ElementTable table, Env env, @Nullable Scope parent) {
         this.node = node;
         this.table = table;
         this.env = env;
         this.parent = parent;
+        this.element = element != null ? element : (
+                switch (node) {
+                    case Decl<?> decl -> decl.getElement();
+                    case LambdaExpr lambdaExpr -> lambdaExpr.getElement();
+                    case null, default -> null;
+                }
+        );
     }
 
-    public Node getNode() {
+    public @Nullable Node getNode() {
         return node;
     }
 
-    public Element getElement() {
-        return node instanceof Decl<?> decl ? decl.getElement() : (
-                node instanceof LambdaExpr l ? l.getElement() : null
-        );
+    public @Nullable Element getElement() {
+        return element;
     }
 
     void add(Element element) {
@@ -63,5 +69,10 @@ public class Scope implements Closeable {
                 throw new RuntimeException("Unrecognized entered element: " + e);
         });
         env.setCurrentScope(parent);
+    }
+
+    @Override
+    public String toString() {
+        return table.toString();
     }
 }

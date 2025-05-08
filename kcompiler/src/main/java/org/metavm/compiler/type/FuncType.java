@@ -63,7 +63,9 @@ public final class FuncType implements Type, Comparable<FuncType> {
 
     @Override
     public TypeNode makeNode() {
-        return new FunctionTypeNode(paramTypes.map(Type::makeNode), retType.makeNode());
+        var node = new FunctionTypeNode(paramTypes.map(Type::makeNode), retType.makeNode());
+        node.setType(this);
+        return node;
     }
 
     @Override

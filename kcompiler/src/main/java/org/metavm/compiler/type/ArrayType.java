@@ -72,7 +72,9 @@ public final class ArrayType implements Type, Comparable<ArrayType> {
 
     @Override
     public TypeNode makeNode() {
-        return new ArrayTypeNode(elementType.makeNode());
+        var node = new ArrayTypeNode(elementType.makeNode());
+        node.setType(this);
+        return node;
     }
 
     @Override

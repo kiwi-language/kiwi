@@ -51,7 +51,9 @@ public final class IntersectionType implements Type, Comparable<IntersectionType
 
     @Override
     public TypeNode makeNode() {
-        return new IntersectionTypeNode(bounds.map(Type::makeNode));
+        var node = new IntersectionTypeNode(bounds.map(Type::makeNode));
+        node.setType(this);
+        return node;
     }
 
     @Override

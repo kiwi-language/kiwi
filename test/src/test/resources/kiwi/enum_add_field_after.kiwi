@@ -1,17 +1,10 @@
-enum Currency {
+enum Currency(priv val rate: double) {
 
     YUAN(0.14),
     DOLLAR(1.0),
     POUND(1.32)
 
 ;
-    
-
-    priv val rate: double
-
-    init(rate: double) {
-        this.rate = rate
-    }
 
     fn getRate() -> double {
         return this.rate

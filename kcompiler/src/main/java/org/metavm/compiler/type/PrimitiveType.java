@@ -173,7 +173,9 @@ public enum PrimitiveType implements Type {
 
     @Override
     public TypeNode makeNode() {
-        return new PrimitiveTypeNode(TypeTag.valueOf(name()));
+        var node = new PrimitiveTypeNode(TypeTag.valueOf(name()));
+        node.setType(this);
+        return node;
     }
 
     @Override

@@ -1,13 +1,9 @@
 import java.lang.IllegalStateException
 
-class Product {
-    priv var name: string
+class Product(
+    priv var name: string,
     priv var kind: ProductKind
-
-    init(name: string, kind: ProductKind) {
-        this.name = name
-        this.kind = kind
-    }
+) {
 
     fn getName() -> string {
         return this.name

@@ -1,13 +1,9 @@
 import java.lang.Enum
 
-class Product {
-    priv var name: string
+class Product(
+    priv var name: string,
     priv var kind: ProductKind
-
-    init(name: string, kind: ProductKind) {
-        this.name = name
-        this.kind = kind
-    }
+) {
 
     fn getName() -> string {
         return this.name
@@ -27,14 +23,10 @@ class Product {
 
 }
 
-class ProductKind {
-    priv val name: string
+class ProductKind(
+    priv val name: string,
     priv val code: int
-
-    init(name: string, code: int) {
-        this.name = name
-        this.code = code
-    }
+) {
 
     fn getName() -> string {
         return this.name

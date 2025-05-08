@@ -1,10 +1,18 @@
 package org.metavm.compiler.type;
 
+import org.metavm.compiler.analyze.Env;
+import org.metavm.compiler.analyze.ResolveKind;
 import org.metavm.compiler.element.*;
+import org.metavm.compiler.element.Package;
+import org.metavm.compiler.syntax.Expr;
+import org.metavm.compiler.syntax.Ident;
+import org.metavm.compiler.syntax.SelectorExpr;
+import org.metavm.compiler.syntax.TypeApply;
 import org.metavm.compiler.util.List;
 import org.metavm.object.type.SymbolRefs;
 import org.metavm.util.MvOutput;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -23,6 +31,48 @@ public class Types {
     private final Clazz stringClass = createStringClass();
 
     private Types() {
+    }
+
+    public static Type resolveType(Expr expr, Env env) {
+        if (Types.resolveType0(expr, env) instanceof Type t)
+            return t;
+        else
+            throw new ResolutionException("Invalid class type " + expr.getText());
+    }
+
+    private static Object resolveType0(Expr expr, Env env) {
+        if (expr instanceof Ident ref) {
+            var element = env.lookupFirst(ref.getName(), EnumSet.of(ResolveKind.TYPE, ResolveKind.PACKAGE));
+            if (element == null)
+                throw new ResolutionException("Symbol " + ref.getText() + " not found");
+            if (element instanceof ClassType ct)
+                return ct;
+            else
+                return element;
+        } else if (expr instanceof SelectorExpr qualName) {
+            var name = qualName.sel();
+            var scope = resolveType0(qualName.x(), env);
+            if (scope instanceof Package pkg) {
+                var clazz = pkg.getTable().lookupFirst(name, e -> e instanceof Clazz);
+                if (clazz != null)
+                    return clazz;
+                var subPkg = pkg.getTable().lookupFirst(name, e -> e instanceof Package);
+                if (subPkg != null)
+                    return subPkg;
+                throw new ResolutionException("Symbol " + expr.getText() + " not found");
+            }
+            else if (scope instanceof ClassType owner) {
+                var clazz = owner.getClazz().getClass(name);
+                return clazz.getInst(owner, clazz.getTypeParams());
+            }
+        } else if (expr instanceof TypeApply typeApply) {
+            var clazz = (ClassType) resolveType0(typeApply.getExpr(), env);
+            return clazz.getClazz().getInst(
+                    clazz.getOwner(),
+                    typeApply.getArgs().map(env::resolveType)
+            );
+        }
+        throw new ResolutionException("Invalid class name " + expr.getText() + " (class: " + expr.getClass().getName() + ")");
     }
 
     private Clazz createStringClass() {

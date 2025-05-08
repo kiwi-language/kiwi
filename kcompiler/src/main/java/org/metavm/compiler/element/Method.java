@@ -203,4 +203,8 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
                 new MethodInst(declClass, this, typeArguments));
     }
 
+    @Override
+    public String toString() {
+        return getQualName().toString();
+    }
 }

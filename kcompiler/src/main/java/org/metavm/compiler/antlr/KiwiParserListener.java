@@ -68,6 +68,16 @@ public interface KiwiParserListener extends ParseTreeListener {
 	 */
 	void exitClassDeclaration(KiwiParser.ClassDeclarationContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KiwiParser#initParameter}.
+	 * @param ctx the parse tree
+	 */
+	void enterInitParameter(KiwiParser.InitParameterContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KiwiParser#initParameter}.
+	 * @param ctx the parse tree
+	 */
+	void exitInitParameter(KiwiParser.InitParameterContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KiwiParser#classBody}.
 	 * @param ctx the parse tree
 	 */
@@ -237,16 +247,6 @@ public interface KiwiParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitMethodDeclaration(KiwiParser.MethodDeclarationContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link KiwiParser#constructorDeclaration}.
-	 * @param ctx the parse tree
-	 */
-	void enterConstructorDeclaration(KiwiParser.ConstructorDeclarationContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link KiwiParser#constructorDeclaration}.
-	 * @param ctx the parse tree
-	 */
-	void exitConstructorDeclaration(KiwiParser.ConstructorDeclarationContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KiwiParser#typeParameters}.
 	 * @param ctx the parse tree

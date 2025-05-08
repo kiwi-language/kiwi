@@ -13,9 +13,7 @@ class LambdaFoo {
         return cmp(Item(v1), Item(v2))
     }
 
-    priv static class Item: Comparable<Item> {
-
-        priv val value: long
+    priv static class Item(priv val value: long): Comparable<Item> {
 
         fn compareTo(o: Item?) -> int {
             return Long.compare(value, o!!.value)
@@ -23,10 +21,6 @@ class LambdaFoo {
 
         fn value() -> long {
             return value
-        }
-
-        priv init(value: long) {
-            this.value = value
         }
 
     }

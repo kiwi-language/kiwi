@@ -121,4 +121,10 @@ public interface NodeVisitor<R> {
     R visitCatcher(Catcher catcher);
 
     R visitTypeApply(TypeApply typeApply);
+
+    R visitClassParamDecl(ClassParamDecl classParamDecl);
+
+    R visitInit(Init init);
+
+    R visitExtend(Extend extend);
 }

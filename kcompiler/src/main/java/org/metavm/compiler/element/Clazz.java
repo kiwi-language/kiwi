@@ -41,6 +41,7 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
     private @Nullable ElementTable table;
     private List<Type> allTypeArguments;
     private @Nullable Closure closure;
+    private @Nullable Method primaryInit;
 
     public Clazz(ClassTag tag, String name, Access access, ClassScope scope) {
         this(tag, NameTable.instance.get(name), access, scope);
@@ -171,6 +172,8 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
 
     public void addMethod(Method method) {
         methods = methods.append(method);
+        if (method.isInit() && primaryInit == null)
+            primaryInit = method;
     }
 
     public void onMethodAdded(Method method) {
@@ -466,6 +469,11 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
     @Override
     public String toString() {
         return "Class " + getQualName();
+    }
+
+    @Override
+    public @Nullable Method getPrimaryInit() {
+        return primaryInit;
     }
 
 }

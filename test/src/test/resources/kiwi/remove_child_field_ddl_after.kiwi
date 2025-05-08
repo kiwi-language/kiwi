@@ -1,11 +1,6 @@
 import java.util.List
 
-class Product {
-    priv var name: string
-
-    init(name: string) {
-        this.name = name
-    }
+class Product(priv var name: string) {
 
     fn getName() -> string {
         return this.name
@@ -17,12 +12,7 @@ class Product {
 
 }
 
-class Inventory {
-    priv var quantity: int
-
-    init(quantity: int) {
-        this.quantity = quantity
-    }
+class Inventory(priv var quantity: int) {
 
     fn getQuantity() -> int {
         return this.quantity
@@ -34,12 +24,7 @@ class Inventory {
 
 }
 
-class Box<T> {
-    priv val item: T
-
-    init(item: T) {
-        this.item = item
-    }
+class Box<T>(priv val item: T) {
 
     fn getItem() -> T {
         return this.item

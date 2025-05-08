@@ -26,147 +26,161 @@ public class ClassFileWriterTest extends TestCase {
         MockStandardTypesInitializer.init();
     }
 
+    public void testParentChild() {
+        process("kiwi/ParentChild.kiwi");
+    }
+
+    public void testLivingBeing() {
+        process("kiwi/LivingBeing.kiwi");
+    }
+
     public void test() {
-        var source = TestUtils.getResourcePath("kiwi/Shopping.kiwi");
-        process(source);
+        process("kiwi/Shopping.kiwi");
     }
 
     public void testEnum() {
-        var source = TestUtils.getResourcePath("kiwi/enum.kiwi");
-        process(source);
+        process("kiwi/enum.kiwi");
     }
 
     public void testLambda() {
-        var source = TestUtils.getResourcePath("kiwi/Lambda.kiwi");
-        process(source);
+        process("kiwi/Lambda.kiwi");
+    }
+
+    public void testAnonClassWithArgs() {
+        process("kiwi/basics/anonymous_class/AnonymousClassWithArgs.kiwi");
+
     }
 
     public void testInnerClass() {
-        process(TestUtils.getResourcePath("kiwi/inner_klass.kiwi"));
+        process("kiwi/inner_klass.kiwi");
     }
 
     public void testInnerClass2() {
-        process(TestUtils.getResourcePath("kiwi/inner_class.kiwi"));
+        process("kiwi/inner_class.kiwi");
     }
 
     public void testGenericOverloading() {
-        process(TestUtils.getResourcePath("kiwi/GenericOverloading.kiwi"));
+        process("kiwi/GenericOverloading.kiwi");
     }
 
     public void testDDL() {
-        process(TestUtils.getResourcePath("kiwi/ddl_after.kiwi"));
+        process("kiwi/ddl_after.kiwi");
     }
 
     public void testEnumConversion() {
-        process(TestUtils.getResourcePath("kiwi/value_to_enum_ddl_after.kiwi"));
+        process("kiwi/value_to_enum_ddl_after.kiwi");
     }
 
     public void testLab() {
-        process(TestUtils.getResourcePath("kiwi/lab.kiwi"));
+        process("kiwi/lab.kiwi");
     }
 
     public void testAssign() {
-        process(TestUtils.getResourcePath("kiwi/assign.kiwi"));
+        process("kiwi/assign.kiwi");
     }
 
     public void testConditional() {
-        process(TestUtils.getResourcePath("kiwi/conditional.kiwi"));
+        process("kiwi/conditional.kiwi");
     }
 
     public void testIntersectionType() {
-        process(TestUtils.getResourcePath("kiwi/intersection_type.kiwi"));
+        process("kiwi/intersection_type.kiwi");
     }
 
     public void testFieldInit() {
-        process(TestUtils.getResourcePath("kiwi/field_init.kiwi"));
+        process("kiwi/field_init.kiwi");
     }
 
     public void testForeach() {
-        process(TestUtils.getResourcePath("kiwi/foreach.kiwi"));
+        process("kiwi/foreach.kiwi");
     }
 
     public void testArrayInitializer() {
-        process(TestUtils.getResourcePath("kiwi/basics/arrayinitializer/ArrayInitializerFoo.kiwi"));
+        process("kiwi/basics/arrayinitializer/ArrayInitializerFoo.kiwi");
     }
 
     public void testBitset() {
-        process(TestUtils.getResourcePath("kiwi/basics/bitset/BitSet.kiwi"));
+        process("kiwi/basics/bitset/BitSet.kiwi");
     }
 
     public void testSmallInt() {
-        process(TestUtils.getResourcePath("kiwi/smallint.kiwi"));
+        process("kiwi/smallint.kiwi");
     }
 
     public void testBranching() {
-        process(TestUtils.getResourcePath("kiwi/basics/branching/BranchingFoo.kiwi"));
+        process("kiwi/basics/branching/BranchingFoo.kiwi");
     }
 
     public void testBreak() {
-        process(TestUtils.getResourcePath("kiwi/break.kiwi"));
+        process("kiwi/break.kiwi");
     }
 
     public void testContinue() {
-        process(TestUtils.getResourcePath("kiwi/basics/continue_/ContinueFoo.kiwi"));
+        process("kiwi/basics/continue_/ContinueFoo.kiwi");
     }
 
     public void testRange() {
-        process(TestUtils.getResourcePath("kiwi/range.kiwi"));
+        process("kiwi/range.kiwi");
     }
 
     public void testAnonymousClass() {
-        process(TestUtils.getResourcePath("kiwi/anonymous_class.kiwi"));
+        process("kiwi/anonymous_class.kiwi");
     }
 
     public void testString() {
-        process(TestUtils.getResourcePath("kiwi/string.kiwi"));
+        process("kiwi/string.kiwi");
     }
 
     public void testLocalClass() {
-        process(TestUtils.getResourcePath("kiwi/local_class.kiwi"));
+        process("kiwi/local_class.kiwi");
     }
 
     public void testNew() {
-        process(TestUtils.getResourcePath("kiwi/new.kiwi"));
+        process("kiwi/new.kiwi");
     }
 
     public void testSuperclassField() {
-        process(TestUtils.getResourcePath("kiwi/basics/anonymous_class/SuperclassFieldFoo.kiwi"));
+        process("kiwi/basics/anonymous_class/SuperclassFieldFoo.kiwi");
     }
 
     public void testDDL2() {
-        process(TestUtils.getResourcePath("kiwi/bean_ddl_before.kiwi"));
+        process("kiwi/bean_ddl_before.kiwi");
     }
 
     public void testTryCatch() {
-        process(TestUtils.getResourcePath("kiwi/basics/exception/CatchUnionExceptionType.kiwi"));
+        process("kiwi/basics/exception/CatchUnionExceptionType.kiwi");
     }
 
     public void testTypePtn() {
-        process(TestUtils.getResourcePath("kiwi/basics/hashcode/HashCodeFoo.kiwi"));
+        process("kiwi/basics/hashcode/HashCodeFoo.kiwi");
     }
 
     public void testBindingVars() {
-        process(TestUtils.getResourcePath("kiwi/binding_var.kiwi"));
+        process("kiwi/binding_var.kiwi");
     }
 
     public void testLowerIndexCreation() {
-        process(TestUtils.getResourcePath("kiwi/basics/index/IndexSelectFoo.kiwi"));
+        process("kiwi/basics/index/IndexSelectFoo.kiwi");
     }
 
     public void testMethodRef() {
-        process(TestUtils.getResourcePath("kiwi/method_ref.kiwi"));
+        process("kiwi/method_ref.kiwi");
     }
 
     public void testIs() {
-        process(TestUtils.getResourcePath("kiwi/basics/instanceof_/InstanceOfFoo.kiwi"));
+        process("kiwi/basics/instanceof_/InstanceOfFoo.kiwi");
     }
 
     public void testMethodCallWithinLambda() {
-        process(TestUtils.getResourcePath("kiwi/basics/lambda/MethodCallWithinLambda.kiwi"));
+        process("kiwi/basics/lambda/MethodCallWithinLambda.kiwi");
+    }
+
+    public void testPrimInit() {
+        process("kiwi/prim_init.kiwi");
     }
 
     private void process(String source) {
-        var file = CompilerTestUtils.parse(source);
+        var file = CompilerTestUtils.parse(TestUtils.getResourcePath(source));
         var project = CompilerTestUtils.attr(file);
         file.accept(new Lower(project));
         var gen = new Gen(project);
@@ -199,6 +213,10 @@ public class ClassFileWriterTest extends TestCase {
             log.debug("{}", clazz.getText());
         }
 
+    }
+
+    public void testEnumConstantImpl() {
+        process("kiwi/basics/enums/EnumConstantImplFoo.kiwi");
     }
 
     private void rebuildNodes(Klass clazz) {

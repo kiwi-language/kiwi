@@ -47,6 +47,12 @@ public interface KiwiParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitClassDeclaration(KiwiParser.ClassDeclarationContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link KiwiParser#initParameter}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitInitParameter(KiwiParser.InitParameterContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link KiwiParser#classBody}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -148,12 +154,6 @@ public interface KiwiParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitMethodDeclaration(KiwiParser.MethodDeclarationContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link KiwiParser#constructorDeclaration}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitConstructorDeclaration(KiwiParser.ConstructorDeclarationContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KiwiParser#typeParameters}.
 	 * @param ctx the parse tree

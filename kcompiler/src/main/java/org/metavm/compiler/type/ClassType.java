@@ -50,7 +50,9 @@ public interface ClassType extends Type, Element, Comparable<ClassType> {
         var typeArgs = getTypeArguments();
         if (!typeArgs.equals(getClazz().getTypeArguments()))
             expr = new TypeApply(expr, typeArgs.map(Type::makeNode));
-        return new ClassTypeNode(expr);
+        var node = new ClassTypeNode(expr);
+        node.setType(this);
+        return node;
     }
 
     default Expr makeNameNode() {
@@ -217,6 +219,8 @@ public interface ClassType extends Type, Element, Comparable<ClassType> {
     List<? extends FieldRef> getFields();
 
     List<? extends ClassType> getClasses();
+
+    MethodRef getPrimaryInit();
 
     boolean isEnum();
 

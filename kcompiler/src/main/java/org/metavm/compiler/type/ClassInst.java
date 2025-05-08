@@ -25,6 +25,8 @@ public class ClassInst implements ClassType, Element, GenericDecl {
     private @Nullable List<MethodInst> methods;
     private @Nullable List<ClassType> classes;
 
+    private MethodInst primInit;
+
     private @Nullable ElementTable table;
     private @Nullable TypeSubst substitutor;
     private @Nullable Closure closure;
@@ -86,6 +88,14 @@ public class ClassInst implements ClassType, Element, GenericDecl {
         if (classes == null)
             classes = clazz.getClasses().map(c -> c.getInst(this, c.getTypeParams()));
         return classes;
+    }
+
+    @Override
+    public MethodRef getPrimaryInit() {
+        var init = (MethodRef) getTable().lookupFirst(Name.init(),
+                e -> e instanceof MethodInst m && m.getFunc() == getClazz().getPrimaryInit()
+        );
+        return Objects.requireNonNull(init);
     }
 
     @Override

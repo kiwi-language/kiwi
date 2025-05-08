@@ -1,13 +1,9 @@
 import java.lang.IllegalStateException
 
-class Product {
-    priv var name: string
+class Product(
+    priv var name: string,
     priv var kind: ProductKind
-
-    init(name: string, kind: ProductKind) {
-        this.name = name
-        this.kind = kind
-    }
+) {
 
     fn getName() -> string {
         return this.name
@@ -31,7 +27,7 @@ class Product {
 
 }
 
-enum ProductKind {
+enum ProductKind(priv val code: int) {
 
     DEFAULT(0),
     HOTEL(1),
@@ -39,12 +35,7 @@ enum ProductKind {
 
 ;
 
-    priv val code: int
     priv deleted var name: string
-
-    init(code: int) {
-        this.code = code
-    }
 
     fn getCode() -> int {
         return this.code

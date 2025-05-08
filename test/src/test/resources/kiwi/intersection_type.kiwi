@@ -5,21 +5,11 @@ interface Greet {
 
 }
 
-class Base {
-
-    var name: string
-
-    init(name: string) {
-        this.name = name
-    }
+class Base(var name: string) {
 
 }
 
-class Sub: Base, Greet {
-
-    init(name: string) {
-        super.init(name)
-    }
+class Sub(name: string): Base(name), Greet {
 
     fn greet(name: string) -> string {
         return concat("Hello ", name)

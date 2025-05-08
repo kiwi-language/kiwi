@@ -23,7 +23,11 @@ public class Env {
 
 
     public Scope enterScope(Node node) {
-        return currentScope = new Scope(node, table, this, currentScope);
+        return currentScope = new Scope(node, null, table, this, currentScope);
+    }
+
+    public Scope enterScope(Node node, Element element) {
+        return currentScope = new Scope(node, element, table, this, currentScope);
     }
 
     void setCurrentScope(Scope currentScope) {

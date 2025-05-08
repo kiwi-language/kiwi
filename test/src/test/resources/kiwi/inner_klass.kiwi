@@ -1,25 +1,16 @@
 
-class Product {
+class Product(quantity: int) {
 
-    priv var inventory: Product.Inventory
+    priv var inventory = Inventory(quantity)
 
-    init(quantity: int) {
-        this.inventory = this.Inventory(quantity)
+    fn getInventory() -> Inventory {
+        return inventory
     }
 
-    fn getInventory() -> Product.Inventory {
-        return this.inventory
-    }
-
-    class Inventory {
-        priv var quantity: int
-
-        init(quantity: int) {
-            this.quantity = quantity
-        }
+    class Inventory(priv var quantity: int) {
 
         fn getQuantity() -> int {
-            return this.quantity
+            return quantity
         }
 
     }

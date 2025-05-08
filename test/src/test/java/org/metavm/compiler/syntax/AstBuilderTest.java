@@ -45,4 +45,11 @@ public class AstBuilderTest extends TestCase {
         }
     }
 
+    public void testClassParams() {
+        var source = TestUtils.getResourcePath("kiwi/class_params.kiwi");
+        var file = AstBuilder.build(CompilerTestUtils.antlrParse(source));
+        var klass = file.getClassDeclarations().head();
+        Assert.assertEquals(1, klass.getParams().size());
+    }
+
 }

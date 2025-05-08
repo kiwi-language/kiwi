@@ -43,10 +43,75 @@ public class Gen extends StructuralNodeVisitor {
             var cp = clazz.getConstPool();
             clazz.getInterfaces().forEach(cp::put);
             clazz.getTypeParams().forEach(tp -> cp.put(tp.getBound()));
-            super.visitClassDecl(classDecl);
+            if (!clazz.isInterface())
+                generatePrimInit(classDecl);
+            for (EnumConst enumConstant : clazz.getEnumConstants()) {
+                cp.put(enumConstant.getType());
+            }
+            for (Field field : clazz.getFields()) {
+                cp.put(field.getType());
+            }
+            for (Node member : classDecl.getMembers()) {
+                if (member instanceof ClassDecl || member instanceof MethodDecl)
+                    member.accept(this);
+            }
+            for (EnumConstDecl ec : classDecl.enumConstants()) {
+                if (ec.getDecl() != null)
+                    ec.getDecl().accept(this);
+            }
             clazz = prevClazz;
             cp.freeze();
             return null;
+        }
+    }
+
+    private void generatePrimInit(ClassDecl classDecl) {
+        var clazz = classDecl.getElement();
+        var method = requireNonNull(clazz.getPrimaryInit());
+        try(var ignored = env.enterScope(classDecl, method)) {
+            if (Traces.traceGeneration)
+                log.trace("Generating code for primary constructor: {}", method.getQualName());
+            var prevCode = code;
+            var cp = method.getConstPool();
+            code = requireNonNull(method.getCode());
+            code.setMaxLocals(1);
+            for (var param : method.getParams()) {
+                cp.put(param.getType());
+                code.newLocal(param);
+            }
+            cp.put(method.getRetType());
+            clazz.getTypeParams().forEach(tp -> cp.put(tp.getBound()));
+            for (ClassParamDecl param : classDecl.getParams()) {
+                if (param.getField() != null) {
+                    code.loadThis(env);
+                    code.load(param.getElement().getIndex(), param.getElement().getType());
+                    param.getField().store(code, env);
+                }
+            }
+            var superType = clazz.getSuper();
+            if (superType != null) {
+                var call = classDecl.getImplements().head().makeCallExpr();
+                genExpr(call, null).drop();
+            }
+            for (Node member : classDecl.getMembers()) {
+                if (member instanceof FieldDecl fieldDecl) {
+                    var field = fieldDecl.getElement();
+                    if (!field.isStatic() && fieldDecl.getInitial() != null) {
+                        code.loadThis(env);
+                        genExpr(fieldDecl.getInitial(), field.getType()).load();
+                        field.store(code, env);
+                    }
+                }
+                else if (member instanceof Init init)
+                    init.accept(this);
+            }
+            if (code.isAlive()) {
+                if (!method.getRetType().isVoid())
+                    throw new RuntimeException("Code of method '" + method.getQualName() + "' is not properly terminated");
+                code.voidRet();
+            }
+            code = prevCode;
+            cp.freeze();
         }
     }
 
@@ -78,14 +143,6 @@ public class Gen extends StructuralNodeVisitor {
     }
 
     @Override
-    public Void visitFieldDecl(FieldDecl fieldDecl) {
-        var field = fieldDecl.getElement();
-        var cp = clazz.getConstPool();
-        cp.put(field.getType());
-        return super.visitFieldDecl(fieldDecl);
-    }
-
-    @Override
     public Void visitLocalVarDecl(LocalVarDecl localVarDecl) {
         var initial = localVarDecl.getInitial();
         var v = localVarDecl.getElement();
@@ -98,20 +155,6 @@ public class Gen extends StructuralNodeVisitor {
     }
 
     @Override
-    public Void visitEnumConstDecl(EnumConstDecl enumConstDecl) {
-        var ec = enumConstDecl.getElement();
-        var cp = clazz.getConstPool();
-        cp.put(ec.getType());
-        return super.visitEnumConstDecl(enumConstDecl);
-    }
-
-    @Override
-    public Void visitParamDecl(ParamDecl paramDecl) {
-        code.newLocal(paramDecl.getElement());
-        return super.visitParamDecl(paramDecl);
-    }
-
-    @Override
     public Void visitMethodDecl(MethodDecl methodDecl) {
         var method = methodDecl.getElement();
         try(var ignored = env.enterScope(methodDecl)) {
@@ -119,12 +162,16 @@ public class Gen extends StructuralNodeVisitor {
                 log.trace("Generating code for method: {}", method.getQualName());
             var prevCode = code;
             var cp = method.getConstPool();
-            method.getParamTypes().forEach(cp::put);
-            cp.put(method.getRetType());
-            clazz.getTypeParams().forEach(tp -> cp.put(tp.getBound()));
             code = method.getCode();
             if (!method.isStatic() && !method.isAbstract())
                 code.setMaxLocals(1);
+            for (Param param : method.getParams()) {
+                cp.put(param.getType());
+                if (!method.isAbstract())
+                    code.newLocal(param);
+            }
+            cp.put(method.getRetType());
+            clazz.getTypeParams().forEach(tp -> cp.put(tp.getBound()));
             super.visitMethodDecl(methodDecl);
             if (!method.isAbstract() && code.isAlive()) {
                 if (!method.getRetType().isVoid())
@@ -423,7 +470,10 @@ public class Gen extends StructuralNodeVisitor {
             cp.put(lambda.getRetType());
             try (var ignored = env.enterScope(lambdaExpr)) {
                 code = lambda.getCode();
-                lambdaExpr.params().forEach(p -> p.accept(Gen.this));
+                for (Param param : lambdaExpr.getElement().getParams()) {
+                    cp.put(param.getType());
+                    code.newLocal(param);
+                }
                 if (lambdaExpr.body() instanceof Expr expr) {
                     var item = genExpr(expr, lambda.getRetType());
                     if (lambda.getRetType().isVoid()) {
@@ -533,13 +583,7 @@ public class Gen extends StructuralNodeVisitor {
         @Override
         public Item visitCall(Call call) {
             var funcItem = call.getFunc().accept(this);
-            var funcType = funcItem.prepareInvoke();
-            var paramTypeIt = funcType.getParamTypes().iterator();
-            for (Expr argument : call.getArguments()) {
-                genExpr(argument, paramTypeIt.next()).load();
-            }
-            funcItem.invoke(funcType);
-            return getStackitem(call.getType());
+            return funcItem.invoke(call.getArguments());
         }
 
         @Override
@@ -552,31 +596,10 @@ public class Gen extends StructuralNodeVisitor {
             expr.getDecl().accept(Gen.this);
             code.new_((ClassType) expr.getType());
             code.dup();
-            var method = (MethodRef) expr.getElement();
-            var paramTypeIt = method.getParamTypes().iterator();
-            expr.getArguments().forEach(e -> genExpr(e, paramTypeIt.next()).load());
+            var method = expr.getDecl().getElement().getPrimaryInit();
             code.invokeSpecial(method);
             return topStackItem();
         }
-
-//        @Override
-//        public Item visitNewExpr(NewExpr newExpr) {
-//            if (newExpr.owner() != null) {
-//                newExpr.owner().accept(this).load();
-//                code.newChild((ClassType) newExpr.getType());
-//            }
-//            else {
-//                if (newExpr.getDecl() != null)
-//                    newExpr.getDecl().accept(Generator.this);
-//                code.new_((ClassType) newExpr.getType());
-//            }
-//            code.dup();
-//            var method = (MethodInst) newExpr.getElement();
-//            var paramTypeIt = method.getParameterTypes().iterator();
-//            newExpr.arguments().forEach(e -> genExpr(e, paramTypeIt.next()).load());
-//            code.invokeSpecial(method);
-//            return topStackItem();
-//        }
 
         @Override
         public Item visitIndexExpr(IndexExpr indexExpr) {
@@ -859,13 +882,12 @@ public class Gen extends StructuralNodeVisitor {
 
         abstract void drop();
 
-        FuncType prepareInvoke() {
+        Item invoke(List<Expr> args) {
             load();
-            return (FuncType) code.peek();
-        }
-
-        void invoke(FuncType type) {
-            code.call(type);
+            var funcType = (FuncType) code.peek();
+            loadArgs(args, funcType.getParamTypes());
+            code.call(funcType);
+            return getStackitem(funcType.getRetType());
         }
 
         CondItem makeCond() {
@@ -1051,13 +1073,11 @@ public class Gen extends StructuralNodeVisitor {
         }
 
         @Override
-        FuncType prepareInvoke() {
-            return (FuncType) member.getType();
-        }
-
-        @Override
-        void invoke(FuncType type) {
+        Item invoke(List<Expr> args) {
+            var funcType = (FuncType) member.getType();
+            loadArgs(args, funcType.getParamTypes());
             member.invoke(code, env);
+            return getStackitem(funcType.getRetType());
         }
 
         @Override
@@ -1097,13 +1117,11 @@ public class Gen extends StructuralNodeVisitor {
         }
 
         @Override
-        FuncType prepareInvoke() {
-            return (FuncType) member.getType();
-        }
-
-        @Override
-        void invoke(FuncType type) {
+        Item invoke(List<Expr> args) {
+            var funcType = (FuncType) member.getType();
+            loadArgs(args, funcType.getParamTypes());
             member.invoke(code, env);
+            return getStackitem(funcType.getRetType());
         }
 
         @Override
@@ -1153,14 +1171,54 @@ public class Gen extends StructuralNodeVisitor {
         }
 
         @Override
-        FuncType prepareInvoke() {
-            code.dup();
-            return init.getType();
+        Item invoke(List<Expr> args) {
+            return new InitResultItem(this, args);
+        }
+    }
+
+    private void loadArgs(List<Expr> args, List<Type> paramTypes) {
+        var it = paramTypes.iterator();
+        args.forEach(arg -> genExpr(arg, it.next()).load());
+    }
+
+    private class InitResultItem extends Item {
+
+        private final InitItem initItem;
+        private final List<Expr> args;
+
+        private InitResultItem(InitItem initItem, List<Expr> args) {
+            super(initItem.init.getDeclType().getTag());
+            this.initItem = initItem;
+            this.args = args;
         }
 
         @Override
-        void invoke(FuncType type) {
-            init.invoke(code, env);
+        Item load() {
+            code.dup();
+            actualInvoke();
+            return getStackitem(initItem.init.getDeclType());
+        }
+
+        private void actualInvoke() {
+            loadArgs(args, initItem.init.getParamTypes());
+            initItem.init.invoke(code, env);
+        }
+
+        @Override
+        void dup() {
+            load();
+            code.dup();
+        }
+
+        @Override
+        void stash() {
+            load();
+            code.dupX1();
+        }
+
+        @Override
+        void drop() {
+            actualInvoke();
         }
     }
 
@@ -1292,13 +1350,10 @@ public class Gen extends StructuralNodeVisitor {
         }
 
         @Override
-        FuncType prepareInvoke() {
-            return func.getType();
-        }
-
-        @Override
-        void invoke(FuncType type) {
+        Item invoke(List<Expr> args) {
+            loadArgs(args, func.getParamTypes());
             code.invokeFunction(func);
+            return getStackitem(func.getRetType());
         }
 
         @Override

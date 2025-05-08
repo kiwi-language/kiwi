@@ -1,17 +1,11 @@
 
-enum Option {
+enum Option(priv val code: int) {
 
     op1(1),
     op2(2),
     op3(3)
 
 ;
-
-    priv val code: int
-
-    init(code: int) {
-        this.code = code
-    }
 
     fn code() -> int {
         return this.code

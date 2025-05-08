@@ -1,34 +1,18 @@
-abstract class BaseService {
-
-    prot val idService: IdService
-
-    init(idService: IdService) {
-        this.idService = idService
-    }
+abstract class BaseService(prot val idService: IdService) {
 
 }
 
-value class IdxFooServiceAllFlags {
-
-    priv val allFlags: bool
-
-    init(allFlags: bool) {
-        this.allFlags = allFlags
-    }
+value class IdxFooServiceAllFlags(priv val allFlags: bool) {
 
 }
 
 @Component
-class FooService: BaseService {
-
-    priv val allFlags: bool
+class FooService(
+    idService: IdService,
     priv val barService: BarService
+): BaseService(idService) {
 
-    init(idService: IdService, barService: BarService) {
-        super.init(idService)
-        this.allFlags = true
-        this.barService = barService
-    }
+    priv val allFlags = true
 
     fn idxAllFlags() -> IdxFooServiceAllFlags {
         return IdxFooServiceAllFlags(this.allFlags)
@@ -37,14 +21,9 @@ class FooService: BaseService {
 }
 
 @Component
-class BarService: BaseService {
+class BarService(idService: IdService): BaseService(idService) {
 
-    priv var allFlags: bool
-
-    init(idService: IdService) {
-        super.init(idService)
-        this.allFlags = true
-    }
+    priv var allFlags = true
 
     fn idxAllFlags() -> IdxBarServiceAllFlags {
         return IdxBarServiceAllFlags(this.allFlags)
@@ -52,13 +31,7 @@ class BarService: BaseService {
 
 }
 
-value class IdxBarServiceAllFlags {
-
-    priv val allFlags: bool
-
-    init(allFlags: bool) {
-        this.allFlags = allFlags
-    }
+value class IdxBarServiceAllFlags(priv val allFlags: bool) {
 
 }
 

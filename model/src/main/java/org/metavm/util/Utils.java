@@ -293,11 +293,12 @@ public class Utils {
     }
 
     public static void clearDirectory(String path) {
-        var p = Path.of(path);
-        if (Files.exists(p)) {
-            try (var files = Files.walk(p)) {
+        var rootPath = Path.of(path);
+        if (Files.exists(rootPath)) {
+            try (var files = Files.walk(rootPath)) {
                 //noinspection ResultOfMethodCallIgnored
                 files.sorted(Comparator.reverseOrder())
+                        .filter(p -> !p.equals(rootPath))
                         .forEach(f -> f.toFile().delete());
             } catch (IOException e) {
                 System.err.println("Faileded to clear directory '" + path + "'");

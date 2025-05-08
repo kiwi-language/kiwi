@@ -18,13 +18,7 @@ class Foo {
 
 }
 
-class Bar {
-
-    priv var foo: Foo
-
-    init(foo: Foo) {
-        this.foo = foo
-    }
+class Bar(priv var foo: Foo) {
 
     fn getFoo() -> Foo {
         return this.foo

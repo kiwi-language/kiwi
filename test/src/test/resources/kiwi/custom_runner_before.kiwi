@@ -1,12 +1,6 @@
-class Field {
+class Field(priv var name: string) {
 
-    priv var name: string
-    priv var value: any|null
-
-    init(name: string) {
-       this.name = name
-       this.value = null
-    }
+    priv var value: any? = null
 
     fn getName() -> string {
        return this.name

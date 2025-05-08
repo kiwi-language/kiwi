@@ -9,10 +9,6 @@ class Base {
 
 class Sub: Base {
 
-    init() {
-        super.init()
-    }
-
     fn test<T>(v: T) -> bool {
         return true
     }

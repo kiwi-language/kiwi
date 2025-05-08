@@ -1,12 +1,6 @@
 package innerclass
 
-class InnerClassInheritance<E>: java.io.Serializable {
-
-    priv val value: string
-
-    init(value: string) {
-        this.value = value
-    }
+class InnerClassInheritance<E>(priv val value: string): java.io.Serializable {
 
     fn getValue() -> string {
         return Inner2(0).getValue()
@@ -24,10 +18,7 @@ class InnerClassInheritance<E>: java.io.Serializable {
 
     }
 
-    priv class Inner2: Inner1 {
-
-        init(index: int) {
-        }
+    priv class Inner2(index: int): Inner1 {
 
     }
 

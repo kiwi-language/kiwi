@@ -1,12 +1,6 @@
 package innerclass
 
-class Warehouse<T> {
-
-    priv var location: T
-
-    init(location: T) {
-        this.location = location
-    }
+class Warehouse<T>(priv var location: T) {
 
     fn getLocation() -> T {
         return location
@@ -16,13 +10,7 @@ class Warehouse<T> {
         this.location = location
     }
 
-    class Container<C> {
-
-        priv val id: C
-
-        init(id: C) {
-            this.id = id
-        }
+    class Container<C>(priv val id: C) {
 
         fn getId() -> C {
             return id
@@ -32,13 +20,9 @@ class Warehouse<T> {
             return Warehouse.this
         }
 
-        class Item<I> {
-
+        class Item<I>(
             priv val type: I
-
-            init(type: I) {
-                this.type = type
-            }
+        ) {
 
             fn getType() -> I {
                 return type

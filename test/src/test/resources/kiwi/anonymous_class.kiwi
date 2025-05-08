@@ -1,12 +1,6 @@
 import java.util.Iterator
 
-class AnonymousClassLab {
-
-    val value: int
-
-    init(value: int) {
-        this.value = value
-    }
+class AnonymousClassLab(val value: int) {
 
     static fn test() -> int {
         return new AnonymousClassLab(1) {

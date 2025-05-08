@@ -83,7 +83,9 @@ public final class UncertainType implements Type, Comparable<UncertainType> {
 
     @Override
     public TypeNode makeNode() {
-        return new UncertainTypeNode(lowerBound.makeNode(), upperBound.makeNode());
+        var node = new UncertainTypeNode(lowerBound.makeNode(), upperBound.makeNode());
+        node.setType(this);
+        return node;
     }
 
     @Override

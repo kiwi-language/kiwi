@@ -1,14 +1,10 @@
 import java.util.List
 import java.util.ArrayList
 
-class Node<T> {
-    priv var label: string
+class Node<T>(
+    priv var label: string,
     priv var value: T
-
-    init(label: string, value:T) {
-        this.label = label
-        this.value = value
-    }
+) {
 
     fn getLabel() -> string {
         return this.label
@@ -20,15 +16,10 @@ class Node<T> {
 
 }
 
-class MyList<T> {
-
-    priv var label: string
+class MyList<T>(
+    priv var label: string,
     priv val nodes: ArrayList<Node<T>>
-
-    init(label: string, nodes: List<Node<T>>) {
-        this.label = label
-        this.nodes = ArrayList<Node<T>>(nodes)
-    }
+) {
 
     fn getLabel() -> string {
         return this.label

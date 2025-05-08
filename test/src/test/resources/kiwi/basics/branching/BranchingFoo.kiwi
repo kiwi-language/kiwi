@@ -22,16 +22,10 @@ class BranchingFoo {
         return isNameNotNull(Foo("foo"))
     }
 
-    static class Foo {
-
-        priv val name: string
+    static class Foo(priv val name: string) {
 
         fn name() -> string {
             return name
-        }
-
-        init(name: string) {
-            this.name = name
         }
 
     }

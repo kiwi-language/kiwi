@@ -1,12 +1,6 @@
 package innerclass
 
-class InnerClassExtension {
-
-    priv val value0: int
-
-    init(value0: int) {
-        this.value0 = value0
-    }
+class InnerClassExtension(priv val value0: int) {
 
     static fn sum(v1: int, v2: int, v3: int, v4: int) -> int {
         var i1 = InnerClassExtension(0).Inner2(v1, v3)
@@ -14,23 +8,9 @@ class InnerClassExtension {
         return i2.sum()
     }
 
-    class Inner2: Inner1 {
+    class Inner2(value1: int, priv val value3: int): Inner1(value1) {
 
-        priv val value3: int
-
-        init(value1: int, value3: int) {
-            super.init(value1)
-            this.value3 = value3
-        }
-
-        class Inner21: Inner11 {
-
-            priv val value4: int
-
-            init(value2: int, value4: int) {
-                super.init(value2)
-                this.value4 = value4
-            }
+        class Inner21(value2: int, priv val value4: int): Inner11(value2) {
 
             fn sum() -> int {
                 return value0 + value1 + value2 + value3 + value4
@@ -44,21 +24,9 @@ class InnerClassExtension {
 
     }
 
-    class Inner1 {
+    class Inner1(val value1: int) {
 
-        val value1: int
-
-        init(value1: int) {
-            this.value1 = value1
-        }
-
-        class Inner11 {
-
-            val value2: int
-
-            init(value2: int) {
-                this.value2 = value2
-            }
+        class Inner11(val value2: int) {
 
         }
 

@@ -252,4 +252,19 @@ public abstract class AbstractNodeVisitor<R> implements NodeVisitor<R> {
     public R visitTypeApply(TypeApply typeApply) {
         return visitExpr(typeApply);
     }
+
+    @Override
+    public R visitClassParamDecl(ClassParamDecl classParamDecl) {
+        return visitDecl(classParamDecl);
+    }
+
+    @Override
+    public R visitInit(Init init) {
+        return visitNode(init);
+    }
+
+    @Override
+    public R visitExtend(Extend extend) {
+        return visitNode(extend);
+    }
 }

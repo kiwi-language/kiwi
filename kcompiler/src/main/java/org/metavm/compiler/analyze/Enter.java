@@ -71,22 +71,27 @@ public class Enter {
                 enterEnumMethods(clazz);
             classDecl.setElement(clazz);
             enterElement(clazz);
+            if (!clazz.isInterface() && clazz.getMethods().nonMatch(Method::isInit)) {
+                new Method(
+                        Name.init(),
+                        Access.PUBLIC,
+                        false,
+                        false,
+                        true,
+                        clazz
+                );
+            }
             super.visitClassDecl(classDecl);
             exitElement();
-            if (!clazz.isInterface() && !classDecl.isAnonymous() && clazz.getMethods().nonMatch(Method::isInit)) {
-                var initDecl = NodeMaker.methodDecl(
-                        new Method(
-                                Name.init(),
-                                Access.PUBLIC,
-                                false,
-                                false,
-                                true,
-                                clazz
-                        ),
-                        List.of()
-                );
-                classDecl.setMembers(classDecl.getMembers().prepend(initDecl));
-            }
+            return null;
+        }
+
+        @Override
+        public Void visitInit(Init init) {
+            var clazz = (Clazz) currentElement();
+            enterElement(Objects.requireNonNull(clazz.getPrimaryInit()));
+            super.visitInit(init);
+            exitElement();
             return null;
         }
 
@@ -171,6 +176,34 @@ public class Enter {
             }
             paramDecl.setElement(param);
             return super.visitParamDecl(paramDecl);
+        }
+
+        @Override
+        public Void visitClassParamDecl(ClassParamDecl classParamDecl) {
+            var clazz = (Clazz) currentElement();
+            var init = (Method) Objects.requireNonNull(clazz.getPrimaryInit());
+            var mods = parseModifiers(classParamDecl.getMods());
+            var param = new Param(
+                    classParamDecl.getName(),
+                    DeferredType.instance,
+                    init
+            );
+            if (traceEntering)
+                log.trace("Entering class parameter {}", classParamDecl.getName());
+            classParamDecl.setElement(param);
+            if (classParamDecl.isWithField()) {
+                classParamDecl.setField(
+                        new Field(
+                            classParamDecl.getName(),
+                            DeferredType.instance,
+                            mods.access,
+                            false,
+                            mods.deleted,
+                            clazz
+                        )
+                );
+            }
+            return super.visitClassParamDecl(classParamDecl);
         }
 
         @Override

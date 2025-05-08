@@ -54,7 +54,7 @@ public class TypeResolverTest extends TestCase {
         var classDecl = file.getClassDeclarations().getFirst();
         var clazz = (Clazz) classDecl.getElement();
         var typeVar = clazz.getTypeParams().head();
-        var fieldDecl = (FieldDecl) classDecl.getMembers().tail().head();
+        var fieldDecl = (FieldDecl) classDecl.getMembers().head();
         var field = (Field) fieldDecl.getElement();
         Assert.assertSame(typeVar, field.getType());
     }

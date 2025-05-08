@@ -6,31 +6,26 @@ import java.util.List
 
 class InnerClassFoo<K, V> {
 
-    priv val entries: List<InnerClassFoo<K, V>.Entry<K, V>> = ArrayList<InnerClassFoo<K, V>.Entry<K, V>>()
+    priv val entries: List<Entry<K, V>> = ArrayList<Entry<K, V>>()
 
     fn addEntry(key: K, value: V) {
         entries.add(Entry<K, V>(key, value))
     }
 
-    fn iterator() -> Iterator<InnerClassFoo<K, V>.Entry<K, V>> {
+    fn iterator() -> Iterator<Entry<K, V>> {
         return MyIterator()
     }
 
-    fn first() -> InnerClassFoo<K, V>.Entry<K, V> {
+    fn first() -> Entry<K, V> {
         var it = iterator()
         if (it.hasNext()) return it.next()
         throw IllegalStateException()
     }
 
-    class Entry<K, V> {
-
-        priv var key: K
-        priv var value: V
-
-        init(key: K, value: V) {
-            this.key = key
-            this.value = value
-        }
+    class Entry<K, V>(
+            priv var key: K,
+            priv var value: V
+    ) {
 
         fn getKey() -> K {
             return key
@@ -52,25 +47,17 @@ class InnerClassFoo<K, V> {
 
     temp class MyIterator: Iterator<Entry<K,V>> {
 
-        priv val it: Iterator<InnerClassFoo<K, V>.Entry<K, V>>
-
-        init() {
-            init(entries.iterator())
-        }
-
-        init(it: Iterator<InnerClassFoo<K, V>.Entry<K, V>>) {
-            this.it = it
-        }
+        priv val it = entries.iterator()
 
         fn hasNext() -> bool {
             return it.hasNext()
         }
 
-        fn next() -> InnerClassFoo<K, V>.Entry<K, V> {
+        fn next() -> Entry<K, V> {
             return it.next()
         }
 
-        fn copy() -> InnerClassFoo<K, V>.MyIterator {
+        fn copy() -> MyIterator {
             return MyIterator()
         }
 

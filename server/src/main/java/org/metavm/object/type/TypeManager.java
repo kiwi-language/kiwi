@@ -16,6 +16,7 @@ import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.persistence.SchemaManager;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
+import org.metavm.util.DebugEnv;
 import org.metavm.util.Instances;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,8 +91,10 @@ public class TypeManager extends EntityContextFactoryAware {
             var klasses = Types.sortKlassesByTopology(batch.getKlasses());
             for (Klass klass : klasses) {
                 klass.resetHierarchy();
-//                rebuildNodes(klass);
-//                logger.debug("{}", klass.getText());
+                if (DebugEnv.traceDeployment && klass.isRoot()) {
+                    rebuildNodes(klass);
+                    logger.trace("{}", klass.getText());
+                }
             }
             beanManager.createBeans(klasses, BeanDefinitionRegistry.getInstance(context), context);
             for (Klass newClass : batch.getNewKlasses()) {

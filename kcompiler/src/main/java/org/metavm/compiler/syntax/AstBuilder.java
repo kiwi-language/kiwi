@@ -43,21 +43,51 @@ public class AstBuilder {
     }
 
     private static ClassDecl buildClassDecl(ClassDeclarationContext ctx, List<Modifier> mods) {
-        List<TypeNode> impls = ctx.typeList() != null ? List.from(ctx.typeList().type(), AstBuilder::buildType) : List.nil();
+        var impls = List.<Extend>builder();
+        var typeIt = ctx.type().iterator();
+        if (ctx.arguments() != null) {
+            impls.append(new Extend(buildType(typeIt.next()), buildExprList(ctx.arguments().expressionList())));
+        }
+        while (typeIt.hasNext())
+            impls.append(new Extend(buildType(typeIt.next())));
         var decl = new ClassDecl(
                 mods.anyMatch(mod -> mod.tag() == ModifierTag.VALUE) ? ClassTag.VALUE : ClassTag.CLASS,
                 List.from(ctx.annotation(), AstBuilder::buildAnnotation),
                 mods,
                 buildName(ctx.identifier()),
                 null,
-                impls,
+                impls.build(),
                 buildTypeVariableDeclList(ctx.typeParameters()),
+                List.from(ctx.initParameter(), AstBuilder::buildClassParam),
                 List.nil(),
                 List.from(ctx.classBody().classBodyDeclaration(), AstBuilder::buildClassMember)
         );
         if (Traces.traceParsing)
             log.trace("{}", decl.getText());
         return decl;
+    }
+
+    private static ClassParamDecl buildClassParam(InitParameterContext ctx) {
+        var fieldDeclCtx = ctx.fieldDeclaration();
+        if (fieldDeclCtx != null) {
+            return new ClassParamDecl(
+                    List.from(ctx.modifier(), AstBuilder::buildModifier),
+                    true,
+                    fieldDeclCtx.VAL() != null,
+                    buildType(fieldDeclCtx.type()),
+                    buildName(fieldDeclCtx.identifier())
+            );
+        }
+        else {
+            var paramDeclCtx = ctx.formalParameter();
+            return new ClassParamDecl(
+                    List.nil(),
+                    false,
+                    false,
+                    buildType(paramDeclCtx.type()),
+                    buildName(paramDeclCtx.identifier())
+            );
+        }
     }
 
     private static Annotation buildAnnotation(AnnotationContext ctx) {
@@ -79,16 +109,18 @@ public class AstBuilder {
     }
 
     private static ClassDecl buildEnumDecl(EnumDeclarationContext ctx, List<Modifier> mods) {
+        var name = buildName(ctx.identifier());
         return new ClassDecl(
                 ClassTag.ENUM,
                 List.from(ctx.annotation(), AstBuilder::buildAnnotation),
                 mods,
-                buildName(ctx.identifier()),
+                name,
                 null,
-                buildTypeList(ctx.typeList()),
+                buildExtends(ctx.typeList()),
                 List.nil(),
+                List.from(ctx.initParameter(), AstBuilder::buildClassParam),
                 ctx.enumConstants() != null ?
-                        List.from(ctx.enumConstants().enumConstant(), AstBuilder::buildEnumConstant) : List.nil(),
+                        List.from(ctx.enumConstants().enumConstant(), ec -> buildEnumConstant(ec, name)) : List.nil(),
                 List.from(ctx.enumBodyDeclarations().classBodyDeclaration(), AstBuilder::buildClassMember)
         );
     }
@@ -112,25 +144,31 @@ public class AstBuilder {
                 mods,
                 buildName(ctx.identifier()),
                 null,
-                buildTypeList(ctx.typeList()),
+                buildExtends(ctx.typeList()),
                 buildTypeVariableDeclList(ctx.typeParameters()),
+                List.nil(),
                 List.nil(),
                 List.from(ctx.interfaceBody().interfaceBodyDeclaration(), AstBuilder::buildInterfaceMember)
         );
     }
 
-    private static EnumConstDecl buildEnumConstant(EnumConstantContext ctx) {
-        return new EnumConstDecl(buildName(ctx.identifier()),
-                    ctx.arguments() != null && ctx.arguments().expressionList() != null ?
-                            List.from(ctx.arguments().expressionList().expression(), AstBuilder::buildExpr) :
-                            List.nil(),
-                ctx.classBody() != null ? buildAnonymousClass(ctx.classBody(), null) : null
-        );
+    private static EnumConstDecl buildEnumConstant(EnumConstantContext ctx, Name className) {
+        var name = buildName(ctx.identifier());
+        List<Expr> args = ctx.arguments() != null ? buildExprList(ctx.arguments().expressionList()) : List.nil();
+        if (ctx.classBody() == null) {
+            return new EnumConstDecl(name, args, null);
+        }
+        else {
+            return new EnumConstDecl(name,
+                    List.nil(),
+                    buildAnonymousClass(ctx.classBody(), args, new ClassTypeNode(new Ident(className)))
+            );
+        }
     }
 
-    private static List<TypeNode> buildTypeList(TypeListContext ctx) {
+    private static List<Extend> buildExtends(TypeListContext ctx) {
         if (ctx != null)
-            return List.from(ctx.type(), AstBuilder::buildType);
+            return List.from(ctx.type(), t -> new Extend(buildType(t)));
         else
             return List.nil();
     }
@@ -145,8 +183,8 @@ public class AstBuilder {
                 return buildMethodDecl(memberDecl.methodDeclaration(), mods);
             else if (memberDecl.typeDeclaration() != null)
                 return buildClassDecl(memberDecl.typeDeclaration(), mods);
-            else if (memberDecl.constructorDeclaration() != null)
-                return buildConstructorDecl(memberDecl.constructorDeclaration(), mods);
+            else if (memberDecl.block() != null)
+                return buildInit(memberDecl.block(), mods);
         }
         else if (ctx.staticBlock() != null)
             return new ClassInit(buildBlock(ctx.staticBlock().block()));
@@ -185,15 +223,8 @@ public class AstBuilder {
         );
     }
 
-    private static MethodDecl buildConstructorDecl(ConstructorDeclarationContext ctx, List<Modifier> mods) {
-        return new MethodDecl(
-                mods,
-                List.nil(),
-                NameTable.instance.init,
-                buildParams(ctx.formalParameters().formalParameterList()),
-                null,
-                ctx.constructorBody != null ? buildBlock(ctx.constructorBody) : null
-        );
+    private static Init buildInit(BlockContext ctx, List<Modifier> mods) {
+        return new Init(buildBlock(ctx));
     }
 
     private static List<ParamDecl> buildParams(FormalParameterListContext ctx) {
@@ -634,20 +665,19 @@ public class AstBuilder {
 
     private static Expr buildAnonymousClassExpr(AnonClassExprContext ctx) {
         return new AnonClassExpr(
-                ctx.arguments().expressionList() != null ?
-                        List.from(ctx.arguments().expressionList().expression(), AstBuilder::buildExpr) : List.nil(),
-                buildAnonymousClass(ctx.classBody(), ctx.classType())
+                buildAnonymousClass(ctx.classBody(), buildExprList(ctx.arguments().expressionList()), buildClassType(ctx.classType()))
         );
     }
 
-    private static ClassDecl buildAnonymousClass(ClassBodyContext bodyCtx, @Nullable ClassTypeContext baseTypeCtx) {
+    private static ClassDecl buildAnonymousClass(ClassBodyContext bodyCtx, List<Expr> args, TypeNode baseType) {
         return new ClassDecl(
                 ClassTag.CLASS,
                 List.nil(),
                 List.nil(),
                 NameTable.instance.empty,
                 null,
-                baseTypeCtx != null ? List.of(buildClassType(baseTypeCtx)) :  List.nil(),
+                List.of(new Extend(baseType, args)),
+                List.nil(),
                 List.nil(),
                 List.nil(),
                 List.from(bodyCtx.classBodyDeclaration(), AstBuilder::buildClassMember)

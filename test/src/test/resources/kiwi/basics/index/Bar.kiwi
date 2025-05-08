@@ -1,12 +1,6 @@
 package index
 
-class Bar {
-
-    priv var code: string
-
-    init(code: string) {
-        this.code = code
-    }
+class Bar(priv var code: string) {
 
     fn getCode() -> string {
         return code

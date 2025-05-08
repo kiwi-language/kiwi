@@ -3,12 +3,14 @@ import java.util.ArrayList
 import java.lang.RuntimeException
 
 @Searchable
-class Product {
-    priv var name: string
+class Product(
+    priv var name: string,
+    skuList: List<SKU>
+) {
+
     priv val skuList: ArrayList<SKU>
 
-    init(name: string, skuList: List<SKU>) {
-        this.name = name
+    {
         this.skuList = ArrayList<SKU>(skuList)
     }
 
@@ -31,17 +33,11 @@ class Product {
 
 }
 
-class SKU {
-
-    priv var name: string
-    priv var price: double
+class SKU(
+    priv var name: string,
+    priv var price: double,
     priv var quantity: int
-
-    init(name: string, price: double, quantity: int) {
-        this.name = name
-        this.price = price
-        this.quantity = quantity
-    }
+) {
 
     fn decQuantity(quantity: int) {
         if (this.quantity < quantity) {
@@ -90,16 +86,12 @@ class SKU {
 
 }
 
-class Coupon {
-    priv val name: string
+class Coupon(
+    priv val name: string,
     priv val discount: double
-    priv var state: CouponState
+) {
 
-    init(name: string, discount: double) {
-        this.name = name
-        this.discount = discount
-        this.state = CouponState.NORMAL
-    }
+    priv var state = CouponState.NORMAL
 
     fn getName() -> string {
         return this.name
@@ -132,22 +124,16 @@ enum CouponState {
 }
 
 @Searchable
-class Order {
-    priv val code: string
-    priv val quantity: int
-    priv val price: double
-    priv val sku: SKU
-    priv val coupons: List<Coupon>
-    priv val orderTime: time
+class Order(
+        priv val code: string,
+        priv val quantity: int,
+        priv val price: double,
+        priv val sku: SKU,
+        c: List<Coupon>
+    ) {
 
-    init(code: string, quantity: int, price: double, sku: SKU, coupons: List<Coupon>) {
-        this.code = code
-        this.quantity = quantity
-        this.price = price
-        this.sku = sku
-        this.coupons = ArrayList<Coupon>(coupons)
-        this.orderTime = now()
-    }
+    priv val coupons: List<Coupon> = ArrayList<Coupon>(c)
+    priv val orderTime = now()
 
     fn getCode() -> string {
         return this.code

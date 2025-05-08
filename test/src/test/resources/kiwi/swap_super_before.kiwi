@@ -1,10 +1,4 @@
-class Base1 {
-
-    priv var value1: int
-
-    init(value1: int) {
-        this.value1 = value1
-    }
+class Base1(priv var value1: int) {
 
     fn getValue1() -> int {
         return this.value1
@@ -12,14 +6,7 @@ class Base1 {
 
 }
 
-class Base2: Base1 {
-
-     priv var value2: int
-
-     init(value1: int, value2: int) {
-         super.init(value1)
-         this.value2 = value2
-     }
+class Base2(value1: int, priv var value2: int): Base1(value1) {
 
      fn getValue2() -> int {
          return this.value2
@@ -27,14 +14,7 @@ class Base2: Base1 {
 
 }
 
-class Derived: Base2 {
-
-    priv var value3: int
-
-    init(value1: int, value2: int, value3: int) {
-        super.init(value1, value2)
-        this.value3 = value3
-    }
+class Derived(value1: int, value2: int, priv var value3: int): Base2(value1, value2) {
 
     fn getValue3() -> int {
         return this.value3

@@ -17,9 +17,12 @@ typeDeclaration: (classDeclaration | enumDeclaration | interfaceDeclaration )
 
 classDeclaration
     : annotation* CLASS identifier typeParameters?
-      (':' typeList)?
+      ( '(' (initParameter (',' initParameter)* ) ')')?
+      (':' type arguments? (',' type)* )?
       classBody
     ;
+
+initParameter:  (modifier* fieldDeclaration) | formalParameter ;
 
 classBody
     : '{' classBodyDeclaration* '}'
@@ -37,7 +40,9 @@ classBodyDeclaration
 staticBlock: STATIC block;
 
 enumDeclaration
-    : annotation* ENUM identifier (':' typeList)? '{' enumConstants? ','? enumBodyDeclarations? '}'
+    : annotation* ENUM identifier
+     ( '(' (initParameter (',' initParameter)* ) ')')?
+     (':' typeList)? '{' enumConstants? ','? enumBodyDeclarations? '}'
     ;
 
 enumConstants
@@ -88,7 +93,7 @@ memberDeclaration
     : methodDeclaration
 //    | genericMethodDeclaration
     | fieldDeclaration
-    | constructorDeclaration
+    | block
     | typeDeclaration
 //    | genericConstructorDeclaration
     ;
@@ -97,10 +102,6 @@ fieldDeclaration: (VAR | VAL) identifier (':' type)? ('=' expression)?;
 
 methodDeclaration
     :  FN identifier typeParameters? formalParameters ('->' typeOrVoid)? methodBody?
-    ;
-
-constructorDeclaration
-    :  INIT formalParameters (THROWS qualifiedNameList)? constructorBody=block
     ;
 
 typeParameters

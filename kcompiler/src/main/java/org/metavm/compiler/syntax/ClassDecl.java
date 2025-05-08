@@ -18,8 +18,9 @@ public final class ClassDecl extends Decl<Clazz> {
     private final Name name;
     @Nullable
     private TypeNode extends_;
-    private List<TypeNode> implements_;
+    private List<Extend> implements_;
     private final List<TypeVariableDecl> typeParameters;
+    private List<ClassParamDecl> params;
     private final List<EnumConstDecl> enumConstants;
     private List<Node> members;
 
@@ -29,8 +30,9 @@ public final class ClassDecl extends Decl<Clazz> {
             List<Modifier> mods,
             Name name,
             @Nullable TypeNode ext,
-            List<TypeNode> impls,
+            List<Extend> impls,
             List<TypeVariableDecl> typeParameters,
+            List<ClassParamDecl> params,
             List<EnumConstDecl> enumConstants,
             List<Node> members
     ) {
@@ -41,6 +43,7 @@ public final class ClassDecl extends Decl<Clazz> {
         this.extends_ = ext;
         this.implements_ = impls;
         this.typeParameters = typeParameters;
+        this.params = params;
         this.enumConstants = enumConstants;
         this.members = members;
         if (Traces.traceParsing) {
@@ -61,16 +64,28 @@ public final class ClassDecl extends Decl<Clazz> {
         writer.write(tag.name().toLowerCase());
         writer.write(" ");
         writer.write(name);
-        writer.write(" ");
-        if (extends_ != null) {
-            writer.write("extends ");
-            extends_.write(writer);
+        if (params.nonEmpty()) {
+            writer.writeln("(");
+            writer.indent();
+            var paramIt = params.iterator();
+            while (paramIt.hasNext()) {
+                writer.write(paramIt.next());
+                if (paramIt.hasNext())
+                    writer.write(",");
+                writer.writeln();
+            }
+            writer.deIndent();
+            writer.write(")");
         }
-        if (!implements_.isEmpty()) {
-            writer.write("implements ");
-            writer.write(implements_);
+        if (implements_.nonEmpty()) {
+            writer.write(": ");
+            writeExtends(writer);
         }
         writeBody(writer);
+    }
+
+    public void writeExtends(SyntaxWriter writer) {
+        writer.write(implements_);
     }
 
     public void writeBody(SyntaxWriter writer) {
@@ -97,6 +112,7 @@ public final class ClassDecl extends Decl<Clazz> {
         if (extends_ != null) action.accept(extends_);
         implements_.forEach(action);
         typeParameters.forEach(action);
+        params.forEach(action);
         enumConstants.forEach(action);
         members.forEach(m -> {
             if (m instanceof FieldDecl fieldDecl)
@@ -120,20 +136,15 @@ public final class ClassDecl extends Decl<Clazz> {
         return name;
     }
 
-    @Nullable
-    public TypeNode getExtends() {
-        return extends_;
-    }
-
     public void setExtends(@Nullable TypeNode extends_) {
         this.extends_ = extends_;
     }
 
-    public List<TypeNode> getImplements() {
+    public List<Extend> getImplements() {
         return implements_;
     }
 
-    public void setImplements(List<TypeNode> impls) {
+    public void setImplements(List<Extend> impls) {
         this.implements_ = impls;
     }
 
@@ -156,6 +167,14 @@ public final class ClassDecl extends Decl<Clazz> {
 
     public void setMembers(List<Node> members) {
         this.members = members;
+    }
+
+    public List<ClassParamDecl> getParams() {
+        return params;
+    }
+
+    public void setParams(List<ClassParamDecl> params) {
+        this.params = params;
     }
 
     @Override

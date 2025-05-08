@@ -1,29 +1,19 @@
 import org.metavm.api.Index
 
-class Product: Versioned {
-
+class Product(
+    priv var name: string,
+    priv var price: double,
+    priv var inventory: Inventory,
+    priv var available: bool,
+    priv var description: string?,
+    priv var manufacturer: any
+): Versioned {
 
     static fn findByName(name: string) -> Product? {
         return Product.nameIdx.getFirst(name)
     }
 
-    priv var name: string
-    priv var price: double
-    priv var inventory: Inventory
-    priv var available: bool
-    priv var description: string?
-    priv var manufacturer: any
-
     priv static var nameIdx = Index<string, Product>(true, p -> p.name)
-
-    init(name: string, price: double, quantity: int, description: string?, manufacturer: any) {
-        super.init()
-        this.name = name
-        this.price = price
-        this.inventory = Inventory(quantity)
-        this.description = description
-        this.manufacturer = manufacturer
-    }
 
     fn getName() -> string {
         return this.name
@@ -87,12 +77,7 @@ class Product: Versioned {
 
 }
 
-class Inventory {
-    priv var quantity: int
-
-    init(quantity: int) {
-        this.quantity = quantity
-    }
+class Inventory(priv var quantity: int) {
 
     fn getQuantity() -> int {
         return this.quantity
@@ -118,14 +103,10 @@ class Versioned {
 
 }
 
-value class Version {
-    priv val majorVersion: int
+value class Version(
+    priv val majorVersion: int,
     priv val minorVersion: int
-
-    init(majorVersion: int, minorVersion: int) {
-        this.majorVersion = majorVersion
-        this.minorVersion = minorVersion
-    }
+) {
 
     fn getMajorVersion() -> int{
         return this.majorVersion
@@ -137,14 +118,10 @@ value class Version {
 
 }
 
-class Box<T> {
-    priv var item: T
+class Box<T>(
+    priv var item: T,
     priv var count: int
-
-    init(item: T, count: int) {
-        this.item = item
-        this.count = count
-    }
+) {
 
     fn getItem() -> T {
         return this.item
