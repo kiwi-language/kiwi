@@ -3,8 +3,8 @@ package org.metavm.compiler.analyze;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.element.Clazz;
 import org.metavm.compiler.element.Method;
-import org.metavm.compiler.element.Package;
 import org.metavm.compiler.element.Name;
+import org.metavm.compiler.element.Package;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.type.PrimitiveType;
@@ -81,6 +81,24 @@ public class TypeResolver extends StructuralNodeVisitor {
     }
 
     @Override
+    public Void visitClassParamDecl(ClassParamDecl classParamDecl) {
+        super.visitClassParamDecl(classParamDecl);
+        var param = classParamDecl.getElement();
+        var field = classParamDecl.getField();
+        if (classParamDecl.getType() != null) {
+            var type = classParamDecl.getType().getType();
+            param.setType(type);
+            if (field != null)
+                field.setType(type);
+        } else {
+            param.setType(PrimitiveType.ANY);
+            if (field != null)
+                field.setType(PrimitiveType.ANY);
+        }
+        return null;
+    }
+
+    @Override
     public Void visitParamDecl(ParamDecl paramDecl) {
         super.visitParamDecl(paramDecl);
         var param = paramDecl.getElement();
@@ -146,13 +164,14 @@ public class TypeResolver extends StructuralNodeVisitor {
                 if (classDecl.getImplements().nonEmpty()) {
                     classDecl.getImplements().forEach(t -> t.accept(this));
                     clazz.setInterfaces(classDecl.getImplements().map(t -> {
-                        var it = (ClassType) t.getType();
+                        var it = (ClassType) t.getType().getType();
                         it.getClazz().getClasses().forEach(scope::add);
                         return it;
                     }));
                 }
                 classDecl.getTypeParameters().forEach(tv -> tv.accept(this));
             }
+            classDecl.getParams().forEach(p -> p.accept(this));
             classDecl.getMembers().forEach(m -> m.accept(this));
             return null;
         }

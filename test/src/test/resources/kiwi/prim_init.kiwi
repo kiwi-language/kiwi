@@ -1,0 +1,7 @@
+
+class Product(
+    var name: string,
+    var price: double,
+    var stock: int
+) {
+}

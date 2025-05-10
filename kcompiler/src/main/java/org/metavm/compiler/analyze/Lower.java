@@ -64,7 +64,8 @@ public class Lower extends AbstractNodeVisitor<Node> {
 
     private void moveFieldInitializers(List<MethodDecl> primaryInits, List<FieldDecl> initializedFields, List.Builder<Node> members) {
         for (FieldDecl fieldDecl : initializedFields) {
-            createFieldInit(fieldDecl, members);
+            if (fieldDecl.getElement().isStatic())
+                createFieldInit(fieldDecl, members);
         }
         for (var methodDecl : primaryInits) {
             var body = requireNonNull(methodDecl.body());
@@ -145,10 +146,40 @@ public class Lower extends AbstractNodeVisitor<Node> {
         var clazz = classDecl.getElement();
         if (Traces.traceLower)
             log.trace("Transforming enum class: {}", clazz.getName());
-        classDecl.setExtends(
-                project.getRootPackage().subPackage("java").subPackage("lang")
-                        .getClass("Enum").getInst(null, List.of(clazz))
-                        .makeNode()
+
+        var init = requireNonNull(clazz.getPrimaryInit());
+        var prevParams = init.getParams();
+        var nameParam = classParamDecl(
+                NameTable.instance.enumName,
+                Types.instance.getStringType(),
+                clazz
+        );
+        var ordinalParam = classParamDecl(
+                NameTable.instance.enumOrdinal,
+                PrimitiveType.INT,
+                clazz
+        );
+
+        classDecl.setParams(
+                classDecl.getParams().prepend(ordinalParam).prepend(nameParam)
+        );
+
+        init.setParams(
+                prevParams.prepend(ordinalParam.getElement()).prepend(nameParam.getElement())
+        );
+
+        classDecl.setImplements(
+                List.of(
+                        new Extend(
+                            project.getRootPackage().subPackage("java").subPackage("lang")
+                                    .getClass("Enum").getInst(List.of(clazz))
+                                    .makeNode(),
+                                List.of(
+                                        ref(nameParam.getElement()),
+                                        ref(ordinalParam.getElement())
+                                )
+                        )
+                )
         );
         var newMembers = List.builder(classDecl.getMembers());
         for (var ecd : classDecl.enumConstants()) {
@@ -216,12 +247,20 @@ public class Lower extends AbstractNodeVisitor<Node> {
         ecInit.setRetType(clazz);
         var stmts = List.<Stmt>builder();
         var init = ecd.getInit();
-        var newExpr = makeNewExpr(
-                init,
-                ecd.getArguments()
-                        .prepend(new Literal(ec.getOrdinal()))
-                        .prepend(new Literal(ec.getName().toString()))
-        );
+        List<Expr> args;
+        if (ecd.getDecl() != null) {
+            var ext = ecd.getDecl().getImplements().head();
+            ext.setArgs(
+                ext.getArgs().prepend(new Literal(ec.getOrdinal())).prepend(new Literal(ec.getName().toString()))
+            );
+            args = List.nil();
+        }
+        else {
+            args = ecd.getArguments()
+                    .prepend(new Literal(ec.getOrdinal()))
+                    .prepend(new Literal(ec.getName().toString()));
+        }
+        var newExpr = makeNewExpr(init, args);
         newExpr.setElement(init);
         newExpr.setType(clazz);
         stmts.append(new RetStmt(newExpr));
@@ -239,47 +278,7 @@ public class Lower extends AbstractNodeVisitor<Node> {
         return node;
     }
 
-    @Override
-    public Node visitMethodDecl(MethodDecl methodDecl) {
-        var method = methodDecl.getElement();
-        var clazz = method.getDeclClass();
-        if (method.isInit()) {
-            if (clazz.isEnum() || clazz.getSuper() != null && clazz.getSuper().isEnum())
-                lowerEnumInit(methodDecl);
-            else
-                lowerInit(methodDecl);
-        }
-        return super.visitMethodDecl(methodDecl);
-    }
-
-    private void lowerInit(MethodDecl methodDecl) {
-        var method = methodDecl.getElement();
-        var clazz = method.getDeclClass();
-        var superType = clazz.getSuper();
-        if (superType != null) {
-            var stmts = requireNonNull(methodDecl.body()).getStmts();
-            if (stmts.isEmpty() || (!Nodes.isSelfInitCall(stmts.head()) && !Nodes.isSuperInitCall(stmts.head()))) {
-                var superInit = (MethodRef) superType.getTable().lookupFirst(
-                        Name.init(), e -> e instanceof MethodRef m && m.getParamTypes().isEmpty()
-                );
-                if (superInit == null) {
-                    throw new AnalysisException("Missing super call in init: " + method.getQualName());
-                }
-                methodDecl.body().setStmts(
-                        stmts.prepend(
-                                exprStmt(
-                                        callExpr(
-                                                ref(superInit), List.nil()
-                                        )
-                                )
-                        )
-                );
-            }
-        }
-    }
-
-    private void lowerEnumInit(MethodDecl methodDecl) {
-        var method = methodDecl.getElement();
+    private void lowerEnumInit(Method method) {
         var clazz = method.getDeclClass();
         if (Traces.traceLower)
             log.trace("Transforming initializer of enum class {}", clazz.getQualName());
@@ -294,36 +293,10 @@ public class Lower extends AbstractNodeVisitor<Node> {
                 PrimitiveType.INT,
                 method
         );
-        methodDecl.setParams(
-                methodDecl.getParams().prepend(ordinalParam).prepend(nameParam)
-        );
         method.setParams(
                 prevParams.prepend(ordinalParam.getElement())
                         .prepend(nameParam.getElement())
         );
-        var body = requireNonNull(methodDecl.body());
-        var superType = requireNonNull(clazz.getSuper());
-        if (superType.isEnum()) {
-            var expr = (Call) ((ExprStmt) body.getStmts().getFirst()).expr();
-            expr.setArguments(
-                    expr.getArguments().prepend(ref(ordinalParam.getElement()))
-                            .prepend(ref(nameParam.getElement()))
-            );
-        }
-        else {
-            var enumInit = requireNonNull(superType.getTable().lookupFirst(Name.init()));
-            body.setStmts(body.getStmts().prepend(
-                    new ExprStmt(
-                            callExpr(
-                                    NodeMaker.ref(enumInit),
-                                    List.of(
-                                            NodeMaker.ref(nameParam.getElement()),
-                                            NodeMaker.ref(ordinalParam.getElement())
-                                    )
-                            )
-                    )
-            ));
-        }
     }
 
     private void lowerIndexInit(FieldDecl fieldDecl, List.Builder<Node> members) {

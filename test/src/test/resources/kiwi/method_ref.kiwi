@@ -12,13 +12,7 @@ class Lab {
 
 }
 
-class Foo {
-
-    val name: string
-
-    init(name: string) {
-        this.name = name
-    }
+class Foo(val name: string) {
 
     fn getName() -> string {
         return name

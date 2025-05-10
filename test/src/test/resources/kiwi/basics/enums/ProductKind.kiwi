@@ -1,16 +1,11 @@
 package enums
 
-enum ProductKind {
+enum ProductKind(priv val code: int) {
 
     DEFAULT(0),
     VIRTUAL(1),
     HOTEL(2),
     ;
-    priv val code: int
-
-    init(code: int) {
-        this.code = code
-    }
 
     static fn fromCode(code: int) -> ProductKind {
         for (kind in values()) {

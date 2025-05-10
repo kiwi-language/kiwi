@@ -8,9 +8,23 @@ import org.metavm.compiler.type.Types;
 import org.metavm.compiler.util.List;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 @Slf4j
 public class NodeMaker {
+
+    public static ClassParamDecl classParamDecl(Name name, Type type, Clazz clazz) {
+        var decl = new ClassParamDecl(
+                List.nil(),
+                false,
+                false,
+                type.makeNode(),
+                name
+        );
+        var init = Objects.requireNonNull(clazz.getPrimaryInit());
+        decl.setElement(new Param(name, type, init));
+        return decl;
+    }
 
     public static ParamDecl paramDecl(Name name, Type type, Executable executable) {
         var paramDecl = new ParamDecl(

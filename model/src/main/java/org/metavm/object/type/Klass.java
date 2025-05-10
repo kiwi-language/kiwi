@@ -1906,8 +1906,9 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     public void writeCode(CodeWriter writer) {
         writer.write(kind.name().toLowerCase() + " " + name);
-        if (superType != null)
-            writer.write(" extends " + superType.getTypeDesc());
+        var supType = getSuperType();
+        if (supType != null)
+            writer.write(" extends " + supType.getTypeDesc());
         if (!interfaces.isEmpty())
             writer.write(" implements " + Utils.join(interfaces, Type::getTypeDesc));
         writer.writeln(" {");

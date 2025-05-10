@@ -110,30 +110,13 @@ Test the Installation
     
 3.  Create a Kiwi source file named `src/test.kiwi` with the following example code:
     
-        class Product {
-            priv var name: string
-            priv var price: double
-            priv val stock: int
+        class Product(
+            var name: string,
+            var price: double,
+            var stock: int
+        ) {
         
-            init(name: string, price: double, stock: int) {
-                this.name = name
-                this.price = price
-                this.stock = stock
-            }
-        
-            getPrice(): double -> {
-                return price
-            }
-        
-            getName(): string -> {
-                return name
-            }
-        
-            getStock() -> int {
-                return stock
-            }
-        
-            decrementStock(quantity: int) -> boolean {
+            reduceStock(quantity: int) -> boolean {
                 if (stock >= quantity) {
                     stock -= quantity
                     return true
@@ -142,6 +125,7 @@ Test the Installation
                     return false
                 }
             }
+
         }
     
 4.  Build the project using the Kiwi compiler (assuming the `bin` directory is in your PATH):
@@ -183,6 +167,6 @@ Send a GET request using the product's ID:
 
 ### Decrement the Stock
 
-Send a POST request to the product's `decrement-stock` endpoint (derived from the `decrementStock` method).
+Send a POST request to the product's `reduce-stock` endpoint (derived from the `reduceStock` method).
 
-    curl -X POST -H "Content-Type: application/json" -d '{"quantity": 1}' http://localhost:8080/<id>/decrement-stock
+    curl -X POST -H "Content-Type: application/json" -d '{"quantity": 1}' http://localhost:8080/<id>/reduce-stock

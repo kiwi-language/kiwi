@@ -5,6 +5,7 @@ import org.metavm.compiler.element.Package;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.*;
+import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.Traces;
 
@@ -19,6 +20,12 @@ public class Attr extends StructuralNodeVisitor {
 
     public Attr(Project project) {
         this.project = project;
+    }
+
+    @Override
+    public Void visitExtend(Extend extend) {
+        extend.getArgs().forEach(arg -> attrExpr(arg, PrimitiveType.ANY).resolve());
+        return null;
     }
 
     @Override
@@ -85,12 +92,11 @@ public class Attr extends StructuralNodeVisitor {
     public Void visitEnumConstDecl(EnumConstDecl enumConstDecl) {
         for (Expr argument : enumConstDecl.getArguments())
             attrExpr(argument, PrimitiveType.ANY).resolve();
-        var clazz = enumConstDecl.getElement().getDeclaringClass();
+        var clazz = enumConstDecl.getActualClass();
         var argTypes = enumConstDecl.getArguments().map(Expr::getType);
         var init = Objects.requireNonNull(resolveInit(clazz, argTypes));
         if (enumConstDecl.getDecl() != null) {
             enumConstDecl.getDecl().accept(this);
-            init = createAnonClassInit(enumConstDecl.getDecl(), init);
         }
         enumConstDecl.setInit(init);
         return null;
@@ -169,49 +175,6 @@ public class Attr extends StructuralNodeVisitor {
             attrExpr(Objects.requireNonNull(varDecl.getInitial()), Types.instance.getNullableAny());
             templateVar.setType(Objects.requireNonNull(varDecl.getInitial()).getType());
         }
-    }
-
-    private MethodRef createAnonClassInit(ClassDecl classDecl, @Nullable MethodRef superInit) {
-        var clazz = classDecl.getElement();
-        var init = new Method(
-                Name.init(),
-                Access.PUBLIC,
-                false,
-                false,
-                true,
-                clazz
-        );
-        MethodDecl initDecl;
-        if (clazz.getInterfaces().getFirst().isInterface()) {
-            initDecl = NodeMaker.methodDecl(init, List.of());
-        }
-        else {
-            Objects.requireNonNull(superInit);
-            var i = 0;
-            var paramDecls = List.<ParamDecl>builder();
-            var superCallArgs = List.<Expr>builder();
-            for (Type parameterType : superInit.getParamTypes()) {
-                var name = Name.from("p" + i++);
-                var param = new Param(name, parameterType, init);
-                paramDecls.append(NodeMaker.paramDecl(param));
-                superCallArgs.append(NodeMaker.ref(param));
-            }
-            var superVar = Objects.requireNonNull(clazz.getTable().lookupFirst(Name.super_(),
-                    e -> e instanceof BuiltinVariable
-            ));
-            initDecl = NodeMaker.methodDecl(init, List.of(
-                    NodeMaker.exprStmt(NodeMaker.callExpr(
-                            NodeMaker.selectorExpr(
-                                    NodeMaker.ref(superVar),
-                                    superInit
-                            ),
-                            superCallArgs.build()
-                    ))
-            ));
-        }
-        clazz.onMethodAdded(init);
-        classDecl.setMembers(classDecl.getMembers().prepend(initDecl));
-        return init;
     }
 
     private class ExprAttr extends AbstractNodeVisitor<Resolver> {
@@ -314,17 +277,6 @@ public class Attr extends StructuralNodeVisitor {
         public Resolver visitAnonClassExpr(AnonClassExpr anonClassExpr) {
             var type = anonClassExpr.getDecl().getElement();
             anonClassExpr.getDecl().accept(Attr.this);
-            var argTypes = anonClassExpr.getArguments().map(this::resolveArgumentType);
-            var table  = type.getTable();
-            var resolved = (MethodRef) table.lookupFirst(Name.init(), e ->
-                    e instanceof MethodRef m && m.isInit() && resolveFunc(m, argTypes) != null
-            );
-            if (anonClassExpr.getDecl() != null)
-                resolved = createAnonClassInit(anonClassExpr.getDecl(), resolved);
-            if (resolved == null)
-                throw new AnalysisException("Can not resolve constructor invocation " + anonClassExpr.getText());
-            completeArgumentResolution(anonClassExpr.getArguments(), resolved.getType().getParamTypes());
-            anonClassExpr.setElement(resolved);
             anonClassExpr.setType(type);
             return new NullResolver();
         }
@@ -493,7 +445,10 @@ public class Attr extends StructuralNodeVisitor {
         }
 
         Element resolve() {
-            var resolved = Objects.requireNonNull(candidates.iterator().next());
+            var it = candidates.iterator();
+            if (!it.hasNext())
+                throw new CompilationException("Cannot resolve expression: " + expr.getText());
+            var resolved = Objects.requireNonNull(it.next());
             ensureElementTyped(resolved);
             onResolved(resolved);
             return resolved;

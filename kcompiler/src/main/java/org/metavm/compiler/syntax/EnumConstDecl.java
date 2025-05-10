@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import org.metavm.compiler.element.Clazz;
 import org.metavm.compiler.element.EnumConst;
 import org.metavm.compiler.element.MethodRef;
 import org.metavm.compiler.element.Name;
@@ -23,12 +24,27 @@ public final class EnumConstDecl extends Decl<EnumConst> {
     @Override
     public void write(SyntaxWriter writer) {
         writer.write(name);
+        if (!arguments.isEmpty()) {
+            writer.write("(");
+            writer.write(arguments);
+            writer.write(")");
+        }
+        if (decl != null) {
+            writer.write("(");
+            writer.write(decl.getImplements().head().getArgs());
+            writer.write(")");
+            decl.writeBody(writer);
+        }
         writer.writeln(",");
     }
 
     @Nullable
     public ClassDecl getDecl() {
         return decl;
+    }
+
+    public Clazz getActualClass() {
+        return decl != null ? decl.getElement() : getElement().getDeclaringClass();
     }
 
     public void setDecl(@Nullable ClassDecl decl) {

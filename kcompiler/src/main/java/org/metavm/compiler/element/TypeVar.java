@@ -111,7 +111,9 @@ public class TypeVar extends ElementBase implements Type, Element, Comparable<Ty
 
     @Override
     public TypeNode makeNode() {
-        return new ClassTypeNode(new Ident(name));
+        var node = new ClassTypeNode(new Ident(name));
+        node.setType(this);
+        return node;
     }
 
     @Override

@@ -1,9 +1,9 @@
 package hashcode
 
-value class HashCodeBaz {
-
-    priv val name: string
+value class HashCodeBaz(
+    priv val name: string,
     priv val extra: any
+) {
 
     fn name() -> string {
         return name
@@ -11,11 +11,6 @@ value class HashCodeBaz {
 
     fn extra() -> any {
         return extra
-    }
-
-    init(name: string, extra: any) {
-        this.name = name
-        this.extra = extra
     }
 
 }

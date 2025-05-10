@@ -1,14 +1,8 @@
 import java.util.List
 import java.util.ArrayList
 
-class Child {
-    priv var name: string
-    priv var next: Child?
-
-    init(name: string) {
-        this.name = name
-        this.next = null
-    }
+class Child(var name: string) {
+    priv var next: Child? = null
 
     fn getName() -> string {
         return this.name
@@ -28,20 +22,20 @@ class Parent {
 
     priv val children = ArrayList<Child>()
 
-    init() {
-        this.children.add(Child("child001"))
+    {
+        children.add(Child("child001"))
     }
 
     fn getChildren() -> List<Child> {
-        return ArrayList<Child>(this.children)
+        return ArrayList<Child>(children)
     }
 
     fn test() {
-        var child1 = this.children.getFirst()
+        var child1 = children.getFirst()
         var child2 = Child("Child002")
         child2.setNext(child1)
-        this.children.add(child2)
-        this.children.clear()
+        children.add(child2)
+        children.clear()
     }
 
 }

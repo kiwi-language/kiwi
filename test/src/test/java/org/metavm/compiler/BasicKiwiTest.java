@@ -8,16 +8,9 @@ import org.metavm.object.instance.core.ClassInstanceWrap;
 import org.metavm.util.BusinessException;
 import org.metavm.util.TestConstants;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class BasicKiwiTest extends KiwiTestBase {

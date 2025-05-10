@@ -75,4 +75,8 @@ public class AttrTest extends TestCase {
         });
     }
 
+    public void testLivingBeing() {
+        process(TestUtils.getResourcePath("kiwi/LivingBeing.kiwi"));
+    }
+
 }

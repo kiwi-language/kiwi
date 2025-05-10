@@ -1,10 +1,4 @@
-abstract class Base<E> {
-
-    var length: int
-
-    init(length: int) {
-        this.length = length
-    }
+abstract class Base<E>(var length: int) {
 
     fn isEmpty() -> bool {
         return this.length == 0
@@ -12,10 +6,6 @@ abstract class Base<E> {
 
 }
 
-class Sub: Base<string> {
-
-    init(length: int) {
-        super.init(length)
-    }
+class Sub(length: int): Base<string>(length) {
 
 }

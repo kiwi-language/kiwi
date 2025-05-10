@@ -3,22 +3,17 @@ package index
 import org.metavm.api.Index
 import java.util.List
 
-class Foo {
+class Foo(
+    priv var name: string,
+    priv var seq: int,
+    priv val bar: Bar
+) {
 
     priv static val nameIndex: Index<string, Foo> = Index<string, Foo>(true, (a0) -> a0.getName())
     priv static val seqIndex: Index<int, Foo> = Index<int, Foo>(false, (f) -> f.seq)
     priv static val barIndex: Index<Bar, Foo> = Index<Bar, Foo>(false, (a0) -> a0.getBar())
     static val nameSeqIndex: Index<Pair<string, int>, Foo> = Index<Pair<string, int>, Foo>(false, (f) -> Pair<string, int>(f.name, f.seq))
     static val descIndex: Index<string, Foo> = Index<string, Foo>(false, (f) -> f.getName() + "-" + f.getSeq() + "-" + f.getBar().getCode())
-    priv var name: string
-    priv var seq: int = 0
-    priv val bar: Bar
-
-    init(name: string, seq: int, bar: Bar) {
-        this.name = name
-        this.seq = seq
-        this.bar = bar
-    }
 
     fn getName() -> string {
         return name

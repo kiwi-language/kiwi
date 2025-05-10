@@ -1,6 +1,7 @@
 package org.metavm.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Generated;
 import org.metavm.entity.*;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+@Slf4j
 public class Code implements Element, LocalKey, Struct {
 
     private Callable callable;

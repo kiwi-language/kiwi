@@ -1,8 +1,10 @@
 package org.metavm.compiler.analyze;
 
 import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.element.AnalysisException;
+import org.metavm.compiler.element.LocalVar;
 import org.metavm.compiler.element.Package;
-import org.metavm.compiler.element.*;
+import org.metavm.compiler.element.Param;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.util.List;
 
@@ -158,10 +160,29 @@ public class IdentAttr extends StructuralNodeVisitor {
     @Override
     public Void visitClassDecl(ClassDecl classDecl) {
         try (var scope = env.enterScope(classDecl)) {
+            for (var paramDecl : classDecl.getParams()) {
+                scope.add(paramDecl.getElement());
+            }
+            classDecl.getImplements().forEach(ext -> ext.accept(this));
+        }
+        try (var scope = env.enterScope(classDecl)) {
             var clazz = classDecl.getElement();
             clazz.getTypeParams().forEach(scope::add);
             scope.addAll(clazz.getTable());
-            return super.visitClassDecl(classDecl);
+            for (Node member : classDecl.getMembers()) {
+                if (!(member instanceof FieldDecl || member instanceof Init))
+                    member.accept(this);
+            }
+            for (var paramDecl : classDecl.getParams()) {
+                var param = paramDecl.getElement();
+                if (paramDecl.getField() == null)
+                    scope.add(param);
+            }
+            for (Node member : classDecl.getMembers()) {
+                if (member instanceof FieldDecl || member instanceof Init)
+                    member.accept(this);
+            }
+            return null;
         }
     }
 

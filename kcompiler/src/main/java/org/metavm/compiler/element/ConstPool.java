@@ -2,6 +2,7 @@ package org.metavm.compiler.element;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.metavm.compiler.util.Traces;
 import org.metavm.util.MvOutput;
 import org.metavm.util.Utils;
@@ -19,7 +20,7 @@ public class ConstPool {
     private int nextIndex;
     private boolean frozen;
 
-    public int put(Constant c) {
+    public int put(@NotNull Constant c) {
         var idx = element2index.get(c);
         if (idx != null)
             return idx;

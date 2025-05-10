@@ -259,4 +259,8 @@ public class KiwiTest extends KiwiTestBase {
         Assert.assertEquals("Hello, Kiwi", r);
     }
 
+    public void testPrimInit() {
+        deploy("kiwi/prim_init.kiwi");
+    }
+
 }

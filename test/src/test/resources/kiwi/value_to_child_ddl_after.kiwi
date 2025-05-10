@@ -1,11 +1,7 @@
-class Product {
-    priv var name: string
+class Product(
+    priv var name: string,
     priv var price: Price
-
-    init(name: string, price: Price) {
-        this.name = name
-        this.price = price
-    }
+) {
 
     fn getName() -> string {
         return this.name
@@ -24,14 +20,10 @@ class Product {
     }
 }
 
-class Price {
-    priv var amount: double
+class Price(
+    priv var amount: double,
     priv var currency: Currency
-
-    init(amount: double, currency: Currency) {
-        this.amount = amount
-        this.currency = currency
-    }
+) {
 
     fn getAmount() -> double {
         return this.amount

@@ -1,11 +1,7 @@
-class Product {
-    priv var name: string
+class Product(
+    priv var name: string,
     priv var  kind: Product.Kind
-
-    init(name: string, kind: string) {
-        this.name = name
-        this.kind = this.Product.Kind(kind)
-    }
+) {
 
     fn getName() -> string {
         return this.name
@@ -24,12 +20,7 @@ class Product {
     }
 
     @Tag(1)
-    class Kind {
-        priv val name: string
-
-        init(name: string) {
-            this.name = name
-        }
+    class Kind(priv val name: string) {
 
         fn getName() -> string {
             return this.name

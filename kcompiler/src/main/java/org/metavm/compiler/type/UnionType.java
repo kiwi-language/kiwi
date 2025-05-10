@@ -94,7 +94,9 @@ public final class UnionType implements Type, Comparable<UnionType> {
 
     @Override
     public TypeNode makeNode() {
-        return new UnionTypeNode(alternatives.map(Type::makeNode));
+        var node = new UnionTypeNode(alternatives.map(Type::makeNode));
+        node.setType(this);
+        return node;
     }
 
     @Override

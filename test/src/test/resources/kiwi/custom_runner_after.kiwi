@@ -3,7 +3,7 @@ import org.metavm.api.Index
 @Component
 class Lab {
 
-    fn  getFieldValue(field: Field) -> any? {
+    fn getFieldValue(field: Field) -> any? {
         var fieldValue = FieldValue.fieldIdx.getFirst(field)
         if(fieldValue == null) {
             return null
@@ -23,14 +23,9 @@ class Lab {
 
 }
 
-class Field {
+class Field(priv var name: string) {
 
-    priv var name: string
     priv deleted var value: any?
-
-    init(name: string) {
-        this.name = name
-    }
 
     fn getName() -> string {
         return this.name
@@ -46,27 +41,15 @@ class Field {
 
 }
 
-value class IdxFieldValueField {
-
-    priv val field: Field
-
-    init(field: Field) {
-        this.field = field
-    }
+value class IdxFieldValueField(priv val field: Field) {
 
 }
 
-class FieldValue {
+class FieldValue(priv var field: Field) {
 
     priv static val fieldIdx = Index<Field, FieldValue>(true, v -> v.field)
 
-    priv var field: Field
-    priv var  value: any?
-
-    init(field: Field) {
-        this.field = field
-        this.value = null
-    }
+    priv var value: any? = null
 
     fn getValue() -> any? {
         return this.value

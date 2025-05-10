@@ -16,17 +16,11 @@ class UpdateStaticFoo {
 
 }
 
-enum Option {
+enum Option(priv var value: int) {
 
     opt1(0),
 
 ;
-
-    priv var value: int
-
-    init(value: int) {
-        this.value = value
-    }
 
     fn getValue() -> int {
         return this.value

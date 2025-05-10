@@ -8,16 +8,10 @@ class ElseTypeNarrowingFoo {
         else return f!!.value
     }
 
-    class Foo {
-
-        priv val value: int
+    class Foo(priv val value: int) {
 
         fn value() -> int {
             return value
-        }
-
-        init(value: int) {
-            this.value = value
         }
 
     }

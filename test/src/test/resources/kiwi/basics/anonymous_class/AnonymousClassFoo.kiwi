@@ -49,14 +49,12 @@ class AnonymousClassFoo<K, V> {
         return r
     }
 
-    class Entry {
+    class Entry(
+            priv val key: K,
+            priv val value: V
+    ) {
 
-        priv val key: K
-        priv val value: V
-
-        init(key: K, value: V) {
-            this.key = key
-            this.value = value
+        {
             entries.add(this)
         }
 

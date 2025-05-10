@@ -36,7 +36,7 @@ public class NameTable {
     public final Name qualString = get("java.lang.String");
     public final Name concat = get("concat");
     public final Name enumName = get("enum$name");
-    public final Name enumOrdinal = get("enum@ordinal");
+    public final Name enumOrdinal = get("enum$ordinal");
     public final Name java = get("java");
     public final Name lang = get("lang");
     public final Name util = get("util");

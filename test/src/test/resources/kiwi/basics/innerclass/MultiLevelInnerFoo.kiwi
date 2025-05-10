@@ -6,13 +6,7 @@ class MultiLevelInnerFoo {
         return MultiLevelInnerFoo().Sub(value).getInner().getValue()
     }
 
-    class External {
-
-        priv val value: int
-
-        init(value: int) {
-            this.value = value
-        }
+    class External(priv val value: int) {
 
         class Inner {
 
@@ -24,11 +18,7 @@ class MultiLevelInnerFoo {
 
     }
 
-    class Sub: External {
-
-        init(value: int) {
-            super.init(value)
-        }
+    class Sub(value: int): External(value) {
 
         fn getInner() -> MultiLevelInnerFoo.External.Inner {
             return Inner()

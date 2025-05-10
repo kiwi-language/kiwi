@@ -1,9 +1,9 @@
 package interceptors
 
-value class UserDTO {
-
-    priv val name: string
+value class UserDTO(
+    priv val name: string,
     priv val telephone: string
+) {
 
     fn name() -> string {
         return name
@@ -11,11 +11,6 @@ value class UserDTO {
 
     fn telephone() -> string {
         return telephone
-    }
-
-    init(name: string, telephone: string) {
-        this.name = name
-        this.telephone = telephone
     }
 
 }
