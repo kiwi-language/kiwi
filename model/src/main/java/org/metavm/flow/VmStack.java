@@ -377,9 +377,9 @@ public class VmStack {
                                 var type = (ClassType) constants[typeIndex];
                                 var parent = stack[--top].resolveObject();
                                 var self = ClassInstanceBuilder.newBuilder(type, parent.getRoot().nextChildId())
+                                        .parent(parent)
                                         .closureContext(type.isLocal() ? new ClosureContext(closureContext, Arrays.copyOfRange(stack, base, top + 1)) : null)
                                         .build();
-                                parent.addChild(self);
                                 stack[top++] = self.getReference();
                                 pc += 3;
                             }

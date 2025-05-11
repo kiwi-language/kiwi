@@ -2,31 +2,30 @@ package org.metavm.object.instance.persistence;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.ddl.Commit;
 import org.metavm.util.Utils;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 @Slf4j
 @Component
 public class SchemaManagerImpl implements SchemaManager {
 
-    @Qualifier("secondaryDataSource")
     private final DataSource dataSource;
 
     public SchemaManagerImpl(DataSource dataSource) {
         this.dataSource = dataSource;
-        Commit.dropTmpTableHook = this::dropTmpTables;
     }
 
     @SneakyThrows
     @Override
     public void createInstanceTable(long appId, String table) {
-        try (var connection = dataSource.getConnection(); var stmt = connection.createStatement()) {
+        var connection = getConnection();
+        try (var stmt = connection.createStatement()) {
             var sql = "create table " + table + "_" + appId +
                     """
                     (
@@ -41,13 +40,16 @@ public class SchemaManagerImpl implements SchemaManager {
                     )""";
             log.info("Creating table {}_{}", table, appId);
             stmt.executeUpdate(sql);
+        } finally {
+            returnConnection(connection);
         }
     }
 
     @SneakyThrows
     @Override
     public void createIndexEntryTable(long appId, String table) {
-        try (var connection = dataSource.getConnection(); var stmt = connection.createStatement()) {
+        var connection = getConnection();
+        try (var stmt = connection.createStatement()) {
             var sql = "create table " + table + "_" + appId +
                     """
                     (
@@ -59,6 +61,8 @@ public class SchemaManagerImpl implements SchemaManager {
                     )""";
             log.info("SQL: {}", sql);
             stmt.executeUpdate(sql);
+        } finally {
+            returnConnection(connection);
         }
     }
 
@@ -67,7 +71,7 @@ public class SchemaManagerImpl implements SchemaManager {
     @Override
     public void switchTable(long appId) {
         Utils.require(TransactionSynchronizationManager.isActualTransactionActive());
-        var connection = DataSourceUtils.getConnection(dataSource);
+        var connection = getConnection();
         try (var stmt = connection.createStatement()) {
             log.info("Start switching table");
             stmt.addBatch(String.format("drop table instance_%d", appId));
@@ -80,23 +84,29 @@ public class SchemaManagerImpl implements SchemaManager {
             );
             stmt.executeBatch();
             log.info("Finished switching tables");
+        } finally {
+            returnConnection(connection);
         }
     }
 
     @SneakyThrows
-    private void switchTable0(long appId) {
-
-    }
-
-    @SneakyThrows
+    @Override
     public void dropTmpTables(long appId) {
-        try (var connection = dataSource.getConnection(); var stmt = connection.createStatement()) {
+        var connection = getConnection();
+        try (var stmt = connection.createStatement()) {
             stmt.executeUpdate(String.format("drop table instance_tmp_%d, index_entry_tmp_%d", appId, appId));
         }
+        finally {
+            returnConnection(connection);
+        }
     }
 
-    public static void main(String[] args) {
-
+    private Connection getConnection() {
+        return DataSourceUtils.getConnection(dataSource);
     }
 
+    private void returnConnection(Connection connection) throws SQLException {
+        if (!TransactionSynchronizationManager.isActualTransactionActive())
+            connection.close();
+    }
 }

@@ -2,8 +2,6 @@ package org.metavm.util;
 
 import org.metavm.autograph.HttpTypeClient;
 import org.metavm.common.Result;
-import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.rest.GetTreesRequest;
 import org.metavm.user.rest.dto.LoginInfo;
 import org.metavm.user.rest.dto.LoginRequest;
 

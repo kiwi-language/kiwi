@@ -84,7 +84,7 @@ public enum CommitState {
     ABORTING(8) {
         @Override
         public void process(Iterable<Instance> instances, Commit commit, IInstanceContext context) {
-            Commit.dropTmpTableHook.accept(context.getAppId());
+            Commit.dropTmpTableHook.accept(context.getAppId(), commit.getId());
         }
 
         @Override

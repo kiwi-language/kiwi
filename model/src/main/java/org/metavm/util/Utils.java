@@ -74,6 +74,10 @@ public class Utils {
         writeFile(new File(path), content);
     }
 
+    public static void deleteFile(String path) {
+        new File(path).delete();
+    }
+
     public static void writeFile(File file, String content) {
         if (file.isDirectory())
             throw new InternalException("Can not write to directory");

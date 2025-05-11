@@ -1,0 +1,3 @@
+package abort
+
+class AbortFoo {}

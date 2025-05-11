@@ -62,6 +62,8 @@ public class BootstrapUtils {
                             new PlatformUser(platformContext.allocateRootId(), "demo", "123456", "demo", List.of()));
                     platformContext.bind(app);
                     TestConstants.APP_ID = app.getId().getTreeId();
+                    instanceMapperRegistry.createInstanceMapper(TestConstants.APP_ID, "instance");
+                    instanceMapperRegistry.createIndexEntryMapper(TestConstants.APP_ID, "index_entry");
                     try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                         BeanDefinitionRegistry.initialize(context);
                         KlassTagAssigner.initialize(context, globalTagAssigner);
@@ -151,6 +153,8 @@ public class BootstrapUtils {
                         new PlatformUser(platformContext.allocateRootId(), "demo", "123456", "demo", List.of()));
                 platformContext.bind(app);
                 TestConstants.APP_ID = app.getId().getTreeId();
+                instanceMapperRegistry.createInstanceMapper(TestConstants.APP_ID, "instance");
+                instanceMapperRegistry.createIndexEntryMapper(TestConstants.APP_ID, "index_entry");
                 try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
                     BeanDefinitionRegistry.initialize(context);
                     KlassTagAssigner.initialize(context, globalTagAssigner);

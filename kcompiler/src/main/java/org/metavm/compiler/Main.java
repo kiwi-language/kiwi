@@ -239,9 +239,13 @@ public class Main {
     }
 
     private static void doLogout() {
-        if (isLoggedIn())
+        if (isLoggedIn()) {
             CompilerHttpUtils.post("/logout", null, new TypeReference<Void>() {
             });
+            Utils.deleteFile(getAppFile());
+            Utils.deleteFile(getTokenFile());
+            Utils.deleteFile(getPlatformTokenFile());
+        }
     }
 
     private static void usage() {

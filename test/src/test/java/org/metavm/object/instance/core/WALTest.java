@@ -11,6 +11,7 @@ import org.metavm.mocks.Bar;
 import org.metavm.mocks.Foo;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.persistence.InstancePO;
+import org.metavm.object.instance.persistence.SchemaManager;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.PrimitiveType;
@@ -31,6 +32,7 @@ public class WALTest extends TestCase {
     private EntityContextFactory entityContextFactory;
     private SchedulerAndWorker schedulerAndWorker;
     private IInstanceStore instanceStore;
+    private SchemaManager schemaManager;
 
     @Override
     protected void setUp() throws Exception {
@@ -38,6 +40,7 @@ public class WALTest extends TestCase {
         entityContextFactory = bootResult.entityContextFactory();
         instanceStore = bootResult.instanceStore();
         schedulerAndWorker = bootResult.schedulerAndWorker();
+        schemaManager = bootResult.schemaManager();
     }
 
     @Override
@@ -45,6 +48,7 @@ public class WALTest extends TestCase {
         entityContextFactory = null;
         instanceStore = null;
         schedulerAndWorker = null;
+        schemaManager = null;
     }
 
     public void testModel() {
@@ -120,6 +124,8 @@ public class WALTest extends TestCase {
         var ids2 = TestUtils.doInTransaction(() -> {
             try (var context = newContext()) {
                 var wal = context.bind(new WAL(context.allocateRootId(), context.getAppId()));
+                schemaManager.createInstanceTable(context.getAppId(), "instance_tmp");
+                schemaManager.createIndexEntryTable(context.getAppId(), "index_entry_tmp");
                 String fieldId;
                 try (var walContext = entityContextFactory.newBufferingContext(APP_ID, wal)) {
                     var klass = walContext.getKlass(klassId);
@@ -214,6 +220,8 @@ public class WALTest extends TestCase {
                 Assert.assertNotNull(klass);
             }
         }
+        schemaManager.createInstanceTable(APP_ID, "instance_tmp");
+        schemaManager.createIndexEntryTable(APP_ID, "index_entry_tmp");
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 var wal = context.getEntity(WAL.class, walId);

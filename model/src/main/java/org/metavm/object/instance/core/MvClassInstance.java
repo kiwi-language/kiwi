@@ -51,7 +51,10 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         this.closureContext = closureContext;
         if (klass != uninitializedKlass && initFieldTable)
             fieldTable.initialize();
-        if (parent != null) setParent(parent);
+        if (parent != null) {
+            setParent(parent);
+            parent.addChild(this);
+        }
         if (data != null)
             reset(data, 0L, 0L);
     }

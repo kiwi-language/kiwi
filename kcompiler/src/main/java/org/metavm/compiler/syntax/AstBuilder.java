@@ -60,7 +60,8 @@ public class AstBuilder {
                 buildTypeVariableDeclList(ctx.typeParameters()),
                 List.from(ctx.initParameter(), AstBuilder::buildClassParam),
                 List.nil(),
-                List.from(ctx.classBody().classBodyDeclaration(), AstBuilder::buildClassMember)
+                ctx.classBody() != null ?
+                    List.from(ctx.classBody().classBodyDeclaration(), AstBuilder::buildClassMember) : List.nil()
         );
         if (Traces.traceParsing)
             log.trace("{}", decl.getText());

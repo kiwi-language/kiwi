@@ -234,6 +234,12 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
         return Utils.map(getKlass().getMethods(), m -> new MethodRef(this, m, List.of()));
     }
 
+    public List<ClassType> getInnerClassTypes() {
+        return Utils.map(getKlass().getKlasses(), k -> KlassType.create(
+                this, k, k.getDefaultTypeArguments()
+        ));
+    }
+
     public void foreachSelfMethod(Consumer<MethodRef> action) {
         for (Method method : getKlass().getMethods()) {
             action.accept(new MethodRef(this, method, List.of()));
