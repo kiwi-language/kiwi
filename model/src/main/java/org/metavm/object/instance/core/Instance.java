@@ -119,7 +119,8 @@ public interface Instance extends Message, Identifiable {
     }
 
     default Id nextChildId() {
-        return PhysicalId.of(getTreeId(), nextNodeId());
+        var root = getRoot();
+        return PhysicalId.of(root.getTreeId(), root.nextNodeId());
     }
 
     default long getNextNodeId() {

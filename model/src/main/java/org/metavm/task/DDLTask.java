@@ -64,7 +64,7 @@ public class DDLTask extends ScanTask implements IDDLTask {
         var commit = getCommit();
         if (commit.getState() != CommitState.ABORTING) {
             commit.setState(CommitState.ABORTING);
-            taskContext.bind(new DDLTask(taskContext.allocateRootId(), getCommit(), CommitState.ABORTING));
+            taskContext.bind(CommitState.ABORTING.createTask(getCommit(), taskContext));
         }
         else
             log.error("Failed to rollback DDL {}", commit.getId());

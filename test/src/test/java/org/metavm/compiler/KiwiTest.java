@@ -271,4 +271,25 @@ public class KiwiTest extends KiwiTestBase {
         Assert.assertEquals(2.0, value, 0.0001);
     }
 
+    public void testChildren() {
+        deploy("kiwi/children.kiwi");
+        var id = saveInstance("Product", Map.of(
+           "name", "Shoes",
+           "SKU", List.of(
+                   Map.of(
+                           "variant", "40",
+                           "price", 100,
+                           "stock", 100
+                   )
+                )
+        ));
+        var product = getObject(id);
+        var skus = product.getArray("SKU");
+        Assert.assertEquals(1, skus.size());
+        var sku = skus.getObject(0);
+        Assert.assertEquals("40", sku.getString("variant"));
+        Assert.assertEquals(100, sku.getDouble("price"), 0.001);
+        Assert.assertEquals(100, sku.getInt("stock"));
+    }
+
 }

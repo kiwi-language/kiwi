@@ -200,6 +200,15 @@ public class DDLTest extends TestCase {
 //        }
     }
 
+    public void testAbortion() {
+        assemble("abort/abort0.kiwi");
+        for (int i = 0; i < 500; i++) {
+            saveInstance("abort.AbortFoo", Map.of());
+        }
+        assemble("abort/abort1.kiwi");
+        assemble("abort/abort0.kiwi");
+    }
+
     public void testCheck() {
         assemble("ddl_before.kiwi");
         var shoesId = saveInstance("Product", Map.of(

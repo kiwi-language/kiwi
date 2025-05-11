@@ -9,6 +9,7 @@ import org.metavm.event.MockEventQueue;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.cache.Cache;
 import org.metavm.object.instance.cache.MockCache;
+import org.metavm.object.instance.persistence.MemMapperRegistry;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.Types;
 import org.metavm.util.*;
@@ -33,7 +34,9 @@ public class InstanceContextTest extends TestCase {
         super.setUp();
         TestUtils.ensureStringKlassInitialized();
         MockStandardTypesInitializer.init();
-        instanceStore = new MemInstanceStore();
+        var mapperReg = new MemMapperRegistry();
+        mapperReg.createTables(TestConstants.APP_ID);
+        instanceStore = new MemInstanceStore(mapperReg);
         entityRepository = new MockDefContext();
         cache = new MockCache();
         eventQueue = new MockEventQueue();

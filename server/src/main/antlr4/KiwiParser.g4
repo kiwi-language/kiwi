@@ -19,7 +19,7 @@ classDeclaration
     : annotation* CLASS identifier typeParameters?
       ( '(' (initParameter (',' initParameter)* ) ')')?
       (':' type arguments? (',' type)* )?
-      classBody
+      classBody?
     ;
 
 initParameter:  (modifier* fieldDeclaration) | formalParameter ;

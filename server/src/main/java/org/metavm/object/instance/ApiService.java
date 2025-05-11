@@ -310,6 +310,12 @@ public class ApiService extends EntityContextFactoryAware {
             map.put(KEY_ID, id);
         map.put(KEY_CLASS, instance.getInstanceType().getKlass().getQualifiedName());
         instance.forEachField((field, value) -> map.put(field.getName(), formatInstance(value, false)));
+        instance.forEachChild(c -> {
+            var child = (ClassInstance) c;
+            //noinspection unchecked
+            var list = (List<Object>) map.computeIfAbsent(child.getInstanceKlass().getName(), k -> new ArrayList<>());
+            list.add(formatValueObject(child));
+        });
         return map;
     }
 
@@ -457,7 +463,7 @@ public class ApiService extends EntityContextFactoryAware {
                         ValueResolutionResult.of(Instances.wrappedBooleanInstance(z)) :
                         ValueResolutionResult.failed;
                 case List<?> list -> tryResolveList(list, classType, currentValue, context);
-                case Map<?, ?> map -> tryResolveObject(map, classType, context);
+                case Map<?, ?> map -> tryResolveObject(map, classType, null, context);
                 case null, default -> ValueResolutionResult.failed;
             };
             case ArrayType arrayType -> tryResolveArray(rawValue, arrayType, currentValue, context);
@@ -508,11 +514,11 @@ public class ApiService extends EntityContextFactoryAware {
         };
     }
 
-    private ValueResolutionResult tryResolveObject(Map<?, ?> map, ClassType type, IInstanceContext context) {
-        return tryResolveValueObject(map, type, context);
+    private ValueResolutionResult tryResolveObject(Map<?, ?> map, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
+        return tryResolveValueObject(map, type, parent, context);
     }
 
-    private ValueResolutionResult tryResolveValueObject(Object rawValue, Type type, IInstanceContext context) {
+    private ValueResolutionResult tryResolveValueObject(Object rawValue, Type type, @Nullable ClassInstance parent, IInstanceContext context) {
         if (rawValue instanceof Map<?, ?> map) {
             var classCode = (String) map.get(KEY_CLASS);
             ClassType actualType;
@@ -524,13 +530,13 @@ public class ApiService extends EntityContextFactoryAware {
                 actualType = ct;
             else
                 return ValueResolutionResult.failed;
-            var instance = saveObject(map, actualType, context);
+            var instance = saveObject(map, actualType, parent, context);
             return instance != null ? ValueResolutionResult.of(instance.getReference()) : ValueResolutionResult.failed;
         } else
             return ValueResolutionResult.failed;
     }
 
-    private @Nullable ClassInstance saveObject(Map<?, ?> map, ClassType type, IInstanceContext context) {
+    private @Nullable ClassInstance saveObject(Map<?, ?> map, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
         var id = (String) map.get(KEY_ID);
         if (id != null) {
             var inst = (ClassInstance) context.get(Id.parse(id));
@@ -539,7 +545,7 @@ public class ApiService extends EntityContextFactoryAware {
             updateObject(inst, map, context);
             return inst;
         } else {
-            return createObject(map, type, context);
+            return createObject(map, type, parent, context);
         }
     }
 
@@ -639,7 +645,7 @@ public class ApiService extends EntityContextFactoryAware {
         if (rawValue instanceof Boolean b)
             return Instances.wrappedBooleanInstance(b);
         if (rawValue instanceof Map<?,?> map) {
-            var r = tryResolveValueObject(map, Types.getAnyType(), context);
+            var r = tryResolveValueObject(map, Types.getAnyType(), null, context);
             if (r.successful) return r.resolved;
         }
         if (rawValue instanceof List<?> list) {
@@ -650,13 +656,12 @@ public class ApiService extends EntityContextFactoryAware {
         throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE, Utils.toJSONString(rawValue));
     }
 
-    private ClassInstance createObject(Map<?, ?> map, ClassType type, IInstanceContext context) {
-        var klassCode = map.get("$class");
-        var actualType = klassCode != null ?
-                Objects.requireNonNull(context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance((String) klassCode))).getType() : type;
-        var id = context.allocateRootId(actualType);
+    private ClassInstance createObject(Map<?, ?> map, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
+        var actualType = map.get("$class") instanceof String qualName ?
+                context.getKlassByQualifiedName(qualName).getType() : type;
+        var id = parent != null ? parent.nextChildId() : context.allocateRootId(actualType);
         var r = resolveConstructor(actualType, map, context);
-        var self = ClassInstance.allocate(id, actualType);
+        var self = ClassInstance.allocate(id, actualType, parent);
         var result = Flows.execute(r.method, self, Utils.map(r.arguments, Value::toStackValue), context);
         context.bind(self);
         if (result.exception() != null)
@@ -688,6 +693,14 @@ public class ApiService extends EntityContextFactoryAware {
                     var getter = type.findGetterByPropertyName(k);
                     var existing = getter != null ? Flows.invokeGetter(getter, instance, context) : null;
                     Flows.invokeSetter(setter, instance, resolveValue(v, setter.getParameterTypes().getFirst(), false, existing, context), context);
+                }
+            }
+        });
+        type.getInnerClassTypes().forEach(t -> {
+            if (map.get(t.getName()) instanceof List<?> values) {
+                for (Object value : values) {
+                    if (!(value instanceof Map<?,?> childMap && tryResolveObject(childMap, t, instance, context).successful))
+                        throw new InternalException("Failed to resolve inner class " + t.getName() + " for value " + value);
                 }
             }
         });

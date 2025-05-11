@@ -1,7 +1,6 @@
 package org.metavm.object.instance.persistence;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.ddl.Commit;
 
 @Slf4j
 public class MockSchemaManager implements SchemaManager  {
@@ -10,16 +9,16 @@ public class MockSchemaManager implements SchemaManager  {
 
     public MockSchemaManager(MemMapperRegistry mapperRegistry) {
         this.mapperRegistry = mapperRegistry;
-        Commit.dropTmpTableHook = this::dropTmpTables;
     }
 
     @Override
     public void createInstanceTable(long appId, String table) {
+        mapperRegistry.createInstanceMapper(appId, table);
     }
 
     @Override
     public void createIndexEntryTable(long appId, String table) {
-
+        mapperRegistry.createIndexEntryMapper(appId, table);
     }
 
     @Override
@@ -31,7 +30,9 @@ public class MockSchemaManager implements SchemaManager  {
         mapperRegistry.renameIndexEntryMapper(appId, "index_entry_tmp", "index_entry");
     }
 
-    private void dropTmpTables(long appId) {
+    @Override
+    public void dropTmpTables(long appId) {
+        log.debug("Dropping tmp tables. appId: {}", appId);
         mapperRegistry.removeInstanceMapper(appId, "instance_tmp");
         mapperRegistry.removeIndexEntryMapper(appId, "index_entry_tmp");
     }

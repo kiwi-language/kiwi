@@ -1,0 +1,8 @@
+package abort
+
+class AbortFoo {
+    fn __run__() {
+        throw Exception("Abort")
+    }
+
+}

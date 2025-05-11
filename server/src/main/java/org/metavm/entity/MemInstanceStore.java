@@ -14,8 +14,8 @@ public class MemInstanceStore extends InstanceStore {
         this(new MemMapperRegistry());
     }
 
-    public MemInstanceStore(MapperRegistry instanceMapperRegistry) {
-        super(instanceMapperRegistry);
+    public MemInstanceStore(MapperRegistry mapperRegistry) {
+        super(mapperRegistry);
     }
 
     public InstancePO get(long appId, long id) {

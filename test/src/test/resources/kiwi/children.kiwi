@@ -1,0 +1,11 @@
+
+
+class Product(var name: string) {
+
+    class SKU(
+        var variant: string,
+        var price: double,
+        var stock: int
+    ) {}
+
+}
