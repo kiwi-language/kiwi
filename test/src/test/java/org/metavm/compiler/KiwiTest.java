@@ -263,4 +263,12 @@ public class KiwiTest extends KiwiTestBase {
         deploy("kiwi/prim_init.kiwi");
     }
 
+    public void testWidening() {
+        deploy("kiwi/widening.kiwi");
+        var id = saveInstance("Value", Map.of("value", 1));
+        callMethod(id, "times", List.of(2));
+        var value = getObject(id).getDouble("value");
+        Assert.assertEquals(2.0, value, 0.0001);
+    }
+
 }

@@ -1,0 +1,8 @@
+
+class Value(var value: double) {
+
+    fn times(n: int) {
+        value = n * value
+    }
+
+}

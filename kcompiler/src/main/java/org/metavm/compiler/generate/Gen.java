@@ -575,7 +575,7 @@ public class Gen extends StructuralNodeVisitor {
                 var targetType = xType.getTag() >= yType.getTag() ? xType : yType;
                 genExpr(binaryExpr.lhs(), targetType).load();
                 genExpr(binaryExpr.rhs(), targetType).load();
-                binaryExpr.op().apply(binaryExpr.lhs().getType(), code);
+                binaryExpr.op().apply(targetType, code);
                 return topStackItem();
             }
         }
@@ -900,7 +900,7 @@ public class Gen extends StructuralNodeVisitor {
             if (sourceTag != typeTag && sourceTag >= TypeTags.TAG_INT && sourceTag <= TypeTags.TAG_DOUBLE
                     && typeTag >= TypeTags.TAG_INT && typeTag <= TypeTags.TAG_DOUBLE) {
                 load();
-                code.cast(typeTag, type.getTag());
+                code.castPrim(typeTag, type);
                 return stackItems[type.getTag()];
             }
             else
