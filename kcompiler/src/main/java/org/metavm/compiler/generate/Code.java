@@ -223,21 +223,23 @@ public class Code {
     public void cast(Type type) {
         var sourceType = state.peek();
         if (sourceType.isPrimitive() &&  type.isPrimitive())
-            cast(sourceType.toStackType().getTag(), type.toStackType().getTag());
+            castPrim(sourceType.toStackType().getTag(), type.toStackType());
         else {
             code(CAST);
             constant( type);
+            state.pop();
+            state.push(type);
         }
-        state.pop();
-        state.push( type);
     }
 
-    public void cast(int sourceTag, int targetTag) {
+    public void castPrim(int sourceTag, Type targetType) {
         var sourceCode = sourceTag - TypeTags.TAG_INT;
-        var targetCode = targetTag - TypeTags.TAG_INT;
+        var targetCode = targetType.getTag() - TypeTags.TAG_INT;
         var offset = targetCode > sourceCode ? targetCode - 1 : sourceCode;
         var code = INT_TO_LONG + 3 * sourceCode + offset;
         code(code);
+        state.pop();
+        state.push(targetType);
     }
 
     public void mul(Type type) {
