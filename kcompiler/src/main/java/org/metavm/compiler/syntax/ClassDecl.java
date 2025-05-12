@@ -23,11 +23,13 @@ public final class ClassDecl extends Decl<Clazz> {
     private List<ClassParamDecl> params;
     private final List<EnumConstDecl> enumConstants;
     private List<Node> members;
+    private boolean isBean;
 
     public ClassDecl(
             ClassTag tag,
             List<Annotation> annotations,
             List<Modifier> mods,
+            boolean isBean,
             Name name,
             @Nullable TypeNode ext,
             List<Extend> impls,
@@ -39,6 +41,7 @@ public final class ClassDecl extends Decl<Clazz> {
         this.tag = tag;
         this.annotations = annotations;
         this.mods = mods;
+        this.isBean = isBean;
         this.name = name;
         this.extends_ = ext;
         this.implements_ = impls;
@@ -175,6 +178,14 @@ public final class ClassDecl extends Decl<Clazz> {
 
     public void setParams(List<ClassParamDecl> params) {
         this.params = params;
+    }
+
+    public boolean isBean() {
+        return isBean;
+    }
+
+    public void setBean(boolean bean) {
+        isBean = bean;
     }
 
     @Override

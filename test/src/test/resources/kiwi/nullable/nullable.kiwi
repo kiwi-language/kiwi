@@ -1,0 +1,9 @@
+package nullable
+
+class NullableFoo {
+
+    static fn test(value: int?) -> int {
+        return value != null ? value!! : 0
+    }
+
+}

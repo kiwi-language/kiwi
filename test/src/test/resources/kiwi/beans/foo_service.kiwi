@@ -1,0 +1,9 @@
+package beans
+
+bean FooService {
+
+    fn greet() -> string {
+        return "Hello"
+    }
+
+}

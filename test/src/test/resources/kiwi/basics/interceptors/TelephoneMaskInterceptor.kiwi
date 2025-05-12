@@ -4,8 +4,7 @@ import org.metavm.api.Interceptor
 import org.metavm.api.entity.HttpRequest
 import org.metavm.api.entity.HttpResponse
 
-@Component
-class TelephoneMaskInterceptor: Interceptor {
+bean TelephoneMaskInterceptor: Interceptor {
 
     fn before(request: HttpRequest?, response: HttpResponse?) {
     }

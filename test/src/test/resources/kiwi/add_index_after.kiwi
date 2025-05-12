@@ -10,8 +10,7 @@ class Product(priv var name: string) {
 
 }
 
-@Component
-class ProductService {
+bean ProductService {
 
     fn  findByName(name: string) -> Product|null {
         return Product.nameIdx.getFirst(name)

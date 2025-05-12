@@ -113,8 +113,7 @@ public class KlassInput extends MvInput {
                 var name = readUTF();
                 var field = klass.findSelfInstanceFieldByName(name);
                 if (field == null) {
-                    field = FieldBuilder.newBuilder(name, klass, -1)
-                            .column(new Column(ColumnKind.REFERENCE, "r", 0)).build();
+                    field = FieldBuilder.newBuilder(name, klass, -1).build();
                 }
                 yield field.getReference();
             }

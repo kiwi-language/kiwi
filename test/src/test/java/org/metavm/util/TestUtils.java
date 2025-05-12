@@ -262,6 +262,10 @@ public class TestUtils {
         waitForTaskDone(predicate, 0L, ScanTask.DEFAULT_BATCH_SIZE, schedulerAndWorker);
     }
 
+    public static void waitForEsSync(SchedulerAndWorker schedulerAndWorker) {
+        TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, schedulerAndWorker);
+    }
+
     public static void waitForTaskDone(Predicate<Task> predicate, long delay, int batchSize, SchedulerAndWorker schedulerAndWorker) {
         var transactionOps = new MockTransactionOperations();
         var scheduler = schedulerAndWorker.scheduler();

@@ -6,13 +6,11 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.MatchAllQueryBuilder;
-import org.elasticsearch.index.reindex.BulkByScrollResponse;
-import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -119,10 +117,9 @@ public class DiskFormatter {
                 .setHttpClientConfigCallback(b -> b.setDefaultCredentialsProvider(credentialsProvider));
         //noinspection deprecation
         try (RestHighLevelClient client = new RestHighLevelClient(builder)) {
-            DeleteByQueryRequest request = new DeleteByQueryRequest("instance");
-            request.setQuery(new MatchAllQueryBuilder());
-            BulkByScrollResponse response = client.deleteByQuery(request, RequestOptions.DEFAULT);
-            System.out.println("Deleted documents: " + response.getCreated());
+            var request = new DeleteIndexRequest("instance");
+            var response = client.indices().delete(request, RequestOptions.DEFAULT);
+            System.out.println("Deleted index acknowledged: " + response.isAcknowledged());
         } catch (IOException e) {
             throw new InternalException("Elasticsearch error", e);
         }

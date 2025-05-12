@@ -18,6 +18,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 import static org.metavm.util.WireTypes.CLASS_TYPE;
+import static org.metavm.util.WireTypes.STRING_TYPE;
 
 public class Types {
 
@@ -85,9 +86,7 @@ public class Types {
 
             @Override
             public void write(MvOutput output) {
-                output.write(CLASS_TYPE);
-                output.write(SymbolRefs.KLASS);
-                output.writeUTF("java.lang.String");
+                output.write(STRING_TYPE);
             }
 
         };

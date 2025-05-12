@@ -1,4 +1,4 @@
-Kiwi: The Persistent & Distributed Language
+Kiwi: The Persistent & Distributed Languagrun
 ===========================================
 
 Kiwi is an open-source programming language featuring built-in persistence and distribution capabilities, streamlining the development of cloud-native applications.
@@ -15,7 +15,7 @@ Build From Source
 
 ### Requirements
 
-*   JDK 23
+*   JDK 21
 *   Maven
 
 ### Steps
@@ -65,25 +65,36 @@ The `bin` directory is located within the root directory of your Kiwi installati
 Configure Datasource
 --------------------
 
-1.  Install PostgreSQL on your system.
+1.  Install PostgreSQL.
 2.  Create a database within PostgreSQL that Kiwi will use.
 3.  Locate the `kiwi.yml` configuration file. It can be found in the `config` directory within your Kiwi installation root (e.g., `/path/to/your/kiwi-install/config/kiwi.yml`).
 4.  Edit the `kiwi.yml` file and update the datasource section with your PostgreSQL details:
     
         datasource:
+            host: <your_postgres_host>
+            port: <your_postgres_port>
             username: <your_postgres_username>
             password: <your_postgres_password>
             database: <your_kiwi_database_name>
-    
-    **Note:** Replace the placeholder values (`<...>`) with your actual PostgreSQL username, password, and the name of the database you created in step 2.
-    
+
+Configure Elasticsearch
+--------------------
+
+1.  Install Elasticsearch.
+2.  Edit the `kiwi.yml` file and update the es section with your Elasticsearch details:
+
+        es:
+            host: <your_elasticsearch_host>
+            port: <your_elasticsearch_port>
+            user: <your_elasticsearch_user>
+            password: <your_elasticsearch_password>
 
 Start the Server
 ----------------
 
 ### Requirements
 
-*   JDK 23
+*   JDK 21
 
 Start the server using this command (assuming the `bin` directory is in your PATH):
 

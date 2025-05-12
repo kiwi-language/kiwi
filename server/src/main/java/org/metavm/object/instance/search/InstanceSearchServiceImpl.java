@@ -1,5 +1,6 @@
 package org.metavm.object.instance.search;
 
+import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Component
 public class InstanceSearchServiceImpl implements InstanceSearchService {
 
@@ -76,7 +78,9 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
         deleteRequests.forEach(bulkRequest::add);
         try {
             var resp = restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-//            System.out.println(resp);
+            if (resp.hasFailures()) {
+                log.error("Failed to synchronized ES documents: {}", resp.buildFailureMessage());
+            }
         } catch (IOException e) {
             throw new RuntimeException("ElasticSearch Error", e);
         }

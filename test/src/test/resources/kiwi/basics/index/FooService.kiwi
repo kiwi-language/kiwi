@@ -1,7 +1,6 @@
 package index
 
-@Component
-class FooService {
+bean FooService {
 
     fn findByDesc(desc: string) -> Foo? {
         return Foo.descIndex.getFirst(desc)
