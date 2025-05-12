@@ -336,11 +336,10 @@ public class ApiService extends EntityContextFactoryAware {
                 TypeParser.parseSimpleMethodRef(methodCode, name -> getKlass(name, context).getKlass()) : null;
         var queue = new LinkedList<ClassType>();
         klass.foreachSuperClass(queue::offer);
-        var argCount = getArgumentCount(rawArguments);
         do {
             var k = Objects.requireNonNull(queue.poll());
             for (MethodRef method : k.getMethods()) {
-                if (method.isPublic() && !method.isAbstract() && (methodRef == null || methodRef.name().equals(method.getName())) && method.getParameterCount() == argCount
+                if (method.isPublic() && !method.isAbstract() && (methodRef == null || methodRef.name().equals(method.getName()))
                         && _static == method.isStatic() && constructor == method.isConstructor()) {
                     method = methodRef != null ? method.getParameterized(methodRef.typeArguments()) : method;
                     var resolvedArgs = tryResolveArguments(method, rawArguments, context);
@@ -366,6 +365,8 @@ public class ApiService extends EntityContextFactoryAware {
     private List<Value> tryResolveArguments(MethodRef method, Object rawArguments, IInstanceContext context) {
         var resolvedArgs = new ArrayList<Value>();
         if (rawArguments instanceof List<?> rawArgList) {
+            if (rawArgList.size() != method.getParameterCount())
+                return null;
             for (int i = 0; i < method.getParameterCount(); i++) {
                 var r = tryResolveValue(rawArgList.get(i), method.getParameterType(i), false, null, context);
                 if (!r.successful())
@@ -376,8 +377,14 @@ public class ApiService extends EntityContextFactoryAware {
         else if (rawArguments instanceof Map<?,?> rawArgMap) {
             for (ParameterRef parameter : method.getParameters()) {
                 var rawArg = rawArgMap.get(parameter.getName());
-                if (rawArg == null)
-                    return null;
+                if (rawArg == null) {
+                    if (parameter.getType().isNullable()) {
+                        resolvedArgs.add(Instances.nullInstance());
+                        continue;
+                    }
+                    else
+                        return null;
+                }
                 var r = tryResolveValue(rawArg, parameter.getType(), false, null, context);
                 if (!r.successful())
                     return null;

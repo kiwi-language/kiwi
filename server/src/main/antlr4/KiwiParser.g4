@@ -16,7 +16,7 @@ typeDeclaration: (classDeclaration | enumDeclaration | interfaceDeclaration )
     ;
 
 classDeclaration
-    : annotation* CLASS identifier typeParameters?
+    : annotation* (CLASS | BEAN) identifier typeParameters?
       ( '(' (initParameter (',' initParameter)* ) ')')?
       (':' type arguments? (',' type)* )?
       classBody?

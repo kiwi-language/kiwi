@@ -208,10 +208,20 @@ public class Attr extends StructuralNodeVisitor {
             condExpr.getCond().accept(this).resolve();
             condExpr.getFalsePart().accept(this).resolve();
             condExpr.getTruePart().accept(this).resolve();
-            condExpr.setType(Types.getLUB(List.of(
-                    condExpr.getTruePart().getType(),
-                    condExpr.getFalsePart().getType()
-            )));
+            var type1 = condExpr.getTruePart().getType();
+            var type2 = condExpr.getFalsePart().getType();
+            Type type;
+            if (type1 instanceof PrimitiveType pt1 && type2 instanceof PrimitiveType pt2) {
+                if (pt1.widensTo(pt2))
+                    type = pt2;
+                else if(pt2.widensTo(pt1))
+                    type = pt1;
+                else
+                    type = PrimitiveType.ANY;
+            }
+            else
+                type = Types.getLUB(List.of(type1, type2));
+            condExpr.setType(type);
             return new NullResolver();
         }
 

@@ -85,10 +85,19 @@ public class Main {
                 });
     }
 
+    private static void enter(String appName) {
+        CompilerHttpUtils.setAppId(2L);
+        var apps = CompilerHttpUtils.get("/app", new TypeReference<Page<ApplicationDTO>>() {}).data();
+        var appId = Utils.findRequired(apps, app -> app.name().equals(appName),
+                () -> "Application '" + appName + "' does not exist").id();
+        enterApp(appId);
+    }
+
     private static void enterApp(long appId) {
         CompilerHttpUtils.post("/platform-user/enter-app/" + appId, null, new TypeReference<LoginInfo>() {
         });
         CompilerHttpUtils.setAppId(appId);
+        deleteSessionFiles();
         Utils.writeFile(getAppFile(), Long.toString(appId));
         Utils.writeFile(getTokenFile(), CompilerHttpUtils.getToken());
         Utils.writeFile(getPlatformTokenFile(), CompilerHttpUtils.getToken(2L));
@@ -212,6 +221,7 @@ public class Main {
     }
 
     private static void deploy(TypeClient typeClient, String targetDir) {
+        Utils.ensureDirectoryExists(selectedEnv);
         typeClient.deploy(targetDir + "/target.mva");
     }
 
@@ -242,26 +252,30 @@ public class Main {
         if (isLoggedIn()) {
             CompilerHttpUtils.post("/logout", null, new TypeReference<Void>() {
             });
-            Utils.deleteFile(getAppFile());
-            Utils.deleteFile(getTokenFile());
-            Utils.deleteFile(getPlatformTokenFile());
+            deleteSessionFiles();
         }
+    }
+
+    private static void deleteSessionFiles() {
+        Utils.deleteFile(getAppFile());
+        Utils.deleteFile(getTokenFile());
+        Utils.deleteFile(getPlatformTokenFile());
     }
 
     private static void usage() {
         System.out.println("Usage: ");
-        System.out.println("metavm deploy");
-        System.out.println("metavm redeploy");
-        System.out.println("metavm clear");
-        System.out.println("metavm host <host>");
-        System.out.println("metavm login");
-        System.out.println("metavm logout");
-        System.out.println("metavm app");
-        System.out.println("metavm create-app <name>");
-        System.out.println("metavm env");
-        System.out.println("metavm create-env <env>");
-        System.out.println("metavm set-env <env>");
-        System.out.println("metavm delete-env <env>");
+        System.out.println("kiwi deploy");
+        System.out.println("kiwi redeploy");
+        System.out.println("kiwi clear");
+        System.out.println("kiwi host <host>");
+        System.out.println("kiwi login");
+        System.out.println("kiwi logout");
+        System.out.println("kiwi app");
+        System.out.println("kiwi create-app <name>");
+        System.out.println("kiwi env");
+        System.out.println("kiwi create-env <env>");
+        System.out.println("kiwi set-env <env>");
+        System.out.println("kiwi delete-env <env>");
     }
 
     public static boolean isMavenProject() {
@@ -289,6 +303,13 @@ public class Main {
                 }
                 case "login" -> login();
                 case "logout" -> logout();
+                case "enter" -> {
+                    if (args.length < 2) {
+                        usage();
+                        return;
+                    }
+                    enter(args[1]);
+                }
                 case "app" -> System.out.println(CompilerHttpUtils.getAppId());
                 case "create-app" -> {
                     if (args.length < 2) {
@@ -333,21 +354,10 @@ public class Main {
                     }
                     deleteEnv(args[1]);
                 }
-                case "build" -> {
-                    var sourceRoot = "src";
-                    var f = new File(sourceRoot);
-                    if (!f.exists() || !f.isDirectory()) {
-                        System.err.println("Source directory '" + sourceRoot + "' does not exist.");
-                        return;
-                    }
-                    var main = new Main(sourceRoot, "target");
-                    main.run();
-                }
+                case "build" -> build();
                 case "deploy" -> {
                     ensureLoggedIn();
-                    logger.info("Host: " + CompilerHttpUtils.getHost());
-                    logger.info("Application ID: {}", Utils.readLong(getAppFile()));
-                    Utils.ensureDirectoryExists(selectedEnv);
+                    build();
                     deploy(new HttpTypeClient(), "target");
                 }
                 default -> usage();
@@ -358,6 +368,17 @@ public class Main {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void build() throws IOException {
+        var sourceRoot = "src";
+        var f = new File(sourceRoot);
+        if (!f.exists() || !f.isDirectory()) {
+            System.err.println("Source directory '" + sourceRoot + "' does not exist.");
+            return;
+        }
+        var main = new Main(sourceRoot, "target");
+        main.run();
     }
 
     public static List<String> listFilePathsRecursively(String dirPath) throws IOException {

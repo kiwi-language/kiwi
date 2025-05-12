@@ -127,15 +127,15 @@ public class Gen extends StructuralNodeVisitor {
 
     private void processAnnotations(ClassDecl classDecl) {
         var clazz = classDecl.getElement();
+        clazz.setSearchable(true);
         var attrs = List.<Attribute>builder();
+        if (classDecl.isBean()){
+            attrs.append(new Attribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT));
+            attrs.append(new Attribute(AttributeNames.BEAN_NAME,
+                    NamingUtils.firstCharToLowerCase(clazz.getName().toString())));
+        }
         for (Annotation annotation : classDecl.getAnnotations()) {
-            if (annotation.getName() == Name.Component()) {
-                attrs.append(new Attribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT));
-                attrs.append(new Attribute(AttributeNames.BEAN_NAME,
-                        NamingUtils.firstCharToLowerCase(clazz.getName().toString())));
-            } else if (annotation.getName() == Name.Searchable()) {
-                clazz.setSearchable(true);
-            } else if (annotation.getName() == Name.Tag()) {
+            if (annotation.getName() == Name.Tag()) {
                 clazz.setSourceTag(Integer.parseInt(annotation.getAttributes().getFirst().getValue().getText()));
             }
         }
@@ -449,12 +449,12 @@ public class Gen extends StructuralNodeVisitor {
         public Item visitCondExpr(CondExpr condExpr) {
             var item = condExpr.getCond().accept(this).makeCond();
             var falseChain = item.jumpFalse();
-            condExpr.getTruePart().accept(this).load();
+            genExpr(condExpr.getTruePart(), condExpr.getType()).load();
             var trueChain = code.goto_(0);
             code.connect(falseChain);
-            condExpr.getFalsePart().accept(this).load();
+            genExpr(condExpr.getFalsePart(), condExpr.getType()).load();
             code.connect(trueChain);
-            return stackItems[code.peek().getTag()];
+            return stackItems[condExpr.getType().getTag()];
         }
 
         @Override

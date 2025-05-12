@@ -1,0 +1,9 @@
+package condexpr
+
+class Foo {
+
+    static fn max(v: double, u: int) -> double {
+        return v > u ? v : u
+    }
+
+}

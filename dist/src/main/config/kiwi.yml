@@ -3,6 +3,14 @@ server:
 
 #Data source configuration
 #datasource:
+#  host: <your_postgres_host>
+#  port: <your_postgres_port>
 #  username: <your_postgres_username>
 #  password: <your_postgres_password>
 #  database: <your_kiwi_database_name>
+
+#es:
+#    host: <your_es_host>
+#    port: <your_es_port>
+#    user: <your_es_user>
+#    password: <your_es_password>

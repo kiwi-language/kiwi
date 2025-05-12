@@ -14,6 +14,7 @@ public class KiwiConfig {
 
     public static String CONFIG_PATH;
     private final DbConfig dbConfig;
+    private final EsConfig esConfig;
     private final ServerConfig serverConfig;
 
     /** @noinspection unchecked*/
@@ -21,6 +22,16 @@ public class KiwiConfig {
         var config = getConfig();
         dbConfig = buildDbConfig((Map<String, Object>) config.get("datasource"));
         serverConfig = buildServerConfig((Map<String, Object>) config.get("server"));
+        esConfig = buildEsConfig((Map<String, Object>) config.get("es"));
+    }
+
+    private EsConfig buildEsConfig(Map<String, Object> config) {
+        Objects.requireNonNull(config);
+        var host = (String) config.get("host");
+        var port = (int) config.get("port");
+        var user = (String) config.get("user");
+        var password = Objects.toString(config.get("password"));
+        return new EsConfig(host, port, user, password);
     }
 
     private ServerConfig buildServerConfig(Map<String, Object> config) {
@@ -48,8 +59,8 @@ public class KiwiConfig {
         var userName = (String) config.get("username");
         var passwd = Objects.toString(config.get("password"));
         var dbName = (String) config.get("database");
-        var host = (String) config.getOrDefault("host", "127.0.0.1");
-        var port = (int) config.getOrDefault("port", 5432);
+        var host = (String) config.get("host");
+        var port = (int) config.get("port");
         return new DbConfig(userName, passwd, dbName, host, port);
     }
 
@@ -61,6 +72,10 @@ public class KiwiConfig {
         return serverConfig;
     }
 
+    public EsConfig getEsConfig() {
+        return esConfig;
+    }
+
     public record DbConfig(String username, String password, String dbName, String host, int port) {
 
         String url() {
@@ -70,6 +85,10 @@ public class KiwiConfig {
     }
 
     public record ServerConfig(int port) {}
+
+    public record EsConfig(String host, int port, String user, String password) {
+
+    }
 
 
 }

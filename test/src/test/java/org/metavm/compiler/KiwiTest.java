@@ -2,13 +2,16 @@ package org.metavm.compiler;
 
 import org.junit.Assert;
 import org.metavm.flow.Flows;
+import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
 import org.metavm.util.TestConstants;
+import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -269,6 +272,37 @@ public class KiwiTest extends KiwiTestBase {
         callMethod(id, "times", List.of(2));
         var value = getObject(id).getDouble("value");
         Assert.assertEquals(2.0, value, 0.0001);
+
+        callMethod(id, "timesAndPlus", List.of(2, 1));
+        var value1 = getObject(id).getDouble("value");
+        Assert.assertEquals(5.0, value1, 0.0001);
+
+        callMethod(id, "set", List.of(1));
+        var value2 = getObject(id).getDouble("value");
+        Assert.assertEquals(1.0, value2, 0.001);
+    }
+
+    public void testCondExpr() {
+        deploy("kiwi/condexpr/condexpr.kiwi");
+        var r = (double) callMethod("condexpr.Foo", "max", List.of(1.5, 1));
+        Assert.assertEquals(1.5, r, 0.001);
+    }
+
+    public void testNullable() {
+        deploy("kiwi/nullable/nullable.kiwi");
+        var args = new HashMap<String, Object>();
+        args.put("value", null);
+        var r = (int) callMethod("nullable.NullableFoo", "test", args);
+        Assert.assertEquals(0, r);
+        var r1 = (int) callMethod("nullable.NullableFoo", "test", Map.of());
+        Assert.assertEquals(0, r1);
+    }
+
+    public void testInnerEnum() {
+        deploy("kiwi/enums/inner_enum.kiwi");
+        var id = saveInstance("enums.Foo", Map.of("option", "op1"));
+        var foo = getObject(id);
+        Assert.assertEquals("op1", foo.getString("option"));
     }
 
     public void testChildren() {
@@ -290,6 +324,31 @@ public class KiwiTest extends KiwiTestBase {
         Assert.assertEquals("40", sku.getString("variant"));
         Assert.assertEquals(100, sku.getDouble("price"), 0.001);
         Assert.assertEquals(100, sku.getInt("stock"));
+    }
+
+    public void testSearch() {
+        deploy("kiwi/search/search.kiwi");
+        var className = "search.SearchFoo";
+        try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+            context.loadKlasses();
+            var klass = context.getKlassByQualifiedName(className);
+            var field = klass.getFields().getFirst();
+            var column = field.getColumn();
+            Assert.assertSame(ColumnKind.STRING, column.kind());
+        }
+        var id = saveInstance(className, Map.of("name", "kiwi"));
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r = search(className, Map.of(
+                "name", "kiwi"
+        ));
+        Assert.assertEquals(1, r.total());
+        Assert.assertEquals(id, r.page().getFirst());
+    }
+
+    public void testBean() {
+        deploy("kiwi/beans/foo_service.kiwi");
+        var r = callMethod("fooService", "greet", List.of());
+        Assert.assertEquals("Hello", r);
     }
 
 }

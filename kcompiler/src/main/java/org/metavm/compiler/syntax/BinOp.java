@@ -188,7 +188,7 @@ public enum BinOp {
     }
 
     public Type getType(Type firstType, Type secondType) {
-        return firstType;
+        return firstType.getTag() > secondType.getTag() ? firstType : secondType;
     }
 
     public abstract void apply(Type type, Code code);

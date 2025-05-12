@@ -1,5 +1,6 @@
 package org.metavm.springconfig;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -8,32 +9,27 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@Slf4j
 @Configuration
 public class ElasticSearchConfig {
+    private final KiwiConfig kiwiConfig;
 
-    @Value("${spring.data.elasticsearch.host}")
-    private String host;
-
-    @Value("${spring.data.elasticsearch.port}")
-    private int port;
-
-    @Value("${spring.data.elasticsearch.user}")
-    private String user;
-
-    @Value("${spring.data.elasticsearch.password}")
-    private String password;
+    public ElasticSearchConfig(KiwiConfig kiwiConfig) {
+        this.kiwiConfig = kiwiConfig;
+    }
 
     @Bean
     public RestHighLevelClient restHighLevelClient() {
+        var esConfig = kiwiConfig.getEsConfig();
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(user, password));
-
-        RestClientBuilder builder = RestClient.builder(new HttpHost(host, port))
+        if (esConfig.user() != null) {
+            credentialsProvider.setCredentials(AuthScope.ANY,
+                    new UsernamePasswordCredentials(esConfig.user(), esConfig.password()));
+        }
+        RestClientBuilder builder = RestClient.builder(new HttpHost(esConfig.host(), esConfig.port()))
                 .setHttpClientConfigCallback(b -> b.setDefaultCredentialsProvider(credentialsProvider));
 
         return new RestHighLevelClient(builder);

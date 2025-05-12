@@ -14,15 +14,6 @@ spring:
 #    username: root
 #    password: 85263670
 #    url: jdbc:mysql://localhost:3306/object?allowMultiQueries=true
-  data:
-    elasticsearch:
-      host: localhost
-      port: 9200
-      user: elastic
-      password: 85263670
-    redis:
-      host: 127.0.0.1
-      port: 6379
   jackson:
     default-property-inclusion: non_null
 

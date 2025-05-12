@@ -5,8 +5,7 @@ import java.util.HashSet
 import java.util.List
 import java.util.Map
 
-@Component
-class HashMapLab {
+bean HashMapLab {
 
     priv val map: Map<any, any> = HashMap<any, any>()
 

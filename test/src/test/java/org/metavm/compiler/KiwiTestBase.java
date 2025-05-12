@@ -7,6 +7,7 @@ import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
@@ -19,7 +20,7 @@ public abstract class KiwiTestBase extends TestCase  {
 
     EntityContextFactory entityContextFactory;
     private TypeManager typeManager;
-    private SchedulerAndWorker schedulerAndWorker;
+    SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
 
     @Override
@@ -46,6 +47,14 @@ public abstract class KiwiTestBase extends TestCase  {
 
     Object callMethod(String qualifier, String methodName, List<Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    }
+
+    Object callMethod(String qualifier, String methodName, Map<String, Object> arguments) {
+        return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    }
+
+    SearchResult search(String className, Map<String, Object> query) {
+        return apiClient.search(className, query, 1, 20);
     }
 
     ClassInstanceWrap getObject(String id) {
