@@ -9,6 +9,7 @@ DEFAULT:            'default';
 CATCH:              'catch';
 STRING:             'string';
 CLASS:              'class';
+BEAN:               'bean';
 TIME:               'time';
 NULL:               'null';
 PACKAGE:            'package';

@@ -1,0 +1,11 @@
+package enums
+
+class Foo(var option: Option) {
+
+    enum Option {
+        op1,
+        op2,
+        ;
+    }
+
+}

@@ -1,7 +1,6 @@
 import org.metavm.api.Index
 
-@Component
-class Lab {
+bean Lab {
 
     fn getFieldValue(field: Field) -> any? {
         var fieldValue = FieldValue.fieldIdx.getFirst(field)

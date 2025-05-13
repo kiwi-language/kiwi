@@ -2,14 +2,13 @@ package org.metavm.compiler.type;
 
 import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.analyze.ResolveKind;
-import org.metavm.compiler.element.*;
 import org.metavm.compiler.element.Package;
+import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.Expr;
 import org.metavm.compiler.syntax.Ident;
 import org.metavm.compiler.syntax.SelectorExpr;
 import org.metavm.compiler.syntax.TypeApply;
 import org.metavm.compiler.util.List;
-import org.metavm.object.type.SymbolRefs;
 import org.metavm.util.MvOutput;
 
 import java.util.EnumSet;
@@ -17,7 +16,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-import static org.metavm.util.WireTypes.CLASS_TYPE;
+import static org.metavm.util.WireTypes.STRING_TYPE;
 
 public class Types {
 
@@ -85,9 +84,7 @@ public class Types {
 
             @Override
             public void write(MvOutput output) {
-                output.write(CLASS_TYPE);
-                output.write(SymbolRefs.KLASS);
-                output.writeUTF("java.lang.String");
+                output.write(STRING_TYPE);
             }
 
         };

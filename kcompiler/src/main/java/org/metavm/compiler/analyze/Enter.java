@@ -65,7 +65,7 @@ public class Enter {
             );
             if (mods.temp)
                 clazz.setEphemeral(true);
-            if (mods.static_)
+            if (mods.static_ || classDecl.tag() == org.metavm.compiler.syntax.ClassTag.ENUM)
                 clazz.setStatic(true);
             if (clazz.isEnum())
                 enterEnumMethods(clazz);

@@ -5,4 +5,16 @@ class Value(var value: double) {
         value = n * value
     }
 
+    fn timesAndPlus(n: int, b: int) {
+        value = n * value + b
+    }
+
+    fn set(value: int) {
+        setValue(value)
+    }
+
+    fn setValue(value: double) {
+        this.value = value
+    }
+
 }

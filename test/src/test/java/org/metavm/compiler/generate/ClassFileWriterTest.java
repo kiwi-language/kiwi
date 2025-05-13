@@ -179,6 +179,18 @@ public class ClassFileWriterTest extends TestCase {
         process("kiwi/prim_init.kiwi");
     }
 
+    public void testWidening() {
+        process("kiwi/widening.kiwi");
+    }
+
+    public void testInnerEnum() {
+        process("kiwi/enums/inner_enum.kiwi");
+    }
+
+    public void testCondExpr() {
+        process("kiwi/condexpr/condexpr.kiwi");
+    }
+
     private void process(String source) {
         var file = CompilerTestUtils.parse(TestUtils.getResourcePath(source));
         var project = CompilerTestUtils.attr(file);

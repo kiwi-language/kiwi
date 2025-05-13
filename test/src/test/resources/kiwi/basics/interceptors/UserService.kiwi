@@ -1,7 +1,6 @@
 package interceptors
 
-@Component
-class UserService {
+bean UserService {
 
     fn getUserByName(name: string) -> UserDTO {
         return UserDTO(name, "12312312312")
