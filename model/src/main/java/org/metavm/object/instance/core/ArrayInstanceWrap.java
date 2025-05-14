@@ -39,4 +39,9 @@ public class ArrayInstanceWrap extends InstanceWrap {
     public Object getFirst() {
         return get(0);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof ArrayInstanceWrap that && list.equals(that.list);
+    }
 }

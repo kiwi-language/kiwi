@@ -1,9 +1,7 @@
 package org.metavm.compiler.analyze;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.compiler.element.Clazz;
-import org.metavm.compiler.element.Method;
-import org.metavm.compiler.element.Name;
+import org.metavm.compiler.element.*;
 import org.metavm.compiler.element.Package;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.ClassType;
@@ -15,8 +13,12 @@ import org.metavm.util.Utils;
 @Slf4j
 public class TypeResolver extends StructuralNodeVisitor {
 
-    private final Env env = new Env();
+    private final Env env;
     private Package pkg;
+
+    public TypeResolver(Project project) {
+         env = new Env(project);
+    }
 
     @Override
     public Void visitDeclStmt(DeclStmt declStmt) {

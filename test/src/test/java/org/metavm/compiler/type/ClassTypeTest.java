@@ -41,7 +41,7 @@ public class ClassTypeTest extends TestCase {
         Assert.assertSame(valueField, valueFieldRef.field());
         Assert.assertSame(PrimitiveType.INT, valueFieldRef.type());
 
-        var getValueMethodRef = (MethodInst) table.lookupFirst("getValue");
+        var getValueMethodRef = (PartialMethodInst) table.lookupFirst("getValue");
         Assert.assertNotNull(getValueMethodRef);
         Assert.assertSame(getValueMethod, getValueMethodRef.getFunc());
         Assert.assertSame(PrimitiveType.INT, getValueMethodRef.getRetType());
@@ -52,7 +52,7 @@ public class ClassTypeTest extends TestCase {
         Assert.assertNotNull(versionFieldRef);
         Assert.assertSame(versionField, versionFieldRef);
 
-        var compareMethodRef = (MethodInst) table.lookupFirst("compare");
+        var compareMethodRef = (PartialMethodInst) table.lookupFirst("compare");
         Assert.assertNotNull(compareMethodRef);
         Assert.assertSame(compareMethod, compareMethodRef.getFunc());
         Assert.assertSame(fooOfIntType, compareMethodRef.getParamTypes().getFirst());

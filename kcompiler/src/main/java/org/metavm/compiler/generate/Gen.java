@@ -23,12 +23,13 @@ public class Gen extends StructuralNodeVisitor {
     private final Project project;
     private Clazz clazz;
     private Code code;
-    private final Env env = new Env();
+    private final Env env;
     private final Item[] stackItems = new Item[TypeTags.TAG_ANY + 1];
     private @Nullable Scope currentScope;
 
     public Gen(Project project) {
         this.project = project;
+        env = new Env(project);
         for(var tag = TypeTags.TAG_NEVER; tag <= TypeTags.TAG_ANY; tag++) {
             stackItems[tag] = tag == TypeTags.TAG_VOID ? new VoidItem() : new StackItem(tag);
         }
@@ -357,20 +358,20 @@ public class Gen extends StructuralNodeVisitor {
         var expr = foreachStmt.getExpr();
         code.newLocal(v);
         genExpr(expr, null).load();
-        var iteratorMethod = (MethodInst) requireNonNull(iterableType.getTable().lookupFirst(NameTable.instance.iterator));
+        var iteratorMethod = (MethodRef) requireNonNull(iterableType.getTable().lookupFirst(NameTable.instance.iterator));
         iteratorMethod.invoke(code, env);
         var iteratorType = (ClassType) iteratorMethod.getRetType();
         var iteratorVar = code.nextLocal();
         code.store(iteratorVar);
         var entry = code.pc();
         code.load(iteratorVar, iterableType);
-        var hasNextMethod = (MethodInst) requireNonNull(iteratorType.getTable().lookupFirst(NameTable.instance.hasNext));
+        var hasNextMethod = (MethodRef) requireNonNull(iteratorType.getTable().lookupFirst(NameTable.instance.hasNext));
         hasNextMethod.invoke(code, env);
         var item = stackItems[TypeTags.TAG_INT].makeCond();
         scope.addExit(item.jumpFalse());
         code.connect(item.trueJumps);
         code.load(iteratorVar, expr.getType());
-        var nextMethod = (MethodInst) requireNonNull(iteratorType.getTable().lookupFirst(NameTable.instance.next));
+        var nextMethod = (MethodRef) requireNonNull(iteratorType.getTable().lookupFirst(NameTable.instance.next));
         nextMethod.invoke(code, env);
         code.store(v.getIndex());
         foreachStmt.getBody().accept(this);

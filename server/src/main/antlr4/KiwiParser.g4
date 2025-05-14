@@ -334,7 +334,7 @@ arguments
     : '(' expressionList? ')'
     ;
 
-identifier: IDENTIFIER | VALUE | INIT | TEMP;
+identifier: IDENTIFIER | VALUE | TEMP;
 
 literal
     : integerLiteral
@@ -377,11 +377,12 @@ primitiveType
     | BYTE
     | SHORT
     | INT
+    | TIME
     | LONG
     | DOUBLE
+    | FLOAT
     | STRING
     | PASSWORD
-    | TIME
     | NULL
     | VOID
     | CHAR

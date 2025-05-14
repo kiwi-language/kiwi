@@ -4,7 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.generate.Code;
-import org.metavm.compiler.type.*;
+import org.metavm.compiler.type.ArrayType;
+import org.metavm.compiler.type.ClassType;
+import org.metavm.compiler.type.Type;
+import org.metavm.compiler.type.Types;
 import org.metavm.compiler.util.List;
 import org.metavm.util.MvOutput;
 
@@ -22,6 +25,7 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
     private boolean static_;
     private boolean abstract_;
     private boolean init;
+    private List<PartialMethodInst> partialInsts = List.nil();
     private final Map<List<Type>, MethodInst> insts = new HashMap<>();
 
     public Method(String name, Access access, boolean static_, boolean abstract_, boolean init, Clazz declClass) {
@@ -43,9 +47,13 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
         return declClass;
     }
 
+    public void addPartialInst(PartialMethodInst inst) {
+        partialInsts = partialInsts.prepend(inst);
+    }
+
     @Override
     public void load(Code code, Env env) {
-        if (this == ArrayType.appendMethod)
+        if (getDeclClass() == ArrayType.arrayClass)
             throw new UnsupportedOperationException();
         else if (isStatic())
             code.getStaticMethod(this);
@@ -67,12 +75,33 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
     public void invoke(Code code, Env env) {
         if (this == ArrayType.appendMethod)
             code.arrayAdd();
-        else if (isStatic())
+        else if (this == ArrayType.intSumMethod) {
+            var proj = env.getProject();
+            var func = proj.getRootPackage().getFunction(NameTable.instance.sumInt);
+            code.invokeFunction(func);
+        } else if (this == ArrayType.longSumMethod) {
+            var proj = env.getProject();
+            var func = proj.getRootPackage().getFunction(NameTable.instance.sumLong);
+            code.invokeFunction(func);
+        } else if (this == ArrayType.floatSumMethod) {
+            var proj = env.getProject();
+            var func = proj.getRootPackage().getFunction(NameTable.instance.sumFloat);
+            code.invokeFunction(func);
+        } else if (this == ArrayType.doubleSmMethod) {
+            var proj = env.getProject();
+            var func = proj.getRootPackage().getFunction(NameTable.instance.sumDouble);
+            code.invokeFunction(func);
+        } else if (isStatic())
             code.invokeStatic(this);
         else if(getAccess() == Access.PRIVATE || isInit())
             code.invokeSpecial(this);
         else
             code.invokeVirtual(this);
+    }
+
+    @Override
+    public Method getRawMethod() {
+        return this;
     }
 
     public void setAccess(Access access) {
@@ -141,14 +170,19 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
     @Override
     public void addParam(Param param) {
         super.addParam(param);
-        for (var instance : insts.values()) {
-            instance.onMethodTypeChange();
-        }
+        onMethodTypeChange();
     }
 
     @Override
     public void setParams(List<Param> params) {
         super.setParams(params);
+        onMethodTypeChange();
+    }
+
+    private void onMethodTypeChange() {
+        for (PartialMethodInst partialInst : partialInsts) {
+            partialInst.onMethodTypeChange();
+        }
         for (var instance : insts.values()) {
             instance.onMethodTypeChange();
         }
@@ -200,7 +234,7 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
         if (typeArguments.equals(getTypeParams()))
             return this;
         return insts.computeIfAbsent(typeArguments, k ->
-                new MethodInst(declClass, this, typeArguments));
+                new MethodInst(this, typeArguments));
     }
 
     @Override

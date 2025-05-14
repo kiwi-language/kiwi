@@ -1,8 +1,8 @@
 package org.metavm.compiler.util;
 
 import org.metavm.compiler.analyze.Enter;
-import org.metavm.compiler.element.*;
 import org.metavm.compiler.element.Package;
+import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.File;
 import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Types;
@@ -49,10 +49,17 @@ public class MockEnter {
 
         createNowFunc(rootPkg);
         createEqualsFunc(rootPkg);
+        createRequireFunc(rootPkg);
+        createForEachFunc(rootPkg);
+        createMapFunc(rootPkg);
         createPrintFunc(project);
         createConcatFunc(rootPkg);
         createConcatFunc(rootPkg);
         createEnumValueOfFunc(rootPkg);
+        createSumInt(rootPkg);
+        createSumLong(rootPkg);
+        createSumFloat(rootPkg);
+        createSumDouble(rootPkg);
     }
 
     private static void createInteger(Package rootPkg) {
@@ -538,42 +545,113 @@ public class MockEnter {
     }
 
     private static void createNowFunc(Package rootPackage) {
-        var nowFunc = new FreeFunc(NameTable.instance.get("now"));
+        var nowFunc = new FreeFunc(NameTable.instance.get("now"), rootPackage);
         nowFunc.setRetType(PrimitiveType.TIME);
-        rootPackage.addFunction(nowFunc);
     }
 
     private static void createEqualsFunc(Package rootPkg) {
-        var equalsFunc = new FreeFunc(Name.from("equals"));
+        var equalsFunc = new FreeFunc(Name.from("equals"), rootPkg);
         new Param(Name.from("o1"), Types.instance.getNullableType(PrimitiveType.ANY), equalsFunc);
         new Param(Name.from("o2"), Types.instance.getNullableType(PrimitiveType.ANY), equalsFunc);
         equalsFunc.setRetType(PrimitiveType.BOOL);
-        rootPkg.addFunction(equalsFunc);
+    }
+
+    private static void createRequireFunc(Package rootPkg) {
+        var func = new FreeFunc(Name.from("require"), rootPkg);
+        new Param(Name.from("cond"), PrimitiveType.BOOL, func);
+        new Param(Name.from("message"), Types.instance.getStringType(), func);
+    }
+
+    private static void createForEachFunc(Package rootPkg) {
+        var func = new FreeFunc(NameTable.instance.forEach, rootPkg);
+        var typeVar = new TypeVar(NameTable.instance.E, PrimitiveType.ANY, func);
+        new Param(
+                NameTable.instance.a,
+                Types.instance.getArrayType(typeVar),
+                func
+        );
+        new Param(NameTable.instance.action,
+                Types.instance.getFuncType(List.of(typeVar), PrimitiveType.VOID),
+                func
+        );
+    }
+
+    private static void createMapFunc(Package rootPkg) {
+        var func = new FreeFunc(NameTable.instance.map, rootPkg);
+        var typeVar1 = new TypeVar(NameTable.instance.T, PrimitiveType.ANY, func);
+        var typeVar2 = new TypeVar(NameTable.instance.R, PrimitiveType.ANY, func);
+        new Param(
+                NameTable.instance.a,
+                Types.instance.getArrayType(typeVar1),
+                func
+        );
+        new Param(NameTable.instance.action,
+                Types.instance.getFuncType(List.of(typeVar1), typeVar2),
+                func
+        );
+        func.setRetType(Types.instance.getArrayType(typeVar2));
+    }
+
+    private static void createSumInt(Package rootPkg) {
+        var func = new FreeFunc(NameTable.instance.sumInt, rootPkg);
+        new Param(
+                NameTable.instance.a,
+                Types.instance.getArrayType(PrimitiveType.INT),
+                func
+        );
+        func.setRetType(PrimitiveType.INT);
+    }
+
+    private static void createSumLong(Package rootPkg) {
+        var func = new FreeFunc(NameTable.instance.sumLong, rootPkg);
+        new Param(
+                NameTable.instance.a,
+                Types.instance.getArrayType(PrimitiveType.LONG),
+                func
+        );
+        func.setRetType(PrimitiveType.LONG);
+    }
+
+    private static void createSumFloat(Package rootPkg) {
+        var func = new FreeFunc(NameTable.instance.sumFloat, rootPkg);
+        new Param(
+                NameTable.instance.a,
+                Types.instance.getArrayType(PrimitiveType.FLOAT),
+                func
+        );
+        func.setRetType(PrimitiveType.FLOAT);
+    }
+
+    private static void createSumDouble(Package rootPkg) {
+        var func = new FreeFunc(NameTable.instance.sumDouble, rootPkg);
+        new Param(
+                NameTable.instance.a,
+                Types.instance.getArrayType(PrimitiveType.DOUBLE),
+                func
+        );
+        func.setRetType(PrimitiveType.DOUBLE);
     }
 
     private static void createPrintFunc(Project proj) {
-        var func = new FreeFunc(Name.from("print"));
+        var func = new FreeFunc(Name.from("print"), proj.getRootPackage());
         new Param(Name.from("message"), Types.instance.getNullableAny(), func);
-        proj.getRootPackage().addFunction(func);
     }
 
     private static void createConcatFunc(Package rootPkg) {
-        var func = new FreeFunc(Name.from("concat"));
+        var func = new FreeFunc(Name.from("concat"), rootPkg);
         new Param(Name.from("o1"), Types.instance.getNullableAny(), func);
         new Param(Name.from("o2"), Types.instance.getNullableAny(), func);
         func.setRetType(Types.instance.getStringType());
-        rootPkg.addFunction(func);
     }
 
     private static void createEnumValueOfFunc(Package rootPkg) {
         var enumClass = rootPkg.subPackage("java").subPackage("lang").getClass("Enum");
-        var func = new FreeFunc(Name.from("enumValueOf"));
+        var func = new FreeFunc(Name.from("enumValueOf"), rootPkg);
         var typeVar = new TypeVar(Name.from("E"), PrimitiveType.ANY, func);
         typeVar.setBound(enumClass.getInst(List.of(typeVar)));
         new Param(Name.from("values"), Types.instance.getArrayType(typeVar), func);
         new Param(Name.from("name"), Types.instance.getStringType(), func);
         func.setRetType(Types.instance.getNullableType(typeVar));
-        rootPkg.addFunction(func);
     }
 
     public static Project enter(List<File> files) {

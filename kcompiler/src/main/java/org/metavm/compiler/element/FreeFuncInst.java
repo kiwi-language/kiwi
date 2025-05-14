@@ -66,13 +66,8 @@ public final class FreeFuncInst extends ElementBase implements FreeFuncRef, Func
         return type;
     }
 
-    public FreeFunc getFunc() {
+    public FuncRef getFunc() {
         return function;
-    }
-
-    @Override
-    public FuncRef getInst(List<Type> typeArguments) {
-        throw new UnsupportedOperationException();
     }
 
     public List<Type> getTypeArgs() {

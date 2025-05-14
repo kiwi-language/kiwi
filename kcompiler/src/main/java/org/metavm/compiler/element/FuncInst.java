@@ -4,9 +4,7 @@ import org.metavm.compiler.type.Type;
 import org.metavm.compiler.util.List;
 
 public interface FuncInst extends ValueElement, Constant {
-    Func getFunc();
-
-    FuncRef getInst(List<Type> typeArguments);
+    FuncRef getFunc();
 
     List<Type> getParamTypes();
 

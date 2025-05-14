@@ -138,4 +138,9 @@ public class TypeVar extends ElementBase implements Type, Element, Comparable<Ty
         }
         return closure;
     }
+
+    @Override
+    public String toString() {
+        return "TypeVar " + name;
+    }
 }

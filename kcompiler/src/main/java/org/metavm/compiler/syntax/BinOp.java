@@ -45,6 +45,11 @@ public enum BinOp {
             code.compare(type);
             code.gt();
         }
+
+        @Override
+        public Type getType(Type firstType, Type secondType) {
+            return PrimitiveType.BOOL;
+        }
     },
     GE(">=", EnumSet.of(COMPARISON)) {
         @Override

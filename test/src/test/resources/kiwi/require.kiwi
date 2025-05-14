@@ -1,0 +1,8 @@
+
+class Require {
+
+    static fn requirePos(value: int) {
+        require(value > 0, "Value must be positive")
+    }
+
+}

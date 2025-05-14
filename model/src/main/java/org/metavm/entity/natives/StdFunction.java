@@ -11,7 +11,6 @@ import org.metavm.entity.StdMethod;
 import org.metavm.flow.FlowExecResult;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Function;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.type.*;
 import org.metavm.user.Session;
@@ -661,6 +660,98 @@ public enum StdFunction implements ValueHolderOwner<Function> {
                 return FlowExecResult.of(Instances.nullInstance());
             }
     ),
+    require(
+            "void require(boolean condition, string message)",
+            false,
+            List.of(),
+            (func, args, callContext) -> {
+                var cond = (IntValue) args.getFirst();
+                if (cond.value != 0)
+                    return FlowExecResult.of(Instances.nullInstance());
+                else {
+                    var e = ClassInstance.allocate(TmpId.random(), StdKlass.illegalArgumentException.type());
+                    var nat = new IllegalArgumentExceptionNative(e);
+                    nat.IllegalArgumentException(args.get(1), callContext);
+                    return FlowExecResult.ofException(e);
+                }
+            }),
+    forEach(
+            "void forEach<E>(E[] a, (E) -> void action)",
+            false,
+            List.of(),
+            (func, args, callContext) -> {
+                var array = args.getFirst().resolveArray();
+                var action = (FunctionValue) args.get(1);
+                array.forEach(e -> action.execute(List.of(e), callContext));
+                return FlowExecResult.of(Instances.nullInstance());
+            }),
+    map(
+            "R[] map<T, R>(T[] a, (T) -> R mapper)",
+            false,
+            List.of(),
+            (func, args, callContext) -> {
+                var array = args.getFirst().resolveArray();
+                var action = (FunctionValue) args.get(1);
+                var rType = func.getTypeArguments().get(1);
+                var result = new ArrayInstance(new ArrayType(rType, ArrayKind.DEFAULT));
+                array.forEach(e -> {
+                    var r = requireNonNull(action.execute(List.of(e), callContext).ret());
+                    result.addElement(r);
+                });
+                return FlowExecResult.of(result.getReference());
+            }),
+    sumInt(
+            "int sumInt(int[] a)",
+            false,
+            List.of(),
+            (func, args, callContext) -> {
+                var array = args.getFirst().resolveArray();
+                var sum = 0;
+                for (Value value : array) {
+                    var i = (IntValue) value;
+                    sum += i.value;
+                }
+                return FlowExecResult.of(Instances.intInstance(sum));
+            }),
+    sumLong(
+            "long sumLong(long[] a)",
+            false,
+            List.of(),
+            (func, args, callContext) -> {
+                var array = args.getFirst().resolveArray();
+                var sum = 0L;
+                for (Value value : array) {
+                    var i = (LongValue) value;
+                    sum += i.value;
+                }
+                return FlowExecResult.of(Instances.longInstance(sum));
+            }),
+    sumFloat(
+            "float sumFloat(float[] a)",
+            false,
+            List.of(),
+            (func, args, callContext) -> {
+                var array = args.getFirst().resolveArray();
+                var sum = 0f;
+                for (Value value : array) {
+                    var i = (FloatValue) value;
+                    sum += i.value;
+                }
+                return FlowExecResult.of(Instances.floatInstance(sum));
+            }),
+    sumDouble(
+            "double sumDouble(double[] a)",
+            false,
+            List.of(),
+            (func, args, callContext) -> {
+                var array = args.getFirst().resolveArray();
+                var sum = 0.0;
+                for (Value value : array) {
+                    var i = (DoubleValue) value;
+                    sum += i.value;
+                }
+                return FlowExecResult.of(Instances.doubleInstance(sum));
+            }),
     ;
 
     private final String name;

@@ -1,0 +1,21 @@
+package arrays
+
+class ArrayLab {
+
+    static fn values(foos: Foo[]) -> int[] {
+         return foos.map<int>(f -> f.value)
+    }
+
+    static fn map<T, R>(a: T[], mapper: (T) -> R) -> R[] {
+        val result = new R[]
+        a.forEach(e -> result.append(mapper(e)))
+        return result
+    }
+
+    static fn inc(foos: Foo[]) {
+        foos.forEach(f -> f.value++)
+    }
+
+}
+
+class Foo(var value: int)

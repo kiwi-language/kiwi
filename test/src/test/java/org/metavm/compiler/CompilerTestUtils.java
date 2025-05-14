@@ -39,20 +39,19 @@ public class CompilerTestUtils {
     }
 
     private static void createConcat(Package rootPkg) {
-        var func = new FreeFunc(NameTable.instance.concat);
+        var func = new FreeFunc(NameTable.instance.concat, rootPkg);
         new Param(Name.from("s1"), Types.instance.getNullableString(), func);
         new Param(Name.from("s2"), Types.instance.getNullableString(), func);
         func.setRetType(Types.instance.getStringType());
-        rootPkg.addFunction(func);
     }
 
     public static Project attr(File file) {
         var project = MockEnter.enter(List.of(file));
         MockEnter.enterStandard(project);
         ImportResolver.resolve(file, project);
-        var typeResolver = new TypeResolver();
+        var typeResolver = new TypeResolver(project);
         file.accept(typeResolver);
-        file.accept(new IdentAttr());
+        file.accept(new IdentAttr(project));
         file.accept(new Attr(project));
         return project;
     }

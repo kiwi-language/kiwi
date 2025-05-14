@@ -91,7 +91,7 @@ public class Package extends ElementBase implements ClassScope, Element {
     }
 
     public FreeFunc getFunction(Name name) {
-        return Objects.requireNonNull(functions.get(name), () -> "Function " + name + " not found in package " + name);
+        return Objects.requireNonNull(functions.get(name), () -> "Function " + name + " not found in package " + this.name);
     }
 
     public Package subPackage(String name) {

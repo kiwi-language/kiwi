@@ -16,10 +16,11 @@ import static org.metavm.compiler.syntax.NodeMaker.*;
 public class Lower extends AbstractNodeVisitor<Node> {
 
     private final Project project;
-    private final Env env = new Env();
+    private final Env env;
 
     public Lower(Project project) {
         this.project = project;
+        env = new Env(project);
     }
 
     @Override

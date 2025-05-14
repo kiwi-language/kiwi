@@ -1,5 +1,6 @@
 package org.metavm.compiler.element;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.compiler.type.Type;
 import org.metavm.compiler.type.TypeSubst;
@@ -12,12 +13,16 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 public class FreeFunc extends Func implements FreeFuncRef, Comparable<FreeFunc> {
 
+    private final Package pkg;
     private final Map<List<Type>, FreeFuncInst> instances = new HashMap<>();
 
-    public FreeFunc(Name name) {
+    public FreeFunc(Name name, Package pkg) {
         super(name);
+        this.pkg = pkg;
+        pkg.addFunction(this);
     }
 
     @Override
@@ -35,6 +40,10 @@ public class FreeFunc extends Func implements FreeFuncRef, Comparable<FreeFunc> 
         return getQualName();
     }
 
+    public Package getPkg() {
+        return pkg;
+    }
+
     @Override
     public int compareTo(@NotNull FreeFunc o) {
         var r = getName().compareTo(o.getName());
@@ -46,7 +55,7 @@ public class FreeFunc extends Func implements FreeFuncRef, Comparable<FreeFunc> 
     public FreeFuncRef getInst(List<Type> typeArguments) {
         if (typeArguments.equals(getParamTypes()))
             return this;
-        var subst = new TypeSubst(getTypeParams(), typeArguments);
+        var subst = TypeSubst.create(getTypeParams(), typeArguments);
         return instances.computeIfAbsent(typeArguments, k ->
                 new FreeFuncInst(this, typeArguments,
                         getParamTypes().map(t -> t.accept(subst)),
