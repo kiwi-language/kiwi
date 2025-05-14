@@ -5,11 +5,9 @@ import org.metavm.compiler.element.Package;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.*;
-import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.Traces;
 
-import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -454,13 +452,13 @@ public class Attr extends StructuralNodeVisitor {
                     return resolved;
                 }
             }
-            throw new AnalysisException("Fail to resolve symbol for expression: " + expr.getText());
+            throw new AnalysisException("Cannot resolve expression '" + expr.getText() + "'");
         }
 
         Element resolve() {
             var it = candidates.iterator();
             if (!it.hasNext())
-                throw new CompilationException("Cannot resolve expression: " + expr.getText());
+                throw new AnalysisException("Cannot resolve expression '" + expr.getText() + "'");
             var resolved = Objects.requireNonNull(it.next());
             ensureElementTyped(resolved);
             onResolved(resolved);

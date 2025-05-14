@@ -5,10 +5,12 @@ import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jetbrains.annotations.NotNull;
+import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.flow.*;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.antlr.TypeLexer;
+import org.metavm.util.BusinessException;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
 import org.metavm.util.Utils;
@@ -272,7 +274,7 @@ public class TypeParserImpl implements TypeParser {
     private ITypeDef getTypeDef(String name) {
         var typeDef = typeDefProvider.getTypeDef(name);
         if(typeDef == null)
-            throw new NullPointerException("Failed to find a TypeDef for name: " + name);
+            throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, name);
         return typeDef;
     }
 

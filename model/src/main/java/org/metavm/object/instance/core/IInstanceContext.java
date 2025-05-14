@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
@@ -10,10 +11,7 @@ import org.metavm.flow.Function;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.type.*;
-import org.metavm.util.InstanceInput;
-import org.metavm.util.Instances;
-import org.metavm.util.ParameterizedMap;
-import org.metavm.util.Utils;
+import org.metavm.util.*;
 import org.metavm.util.profile.Profiler;
 
 import javax.annotation.Nullable;
@@ -247,8 +245,10 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
     }
 
     default Klass getKlassByQualifiedName(String qualifiedName) {
-        return Objects.requireNonNull(findKlassByQualifiedName(qualifiedName),
-                () -> "Cannot find klass for name " + qualifiedName);
+        var klass = findKlassByQualifiedName(qualifiedName);
+        if (klass == null)
+            throw new BusinessException(ErrorCode.CLASS_NOT_FOUND, qualifiedName);
+        return klass;
     }
 
     default Commit getCommit(String id) {

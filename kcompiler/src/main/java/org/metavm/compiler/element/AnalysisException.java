@@ -1,6 +1,8 @@
 package org.metavm.compiler.element;
 
-public class AnalysisException extends RuntimeException {
+import org.metavm.compiler.util.CompilationException;
+
+public class AnalysisException extends CompilationException {
 
     public AnalysisException() {
     }

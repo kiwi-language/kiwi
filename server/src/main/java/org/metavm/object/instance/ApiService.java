@@ -725,7 +725,7 @@ public class ApiService extends EntityContextFactoryAware {
             }
         }
         if (result == null)
-            throw new InternalException("Can not resolve method in klass " + klass.getName() + " for map " + map);
+            throw new BusinessException(ErrorCode.CONSTRUCTOR_NOT_FOUND, klass.getName(), map);
         return result;
     }
 

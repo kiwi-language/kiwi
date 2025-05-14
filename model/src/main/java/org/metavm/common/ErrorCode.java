@@ -37,6 +37,7 @@ public enum ErrorCode {
     CLASS_NOT_FOUND(320, "Class '{}' not found"),
     NOT_AN_ENUM_CLASS(321, "Class `{}' is not an enum class"),
     INVALID_ELEMENT_NAME(322, "Invalid element name: {}"),
+    CONSTRUCTOR_NOT_FOUND(323, "Cannot find constructor in class '{}' for arguments: '{}'"),
 
     // instance
     INSTANCE_NOT_FOUND(301, "Object '{}' not found"),
