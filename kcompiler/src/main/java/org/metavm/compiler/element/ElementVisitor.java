@@ -37,4 +37,6 @@ public interface ElementVisitor<R> {
     R visitFunctionInst(FreeFuncInst functionInst);
 
     R visitClassInst(ClassInst classInst);
+
+    R visitPartialMethodInst(PartialMethodInst partialMethodInst);
 }

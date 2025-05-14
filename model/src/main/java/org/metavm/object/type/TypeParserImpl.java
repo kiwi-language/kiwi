@@ -217,6 +217,8 @@ public class TypeParserImpl implements TypeParser {
             return PrimitiveType.charType;
         if (ctx.DOUBLE() != null)
             return PrimitiveType.doubleType;
+        if (ctx.FLOAT() != null)
+            return PrimitiveType.floatType;
         if (ctx.VOID() != null)
             return PrimitiveType.voidType;
         if (ctx.TIME() != null)

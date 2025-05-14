@@ -50,10 +50,10 @@ public class CompilationTask {
         enter.enter(files);
         for (File file : files) {
             ImportResolver.resolve(file, project);
-            file.accept(new TypeResolver());
+            file.accept(new TypeResolver(project));
         }
         for (File file : files) {
-            file.accept(new IdentAttr());
+            file.accept(new IdentAttr(project));
         }
         for (File file : files) {
             file.accept(new Attr(project));

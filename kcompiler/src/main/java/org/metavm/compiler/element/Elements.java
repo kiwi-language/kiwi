@@ -1,5 +1,6 @@
 package org.metavm.compiler.element;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.type.Types;
 import org.metavm.object.type.SymbolRefs;
 import org.metavm.util.DebugEnv;
@@ -7,6 +8,7 @@ import org.metavm.util.MvOutput;
 
 import java.util.Objects;
 
+@Slf4j
 public class Elements {
 
     public static void writeReference(Element element, MvOutput output) {

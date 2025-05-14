@@ -3,18 +3,17 @@ package org.metavm.compiler;
 import org.junit.Assert;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ColumnKind;
+import org.metavm.object.instance.core.ArrayInstanceWrap;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.Klass;
+import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
 import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class KiwiTest extends KiwiTestBase {
 
@@ -280,6 +279,53 @@ public class KiwiTest extends KiwiTestBase {
         callMethod(id, "set", List.of(1));
         var value2 = getObject(id).getDouble("value");
         Assert.assertEquals(1.0, value2, 0.001);
+    }
+
+    public void testRequire() {
+        deploy("kiwi/require.kiwi");
+        callMethod("Require", "requirePos", List.of(1));
+        try {
+            callMethod("Require", "requirePos", List.of(0));
+            Assert.fail();
+        }
+        catch (BusinessException e) {
+            Assert.assertEquals("Value must be positive", e.getMessage());
+        }
+    }
+
+    public void testArrayForEach() {
+        deploy("kiwi/arrays/ArrayLab.kiwi");
+        var fooIds = new ArrayList<String>();
+        for (int i = 0; i < 5; i++) {
+            fooIds.add(saveInstance("arrays.Foo", Map.of("value", 1)));
+        }
+        callMethod("arrays.ArrayLab", "inc", List.of(fooIds));
+        for (var fooId : fooIds) {
+            var foo = getObject(fooId);
+            Assert.assertEquals(2, foo.getInt("value"));
+        }
+    }
+
+    public void testArrayMap() {
+        deploy("kiwi/arrays/ArrayLab.kiwi");
+        var fooIds = new ArrayList<String>();
+        for (int i = 0; i < 5; i++) {
+            fooIds.add(saveInstance("arrays.Foo", Map.of("value", 1)));
+        }
+        var r = callMethod("arrays.ArrayLab", "values", List.of(fooIds));
+        Assert.assertEquals(new ArrayInstanceWrap(List.of(1, 1, 1, 1, 1)), r);
+    }
+
+    public void testArraySum() {
+        deploy("kiwi/arrays/sum.kiwi");
+        var sum = (int) callMethod("arrays.Lab", "sumInt", List.of(List.of(1, 2, 3)));
+        Assert.assertEquals(6, sum);
+        var sum1 = (long) callMethod("arrays.Lab", "sumLong", List.of(List.of(1, 2, 3)));
+        Assert.assertEquals(6L, sum1);
+        var sum2 = (float) callMethod("arrays.Lab", "sumFloat", List.of(List.of(1.0, 2.0, 3.0)));
+        Assert.assertEquals(6.0f, sum2, 0.001f);
+        var sum3 = (double) callMethod("arrays.Lab", "sumDouble", List.of(List.of(1.0, 2.0, 3.0)));
+        Assert.assertEquals(6.0, sum3, 0.001);
     }
 
     public void testCondExpr() {

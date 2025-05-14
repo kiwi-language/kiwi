@@ -12,7 +12,7 @@ public class TypeSubstTest extends TestCase {
         var clazz = new Clazz(ClassTag.CLASS, NameTable.instance.get( "Foo"), Access.PUBLIC, project.getRootPackage());
         var typeVar = new TypeVar(NameTable.instance.get("T"), PrimitiveType.ANY, clazz);
 
-        var subst = new TypeSubst(List.of(typeVar), List.of(Types.instance.getStringType()));
+        var subst = TypeSubst.create(List.of(typeVar), List.of(Types.instance.getStringType()));
         var pType = clazz.accept(subst);
         Assert.assertSame(
                 clazz.getInst(null, List.of(Types.instance.getStringType())),

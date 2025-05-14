@@ -22,7 +22,7 @@ public class ClassInst implements ClassType, Element, GenericDecl {
 
     private @Nullable List<ClassType> interfaces;
     private @Nullable List<FieldInst> fields;
-    private @Nullable List<MethodInst> methods;
+    private @Nullable List<PartialMethodInst> methods;
     private @Nullable List<ClassType> classes;
 
     private MethodInst primInit;
@@ -93,7 +93,7 @@ public class ClassInst implements ClassType, Element, GenericDecl {
     @Override
     public MethodRef getPrimaryInit() {
         var init = (MethodRef) getTable().lookupFirst(Name.init(),
-                e -> e instanceof MethodInst m && m.getFunc() == getClazz().getPrimaryInit()
+                e -> e instanceof PartialMethodInst m && m.getFunc() == getClazz().getPrimaryInit()
         );
         return Objects.requireNonNull(init);
     }
@@ -103,7 +103,7 @@ public class ClassInst implements ClassType, Element, GenericDecl {
         return clazz.isEnum();
     }
 
-    public List<MethodInst> getMethods() {
+    public List<PartialMethodInst> getMethods() {
         if (methods == null)
             methods = clazz.getMethods().map(this::createMethodInst);
         return methods;
@@ -121,8 +121,8 @@ public class ClassInst implements ClassType, Element, GenericDecl {
         return new FieldInst(this, field, type);
     }
 
-    private MethodInst createMethodInst(Method method) {
-        return new MethodInst(this, method, List.into(method.getTypeParams()));
+    private PartialMethodInst createMethodInst(Method method) {
+        return new PartialMethodInst(this, method);
     }
 
     @Override
@@ -154,7 +154,7 @@ public class ClassInst implements ClassType, Element, GenericDecl {
         if (substitutor == null) {
             var map = new HashMap<Type, Type>();
             buildTypeArgMap(map);
-            substitutor = new TypeSubst(map);
+            substitutor = TypeSubst.create(map);
         }
         return substitutor;
     }

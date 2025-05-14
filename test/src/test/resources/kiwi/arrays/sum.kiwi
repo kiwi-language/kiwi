@@ -1,0 +1,21 @@
+package arrays
+
+class Lab {
+
+    static fn sumInt(values: int[]) -> int {
+        return values.sum()
+    }
+
+    static fn sumLong(values: long[]) -> long {
+        return values.sum()
+    }
+
+    static fn sumFloat(values: float[]) -> float {
+        return values.sum()
+    }
+
+    static fn sumDouble(values: double[]) -> double {
+        return values.sum()
+    }
+
+}

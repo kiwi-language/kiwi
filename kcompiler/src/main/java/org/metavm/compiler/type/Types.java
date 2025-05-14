@@ -118,7 +118,7 @@ public class Types {
     }
 
     public Type substitute(Type type, List<Type> from, List<Type> to) {
-        var subst = new TypeSubst(from, to);
+        var subst = TypeSubst.create(from, to);
         return type.accept(subst);
     }
 
@@ -151,6 +151,11 @@ public class Types {
     public UncertainType getUpperBoundedType(Type upperBound) {
         return getUncertainType(PrimitiveType.NEVER, upperBound);
     }
+
+    public UncertainType getLowerBoundedType(Type lowerBound) {
+        return getUncertainType(lowerBound, PrimitiveType.ANY);
+    }
+
 
     // Type list are usually short, so this implementation is fine
     public List<Type> sorted(List<Type> types) {

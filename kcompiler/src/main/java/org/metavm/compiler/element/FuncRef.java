@@ -17,5 +17,4 @@ public interface FuncRef extends ValueElement, Constant {
 
      FuncType getType();
 
-     FuncRef getInst(List<Type> typeArguments);
 }

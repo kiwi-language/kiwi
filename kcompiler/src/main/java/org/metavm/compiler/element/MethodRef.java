@@ -15,4 +15,7 @@ public interface MethodRef extends FuncRef, MemberRef {
     boolean isStatic();
 
     void invoke(Code code, Env env);
+
+    Method getRawMethod();
+
 }

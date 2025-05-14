@@ -1,5 +1,7 @@
 package org.metavm.compiler.type;
 
+import org.metavm.compiler.analyze.DeferredType;
+import org.metavm.compiler.element.TypeVar;
 import org.metavm.compiler.util.List;
 import org.metavm.util.Utils;
 
@@ -8,16 +10,27 @@ import java.util.Map;
 
 public class TypeSubst extends AbstractTypeVisitor<Type> {
 
-    public static final TypeVisitor<Type> empty = new TypeSubst(List.nil(), List.nil());
+    public static TypeSubst create(List<? extends Type> from, List<? extends Type> to) {
+        if (from.isEmpty())
+            return empty;
+        return new TypeSubst(from, to);
+    }
+
+    public static TypeSubst create(Map<Type, Type> map) {
+        if (map.isEmpty())
+            return empty;
+        return new TypeSubst(map);
+    }
+
     private final Types types = Types.instance;
     private final Map<Type, Type> map = new IdentityHashMap<>();
 
-    public TypeSubst(List<? extends Type> from, List<? extends Type> to) {
-        Utils.require(from.size() == to.size());
+    private TypeSubst(List<? extends Type> from, List<? extends Type> to) {
+        Utils.require(from.size() == to.size(), () -> "Expecting " + from.size() + " type arguments, but got " + to.size());
         Utils.biForEach(from, to, map::put);
     }
 
-    public TypeSubst(Map<Type, Type> map) {
+    private TypeSubst(Map<Type, Type> map) {
         this.map.putAll(map);
     }
 
@@ -84,5 +97,58 @@ public class TypeSubst extends AbstractTypeVisitor<Type> {
             return subst;
         return types.getUnionType(unionType.alternatives().map(t -> t.accept(this)));
     }
+
+    public static final TypeSubst empty = new TypeSubst(List.nil(), List.nil()) {
+
+        @Override
+        public Type visitFunctionType(FuncType funcType) {
+            return funcType;
+        }
+
+        @Override
+        public Type visitIntersectionType(IntersectionType intersectionType) {
+            return intersectionType;
+        }
+
+        @Override
+        public Type visitUncertainType(UncertainType uncertainType) {
+            return uncertainType;
+        }
+
+        @Override
+        public Type visitClassType(ClassType classTypeInst) {
+            return classTypeInst;
+        }
+
+        @Override
+        public Type visitArrayType(ArrayType arrayType) {
+            return arrayType;
+        }
+
+        @Override
+        public Type visitUnionType(UnionType unionType) {
+            return unionType;
+        }
+
+        @Override
+        public Type visitDeferredType(DeferredType deferredType) {
+            return deferredType;
+        }
+
+        @Override
+        public Type visitTypeVariable(TypeVar typeVar) {
+            return typeVar;
+        }
+
+        @Override
+        public Type visitPrimitiveType(PrimitiveType primitiveType) {
+            return primitiveType;
+        }
+
+        @Override
+        public Type visitType(Type type) {
+            return type;
+        }
+    };
 
 }

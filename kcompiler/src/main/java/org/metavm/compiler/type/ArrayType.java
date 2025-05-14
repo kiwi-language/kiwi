@@ -12,22 +12,67 @@ import javax.annotation.Nullable;
 
 public final class ArrayType implements Type, Comparable<ArrayType> {
 
-    public static final Clazz arrayClass = new Clazz(ClassTag.CLASS, Name.array(),
-            Access.PUBLIC, BuiltinClassScope.instance);
+    public static final Clazz arrayClass = ClazzBuilder.newBuilder(Name.array(), BuiltinClassScope.instance)
+            .addTypeParam(NameTable.instance.T)
+            .build();
+
+    public static final Clazz intArrayClass = ClazzBuilder.newBuilder(NameTable.instance.intArray, BuiltinClassScope.instance)
+            .interfaces(List.of(arrayClass.getInst(List.of(PrimitiveType.INT))))
+            .build();
+
+    public static final Clazz longArrayClass = ClazzBuilder.newBuilder(NameTable.instance.longArray, BuiltinClassScope.instance)
+            .interfaces(List.of(arrayClass.getInst(List.of(PrimitiveType.LONG))))
+            .build();
+
+    public static final Clazz floatArrayClass = ClazzBuilder.newBuilder(NameTable.instance.floatArray, BuiltinClassScope.instance)
+            .interfaces(List.of(arrayClass.getInst(List.of(PrimitiveType.FLOAT))))
+            .build();
+
+    public static final Clazz doubleArrayClass = ClazzBuilder.newBuilder(NameTable.instance.doubleArray, BuiltinClassScope.instance)
+            .interfaces(List.of(arrayClass.getInst(List.of(PrimitiveType.DOUBLE))))
+            .build();
 
     public static final Field lengthField = new Field(
             NameTable.instance.length, PrimitiveType.INT, Access.PUBLIC, false, false, arrayClass
     );
 
-    public static final Method appendMethod = new Method(
-            NameTable.instance.append,
-            Access.PUBLIC, false, false, false, arrayClass
-    );
+    public static final Method appendMethod = MethodBuilder.newBuilder(arrayClass, NameTable.instance.append)
+            .addParam(NameTable.instance.t, arrayClass.getTypeParams().head())
+            .build();
+    public static final Method forEachMethod = MethodBuilder.newBuilder(arrayClass, NameTable.instance.forEach)
+            .addParam(
+                    NameTable.instance.action,
+                    Types.instance.getFuncType(List.of(arrayClass.getTypeParams().head()), PrimitiveType.VOID)
+            )
+            .build();
+
+    public static final Method mapMethod = MethodBuilder.newBuilder(arrayClass, NameTable.instance.map).build();
 
     static {
-        var typeVar = new TypeVar(NameTable.instance.T, PrimitiveType.ANY, arrayClass);
-        new Param(NameTable.instance.t, typeVar, appendMethod);
+        var typeVar2 = new TypeVar(NameTable.instance.R, PrimitiveType.ANY, mapMethod);
+        new Param(
+                NameTable.instance.mapper,
+                Types.instance.getFuncType(List.of(arrayClass.getTypeParams().head()), typeVar2),
+                mapMethod
+        );
+        mapMethod.setRetType(Types.instance.getArrayType(typeVar2));
     }
+
+    public static final Method intSumMethod = MethodBuilder.newBuilder(intArrayClass, NameTable.instance.sum)
+            .retType(PrimitiveType.INT)
+            .build();
+
+    public static final Method longSumMethod = MethodBuilder.newBuilder(longArrayClass, NameTable.instance.sum)
+            .retType(PrimitiveType.LONG)
+            .build();
+
+    public static final Method floatSumMethod = MethodBuilder.newBuilder(floatArrayClass, NameTable.instance.sum)
+            .retType(PrimitiveType.FLOAT)
+            .build();
+
+    public static final Method doubleSmMethod = MethodBuilder.newBuilder(doubleArrayClass, NameTable.instance.sum)
+            .retType(PrimitiveType.DOUBLE)
+            .build();
 
     private final Type elementType;
     private final ClassType classType;
@@ -35,7 +80,17 @@ public final class ArrayType implements Type, Comparable<ArrayType> {
 
     ArrayType(Type elementType) {
         this.elementType = elementType;
-        classType = arrayClass.getInst(List.of(elementType));
+        if (elementType instanceof PrimitiveType primitiveType) {
+            classType = switch (primitiveType) {
+                case INT -> intArrayClass;
+                case LONG -> longArrayClass;
+                case FLOAT -> floatArrayClass;
+                case DOUBLE -> doubleArrayClass;
+                default -> arrayClass.getInst(List.of(elementType));
+            };
+        }
+        else
+            classType = arrayClass.getInst(List.of(elementType));
     }
 
     @Override

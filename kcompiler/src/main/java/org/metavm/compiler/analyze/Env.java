@@ -17,10 +17,19 @@ import java.util.function.Predicate;
 @Slf4j
 public class Env {
 
+    private final Project project;
     private final Types types = Types.instance;
     private final ElementTable table = new ElementTable();
     private Scope currentScope;
 
+    public Env(Project project) {
+        this.project = project;
+    }
+
+
+    public Project getProject() {
+        return project;
+    }
 
     public Scope enterScope(Node node) {
         return currentScope = new Scope(node, null, table, this, currentScope);

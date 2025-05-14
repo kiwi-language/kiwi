@@ -155,6 +155,8 @@ public class Attr extends StructuralNodeVisitor {
     }
 
     private Resolver attrExpr(Expr expr, Type type) {
+        if (Traces.traceAttr)
+            log.trace("Attributing expression {}", expr.getText());
         if (expr.getStatus() == ExprStatus.RESOLVED)
             return new ImmediateResolver(expr.getElement());
         if (expr.getStatus() == ExprStatus.RESOLVING)
@@ -357,7 +359,8 @@ public class Attr extends StructuralNodeVisitor {
                     return r.resolve(e -> {
                         if (e instanceof GenericDecl genDecl
                                 && genDecl.getTypeParams().size() == typeApply.getArgs().size()) {
-                            var resolved = mapper.apply(genDecl.getInst(typeApply.getArgs().map(TypeNode::getType)));
+                            var inst = genDecl.getInst(typeApply.getArgs().map(TypeNode::getType));
+                            var resolved = mapper.apply(inst);
                             if (resolved != null) {
                                 typeApply.setElement(resolved);
                                 return resolved;

@@ -191,6 +191,10 @@ public class ClassFileWriterTest extends TestCase {
         process("kiwi/condexpr/condexpr.kiwi");
     }
 
+    public void testRequire() {
+        process("kiwi/require.kiwi");
+    }
+
     private void process(String source) {
         var file = CompilerTestUtils.parse(TestUtils.getResourcePath(source));
         var project = CompilerTestUtils.attr(file);

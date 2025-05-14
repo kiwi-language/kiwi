@@ -1,7 +1,7 @@
-Kiwi: The Persistent & Distributed Language
+Kiwi: The Low-Code Programming Langauge
 ===========================================
 
-Kiwi is an open-source programming language featuring built-in persistence and distribution capabilities, streamlining the development of cloud-native applications.
+Welcome to Kiwi! Kiwi is a low-code programming language designed to streamline the development of cloud-native applications
 
 Download Pre-built Release
 --------------------------
@@ -127,14 +127,9 @@ Test the Installation
             var stock: int
         ) {
         
-            reduceStock(quantity: int) -> boolean {
-                if (stock >= quantity) {
-                    stock -= quantity
-                    return true
-                }
-                else {
-                    return false
-                }
+            reduceStock(quantity: int) {
+                require(stock >= quantity, "Out of stock")
+                stock -= quantity
             }
 
         }
