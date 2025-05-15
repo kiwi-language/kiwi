@@ -13,8 +13,6 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.metavm.util.Constants;
 import org.metavm.util.InternalException;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -94,20 +92,6 @@ public class DiskFormatter {
         }
     }
 
-    private static void clearRedis() {
-        if (CONFIG.containsKey(CONFIG_REDIS_PORT)) {
-            var config = new RedisStandaloneConfiguration(
-                    (String) CONFIG.get(CONFIG_HOST),
-                    (int) CONFIG.get(CONFIG_REDIS_PORT)
-            );
-            var connectionFactory = new JedisConnectionFactory(config);
-            connectionFactory.afterPropertiesSet();
-            try (var connection = connectionFactory.getConnection()) {
-                connection.serverCommands().flushAll();
-            }
-        }
-    }
-
     private static void clearEs() {
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY,
@@ -161,7 +145,6 @@ public class DiskFormatter {
 
     public static void main(String[] args) {
         clearEs();
-        clearRedis();
         clearDatabase();
         if (shouldDeleteIdFiles()) {
             deleteIdFiles();
