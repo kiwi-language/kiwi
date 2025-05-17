@@ -169,6 +169,10 @@ public enum ErrorCode {
     MISSING_TYPE_CONVERTER(1603, "Type converter is missing for field {}"),
     MISSING_SUPER_INITIALIZER(1604, "Super class initializer is missing class {}"),
 
+    // schema
+    UNSUPPORTED_SCHEMA(1701, "Unsupported schema: {}"),
+
+
     ;
 
     private final int code;
