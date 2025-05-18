@@ -2,12 +2,6 @@
 
 API for creating, retrieving, and invoking methods on objects.
 
-## Name-to-Path Conversion
-Convert names (e.g., foo.bar.BazService) to paths (e.g., foo/bar/baz-service):
-
-1.   Replace `.` with `/`.
-2.   Convert `CamelCase` to `lowercase-hypenated`.
-
 ## API Data Types
 
 | Type(s)        | API Representation         |
@@ -26,10 +20,11 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
 ### Object Creation
 
 * **`PUT /api/{class-path}`**
+* `{class-path}`: Qualified class name (e.g., org.kiwi.DemoClass) converted to a lowercase-hyphenated path (e.g., org/kiwi/demo-class).
 * **Request Body(JSON):**
     * Constructor arguments (key-value).
     * `public` child objects (arrays, keyed by child class names, recursive).
-    * Example: `PUT /org/kiwi/demo/order`
+    * Example: `PUT /api/org/kiwi/demo/order`
         ```json
         {
            "price": 14000,
@@ -64,7 +59,10 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
 
 ### Method Invocation
 *   **`POST /api/{receiver}/{method-name}`**
-    *   `{receiver}`: Object ID (instance methods), or Bean Name (bean methods).
+    *    `{receiver}`: The target of the invocation. This can be:
+          * An {object-id} for instance methods.
+          * A Bean Name for bean methods (the lowercase-hyphenated simple class name, e.g., user-service for UserService).
+    *    `{method-name}`: `CamelCase` (e.g., `reduceStock`) converted to `lowercase-hyphenated` (e.g., `reduce-stock`)
 *   **Request Body (JSON):** Method arguments.
 *   **Response:** `Result<any>` (data is the method's return value, see [API Data Types](#api-data-types)).
     *   Example: `POST /api/{product-id}/reduce-stock`
