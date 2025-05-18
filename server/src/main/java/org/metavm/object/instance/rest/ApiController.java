@@ -8,6 +8,7 @@ import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.common.ErrorCode;
+import org.metavm.common.Result;
 import org.metavm.http.HttpCookieImpl;
 import org.metavm.http.HttpHeaderImpl;
 import org.metavm.http.HttpRequestImpl;
@@ -49,10 +50,10 @@ public class ApiController {
     }
 
     @RequestMapping("/**")
-    public Object handle(HttpServletRequest servletRequest, HttpServletResponse servletResponse, @RequestBody(required = false) Object requestBody) {
+    public Result<Object> handle(HttpServletRequest servletRequest, HttpServletResponse servletResponse, @RequestBody(required = false) Object requestBody) {
         for (int i = 0; i < MAX_RETRIES; i++) {
             try {
-                return handle0(servletRequest, servletResponse, requestBody);
+                return Result.success(handle0(servletRequest, servletResponse, requestBody));
             }
             catch (PessimisticLockingFailureException e) {
                 logger.error("Serialization failure", e);

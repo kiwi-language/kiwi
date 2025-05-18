@@ -34,7 +34,7 @@ X-App-ID: 2
 GET http://localhost:8080/platform-user/apps
 
 ###
-POST http://localhost:8080/platform-user/enter-app/1850817017
+POST http://localhost:8080/platform-user/enter-app/1000006000
 Accept: application/json
 X-App-ID: 2
 
@@ -48,7 +48,7 @@ POST http://localhost:8080/platform-user/exit-app
 Accept: application/json
 
 ###
-POST http://localhost:8080/login
+POST https://metavm.tech/login
 Accept: application/json
 Content-Type: application/json
 
@@ -58,8 +58,46 @@ Content-Type: application/json
   "password": "123456"
 }
 
-###
 
+###
+POST http://localhost:8080/login
+Accept: application/json
+Content-Type: application/json
+
+{
+  "appId": 2,
+  "loginName": "demo",
+  "password": "123456"
+}
+###
+GET http://localhost:8080/schema
+X-App-ID: 1000006000
+
+###
+PUT http://localhost:8080/api/product
+Content-Type: application/json
+X-App-ID: 1000006000
+
+{
+  "name": "Shoes",
+  "price": 100,
+  "stock": 100,
+  "category": "CLOTHING"
+}
+###
+GET http://localhost:8080/api/01a0c4d7b90700
+X-App-ID: 1000006000
+
+###
+POST http://localhost:8080/api/01a0c4d7b90700/reduce-stock
+X-App-ID: 1000006000
+Content-Type: application/json
+
+{
+  "quantity": 1
+}
+
+###
 POST http://localhost:8081/api/flow/execute
 Accept: application/json
 Content-Type: application/json
