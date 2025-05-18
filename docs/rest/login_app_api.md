@@ -2,7 +2,7 @@
 
 ## Overview
 
-This API manages user authentication and application lifecycle. Users first log into the central **platform application (ID: 2)**. Once authenticated on the platform, they can "enter" other user applications they are members of.
+This API manages user authentication and application lifecycle. All endpoints except `/login` require a logged-in user and an `X-App-ID: 2` header.
 
 ## Common Data Structures
 
@@ -13,12 +13,6 @@ This API manages user authentication and application lifecycle. Users first log 
     | `code`    | `int`    | `0` for success, else error code      |
     | `message` | `string` | Error message when `code` is non-zero |
     | `data`    | `T`      | Response data                         |
-*   **`LoginInfo`**: Information returned upon successful login/entry.
-
-    | Field   | Type   | Description    |
-    |:--------|:-------|:---------------|
-    | `appId` | `long` | Application ID |
-    | `userId`| `string`| User ID        |
 *   **`Application`**: Represents an application.
 
     | Field   | Type   | Description        |
@@ -33,26 +27,27 @@ This API manages user authentication and application lifecycle. Users first log 
     | `data`  | `T[]`      | Array of items for the current page     |
     | `total` | `long`   | Total number of items across all pages  |
 
-## Authentication
-
-*   Endpoints generally require a valid `token_{app_id}` cookie from a previous login or "enter app" action, relevant to the context (platform or specific app).
-*   The "Enter Application" endpoint specifically requires being logged into the platform (i.e., having a `token_2` cookie and sending `X-App-ID: 2`).
-
 ## Endpoints
 
 ### 1. Login
-Logs a user into an application (typically the platform).
+Authenticates a user.
 
 *   `POST /login`
 *   **Request Body:**
 
-    | Field     | Type   | Description                                  |
-    |:----------|:-------|:---------------------------------------------|
-    | `appId`   | `long` | Application ID (e.g., `2` for platform)      |
-    | `loginName`| `string`| User name                                    |
-    | `password` | `string`| Password                                     |
+    | Field     | Type   | Description |
+    |:----------|:-------|:------------|
+    | `appId`   | `long` | Must be `2` |
+    | `loginName`| `string`| User name   |
+    | `password` | `string`| Password    |
 *   **Response:** `Result<LoginInfo>`
-*   **Cookie:** Sets `token_{appId}` (using `appId` from request).
+*   **`LoginInfo`**:
+
+    | Field   | Type   | Description |
+    |:--------|:-------|:------------|
+    | `appId` | `long` | Will be `2` |
+    | `userId`| `string`| User ID     |
+*   **Cookie:** Sets `token_2`
 *   **Example Request:**
     ```json
     { "appId": 2, "loginName": "demo", "password": "123456" }
@@ -63,7 +58,7 @@ Logs the current user out.
 
 *   `POST /logout`
 *   **Response:** `Result<Void>`
-    *   *Note: This invalidates the current `token_{app_id}` cookie.*
+    *   *Note: This invalidates the `token_2` cookie.*
 
 ### 3. List Applications
 Retrieves a paginated list of applications.
@@ -93,15 +88,3 @@ Deletes an application.
 *   `DELETE /app/{id}`
 *   **Path Parameter:** `id` (long) - The ID of the application to delete.
 *   **Response:** `Result<Void>`
-
-### 6. Enter Application
-Allows a platform-logged-in user to enter a specific user application.
-
-*   `POST /platform-user/enter-app/{app-id}`
-*   **Path Parameter:** `app-id` (long) - The ID of the application to enter.
-*   **Headers:** `X-App-ID: 2` (caller must be in platform context).
-*   **Authentication:** Requires prior login to the platform (appId: 2).
-*   **Response:** `Result<LoginInfo>` (for the entered application).
-*   **Cookie:** Sets `token_{app-id}` (using `app-id` from path parameter).
-
----
