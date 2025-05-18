@@ -5,7 +5,6 @@ Provides a GET /schema endpoint to retrieve structural information about defined
 ## Endpoint
 
 *   `GET /schema`
-*   **Authentication:** Requires a logged-in user (see [Login API](login_app_api.md)).
 *   **Header:** `X-App-ID: {app-id}`
 *   **Response:** `Result<Response>` (See data structures below)
 

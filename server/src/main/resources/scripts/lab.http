@@ -69,9 +69,14 @@ Content-Type: application/json
   "loginName": "demo",
   "password": "123456"
 }
+
+###
+POST http://localhost:8080/logout
+X-App-ID: 2
+
 ###
 GET http://localhost:8080/schema
-X-App-ID: 1000006000
+X-App-ID: 1000000010
 
 ###
 PUT http://localhost:8080/api/product
