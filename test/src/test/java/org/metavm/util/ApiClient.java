@@ -76,6 +76,10 @@ public class ApiClient {
         return apiService.search(className, query, page, pageSize, false);
     }
 
+    public SearchResult search(String className, Map<String, Object> query, int page, int pageSize, boolean includeObjects) {
+        return apiService.search(className, query, page, pageSize, includeObjects);
+    }
+
     private HttpRequest makeRequest(String method, String uri) {
         return new HttpRequestImpl(
                 method,

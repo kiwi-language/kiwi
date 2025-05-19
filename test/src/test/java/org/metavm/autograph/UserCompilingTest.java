@@ -82,7 +82,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 // test platform user view list
                 var platformUserList = apiClient.search(
                         userKlass, Map.of(), 1, 20
-                ).page();
+                ).data();
                 Assert.assertEquals(1, platformUserList.size());
                 // test platform user view update
 //                var platformUser1 = platformUserList.getFirst();
@@ -153,7 +153,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 waitForAllTasksDone();
                 var messageList = apiClient.search("org.metavm.message.LabMessage",
                         Map.of("receiver", anotherPlatformUserId),
-                        1, 20).page();
+                        1, 20).data();
                 Assert.assertEquals(1, messageList.size());
                 var messageId = (String) requireNonNull(messageList.getFirst());
                 var message = getObject(messageId);

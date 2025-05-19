@@ -79,9 +79,21 @@ GET http://localhost:8080/schema
 X-App-ID: 1000000010
 
 ###
+POST http://localhost:8080/api/search/product
+X-App-ID: 1000000010
+Content-Type: application/json
+
+{
+  "criteria": {
+    "price": [0, 99]
+  },
+  "includeObjects": true
+}
+
+###
 PUT http://localhost:8080/api/product
 Content-Type: application/json
-X-App-ID: 1000006000
+X-App-ID: 1000000010
 
 {
   "name": "Shoes",

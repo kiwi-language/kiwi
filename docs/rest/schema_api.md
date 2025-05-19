@@ -1,5 +1,7 @@
 # Schema API
 
+## Overview
+
 Provides a GET /schema endpoint to retrieve structural information about defined types.
 
 ## Endpoint
@@ -95,7 +97,7 @@ A polymorphic type descriptor.
 Subtypes: [PrimitiveType](#primitivetype), [ClassType](#classtype), [ArrayType](#arraytype), [UnionType](#uniontype)
 
 ### `PrimitiveType`
-Represents a primitive data type.
+Represents a primitive type.
 
 | Field | Type     | Description                                                                                    |
 |:------|:---------|:-----------------------------------------------------------------------------------------------|
@@ -103,7 +105,7 @@ Represents a primitive data type.
 | `name`  | `string`   | Values: `byte`, `short`, `int`, `long`, `float`, `double`, `boolean`, `char`, `string`, `void`, `never`, `any`, `null` |
 
 ### `ClassType`
-Represents a reference to a class type.
+Represents a class type.
 
 | Field         | Type   | Description      |
 |:--------------|:-------|:-----------------|
@@ -180,7 +182,12 @@ enum Category {
 }
 ```
 
-### Schema Response (JSON)
+### Schema
+```http
+GET /schema
+X-App-ID: {app-id}
+```
+* Response
 ```json
 {
   "code": 0,

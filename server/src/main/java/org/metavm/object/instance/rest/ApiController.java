@@ -73,13 +73,15 @@ public class ApiController {
                 if (path.startsWith("search/")) {
                     if (!(requestBody instanceof Map<?,?>))
                         throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
+                    var className = NamingUtils.pathToName(path.substring("search/".length()), true);
                     //noinspection unchecked
                     var map = (Map<String, Object>) requestBody;
-                    var className = NamingUtils.pathToName(path.substring("search/".length()), true);
-                    var page = Objects.requireNonNullElse((Integer) map.remove("$page"), 1);
-                    var pageSize = Objects.requireNonNullElse((Integer) map.remove("$pageSize"), 20);
-                    var returnObjects = Objects.requireNonNullElse((Boolean) map.remove("$returnObjects"), false);
-                    yield apiService.search(className, map, page, pageSize, returnObjects);
+                    //noinspection unchecked
+                    var criteria = (Map<String, Object>) map.getOrDefault("criteria", Map.of());
+                    var page = (int) map.getOrDefault("page", 1);
+                    var pageSize = (int) map.getOrDefault("pageSize", 20);
+                    var includeObjects = (boolean) map.getOrDefault("includeObjects", false);
+                    yield apiService.search(className, criteria, page, pageSize, includeObjects);
                 }
                 else {
                     var idx = path.lastIndexOf('/');

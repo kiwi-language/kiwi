@@ -2,4 +2,8 @@ package search
 
 class SearchFoo(
     var name: string
-)
+) {
+
+    class Child(var name: string)
+
+}

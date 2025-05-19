@@ -2,32 +2,11 @@
 
 ## Overview
 
-This API manages user authentication and application lifecycle. All endpoints except `/login` require a logged-in user and an `X-App-ID: 2` header.
-
-## Common Data Structures
-
-*   **`Result<T>`**: Standard API response wrapper.
-
-    | Field     | Type     | Description                           |
-    |:----------|:---------|:--------------------------------------|
-    | `code`    | `int`    | `0` for success, else error code      |
-    | `message` | `string` | Error message when `code` is non-zero |
-    | `data`    | `T`      | Response data                         |
-*   **`Application`**: Represents an application.
-
-    | Field   | Type   | Description        |
-    |:--------|:-------|:-------------------|
-    | `id`    | `long` | Application ID     |
-    | `name`  | `string`| Application Name   |
-    | `ownerId`| `long` | Application owner ID |
-*   **`Page<T>`**: Represents a paginated list of items.
-* 
-    | Field   | Type     | Description                             |
-    |:--------|:---------|:----------------------------------------|
-    | `data`  | `T[]`      | Array of items for the current page     |
-    | `total` | `long`   | Total number of items across all pages  |
+This API manages user authentication and application lifecycle.
 
 ## Endpoints
+
+All endpoints except `/login` require a logged-in user and an `X-App-ID: 2` header. Responses use the [Result Schema](#result).
 
 ### 1. Login
 Authenticates a user.
@@ -40,25 +19,51 @@ Authenticates a user.
     | `appId`   | `long` | Must be `2` |
     | `loginName`| `string`| User name   |
     | `password` | `string`| Password    |
-*   **Response:** `Result<LoginInfo>`
-*   **`LoginInfo`**:
+*   **Response Data:**
 
     | Field   | Type   | Description |
     |:--------|:-------|:------------|
     | `appId` | `long` | Will be `2` |
     | `userId`| `string`| User ID     |
 *   **Cookie:** Sets `token_2`
-*   **Example Request:**
+*   **Example:**
+    ```http
+    POST /login
+    Content-Type: application/json
+    
+    {
+      "appId": 2, 
+      "loginName": "demo", 
+      "password": "123456" 
+    }
+    ```
+    * Response:
     ```json
-    { "appId": 2, "loginName": "demo", "password": "123456" }
+    {
+      "code": 0,
+      "data": {
+        "appId": 2,
+        "userId": "{user-id}"
+      }
+    }
     ```
 
 ### 2. Logout
 Logs the current user out.
 
 *   `POST /logout`
-*   **Response:** `Result<Void>`
-    *   *Note: This invalidates the `token_2` cookie.*
+*   **Cookie:** Invalidates `token_2`
+*   **Example:**
+    ```http
+    POST /logout
+    X-App-ID: 2
+    ```
+    * Response
+    ```json
+    {
+      "code": 0
+    }
+    ```
 
 ### 3. List Applications
 Retrieves a paginated list of applications.
@@ -71,7 +76,28 @@ Retrieves a paginated list of applications.
     | `page`     | Yes      | `1`     | Page number                         |
     | `pageSize` | Yes      | `20`    | Number of items per page            |
     | `searchText`| No       |         | Filter applications by name         |
-*   **Response:** `Result<Page<Application>>`
+*   **Response Data:** `Page<Application>`
+*   **Example:**
+    ```http
+    GET /app?searchText=demo
+    X-App-ID: 2
+    ```
+    * Response
+    ```json
+    {
+      "code": 0,
+      "data": {
+        "data": [
+          {
+            "id": 1000002004,
+            "name": "demo",
+            "ownerId": "{user-id}"
+          }   
+        ],
+        "total": 1
+      }
+    }
+    ```
 
 ### 4. Save Application
 Creates a new application or updates an existing one.
@@ -80,11 +106,67 @@ Creates a new application or updates an existing one.
 *   **Request Body:** `Application`
     *   If `id` is `null` or omitted: Creates a new application.
     *   If `id` is provided: Updates the existing application with that ID.
-*   **Response:** `Result<Long>` (data is the created/updated application's ID)
-
+    *   `ownerId` is not required in request.
+*   **Response Data:** `long` (The application ID)
+*   **Example:**
+    ```http
+    POST /app
+    Content-Type: application/json
+    X-App-ID: 2
+    
+    {
+      "name": "shopping"
+    }
+    ```
+    * Response
+    ```json
+    {
+      "code": 0,
+      "data": 1000002004
+    }
+    ```
 ### 5. Delete Application
 Deletes an application.
 
 *   `DELETE /app/{id}`
 *   **Path Parameter:** `id` (long) - The ID of the application to delete.
-*   **Response:** `Result<Void>`
+*   **Example:**
+    ```http
+    DELETE /app/{id}
+    X-App-ID: 2
+    ```
+    * Response
+    ```json
+    {
+      "code": 0
+    }
+    ```
+
+## Common Data Structures
+
+### `Result`
+Standard API response wrapper.
+
+| Field      | Type     | Description                           |
+|:-----------|:---------|:--------------------------------------|
+| `code`     | `int`    | `0` for success, else error code      |
+| `message`  | `string` | Error message when `code` is non-zero |
+| `data`     | `T`      | Response data                         |
+
+### `Application` 
+Represents an application.
+
+| Field   | Type   | Description        |
+|:--------|:-------|:-------------------|
+| `id`    | `long` | Application ID     |
+| `name`  | `string`| Application Name   |
+| `ownerId`| `long` | Application owner ID |
+
+### `Page` 
+Represents a paginated list of items.
+
+| Field   | Type     | Description                             |
+|:--------|:---------|:----------------------------------------|
+| `data`  | `T[]`      | Array of items for the current page     |
+| `total` | `long`   | Total number of items across all pages  |
+
