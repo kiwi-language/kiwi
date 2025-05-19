@@ -884,7 +884,7 @@ public class DDLTest extends TestCase {
         assemble("enable_search_before.kiwi");
         var id = saveInstance(className, Map.of("name", "foo"));
         assemble("enable_search_after.kiwi");
-        var page = search(className, Map.of("name", "foo"), 1, 20).page();
+        var page = search(className, Map.of("name", "foo"), 1, 20).data();
         Assert.assertEquals(1, page.size());
         Assert.assertEquals(id, page.getFirst());
     }

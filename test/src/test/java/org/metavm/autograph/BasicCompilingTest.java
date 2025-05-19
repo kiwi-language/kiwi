@@ -673,7 +673,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var className = "search.SearchFoo";
         var id = saveInstance(className, Map.of("name", "foo", "seq", 100));
         TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, schedulerAndWorker);
-        var page = search(className, Map.of("name", "foo", "seq", List.of(50, 200)), 1, 20).page();
+        var page = search(className, Map.of("name", "foo", "seq", List.of(50, 200)), 1, 20).data();
         Assert.assertEquals(1, page.size());
         Assert.assertEquals(id, page.getFirst());
     }

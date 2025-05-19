@@ -382,13 +382,19 @@ public class KiwiTest extends KiwiTestBase {
             var column = field.getColumn();
             Assert.assertSame(ColumnKind.STRING, column.kind());
         }
-        var id = saveInstance(className, Map.of("name", "kiwi"));
+        var id = saveInstance(className, Map.of("name", "kiwi", "Child", List.of(
+                Map.of(
+                        "name", "child"
+                )
+        )));
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = search(className, Map.of(
-                "name", "kiwi"
-        ));
+        var r = search(className, Map.of("name", "kiwi"), false);
         Assert.assertEquals(1, r.total());
-        Assert.assertEquals(id, r.page().getFirst());
+        Assert.assertEquals(id, r.data().getFirst());
+
+        var r1 = search(className, Map.of("name", "kiwi"), true);
+        Assert.assertEquals(1, r1.total());
+        Assert.assertEquals(Map.of("$id", id, "$class", className, "name", "kiwi"), r1.data().getFirst());
     }
 
     public void testBean() {

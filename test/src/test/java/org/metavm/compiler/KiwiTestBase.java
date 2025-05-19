@@ -57,6 +57,10 @@ public abstract class KiwiTestBase extends TestCase  {
         return apiClient.search(className, query, 1, 20);
     }
 
+    SearchResult search(String className, Map<String, Object> query, boolean returnObjects) {
+        return apiClient.search(className, query, 1, 20, returnObjects);
+    }
+
     ClassInstanceWrap getObject(String id) {
         return apiClient.getObject(id);
     }

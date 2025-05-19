@@ -21,8 +21,6 @@ import org.metavm.util.LinkedList;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +37,6 @@ public class ApiService extends EntityContextFactoryAware {
     public static final String KEY_CLASS = "$class";
 
     private final MetaContextCache metaContextCache;
-    private JdbcTemplate jdbcTemplate;
     private final InstanceQueryService instanceQueryService;
 
     public ApiService(EntityContextFactory entityContextFactory, MetaContextCache metaContextCache,  InstanceQueryService instanceQueryService) {
@@ -58,7 +55,7 @@ public class ApiService extends EntityContextFactoryAware {
             var result = self.getReference();
             context.bind(self);
             context.finish();
-            return (String) formatInstance(result, false);
+            return (String) formatInstance(result, false, false);
         }
     }
 
@@ -82,7 +79,7 @@ public class ApiService extends EntityContextFactoryAware {
                 }
             }
             context.finish();
-            return formatInstance(result, false);
+            return formatInstance(result, false, false);
         }
     }
 
@@ -104,7 +101,7 @@ public class ApiService extends EntityContextFactoryAware {
             var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
             var inst = execute(r.method, null, r.arguments, request, response, context);
             context.finish();
-            return formatInstance(inst, false);
+            return formatInstance(inst, false, false);
         }
     }
 
@@ -157,7 +154,7 @@ public class ApiService extends EntityContextFactoryAware {
     @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
     public Object getInstance(String id) {
         try (var context = newContext()) {
-            return formatInstance(context.get(Id.parse(id)).getReference(), true);
+            return formatInstance(context.get(Id.parse(id)).getReference(), true, false);
         }
     }
 
@@ -166,7 +163,7 @@ public class ApiService extends EntityContextFactoryAware {
         try(var context = newContext()) {
             var klass = getKlass(className, context);
             var sft = StaticFieldTable.getInstance(klass, context);
-            return formatInstance(sft.getByName(fieldName), false);
+            return formatInstance(sft.getByName(fieldName), false, false);
         }
     }
 
@@ -200,12 +197,12 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
 
-    public SearchResult search(String className, Map<String, Object> query, int page, int pageSize, boolean returnObjects) {
+    public SearchResult search(String className, Map<String, Object> criteria, int page, int pageSize, boolean includeObjects) {
         try (var entityContext = newContext()) {
             var klass = entityContext.getKlassByQualifiedName(className);
             var classType = klass.getType();
             var fields = new ArrayList<InstanceQueryField>();
-            query.forEach((name, value) -> {
+            criteria.forEach((name, value) -> {
                 var field = klass.findFieldByName(name);
                 if (field != null) {
                     if (field.getType().isNumber() && value instanceof List<?> list && list.size() == 2) {
@@ -232,9 +229,9 @@ public class ApiService extends EntityContextFactoryAware {
                     .pageSize(pageSize)
                     .build();
             var dataPage1 = instanceQueryService.query(internalQuery, entityContext);
-            if (returnObjects) {
+            if (includeObjects) {
               return new SearchResult(
-                      Utils.map(dataPage1.data(), i -> formatInstance(i, true)),
+                      Utils.map(dataPage1.data(), i -> formatInstance(i, true, true)),
                       dataPage1.total()
               );
             } else {
@@ -254,7 +251,7 @@ public class ApiService extends EntityContextFactoryAware {
             return Objects.requireNonNullElseGet(result.ret(), Instances::nullInstance);
     }
 
-    private Object formatInstance(@Nullable Value instance, boolean asValue) {
+    private Object formatInstance(@Nullable Value instance, boolean asValue, boolean excludingChildren) {
         return switch (instance) {
             case null -> null;
             case NullValue ignored -> null;
@@ -287,14 +284,14 @@ public class ApiService extends EntityContextFactoryAware {
                         if (clsInst.isEnum())
                             yield Instances.toJavaString(clsInst.getField(StdField.enumName.get()));
                         if (clsInst.isList())
-                            yield formatList(clsInst);
+                            yield formatList(clsInst, excludingChildren);
                         else if (asValue || reference instanceof ValueReference)
-                            yield formatValueObject(clsInst);
+                            yield formatValueObject(clsInst, excludingChildren);
                         else
                             yield ((EntityReference) reference).getStringId();
                     }
                     case ArrayInstance array -> {
-                        yield formatArray(array);
+                        yield formatArray(array, excludingChildren);
                     }
                     case null, default -> throw new IllegalStateException("Unrecognized DurableInstance: " + resolved);
                 }
@@ -303,31 +300,33 @@ public class ApiService extends EntityContextFactoryAware {
         };
     }
 
-    private Map<String, Object> formatValueObject(ClassInstance instance) {
+    private Map<String, Object> formatValueObject(ClassInstance instance, boolean excludingChildren) {
         var map = new LinkedHashMap<String, Object>();
         var id = instance.getStringId();
         if (id != null)
             map.put(KEY_ID, id);
         map.put(KEY_CLASS, instance.getInstanceType().getKlass().getQualifiedName());
-        instance.forEachField((field, value) -> map.put(field.getName(), formatInstance(value, false)));
-        instance.forEachChild(c -> {
-            var child = (ClassInstance) c;
-            //noinspection unchecked
-            var list = (List<Object>) map.computeIfAbsent(child.getInstanceKlass().getName(), k -> new ArrayList<>());
-            list.add(formatValueObject(child));
-        });
+        instance.forEachField((field, value) -> map.put(field.getName(), formatInstance(value, false, excludingChildren)));
+        if (!excludingChildren) {
+            instance.forEachChild(c -> {
+                var child = (ClassInstance) c;
+                //noinspection unchecked
+                var list = (List<Object>) map.computeIfAbsent(child.getInstanceKlass().getName(), k -> new ArrayList<>());
+                list.add(formatValueObject(child, false));
+            });
+        }
         return map;
     }
 
-    private List<Object> formatArray(ArrayInstance arrayInstance) {
+    private List<Object> formatArray(ArrayInstance arrayInstance, boolean excludingChildren) {
         var list = new ArrayList<>();
-        arrayInstance.forEach(e -> list.add(formatInstance(e, false)));
+        arrayInstance.forEach(e -> list.add(formatInstance(e, false, excludingChildren)));
         return list;
     }
 
-    private List<Object> formatList(ClassInstance instance) {
+    private List<Object> formatList(ClassInstance instance, boolean excludingChildren) {
         var list = new ArrayList<>();
-        Instances.toJavaList(instance).forEach(e -> list.add(formatInstance(e, false)));
+        Instances.toJavaList(instance).forEach(e -> list.add(formatInstance(e, false, excludingChildren)));
         return list;
     }
 
@@ -762,8 +761,4 @@ public class ApiService extends EntityContextFactoryAware {
         return entityContextFactory.newContext(appId, metaContext);
     }
 
-    @Autowired
-    public void setTransactionTemplate(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
 }
