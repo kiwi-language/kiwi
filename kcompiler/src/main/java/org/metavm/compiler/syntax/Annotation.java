@@ -1,6 +1,7 @@
 package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.element.Name;
+import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.List;
 
 import java.util.function.Consumer;
@@ -46,6 +47,12 @@ public class Annotation extends Node {
     public void forEachChild(Consumer<Node> action) {
     }
 
+    public Object extractValue() {
+        if (getAttributes().size() != 1)
+            throw new  CompilationException("Invalid annotation: " + this);
+        return getAttributes().getFirst().getLiteralValue();
+    }
+
     public static class Attribute {
         private Name name;
         private Expr value;
@@ -65,6 +72,16 @@ public class Annotation extends Node {
 
         public Expr getValue() {
             return value;
+        }
+
+        public Object getLiteralValue() {
+            if (value instanceof Literal literal)
+                return literal.value();
+            else
+                throw new CompilationException("Annotation attribute '"
+                        + name + "=" + value.getText() + "'"
+                        + " must have a literal value"
+                );
         }
 
         public void setValue(Expr value) {

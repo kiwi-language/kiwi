@@ -5,6 +5,8 @@ import org.metavm.compiler.util.List;
 
 public class Param extends LocalVar {
 
+    private List<Attribute> attributes = List.nil();
+
     public Param(String name, Type type, Executable executable) {
         this(NameTable.instance.get(name), type, executable);
     }
@@ -24,6 +26,10 @@ public class Param extends LocalVar {
     }
 
     public List<Attribute> getAttributes() {
-        return List.nil();
+        return attributes;
+    }
+
+    public void setAttributes(List<Attribute> attributes) {
+        this.attributes = attributes;
     }
 }

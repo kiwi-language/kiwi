@@ -1,6 +1,7 @@
 package org.metavm.compiler;
 
 import org.junit.Assert;
+import org.metavm.entity.Attribute;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.ArrayInstanceWrap;
@@ -401,6 +402,49 @@ public class KiwiTest extends KiwiTestBase {
         deploy("kiwi/beans/foo_service.kiwi");
         var r = callMethod("fooService", "greet", List.of());
         Assert.assertEquals("Hello", r);
+    }
+
+    public void testDisplay() {
+        deploy("kiwi/display/display.kiwi");
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var productCls = context.getKlassByQualifiedName("display.Product");
+            assertEquals(1, productCls.getAttributes().size());
+            var labelAttr = productCls.getAttributes().getFirst();
+            assertEquals("label", labelAttr.name());
+            assertEquals("Product", labelAttr.value());
+
+            assertEquals(3, productCls.getFieldCount());
+
+            var nameField = productCls.getFields().getFirst();
+            assertEquals(List.of(new Attribute("label", "Product Name")), nameField.getAttributes());
+
+            var priceField = productCls.getFields().get(1);
+            assertEquals(List.of(new Attribute("label", "Product Price")), priceField.getAttributes());
+
+            var stockField = productCls.getFields().get(2);
+            assertEquals(List.of(new Attribute("label", "Product Stock")), stockField.getAttributes());
+
+            assertSame(nameField, productCls.getTitleField());
+
+            assertEquals(2, productCls.getMethods().size());
+            var init = productCls.getMethods().getFirst();
+
+            assertEquals(List.of(new Attribute("label", "Product Name")), init.getParameter(0).getAttributes());
+            assertEquals(List.of(new Attribute("label", "Product Price")), init.getParameter(1).getAttributes());
+            assertEquals(List.of(new Attribute("label", "Product Stock")), init.getParameter(2).getAttributes());
+
+            var reduceStockMethod = productCls.getMethods().get(1);
+            assertEquals(List.of(new Attribute("label", "Remove Product Stock")), reduceStockMethod.getAttributes());
+
+            assertEquals(List.of(new Attribute("label", "Removed Quantity")), reduceStockMethod.getParameter(0).getAttributes());
+
+            var categoryCls = context.getKlassByQualifiedName("display.Category");
+            var enumConsts = categoryCls.getEnumConstants();
+            assertEquals(List.of(new Attribute("label", "Electronics")), enumConsts.getFirst().getAttributes());
+            assertEquals(List.of(new Attribute("label", "Clothing")), enumConsts.get(1).getAttributes());
+            assertEquals(List.of(new Attribute("label", "Other")), enumConsts.get(2).getAttributes());
+        }
     }
 
 }

@@ -28,6 +28,9 @@ public class NameTable {
     public final Name Component = get("Component");
     public final Name Searchable = get("Searchable");
     public final Name Tag = get("Tag");
+    public final Name Label = get("Label");
+    public final Name Summary = get("Summary");
+    public final Name Bean = get("Bean");
     public final Name length = get("length");
     public final Name values = get("values");
     public final Name valueOf = get("valueOf");

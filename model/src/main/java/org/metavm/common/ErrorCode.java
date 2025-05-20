@@ -31,7 +31,7 @@ public enum ErrorCode {
     CHANGING_IS_TEMPLATE(314, "Cannot change generic to non-generic or vice versa"),
     PROPERTY_NOT_READABLE(315, "Property is not readable"),
     PROPERTY_NOT_WRITABLE(316, "Property is not writable"),
-    TITLE_FIELD_MUST_BE_STRING(317, "Title field must be a string"),
+    TITLE_FIELD_MUST_BE_STRING(317, "Title field '{}: {}' is not a string"),
     CHILD_FIELD_CAN_NOT_BE_PRIMITIVE_TYPED(318, "Child object field cannot be a primitive type"),
     ENTITY_STRUCT_LACKS_CANONICAL_CONSTRUCTOR(319, "Entity structure {} lacks a canonical constructor"),
     CLASS_NOT_FOUND(320, "Class '{}' not found"),

@@ -9,13 +9,15 @@ import org.metavm.compiler.util.List;
 public class ClassParamDecl extends VariableDecl<Param> {
 
     private List<Modifier> mods;
+    private List<Annotation> annotations;
     private boolean readonly;
     private boolean withField;
     private Field field;
 
-    public ClassParamDecl(List<Modifier> mods, boolean withField, boolean readonly, @Nullable TypeNode type, Name name) {
-        super(type, name, null);
+    public ClassParamDecl(List<Modifier> mods, List<Annotation> annotations, boolean withField, boolean readonly, @Nullable TypeNode type, Name name) {
+        super(List.nil(), type, name, null);
         this.mods = mods;
+        this.annotations = annotations;
         this.readonly = readonly;
         this.withField = withField;
     }
@@ -46,6 +48,16 @@ public class ClassParamDecl extends VariableDecl<Param> {
 
     public void setMods(List<Modifier> mods) {
         this.mods = mods;
+    }
+
+    @Override
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    @Override
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
     }
 
     public boolean isWithField() {

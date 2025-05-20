@@ -19,8 +19,17 @@ public class AstBuilder {
     public static File build(CompilationUnitContext ctx) {
         var pkgDecl = ctx.packageDeclaration() != null ? buildPackageDecl(ctx.packageDeclaration()) : null;
         var imports = List.from(ctx.importDeclaration(), AstBuilder::buildImport);
-        var decls = List.from(ctx.topLevTypeDecl(), decl -> buildClassDecl(decl.typeDeclaration(),
-                List.from(decl.classOrInterfaceModifier(), AstBuilder::buildModifier)));
+        var decls = List.from(ctx.topLevTypeDecl(), decl -> {
+            var mods = List.<Modifier>builder();
+            var annotations = List.<Annotation>builder();
+            for (ClassOrInterfaceModifierContext modCtx : decl.classOrInterfaceModifier()) {
+                if (modCtx.annotation() != null)
+                    annotations.append(buildAnnotation(modCtx.annotation()));
+                else
+                    mods.append(buildModifier(modCtx));
+            }
+            return buildClassDecl(decl.typeDeclaration(), mods.build(), annotations.build());
+        });
         return new File(pkgDecl, imports, decls);
     }
 
@@ -32,17 +41,17 @@ public class AstBuilder {
         return new PackageDecl(buildQualifiedName(ctx.qualifiedName()));
     }
 
-    private static ClassDecl buildClassDecl(TypeDeclarationContext ctx, List<Modifier> mods) {
+    private static ClassDecl buildClassDecl(TypeDeclarationContext ctx, List<Modifier> mods, List<Annotation> annotations) {
         if (ctx.classDeclaration() != null)
-            return buildClassDecl(ctx.classDeclaration(), mods);
+            return buildClassDecl(ctx.classDeclaration(), mods, annotations);
         if (ctx.enumDeclaration() != null)
             return buildEnumDecl(ctx.enumDeclaration(), mods);
         if (ctx.interfaceDeclaration() != null)
-            return buildInterfaceDecl(ctx.interfaceDeclaration(), mods);
+            return buildInterfaceDecl(ctx.interfaceDeclaration(), mods, annotations);
         throw new ParsingException("Invalid type declaration '" + ctx.getText() + "'");
     }
 
-    private static ClassDecl buildClassDecl(ClassDeclarationContext ctx, List<Modifier> mods) {
+    private static ClassDecl buildClassDecl(ClassDeclarationContext ctx, List<Modifier> mods, List<Annotation> annotations) {
         var impls = List.<Extend>builder();
         var typeIt = ctx.type().iterator();
         if (ctx.arguments() != null) {
@@ -52,9 +61,8 @@ public class AstBuilder {
             impls.append(new Extend(buildType(typeIt.next())));
         var decl = new ClassDecl(
                 mods.anyMatch(mod -> mod.tag() == ModifierTag.VALUE) ? ClassTag.VALUE : ClassTag.CLASS,
-                List.from(ctx.annotation(), AstBuilder::buildAnnotation),
+                annotations,
                 mods,
-                ctx.BEAN() != null,
                 buildName(ctx.identifier()),
                 null,
                 impls.build(),
@@ -72,8 +80,10 @@ public class AstBuilder {
     private static ClassParamDecl buildClassParam(InitParameterContext ctx) {
         var fieldDeclCtx = ctx.fieldDeclaration();
         if (fieldDeclCtx != null) {
+            var modsAndAnno = buildModsAndAnnotations(ctx.modifier());
             return new ClassParamDecl(
-                    List.from(ctx.modifier(), AstBuilder::buildModifier),
+                    modsAndAnno.mods,
+                    modsAndAnno.annotations,
                     true,
                     fieldDeclCtx.VAL() != null,
                     buildType(fieldDeclCtx.type()),
@@ -82,8 +92,10 @@ public class AstBuilder {
         }
         else {
             var paramDeclCtx = ctx.formalParameter();
+            var annotations = List.from(paramDeclCtx.annotation(), AstBuilder::buildAnnotation);
             return new ClassParamDecl(
                     List.nil(),
+                    annotations,
                     false,
                     false,
                     buildType(paramDeclCtx.type()),
@@ -116,7 +128,6 @@ public class AstBuilder {
                 ClassTag.ENUM,
                 List.from(ctx.annotation(), AstBuilder::buildAnnotation),
                 mods,
-                false,
                 name,
                 null,
                 buildExtends(ctx.typeList()),
@@ -140,12 +151,11 @@ public class AstBuilder {
         );
     }
 
-    private static ClassDecl buildInterfaceDecl(InterfaceDeclarationContext ctx, List<Modifier> mods) {
+    private static ClassDecl buildInterfaceDecl(InterfaceDeclarationContext ctx, List<Modifier> mods, List<Annotation> annotations) {
         return new ClassDecl(
                 ClassTag.INTERFACE,
-                List.from(ctx.annotation(), AstBuilder::buildAnnotation),
+                annotations,
                 mods,
-                false,
                 buildName(ctx.identifier()),
                 null,
                 buildExtends(ctx.typeList()),
@@ -157,13 +167,14 @@ public class AstBuilder {
     }
 
     private static EnumConstDecl buildEnumConstant(EnumConstantContext ctx, Name className) {
+        var annotations = List.from(ctx.annotation(), AstBuilder::buildAnnotation);
         var name = buildName(ctx.identifier());
         List<Expr> args = ctx.arguments() != null ? buildExprList(ctx.arguments().expressionList()) : List.nil();
         if (ctx.classBody() == null) {
-            return new EnumConstDecl(name, args, null);
+            return new EnumConstDecl(annotations, name, args, null);
         }
         else {
-            return new EnumConstDecl(name,
+            return new EnumConstDecl(annotations, name,
                     List.nil(),
                     buildAnonymousClass(ctx.classBody(), args, new ClassTypeNode(new Ident(className)))
             );
@@ -178,17 +189,17 @@ public class AstBuilder {
     }
 
     private static Node buildClassMember(ClassBodyDeclarationContext ctx) {
-        var mods = List.from(ctx.modifier(), AstBuilder::buildModifier);
+        var mods = buildModsAndAnnotations(ctx.modifier());
         var memberDecl = ctx.memberDeclaration();
         if (memberDecl != null) {
             if (memberDecl.fieldDeclaration() != null)
-                return buildFieldDecl(memberDecl.fieldDeclaration(), mods);
+                return buildFieldDecl(memberDecl.fieldDeclaration(), mods.mods, mods.annotations);
             else if (memberDecl.methodDeclaration() != null)
-                return buildMethodDecl(memberDecl.methodDeclaration(), mods);
+                return buildMethodDecl(memberDecl.methodDeclaration(), mods.mods, mods.annotations);
             else if (memberDecl.typeDeclaration() != null)
-                return buildClassDecl(memberDecl.typeDeclaration(), mods);
+                return buildClassDecl(memberDecl.typeDeclaration(), mods.mods, mods.annotations);
             else if (memberDecl.block() != null)
-                return buildInit(memberDecl.block(), mods);
+                return buildInit(memberDecl.block(), mods.mods);
         }
         else if (ctx.staticBlock() != null)
             return new ClassInit(buildBlock(ctx.staticBlock().block()));
@@ -196,18 +207,31 @@ public class AstBuilder {
     }
 
     private static Node buildInterfaceMember(InterfaceBodyDeclarationContext ctx) {
-        var mods = List.from(ctx.modifier(), AstBuilder::buildModifier);
+        var mods = buildModsAndAnnotations(ctx.modifier());
         var memberDecl = ctx.interfaceMemberDeclaration();
         if (memberDecl != null) {
             if (memberDecl.interfaceMethodDeclaration() != null)
-                return buildInterfaceMethodDecl(memberDecl.interfaceMethodDeclaration(), mods);
+                return buildInterfaceMethodDecl(memberDecl.interfaceMethodDeclaration(), mods.mods, mods.annotations);
         }
         throw new ParsingException("Invalid class member declaration: " + ctx.getText());
     }
 
-    private static MethodDecl buildMethodDecl(MethodDeclarationContext ctx, List<Modifier> mods) {
+    private static ModsAndAnnotations buildModsAndAnnotations(java.util.List<ModifierContext> contexts) {
+        var mods = List.<Modifier>builder();
+        var annotations = List.<Annotation>builder();
+        for (ModifierContext ctx : contexts) {
+            if (ctx.classOrInterfaceModifier() != null && ctx.classOrInterfaceModifier().annotation() != null)
+                annotations.append(buildAnnotation(ctx.classOrInterfaceModifier().annotation()));
+            else
+                mods.append(buildModifier(ctx));
+        }
+        return new ModsAndAnnotations(mods.build(), annotations.build());
+    }
+
+    private static MethodDecl buildMethodDecl(MethodDeclarationContext ctx, List<Modifier> mods, List<Annotation> annotations) {
         return new MethodDecl(
                 mods,
+                annotations,
                 buildTypeVariableDeclList(ctx.typeParameters()),
                 buildName(ctx.identifier()),
                 buildParams(ctx.formalParameters().formalParameterList()),
@@ -216,9 +240,10 @@ public class AstBuilder {
         );
     }
 
-    private static MethodDecl buildInterfaceMethodDecl(InterfaceMethodDeclarationContext ctx, List<Modifier> mods) {
+    private static MethodDecl buildInterfaceMethodDecl(InterfaceMethodDeclarationContext ctx, List<Modifier> mods, List<Annotation> annotations) {
         return new MethodDecl(
                 mods,
+                annotations,
                 buildTypeVariableDeclList(ctx.typeParameters()),
                 buildName(ctx.identifier()),
                 buildParams(ctx.formalParameters().formalParameterList()),
@@ -239,16 +264,17 @@ public class AstBuilder {
 
     private static List<ParamDecl> buildLambdaParams(LambdaParametersContext ctx) {
         if (ctx.identifier() != null)
-            return List.of(new ParamDecl(null, buildName(ctx.identifier())));
+            return List.of(new ParamDecl(List.nil(), null, buildName(ctx.identifier())));
         else if (ctx.lambdaParameterList() != null)
             return List.from(ctx.lambdaParameterList().lambdaParameter(), AstBuilder::buildLambdaParam);
         else
             return List.of();
     }
 
-    private static FieldDecl buildFieldDecl(FieldDeclarationContext ctx, List<Modifier> mods) {
+    private static FieldDecl buildFieldDecl(FieldDeclarationContext ctx, List<Modifier> mods, List<Annotation> annotations) {
         return new FieldDecl(
                 mods,
+                annotations,
                 Utils.safeCall(ctx.type(), AstBuilder::buildType),
                 buildName(ctx.identifier()),
                 Utils.safeCall(ctx.expression(), AstBuilder::buildExpr)
@@ -256,11 +282,12 @@ public class AstBuilder {
     }
 
     private static ParamDecl buildParam(FormalParameterContext ctx) {
-        return new ParamDecl(buildType(ctx.type()), buildName(ctx.identifier()));
+        var annotations = List.from(ctx.annotation(), AstBuilder::buildAnnotation);
+        return new ParamDecl(annotations, buildType(ctx.type()), buildName(ctx.identifier()));
     }
 
     private static ParamDecl buildLambdaParam(LambdaParameterContext ctx) {
-        return new ParamDecl(Utils.safeCall(ctx.type(), AstBuilder::buildType), buildName(ctx.identifier()));
+        return new ParamDecl(List.nil(), Utils.safeCall(ctx.type(), AstBuilder::buildType), buildName(ctx.identifier()));
     }
 
     private static TypeNode buildType(TypeOrVoidContext ctx) {
@@ -678,7 +705,6 @@ public class AstBuilder {
                 ClassTag.CLASS,
                 List.nil(),
                 List.nil(),
-                false,
                 NameTable.instance.empty,
                 null,
                 List.of(new Extend(baseType, args)),
@@ -825,5 +851,10 @@ public class AstBuilder {
     private static Name getSymName(String text) {
         return NameTable.instance.get(text);
     }
+
+    private record ModsAndAnnotations(
+            List<Modifier> mods,
+            List<Annotation> annotations
+    ) {}
 
 }

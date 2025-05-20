@@ -162,4 +162,25 @@ public class NamingUtils {
         }
         return sb.toString();
     }
+
+    public static String nameToLabel(String name) {
+        if (name.isEmpty())
+            return "";
+        var sb = new StringBuilder();
+        sb.append(Character.toUpperCase(name.charAt(0)));
+        var len = name.length();
+        var lastUpperCase = true;
+        for (int i = 1; i < len; i++) {
+            var c = name.charAt(i);
+            if (Character.isUpperCase(c)) {
+                if(!lastUpperCase)
+                    sb.append(' ');
+                lastUpperCase = true;
+            }
+            else
+                lastUpperCase = false;
+            sb.append(c);
+        }
+        return sb.toString();
+    }
 }

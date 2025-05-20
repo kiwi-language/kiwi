@@ -4,7 +4,9 @@
 
 API for creating, retrieving, searching and invoking methods on objects.
 
-## API Data Types
+## Conventions
+
+### API Data Types
 
 | Type(s)                                           | API Representation          |
 |:--------------------------------------------------|:----------------------------|
@@ -17,16 +19,36 @@ API for creating, retrieving, searching and invoking methods on objects.
 | `enum constant`                                   | Enum constant name (String) |
 | `child objects`                                   | Array of Objects            |
 
+### Path Naming
+Symbol names (e.g., class, bean, method) in paths are converted:
+1. `.` becomes `/`.
+2. CamelCase becomes lowercase-hyphenated.
+
+**Example**: org.kiw.demo.DemoClass -> org/kiwi/demo/demo-class
+
 ## Endpoints
 All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result Schema](#result).
 
 ### Object Creation
 
-* **`PUT /api/{class-path}`**
-* `{class-path}`: Qualified class name (e.g., org.kiwi.DemoClass) converted to a lowercase-hyphenated path (e.g., org/kiwi/demo-class).
+* **`PUT /api/{qualified-class-name}`**
 * **Request Body:** JSON object of constructor arguments and `public` child objects (arrays, keyed by child class names, recursive)
 * **Response Data:**: Created object's ID (`String`)
 * **Example**:
+    ```kotlin
+    package org.kiwi.demo
+    
+    class Order(val price: double) {
+        
+        var confirmed = false      
+  
+        class Item(
+            val product: Product,
+            val quantity: int
+        )  
+    }
+    ```
+    * Request
     ```http
     PUT /api/org/kiwi/demo/order
     X-App-ID: {app-id}
@@ -54,6 +76,7 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
 * **`GET /api/{object-id}`**
 * **Response Data:** JSON object containing `public` fields and `public` child objects (arrays, keyed by child class names, recursive).
 * **Example**:
+    * Request
     ```http
     GET /api/{order-id}
     X-App-ID: {app-id}
@@ -76,8 +99,7 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
     ```
 
 ### Search
-* **`POST /api/search/{class-path}`**
-    * `{class-path}`: See [Object Creation](#object-creation)
+* **`POST /api/search/{qualified-class-name}`**
 * **Request Body:**
   
   | Field            | Type        | Description                                                                                                                      |
@@ -94,6 +116,23 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
   | `total`  | `long`   | Total number of items across all pages                    |
 *   *Note:* Objects in search results do not contain child objects.
 * **Example:**
+    ```kotlin
+    package org.kiwi.demo
+  
+    class Product(
+        var name: string,
+        var price: double,
+        var stock: int
+    ) {
+        
+        fn reduceStock(quantity: int) {
+            require(stock >= quantity, "Out of stock")
+            stock -= quantity  
+        } 
+    
+    }
+    ```
+    * Request
     ```http
     POST /api/search/org/kiwi/demo/product
     X-App-ID: {app-id}
@@ -127,12 +166,12 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
 ### Method Invocation
 *   **`POST /api/{receiver}/{method-name}`**
     *    `{receiver}`: The target of the invocation. This can be:
-          * An `{object-id}` for instance methods.
-          * A Bean Name for bean methods (the lowercase-hyphenated simple class name, e.g., user-service for UserService).
-    *    `{method-name}`: `CamelCase` (e.g., `reduceStock`) converted to `lowercase-hyphenated` (e.g., `reduce-stock`)
+          * Object ID for instance methods.
+          * Bean name for bean methods.
 *   **Request Body:** JSON object containing method arguments.
 *   **Response Data:** Method's return value.
 *   **Example:**
+      * Request
       ```http
       POST /api/{product-id}/reduce-stock
       X-App-ID: {app-id}

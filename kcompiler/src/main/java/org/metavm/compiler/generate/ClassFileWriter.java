@@ -47,31 +47,13 @@ public class ClassFileWriter {
         writeList(clazz.getInterfaces().filter(ClassType::isInterface), this::writeConstant);
         writeList(clazz.getTypeParams(), this::writeTypeVariable);
         writeList(clazz.getFields().filter(f -> !f.isStatic()), this::writeField);
-        var staticFields = clazz.getFields().filter(Field::isStatic);
-        writeInt(clazz.getEnumConstants().size() + staticFields.size());
-        clazz.getEnumConstants().forEach(this::writeEnumConstant);
-        staticFields.forEach(this::writeField);
+        writeList(clazz.getFields().filter(Field::isStatic), this::writeField);
         writeList(clazz.getMethods(), this::writeMethod);
         writeList(clazz.getClasses(), this::writeClass);
+        writeNullable(clazz.getSummaryField(), f -> Elements.writeReference(f, output));
         writeList(clazz.getAttributes(), a -> a.write(output));
 
         constPool = prevCp;
-    }
-
-    private void writeEnumConstant(EnumConst enumConst) {
-        if (Traces.traceWritingClassFile) {
-            log.trace("Writing enum constant {}. Initializer: {}",
-                    enumConst.getQualifiedName(), enumConst.getInitializer());
-        }
-        writeNullable(enumConst.getSourceTag(), output::writeInt);
-        writeUTF(enumConst.getName());
-        writeConstant(enumConst.getType());
-        write(Access.PUBLIC.code());
-        writeInt(enumConst.getFlags());
-        writeInt(enumConst.getOrdinal());
-        writeInt(enumConst.getSince());
-        writeNullable(enumConst.getInitializer(), m -> Elements.writeReference(m, output));
-        output.writeBoolean(false);
     }
 
     private void writeMethod(Method method) {
@@ -138,6 +120,7 @@ public class ClassFileWriter {
         var init = field.getInitializer();
         writeNullable(init, m -> Elements.writeReference(m, output));
         output.writeBoolean(field.isDeleted());
+        writeList(field.getAttributes(), a -> a.write(output));
     }
 
     private void write(int b) {

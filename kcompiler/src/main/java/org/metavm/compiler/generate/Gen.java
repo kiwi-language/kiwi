@@ -7,10 +7,7 @@ import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.*;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.Traces;
-import org.metavm.entity.AttributeNames;
-import org.metavm.entity.BeanKinds;
 import org.metavm.flow.Bytecodes;
-import org.metavm.util.NamingUtils;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
@@ -40,7 +37,6 @@ public class Gen extends StructuralNodeVisitor {
         try (var ignored = env.enterScope(classDecl)) {
             var prevClazz = clazz;
             clazz = classDecl.getElement();
-            processAnnotations(classDecl);
             var cp = clazz.getConstPool();
             clazz.getInterfaces().forEach(cp::put);
             clazz.getTypeParams().forEach(tp -> cp.put(tp.getBound()));
@@ -124,23 +120,6 @@ public class Gen extends StructuralNodeVisitor {
     @Override
     public Void visitImport(Import imp) {
         return null;
-    }
-
-    private void processAnnotations(ClassDecl classDecl) {
-        var clazz = classDecl.getElement();
-        clazz.setSearchable(true);
-        var attrs = List.<Attribute>builder();
-        if (classDecl.isBean()){
-            attrs.append(new Attribute(AttributeNames.BEAN_KIND, BeanKinds.COMPONENT));
-            attrs.append(new Attribute(AttributeNames.BEAN_NAME,
-                    NamingUtils.firstCharToLowerCase(clazz.getName().toString())));
-        }
-        for (Annotation annotation : classDecl.getAnnotations()) {
-            if (annotation.getName() == Name.Tag()) {
-                clazz.setSourceTag(Integer.parseInt(annotation.getAttributes().getFirst().getValue().getText()));
-            }
-        }
-        clazz.setAttributes(attrs.build());
     }
 
     @Override

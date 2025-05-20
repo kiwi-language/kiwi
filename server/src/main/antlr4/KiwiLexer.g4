@@ -9,7 +9,6 @@ DEFAULT:            'default';
 CATCH:              'catch';
 STRING:             'string';
 CLASS:              'class';
-BEAN:               'bean';
 NULL:               'null';
 PACKAGE:            'package';
 IMPORT:             'import';

@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 
 public final class MethodDecl extends Decl<Method> {
     private final List<Modifier> mods;
+    private List<Annotation> annotations;
     private final List<TypeVariableDecl> typeParameters;
     private final Name name;
     private List<ParamDecl> params;
@@ -20,6 +21,7 @@ public final class MethodDecl extends Decl<Method> {
 
     public MethodDecl(
             List<Modifier> mods,
+            List<Annotation> annotations,
             List<TypeVariableDecl> typeParameters,
             Name name,
             List<ParamDecl> params,
@@ -27,6 +29,7 @@ public final class MethodDecl extends Decl<Method> {
             @Nullable Block body
     ) {
         this.mods = mods;
+        this.annotations = annotations;
         this.typeParameters = typeParameters;
         this.name = name;
         this.params = params;
@@ -65,6 +68,14 @@ public final class MethodDecl extends Decl<Method> {
     @Override
     public <R> R accept(NodeVisitor<R> visitor) {
         return visitor.visitMethodDecl(this);
+    }
+
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
     }
 
     @Override

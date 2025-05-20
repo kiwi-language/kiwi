@@ -1,0 +1,31 @@
+package display
+
+@Label("Product")
+class Product(
+    @Summary
+    @Label("Product Name")
+    var name: string,
+    @Label("Product Price")
+    var price: double,
+    @Label("Product Stock")
+    var stock: int
+) {
+
+    @Label("Remove Product Stock")
+    fn reduceStock(@Label("Removed Quantity") quantity: int) {
+        require(stock >= quantity, "Out of Stock")
+        stock -= quantity
+    }
+
+}
+
+enum Category {
+    @Label("Electronics")
+    ELECTRONICS,
+    @Label("Clothing")
+    CLOTHIGN,
+    @Label("Other")
+    OTHER
+
+;
+}

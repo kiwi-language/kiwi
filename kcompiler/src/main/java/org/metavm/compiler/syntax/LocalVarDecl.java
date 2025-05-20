@@ -2,13 +2,14 @@ package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.element.LocalVar;
 import org.metavm.compiler.element.Name;
+import org.metavm.compiler.util.List;
 
 import javax.annotation.Nullable;
 
 public final class LocalVarDecl extends VariableDecl<LocalVar> {
 
     public LocalVarDecl(@Nullable TypeNode type, Name name, @Nullable Expr initial) {
-        super(type, name, initial);
+        super(List.nil(), type, name, initial);
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
@@ -99,5 +100,8 @@ public abstract class KiwiTestBase extends TestCase  {
         task.generate();
     }
 
+    protected IInstanceContext newContext() {
+        return entityContextFactory.newContext(TestConstants.APP_ID);
+    }
 
 }

@@ -9,13 +9,15 @@ import java.util.function.Consumer;
 
 public final class FieldDecl extends VariableDecl<Field> {
     private final List<Modifier> mods;
+
     public FieldDecl(
             List<Modifier> mods,
+            List<Annotation> annotations,
             @Nullable TypeNode type,
             Name name,
             @Nullable Expr initial
     ) {
-        super(type, name, initial);
+        super(annotations, type, name, initial);
         this.mods = mods;
     }
 

@@ -27,6 +27,7 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
     private boolean init;
     private List<PartialMethodInst> partialInsts = List.nil();
     private final Map<List<Type>, MethodInst> insts = new HashMap<>();
+    private List<Attribute> attributes = List.nil();
 
     public Method(String name, Access access, boolean static_, boolean abstract_, boolean init, Clazz declClass) {
         this(NameTable.instance.get(name), access, static_, abstract_, init, declClass);
@@ -213,10 +214,6 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
         this.init = init;
     }
 
-    public List<Attribute> getAttributes() {
-        return List.nil();
-    }
-
     public List<CapturedType> getCapturedTypeVariables() {
         return List.nil();
     }
@@ -235,6 +232,14 @@ public class Method extends Func implements MethodRef, Member, Executable, Compa
             return this;
         return insts.computeIfAbsent(typeArguments, k ->
                 new MethodInst(this, typeArguments));
+    }
+
+    public List<Attribute> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(List<Attribute> attributes) {
+        this.attributes = attributes;
     }
 
     @Override

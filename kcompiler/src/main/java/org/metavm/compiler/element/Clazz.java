@@ -28,6 +28,7 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
     private final ClassScope scope;
     private List<TypeVar> typeParams = List.nil();
     private List<Field> fields = List.nil();
+    private @Nullable Field summaryField;
     private List<Method> methods = List.nil();
     private List<Clazz> classes = List.nil();
     private List<EnumConst> enumConsts = List.nil();
@@ -464,6 +465,15 @@ public class Clazz extends ElementBase implements Member, ClassScope, GenericDec
                 return true;
         }
         return false;
+    }
+
+    @Nullable
+    public Field getSummaryField() {
+        return summaryField;
+    }
+
+    public void setSummaryField(@Nullable Field field) {
+        this.summaryField = field;
     }
 
     @Override

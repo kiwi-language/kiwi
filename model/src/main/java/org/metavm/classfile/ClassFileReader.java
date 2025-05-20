@@ -16,7 +16,6 @@ import org.metavm.util.Utils;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TransferQueue;
 
 @Slf4j
 public class ClassFileReader {
@@ -83,6 +82,7 @@ public class ClassFileReader {
         klass.setStaticFields(input.readList(() -> readField(klassF)));
         klass.setMethods(input.readList(() -> readMethod(klassF)));
         klass.setKlasses(input.readList(() -> readKlass(klassF)));
+        klass.setTitleField(input.readNullable(() -> (Field) input.readReference().resolveObject()));
         klass.setAttributes(input.readList(() -> Attribute.read(input)));
         klass.setIndices(Utils.mapAndFilter(klass.getStaticFields(), this::addIndex, Objects::nonNull));
         if (listener != null) {
@@ -201,6 +201,7 @@ public class ClassFileReader {
         field.setSince(input.readInt());
         field.setInitializerReference(input.readNullable(input::readReference));
         var deleted = input.readBoolean();
+        field.setAttributes(input.readList(() -> Attribute.read(input)));
         if (deleted) field.setState(MetadataState.REMOVED);
         else if (field.getState() == MetadataState.REMOVED) field.setState(MetadataState.READY);
         if (listener != null) {

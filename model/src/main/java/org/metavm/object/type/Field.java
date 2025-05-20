@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 
 @NativeEntity(72)
 @Entity
-public class Field extends org.metavm.entity.Entity implements ChangeAware, Property, ITypeDef, Element {
+public class Field extends AttributedElement implements ChangeAware, Property, ITypeDef {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
@@ -104,6 +104,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
 
     @Generated
     public static void visitBody(StreamVisitor visitor) {
+        AttributedElement.visitBody(visitor);
         visitor.visitNullable(visitor::visitInt);
         visitor.visitUTF();
         visitor.visitByte();
@@ -640,6 +641,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     @Generated
     @Override
     public void readBody(MvInput input, org.metavm.entity.Entity parent) {
+        super.readBody(input, parent);
         this.declaringType = (Klass) parent;
         this.sourceTag = input.readNullable(input::readInt);
         this.name = input.readUTF();
@@ -664,6 +666,7 @@ public class Field extends org.metavm.entity.Entity implements ChangeAware, Prop
     @Generated
     @Override
     public void writeBody(MvOutput output) {
+        super.writeBody(output);
         output.writeNullable(sourceTag, output::writeInt);
         output.writeUTF(name);
         output.write(access.code());
