@@ -10,12 +10,14 @@ import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 public final class EnumConstDecl extends Decl<EnumConst> {
+    private List<Annotation> annotations;
     private final Name name;
     private List<Expr> arguments;
     private @Nullable ClassDecl decl;
     private MethodRef init;
 
-    public EnumConstDecl(Name name, List<Expr> arguments, @Nullable ClassDecl decl) {
+    public EnumConstDecl(List<Annotation> annotations, Name name, List<Expr> arguments, @Nullable ClassDecl decl) {
+        this.annotations = annotations;
         this.name = name;
         this.arguments = arguments;
         this.decl = decl;
@@ -38,13 +40,21 @@ public final class EnumConstDecl extends Decl<EnumConst> {
         writer.writeln(",");
     }
 
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
+    }
+
     @Nullable
     public ClassDecl getDecl() {
         return decl;
     }
 
     public Clazz getActualClass() {
-        return decl != null ? decl.getElement() : getElement().getDeclaringClass();
+        return decl != null ? decl.getElement() : getElement().getDeclClass();
     }
 
     public void setDecl(@Nullable ClassDecl decl) {

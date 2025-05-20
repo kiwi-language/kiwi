@@ -2,7 +2,6 @@ package org.metavm.compiler.element;
 
 import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.generate.Code;
-import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.type.FuncType;
 import org.metavm.compiler.type.Type;
 import org.metavm.compiler.util.List;
@@ -12,7 +11,7 @@ import java.util.function.Consumer;
 
 import static org.metavm.object.type.Field.FLAG_STATIC;
 
-public final class Field extends ElementBase implements Member, FieldRef {
+public class Field extends ElementBase implements Member, FieldRef {
 
     private Name name;
     private Type type;
@@ -23,6 +22,7 @@ public final class Field extends ElementBase implements Member, FieldRef {
     private final Clazz declaringClass;
     private @Nullable Method initializer;
     private List<FieldInst> instances = List.nil();
+    private List<Attribute> attributes = List.nil();
 
     public Field(String name, Type type, Access access, boolean static_, Clazz declaringClass) {
         this(NameTable.instance.get(name), type, access, static_, false, declaringClass);
@@ -50,7 +50,7 @@ public final class Field extends ElementBase implements Member, FieldRef {
     }
 
     @Override
-    public ClassType getDeclType() {
+    public Clazz getDeclType() {
         return declaringClass;
     }
 
@@ -83,6 +83,10 @@ public final class Field extends ElementBase implements Member, FieldRef {
 
     public Clazz getDeclClass() {
         return declaringClass;
+    }
+
+    public void setAsSummary() {
+        declaringClass.setSummaryField(this);
     }
 
     @Override
@@ -165,4 +169,11 @@ public final class Field extends ElementBase implements Member, FieldRef {
         instances = instances.prepend(fieldInst);
     }
 
+    public List<Attribute> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(List<Attribute> attributes) {
+        this.attributes = attributes;
+    }
 }

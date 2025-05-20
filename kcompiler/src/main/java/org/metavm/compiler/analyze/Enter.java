@@ -1,8 +1,8 @@
 package org.metavm.compiler.analyze;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.compiler.element.*;
 import org.metavm.compiler.element.ClassTag;
+import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Types;

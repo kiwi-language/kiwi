@@ -48,6 +48,8 @@ public class CompilationTask {
     public Project analyze() {
         var enter = new Enter(project);
         enter.enter(files);
+        var meta = new Meta();
+        files.forEach(f -> f.accept(meta));
         for (File file : files) {
             ImportResolver.resolve(file, project);
             file.accept(new TypeResolver(project));

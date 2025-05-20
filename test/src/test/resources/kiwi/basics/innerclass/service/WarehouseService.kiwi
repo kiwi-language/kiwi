@@ -3,7 +3,8 @@ package innerclass.service
 import innerclass.Warehouse
 import java.util.List
 
-bean WarehouseService {
+@Bean
+class WarehouseService {
 
     fn createWarehouse(name: string) -> Warehouse<string> {
         return Warehouse<string>(name)

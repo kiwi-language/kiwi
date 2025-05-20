@@ -2,12 +2,13 @@ package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.element.Name;
 import org.metavm.compiler.element.Param;
+import org.metavm.compiler.util.List;
 
 import javax.annotation.Nullable;
 
 public final class ParamDecl extends VariableDecl<Param> {
-    public ParamDecl(@Nullable TypeNode type, Name name) {
-        super(type, name, null);
+    public ParamDecl(List<Annotation> annotations, @Nullable TypeNode type, Name name) {
+        super(annotations, type, name, null);
     }
 
     @Override

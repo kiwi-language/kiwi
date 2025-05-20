@@ -6,7 +6,8 @@ value class IdxFooServiceAllFlags(priv val allFlags: bool) {
 
 }
 
-bean FooService(
+@Bean
+class FooService(
     idService: IdService,
     priv val barService: BarService
 ): BaseService(idService) {
@@ -19,7 +20,8 @@ bean FooService(
 
 }
 
-bean BarService(idService: IdService): BaseService(idService) {
+@Bean
+class BarService(idService: IdService): BaseService(idService) {
 
     priv var allFlags = true
 
@@ -37,7 +39,8 @@ interface IdService {
 
 }
 
-bean IdServiceImpl: IdService {
+@Bean
+class IdServiceImpl: IdService {
 
 }
 

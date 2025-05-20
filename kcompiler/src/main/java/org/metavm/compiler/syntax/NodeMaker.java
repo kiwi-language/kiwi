@@ -16,6 +16,7 @@ public class NodeMaker {
     public static ClassParamDecl classParamDecl(Name name, Type type, Clazz clazz) {
         var decl = new ClassParamDecl(
                 List.nil(),
+                List.nil(),
                 false,
                 false,
                 type.makeNode(),
@@ -28,6 +29,7 @@ public class NodeMaker {
 
     public static ParamDecl paramDecl(Name name, Type type, Executable executable) {
         var paramDecl = new ParamDecl(
+                List.nil(),
                 makeType(type),
                 name
         );
@@ -127,6 +129,7 @@ public class NodeMaker {
         }
         var methodDecl = new MethodDecl(
                 mods.build(),
+                List.nil(),
                 method.getTypeParams().map(NodeMaker::makeTypeVariableDecl),
                 method.getName(),
                 method.getParams().map(NodeMaker::paramDecl),
@@ -138,7 +141,7 @@ public class NodeMaker {
     }
 
     public static ParamDecl paramDecl(Param param) {
-        var paramDecl = new ParamDecl(param.getType().makeNode(), param.getName());
+        var paramDecl = new ParamDecl(List.nil(), param.getType().makeNode(), param.getName());
         paramDecl.setElement(param);
         return paramDecl;
     }

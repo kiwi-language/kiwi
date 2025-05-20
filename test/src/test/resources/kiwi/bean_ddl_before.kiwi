@@ -1,6 +1,7 @@
 import org.metavm.api.Index
 
-bean FooService {
+@Bean
+class FooService {
 
     priv static val allFlagsIdx = Index<bool, FooService>(false, s -> s.allFlags)
 

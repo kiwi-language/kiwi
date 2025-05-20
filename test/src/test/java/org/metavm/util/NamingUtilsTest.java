@@ -39,4 +39,10 @@ public class NamingUtilsTest extends TestCase {
         Assert.assertEquals("org/metavm/lab/user-service", path);
     }
 
+    public void testNameToLabel() {
+        assertEquals("Product Name", NamingUtils.nameToLabel("productName"));
+        assertEquals("Order Placement Service", NamingUtils.nameToLabel("OrderPlacementService"));
+        assertEquals("SKU", NamingUtils.nameToLabel("SKU"));
+    }
+
 }

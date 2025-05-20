@@ -353,7 +353,8 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     public void setTitleField(@Nullable Field titleField) {
         if (titleField != null && !titleField.getType().getUnderlyingType().isString())
-            throw new BusinessException(ErrorCode.TITLE_FIELD_MUST_BE_STRING);
+            throw new BusinessException(ErrorCode.TITLE_FIELD_MUST_BE_STRING,
+                    titleField.getQualifiedName(), titleField.getType().getTypeDesc());
         this.titleField = Utils.safeCall(titleField, Instance::getReference);
     }
 

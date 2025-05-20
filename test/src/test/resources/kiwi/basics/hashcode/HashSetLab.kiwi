@@ -3,7 +3,8 @@ package hashcode
 import java.util.HashSet
 import java.util.Set
 
-bean HashSetLab {
+@Bean
+class HashSetLab {
 
     priv val set: Set<any> = HashSet<any>()
 

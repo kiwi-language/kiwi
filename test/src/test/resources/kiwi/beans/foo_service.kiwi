@@ -1,6 +1,7 @@
 package beans
 
-bean FooService {
+@Bean
+class FooService {
 
     fn greet() -> string {
         return "Hello"

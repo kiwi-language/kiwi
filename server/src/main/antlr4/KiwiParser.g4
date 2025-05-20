@@ -16,7 +16,7 @@ typeDeclaration: (classDeclaration | enumDeclaration | interfaceDeclaration )
     ;
 
 classDeclaration
-    : annotation* (CLASS | BEAN) identifier typeParameters?
+    : CLASS identifier typeParameters?
       ( '(' (initParameter (',' initParameter)* ) ')')?
       (':' type arguments? (',' type)* )?
       classBody?
@@ -50,7 +50,7 @@ enumConstants
     ;
 
 enumConstant
-    : identifier arguments? classBody?
+    : annotation* identifier arguments? classBody?
     ;
 
 enumBodyDeclarations
@@ -58,7 +58,7 @@ enumBodyDeclarations
     ;
 
 interfaceDeclaration
-    : annotation* INTERFACE identifier typeParameters? (':' typeList)? interfaceBody
+    : INTERFACE identifier typeParameters? (':' typeList)? interfaceBody
     ;
 
 interfaceBody
@@ -130,7 +130,7 @@ formalParameterList
     ;
 
 formalParameter
-    : identifier ':' type
+    : annotation* identifier ':' type
     ;
 
 methodBody: block
@@ -411,7 +411,8 @@ modifier
     ;
 
 classOrInterfaceModifier
-    : PUB
+    : annotation
+    | PUB
     | PROT
     | PRIV
     | STATIC

@@ -41,6 +41,7 @@ public class ClassFileWriter {
         output.writeList(klass.getStaticFields(), this::writeField);
         output.writeList(klass.getMethods(), this::writeMethod);
         output.writeList(klass.getKlasses(), this::writeKlass);
+        output.writeNullable(klass.getSelfTitleField(), f -> output.writeReference(f.getReference()));
         output.writeList(klass.getAttributes(), a -> a.write(output));
     }
 
@@ -72,6 +73,7 @@ public class ClassFileWriter {
         output.writeInt(field.getSince());
         output.writeNullable(field.getInitializerReference(), output::writeReference);
         output.writeBoolean(field.getState() == MetadataState.REMOVED);
+        output.writeList(field.getAttributes(), a -> a.write(output));
     }
 
     private void writeMethod(Method method) {

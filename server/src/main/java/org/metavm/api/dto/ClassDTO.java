@@ -1,10 +1,13 @@
 package org.metavm.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 public record ClassDTO(
         String access,
         String tag,
+        @JsonProperty("abstract")
         boolean isAbstract,
         String name,
         String qualifiedName,
@@ -13,6 +16,8 @@ public record ClassDTO(
         List<FieldDTO> fields,
         List<MethodDTO> methods,
         List<ClassDTO> classes,
-        List<EnumConstantDTO> enumConstants
+        List<EnumConstantDTO> enumConstants,
+        String beanName,
+        String label
 ) {
 }

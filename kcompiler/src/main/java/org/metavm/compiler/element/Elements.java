@@ -52,11 +52,6 @@ public class Elements {
 //                    buffer.writeVarInt(field.getSourceTag());
 //                }
             }
-            case EnumConst enumConst -> {
-                output.write(SymbolRefs.STATIC_FIELD);
-                writeReference(enumConst.getDeclaringClass(), output);
-                output.writeUTF(enumConst.getName().toString());
-            }
             case FreeFunc function -> {
                 output.write(SymbolRefs.FUNCTION);
                 output.writeUTF(function.getName().toString());

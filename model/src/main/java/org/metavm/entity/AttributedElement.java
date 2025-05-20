@@ -62,6 +62,8 @@ public abstract class AttributedElement extends Entity implements Element {
         return Collections.unmodifiableList(attributes);
     }
 
+    public abstract String getName();
+
     public void setAttributes(List<Attribute> attributes) {
         this.attributes.clear();
         this.attributes.addAll(attributes);
