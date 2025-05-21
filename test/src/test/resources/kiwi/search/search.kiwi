@@ -4,6 +4,14 @@ class SearchFoo(
     var name: string
 ) {
 
+    var status = Status.ENABLED
+
     class Child(var name: string)
 
+}
+
+enum Status {
+    ENABLED,
+    DISABLED
+;
 }

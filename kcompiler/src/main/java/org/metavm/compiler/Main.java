@@ -87,7 +87,7 @@ public class Main {
 
     private static void enter(String appName) {
         CompilerHttpUtils.setAppId(2L);
-        var apps = CompilerHttpUtils.get("/app", new TypeReference<Page<ApplicationDTO>>() {}).data();
+        var apps = CompilerHttpUtils.get("/app", new TypeReference<Page<ApplicationDTO>>() {}).items();
         var appId = Utils.findRequired(apps, app -> app.name().equals(appName),
                 () -> "Application '" + appName + "' does not exist").id();
         enterApp(appId);
@@ -228,11 +228,11 @@ public class Main {
     private static List<ApplicationDTO> listApps() {
         var page = CompilerHttpUtils.get("/app", new TypeReference<Page<ApplicationDTO>>() {});
         System.out.println("applications:");
-        for (ApplicationDTO app : page.data()) {
+        for (ApplicationDTO app : page.items()) {
             if(app.id() > 2)
                 System.out.printf("\t%s%n", app.name());
         }
-        return page.data();
+        return page.items();
     }
 
     private static void initializeHttpClient() {

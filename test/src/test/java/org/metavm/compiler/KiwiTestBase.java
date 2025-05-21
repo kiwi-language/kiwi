@@ -6,9 +6,9 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceQueryService;
-import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.rest.SearchResult;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
@@ -42,27 +42,27 @@ public abstract class KiwiTestBase extends TestCase  {
         apiClient = null;
     }
 
-    String saveInstance(String className, Map<String, Object> fields) {
-        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, fields));
+    Id saveInstance(String className, Map<String, Object> arguments) {
+        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, arguments));
     }
 
-    Object callMethod(String qualifier, String methodName, List<Object> arguments) {
+    Id saveInstance(String className, Map<String, Object> arguments, Map<String, List<Map<String, Object>>> children) {
+        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, arguments, children));
+    }
+
+    Object callMethod(Object qualifier, String methodName, List<Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
     }
 
-    Object callMethod(String qualifier, String methodName, Map<String, Object> arguments) {
+    Object callMethod(Object qualifier, String methodName, Map<String, Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
     }
 
-    SearchResult search(String className, Map<String, Object> query) {
+    ApiSearchResult search(String className, Map<String, Object> query) {
         return apiClient.search(className, query, 1, 20);
     }
 
-    SearchResult search(String className, Map<String, Object> query, boolean returnObjects) {
-        return apiClient.search(className, query, 1, 20, returnObjects);
-    }
-
-    ClassInstanceWrap getObject(String id) {
+    ApiObject getObject(Id id) {
         return apiClient.getObject(id);
     }
 

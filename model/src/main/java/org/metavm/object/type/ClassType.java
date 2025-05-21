@@ -507,4 +507,8 @@ public abstract class ClassType extends CompositeType implements ISubstitutor, G
     public void forEachReference(Consumer<Reference> action) {
         super.forEachReference(action);
     }
+
+    public boolean isBean() {
+        return getKlass().isBeanClass();
+    }
 }

@@ -22,7 +22,7 @@ public class EntityQueryService {
         var searchQuery = buildSearchQuery(query);
         var idPage = instanceSearchService.search(searchQuery);
         return new Page<>(
-                Utils.map(idPage.data(), id -> context.getEntity(query.entityType(), id)),
+                Utils.map(idPage.items(), id -> context.getEntity(query.entityType(), id)),
                 idPage.total()
         );
     }

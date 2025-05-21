@@ -11,7 +11,7 @@ class TelephoneMaskInterceptor: Interceptor {
     }
 
     fn after(request: HttpRequest?, response: HttpResponse?, result: any?) -> any? {
-        if (equals(request!!.getRequestURI(), "/api/user-service/get-user-by-name")) {
+        if (result is UserDTO) {
             var user = result!! as UserDTO
             var tel = user.telephone()
             return UserDTO(user.name(), tel.substring(0, 3) + "******" + tel.substring(9))

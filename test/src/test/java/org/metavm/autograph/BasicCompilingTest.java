@@ -2,6 +2,8 @@ package org.metavm.autograph;
 
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
+import org.metavm.object.instance.core.ApiObject;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.MetadataState;
 import org.metavm.task.SynchronizeSearchTask;
@@ -120,6 +122,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processValueTypes() {
+        var yuan = ApiNamedObject.of("valuetypes.CurrencyKind", "YUAN");
         var productId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                 "valuetypes.Product",
                 Map.of(
@@ -127,21 +130,21 @@ public class BasicCompilingTest extends CompilerTestBase {
                         "price", Map.of(
                                 "defaultPrice", Map.of(
                                         "quantity", 100,
-                                        "kind", "YUAN"
+                                        "kind",  yuan
                                 ),
                                 "channelPrices", List.of(
                                         Map.of(
                                                 "channel", "mobile",
                                                 "price", Map.of(
                                                         "quantity", 80,
-                                                        "kind", "YUAN"
+                                                        "kind", yuan
                                                 )
                                         ),
                                         Map.of(
                                                 "channel", "web",
                                                 "price", Map.of(
                                                         "quantity", 95,
-                                                        "kind", "YUAN"
+                                                        "kind", yuan
                                                 )
                                         )
                                 )
@@ -155,24 +158,24 @@ public class BasicCompilingTest extends CompilerTestBase {
         var defaultPrice = price.getObject("defaultPrice");
         Assert.assertNull(defaultPrice.id());
         Assert.assertEquals(100.0, defaultPrice.getDouble("quantity"), 0.0001);
-        Assert.assertEquals("YUAN", defaultPrice.getString("kind"));
+        Assert.assertEquals(yuan, defaultPrice.getEnumConstant("kind"));
         // check channels
         var channelPrices = price.getArray("channelPrices");
         Assert.assertEquals(2, channelPrices.size());
         // check mobile channel
-        var mobileChannelPrice = channelPrices.getObject(0);
+        var mobileChannelPrice = (ApiObject) channelPrices.getFirst();
         Assert.assertNull(mobileChannelPrice.id());
         Assert.assertEquals("mobile", mobileChannelPrice.getString("channel"));
         var mobilePrice = mobileChannelPrice.getObject("price");
         Assert.assertEquals(80.0, mobilePrice.getDouble("quantity"), 0.0001);
-        Assert.assertEquals("YUAN", mobilePrice.getString("kind"));
+        Assert.assertEquals(yuan, mobilePrice.getEnumConstant("kind"));
         // check web channel
-        var webChannelPrice = channelPrices.getObject(1);
+        var webChannelPrice = (ApiObject) channelPrices.get(1);
         Assert.assertNull(webChannelPrice.id());
         Assert.assertEquals("web", webChannelPrice.getString("channel"));
         var webPrice = webChannelPrice.getObject("price");
         Assert.assertEquals(95.0, webPrice.getDouble("quantity"), 0.0001);
-        Assert.assertEquals("YUAN", webPrice.getString("kind"));
+        Assert.assertEquals(yuan, webPrice.getEnumConstant("kind"));
     }
 
     private void processRemovedField() {
@@ -198,13 +201,13 @@ public class BasicCompilingTest extends CompilerTestBase {
         var labId = TestUtils.doInTransaction(() -> apiClient.saveInstance("sorting.SortLab", Map.of(
                 "foos", List.of(foo2Id, foo1Id)
         )));
-        var foos = apiClient.getObject(labId).getRaw("foos");
+        var foos = apiClient.getObject(labId).get("foos");
         Assert.assertEquals(List.of(foo1Id, foo2Id), foos);
         callMethod(labId, "reverseFoos", List.of());
-        var foos1 = apiClient.getObject(labId).getRaw("foos");
+        var foos1 = apiClient.getObject(labId).get("foos");
         Assert.assertEquals(List.of(foo2Id, foo1Id), foos1);
         callMethod(labId, "sortFoos", List.of());
-        var foos2 = apiClient.getObject(labId).getRaw("foos");
+        var foos2 = apiClient.getObject(labId).get("foos");
         Assert.assertEquals(List.of(foo1Id, foo2Id), foos2);
     }
 
@@ -221,7 +224,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processTryCatch() {
-        var id = (String) TestUtils.doInTransaction(() -> apiClient.saveInstance(
+        var id = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                 "trycatch.TryCatchFoo<string, string>",
                 Map.of())
         );
@@ -368,7 +371,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var id = TestUtils.doInTransaction(() ->
                 apiClient.saveInstance("clone.CloneFoo", Map.of("value", "MetaVM"))
         );
-        var cloneId = (String) TestUtils.doInTransaction(() ->
+        var cloneId = (Id) TestUtils.doInTransaction(() ->
                 apiClient.callMethod(id, "clone", List.of())
         );
         var cloneValue = apiClient.getObject(cloneId).get("value");
@@ -442,7 +445,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         var foo = getObject(id);
         Assert.assertEquals("001", foo.getString("id"));
         var elements = foo.getArray("elements");
-        Assert.assertEquals(List.of(1,2,3), elements.toList());
+        Assert.assertEquals(List.of(1,2,3), elements);
         var modCount = foo.get("modCount");
         Assert.assertEquals(0, modCount);
         var id2 = saveInstance("objectio.CustomObjectIOFoo",
@@ -570,8 +573,8 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processSwitchExpression() {
         var klassName = "switchexpr.SwitchExpressionFoo";
         var currencyKlassName = klassName + ".Currency";
-        var yuanId = (String) getStatic(currencyKlassName, "YUAN");
-        Assert.assertEquals(0.14, callMethod(klassName, "getRate", List.of(yuanId)));
+        var yuan = (ApiNamedObject) getStatic(currencyKlassName, "YUAN");
+        Assert.assertEquals(0.14, callMethod(klassName, "getRate", List.of(yuan)));
     }
 
     private void processMultiply() {
@@ -675,7 +678,7 @@ public class BasicCompilingTest extends CompilerTestBase {
         TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, schedulerAndWorker);
         var page = search(className, Map.of("name", "foo", "seq", List.of(50, 200)), 1, 20).data();
         Assert.assertEquals(1, page.size());
-        Assert.assertEquals(id, page.getFirst());
+        Assert.assertEquals(id, page.getFirst().id());
     }
 
     private void processCharReplace() {

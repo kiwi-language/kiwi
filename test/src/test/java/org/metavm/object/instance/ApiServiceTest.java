@@ -1,13 +1,17 @@
 package org.metavm.object.instance;
 
 import junit.framework.TestCase;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
+import org.metavm.object.instance.core.ApiObject;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class ApiServiceTest extends TestCase {
 
     private TypeManager typeManager;
@@ -36,7 +40,7 @@ public class ApiServiceTest extends TestCase {
         var title = "Shoes-40";
         var price = 100.0;
         var quantity = 100;
-        var skuId = (String) TestUtils.doInTransaction(() -> apiClient.newInstance(
+        var skuId = TestUtils.doInTransaction(() -> apiClient.newInstance(
                 "SKU", List.of(title, price, quantity)
         ));
         var sku = apiClient.getObject(skuId);
@@ -73,7 +77,7 @@ public class ApiServiceTest extends TestCase {
                 List.of("10 Yuan off", 10)
         ));
         // buy
-        var orderId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod(
+        var orderId = (Id) TestUtils.doInTransaction(() -> apiClient.callMethod(
                 skuId,
                 "buy",
                 List.of(1, List.of(coupon1Id, coupon2Id))
@@ -97,6 +101,28 @@ public class ApiServiceTest extends TestCase {
         ));
         var sku = apiClient.getObject(skuId);
         Assert.assertEquals(99, sku.getInt("quantity"));
+    }
+
+    public void testSummary() {
+        MockUtils.assemble("kiwi/summary/summary.kiwi", typeManager, schedulerAndWorker);
+        var productId = saveInstance("summary.Product",
+                Map.of("name", "MacBook Pro", "price", 14000, "stock", 100)
+        );
+        var orderId = saveInstance("summary.Order",
+                Map.of("product", productId, "quantity", 1)
+        );
+        var order = getObject(orderId);
+        //noinspection unchecked
+        var productRef = ((Map<String, Object>) order.getMap().get("fields")).get("product");
+        assertEquals(Map.of("id", productId.toString(), "type", "summary.Product", "summary", "MacBook Pro"), productRef);
+    }
+
+    private Id saveInstance(String className, Map<String, Object> map) {
+        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, map));
+    }
+
+    public ApiObject getObject(Id id) {
+        return apiClient.getObject(id);
     }
 
 }

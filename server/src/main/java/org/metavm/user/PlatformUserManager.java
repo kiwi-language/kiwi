@@ -73,7 +73,7 @@ public class PlatformUserManager extends EntityContextFactoryAware {
                     .build();
             Page<User> dataPage = entityQueryService.query(query, context);
             return new Page<>(
-                    Utils.map(dataPage.data(), User::toDTO),
+                    Utils.map(dataPage.items(), User::toDTO),
                     dataPage.total()
             );
         }

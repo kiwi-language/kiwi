@@ -30,7 +30,7 @@ public class RoleManager extends EntityContextFactoryAware {
         Page<Role> dataPage =
                 entityQueryService.query(query, newContext());
         return new Page<>(
-                Utils.map(dataPage.data(), Role::toRoleDTO),
+                Utils.map(dataPage.items(), Role::toRoleDTO),
                 dataPage.total()
         );
     }

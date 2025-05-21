@@ -10,9 +10,9 @@ import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceQueryService;
-import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.instance.core.ApiObject;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.persistence.MockSchemaManager;
-import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.type.*;
 import org.metavm.user.LoginService;
 import org.metavm.user.PlatformUserManager;
@@ -162,19 +162,19 @@ public abstract class CompilerTestBase extends TestCase  {
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
     }
 
-    protected String saveInstance(String className, Map<String, Object> fields) {
+    protected Id saveInstance(String className, Map<String, Object> fields) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, fields));
     }
 
-    protected Object callMethod(String qualifier, String methodName, List<Object> arguments) {
-        return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
+    protected Object callMethod(Object receiver, String methodName, List<Object> arguments) {
+        return TestUtils.doInTransaction(() -> apiClient.callMethod(receiver, methodName, arguments));
     }
 
-    protected SearchResult search(String className, Map<String, Object> query, int page, int pageSize) {
+    protected ApiSearchResult search(String className, Map<String, Object> query, int page, int pageSize) {
         return apiClient.search(className, query, page, pageSize);
     }
 
-    protected ClassInstanceWrap getObject(String id) {
+    protected ApiObject getObject(Id id) {
         return apiClient.getObject(id);
     }
 

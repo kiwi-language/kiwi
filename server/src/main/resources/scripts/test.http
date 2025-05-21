@@ -1,4 +1,4 @@
-GET http://localhost:8081/api/instance?typeId=13000&searchText=Test&page=1&pageSize=20
+GET http://localhost:8081/object/instance?typeId=13000&searchText=Test&page=1&pageSize=20
 Accept: application/json
 Content-Type: application/json
 

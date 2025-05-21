@@ -23,7 +23,6 @@ public class TransformerTest extends TestCase {
         Assert.assertNotNull(classDecl);
         var clazz = classDecl.getElement();
         Assert.assertEquals(ClassTag.ENUM, clazz.getClassTag());
-        log.debug("{}", classDecl.getText());
     }
 
 }

@@ -48,7 +48,7 @@ public class MessageManager extends EntityContextFactoryAware {
                     context
             );
             return new Page<>(
-                    Utils.map(dataPage.data(), Message::toDTO),
+                    Utils.map(dataPage.items(), Message::toDTO),
                     dataPage.total()
             );
         }

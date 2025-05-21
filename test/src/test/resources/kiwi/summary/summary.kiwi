@@ -1,0 +1,13 @@
+package summary
+
+class Product(
+    @Summary
+    var name: string,
+    var price: double,
+    var stock: int
+)
+
+class Order(
+    var product: Product,
+    var quantity: int
+)

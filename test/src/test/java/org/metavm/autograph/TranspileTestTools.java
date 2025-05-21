@@ -67,12 +67,9 @@ public class TranspileTestTools {
             Path potentialPath = Paths.get(javaHomeEnv, "jmods", "java.base.jmod");
             if (Files.isRegularFile(potentialPath)) {
                 jmodPath = potentialPath;
-                logger.debug("Found java.base.jmod using JAVA_HOME: {}", jmodPath);
             } else {
                 logger.warn("JAVA_HOME is set ('{}'), but '{}' not found or not a file.", javaHomeEnv, potentialPath);
             }
-        } else {
-            logger.debug("JAVA_HOME environment variable not set. Trying java.home system property.");
         }
 
         // 2. If not found, try java.home system property
@@ -85,7 +82,6 @@ public class TranspileTestTools {
                 Path potentialPath1 = javaHomePath.resolve("jmods").resolve("java.base.jmod");
                 if (Files.isRegularFile(potentialPath1)) {
                     jmodPath = potentialPath1;
-                    logger.debug("Found java.base.jmod using java.home directly: {}", jmodPath);
                 } else {
                     // Check <java.home>/../jmods/java.base.jmod (e.g., java.home is JRE path inside JDK)
                     Path parentPath = javaHomePath.getParent();
@@ -93,7 +89,6 @@ public class TranspileTestTools {
                         Path potentialPath2 = parentPath.resolve("jmods").resolve("java.base.jmod");
                         if (Files.isRegularFile(potentialPath2)) {
                             jmodPath = potentialPath2;
-                            logger.debug("Found java.base.jmod using parent of java.home: {}", jmodPath);
                         }
                     }
                 }

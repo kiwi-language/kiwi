@@ -3,7 +3,7 @@ package org.metavm.autograph;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.application.rest.dto.ApplicationCreateRequest;
-import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.Id;
 import org.metavm.user.rest.dto.LoginRequest;
 import org.metavm.util.*;
@@ -59,7 +59,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 String email = "15968879210@163.com";
                 sendVerificationCode(email);
                 var verificationCode = getLastSentEmailContent();
-                var platformUserId = (String) doInTransaction(() -> apiClient.callMethod(
+                var platformUserId = (Id) doInTransaction(() -> apiClient.callMethod(
                         userKlass,
                         "register",
                         List.of(
@@ -73,7 +73,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 ));
                 waitForAllTasksDone();
                 var platformUser = getObject(platformUserId);
-                logger.info("{}", Utils.toPrettyJsonString(platformUser));
+                logger.info("{}", Utils.toPrettyJsonString(platformUser.getMap()));
                 Assert.assertEquals(email, platformUser.getString("loginName"));
                 Assert.assertEquals("lyq", platformUser.getString("name"));
                 var platformUserApplications = platformUser.getArray("applications");
@@ -91,7 +91,7 @@ public class UserCompilingTest extends CompilerTestBase {
 //                Assert.assertEquals(1, platformUser2.getArray("roles").size());
 
                 // create an UserApplication by invoking the UserApplication.create method
-                var applicationId = (String) callMethod(userApplicationKlass, "create",
+                var applicationId = (Id) callMethod(userApplicationKlass, "create",
                         List.of("lab", platformUserId));
                 var application = getObject(applicationId);
                 var reloadedPlatformUser = getObject(platformUserId);
@@ -100,7 +100,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(applicationId, joinedApplications.getFirst());
 
                 // get PlatformApplication
-                var platformApplicationId = (String) doInTransaction(() -> apiClient.callMethod(
+                var platformApplicationId = (Id) doInTransaction(() -> apiClient.callMethod(
                         platformApplicationKlass, "getInstance", List.of()
                 ));
                 var platformApplication = getObject(platformApplicationId);
@@ -109,7 +109,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 var token = login(platformApplication.id(), email, "123456");
 
                 // enter application
-                var loginResult = (ClassInstanceWrap) doInTransaction(() -> apiClient.callMethod(
+                var loginResult = (ApiObject) doInTransaction(() -> apiClient.callMethod(
                         userKlass,
                         "enterApp", List.of(platformUserId, application.id())
                 ));
@@ -129,7 +129,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 }
 
                 // create a platform user to join the application and then leave
-                var anotherPlatformUserId = (String) doInTransaction(() -> apiClient.newInstance(
+                var anotherPlatformUserId = (Id) doInTransaction(() -> apiClient.newInstance(
                         userKlass,
                         List.of("lyq2", "123456", "lyq2", List.of(roleId))
                 ));
@@ -155,7 +155,7 @@ public class UserCompilingTest extends CompilerTestBase {
                         Map.of("receiver", anotherPlatformUserId),
                         1, 20).data();
                 Assert.assertEquals(1, messageList.size());
-                var messageId = (String) requireNonNull(messageList.getFirst());
+                var messageId = requireNonNull(messageList.getFirst()).id();
                 var message = getObject(messageId);
                 // check that the message is not read
                 Assert.assertFalse(message.getBoolean("read"));
@@ -165,13 +165,13 @@ public class UserCompilingTest extends CompilerTestBase {
                 // accept invitation
                 callMethod(
                         userApplicationKlass, "acceptInvitation",
-                        List.of(message.getString("target"))
+                        List.of(message.get("target"))
                 );
                 // assert that the user has joined the application
                 var reloadedAnotherPlatformUser = getObject(anotherPlatformUserId);
                 var anotherJoinedApplications = reloadedAnotherPlatformUser.getArray("applications");
                 Assert.assertEquals(1, anotherJoinedApplications.size());
-                loginResult = (ClassInstanceWrap) doInTransaction(() -> apiClient.callMethod(
+                loginResult = (ApiObject) doInTransaction(() -> apiClient.callMethod(
                         userKlass,
                         "enterApp",
                         List.of(anotherPlatformUserId, application.id())
@@ -238,8 +238,8 @@ public class UserCompilingTest extends CompilerTestBase {
                 // execute the LabUser.verify method and check verification result
                 var tokenValue = createTokenValue(application.id(), token);
                 var loginInfo = verify(tokenValue);
-                Assert.assertEquals(application.id(), loginInfo.getString("application"));
-                Assert.assertEquals(userId, loginInfo.getString("user"));
+                Assert.assertEquals(application.id(), loginInfo.getId("application"));
+                Assert.assertEquals(userId, loginInfo.getId("user"));
 
                 // test logout
                 var tokenF = token;
@@ -302,18 +302,18 @@ public class UserCompilingTest extends CompilerTestBase {
         Assert.assertNull(loginInfo.get("application"));
     }
 
-    private ClassInstanceWrap verify(Map<String, Object> tokenValue) {
-        return (ClassInstanceWrap) callMethod(
+    private ApiObject verify(Map<String, Object> tokenValue) {
+        return (ApiObject) callMethod(
                 "org.metavm.user.LabUser", "verify", List.of(tokenValue)
         );
     }
 
-    private String login(String applicationId, String loginName, @SuppressWarnings("SameParameterValue") String password) {
+    private String login(Id applicationId, String loginName, @SuppressWarnings("SameParameterValue") String password) {
         return login(applicationId, loginName, password, "127.0.0.1", true);
     }
 
-    private String login(String applicationId, String loginName, String password, String clientIP, boolean checkToken) {
-        var loginResult = (ClassInstanceWrap) callMethod(
+    private String login(Id applicationId, String loginName, String password, String clientIP, boolean checkToken) {
+        var loginResult = (ApiObject) callMethod(
                 "org.metavm.user.LabUser", "login",
                 List.of(applicationId, loginName, password, clientIP)
         );
@@ -323,7 +323,7 @@ public class UserCompilingTest extends CompilerTestBase {
         return token;
     }
 
-    private Map<String, Object> createTokenValue(String id, String token) {
+    private Map<String, Object> createTokenValue(Id id, String token) {
         return Map.of(
                 "application", id,
                 "token", token

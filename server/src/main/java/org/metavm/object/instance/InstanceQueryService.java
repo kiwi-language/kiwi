@@ -63,12 +63,12 @@ public class InstanceQueryService {
         var created = Utils.map(query.createdIds(), instanceRepository::get);
         var filteredCreatedId =
                 Utils.filterAndMap(created, i -> match((ClassInstance) i, searchQuery.types(), condition), Instance::tryGetId);
-        List<Id> ids = Utils.merge(idPage.data(), filteredCreatedId, true);
+        List<Id> ids = Utils.merge(idPage.items(), filteredCreatedId, true);
         ids = Utils.filter(ids, id -> !query.excludedIds().contains(id));
         ids = instanceRepository.filterAlive(ids);
         int actualSize = ids.size();
         ids = ids.subList(0, Math.min(ids.size(), query.pageSize()));
-        long total = idPage.total() + (actualSize - idPage.data().size());
+        long total = idPage.total() + (actualSize - idPage.items().size());
         return new Page<>(Utils.map(ids, id -> instanceRepository.get(id).getReference()), total);
     }
 

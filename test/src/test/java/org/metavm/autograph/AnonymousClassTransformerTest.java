@@ -40,12 +40,10 @@ public class AnonymousClassTransformerTest extends TestCase {
     private void process(String source) {
         source = TestUtils.getResourcePath(source);
         var m = PTN.matcher(source);
-        log.debug("{}", source);
         if(m.find()) {
             var pkgName = m.group(1);
             var newPkgName = pkgName + "2";
             var target = m.replaceAll("tmp/" + newPkgName + "/");
-            log.debug("{}", target);
             var file = TranspileTestTools.getPsiJavaFile(source);
             TranspileTestTools.executeCommand(() -> {
                 file.accept(new SyntheticClassNameTracker());

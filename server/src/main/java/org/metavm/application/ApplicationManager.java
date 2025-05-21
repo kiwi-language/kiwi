@@ -70,7 +70,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
                     context
             );
             return new Page<>(
-                    Utils.map(dataPage.data(), Application::toDTO),
+                    Utils.map(dataPage.items(), Application::toDTO),
                     dataPage.total()
             );
         }
@@ -302,7 +302,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
                     query.pageSize()
             ), context);
             return new Page<>(
-                    Utils.map(dataPage.data(),
+                    Utils.map(dataPage.items(),
                             user -> new AppMemberDTO(user.getStringId(), user.getName(),
                                     app.isAdmin(user),
                                     app.isOwner(user))),
@@ -319,7 +319,7 @@ public class ApplicationManager extends EntityContextFactoryAware {
                     context
             );
             var invitees = new ArrayList<InviteeDTO>();
-            for (PlatformUser user : dataPage.data()) {
+            for (PlatformUser user : dataPage.items()) {
                 invitees.add(new InviteeDTO(
                         user.getStringId(),
                         user.getLoginName(),

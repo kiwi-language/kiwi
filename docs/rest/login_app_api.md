@@ -87,7 +87,7 @@ Retrieves a paginated list of applications.
     {
       "code": 0,
       "data": {
-        "data": [
+        "items": [
           {
             "id": 1000002004,
             "name": "demo",
@@ -165,8 +165,8 @@ Represents an application.
 ### `Page` 
 Represents a paginated list of items.
 
-| Field   | Type     | Description                             |
-|:--------|:---------|:----------------------------------------|
-| `data`  | `T[]`      | Array of items for the current page     |
-| `total` | `long`   | Total number of items across all pages  |
+| Field   | Type      | Description                             |
+|:--------|:----------|:----------------------------------------|
+| `items` | `T[]`     | Array of items for the current page     |
+| `total` | `long`    | Total number of items across all pages  |
 

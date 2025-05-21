@@ -1,5 +1,5 @@
 ###
-PUT http://localhost:8080/api/shopping/product
+PUT http://localhost:8080/object/shopping/product
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -15,11 +15,11 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:8080/api/019cb8d6b90700
+GET http://localhost:8080/object/019cb8d6b90700
 X-App-ID: 1000000026
 
 ###
-POST http://localhost:8080/api/019cb8d6b90702/decrement-stock
+POST http://localhost:8080/object/019cb8d6b90702/decrement-stock
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -28,7 +28,7 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/api/shopping/direct-coupon
+PUT http://localhost:8080/object/shopping/direct-coupon
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -38,7 +38,7 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8080/api/order-service/place-order
+POST http://localhost:8080/object/order-service/place-order
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -49,15 +49,15 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:8080/api/01d8d9d6b90700
+GET http://localhost:8080/object/01d8d9d6b90700
 X-App-ID: 1000000026
 
 ###
-GET http://localhost:8080/api/018cd9d6b90700
+GET http://localhost:8080/object/018cd9d6b90700
 X-App-ID: 1000000026
 
 ###
-POST http://localhost:8080/api/product-service/find-by-title
+POST http://localhost:8080/object/product-service/find-by-title
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -66,7 +66,7 @@ Content-Type: application/json
 ]
 
 ###
-POST http://localhost:8080/api/product-service/count-by-price
+POST http://localhost:8080/object/product-service/count-by-price
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -75,7 +75,7 @@ Content-Type: application/json
 ]
 
 ###
-POST http://localhost:8080/api/search/shopping/product
+POST http://localhost:8080/object/search/shopping/product
 X-App-ID: 1000000026
 Content-Type: application/json
 

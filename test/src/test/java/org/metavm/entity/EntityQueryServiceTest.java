@@ -69,7 +69,7 @@ public class EntityQueryServiceTest extends TestCase {
                     context
             );
             Assert.assertEquals(1, page.total());
-            Assert.assertSame(foo, page.data().getFirst());
+            Assert.assertSame(foo, page.items().getFirst());
         }
     }
 
@@ -87,7 +87,7 @@ public class EntityQueryServiceTest extends TestCase {
                     context
             );
             Assert.assertEquals(1, page.total());
-            Assert.assertSame(foo, page.data().getFirst());
+            Assert.assertSame(foo, page.items().getFirst());
         }
     }
 

@@ -63,7 +63,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
                 0
         ));
         assertEquals(1, result.total());
-        assertEquals(Objects.requireNonNull(foo.tryGetId()), result.data().getFirst());
+        assertEquals(Objects.requireNonNull(foo.tryGetId()), result.items().getFirst());
     }
 
     public void testSearchingSuperClassField() {
@@ -84,7 +84,7 @@ public class MemInstanceSearchServiceV2Test extends TestCase {
                 0
         ));
         assertEquals(1, result.total());
-        assertEquals(Objects.requireNonNull(human.tryGetId()), result.data().getFirst());
+        assertEquals(Objects.requireNonNull(human.tryGetId()), result.items().getFirst());
 
     }
 
