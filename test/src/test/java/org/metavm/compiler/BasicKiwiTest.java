@@ -3,8 +3,9 @@ package org.metavm.compiler;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
-import org.metavm.object.instance.core.ArrayInstanceWrap;
-import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.instance.core.ApiObject;
+import org.metavm.object.instance.core.Id;
+import org.metavm.util.ApiNamedObject;
 import org.metavm.util.BusinessException;
 import org.metavm.util.TestConstants;
 
@@ -20,7 +21,7 @@ public class BasicKiwiTest extends KiwiTestBase {
                 "kiwi/basics/anonymous_class/AnonymousClassFoo.kiwi",
                 "kiwi/basics/anonymous_class/EntryDTO.kiwi"
         ));
-        var id = (String) callMethod("anonymous_class.AnonymousClassFoo",
+        var id = (Id) callMethod("anonymous_class.AnonymousClassFoo",
                         "create<string, any>",
                         List.of(
                                 List.of(
@@ -158,9 +159,9 @@ public class BasicKiwiTest extends KiwiTestBase {
         deploy("kiwi/basics/branching/ElseTypeNarrowingFoo.kiwi");
         var className = "branching.ElseTypeNarrowingFoo";
         var fooClassName = className + ".Foo";
-        var foo = saveInstance(fooClassName, Map.of("value", 1));
+        var fooId = saveInstance(fooClassName, Map.of("value", 1));
         Assert.assertEquals(
-                1, callMethod(className, "test", List.of(foo))
+                1, callMethod(className, "test", List.of(fooId))
         );
     }
 
@@ -203,7 +204,9 @@ public class BasicKiwiTest extends KiwiTestBase {
     public void testEnumConstantImpl() {
         deploy("kiwi/basics/enums/EnumConstantImplFoo.kiwi");
         var className = "enums.EnumConstantImplFoo";
-        Assert.assertEquals("Option 1", callMethod(className, "getOptionDesc", List.of("op1")));
+        Assert.assertEquals("Option 1", callMethod(className, "getOptionDesc",
+                List.of(new ApiNamedObject("enums.EnumConstantImplFoo.Option", "op1")))
+        );
     }
 
     public void testEnumField() {
@@ -214,8 +217,8 @@ public class BasicKiwiTest extends KiwiTestBase {
 
     public void testEnums() {
         deploy("kiwi/basics/enums/ProductKind.kiwi");
-        var kind = (String) callMethod("enums.ProductKind", "fromCode", List.of(0));
-        Assert.assertEquals("DEFAULT", kind);
+        var kind = callMethod("enums.ProductKind", "fromCode", List.of(0));
+        Assert.assertEquals(new ApiNamedObject("enums.ProductKind", "DEFAULT"), kind);
     }
 
     public void testCatchUnionExceptionType() {
@@ -265,19 +268,20 @@ public class BasicKiwiTest extends KiwiTestBase {
         var fooId = saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
         ));
-        callMethod("hashMapLab", "put", List.of(fooId, "Foo"));
+        var bean = ApiNamedObject.of("hashMapLab");
+        callMethod(bean, "put", List.of(fooId, "Foo"));
         var foo2Id = saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
         ));
-        var result = callMethod("hashMapLab", "get", List.of(foo2Id));
+        var result = callMethod(bean, "get", List.of(foo2Id));
         Assert.assertEquals("Foo", result);
 
         // Test entity without a defined hashCode method
         var barId = saveInstance("hashcode.HashCodeBar", Map.of(
                 "name", "Bar"
         ));
-        callMethod("hashMapLab", "put", List.of(barId, "Bar"));
-        var result2 = callMethod("hashMapLab", "get", List.of(barId));
+        callMethod(bean, "put", List.of(barId, "Bar"));
+        var result2 = callMethod(bean, "get", List.of(barId));
         Assert.assertEquals("Bar", result2);
 
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
@@ -286,30 +290,30 @@ public class BasicKiwiTest extends KiwiTestBase {
         }
 
         // Test value object
-        callMethod("hashMapLab", "bazPut", List.of("Baz", fooId, "Baz"));
-        var result3 = callMethod("hashMapLab", "bazGet", List.of("Baz", fooId));
+        callMethod(bean, "bazPut", List.of("Baz", fooId, "Baz"));
+        var result3 = callMethod(bean, "bazGet", List.of("Baz", fooId));
         Assert.assertEquals("Baz", result3);
-        var result4 = callMethod("hashMapLab", "bazGet", List.of("Baz1", fooId));
+        var result4 = callMethod(bean, "bazGet", List.of("Baz1", fooId));
         Assert.assertNull(result4);
 
         // Test list
-        callMethod("hashMapLab", "listPut", List.of(List.of(fooId, barId), "List"));
-        var result5 = callMethod("hashMapLab", "listGet", List.of(List.of(fooId, barId)));
+        callMethod(bean, "listPut", List.of(List.of(fooId, barId), "List"));
+        var result5 = callMethod(bean, "listGet", List.of(List.of(fooId, barId)));
         Assert.assertEquals("List", result5);
 
         // Test set
-        callMethod("hashMapLab", "setPut", List.of(List.of("Hello", "World"), "Set"));
-        var result6 = callMethod("hashMapLab", "setGet", List.of(List.of("World", "Hello")));
+        callMethod(bean, "setPut", List.of(List.of("Hello", "World"), "Set"));
+        var result6 = callMethod(bean, "setGet", List.of(List.of("World", "Hello")));
         Assert.assertEquals("Set", result6);
-        var result7 = callMethod("hashMapLab", "setGet", List.of(List.of("World")));
+        var result7 = callMethod(bean, "setGet", List.of(List.of("World")));
         Assert.assertNull(result7);
 
         // Test map
         var entries = List.of(Map.of("key", "name", "value", "leen"), Map.of("key", "age", "value", 30));
-        callMethod("hashMapLab", "mapPut", List.of(entries, "Map"));
-        var result8 = callMethod("hashMapLab", "mapGet", List.of(entries));
+        callMethod(bean, "mapPut", List.of(entries, "Map"));
+        var result8 = callMethod(bean, "mapGet", List.of(entries));
         Assert.assertEquals("Map", result8);
-        var result9 = callMethod("hashMapLab", "setGet", List.of(List.of("World")));
+        var result9 = callMethod(bean, "setGet", List.of(List.of("World")));
         Assert.assertNull(result9);
     }
 
@@ -318,24 +322,25 @@ public class BasicKiwiTest extends KiwiTestBase {
                 "kiwi/basics/hashcode/HashCodeFoo.kiwi",
                 "kiwi/basics/hashcode/HashSetLab.kiwi"
         ));
-        callMethod("hashSetLab", "add", List.of("Hello"));
-        var contains = callMethod("hashSetLab", "contains", List.of("Hello"));
+        var bean = ApiNamedObject.of("hashSetLab");
+        callMethod(bean, "add", List.of("Hello"));
+        var contains = callMethod(bean, "contains", List.of("Hello"));
         Assert.assertEquals(true, contains);
 
         var foo1Id = saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
         ));
-        callMethod("hashSetLab", "add", List.of(foo1Id));
+        callMethod(bean, "add", List.of(foo1Id));
 
         var foo2Id = saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
         ));
-        var contains1 = callMethod("hashSetLab", "contains", List.of(foo2Id));
+        var contains1 = callMethod(bean, "contains", List.of(foo2Id));
         Assert.assertEquals(true, contains1);
         var foo3Id = saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo1"
         ));
-        var contains2 = callMethod("hashSetLab", "contains", List.of(foo3Id));
+        var contains2 = callMethod(bean, "contains", List.of(foo3Id));
         Assert.assertEquals(false, contains2);
     }
 
@@ -343,7 +348,7 @@ public class BasicKiwiTest extends KiwiTestBase {
         deploy("kiwi/basics/index/IndexSelectFoo.kiwi");
         var className = "index.IndexSelectFoo";
         var id = saveInstance(className, Map.of("name", "foo"));
-        var found = (String) callMethod(className, "findByName", List.of("foo"));
+        var found = callMethod(className, "findByName", List.of("foo"));
         Assert.assertEquals(id, found);
     }
 
@@ -364,13 +369,13 @@ public class BasicKiwiTest extends KiwiTestBase {
         } catch (Exception ignored) {}
         Assert.assertEquals(fooId, callMethod(fooClass, "findByName", List.of("foo")));
         Assert.assertEquals(1L, (long) callMethod(fooClass, "countBySeq", List.of(0, 5)));
-        var list = (ArrayInstanceWrap) callMethod(fooClass, "queryBySeq", List.of(0, 5));
+        var list = (List<?>) callMethod(fooClass, "queryBySeq", List.of(0, 5));
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals(fooId, list.getFirst());
         Assert.assertEquals(fooId, callMethod(fooClass, "findByBar", List.of(barId)));
         Assert.assertEquals(fooId, callMethod(fooClass, "findByNameAndSeq", List.of("foo", 3)));
-        Assert.assertEquals(fooId, callMethod("fooService", "findByDesc", List.of("foo-3-bar001")));
+        Assert.assertEquals(fooId, callMethod(ApiNamedObject.of("fooService"), "findByDesc", List.of("foo-3-bar001")));
     }
 
     public void testWarehouse() {
@@ -378,9 +383,10 @@ public class BasicKiwiTest extends KiwiTestBase {
                 "kiwi/basics/innerclass/service/WarehouseService.kiwi",
                 "kiwi/basics/innerclass/Warehouse.kiwi"
         ));
-        var warehouseId = (String) callMethod("warehouseService", "createWarehouse", List.of("w1"));
-        var containerId = (String) callMethod("warehouseService", "createContainer", List.of(warehouseId, "c1"));
-        var itemId = (String) callMethod("warehouseService", "createItem", List.of(containerId, "i1"));
+        var bean = ApiNamedObject.of("warehouseService");
+        var warehouseId = (Id) callMethod(bean, "createWarehouse", List.of("w1"));
+        var containerId = (Id) callMethod(bean, "createContainer", List.of(warehouseId, "c1"));
+        var itemId = (Id) callMethod(bean, "createItem", List.of(containerId, "i1"));
         var itemType = callMethod(itemId, "getType", List.of());
         var itemContainer = callMethod(itemId, "getContainer", List.of());
         var itemWarehouse = callMethod(itemId, "getWarehouse", List.of());
@@ -410,9 +416,9 @@ public class BasicKiwiTest extends KiwiTestBase {
 
     public void testInnerClassFoo() {
         deploy("kiwi/basics/innerclass/InnerClassFoo.kiwi");
-        var id = (String) saveInstance("innerclass.InnerClassFoo<string, string>", Map.of());
+        var id = saveInstance("innerclass.InnerClassFoo<string, string>", Map.of());
         callMethod(id, "addEntry", List.of("name", "leen"));
-        var entryId = (String) callMethod(id, "first", List.of());
+        var entryId = (Id) callMethod(id, "first", List.of());
         var entry = getObject(entryId);
         Assert.assertEquals("name", entry.get("key"));
         Assert.assertEquals("leen", entry.get("value"));
@@ -457,7 +463,7 @@ public class BasicKiwiTest extends KiwiTestBase {
                 "kiwi/basics/interceptors/UserDTO.kiwi",
                 "kiwi/basics/interceptors/UserService.kiwi"
         ));
-        var user = (ClassInstanceWrap) callMethod("userService", "getUserByName", List.of("leen"));
+        var user = (ApiObject) callMethod(ApiNamedObject.of("userService"), "getUserByName", List.of("leen"));
         var tel =  user.getString("telephone");
         Assert.assertEquals("123******12", tel);
     }

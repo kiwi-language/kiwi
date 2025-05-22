@@ -226,7 +226,6 @@ public class ClassFileWriterTest extends TestCase {
         for (int i = 0; i < numClasses; i++) {
             var clazz = reader.read();
             rebuildNodes(clazz);
-            log.debug("{}", clazz.getText());
         }
 
     }

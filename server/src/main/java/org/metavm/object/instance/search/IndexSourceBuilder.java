@@ -21,8 +21,10 @@ public class IndexSourceBuilder {
         source.put(ID, instance.getStringId());
         var fields = instance.buildSource();
         fields.forEach((f, v) -> {
-            Object esValue = getEsValue(v);
-            source.put(f, esValue);
+            if (!shouldSkip(v)) {
+                Object esValue = getEsValue(v);
+                source.put(f, esValue);
+            }
         });
 //        List<Klass> hierarchy = type.getAncestorClasses();
 //        for (int lev = 0; lev < hierarchy.size(); lev++) {
@@ -37,6 +39,10 @@ public class IndexSourceBuilder {
 //            }
 //        }
         return source;
+    }
+
+    private static boolean shouldSkip(Value value) {
+        return value instanceof ValueReference && !(value instanceof StringReference);
     }
 
     private static void setEsValue(Value value, Field field, Map<String, Object> source) {
@@ -60,7 +66,7 @@ public class IndexSourceBuilder {
         } else if (value instanceof StringReference stringReference)
             return stringReference.getValue();
         else {
-            return ((EntityReference) value).tryGetTreeId();
+            return ((EntityReference) value).getStringId();
         }
     }
 

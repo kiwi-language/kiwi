@@ -20,7 +20,6 @@ public class LowerTest extends TestCase {
         Assert.assertTrue(impls.nonEmpty());
         var ext = impls.head();
         Assert.assertEquals(2, ext.getArgs().size());
-        log.debug("{}", file.getText());
     }
 
 }

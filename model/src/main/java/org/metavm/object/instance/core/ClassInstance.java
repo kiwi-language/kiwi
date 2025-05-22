@@ -163,4 +163,12 @@ public interface ClassInstance extends Instance {
         return null;
     }
 
+    default String getSummary() {
+        var titleField = getInstanceKlass().getTitleField();
+        if (titleField != null && getField(titleField) instanceof StringReference strRef)
+            return strRef.getValue();
+        else
+            return getStringId();
+    }
+
 }

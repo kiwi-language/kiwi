@@ -4,7 +4,8 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.MockStandardTypesInitializer;
-import org.metavm.object.instance.core.ClassInstanceWrap;
+import org.metavm.object.instance.core.ApiObject;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
@@ -57,7 +58,7 @@ public class ShoppingTest extends TestCase {
         MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
         var productId = createProduct();
         var product = getObject(productId);
-        var firstSkuId = (String) product.getArray("skuList").get(0);
+        var firstSkuId = (Id) product.getArray("skuList").get(0);
         var firstSku = getObject(firstSkuId);
         int originalAmount = firstSku.getInt("quantity");
         callMethod(firstSkuId, "decQuantity", List.of(1));
@@ -73,19 +74,19 @@ public class ShoppingTest extends TestCase {
     }
 
     public void testBuy() {
-        var shoppingTypeIds = MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
+        MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
         var productId = createProduct();
         var product = getObject(productId);
         var couponsIds = createCoupons();
-        var firstSkuId = (String) product.getArray("skuList").get(0);
+        var firstSkuId = (Id) product.getArray("skuList").getFirst();
         var firstSku = getObject(firstSkuId);
-        var orderId = (String) callMethod(firstSkuId, "buy", List.of(1, couponsIds));
+        var orderId = (Id) callMethod(firstSkuId, "buy", List.of(1, couponsIds));
         var order = getObject(orderId);
         Assert.assertEquals(1, order.getInt("quantity"));
         Assert.assertEquals(70.0, order.getDouble("price"), 0.0001);
         for (var couponId : couponsIds) {
             var coupon = getObject(couponId);
-            Assert.assertEquals("USED", coupon.getString("state"));
+            Assert.assertEquals("USED", coupon.getEnumConstant("state").name());
         }
         var reloadedFirstSkuDTO = getObject(firstSkuId);
         var originalQuantity = firstSku.getInt("quantity");
@@ -93,7 +94,7 @@ public class ShoppingTest extends TestCase {
         Assert.assertEquals(originalQuantity - 1, skuQuantity);
     }
 
-    private String createProduct() {
+    private Id createProduct() {
         return saveInstance("Product", Map.of(
                 "name", "Shoes",
                 "skuList", List.of(
@@ -116,7 +117,7 @@ public class ShoppingTest extends TestCase {
         ));
     }
 
-    private List<String> createCoupons() {
+    private List<Id> createCoupons() {
         return List.of(
                 saveInstance("Coupon", Map.of(
                         "name", "5 Yuan Off", "discount", 5
@@ -130,15 +131,15 @@ public class ShoppingTest extends TestCase {
         );
     }
 
-    protected String saveInstance(String className, Map<String, Object> fields) {
+    protected Id saveInstance(String className, Map<String, Object> fields) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, fields));
     }
 
-    protected Object callMethod(String qualifier, String methodName, List<Object> arguments) {
+    protected Object callMethod(Object qualifier, String methodName, List<Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
     }
 
-    protected ClassInstanceWrap getObject(String id) {
+    protected ApiObject getObject(Id id) {
         return apiClient.getObject(id);
     }
 

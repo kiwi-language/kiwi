@@ -79,7 +79,7 @@ GET http://localhost:8080/schema
 X-App-ID: 1000000010
 
 ###
-POST http://localhost:8080/api/search/product
+POST http://localhost:8080/object/search/product
 X-App-ID: 1000000010
 Content-Type: application/json
 
@@ -91,7 +91,7 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/api/product
+PUT http://localhost:8080/object/product
 Content-Type: application/json
 X-App-ID: 1000000010
 
@@ -102,11 +102,11 @@ X-App-ID: 1000000010
   "category": "CLOTHING"
 }
 ###
-GET http://localhost:8080/api/01a0c4d7b90700
+GET http://localhost:8080/object/01a0c4d7b90700
 X-App-ID: 1000006000
 
 ###
-POST http://localhost:8080/api/01a0c4d7b90700/reduce-stock
+POST http://localhost:8080/object/01a0c4d7b90700/reduce-stock
 X-App-ID: 1000006000
 Content-Type: application/json
 
@@ -115,7 +115,7 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8081/api/flow/execute
+POST http://localhost:8081/object/flow/execute
 Accept: application/json
 Content-Type: application/json
 
@@ -163,7 +163,7 @@ GET http://localhost:8080/perf/read-bytes/1258405178?runs=10
 GET http://localhost:8080/perf/skip-bytes/1256205279?runs=1
 
 ###
-POST http://localhost:8081/api/type/field
+POST http://localhost:8081/object/type/field
 Accept: application/json
 Content-Type: application/json
 
@@ -205,7 +205,7 @@ Content-Type: application/json
 
 
 
-POST http://localhost:8081/api/table/column
+POST http://localhost:8081/object/table/column
 Accept: application/json
 Content-Type: application/json
 
@@ -231,7 +231,7 @@ Content-Type: application/json
 
 
 ###
-POST http://localhost:8081/api/instance/batch-get
+POST http://localhost:8081/object/instance/batch-get
 Accept: application/json
 Cookie: __token__=BabUSMOGGUIppY7oHVI7VU0oL0eqDma0JsdAXjQ5+9rC6TQnu0RkXk9Kp8u76tJqhBe6SMzsCbK/aDZz/b//x35rFoMBPXq67QpgXz/M6bVdFXF7aJkdoChEoSdwChyvcEMsafb23wTokdtaW7aYwhtJf6Tll+t9JIkVf2O1Nix9rJZbwV/oPDsNESTHqDRLgTi3ugjCbZF6JqDjv1YXJ8XYKsfHt1O0sdVZMz0EoOeYHXrrjoG/EwWuNv/k+6C+8Vh97x5p5SAga6xjiWTT+qZCeUPwBaASgZ/Bytd0YZEgmmg5vDu/s51F544/4/vREbRn/g3YRJVzRlylM1UudrjoUksbkG14Dkk4/SOC4KGHS9dC6EDbyu6THc63o3RV0bT1+GnPrpzgNHDnIfH4wM3rc3mgNZ5LeJg1sr8Y0O0a5l+IBHJxuScRvgScs+IkukNg6JBGvUmEOEieD5yno0QHZaCvVRX9/QlSLvGBGxHcVPTzvtKyWm2NYPF95Idpdcezt0yflGxWmlf+OawzkxnfNewCGvuNtrMGLFdzGb6bAMBnXxi0VA7tdcqdf2rRxFrzdFjh8P5yhoDHQvbPAxYeVUNuHDmz8xupRawtD9Qw9joEDp9B7vNRTtPuk/NGvidhtj206lwOKpEQH2AzP+T1Pb5L5o55KGK69o4idBH+savKNXWUWVpNQ+ybdK1d+7gvAJAT0SWtQ2Caflr4sRbMZKazPryX5n8WJ32UTcu+s4VOobngZK+upFJMpq4UTO6+pb1eCDNC6QmHG024P++J9QIbUPqdqNtgOCokCXzMLdX1D3QymkIxZelwrx+RhT5OhxgXuSCyOsxCvzZnplJ3tCy3ynv0kfcJp1A0Rwfkl3/4mVnf4cao5mKg7/AcH9+p5hgO9znCZNtyiTI6RgRkuIE1Chl6nnpDJRIN2/qfinGGEyAl1SWugv5S6jJV0B7s4gDgAO3NVAIzpP7VoN89nBZuM9YtJQEppMIJL6Yh0oavKf3eA9PaIJo5/Mv4ZcWHV5FELoMRyspKPN+N4jVha7SMmQQaU8VfPjrsupE84SZLlxZEIISIyH99L+JA1UY08ZeqIQJaHvAz6ZJqa2Sxxcycjizg9ug1l7oMh0IjBzwYp/w84/gteSlDrKsCTiZIujcXlGj/44tm6ld7u/osq72WTammL5rbBZPjhwr9UBUpqPE2Zb9lk2liJwebX4LU3INDo5WoQaFFdpvi5jQMhAzBd6HOhM+0gUNuzhmfiSKRSBpeGZI0oWjaGZqXbYzFI3cvrDjl4IBuJatFgRNMXnmMDBOZYK+uV47Za18NVKEpzNiuW7Wm
 Content-Type: application/json
@@ -291,7 +291,7 @@ Content-Type: application/json
 
 
 ###
-GET http://localhost:8081/api/expression/parse-search-expression?typeId=1000500011&
+GET http://localhost:8081/object/expression/parse-search-expression?typeId=1000500011&
     searchExpression=(code%20STARTS%20WITH%20%27001%27%20OR%20code%20LIKE%20%27001%27)%20AND%20op%20IN%20($$8106480329266893)
 Cookie: __token__=AVveZlx9Ae1exLrox2y3y76CDG8+tYj6+7zlbOrl/StQEoraoO7hVwNvuE1XSzGas9Xc+46UQgmo2wlw2uRBAysJkxTNtA7XYef+YWKIPK7mhtW+jTD5CIfnBXoyy3mcKYISL3w8ujHsiXMdd0GQQClsgjlhmjODlNhjoYBXOZyEU9EUhHxtCW9n2xE2R+HFdoXSLzUYfuLpwuwm0YE88t4n6AMmX2MhaUjqfeweGLVKZ/Gbrdcchjm5k2qXH/GJZ5k0wP7ffATFhIFt9pzgeY0AfOEfs8+08qLQsLWt1olmvI2DIWTG9+6YrAeOs0xl0p+1ZILP9zXsPUye/ydZNKk89BOu43IIEVEE3cF0UYSsZk05q4W4TshBfEKjx6o6CN6vtD/4gyGfVxhYxB7MTv3a6qsSWBmPJn/Tizi8gCjVOGprVuoWQvK3bsTM1xIKiVO+3OKgn0b8ov2cr8Mmejn7rdP3goCWpabjET7M7OO97Ov5ZtleHzgcC7P2gLWPDiD06B5cUGfxk3UP2Hw3+xPIHFPjNif/Ch0b/dh3mSPbtVXMqyz3VWZ4BXasT01zbn6LHReuTSV21U/XCR4q9NLgES3ZtOZzz+bIF4lFDtYbRIrPp3LEBBqAMUQraPiWmmTVn36zgxwsyMRcxaW69jjmz7Sjf94bqF4nT3INtChEVqJPP+ejiiVc8sLVKelIkCpZ3t76bFF0kxNxWb73P5K002naqPHR9MmBJ+RmjE4jedv7IIH9nKPr1lduOKH4gJ6yh7T1hld+3pzUG48KferGzyBJqeCmnY7J290/gfordlogW/USbLMP4t54Hle97gx79pi8Q8P+gbShC/5AW4Dz9crxs3635l5ju7L28B3jIHhtmcP48FtDGL6LKvEylEW9BiKzVruHDzlXC01IXGCfiZ5e5Oh1RZaCjOVWtdClLltiDsOIvA6c+XysND0bNI2tzE3iLYJV2Eiwb4Xgj6YnCAtEVEEahjhnK1kh+qyZIGrGCKvwLm/Iex/CvDIR1MNYqd9P06tfft1b6crf16JEAN9rUY77KucjFSPx9U8nPT8NXJ7zo4kRIQDS0oHVyoyASa9Kn9fRK9SsC97A0wpWzVt/bVURj4j6kKX5Hf3P7iTDVRxqGnoCnlGQ17JFgIyAmqb6VVCfY+Gl/011/GtLBhmB81JFwtKTwNSu7ArjgMkXIoolf4yMHXn8saF7zUOVeGV/YNoFlSnDBPgO5nUWz+xJX+xhaK/ScvxISgf6P5//Wv+80SXp+Urp13T5yxHkmTqmPlViVJgsoRg01yofCzV4klhig5Yvl4AOHqiJEvia3xBBKLX/
 
@@ -389,7 +389,7 @@ GET http://localhost:8080/instance?typeId=1004700108&searchText=true
 
 
 ###
-GET http://localhost:8081/api/instance?typeId=1004700108&searchText=product%20=%20$$1007900160
+GET http://localhost:8081/object/instance?typeId=1004700108&searchText=product%20=%20$$1007900160
 
 
 ###
@@ -458,7 +458,7 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8081/api/flow/execute
+POST http://localhost:8081/object/flow/execute
 Accept: application/json
 Content-Type: application/json
 
@@ -550,7 +550,7 @@ Accept: application/json
 <> 2023-02-19T223735.500.json
 
 ###
-POST http://localhost:8081/api/type/constraint
+POST http://localhost:8081/object/type/constraint
 Accept: application/json
 Content-Type: application/json
 
@@ -699,7 +699,7 @@ GET http://localhost:8080/type/12001
 GET http://localhost:8080/type?page=1&pageSize=20&categoryCodes=18,11,13,16,19,12
 
 ###
-POST http://localhost:8081/api/type/get-parameterized-type
+POST http://localhost:8081/object/type/get-parameterized-type
 Accept: application/json
 Accept-Language: en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7
 X-App-ID: 1323806477
@@ -732,7 +732,7 @@ Content-Type: application/json
 
 ###
 
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Unit/new
+POST http://localhost:8080/object/tech/metavm/manufacturing/material/Unit/new
 Content-Type: application/json
 X-App-ID: 1843016862
 X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
@@ -746,7 +746,7 @@ X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
 ]
 
 ###
-POST http://localhost:8080/api/tech/metavm/manufacturing/material/Material/new
+POST http://localhost:8080/object/tech/metavm/manufacturing/material/Material/new
 Content-Type: application/json
 X-App-ID: 1843016862
 X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
@@ -761,7 +761,7 @@ X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
 ]
 
 ###
-POST http://localhost:8080/api/01bebac5dd0d06
+POST http://localhost:8080/object/01bebac5dd0d06
 Content-Type: application/json
 X-App-ID: 1843016862
 X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
@@ -776,7 +776,7 @@ X-App-Secret: f86h_cVRggKRxI2z3VC9wgPy-Jv00ybYkNrSWsUj21A
 ]
 
 ###
-POST http://localhost:8080/api/$$01b2efdddd0d06/inbound
+POST http://localhost:8080/object/$$01b2efdddd0d06/inbound
 Content-Type: application/json
 X-App-ID: 1843216866
 X-App-Secret: R-pynreMq5GP-3MYu5qjlVa0lOFM-Gg73dd1ccr_iNc
@@ -793,7 +793,7 @@ X-App-Secret: R-pynreMq5GP-3MYu5qjlVa0lOFM-Gg73dd1ccr_iNc
 ]
 
 ###
-POST http://localhost:8080/api/$$01b2efdddd0d06/inbound
+POST http://localhost:8080/object/$$01b2efdddd0d06/inbound
 Content-Type: application/json
 X-App-ID: 1843216866
 X-App-Secret: R-pynreMq5GP-3MYu5qjlVa0lOFM-Gg73dd1ccr_iNc
@@ -818,7 +818,7 @@ X-App-Secret: R-pynreMq5GP-3MYu5qjlVa0lOFM-Gg73dd1ccr_iNc
 ]
 
 ###
-PUT http://localhost:8080/api/product
+PUT http://localhost:8080/object/product
 Content-Type: application/json
 X-App-ID: 1843416869
 
@@ -829,11 +829,11 @@ X-App-ID: 1843416869
 }
 
 ###
-GET http://localhost:8080/api/01d2a2f6dd0d00
+GET http://localhost:8080/object/01d2a2f6dd0d00
 X-App-ID: 1843416869
 
 ###
-POST http://localhost:8080/api/01d2a2f6dd0d00/dec-quantity
+POST http://localhost:8080/object/01d2a2f6dd0d00/dec-quantity
 Content-Type: application/json
 X-App-ID: 1843416869
 
@@ -842,7 +842,7 @@ X-App-ID: 1843416869
 ]
 
 ###
-POST http://localhost:8080/api/user-service/signup
+POST http://localhost:8080/object/user-service/signup
 Content-Type: application/json
 X-App-ID: 1843616873
 
@@ -852,7 +852,7 @@ X-App-ID: 1843616873
 ]
 
 ###
-POST http://localhost:8080/api/user-service/login
+POST http://localhost:8080/object/user-service/login
 Content-Type: application/json
 X-App-ID: 1843616873
 
@@ -862,7 +862,7 @@ X-App-ID: 1843616873
 ]
 
 ###
-PUT http://localhost:8080/api/org/metavm/manufacturing/material/unit
+PUT http://localhost:8080/object/org/metavm/manufacturing/material/unit
 Content-Type: application/json
 X-App-ID: 1843616873
 
@@ -874,7 +874,7 @@ X-App-ID: 1843616873
 }
 
 ###
-POST http://localhost:8080/api/material-service/save
+POST http://localhost:8080/object/material-service/save
 Content-Type: application/json
 X-App-ID: 1843616873
 
@@ -890,23 +890,23 @@ X-App-ID: 1843616873
 ]
 
 ###
-GET http://localhost:8080/api/01e8da8ede0d00
+GET http://localhost:8080/object/01e8da8ede0d00
 X-App-ID: 1843616873
 
 ###
-GET http://localhost:8080/api/org/metavm/mlab/Currency/YUAN
+GET http://localhost:8080/object/org/metavm/mlab/Currency/YUAN
 X-App-ID: 1000001021
 
 ###
-GET http://localhost:8080/api/org/metavm/mlab/Currency/DOLLAR
+GET http://localhost:8080/object/org/metavm/mlab/Currency/DOLLAR
 X-App-ID: 1000000024
 
 ###
-GET http://localhost:8080/api/org/metavm/mlab/ProductKind/DEFAULT
+GET http://localhost:8080/object/org/metavm/mlab/ProductKind/DEFAULT
 X-App-ID: 1000001021
 
 ###
-PUT http://localhost:8080/api/org/metavm/mlab/Product
+PUT http://localhost:8080/object/org/metavm/mlab/Product
 X-App-ID: 1000001021
 Content-Type: application/json
 
@@ -928,7 +928,7 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/api/org/metavm/mlab/Product
+PUT http://localhost:8080/object/org/metavm/mlab/Product
 X-App-ID: 1000001021
 Content-Type: application/json
 
@@ -972,15 +972,15 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:8080/api/0188ceb9df0d00
+GET http://localhost:8080/object/0188ceb9df0d00
 X-App-ID: 1000001021
 
 ###
-GET http://localhost:8080/api/0282a4d8e00d008c02
+GET http://localhost:8080/object/0282a4d8e00d008c02
 X-App-ID: 1846416929
 
 ###
-POST http://localhost:8080/api/0198d1b9df0d08/get-product
+POST http://localhost:8080/object/0198d1b9df0d08/get-product
 X-App-ID: 1000001021
 Content-Type: application/json
 
@@ -1005,19 +1005,19 @@ GET http://localhost:8080/type/is-flag1?name=org.metavm.mlab.Product
 X-App-ID: 1850817017
 
 ###
-GET http://localhost:8080/api/org/metavm/mlab/ProductKind/DEFAULT
+GET http://localhost:8080/object/org/metavm/mlab/ProductKind/DEFAULT
 X-App-ID: 1000000024
 
 ###
-GET http://localhost:8080/api/org/metavm/mlab/Currency/YUAN
+GET http://localhost:8080/object/org/metavm/mlab/Currency/YUAN
 X-App-ID: 1000000024
 
 ###
-GET http://localhost:8080/api/org/metavm/mlab/CouponState/ACTIVE
+GET http://localhost:8080/object/org/metavm/mlab/CouponState/ACTIVE
 X-App-ID: 1000000024
 
 ###
-PUT http://localhost:8080/api/org/metavm/mlab/Product
+PUT http://localhost:8080/object/org/metavm/mlab/Product
 X-App-ID: 1000000024
 Content-Type: application/json
 
@@ -1062,18 +1062,18 @@ Content-Type: application/json
 <> 2024-08-16T160035.200.txt
 
 ###
-POST http://localhost:8080/api/01f6a8d6b90700/get-rate
+POST http://localhost:8080/object/01f6a8d6b90700/get-rate
 X-App-ID: 1000000024
 Content-Type: application/json
 
 []
 
 ###
-GET http://localhost:8080/api/01aa87e1b90704
+GET http://localhost:8080/object/01aa87e1b90704
 X-App-ID: 1000000024
 
 ###
-POST http://localhost:8080/api/order-service/create-order
+POST http://localhost:8080/object/order-service/create-order
 X-App-ID: 1000000024
 Content-Type: application/json
 
@@ -1087,11 +1087,11 @@ Content-Type: application/json
 ]
 
 ###
-GET http://localhost:8080/api/01e6c2e2b90700
+GET http://localhost:8080/object/01e6c2e2b90700
 X-App-ID: 1000000024
 
 ###
-PUT http://localhost:8080/api/org/metavm/mlab/Coupon
+PUT http://localhost:8080/object/org/metavm/mlab/Coupon
 X-App-ID: 1000000024
 Content-Type: application/json
 
@@ -1105,7 +1105,7 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/api/org/metavm/mlab/Coupon
+PUT http://localhost:8080/object/org/metavm/mlab/Coupon
 X-App-ID: 1000000024
 Content-Type: application/json
 
@@ -1120,7 +1120,7 @@ Content-Type: application/json
 
 
 ###
-PUT http://localhost:8080/api/org/metavm/mlab/Product
+PUT http://localhost:8080/object/org/metavm/mlab/Product
 X-App-ID: 1000000024
 Content-Type: application/json
 
@@ -1130,7 +1130,7 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/api/org/metavm/mlab/Product
+PUT http://localhost:8080/object/org/metavm/mlab/Product
 X-App-ID: 1000000024
 Content-Type: application/json
 
@@ -1140,7 +1140,7 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/api/shopping/product
+PUT http://localhost:8080/object/shopping/product
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -1151,11 +1151,11 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:8080/api/01a6a9d6b90700
+GET http://localhost:8080/object/01a6a9d6b90700
 X-App-ID: 1000000026
 
 ###
-POST http://localhost:8080/api/01a6a9d6b90700/decrement-stock
+POST http://localhost:8080/object/01a6a9d6b90700/decrement-stock
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -1164,7 +1164,7 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/api/shopping/direct-coupon
+PUT http://localhost:8080/object/shopping/direct-coupon
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -1174,7 +1174,7 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8080/api/order-service/place-order
+POST http://localhost:8080/object/order-service/place-order
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -1185,11 +1185,11 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:8080/api/01aca9d6b90700
+GET http://localhost:8080/object/01aca9d6b90700
 X-App-ID: 1000000026
 
 ###
-POST http://localhost:8080/api/product-service/find-by-name
+POST http://localhost:8080/object/product-service/find-by-name
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -1198,7 +1198,7 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8080/api/product-service/query-by-price
+POST http://localhost:8080/object/product-service/query-by-price
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -1208,7 +1208,7 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/api/shopping/Product
+PUT http://localhost:8080/object/shopping/Product
 X-App-ID: 1000009000
 Content-Type: application/json
 
@@ -1220,7 +1220,7 @@ Content-Type: application/json
 
 
 ###
-POST http://localhost:8080/api/search/shopping/product
+POST http://localhost:8080/object/search/shopping/product
 X-App-ID: 1000000026
 Content-Type: application/json
 
@@ -1229,7 +1229,7 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8080/api/shopping/product-status/from-code
+POST http://localhost:8080/object/shopping/product-status/from-code
 X-App-ID: 1000000025
 Content-Type: application/json
 
@@ -1238,10 +1238,64 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8080/api/shopping/product-status/get-display-name
+POST http://localhost:8080/object/shopping/product-status/get-display-name
 X-App-ID: 1000000025
 Content-Type: application/json
 
 {
   "code": 2
+}
+
+###
+PUT http://localhost:8080/object
+X-App-ID: 1000007000
+Content-Type: application/json
+
+{
+  "object": {
+    "type": "Product",
+    "fields": {
+      "name": "MacBook Air",
+      "price": 8500,
+      "stock": 100,
+      "category": {
+        "type": "Category",
+        "name": "ELECTRONICS"
+      }
+    }
+  }
+}
+
+###
+GET http://localhost:8080/object/01a6c4d7b90700
+X-App-ID: 1000007000
+
+###
+POST http://localhost:8080/object/search
+X-App-ID: 1000007000
+Content-Type: application/json
+
+{
+  "type": "Product",
+  "criteria": {
+    "category": {
+      "type": "Category",
+      "name": "ELECTRONICS"
+    }
+  }
+}
+
+###
+POST http://localhost:8080/object/invoke
+X-App-ID: 1000007000
+Content-Type: application/json
+
+{
+  "receiver": {
+    "id": "01d0b4d7b90700"
+  },
+  "method": "reduceStock",
+  "arguments": {
+    "quantity": 1
+  }
 }

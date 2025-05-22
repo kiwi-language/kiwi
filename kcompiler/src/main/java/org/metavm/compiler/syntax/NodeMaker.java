@@ -53,7 +53,6 @@ public class NodeMaker {
         var typeApply = new TypeApply(expr, typeArgs.map(Type::makeNode));
         var genDecl = (GenericDecl) expr.getElement();
         typeApply.setElement(genDecl.getInst(List.into(typeArgs)));
-        log.debug("type apply {}, element: {}", typeApply.getText(), typeApply.getElement().getText());
         return typeApply;
     }
 

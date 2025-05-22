@@ -15,7 +15,7 @@ public enum ColumnKind {
 
     DOUBLE(4, "double","double","d",10),
 
-    REFERENCE(5, "bigint","long","r",30),
+    REFERENCE(5, "bigint","keyword","r",30),
 
     UNSPECIFIED(6, "json",null,"o",10),
 

@@ -24,7 +24,7 @@ public class Constants {
 
     public static final String ADMIN_ROLE_NAME = "admin";
 
-    public static final int MAX_INHERITANCE_DEPTH = 16;
+    public static final int MAX_INHERITANCE_DEPTH = 8;
 
     public static final String ROOT_ADMIN_PASSWORD = "123456";
     public static final String ROOT_ADMIN_LOGIN_NAME = "root";

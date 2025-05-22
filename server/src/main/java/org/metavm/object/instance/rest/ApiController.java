@@ -3,6 +3,7 @@ package org.metavm.object.instance.rest;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
@@ -15,27 +16,23 @@ import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
 import org.metavm.user.LoginService;
-import org.metavm.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.metavm.util.BusinessException;
+import org.metavm.util.ContextUtil;
+import org.metavm.util.Headers;
+import org.metavm.util.ValueUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.PessimisticLockingFailureException;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/object")
+@Slf4j
 public class ApiController {
 
-    public static final int MAX_RETRIES = 5;
-
-    public static final Logger logger = LoggerFactory.getLogger(ApiController.class);
+//    public static final int MAX_RETRIES = 5;
 
     private final ApiService apiService;
 
@@ -49,73 +46,52 @@ public class ApiController {
         this.verify = verify;
     }
 
-    @RequestMapping("/**")
-    public Result<Object> handle(HttpServletRequest servletRequest, HttpServletResponse servletResponse, @RequestBody(required = false) Object requestBody) {
-        for (int i = 0; i < MAX_RETRIES; i++) {
-            try {
-                return Result.success(handle0(servletRequest, servletResponse, requestBody));
-            }
-            catch (PessimisticLockingFailureException e) {
-                logger.error("Serialization failure", e);
-            }
-        }
-        throw new InternalException("Too many retries (" + MAX_RETRIES + ")");
-    }
-
-    private Object handle0(HttpServletRequest servletRequest, HttpServletResponse servletResponse, Object requestBody) {
+    @PutMapping
+    public Result<String> save(HttpServletRequest servletRequest, @RequestBody Map<String, Object> requestBody) {
         verify(servletRequest);
         var request = createRequest(servletRequest);
         var response = new HttpResponseImpl();
-        var method = servletRequest.getMethod();
-        var path = servletRequest.getRequestURI().substring(5);
-        var result = switch (method) {
-            case "POST" -> {
-                if (path.startsWith("search/")) {
-                    if (!(requestBody instanceof Map<?,?>))
-                        throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
-                    var className = NamingUtils.pathToName(path.substring("search/".length()), true);
-                    //noinspection unchecked
-                    var map = (Map<String, Object>) requestBody;
-                    //noinspection unchecked
-                    var criteria = (Map<String, Object>) map.getOrDefault("criteria", Map.of());
-                    var page = (int) map.getOrDefault("page", 1);
-                    var pageSize = (int) map.getOrDefault("pageSize", 20);
-                    var includeObjects = (boolean) map.getOrDefault("includeObjects", false);
-                    yield apiService.search(className, criteria, page, pageSize, includeObjects);
-                }
-                else {
-                    var idx = path.lastIndexOf('/');
-                    if (idx == -1)
-                        throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
-                    var qualifier = NamingUtils.pathToName(path.substring(0, idx));
-                    var methodCode = NamingUtils.hyphenToCamel(path.substring(idx + 1));
-                    if (requestBody instanceof List<?> || requestBody instanceof Map<?,?>)
-                        yield apiService.handleMethodCall(qualifier, methodCode, requestBody, request, response);
-                    else
-                        throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
+        if(requestBody.getOrDefault("object", Map.of()) instanceof Map<?,?> object) {
+            //noinspection unchecked
+            return Result.success(apiService.saveInstance((Map<String, Object>) object, request, response));
+        }
+        else
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+    }
 
-                }
-            }
-            case "GET" -> {
-                var idx = path.lastIndexOf('/');
-                if (idx == -1)
-                    yield apiService.getInstance(path);
-                else
-                    yield apiService.getStatic(NamingUtils.pathToName(path.substring(0, idx), true), path.substring(idx + 1));
-            }
-            case "PUT" -> {
-                if(requestBody instanceof Map<?,?>) {
-                    var klassName = NamingUtils.pathToName(path, true);
-                    //noinspection unchecked
-                    yield apiService.saveInstance(klassName, (Map<String, Object>) requestBody, request, response);
-                }
-                else
-                    throw new BusinessException(ErrorCode.INVALID_REQUEST_PATH);
-            }
-            default -> throw new BusinessException(ErrorCode.INVALID_REQUEST_METHOD);
-        };
-        saveResponse(response, servletResponse);
-        return result;
+    @GetMapping("/{id}")
+    public Result<Map<String, Object>> get(HttpServletRequest servletRequest, @PathVariable("id") String id) {
+        verify(servletRequest);
+        return Result.success(apiService.getInstance(id));
+    }
+
+    @PostMapping("/search")
+    public Result<SearchResult> search(HttpServletRequest servletRequest, @RequestBody Map<String, Object> requestBody) {
+        verify(servletRequest);
+        if (!(requestBody.get("type") instanceof String type))
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+        //noinspection unchecked
+        var criteria = (Map<String, Object>) requestBody.getOrDefault("criteria", Map.of());
+        var page = (int) requestBody.getOrDefault("page", 1);
+        var pageSize = (int) requestBody.getOrDefault("pageSize", 20);
+        return Result.success(apiService.search(type, criteria, page, pageSize));
+    }
+
+    @PostMapping("/invoke")
+    public Result<Object> invoke(HttpServletRequest servletRequest, HttpServletResponse servletResponse, @RequestBody Map<String, Object> requestBody) {
+        verify(servletRequest);
+        var request = createRequest(servletRequest);
+        var response = new HttpResponseImpl();
+        var args = requestBody.getOrDefault("arguments", Map.of());
+        var receiver = requestBody.get("receiver");
+        if (receiver == null || !(requestBody.get("method") instanceof String methodName))
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+        if (args instanceof List<?> || args instanceof Map<?,?>) {
+            var r = apiService.handleMethodCall(receiver, methodName, args, request, response);
+            saveResponse(response, servletResponse);
+            return Result.success(r);
+        } else
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
     }
 
     private void verify(HttpServletRequest request) {

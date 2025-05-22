@@ -24,7 +24,6 @@ public class AstBuilderTest extends TestCase {
         Assert.assertNotNull(k);
         Assert.assertEquals("CouponState", k.name().toString());
         Assert.assertEquals(2, k.enumConstants().size());
-        log.debug("{}", file.getText());
     }
 
     public void testDDL() {
@@ -32,7 +31,6 @@ public class AstBuilderTest extends TestCase {
         AstBuilder.build(CompilerTestUtils.antlrParse(source));
         var source1 = TestUtils.getResourcePath("kiwi/ddl_after.kiwi");
         var unit1 = AstBuilder.build(CompilerTestUtils.antlrParse(source1));
-        log.debug("{}", unit1.getText());
     }
 
     public void testAllFiles() {

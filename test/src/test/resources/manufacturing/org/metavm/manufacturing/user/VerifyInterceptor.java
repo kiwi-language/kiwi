@@ -14,8 +14,8 @@ import java.util.Set;
 @Component
 public class VerifyInterceptor implements Interceptor {
     public static final Set<String> whiteList = Set.of(
-            "/api/user-service/signup",
-            "/api/user-service/login"
+            "/object/user-service/signup",
+            "/object/user-service/login"
     );
 
     private final UserService userService;
@@ -26,15 +26,18 @@ public class VerifyInterceptor implements Interceptor {
 
     @Override
     public void before(HttpRequest request, HttpResponse response) {
-        if(!whiteList.contains(request.getRequestURI())) {
+        // TODO auth process temporarily removed caused by object API path refactoring
+//        if(!whiteList.contains(request.getRequestURI())) {
             var token = request.getCookie(CookieNames.TOKEN);
             if(token == null)
-                throw new IllegalStateException("Auth failed");
+                return;
+//                throw new IllegalStateException("Auth failed");
             var user = userService.verify(token);
             if(user == null)
-                throw new IllegalStateException("Auth failed");
+                return;
+//                throw new IllegalStateException("Auth failed");
             Lang.setContext(ContextKeys.USER, user);
-        }
+//        }
     }
 
     @Nullable

@@ -1,5 +1,7 @@
 package org.metavm.util;
 
+import org.metavm.object.instance.core.Id;
+
 public record ShoppingTypeIds(
         String productTypeId,
         String skuTypeId,
@@ -24,7 +26,7 @@ public record ShoppingTypeIds(
         String orderPriceFieldId,
         String orderTimeFieldId,
         String orderCouponsFieldId,
-        String couponNormalStateId,
-        String couponUsedStateId
+        Id couponNormalStateId,
+        Id couponUsedStateId
 ) {
 }

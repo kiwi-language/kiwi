@@ -55,11 +55,11 @@ public class ApplicationManagerTest extends TestCase {
         ))).appId();
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         var page = applicationManager.list(1, 20, "metavm");
-        Assert.assertEquals(1, page.data().size());
-        Assert.assertEquals(id, (long) page.data().getFirst().id());
+        Assert.assertEquals(1, page.items().size());
+        Assert.assertEquals(id, (long) page.items().getFirst().id());
 
         var page1 = applicationManager.list(1, 20, null);
-        Assert.assertEquals(2, page1.data().size());
+        Assert.assertEquals(2, page1.items().size());
     }
 
 }

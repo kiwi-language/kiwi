@@ -4,13 +4,10 @@ import org.junit.Assert;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ColumnKind;
-import org.metavm.object.instance.core.ArrayInstanceWrap;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.Klass;
-import org.metavm.util.BusinessException;
-import org.metavm.util.Instances;
-import org.metavm.util.TestConstants;
-import org.metavm.util.TestUtils;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,7 +97,7 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testTreeSet() {
         deploy("kiwi/tree_set.kiwi");
-        var id = (String) callMethod("TreeSetLab", "create", List.of());
+        var id = (Id) callMethod("TreeSetLab", "create", List.of());
         var elements = List.of(5,4,3,2,1);
         callMethod(id, "addAll", List.of(elements));
         var containsAll = (boolean) callMethod(id, "containsAll", List.of(elements));
@@ -151,7 +148,7 @@ public class KiwiTest extends KiwiTestBase {
         var className = "Product";
         var productId = saveInstance(className, Map.of("quantity", 100));
         var product = getObject(productId);
-        var inventory = getObject(product.getString("inventory"));
+        var inventory = getObject(product.getId("inventory"));
         Assert.assertEquals(100, inventory.getInt("quantity"));
     }
 
@@ -241,7 +238,7 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testNew() {
         deploy("kiwi/new.kiwi");
-        var id = (String) callMethod("Foo", "test", List.of());
+        var id = (Id) callMethod("Foo", "test", List.of());
         var r = callMethod(id, "getValue", List.of());
         assertEquals(1, r);
     }
@@ -296,7 +293,7 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testArrayForEach() {
         deploy("kiwi/arrays/ArrayLab.kiwi");
-        var fooIds = new ArrayList<String>();
+        var fooIds = new ArrayList<Id>();
         for (int i = 0; i < 5; i++) {
             fooIds.add(saveInstance("arrays.Foo", Map.of("value", 1)));
         }
@@ -309,12 +306,12 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testArrayMap() {
         deploy("kiwi/arrays/ArrayLab.kiwi");
-        var fooIds = new ArrayList<String>();
+        var fooIds = new ArrayList<Id>();
         for (int i = 0; i < 5; i++) {
             fooIds.add(saveInstance("arrays.Foo", Map.of("value", 1)));
         }
         var r = callMethod("arrays.ArrayLab", "values", List.of(fooIds));
-        Assert.assertEquals(new ArrayInstanceWrap(List.of(1, 1, 1, 1, 1)), r);
+        Assert.assertEquals(List.of(1, 1, 1, 1, 1), r);
     }
 
     public void testArraySum() {
@@ -347,27 +344,32 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testInnerEnum() {
         deploy("kiwi/enums/inner_enum.kiwi");
-        var id = saveInstance("enums.Foo", Map.of("option", "op1"));
+        var id = saveInstance("enums.Foo",
+                Map.of("option", new ApiNamedObject("enums.Foo.Option", "op1"))
+        );
         var foo = getObject(id);
-        Assert.assertEquals("op1", foo.getString("option"));
+        Assert.assertEquals("op1", foo.getEnumConstant("option").name());
     }
 
     public void testChildren() {
         deploy("kiwi/children.kiwi");
         var id = saveInstance("Product", Map.of(
-           "name", "Shoes",
-           "SKU", List.of(
-                   Map.of(
+                "name", "Shoes"
+                ),
+               Map.of(
+               "SKU", List.of(
+                       Map.of(
                            "variant", "40",
                            "price", 100,
                            "stock", 100
-                   )
-                )
-        ));
+                       )
+                    )
+               )
+        );
         var product = getObject(id);
-        var skus = product.getArray("SKU");
+        var skus = product.getChildren("SKU");
         Assert.assertEquals(1, skus.size());
-        var sku = skus.getObject(0);
+        var sku = skus.getFirst();
         Assert.assertEquals("40", sku.getString("variant"));
         Assert.assertEquals(100, sku.getDouble("price"), 0.001);
         Assert.assertEquals(100, sku.getInt("stock"));
@@ -389,18 +391,18 @@ public class KiwiTest extends KiwiTestBase {
                 )
         )));
         TestUtils.waitForEsSync(schedulerAndWorker);
-        var r = search(className, Map.of("name", "kiwi"), false);
+        var r = search(className, Map.of(
+                "name", "kiwi",
+                "status", ApiNamedObject.of("search.Status", "ENABLED")
+        ));
         Assert.assertEquals(1, r.total());
-        Assert.assertEquals(id, r.data().getFirst());
-
-        var r1 = search(className, Map.of("name", "kiwi"), true);
-        Assert.assertEquals(1, r1.total());
-        Assert.assertEquals(Map.of("$id", id, "$class", className, "name", "kiwi"), r1.data().getFirst());
+        Assert.assertEquals(id, r.data().getFirst().id());
+        assertNull(r.data().getFirst().getMap().get("children"));
     }
 
     public void testBean() {
         deploy("kiwi/beans/foo_service.kiwi");
-        var r = callMethod("fooService", "greet", List.of());
+        var r = callMethod(ApiNamedObject.of("fooService"), "greet", List.of());
         Assert.assertEquals("Hello", r);
     }
 

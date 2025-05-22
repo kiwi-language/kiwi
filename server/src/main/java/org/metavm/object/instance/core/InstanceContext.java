@@ -327,10 +327,6 @@ public class InstanceContext extends BufferingInstanceContext {
                     if (i.isRemoved()) {
                         if(DebugEnv.recordPath)
                             logger.info("Reference path: {}", Utils.join(DebugEnv.path));
-                        for (Method method : StdKlass.string.get().getMethods()) {
-                            logger.debug("{}", method.getQualifiedSignature());
-
-                        }
                         throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(i.getReference()));
                     }
                     return true;

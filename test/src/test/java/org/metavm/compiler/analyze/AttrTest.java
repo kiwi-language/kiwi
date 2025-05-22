@@ -64,7 +64,6 @@ public class AttrTest extends TestCase {
 
             @Override
             public Void visitExpr(Expr expr) {
-                log.debug("{}: element: {}, type: {}", expr.getText(), expr.getElement(), Utils.safeCall(expr.getType(), Type::getTypeText));
                 Assert.assertTrue(
                         "Expression '" + expr.getText() +  "' is not resolved",
                         expr.getElement() instanceof ClassType ||

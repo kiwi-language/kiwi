@@ -4,7 +4,7 @@ GET https://metavm.tech/rest/instance/1000600045
 <> 2023-02-22T151012.200.json
 <> 2023-02-22T150945.401.json
 ###
-PUT https://metavm.tech/api/product
+PUT https://metavm.tech/object/product
 Content-Type: application/json
 X-App-ID: 1001500031
 
@@ -15,7 +15,7 @@ X-App-ID: 1001500031
 }
 
 ###
-POST https://metavm.tech/api/user-service/get-user-by-name
+POST https://metavm.tech/object/user-service/get-user-by-name
 Content-Type: application/json
 X-App-ID: 1001500031
 
@@ -23,15 +23,15 @@ X-App-ID: 1001500031
   "leen"
 ]
 ###
-GET https://metavm.tech/api/org/metavm/mlab/ProductKind/DEFAULT
+GET https://metavm.tech/object/org/metavm/mlab/ProductKind/DEFAULT
 X-App-ID: 1000000019
 
 ###
-GET https://metavm.tech/api/org/metavm/mlab/Currency/YUAN
+GET https://metavm.tech/object/org/metavm/mlab/Currency/YUAN
 X-App-ID: 1000000019
 
 ###
-PUT https://metavm.tech/api/org/metavm/mlab/Product
+PUT https://metavm.tech/object/org/metavm/mlab/Product
 X-App-ID: 1000000019
 Content-Type: application/json
 
