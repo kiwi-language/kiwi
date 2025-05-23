@@ -5,7 +5,6 @@ import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.Id;
-import org.metavm.util.ApiNamedObject;
 import org.metavm.util.BusinessException;
 import org.metavm.util.TestConstants;
 
@@ -205,7 +204,7 @@ public class BasicKiwiTest extends KiwiTestBase {
         deploy("kiwi/basics/enums/EnumConstantImplFoo.kiwi");
         var className = "enums.EnumConstantImplFoo";
         Assert.assertEquals("Option 1", callMethod(className, "getOptionDesc",
-                List.of(new ApiNamedObject("enums.EnumConstantImplFoo.Option", "op1")))
+                List.of("op1"))
         );
     }
 
@@ -218,7 +217,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     public void testEnums() {
         deploy("kiwi/basics/enums/ProductKind.kiwi");
         var kind = callMethod("enums.ProductKind", "fromCode", List.of(0));
-        Assert.assertEquals(new ApiNamedObject("enums.ProductKind", "DEFAULT"), kind);
+        Assert.assertEquals("DEFAULT", kind);
     }
 
     public void testCatchUnionExceptionType() {
@@ -268,7 +267,7 @@ public class BasicKiwiTest extends KiwiTestBase {
         var fooId = saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
         ));
-        var bean = ApiNamedObject.of("hashMapLab");
+        var bean = "hashMapLab";
         callMethod(bean, "put", List.of(fooId, "Foo"));
         var foo2Id = saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
@@ -322,7 +321,7 @@ public class BasicKiwiTest extends KiwiTestBase {
                 "kiwi/basics/hashcode/HashCodeFoo.kiwi",
                 "kiwi/basics/hashcode/HashSetLab.kiwi"
         ));
-        var bean = ApiNamedObject.of("hashSetLab");
+        var bean = "hashSetLab";
         callMethod(bean, "add", List.of("Hello"));
         var contains = callMethod(bean, "contains", List.of("Hello"));
         Assert.assertEquals(true, contains);
@@ -375,7 +374,7 @@ public class BasicKiwiTest extends KiwiTestBase {
         Assert.assertEquals(fooId, list.getFirst());
         Assert.assertEquals(fooId, callMethod(fooClass, "findByBar", List.of(barId)));
         Assert.assertEquals(fooId, callMethod(fooClass, "findByNameAndSeq", List.of("foo", 3)));
-        Assert.assertEquals(fooId, callMethod(ApiNamedObject.of("fooService"), "findByDesc", List.of("foo-3-bar001")));
+        Assert.assertEquals(fooId, callMethod("fooService", "findByDesc", List.of("foo-3-bar001")));
     }
 
     public void testWarehouse() {
@@ -383,7 +382,7 @@ public class BasicKiwiTest extends KiwiTestBase {
                 "kiwi/basics/innerclass/service/WarehouseService.kiwi",
                 "kiwi/basics/innerclass/Warehouse.kiwi"
         ));
-        var bean = ApiNamedObject.of("warehouseService");
+        var bean = "warehouseService";
         var warehouseId = (Id) callMethod(bean, "createWarehouse", List.of("w1"));
         var containerId = (Id) callMethod(bean, "createContainer", List.of(warehouseId, "c1"));
         var itemId = (Id) callMethod(bean, "createItem", List.of(containerId, "i1"));
@@ -418,7 +417,7 @@ public class BasicKiwiTest extends KiwiTestBase {
         deploy("kiwi/basics/innerclass/InnerClassFoo.kiwi");
         var id = saveInstance("innerclass.InnerClassFoo<string, string>", Map.of());
         callMethod(id, "addEntry", List.of("name", "leen"));
-        var entryId = (Id) callMethod(id, "first", List.of());
+        var entryId = (String) callMethod(id, "first", List.of());
         var entry = getObject(entryId);
         Assert.assertEquals("name", entry.get("key"));
         Assert.assertEquals("leen", entry.get("value"));
@@ -463,7 +462,7 @@ public class BasicKiwiTest extends KiwiTestBase {
                 "kiwi/basics/interceptors/UserDTO.kiwi",
                 "kiwi/basics/interceptors/UserService.kiwi"
         ));
-        var user = (ApiObject) callMethod(ApiNamedObject.of("userService"), "getUserByName", List.of("leen"));
+        var user = (ApiObject) callMethod("userService", "getUserByName", List.of("leen"));
         var tel =  user.getString("telephone");
         Assert.assertEquals("123******12", tel);
     }

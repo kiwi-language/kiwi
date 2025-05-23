@@ -183,4 +183,12 @@ public class NamingUtils {
         }
         return sb.toString();
     }
+
+    public static String extractSimpleName(String qualName) {
+        var idx = qualName.lastIndexOf('.');
+        if (idx == -1)
+            return qualName;
+        return qualName.substring(idx + 1);
+    }
+
 }

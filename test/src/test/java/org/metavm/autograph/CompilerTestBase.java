@@ -162,7 +162,7 @@ public abstract class CompilerTestBase extends TestCase  {
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
     }
 
-    protected Id saveInstance(String className, Map<String, Object> fields) {
+    protected String saveInstance(String className, Map<String, Object> fields) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, fields));
     }
 
@@ -174,7 +174,7 @@ public abstract class CompilerTestBase extends TestCase  {
         return apiClient.search(className, query, page, pageSize);
     }
 
-    protected ApiObject getObject(Id id) {
+    protected ApiObject getObject(String id) {
         return apiClient.getObject(id);
     }
 

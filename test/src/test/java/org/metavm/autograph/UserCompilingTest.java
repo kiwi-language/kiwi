@@ -59,7 +59,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 String email = "15968879210@163.com";
                 sendVerificationCode(email);
                 var verificationCode = getLastSentEmailContent();
-                var platformUserId = (Id) doInTransaction(() -> apiClient.callMethod(
+                var platformUserId = (String) doInTransaction(() -> apiClient.callMethod(
                         userKlass,
                         "register",
                         List.of(
@@ -73,7 +73,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 ));
                 waitForAllTasksDone();
                 var platformUser = getObject(platformUserId);
-                logger.info("{}", Utils.toPrettyJsonString(platformUser.getMap()));
+                logger.info("{}", Utils.toPrettyJsonString(platformUser.map()));
                 Assert.assertEquals(email, platformUser.getString("loginName"));
                 Assert.assertEquals("lyq", platformUser.getString("name"));
                 var platformUserApplications = platformUser.getArray("applications");
@@ -91,7 +91,7 @@ public class UserCompilingTest extends CompilerTestBase {
 //                Assert.assertEquals(1, platformUser2.getArray("roles").size());
 
                 // create an UserApplication by invoking the UserApplication.create method
-                var applicationId = (Id) callMethod(userApplicationKlass, "create",
+                var applicationId = (String) callMethod(userApplicationKlass, "create",
                         List.of("lab", platformUserId));
                 var application = getObject(applicationId);
                 var reloadedPlatformUser = getObject(platformUserId);
@@ -100,7 +100,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 Assert.assertEquals(applicationId, joinedApplications.getFirst());
 
                 // get PlatformApplication
-                var platformApplicationId = (Id) doInTransaction(() -> apiClient.callMethod(
+                var platformApplicationId = (String) doInTransaction(() -> apiClient.callMethod(
                         platformApplicationKlass, "getInstance", List.of()
                 ));
                 var platformApplication = getObject(platformApplicationId);
@@ -129,7 +129,7 @@ public class UserCompilingTest extends CompilerTestBase {
                 }
 
                 // create a platform user to join the application and then leave
-                var anotherPlatformUserId = (Id) doInTransaction(() -> apiClient.newInstance(
+                var anotherPlatformUserId = doInTransaction(() -> apiClient.newInstance(
                         userKlass,
                         List.of("lyq2", "123456", "lyq2", List.of(roleId))
                 ));
@@ -238,8 +238,8 @@ public class UserCompilingTest extends CompilerTestBase {
                 // execute the LabUser.verify method and check verification result
                 var tokenValue = createTokenValue(application.id(), token);
                 var loginInfo = verify(tokenValue);
-                Assert.assertEquals(application.id(), loginInfo.getId("application"));
-                Assert.assertEquals(userId, loginInfo.getId("user"));
+                Assert.assertEquals(application.id(), loginInfo.getString("application"));
+                Assert.assertEquals(userId, loginInfo.getString("user"));
 
                 // test logout
                 var tokenF = token;
@@ -308,11 +308,11 @@ public class UserCompilingTest extends CompilerTestBase {
         );
     }
 
-    private String login(Id applicationId, String loginName, @SuppressWarnings("SameParameterValue") String password) {
+    private String login(String applicationId, String loginName, @SuppressWarnings("SameParameterValue") String password) {
         return login(applicationId, loginName, password, "127.0.0.1", true);
     }
 
-    private String login(Id applicationId, String loginName, String password, String clientIP, boolean checkToken) {
+    private String login(String applicationId, String loginName, String password, String clientIP, boolean checkToken) {
         var loginResult = (ApiObject) callMethod(
                 "org.metavm.user.LabUser", "login",
                 List.of(applicationId, loginName, password, clientIP)
@@ -323,7 +323,7 @@ public class UserCompilingTest extends CompilerTestBase {
         return token;
     }
 
-    private Map<String, Object> createTokenValue(Id id, String token) {
+    private Map<String, Object> createTokenValue(String id, String token) {
         return Map.of(
                 "application", id,
                 "token", token

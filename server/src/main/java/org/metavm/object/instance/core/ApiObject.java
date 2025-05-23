@@ -1,63 +1,24 @@
 package org.metavm.object.instance.core;
 
 import org.metavm.util.ApiNamedObject;
-import org.metavm.util.Utils;
 
 import java.util.*;
 
-public class ApiObject {
-    private final Map<String,Object> map;
-    private final Id id;
-    private final Map<String, Object> fields = new HashMap<>();
-    private final Map<String, List<ApiObject>> children = new HashMap<>();
-
+public record ApiObject(Map<String, Object> map) {
     public ApiObject(Map<String, Object> map) {
         this.map = new HashMap<>(map);
-        id = Utils.safeCall((String) map.get("id"), Id::parse);
-        //noinspection unchecked
-        var fields = (Map<String, Object>) map.getOrDefault("fields", Map.of());
-        fields.forEach((name, value) -> this.fields.put(name, convertValue(value)));
-        //noinspection unchecked
-        var children = (Map<String, List<Object>>) map.getOrDefault("children", Map.of());
-        children.forEach((name, c) -> {
-            var c1 = new ArrayList<ApiObject>();
-            c.forEach(e -> c1.add((ApiObject) convertValue(e)));
-            this.children.put(name, c1);
-        });
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public static ApiObject from(Object value) {
-        var inst = convertValue(value);
-        if(inst instanceof ApiObject apiObject)
-            return apiObject;
+        if (value instanceof Map map)
+            return new ApiObject(map);
         else
             throw new IllegalArgumentException("Invalid object: " + value);
     }
 
-    public static Object convertValue(Object value) {
-        if(value instanceof Map<?,?> m) {
-            if (m.get("name") instanceof String name) {
-                if (m.get("type") instanceof String type)
-                   return ApiNamedObject.of(type, name);
-                else
-                    return ApiNamedObject.of(name);
-            }
-            else if (m.containsKey("fields")) {
-                //noinspection unchecked
-                return new ApiObject((Map<String, Object>) m);
-            }
-            else
-                return Id.parse((String) Objects.requireNonNull(m.get("id"), () -> "Invalid object: " + m));
-        } else if(value instanceof List<?> l) {
-            var convertedList = new ArrayList<>();
-            l.forEach(e -> convertedList.add(convertValue(e)));
-            return convertedList;
-        } else
-            return value;
-    }
-
     public Object get(String fieldName) {
-        return fields.get(fieldName);
+        return map.get(fieldName);
     }
 
     public long getLong(String fieldName) {
@@ -76,40 +37,24 @@ public class ApiObject {
         return (String) get(fieldName);
     }
 
-    public ApiNamedObject getEnumConstant(String fieldName) {
-        return (ApiNamedObject) get(fieldName);
-    }
-
     public boolean getBoolean(String fieldName) {
         return (boolean) get(fieldName);
     }
 
-    public Id getId(String fieldName) {
-        return (Id) get(fieldName);
-    }
-
-    public Id id() {
-        return id;
+    public String id() {
+        return (String) map.get("$id");
     }
 
     public ApiObject getObject(String fieldName) {
-        var value = get(fieldName);
-        if(value instanceof ApiObject apiObject)
-            return apiObject;
-        else
-            throw new IllegalStateException("Field '" + fieldName + "' is not an object: " + value);
+        return from(get(fieldName));
     }
 
     public List<?> getArray(String fieldName) {
         var value = get(fieldName);
-        if(value instanceof List<?> array)
+        if (value instanceof List<?> array)
             return array;
         else
             throw new IllegalStateException("Field '" + fieldName + "' is not an array: " + value);
-    }
-
-    public List<ApiObject> getChildren(String className) {
-        return Objects.requireNonNull(children.get(className), () -> "Children not found for class: " + className);
     }
 
     @Override
@@ -117,12 +62,9 @@ public class ApiObject {
         return map.toString();
     }
 
-    public Map<String, Object> getMap() {
+    @Override
+    public Map<String, Object> map() {
         return Collections.unmodifiableMap(map);
-    }
-
-    public Map<String, Object> getFields() {
-        return Collections.unmodifiableMap(fields);
     }
 
     @Override

@@ -77,7 +77,7 @@ public class ApiServiceTest extends TestCase {
                 List.of("10 Yuan off", 10)
         ));
         // buy
-        var orderId = (Id) TestUtils.doInTransaction(() -> apiClient.callMethod(
+        var orderId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod(
                 skuId,
                 "buy",
                 List.of(1, List.of(coupon1Id, coupon2Id))
@@ -113,15 +113,15 @@ public class ApiServiceTest extends TestCase {
         );
         var order = getObject(orderId);
         //noinspection unchecked
-        var productRef = ((Map<String, Object>) order.getMap().get("fields")).get("product");
-        assertEquals(Map.of("id", productId.toString(), "type", "summary.Product", "summary", "MacBook Pro"), productRef);
+        var productRef = ((Map<String, Object>) order.map().get("fields")).get("product");
+        assertEquals(Map.of("id", productId, "type", "summary.Product", "summary", "MacBook Pro"), productRef);
     }
 
-    private Id saveInstance(String className, Map<String, Object> map) {
+    private String saveInstance(String className, Map<String, Object> map) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, map));
     }
 
-    public ApiObject getObject(Id id) {
+    public ApiObject getObject(String id) {
         return apiClient.getObject(id);
     }
 

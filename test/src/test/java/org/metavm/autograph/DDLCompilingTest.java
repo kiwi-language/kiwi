@@ -5,7 +5,6 @@ import org.junit.Assert;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.MetadataState;
 import org.metavm.object.type.StaticFieldTable;
-import org.metavm.util.ApiNamedObject;
 import org.metavm.util.Instances;
 import org.metavm.util.TestConstants;
 
@@ -23,10 +22,10 @@ public class DDLCompilingTest extends CompilerTestBase {
         var ref = new Object() {
           Id stateFieldId;
           Id stateKlassId;
-          Id derivedInstanceId;
-          Id fooId;
-          Id productId;
-          Id krwCurrencyId;
+          String derivedInstanceId;
+          String fooId;
+          String productId;
+          String krwCurrencyId;
         };
         submit(() -> {
             try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
@@ -37,7 +36,7 @@ public class DDLCompilingTest extends CompilerTestBase {
                 ref.derivedInstanceId = saveInstance("swapsuper.Derived",
                         Map.of("value1", 1, "value2", 2, "value3", 3));
                 var currencyKlass = context.getKlassByQualifiedName("Currency");
-                ref.krwCurrencyId = StaticFieldTable.getInstance(currencyKlass.getType(), context).getEnumConstantByName("KRW").getId();
+                ref.krwCurrencyId = StaticFieldTable.getInstance(currencyKlass.getType(), context).getEnumConstantByName("KRW").getStringId();
                 var indexFooKlass = context.getKlassByQualifiedName("index.IndexFoo");
                 Assert.assertEquals(1, indexFooKlass.getIndices().size());
             }
@@ -45,7 +44,7 @@ public class DDLCompilingTest extends CompilerTestBase {
             ref.productId = saveInstance("Product", Map.of("name", "Shoes",
                     "price", Map.of(
                             "amount", 20,
-                            "currency", ApiNamedObject.of("Currency", "DOLLAR")
+                            "currency", "DOLLAR"
                     )
             ));
         });
@@ -82,13 +81,13 @@ public class DDLCompilingTest extends CompilerTestBase {
                 }
             }
             Assert.assertEquals(ref.fooId, callMethod("index.IndexFoo", "findBySeq", List.of(1)));
-            Assert.assertEquals(ApiNamedObject.of("ProductStatus", "AVAILABLE"),
+            Assert.assertEquals("AVAILABLE",
                     getStatic("Product", "DEFAULT_STATUS"));
-            Assert.assertEquals(ApiNamedObject.of("Currency","EURO"), getStatic("Currency", "EURO"));
+            Assert.assertEquals("EURO", getStatic("Currency", "EURO"));
             var product = getObject(ref.productId);
             Assert.assertEquals("none", product.getString("tag"));
-            Assert.assertEquals(ApiNamedObject.of("Currency", "USD"),
-                    product.getObject("price").getEnumConstant("currency"));
+            Assert.assertEquals("USD",
+                    product.getObject("price").getString("currency"));
 //            try {
 //                getObject(ref.krwCurrencyId.toString());
 //                Assert.fail("Enum constant should have been removed");

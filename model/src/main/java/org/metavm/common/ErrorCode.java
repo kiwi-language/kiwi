@@ -166,6 +166,7 @@ public enum ErrorCode {
     INVALID_REQUEST_PATH(1502, "Invalid request path"),
     INVALID_REQUEST_BODY(1503, "Invalid request body"),
     BEAN_NOT_FOUND(1504, "Bean not found: {}"),
+    INVALID_CHILD(1505, "'{}' is not a child class of '{}'"),
 
     // DDL
     COMMIT_RUNNING(1601, "Commit is in progress"),

@@ -5,7 +5,9 @@ import org.junit.Assert;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.Id;
-import org.metavm.util.*;
+import org.metavm.util.Constants;
+import org.metavm.util.ContextUtil;
+import org.metavm.util.TestUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,21 +26,21 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
     public static final String PASSWORD = "123456";
     public static final String qualityInspectionStateKlass = "org.metavm.manufacturing.material.QualityInspectionState";
     public static final String inventoryKlass = "org.metavm.manufacturing.storage.Inventory";
-    public static final ApiNamedObject QUALIFIED = ApiNamedObject.of("org.metavm.manufacturing.material.QualityInspectionState", "QUALIFIED");
-    public static final ApiNamedObject INITIAL = ApiNamedObject.of("org.metavm.manufacturing.storage.InventoryBizState", "INITIAL");
-    public static final ApiNamedObject ADJUSTMENT = ApiNamedObject.of("org.metavm.manufacturing.storage.InventoryOp", "ADJUSTMENT");
-    public static final ApiNamedObject PURCHASE = ApiNamedObject.of("org.metavm.manufacturing.storage.InboundBizType", "PURCHASE");
-    public static final ApiNamedObject STORAGE = ApiNamedObject.of("org.metavm.manufacturing.storage.TransferBizType", "STORAGE");
-    public static final ApiNamedObject ENABLED = ApiNamedObject.of("org.metavm.manufacturing.GeneralState", "ENABLED");
-    public static final ApiNamedObject DIRECT = ApiNamedObject.of("org.metavm.manufacturing.production.FeedType", "DIRECT");
-    public static final ApiNamedObject NORMAL = ApiNamedObject.of("org.metavm.manufacturing.material.MaterialKind", "NORMAL");
-    public static final ApiNamedObject YEAR = ApiNamedObject.of("org.metavm.manufacturing.material.TimeUnit", "YEAR");
-    public static final ApiNamedObject ROUND_HALF_UP = ApiNamedObject.of("org.metavm.manufacturing.material.RoundingRule","ROUND_HALF_UP");
-    public static final ApiNamedObject ON_DEMAND = ApiNamedObject.of("org.metavm.manufacturing.production.PickMethod", "ON_DEMAND");
-    public static final ApiNamedObject USER_SERVICE = ApiNamedObject.of("userService");
-    public static final ApiNamedObject MATERIAL_SERVICE = ApiNamedObject.of("materialService");
-    public static final ApiNamedObject ROUTING_SERVICE = ApiNamedObject.of("routingService");
-    public static final ApiNamedObject BOM_SERVICE = ApiNamedObject.of("bomService");
+    public static final String QUALIFIED = "QUALIFIED";
+    public static final String INITIAL = "INITIAL";
+    public static final String ADJUSTMENT = "ADJUSTMENT";
+    public static final String PURCHASE = "PURCHASE";
+    public static final String STORAGE = "STORAGE";
+    public static final String ENABLED = "ENABLED";
+    public static final String DIRECT = "DIRECT";
+    public static final String NORMAL = "NORMAL";
+    public static final String YEAR = "YEAR";
+    public static final String ROUND_HALF_UP = "ROUND_HALF_UP";
+    public static final String ON_DEMAND = "ON_DEMAND";
+    public static final String USER_SERVICE = "userService";
+    public static final String MATERIAL_SERVICE = "materialService";
+    public static final String ROUTING_SERVICE = "routingService";
+    public static final String BOM_SERVICE = "bomService";
 
     @Override
     protected void setUp() {
@@ -65,7 +67,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                         Arrays.asList("meter", "meter", ROUND_HALF_UP
                                 , 2, null)
                 ));
-                var materialId = (Id) doInTransaction(() -> apiClient.callMethod(
+                var materialId = (String) doInTransaction(() -> apiClient.callMethod(
                         MATERIAL_SERVICE,
                         "save",
                         List.of(
@@ -262,7 +264,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                         null
                 )
         ));
-        var inboundOrderItemId = (Id) doInTransaction(() -> apiClient.callMethod(
+        var inboundOrderItemId = (String) doInTransaction(() -> apiClient.callMethod(
                 inboundOrderId,
                 "createItem",
                 Arrays.asList(
@@ -445,7 +447,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                             "product", material.id(),
                             "unit", unit.id(),
                             "processes", List.of(
-                                    routingProcess.getFields(),
+                                    routingProcess.map(),
                                     Map.of(
                                             "processCode", "process2",
                                             "processDescription", "process2",
@@ -470,8 +472,8 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                     Map.of(
                             "product", material.id(),
                             "unit", unit.id(),
-                            "routing", routing.getId("entity"),
-                            "reportingProcess", routingProcess.getId("entity"),
+                            "routing", routing.getString("entity"),
+                            "reportingProcess", routingProcess.getString("entity"),
                             "state", ENABLED,
                             "inbound", true,
                             "autoInbound", true,
@@ -486,7 +488,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                                             Map.entry("attritionRate", 0.0),
                                             Map.entry("pickMethod", ON_DEMAND),
                                             Map.entry("routingSpecified", false),
-                                            Map.entry("process", routingProcess.getId("entity")),
+                                            Map.entry("process", routingProcess.getString("entity")),
                                             Map.entry("qualityInspectionState", QUALIFIED),
                                             Map.entry("feedType", DIRECT),
                                             Map.entry("items", List.of(
@@ -494,7 +496,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                                                             "sequence", 1,
                                                             "numerator", 1,
                                                             "denominator", 1,
-                                                            "process", routingProcess.getId("entity"),
+                                                            "process", routingProcess.getString("entity"),
                                                             "qualityInspectionState", QUALIFIED,
                                                             "feedType", DIRECT
                                                     )
@@ -507,7 +509,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
 //        var bomId = TestUtils.getSourceId(bomViewId);
         // create production order
         long startTime = System.currentTimeMillis();
-        var productionOrderId = (Id) doInTransaction(() -> apiClient.callMethod(
+        var productionOrderId = (String) doInTransaction(() -> apiClient.callMethod(
                 bomId,
                 "createProductionOrder",
                 List.of(startTime, startTime + 3 * 24 * 60 * 60 * 1000, 10))

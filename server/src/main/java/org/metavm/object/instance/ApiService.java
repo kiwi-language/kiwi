@@ -15,6 +15,7 @@ import org.metavm.flow.ParameterRef;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.rest.SearchResult;
+import org.metavm.object.instance.rest.dto.*;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
 import org.metavm.util.LinkedList;
@@ -46,7 +47,7 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public String handleNewInstance(String classCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
+    public String handleNewInstance(String classCode, List<ArgumentDTO> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, null, rawArguments, false, true, context);
@@ -62,21 +63,20 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public Object handleMethodCall(Object receiver, String methodCode, Object rawArguments, HttpRequest request, HttpResponse response) {
+    public Object handleMethodCall(InvokeRequest request, HttpRequest httpRequest, HttpResponse httpResponse) {
         try (var context = newContext()) {
             Value result;
-            if (receiver instanceof Map<?,?> map) {
-                var r = tryResolveObject(map, AnyType.instance, null, context);
-                if (!r.successful)
-                    throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
-                result = executeInstanceMethod(r.resolved.resolveObject(), methodCode, rawArguments, request, response, context);
-            } else if (receiver instanceof String s){
-                var klassName = s.contains(".") ? s : NamingUtils.firstCharToUpperCase(s);
+             if (request.receiver() instanceof StringValueDTO s) {
+                var klassName = s.value().contains(".") ? s.value() : NamingUtils.firstCharToUpperCase(s.value());
                 var klass = getKlass(klassName, context);
-                var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
-                result = execute(r.method, null, r.arguments, request, response, context);
-            } else
-                throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+                var r = resolveMethod(klass, request.method(), request.arguments(), true, false, context);
+                result = execute(r.method, null, r.arguments, httpRequest, httpResponse, context);
+            } else  {
+                 var r = tryResolveObject(request.receiver(), AnyType.instance, null, context);
+                 if (!r.successful)
+                     throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+                 result = executeInstanceMethod(r.resolved.resolveObject(), request.method(), request.arguments(), httpRequest, httpResponse, context);
+             }
             context.finish();
             return formatValue(result, false, false);
         }
@@ -92,7 +92,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     private Value executeInstanceMethod(ClassInstance self,
                                         String methodCode,
-                                        Object rawArguments,
+                                        List<ArgumentDTO> rawArguments,
                                         HttpRequest request,
                                         HttpResponse response,
                                         IInstanceContext context) {
@@ -102,7 +102,7 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public Object handleStaticMethodCall(String classCode, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
+    public Object handleStaticMethodCall(String classCode, String methodCode, List<ArgumentDTO> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
@@ -175,7 +175,7 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public String saveInstance(Map<String, Object> object, HttpRequest request, HttpResponse response) {
+    public String saveInstance(ObjectDTO object, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
 //            logTxId();
             var inst = doIntercepted(() -> {
@@ -196,23 +196,23 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    public SearchResult search(String type, Map<String, Object> criteria, int page, int pageSize) {
+    public SearchResult search(SearchRequest request) {
         try (var entityContext = newContext()) {
-            var klass = entityContext.getKlassByQualifiedName(type);
+            var klass = entityContext.getKlassByQualifiedName(request.type().qualifiedName());
             var classType = klass.getType();
             var fields = new ArrayList<InstanceQueryField>();
-            criteria.forEach((name, value) -> {
-                var field = klass.findFieldByName(name);
+            request.terms().forEach(term -> {
+                var field = klass.findFieldByName(term.field());
                 if (field != null) {
-                    if (field.getType().isNumber() && value instanceof List<?> list && list.size() == 2) {
-                        var min = resolveValue(list.getFirst(), field.getType(), false, null, entityContext);
-                        var max = resolveValue(list.get(1), field.getType(), false, null, entityContext);
+                    if (field.getType().isNumber() && term.min() != null) {
+                        var min = resolveValue(term.min(), field.getType(), false, null, entityContext);
+                        var max = resolveValue(term.max(), field.getType(), false, null, entityContext);
                         fields.add(new InstanceQueryField(field, null, min, max));
                     }
                     else {
                         fields.add(new InstanceQueryField(
                                 field,
-                                resolveValue(value, field.getType(), false, null, entityContext),
+                                resolveValue(term.value(), field.getType(), false, null, entityContext),
                                 null,
                                 null
                         ));
@@ -224,8 +224,8 @@ public class ApiService extends EntityContextFactoryAware {
 //                    .newlyCreated(NncUtils.map(query.createdIds(), Id::parse))
                     .fields(fields)
 //                    .expression(query.expression())
-                    .page(page)
-                    .pageSize(pageSize)
+                    .page(request.page())
+                    .pageSize(request.pageSize())
                     .build();
             var dataPage1 = instanceQueryService.query(internalQuery, entityContext);
             return new SearchResult(
@@ -345,7 +345,7 @@ public class ApiService extends EntityContextFactoryAware {
         return list;
     }
 
-    private ResolutionResult resolveMethod(@NotNull ClassType klass, String methodCode, Object rawArguments, boolean _static, boolean constructor, IInstanceContext context) {
+    private ResolutionResult resolveMethod(@NotNull ClassType klass, String methodCode, List<ArgumentDTO> rawArguments, boolean _static, boolean constructor, IInstanceContext context) {
         var methodRef = methodCode != null ?
                 TypeParser.parseSimpleMethodRef(methodCode, name -> getKlass(name, context).getKlass()) : null;
         var queue = new LinkedList<ClassType>();
@@ -376,39 +376,32 @@ public class ApiService extends EntityContextFactoryAware {
         return rawArgument instanceof List<?> list ? list.size() : ((Map<?,?>) rawArgument).size();
     }
 
-    private List<Value> tryResolveArguments(MethodRef method, Object rawArguments, IInstanceContext context) {
+    private List<Value> tryResolveArguments(MethodRef method, List<ArgumentDTO> rawArguments, IInstanceContext context) {
         var resolvedArgs = new ArrayList<Value>();
-        if (rawArguments instanceof List<?> rawArgList) {
-            if (rawArgList.size() != method.getParameterCount())
-                return null;
-            for (int i = 0; i < method.getParameterCount(); i++) {
-                var r = tryResolveValue(rawArgList.get(i), method.getParameterType(i), false, null, context);
-                if (!r.successful())
-                    return null;
-                resolvedArgs.add(r.resolved());
-            }
-        }
-        else if (rawArguments instanceof Map<?,?> rawArgMap) {
-            for (ParameterRef parameter : method.getParameters()) {
-                var rawArg = rawArgMap.get(parameter.getName());
-                if (rawArg == null) {
-                    if (parameter.getType().isNullable()) {
-                        resolvedArgs.add(Instances.nullInstance());
-                        continue;
-                    }
-                    else
-                        return null;
+        var argMap = Utils.toMap(rawArguments, ArgumentDTO::name, ArgumentDTO::value);
+        int i = 0;
+        for (ParameterRef parameter : method.getParameters()) {
+            var arg = argMap.get(parameter.getName());
+            if (arg == null)
+                arg = argMap.get("$arg" + i);
+            i++;
+            if (arg == null) {
+                if (parameter.getType().isNullable()) {
+                    resolvedArgs.add(Instances.nullInstance());
+                    continue;
                 }
-                var r = tryResolveValue(rawArg, parameter.getType(), false, null, context);
-                if (!r.successful())
+                else
                     return null;
-                resolvedArgs.add(r.resolved());
             }
+            var r = tryResolveValue(arg, parameter.getType(), false, null, context);
+            if (!r.successful())
+                return null;
+            resolvedArgs.add(r.resolved());
         }
         return resolvedArgs;
     }
 
-    private Value resolveValue(Object rawValue, Type type, @SuppressWarnings("SameParameterValue") boolean asValue, @Nullable Value currentValue, IInstanceContext context) {
+    private Value resolveValue(ValueDTO rawValue, Type type, @SuppressWarnings("SameParameterValue") boolean asValue, @Nullable Value currentValue, IInstanceContext context) {
         var r = tryResolveValue(rawValue, type, asValue, currentValue, context);
         if (r.successful())
             return r.resolved();
@@ -416,70 +409,52 @@ public class ApiService extends EntityContextFactoryAware {
             throw new BusinessException(ErrorCode.VALUE_RESOLUTION_ERROR, rawValue, type.getTypeDesc());
     }
 
-    private ValueResolutionResult tryResolveValue(Object rawValue, Type type, boolean asValue, @Nullable Value currentValue, IInstanceContext context) {
+    private ValueResolutionResult tryResolveValue(ValueDTO rawValue, Type type, boolean asValue, @Nullable Value currentValue, IInstanceContext context) {
         return switch (type) {
             case NullType ignored ->
                     rawValue == null ? ValueResolutionResult.of(Instances.nullInstance()) : ValueResolutionResult.failed;
             case PrimitiveType primitiveType -> tryResolvePrimitive(rawValue, primitiveType);
             case KlassType classType -> switch (rawValue) {
-                case String s -> {
+                case StringValueDTO s -> {
                     if (classType.isAssignableFrom(StdKlass.string.type()))
-                        yield ValueResolutionResult.of(Instances.stringInstance(s));
+                        yield ValueResolutionResult.of(Instances.stringInstance(s.value()));
+                    if (classType.isAssignableFrom(StdKlass.character.type())) {
+                        if (s.value().length() == 1)
+                            yield ValueResolutionResult.of(Instances.charInstance(s.value().charAt(0)));
+                        else
+                            throw invalidRequestBody();
+                    }
                     yield ValueResolutionResult.failed;
                 }
-                case Long l->  {
-                    if (classType.isAssignableFrom(StdKlass.long_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedLongInstance(l));
+                case IntValueDTO i->  {
+                    if (classType.isAssignableFrom(StdKlass.byte_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedByteInstance((byte) i.value()));
+                    else if (classType.isAssignableFrom(StdKlass.short_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedShortInstance((short) i.value()));
+                    else if (classType.isAssignableFrom(StdKlass.integer.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedIntInstance((int) i.value()));
+                    else if (classType.isAssignableFrom(StdKlass.long_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedLongInstance(i.value()));
                     else if (classType.isAssignableFrom(StdKlass.double_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(l));
+                        yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(i.value()));
                     else if (classType.isAssignableFrom(StdKlass.float_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedFloatInstance(l));
+                        yield ValueResolutionResult.of(Instances.wrappedFloatInstance(i.value()));
                     else
                         yield ValueResolutionResult.failed;
                 }
-                case Double d->  {
+                case FloatValueDTO d->  {
                   if (classType.isAssignableFrom(StdKlass.double_.type()))
-                      yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(d));
+                      yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(d.value()));
                   else if (classType.isAssignableFrom(StdKlass.float_.type()))
-                      yield ValueResolutionResult.of(Instances.wrappedFloatInstance(d.floatValue()));
+                      yield ValueResolutionResult.of(Instances.wrappedFloatInstance((float) d.value()));
                   else
                       yield ValueResolutionResult.failed;
                 }
-                case Integer i->  {
-                    if (classType.isAssignableFrom(StdKlass.byte_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedByteInstance(i.byteValue()));
-                    else if (classType.isAssignableFrom(StdKlass.short_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedShortInstance(i.shortValue()));
-                    else if (classType.isAssignableFrom(StdKlass.integer.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedIntInstance(i));
-                    else if (classType.isAssignableFrom(StdKlass.long_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedLongInstance(i));
-                    else if (classType.isAssignableFrom(StdKlass.float_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedFloatInstance(i));
-                    else if (classType.isAssignableFrom(StdKlass.double_.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(i));
-                    else
-                        yield ValueResolutionResult.failed;
-                }
-                case Float f->  classType.isAssignableFrom(StdKlass.float_.type()) ?
-                        ValueResolutionResult.of(Instances.wrappedFloatInstance(f)) :
+                case BoolValueDTO b ->  classType.isAssignableFrom(StdKlass.boolean_.type()) ?
+                        ValueResolutionResult.of(Instances.wrappedBooleanInstance(b.value())) :
                         ValueResolutionResult.failed;
-                case Short s->  classType.isAssignableFrom(StdKlass.short_.type()) ?
-                        ValueResolutionResult.of(Instances.wrappedShortInstance(s)) :
-                        ValueResolutionResult.failed;
-                case Byte b->  classType.isAssignableFrom(StdKlass.byte_.type()) ?
-                        ValueResolutionResult.of(Instances.wrappedByteInstance(b)) :
-                        ValueResolutionResult.failed;
-                case Character c->  classType.isAssignableFrom(StdKlass.character.type()) ?
-                        ValueResolutionResult.of(Instances.wrappedCharInstance(c)) :
-                        ValueResolutionResult.failed;
-                case Boolean z->  classType.isAssignableFrom(StdKlass.boolean_.type()) ?
-                        ValueResolutionResult.of(Instances.wrappedBooleanInstance(z)) :
-                        ValueResolutionResult.failed;
-                case List<?> list -> tryResolveList(list, classType, currentValue, context);
-                //noinspection rawtypes
-                case Map map -> tryResolveObject(map, classType, null, context);
-                case null, default -> ValueResolutionResult.failed;
+                case ArrayDTO array -> tryResolveList(array, classType, currentValue, context);
+                default -> tryResolveObject(rawValue, classType, null, context);
             };
             case ArrayType arrayType -> tryResolveArray(rawValue, arrayType, currentValue, context);
             case UnionType unionType -> {
@@ -529,51 +504,45 @@ public class ApiService extends EntityContextFactoryAware {
         };
     }
 
-    private ValueResolutionResult tryResolveObject(@SuppressWarnings("rawtypes") Map map, Type type, @Nullable ClassInstance parent, IInstanceContext context) {
-        if (map.get("id") instanceof String id)
-            return tryResolveReference(id, type, context);
-        ClassType actualType;
-        if (map.get("type") instanceof String typeExpr) {
-            actualType = getKlass(typeExpr, context);
-            if (!type.isAssignableFrom(type))
-                return ValueResolutionResult.failed;
-        } else if (type instanceof ClassType ct)
-            actualType = ct;
-        else
-            actualType = null;
-        if (map.get("name") instanceof String name) {
-            if (actualType != null && actualType.isEnum())
-                return tryResolveEnumConstant(name, actualType, context);
-            var bean = resolveBean(name, context);
+    private ValueResolutionResult tryResolveObject(ValueDTO value, Type type, @Nullable ClassInstance parent, IInstanceContext context) {
+        if (value instanceof ReferencedTO r)
+            return tryResolveReference(r.id(), type, context);
+        if (value instanceof BeanDTO b) {
+            var bean = resolveBean(b.name(), context);
             if (!type.isAssignableFrom(bean.getInstanceType()))
                 return ValueResolutionResult.failed;
             return ValueResolutionResult.of(bean.getReference());
         }
-        if (actualType == null)
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
-        var instance = saveObject(map, actualType, parent, context);
-        return instance != null ? ValueResolutionResult.of(instance.getReference()) : ValueResolutionResult.failed;
+        if (value instanceof EnumConstantDTO ec) {
+            var t = getKlass(ec.type(), context);
+            return tryResolveEnumConstant(ec.name(), t, context);
+        }
+        if (value instanceof ObjectDTO o) {
+            var actualType = getKlass(o.type().qualifiedName(), context);
+            var instance = saveObject(o, actualType, parent, context);
+            return instance != null ? ValueResolutionResult.of(instance.getReference()) : ValueResolutionResult.failed;
+        }
+        else
+            throw invalidRequestBody();
     }
 
-    private @Nullable ClassInstance saveObject(Map<?, ?> map, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
-        var id = (String) map.get(KEY_ID);
-        if (id != null) {
-            var inst = (ClassInstance) context.get(Id.parse(id));
+    private @Nullable ClassInstance saveObject(ObjectDTO object, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
+        if (object.id() != null) {
+            var inst = (ClassInstance) context.get(Id.parse(object.id()));
             if (!type.isInstance(inst.getReference()))
                 return null;
-            updateObject(inst, map, context);
+            updateObject(inst, object, context);
             return inst;
         } else {
-            //noinspection unchecked
-            return createObject((Map<String, Object>) map, type, parent, context);
+            return createObject(object, type, parent, context);
         }
     }
 
     private ValueResolutionResult tryResolveArray(Object rawValue, ArrayType type, @Nullable Value currentValue, IInstanceContext context) {
-        if (rawValue instanceof List<?> list) {
+        if (rawValue instanceof ArrayDTO array) {
             var elements = new ArrayList<Value>();
-            for (Object o : list) {
-                var r = tryResolveValue(o, type.getElementType(), false, null, context);
+            for (var e : array.elements()) {
+                var r = tryResolveValue(e, type.getElementType(), false, null, context);
                 if (r.successful())
                     elements.add(r.resolved());
                 else
@@ -592,7 +561,7 @@ public class ApiService extends EntityContextFactoryAware {
             return ValueResolutionResult.failed;
     }
 
-    private ValueResolutionResult tryResolveList(List<?> list, ClassType type, @Nullable Value currentValue, IInstanceContext context) {
+    private ValueResolutionResult tryResolveList(ArrayDTO list, ClassType type, @Nullable Value currentValue, IInstanceContext context) {
         ArrayListNative listNative;
         if (currentValue != null && currentValue.isObject() && type.isInstance(currentValue)) {
             listNative = Instances.getListNative(currentValue.resolveObject());
@@ -617,7 +586,7 @@ public class ApiService extends EntityContextFactoryAware {
         var elements = new ArrayList<Value>();
         var actualType = listNative.getInstance().getInstanceType();
         var elementType = actualType.getFirstTypeArgument();
-        for (Object o : list) {
+        for (var o : list.elements()) {
             var r = tryResolveValue(o, elementType, false, null, context);
             if (r.successful())
                 elements.add(r.resolved());
@@ -634,63 +603,46 @@ public class ApiService extends EntityContextFactoryAware {
             return type.isInstance(inst.getReference()) ? ValueResolutionResult.of(inst.getReference()) : ValueResolutionResult.failed;
     }
 
-    private Value resolveAny(Object rawValue, IInstanceContext context) {
+    private Value resolveAny(ValueDTO rawValue, IInstanceContext context) {
         if (rawValue == null)
             return Instances.nullInstance();
-        if (rawValue instanceof String str)
-            return Instances.stringInstance(str);
-        if(rawValue instanceof Character c)
-            return Instances.wrappedCharInstance(c);
-        if(ValueUtils.isLong(rawValue))
-            return Instances.wrappedLongInstance(((Number) rawValue).longValue());
-        if (ValueUtils.isInteger(rawValue))
-            return Instances.wrappedIntInstance(((Number) rawValue).intValue());
-        if (ValueUtils.isDouble(rawValue))
-            return Instances.wrappedDoubleInstance(((Number) rawValue).doubleValue());
-        if (ValueUtils.isFloat(rawValue))
-            return Instances.wrappedFloatInstance(((Number) rawValue).floatValue());
-        if (rawValue instanceof Boolean b)
-            return Instances.wrappedBooleanInstance(b);
-        if (rawValue instanceof Map<?,?> map) {
-            var r = tryResolveObject(map, Types.getAnyType(), null, context);
-            if (r.successful) return r.resolved;
-        }
-        if (rawValue instanceof List<?> list) {
+        if (rawValue instanceof StringValueDTO str)
+            return Instances.stringInstance(str.value());
+        if(rawValue instanceof IntValueDTO i)
+            return Instances.wrappedLongInstance(i.value());
+        if (rawValue instanceof FloatValueDTO f)
+            return Instances.wrappedDoubleInstance(f.value());
+        if (rawValue instanceof BoolValueDTO b)
+            return Instances.wrappedBooleanInstance(b.value());
+        if (rawValue instanceof ArrayDTO array) {
             var listType = KlassType.create(StdKlass.arrayList.get(), List.of(Types.getAnyType()));
             return Instances.createList(listType,
-                    Utils.map(list, e -> resolveAny(e, context))).getReference();
+                    Utils.map(array.elements(), e -> resolveAny(e, context))).getReference();
         }
-        throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE, Utils.toJSONString(rawValue));
+        var r = tryResolveObject(rawValue, Types.getAnyType(), null, context);
+        if (r.successful) return r.resolved;
+        throw invalidRequestBody();
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private ClassInstance createObject(Map<String, Object> map, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
-        var actualType = map.get("type") instanceof String typeExpr ? getKlass(typeExpr, context) : type;
+    private ClassInstance createObject(ObjectDTO object, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
+        var actualType = getKlass(object.type().qualifiedName(), context);
         var id = parent != null ? parent.nextChildId() : context.allocateRootId(actualType);
-        if (!(map.getOrDefault("fields", Map.of()) instanceof Map<?,?> fields))
-            throw invalidRequestBody();
-        var r = resolveConstructor(actualType, fields, context);
+        var r = resolveConstructor(actualType, object.fields(), context);
         var self = ClassInstance.allocate(id, actualType, parent);
         var result = Flows.execute(r.method, self, Utils.map(r.arguments, Value::toStackValue), context);
         context.bind(self);
         if (result.exception() != null)
             throw new BusinessException(ErrorCode.OBJECT_CREATION_ERROR, ThrowableNative.getMessage(result.exception()));
-        if (!(map.getOrDefault("children", Map.of()) instanceof Map children))
-            throw invalidRequestBody();
-        saveChildren(children, self, context);
+        saveChildren(object.children(), self, context);
         return self;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private void updateObject(ClassInstance instance, Object json, IInstanceContext context) {
-        if (!(json instanceof Map map))
-            throw invalidRequestBody();
+    private void updateObject(ClassInstance instance, ObjectDTO json, IInstanceContext context) {
         var type = instance.getInstanceType();
-        if (!(map.getOrDefault("fields", Map.of()) instanceof Map fields))
-            throw invalidRequestBody();
-        fields.forEach((k, v) -> {
-            if (!(k instanceof String name))
-                throw invalidRequestBody();
+        json.fields().forEach(f -> {
+            var name = f.name();
+            var v = f.value();
             var fieldRef = type.findFieldByName(name);
             if (fieldRef != null && fieldRef.isPublic()) {
                 var field = fieldRef.getRawField();
@@ -705,33 +657,30 @@ public class ApiService extends EntityContextFactoryAware {
                 }
             }
         });
-        if (!(map.getOrDefault("children", Map.of()) instanceof Map children))
-            throw invalidRequestBody();
-        saveChildren(children, instance, context);
+        saveChildren(json.children(), instance, context);
     }
 
     private BusinessException invalidRequestBody() {
         return new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
     }
 
-    private void saveChildren(Map<String, Object> children, ClassInstance instance, IInstanceContext context) {
-        instance.getInstanceType().getInnerClassTypes().forEach(t -> {
-            if (children.get(t.getName()) instanceof List<?> values) {
-                for (Object value : values) {
-                    if (!(value instanceof Map<?,?> childMap))
-                        throw invalidRequestBody();
-                    if (!(tryResolveObject(childMap, t, instance, context).successful))
-                        throw new BusinessException(ErrorCode.OBJECT_CREATION_ERROR, "error when creating child '" + value + "'");
-                }
+    private void saveChildren(List<ObjectDTO> children, ClassInstance instance, IInstanceContext context) {
+        for (ObjectDTO child : children) {
+            var childType = getKlass(child.type().qualifiedName(), context);
+            if (childType.getOwner() instanceof ClassType encl && encl.isAssignableFrom(instance.getInstanceType())) {
+                if (!(tryResolveObject(child, childType, instance, context).successful))
+                    throw new BusinessException(ErrorCode.OBJECT_CREATION_ERROR, "error when creating child '" + Utils.toJSONString(child) + "'");
             }
-        });
+            else
+                throw new BusinessException(ErrorCode.INVALID_CHILD, child.type().qualifiedName(), instance.getInstanceType().getTypeDesc());
+        }
     }
 
-    private ResolutionResult resolveConstructor(ClassType klass, Map<?, ?> map, IInstanceContext context) {
+    private ResolutionResult resolveConstructor(ClassType klass, List<FieldDTO> fields, IInstanceContext context) {
         ResolutionResult result = null;
         for (var method : klass.getMethods()) {
             if (method.isConstructor()) {
-                var args = tryResolveConstructor(method, map, context);
+                var args = tryResolveConstructor(method, fields, context);
                 if (args != null) {
                     if (result == null || Utils.count(result.arguments, Value::isNotNull) < Utils.count(args, Value::isNotNull))
                         result = new ResolutionResult(method, args);
@@ -739,14 +688,15 @@ public class ApiService extends EntityContextFactoryAware {
             }
         }
         if (result == null)
-            throw new BusinessException(ErrorCode.CONSTRUCTOR_NOT_FOUND, klass.getName(), map);
+            throw new BusinessException(ErrorCode.CONSTRUCTOR_NOT_FOUND, klass.getName(), fields);
         return result;
     }
 
-    private List<Value> tryResolveConstructor(MethodRef method, Map<?, ?> map, IInstanceContext context) {
+    private List<Value> tryResolveConstructor(MethodRef method, List<FieldDTO> fields, IInstanceContext context) {
         var arguments = new ArrayList<Value>();
+        var fieldMap = Utils.toMap(fields, FieldDTO::name, FieldDTO::value);
         for (var parameter : method.getParameters()) {
-            var v = map.get(parameter.getName());
+            var v = fieldMap.get(parameter.getName());
             var r = tryResolveValue(v, parameter.getType(), false, null, context);
             if (r.successful)
                 arguments.add(r.resolved);

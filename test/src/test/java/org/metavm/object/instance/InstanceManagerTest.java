@@ -6,7 +6,10 @@ import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.FlowSavingContext;
 import org.metavm.mocks.FooState;
 import org.metavm.mocks.IndexFoo;
-import org.metavm.object.instance.core.*;
+import org.metavm.object.instance.core.ApiObject;
+import org.metavm.object.instance.core.ClassInstance;
+import org.metavm.object.instance.core.ClassInstanceBuilder;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.type.FieldBuilder;
 import org.metavm.object.type.TypeManager;
 import org.metavm.object.type.Types;
@@ -184,7 +187,7 @@ public class InstanceManagerTest extends TestCase {
         }
     }
 
-    protected Id saveInstance(String className, Map<String, Object> fields) {
+    protected String saveInstance(String className, Map<String, Object> fields) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, fields));
     }
 
@@ -192,7 +195,7 @@ public class InstanceManagerTest extends TestCase {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
     }
 
-    protected ApiObject getObject(Id id) {
+    protected ApiObject getObject(String id) {
         return apiClient.getObject(id);
     }
 

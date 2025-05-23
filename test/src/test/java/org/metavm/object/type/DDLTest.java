@@ -70,7 +70,7 @@ public class DDLTest extends TestCase {
         var shoes = apiClient.getObject(shoesId);
         Assert.assertEquals(100, shoes.get("price"));
 //        var inventory = shoes.getObject("inventory");
-        var inventoryId = shoes.getId("inventory");
+        var inventoryId = shoes.getString("inventory");
         var inventory = apiClient.getObject(inventoryId);
         Assert.assertEquals(100, inventory.get("quantity"));
         var boxId = saveInstance("Box<Inventory>", Map.of(
@@ -88,7 +88,7 @@ public class DDLTest extends TestCase {
         TestUtils.waitForDDLPrepared(schedulerAndWorker);
         try (var context = newContext()) {
             context.loadKlasses();
-            var hat = (ClassInstance) context.get(hatId);
+            var hat = (ClassInstance) context.get(Id.parse(hatId));
             var ver = hat.getField("version").resolveObject();
             Assert.assertEquals(Instances.intInstance(0), ver.getField("majorVersion"));
             var commit = context.getCommit(commitId);
@@ -103,7 +103,7 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(true, shoes1.get("available"));
         Assert.assertNull(shoes1.get("description"));
         Assert.assertEquals(100.0, shoes1.get("price"));
-        var inventoryId1 = shoes1.getId("inventory");
+        var inventoryId1 = shoes1.getString("inventory");
         Assert.assertEquals(100, apiClient.getObject(inventoryId1).get("quantity"));
         Assert.assertEquals(0, shoes1.getObject("version").get("majorVersion"));
         Assert.assertEquals(0, hat.getObject("version").get("majorVersion"));
@@ -290,10 +290,10 @@ public class DDLTest extends TestCase {
                 "name", "Shoes",
                 "price", Map.of(
                         "amount", 100,
-                        "currency", new ApiNamedObject("Currency", "YUAN")
+                        "currency", "YUAN"
                 )
         ));
-        var priceId = apiClient.getObject(shoesId).getId("price");
+        var priceId = apiClient.getObject(shoesId).getString("price");
         var productIds = new ArrayList<>(List.of(shoesId));
         for (int i = 0; i < 16; i++) {
             productIds.add(saveInstance("Product", Map.of(
@@ -335,14 +335,14 @@ public class DDLTest extends TestCase {
                     context.bind(product);
                 }
                 context.finish();
-                products.forEach(p -> productIds.add(p.getId()));
+                products.forEach(p -> productIds.add(p.getStringId()));
             }
         });
         TestUtils.waitForDDLPrepared(schedulerAndWorker);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
                 for (var productId : productIds) {
-                    context.get(productId);
+                    context.get(Id.parse(productId));
                 }
                 context.finish();
             }
@@ -354,7 +354,7 @@ public class DDLTest extends TestCase {
         try (var context = newContext()) {
             context.loadKlasses();
             for (var productId : productIds) {
-                var product = (MvClassInstance) context.get(productId);
+                var product = (MvClassInstance) context.get(Id.parse(productId));
                 var priceRef = (Reference) product.getField("price");
                 Assert.assertTrue(priceRef instanceof ValueReference);
                 var price = priceRef.resolveObject();
@@ -392,7 +392,7 @@ public class DDLTest extends TestCase {
             var productKlass1 = context.getKlassByQualifiedName("Product");
             var priceField = productKlass1.getFieldByName("price");
             for (var productId : productIds) {
-                var productInst = (ClassInstance) context.get(productId);
+                var productInst = (ClassInstance) context.get(Id.parse(productId));
                 var priceRef = (Reference) productInst.getField(priceField);
                 Assert.assertFalse(priceRef.isResolved());
                 Assert.assertFalse(priceRef instanceof ValueReference);
@@ -406,7 +406,7 @@ public class DDLTest extends TestCase {
                 "name", "Shoes",
                 "price", Map.of(
                         "amount", 100,
-                        "currency", new ApiNamedObject("Currency", "YUAN")
+                        "currency", "YUAN"
                 )
         ));
         var commitId = assemble("value_ddl_after.kiwi", false);
@@ -419,7 +419,7 @@ public class DDLTest extends TestCase {
         });
         TestUtils.waitForDDLAborted(schedulerAndWorker);
         try(var context = newContext()) {
-            var shoesInst = (ClassInstance) context.get(shoesId);
+            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
             var priceRef = (Reference) shoesInst.getField("price");
             Assert.assertFalse(priceRef instanceof ValueReference);
         }
@@ -519,7 +519,7 @@ public class DDLTest extends TestCase {
                         "code", 0
                 )
         ));
-        var kindId = apiClient.getObject(shoesId).getId("kind");
+        var kindId = apiClient.getObject(shoesId).getString("kind");
         var commitId = assemble("enum_ddl_after.kiwi", false);
         TestUtils.doInTransactionWithoutResult(() -> {
             try(var context = newContext()) {
@@ -530,9 +530,9 @@ public class DDLTest extends TestCase {
         });
         TestUtils.waitForDDLAborted(schedulerAndWorker);
         try(var context = newContext()) {
-            var shoesInst = (ClassInstance) context.get(shoesId);
+            var shoesInst = (ClassInstance) context.get(Id.parse(shoesId));
             var kindRef = (Reference) shoesInst.getField("kind");
-            var kind = (ClassInstance) context.get(kindId);
+            var kind = (ClassInstance) context.get(Id.parse(kindId));
             Assert.assertSame(kind, kindRef.get());
             Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), StdField.enumName.get().getTag()));
             Assert.assertNull(kind.tryGetUnknown(StdKlass.enum_.get().getTag(), StdField.enumOrdinal.get().getTag()));
@@ -649,7 +649,7 @@ public class DDLTest extends TestCase {
         assemble("value_to_enum_ddl_after.kiwi");
         var shoes = apiClient.getObject(shoesId);
         var kind = shoes.get("kind");
-        Assert.assertEquals(ApiNamedObject.of("ProductKind", "DEFAULT"), kind);
+        Assert.assertEquals("ProductKind", "DEFAULT", kind);
         assemble("value_to_enum_ddl_rollback.kiwi");
         var shoes1 = apiClient.getObject(shoesId);
         var kind1 = shoes1.get("kind");
@@ -683,7 +683,7 @@ public class DDLTest extends TestCase {
         assemble("enum_to_value_ddl.kiwi");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
-                "kind", new ApiNamedObject("ProductKind", "DEFAULT")
+                "kind", "DEFAULT"
                 )
         );
         var commitId = assemble("value_to_enum_ddl_rollback.kiwi", false);
@@ -693,7 +693,7 @@ public class DDLTest extends TestCase {
         });
         TestUtils.waitForDDLAborted(schedulerAndWorker);
         var kind = apiClient.getObject(shoesId).get("kind");
-        Assert.assertEquals(ApiNamedObject.of("ProductKind", "DEFAULT"), kind);
+        Assert.assertEquals("ProductKind", "DEFAULT", kind);
     }
 
 //    public void testChildFieldRemoval() {
@@ -865,7 +865,7 @@ public class DDLTest extends TestCase {
         var value = apiClient.getObject(fieldId).get("value");
         Assert.assertEquals(1, value);
         assemble("custom_runner_after.kiwi");
-        var value1 = TestUtils.doInTransaction(() -> apiClient.callMethod(ApiNamedObject.of("lab"), "getFieldValue", List.of(fieldId)));
+        var value1 = TestUtils.doInTransaction(() -> apiClient.callMethod("lab", "getFieldValue", List.of(fieldId)));
         Assert.assertEquals(value, value1);
     }
 
@@ -873,7 +873,7 @@ public class DDLTest extends TestCase {
         assemble("add_index_before.kiwi");
         var id = saveInstance("Product", Map.of("name", "Shoes"));
         assemble("add_index_after.kiwi");
-        Assert.assertEquals(id, callMethod(ApiNamedObject.of("productService"), "findByName", List.of("Shoes")));
+        Assert.assertEquals(id, callMethod("productService", "findByName", List.of("Shoes")));
     }
 
     public void testEnablingSearch() {
@@ -894,11 +894,11 @@ public class DDLTest extends TestCase {
         return MockUtils.assemble(SRC_DIR + fileName, typeManager, waitForDDLCompleted, schedulerAndWorker);
     }
 
-    private Id saveInstance(String className, Map<String, Object> value) {
+    private String saveInstance(String className, Map<String, Object> value) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, value));
     }
 
-    private Object callMethod(Object receiver, String methodName, List<Object> arguments) {
+    private Object callMethod(String receiver, String methodName, List<Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(receiver, methodName, arguments));
     }
 

@@ -42,12 +42,8 @@ public abstract class KiwiTestBase extends TestCase  {
         apiClient = null;
     }
 
-    Id saveInstance(String className, Map<String, Object> arguments) {
+    String saveInstance(String className, Map<String, Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, arguments));
-    }
-
-    Id saveInstance(String className, Map<String, Object> arguments, Map<String, List<Map<String, Object>>> children) {
-        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, arguments, children));
     }
 
     Object callMethod(Object qualifier, String methodName, List<Object> arguments) {
@@ -62,7 +58,7 @@ public abstract class KiwiTestBase extends TestCase  {
         return apiClient.search(className, query, 1, 20);
     }
 
-    ApiObject getObject(Id id) {
+    ApiObject getObject(String id) {
         return apiClient.getObject(id);
     }
 

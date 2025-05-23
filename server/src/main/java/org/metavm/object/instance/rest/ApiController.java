@@ -15,6 +15,9 @@ import org.metavm.http.HttpHeaderImpl;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.rest.dto.CreateRequest;
+import org.metavm.object.instance.rest.dto.InvokeRequest;
+import org.metavm.object.instance.rest.dto.SearchRequest;
 import org.metavm.user.LoginService;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
@@ -24,7 +27,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -47,16 +49,11 @@ public class ApiController {
     }
 
     @PutMapping
-    public Result<String> save(HttpServletRequest servletRequest, @RequestBody Map<String, Object> requestBody) {
+    public Result<String> save(HttpServletRequest servletRequest, @RequestBody CreateRequest request) {
         verify(servletRequest);
-        var request = createRequest(servletRequest);
-        var response = new HttpResponseImpl();
-        if(requestBody.getOrDefault("object", Map.of()) instanceof Map<?,?> object) {
-            //noinspection unchecked
-            return Result.success(apiService.saveInstance((Map<String, Object>) object, request, response));
-        }
-        else
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+        var httpRequest = createRequest(servletRequest);
+        var httResponse = new HttpResponseImpl();
+        return Result.success(apiService.saveInstance(request.object(), httpRequest, httResponse));
     }
 
     @GetMapping("/{id}")
@@ -66,32 +63,19 @@ public class ApiController {
     }
 
     @PostMapping("/search")
-    public Result<SearchResult> search(HttpServletRequest servletRequest, @RequestBody Map<String, Object> requestBody) {
+    public Result<SearchResult> search(HttpServletRequest servletRequest, @RequestBody SearchRequest request) {
         verify(servletRequest);
-        if (!(requestBody.get("type") instanceof String type))
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
-        //noinspection unchecked
-        var criteria = (Map<String, Object>) requestBody.getOrDefault("criteria", Map.of());
-        var page = (int) requestBody.getOrDefault("page", 1);
-        var pageSize = (int) requestBody.getOrDefault("pageSize", 20);
-        return Result.success(apiService.search(type, criteria, page, pageSize));
+        return Result.success(apiService.search(request));
     }
 
     @PostMapping("/invoke")
-    public Result<Object> invoke(HttpServletRequest servletRequest, HttpServletResponse servletResponse, @RequestBody Map<String, Object> requestBody) {
+    public Result<Object> invoke(HttpServletRequest servletRequest, HttpServletResponse servletResponse, @RequestBody InvokeRequest request) {
         verify(servletRequest);
-        var request = createRequest(servletRequest);
-        var response = new HttpResponseImpl();
-        var args = requestBody.getOrDefault("arguments", Map.of());
-        var receiver = requestBody.get("receiver");
-        if (receiver == null || !(requestBody.get("method") instanceof String methodName))
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
-        if (args instanceof List<?> || args instanceof Map<?,?>) {
-            var r = apiService.handleMethodCall(receiver, methodName, args, request, response);
-            saveResponse(response, servletResponse);
-            return Result.success(r);
-        } else
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+        var httpRequest = createRequest(servletRequest);
+        var httpResponse = new HttpResponseImpl();
+        var r = apiService.handleMethodCall(request, httpRequest, httpResponse);
+        saveResponse(httpResponse, servletResponse);
+        return Result.success(r);
     }
 
     private void verify(HttpServletRequest request) {

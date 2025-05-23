@@ -2,7 +2,6 @@ package org.metavm.autograph;
 
 import org.junit.Assert;
 import org.metavm.object.instance.core.Id;
-import org.metavm.util.ApiNamedObject;
 
 import java.util.List;
 import java.util.Map;
@@ -27,11 +26,11 @@ public class ShoppingCompilingTest extends CompilerTestBase {
                     Map.of(
                             "discount", 5,
                             "state",
-                            ApiNamedObject.of("org.metavm.lab.shopping.AstCouponState", "UNUSED"),
+                            "UNUSED",
                             "product", productId
                     )
             );
-            var orderId = (Id) callMethod(
+            var orderId = (String) callMethod(
                     productId,
                     "buy",
                     List.of(1, List.of(couponId))
