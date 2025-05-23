@@ -1,9 +1,9 @@
 package org.metavm.object.instance.rest.dto;
 
-public record IntValueDTO(int value) implements IntegerValueDTO {
+public record ShortValueDTO(short value) implements IntegerValueDTO {
     @Override
     public String getKind() {
-        return "int";
+        return "short";
     }
 
     @Override
@@ -13,7 +13,7 @@ public record IntValueDTO(int value) implements IntegerValueDTO {
 
     @Override
     public short shortValue() {
-        return (short) value;
+        return value;
     }
 
     @Override

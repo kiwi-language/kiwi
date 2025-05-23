@@ -17,6 +17,7 @@ import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.rest.dto.CreateRequest;
 import org.metavm.object.instance.rest.dto.InvokeRequest;
+import org.metavm.object.instance.rest.dto.ObjectDTO;
 import org.metavm.object.instance.rest.dto.SearchRequest;
 import org.metavm.user.LoginService;
 import org.metavm.util.BusinessException;
@@ -57,7 +58,7 @@ public class ApiController {
     }
 
     @GetMapping("/{id}")
-    public Result<Map<String, Object>> get(HttpServletRequest servletRequest, @PathVariable("id") String id) {
+    public Result<ObjectDTO> get(HttpServletRequest servletRequest, @PathVariable("id") String id) {
         verify(servletRequest);
         return Result.success(apiService.getInstance(id));
     }

@@ -1,9 +1,9 @@
 package org.metavm.object.instance.rest.dto;
 
-public record IntValueDTO(int value) implements IntegerValueDTO {
+public record DoubleValueDTO(double value) implements NumberValueDTO {
     @Override
     public String getKind() {
-        return "int";
+        return "double";
     }
 
     @Override
@@ -18,17 +18,17 @@ public record IntValueDTO(int value) implements IntegerValueDTO {
 
     @Override
     public int intValue() {
-        return value;
+        return (int) value;
     }
 
     @Override
     public long longValue() {
-        return value;
+        return (long) value;
     }
 
     @Override
     public float floatValue() {
-        return value;
+        return (float) value;
     }
 
     @Override

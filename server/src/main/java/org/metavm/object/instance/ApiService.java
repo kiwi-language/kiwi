@@ -1,6 +1,7 @@
 package org.metavm.object.instance;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.api.dto.ClassTypeDTO;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.beans.BeanDefinitionRegistry;
@@ -18,7 +19,6 @@ import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.instance.rest.dto.*;
 import org.metavm.object.type.TypeParser;
 import org.metavm.object.type.*;
-import org.metavm.util.LinkedList;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,10 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 @Service
@@ -56,21 +59,25 @@ public class ApiService extends EntityContextFactoryAware {
             var result = self.getReference();
             context.bind(self);
             context.finish();
-            //noinspection rawtypes
-            var map = (Map) formatValue(result, false, false);
-            return (String) map.get("id");
+            var map = (ReferencedTO) formatValue(result, false, false);
+            return map.id();
         }
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public Object handleMethodCall(InvokeRequest request, HttpRequest httpRequest, HttpResponse httpResponse) {
+    public ValueDTO handleMethodCall(InvokeRequest request, HttpRequest httpRequest, HttpResponse httpResponse) {
         try (var context = newContext()) {
             Value result;
              if (request.receiver() instanceof StringValueDTO s) {
-                var klassName = s.value().contains(".") ? s.value() : NamingUtils.firstCharToUpperCase(s.value());
-                var klass = getKlass(klassName, context);
-                var r = resolveMethod(klass, request.method(), request.arguments(), true, false, context);
-                result = execute(r.method, null, r.arguments, httpRequest, httpResponse, context);
+                 ClassInstance bean;
+                 if (s.value().indexOf('.') == -1 && (bean = tryResolveBean(s.value(), context)) != null)
+                    result = executeInstanceMethod(bean, request.method(), request.arguments(), httpRequest, httpResponse, context);
+                 else {
+                     var klassName = s.value().contains(".") ? s.value() : NamingUtils.firstCharToUpperCase(s.value());
+                     var klass = getKlass(klassName, context);
+                     var r = resolveMethod(klass, request.method(), request.arguments(), true, false, context);
+                     result = execute(r.method, null, r.arguments, httpRequest, httpResponse, context);
+                 }
             } else  {
                  var r = tryResolveObject(request.receiver(), AnyType.instance, null, context);
                  if (!r.successful)
@@ -83,11 +90,15 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private ClassInstance resolveBean(String name, IInstanceContext context) {
-        var registry = BeanDefinitionRegistry.getInstance(context);
-        var bean = registry.tryGetBean(name);
+        var bean = tryResolveBean(name, context);
         if (bean == null)
             throw new BusinessException(ErrorCode.BEAN_NOT_FOUND, name);
         return bean;
+    }
+
+    private @Nullable ClassInstance tryResolveBean(String name, IInstanceContext context) {
+        var registry = BeanDefinitionRegistry.getInstance(context);
+        return registry.tryGetBean(name);
     }
 
     private Value executeInstanceMethod(ClassInstance self,
@@ -159,9 +170,9 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
-    public Map<String, Object> getInstance(String id) {
+    public ObjectDTO getInstance(String id) {
         try (var context = newContext()) {
-            return formatObject((ClassInstance) context.get(Id.parse(id)), false, true, true);
+            return (ObjectDTO) formatObject((ClassInstance) context.get(Id.parse(id)), false, true, true);
         }
     }
 
@@ -229,7 +240,7 @@ public class ApiService extends EntityContextFactoryAware {
                     .build();
             var dataPage1 = instanceQueryService.query(internalQuery, entityContext);
             return new SearchResult(
-                    Utils.map(dataPage1.items(), i -> formatValue(i, true, false)),
+                    Utils.map(dataPage1.items(), i -> (ObjectDTO) formatValue(i, true, false)),
                     dataPage1.total()
             );
         }
@@ -243,36 +254,44 @@ public class ApiService extends EntityContextFactoryAware {
             return Objects.requireNonNullElseGet(result.ret(), Instances::nullInstance);
     }
 
-    private Object formatValue(@Nullable Value value, boolean asValue, boolean includeChildren) {
+    private ValueDTO formatValue(@Nullable Value value, boolean asValue, boolean includeChildren) {
         return switch (value) {
-            case null -> null;
-            case NullValue ignored -> null;
-            case PrimitiveValue primitiveValue -> primitiveValue.getValue();
-            case StringReference s -> s.getValue();
+            case null -> NullDTO.instance;
+            case NullValue ignored -> NullDTO.instance;
+            case ByteValue b -> new ByteValueDTO(b.value);
+            case ShortValue s -> new ShortValueDTO(s.value);
+            case IntValue i -> new IntValueDTO(i.value);
+            case LongValue l -> new LongValueDTO(l.value);
+            case FloatValue f -> new FloatValueDTO(f.value);
+            case DoubleValue d -> new DoubleValueDTO(d.value);
+            case CharValue c -> new CharValueDTO(c.getValue());
+            case BooleanValue z -> new BoolValueDTO(z.getValue());
+            case TimeValue t -> new LongValueDTO(t.getValue());
+            case StringReference s -> new StringValueDTO(s.getValue());
             case Reference reference -> {
                 var resolved = reference.get();
                 switch (resolved) {
                     case Entity entity -> {
-                        yield entity.toJson();
+                        yield new ReferencedTO(entity.getStringId(), new ClassTypeDTO(entity.getInstanceType().getTypeDesc()), null);
                     }
                     case ClassInstance clsInst -> {
                         var klass = clsInst.getInstanceKlass();
                         if (klass == StdKlass.byte_.get())
-                            yield Instances.toJavaByte(reference);
+                            yield new ByteValueDTO(Instances.toJavaByte(reference));
                         if (klass == StdKlass.short_.get())
-                            yield Instances.toJavaShort(reference);
+                            yield new ShortValueDTO(Instances.toJavaShort(reference));
                         if (klass == StdKlass.integer.get())
-                            yield Instances.toJavaInt(reference);
+                            yield new IntValueDTO(Instances.toJavaInt(reference));
                         if (klass == StdKlass.long_.get())
-                            yield Instances.toJavaLong(reference);
+                            yield new LongValueDTO(Instances.toJavaLong(reference));
                         if (klass == StdKlass.float_.get())
-                            yield Instances.toJavaFloat(reference);
+                            yield new FloatValueDTO(Instances.toJavaFloat(reference));
                         if (klass == StdKlass.double_.get())
-                            yield Instances.toJavaDouble(reference);
+                            yield new DoubleValueDTO(Instances.toJavaDouble(reference));
                         if (klass == StdKlass.character.get())
-                            yield Instances.toJavaChar(reference);
+                            yield new CharValueDTO(Instances.toJavaChar(reference));
                         if (klass == StdKlass.boolean_.get())
-                            yield Instances.toJavaBoolean(reference);
+                            yield new BoolValueDTO(Instances.toJavaBoolean(reference));
                         if (clsInst.isList())
                             yield formatList(clsInst, includeChildren);
                         else if (asValue || reference instanceof ValueReference)
@@ -290,59 +309,49 @@ public class ApiService extends EntityContextFactoryAware {
         };
     }
 
-    private Map<String, Object> formatObject(ClassInstance instance,
+    private ValueDTO formatObject(ClassInstance instance,
                                              boolean includeSummary,
                                              boolean includeFields ,
                                              boolean includeChildren) {
-        var map = new LinkedHashMap<String, Object>();
         var type = instance.getInstanceType();
         if (type.isBean()) {
             var beanName = Objects.requireNonNull(type.getKlass().getAttribute(AttributeNames.BEAN_NAME),
                     () -> "Bean name not found for class: " + type.getKlass().getQualifiedName());
             if (resolveBean(beanName, instance.getContext()) == instance) {
-                map.put("name", beanName);
-                return map;
+                return new BeanDTO(beanName);
             }
         }
-        map.put("type", type.getTypeDesc());
         if (instance.isEnum()) {
             var name = Instances.toJavaString(instance.getField(StdField.enumName.get()));
-            map.put("name", name);
-            return map;
+            return new EnumConstantDTO(type.getTypeDesc(), name);
         }
         var id = instance.getStringId();
-        if (id != null)
-            map.put("id", id);
-        if (includeSummary)
-            map.put("summary", instance.getSummary());
+        if (!includeFields && !includeChildren)
+            return new ReferencedTO(id, new ClassTypeDTO(type.getTypeDesc()), includeSummary ? instance.getSummary() : null);
+        var fields = new ArrayList<FieldDTO>();
         if (includeFields) {
-            var fields = new LinkedHashMap<String, Object>();
-            map.put("fields", fields);
-            instance.forEachField((field, value) -> fields.put(field.getName(), formatValue(value, false, false)));
+            instance.forEachField((field, value) -> fields.add(new FieldDTO(field.getName(), formatValue(value, false, false))));
         }
+        var children = new ArrayList<ObjectDTO>();
         if (includeChildren) {
-            var children = new LinkedHashMap<String, Object>();
-            map.put("children", children);
             instance.forEachChild(c -> {
                 var child = (ClassInstance) c;
-                //noinspection unchecked
-                var list = (List<Object>) children.computeIfAbsent(child.getInstanceKlass().getName(), k -> new ArrayList<>());
-                list.add(formatObject(child, includeSummary, includeFields, true));
+                children.add((ObjectDTO) formatObject(child, includeSummary, includeFields, true));
             });
         }
-        return map;
+        return new ObjectDTO(id, new ClassTypeDTO(type.getTypeDesc()), fields, children);
     }
 
-    private List<Object> formatArray(ArrayInstance arrayInstance, boolean excludingChildren) {
-        var list = new ArrayList<>();
+    private ArrayDTO formatArray(ArrayInstance arrayInstance, boolean excludingChildren) {
+        var list = new ArrayList<ValueDTO>();
         arrayInstance.forEach(e -> list.add(formatValue(e, false, excludingChildren)));
-        return list;
+        return new ArrayDTO(list);
     }
 
-    private List<Object> formatList(ClassInstance instance, boolean excludingChildren) {
-        var list = new ArrayList<>();
+    private ArrayDTO formatList(ClassInstance instance, boolean excludingChildren) {
+        var list = new ArrayList<ValueDTO>();
         Instances.toJavaList(instance).forEach(e -> list.add(formatValue(e, false, excludingChildren)));
-        return list;
+        return new ArrayDTO(list);
     }
 
     private ResolutionResult resolveMethod(@NotNull ClassType klass, String methodCode, List<ArgumentDTO> rawArguments, boolean _static, boolean constructor, IInstanceContext context) {
@@ -412,19 +421,32 @@ public class ApiService extends EntityContextFactoryAware {
     private ValueResolutionResult tryResolveValue(ValueDTO rawValue, Type type, boolean asValue, @Nullable Value currentValue, IInstanceContext context) {
         return switch (type) {
             case NullType ignored ->
-                    rawValue == null ? ValueResolutionResult.of(Instances.nullInstance()) : ValueResolutionResult.failed;
+                    rawValue instanceof NullDTO ? ValueResolutionResult.of(Instances.nullInstance()) : ValueResolutionResult.failed;
             case PrimitiveType primitiveType -> tryResolvePrimitive(rawValue, primitiveType);
             case KlassType classType -> switch (rawValue) {
                 case StringValueDTO s -> {
                     if (classType.isAssignableFrom(StdKlass.string.type()))
                         yield ValueResolutionResult.of(Instances.stringInstance(s.value()));
-                    if (classType.isAssignableFrom(StdKlass.character.type())) {
-                        if (s.value().length() == 1)
-                            yield ValueResolutionResult.of(Instances.charInstance(s.value().charAt(0)));
-                        else
-                            throw invalidRequestBody();
-                    }
-                    yield ValueResolutionResult.failed;
+                    yield tryResolveObject(s, type, null, context);
+//                    yield ValueResolutionResult.failed;
+                }
+                case LongValueDTO l->  {
+                    if (classType.isAssignableFrom(StdKlass.long_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedLongInstance(l.value()));
+                    else if (classType.isAssignableFrom(StdKlass.double_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(l.value()));
+                    else if (classType.isAssignableFrom(StdKlass.float_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedFloatInstance(l.value()));
+                    else
+                        yield ValueResolutionResult.failed;
+                }
+                case DoubleValueDTO d->  {
+                    if (classType.isAssignableFrom(StdKlass.double_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(d.value()));
+                    else if (classType.isAssignableFrom(StdKlass.float_.type()))
+                        yield ValueResolutionResult.of(Instances.wrappedFloatInstance((float) d.value()));
+                    else
+                        yield ValueResolutionResult.failed;
                 }
                 case IntValueDTO i->  {
                     if (classType.isAssignableFrom(StdKlass.byte_.type()))
@@ -432,7 +454,7 @@ public class ApiService extends EntityContextFactoryAware {
                     else if (classType.isAssignableFrom(StdKlass.short_.type()))
                         yield ValueResolutionResult.of(Instances.wrappedShortInstance((short) i.value()));
                     else if (classType.isAssignableFrom(StdKlass.integer.type()))
-                        yield ValueResolutionResult.of(Instances.wrappedIntInstance((int) i.value()));
+                        yield ValueResolutionResult.of(Instances.wrappedIntInstance(i.value()));
                     else if (classType.isAssignableFrom(StdKlass.long_.type()))
                         yield ValueResolutionResult.of(Instances.wrappedLongInstance(i.value()));
                     else if (classType.isAssignableFrom(StdKlass.double_.type()))
@@ -442,11 +464,20 @@ public class ApiService extends EntityContextFactoryAware {
                     else
                         yield ValueResolutionResult.failed;
                 }
-                case FloatValueDTO d->  {
+                case ShortValueDTO s->  classType.isAssignableFrom(StdKlass.short_.type()) ?
+                        ValueResolutionResult.of(Instances.wrappedShortInstance(s.value())) :
+                        ValueResolutionResult.failed;
+                case ByteValueDTO b->  classType.isAssignableFrom(StdKlass.byte_.type()) ?
+                        ValueResolutionResult.of(Instances.wrappedByteInstance(b.value())) :
+                        ValueResolutionResult.failed;
+                case CharValueDTO c->  classType.isAssignableFrom(StdKlass.character.type()) ?
+                        ValueResolutionResult.of(Instances.wrappedCharInstance(c.value())) :
+                        ValueResolutionResult.failed;
+                case FloatValueDTO f->  {
                   if (classType.isAssignableFrom(StdKlass.double_.type()))
-                      yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(d.value()));
+                      yield ValueResolutionResult.of(Instances.wrappedDoubleInstance(f.value()));
                   else if (classType.isAssignableFrom(StdKlass.float_.type()))
-                      yield ValueResolutionResult.of(Instances.wrappedFloatInstance((float) d.value()));
+                      yield ValueResolutionResult.of(Instances.wrappedFloatInstance(f.value()));
                   else
                       yield ValueResolutionResult.failed;
                 }
@@ -476,30 +507,32 @@ public class ApiService extends EntityContextFactoryAware {
                 : ValueResolutionResult.failed;
     }
 
-    private ValueResolutionResult tryResolvePrimitive(Object rawValue, PrimitiveType type) {
+    private ValueResolutionResult tryResolvePrimitive(ValueDTO rawValue, PrimitiveType type) {
         return switch (type.getKind()) {
-            case LONG -> ValueUtils.isInteger(rawValue) ?
-                    ValueResolutionResult.of(Instances.longInstance(((Number) rawValue).longValue())) :
+            case LONG -> rawValue instanceof IntegerValueDTO i ?
+                    ValueResolutionResult.of(Instances.longInstance(i.longValue())) :
                     ValueResolutionResult.failed;
-            case INT -> ValueUtils.isInteger(rawValue) ?
-                    ValueResolutionResult.of(Instances.intInstance(((Number) rawValue).intValue())) :
+            case INT -> rawValue instanceof IntegerValueDTO i ?
+                    ValueResolutionResult.of(Instances.intInstance(i.intValue())) :
                     ValueResolutionResult.failed;
-            case DOUBLE -> rawValue instanceof Number n ?
-                    ValueResolutionResult.of(Instances.doubleInstance(n.doubleValue())) : ValueResolutionResult.failed;
-            case FLOAT -> rawValue instanceof Number n ?
-                    ValueResolutionResult.of(Instances.floatInstance(n.floatValue())) : ValueResolutionResult.failed;
-            case BOOLEAN -> rawValue instanceof Boolean b ?
-                    ValueResolutionResult.of(Instances.booleanInstance(b)) : ValueResolutionResult.failed;
-            case PASSWORD -> rawValue instanceof String s ?
-                    ValueResolutionResult.of(Instances.passwordInstance(s)) : ValueResolutionResult.failed;
-            case CHAR -> rawValue instanceof Character c ?
-                    ValueResolutionResult.of(Instances.charInstance(c)) : ValueResolutionResult.failed;
-            case SHORT -> ValueUtils.isInteger(rawValue) ?
-                    ValueResolutionResult.of(Instances.shortInstance(((Number) rawValue).shortValue())) : ValueResolutionResult.failed;
-            case BYTE -> ValueUtils.isInteger(rawValue) ?
-                    ValueResolutionResult.of(Instances.byteInstance(((Number) rawValue).byteValue())) : ValueResolutionResult.failed;
-            case TIME -> ValueUtils.isInteger(rawValue) ?
-                    ValueResolutionResult.of(Instances.timeInstance(((Number) rawValue).longValue())) : ValueResolutionResult.failed;
+            case DOUBLE -> rawValue instanceof NumberValueDTO f ?
+                    ValueResolutionResult.of(Instances.doubleInstance(f.doubleValue())) :
+                            ValueResolutionResult.failed;
+            case FLOAT -> rawValue instanceof NumberValueDTO f ?
+                    ValueResolutionResult.of(Instances.floatInstance(f.floatValue())) :
+                    ValueResolutionResult.failed;
+            case BOOLEAN -> rawValue instanceof BoolValueDTO b ?
+                    ValueResolutionResult.of(Instances.booleanInstance(b.value())) : ValueResolutionResult.failed;
+            case PASSWORD -> rawValue instanceof StringValueDTO s ?
+                    ValueResolutionResult.of(Instances.passwordInstance(s.value())) : ValueResolutionResult.failed;
+            case CHAR -> rawValue instanceof CharValueDTO c ?
+                    ValueResolutionResult.of(Instances.charInstance(c.value())) : ValueResolutionResult.failed;
+            case SHORT -> rawValue instanceof IntegerValueDTO i ?
+                    ValueResolutionResult.of(Instances.shortInstance(i.shortValue())) : ValueResolutionResult.failed;
+            case BYTE -> rawValue instanceof IntegerValueDTO i ?
+                    ValueResolutionResult.of(Instances.byteInstance(i.byteValue())) : ValueResolutionResult.failed;
+            case TIME -> rawValue instanceof IntegerValueDTO i ?
+                    ValueResolutionResult.of(Instances.timeInstance(i.longValue())) : ValueResolutionResult.failed;
             case VOID -> throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE_OF_TYPE, "void");
         };
     }
@@ -513,6 +546,8 @@ public class ApiService extends EntityContextFactoryAware {
                 return ValueResolutionResult.failed;
             return ValueResolutionResult.of(bean.getReference());
         }
+        if (value instanceof StringValueDTO s && type instanceof ClassType ct && ct.isEnum())
+            return tryResolveEnumConstant(s.value(), ct, context);
         if (value instanceof EnumConstantDTO ec) {
             var t = getKlass(ec.type(), context);
             return tryResolveEnumConstant(ec.name(), t, context);
@@ -608,12 +643,22 @@ public class ApiService extends EntityContextFactoryAware {
             return Instances.nullInstance();
         if (rawValue instanceof StringValueDTO str)
             return Instances.stringInstance(str.value());
+        if(rawValue instanceof ByteValueDTO b)
+            return Instances.wrappedByteInstance(b.value());
+        if(rawValue instanceof ShortValueDTO s)
+            return Instances.wrappedShortInstance(s.value());
         if(rawValue instanceof IntValueDTO i)
-            return Instances.wrappedLongInstance(i.value());
+            return Instances.wrappedIntInstance(i.value());
+        if(rawValue instanceof LongValueDTO l)
+            return Instances.wrappedLongInstance(l.value());
         if (rawValue instanceof FloatValueDTO f)
-            return Instances.wrappedDoubleInstance(f.value());
+            return Instances.wrappedFloatInstance(f.value());
+        if (rawValue instanceof DoubleValueDTO d)
+            return Instances.wrappedDoubleInstance(d.value());
         if (rawValue instanceof BoolValueDTO b)
             return Instances.wrappedBooleanInstance(b.value());
+        if (rawValue instanceof CharValueDTO c)
+            return Instances.wrappedCharInstance(c.value());
         if (rawValue instanceof ArrayDTO array) {
             var listType = KlassType.create(StdKlass.arrayList.get(), List.of(Types.getAnyType()));
             return Instances.createList(listType,
@@ -696,7 +741,7 @@ public class ApiService extends EntityContextFactoryAware {
         var arguments = new ArrayList<Value>();
         var fieldMap = Utils.toMap(fields, FieldDTO::name, FieldDTO::value);
         for (var parameter : method.getParameters()) {
-            var v = fieldMap.get(parameter.getName());
+            var v = fieldMap.getOrDefault(parameter.getName(),  NullDTO.instance);
             var r = tryResolveValue(v, parameter.getType(), false, null, context);
             if (r.successful)
                 arguments.add(r.resolved);

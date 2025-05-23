@@ -8,8 +8,8 @@ import org.metavm.api.entity.HttpResponse;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
 import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.ApiValueConverter;
 import org.metavm.object.instance.core.ApiObject;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.instance.rest.dto.ArgumentDTO;
 import org.metavm.object.instance.rest.dto.InvokeRequest;
@@ -40,7 +40,7 @@ public class ApiClient {
     }
 
     public ApiObject getObject(String id) {
-        return ApiObject.from(apiService.getInstance(id));
+        return ApiObject.from(ApiValueConverter.toMap(apiService.getInstance(id)));
     }
 
     public String saveInstance(String className, Map<String, Object> arguments) {
@@ -71,7 +71,7 @@ public class ApiClient {
                 buildArguments(arguments)
         ), req, resp);
         processResponse(resp);
-        return rs;
+        return ApiValueConverter.toRaw(rs);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -119,7 +119,7 @@ public class ApiClient {
 
     private ApiSearchResult buildApiSearchResult(SearchResult searchResult) {
         return new ApiSearchResult(
-                Utils.map(searchResult.items(), ApiObject::from),
+                Utils.map(searchResult.items(), item -> ApiObject.from(ApiValueConverter.toMap(item))),
                 searchResult.total()
         );
     }

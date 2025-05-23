@@ -1,9 +1,11 @@
 package org.metavm.object.instance.rest;
 
+import org.metavm.object.instance.rest.dto.ObjectDTO;
+
 import java.util.List;
 
 public record SearchResult(
-        List<Object> items,
+        List<ObjectDTO> items,
         long total
 ) {
 }

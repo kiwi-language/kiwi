@@ -5,7 +5,6 @@ import org.metavm.entity.Attribute;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.ApiObject;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.Klass;
 import org.metavm.util.BusinessException;
@@ -101,7 +100,7 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testTreeSet() {
         deploy("kiwi/tree_set.kiwi");
-        var id = (Id) callMethod("TreeSetLab", "create", List.of());
+        var id = (String) callMethod("TreeSetLab", "create", List.of());
         var elements = List.of(5,4,3,2,1);
         callMethod(id, "addAll", List.of(elements));
         var containsAll = (boolean) callMethod(id, "containsAll", List.of(elements));
@@ -242,7 +241,7 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testNew() {
         deploy("kiwi/new.kiwi");
-        var id = (Id) callMethod("Foo", "test", List.of());
+        var id = (String) callMethod("Foo", "test", List.of());
         var r = callMethod(id, "getValue", List.of());
         assertEquals(1, r);
     }

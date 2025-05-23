@@ -1,7 +1,9 @@
 package org.metavm.object.instance;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.dto.ClassTypeDTO;
 import org.metavm.common.ErrorCode;
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.rest.dto.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.NamingUtils;
@@ -12,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class ApiValueConverter {
 
@@ -27,10 +30,15 @@ public class ApiValueConverter {
             case ObjectDTO objectDTO -> toMap(objectDTO);
             case ReferencedTO referencedTO -> referencedTO.id();
             case StringValueDTO stringValueDTO -> stringValueDTO.value();
+            case DoubleValueDTO doubleValueDTO -> doubleValueDTO.value();
+            case LongValueDTO longValueDTO -> longValueDTO.value();
+            case ByteValueDTO byteValueDTO -> byteValueDTO.value();
+            case CharValueDTO charValueDTO -> charValueDTO.value();
+            case ShortValueDTO shortValueDTO -> shortValueDTO.value();
         };
     }
 
-    private static Map<String, Object> toMap(ObjectDTO object) {
+    public static Map<String, Object> toMap(ObjectDTO object) {
         var map = new HashMap<String, Object>();
         map.put("$id", object.id());
         map.put("$type", object.type().qualifiedName());
@@ -47,15 +55,24 @@ public class ApiValueConverter {
 
     public static ValueDTO buildValue(Object o) {
         return switch (o) {
-            case Byte b -> new IntValueDTO(b);
-            case Short s -> new IntValueDTO(s);
+            case Byte b -> new ByteValueDTO(b);
+            case Short s -> new ShortValueDTO(s);
             case Integer i -> new IntValueDTO(i);
-            case Long l -> new IntValueDTO(l);
+            case Long l -> new LongValueDTO(l);
             case Float f -> new FloatValueDTO(f);
-            case Double d -> new FloatValueDTO(d);
+            case Double d -> new DoubleValueDTO(d);
             case Boolean z -> new BoolValueDTO(z);
-            case Character c -> new StringValueDTO(c.toString());
-            case String str -> new StringValueDTO(str);
+            case Character c -> new CharValueDTO(c);
+            case String str -> {
+                if (str.startsWith("0")) {
+                    try {
+                        Id.parse(str);
+                        yield new ReferencedTO(str, null, null);
+                    }
+                    catch (Exception ignored) {}
+                }
+                yield new StringValueDTO(str);
+            }
             case Map map -> buildObject(map);
             case List list -> buildArray(list);
             case null -> new NullDTO();
@@ -75,7 +92,7 @@ public class ApiValueConverter {
         map.forEach((k, v) -> {
             if (!(k instanceof String name) || name.isEmpty())
                 throw invalidRequestBody();
-            if (!k.equals("$id") && !k.equals("$type"))
+            if (k.equals("$id") || k.equals("$type"))
                 return;
             if (Character.isUpperCase(name.charAt(0))) {
                 if (!(v instanceof List list))
@@ -83,7 +100,7 @@ public class ApiValueConverter {
                 for (Object e : list) {
                     if (!(e instanceof Map childMap))
                         throw invalidRequestBody();
-                    children.add(buildObject(childMap));
+                    children.add(buildObject(childMap, typeExpr + "." + name));
                 }
             }
             else

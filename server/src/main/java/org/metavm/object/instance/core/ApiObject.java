@@ -1,20 +1,17 @@
 package org.metavm.object.instance.core;
 
-import org.metavm.util.ApiNamedObject;
-
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public record ApiObject(Map<String, Object> map) {
     public ApiObject(Map<String, Object> map) {
         this.map = new HashMap<>(map);
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    public static ApiObject from(Object value) {
-        if (value instanceof Map map)
-            return new ApiObject(map);
-        else
-            throw new IllegalArgumentException("Invalid object: " + value);
+    public static ApiObject from(Map<String, Object> value) {
+        return new ApiObject(value);
     }
 
     public Object get(String fieldName) {
@@ -46,7 +43,8 @@ public record ApiObject(Map<String, Object> map) {
     }
 
     public ApiObject getObject(String fieldName) {
-        return from(get(fieldName));
+        //noinspection unchecked
+        return from((Map<String, Object>) get(fieldName));
     }
 
     public List<?> getArray(String fieldName) {

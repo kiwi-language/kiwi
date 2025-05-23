@@ -1,19 +1,19 @@
 package org.metavm.object.instance.rest.dto;
 
-public record IntValueDTO(int value) implements IntegerValueDTO {
+public record ByteValueDTO(byte value) implements IntegerValueDTO {
     @Override
     public String getKind() {
-        return "int";
+        return "byte";
     }
 
     @Override
     public byte byteValue() {
-        return (byte) value;
+        return value;
     }
 
     @Override
     public short shortValue() {
-        return (short) value;
+        return value;
     }
 
     @Override
