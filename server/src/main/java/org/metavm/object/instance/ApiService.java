@@ -413,7 +413,7 @@ public class ApiService extends EntityContextFactoryAware {
         if (r.successful())
             return r.resolved();
         else
-            throw new InternalException("Failed to resolve value " + rawValue + " for type " + type.getTypeDesc());
+            throw new BusinessException(ErrorCode.VALUE_RESOLUTION_ERROR, rawValue, type.getTypeDesc());
     }
 
     private ValueResolutionResult tryResolveValue(Object rawValue, Type type, boolean asValue, @Nullable Value currentValue, IInstanceContext context) {
@@ -663,57 +663,65 @@ public class ApiService extends EntityContextFactoryAware {
         throw new BusinessException(ErrorCode.FAILED_TO_RESOLVE_VALUE, Utils.toJSONString(rawValue));
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private ClassInstance createObject(Map<String, Object> map, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
-        var actualType = map.get("type") instanceof String typeExpr ?
-                getKlass(typeExpr, context) : type;
+        var actualType = map.get("type") instanceof String typeExpr ? getKlass(typeExpr, context) : type;
         var id = parent != null ? parent.nextChildId() : context.allocateRootId(actualType);
-        //noinspection rawtypes
-        var fields = (Map) map.get("fields");
+        if (!(map.getOrDefault("fields", Map.of()) instanceof Map<?,?> fields))
+            throw invalidRequestBody();
         var r = resolveConstructor(actualType, fields, context);
         var self = ClassInstance.allocate(id, actualType, parent);
         var result = Flows.execute(r.method, self, Utils.map(r.arguments, Value::toStackValue), context);
         context.bind(self);
         if (result.exception() != null)
-            throw new InternalException("Failed to instantiate " + type.getTypeDesc() + " with value " + map
-                    + ": " + ThrowableNative.getMessage(result.exception()));
-        //noinspection unchecked
-        var children = (Map<String, Object>) map.getOrDefault("children", Map.of());
+            throw new BusinessException(ErrorCode.OBJECT_CREATION_ERROR, ThrowableNative.getMessage(result.exception()));
+        if (!(map.getOrDefault("children", Map.of()) instanceof Map children))
+            throw invalidRequestBody();
         saveChildren(children, self, context);
         return self;
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void updateObject(ClassInstance instance, Object json, IInstanceContext context) {
-        //noinspection unchecked
-        var map = (Map<String, Object>) json;
+        if (!(json instanceof Map map))
+            throw invalidRequestBody();
         var type = instance.getInstanceType();
-        //noinspection unchecked
-        var fields = (Map<String, Object>) map.getOrDefault("fields", Map.of());
+        if (!(map.getOrDefault("fields", Map.of()) instanceof Map fields))
+            throw invalidRequestBody();
         fields.forEach((k, v) -> {
-            var fieldRef = type.findFieldByName(k);
+            if (!(k instanceof String name))
+                throw invalidRequestBody();
+            var fieldRef = type.findFieldByName(name);
             if (fieldRef != null && fieldRef.isPublic()) {
                 var field = fieldRef.getRawField();
                 if (!field.isReadonly())
                     instance.setField(field, resolveValue(v, fieldRef.getPropertyType(), false, instance.getField(field), context));
             } else {
-                var setter = type.findSetterByPropertyName(k);
+                var setter = type.findSetterByPropertyName(name);
                 if (setter != null) {
-                    var getter = type.findGetterByPropertyName(k);
+                    var getter = type.findGetterByPropertyName(name);
                     var existing = getter != null ? Flows.invokeGetter(getter, instance, context) : null;
                     Flows.invokeSetter(setter, instance, resolveValue(v, setter.getParameterTypes().getFirst(), false, existing, context), context);
                 }
             }
         });
-        //noinspection unchecked
-        var children = (Map<String, Object>) map.getOrDefault("children", Map.of());
+        if (!(map.getOrDefault("children", Map.of()) instanceof Map children))
+            throw invalidRequestBody();
         saveChildren(children, instance, context);
+    }
+
+    private BusinessException invalidRequestBody() {
+        return new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
     }
 
     private void saveChildren(Map<String, Object> children, ClassInstance instance, IInstanceContext context) {
         instance.getInstanceType().getInnerClassTypes().forEach(t -> {
             if (children.get(t.getName()) instanceof List<?> values) {
                 for (Object value : values) {
-                    if (!(value instanceof Map<?,?> childMap && tryResolveObject(childMap, t, instance, context).successful))
-                        throw new InternalException("Failed to resolve inner class " + t.getName() + " for value " + value);
+                    if (!(value instanceof Map<?,?> childMap))
+                        throw invalidRequestBody();
+                    if (!(tryResolveObject(childMap, t, instance, context).successful))
+                        throw new BusinessException(ErrorCode.OBJECT_CREATION_ERROR, "error when creating child '" + value + "'");
                 }
             }
         });

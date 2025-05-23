@@ -61,6 +61,8 @@ public enum ErrorCode {
     FAILED_TO_RESOLVE_VALUE_OF_TYPE(418, "Failed to resolve value of type {}"),
     FAILED_TO_FORMAT_VALUE(419, "Failed to format value {}"),
     INCORRECT_ARRAY_ELEMENT(420, "Invalid element '{}' for array {}"),
+    OBJECT_CREATION_ERROR(421, "Failed to create object: {}"),
+    VALUE_RESOLUTION_ERROR(422, "Incorrect '{}' for type '{}'"),
 
     // Flow
     FLOW_NOT_FOUND(401, "Flow {} not found"),
