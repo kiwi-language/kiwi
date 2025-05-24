@@ -7,7 +7,7 @@ import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
-import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.ObjectService;
 import org.metavm.object.instance.ApiValueConverter;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.rest.SearchResult;
@@ -27,20 +27,20 @@ import static org.metavm.object.instance.ApiValueConverter.buildValue;
 @Slf4j
 public class ApiClient {
 
-    private final ApiService apiService;
+    private final ObjectService objectService;
 
     private final List<HttpCookie> cookies = new ArrayList<>();
 
-    public ApiClient(ApiService apiService) {
-        this.apiService = apiService;
+    public ApiClient(ObjectService objectService) {
+        this.objectService = objectService;
     }
 
     public Object getStatic(String className, String fieldName) {
-        return ApiValueConverter.toRaw(apiService.getStatic(className, fieldName));
+        return ApiValueConverter.toRaw(objectService.getStatic(className, fieldName));
     }
 
     public ApiObject getObject(String id) {
-        return ApiObject.from(ApiValueConverter.toMap(apiService.getInstance(id)));
+        return ApiObject.from(ApiValueConverter.toMap(objectService.getInstance(id)));
     }
 
     public String saveInstance(String className, Map<String, Object> arguments) {
@@ -48,7 +48,7 @@ public class ApiClient {
         var uri = "/object/" + NamingUtils.nameToPath(className);
         var req = makeRequest("PUT", uri);
         var resp = new HttpResponseImpl();
-        var rs = apiService.saveInstance(obj, req, resp);
+        var rs = objectService.saveInstance(obj, req, resp);
         processResponse(resp);
         return rs;
     }
@@ -65,7 +65,7 @@ public class ApiClient {
         var uri = "/object/invoke";
         var req = makeRequest("POST", uri);
         var resp = new HttpResponseImpl();
-        var rs = apiService.handleMethodCall(new InvokeRequest(
+        var rs = objectService.handleMethodCall(new InvokeRequest(
                 buildValue(receiver),
                 methodName,
                 buildArguments(arguments)
@@ -82,7 +82,7 @@ public class ApiClient {
         else if(arguments instanceof List argList) {
             int i = 0;
             for (Object o : argList) {
-                args.add(new ArgumentDTO("$arg" + i++, buildValue(o)));
+                args.add(new ArgumentDTO(ObjectService.ARG_PREFIX + i++, buildValue(o)));
             }
         }
         else
@@ -94,7 +94,7 @@ public class ApiClient {
         var uri = "/object/class/" + NamingUtils.nameToPath(className) + "/new";
         var req = makeRequest("POST", uri);
         var resp = new HttpResponseImpl();
-        var rs = apiService.handleNewInstance(className, buildArguments(arguments), req, resp);
+        var rs = objectService.handleNewInstance(className, buildArguments(arguments), req, resp);
         processResponse(resp);
         return rs;
     }
@@ -114,7 +114,7 @@ public class ApiClient {
                 page,
                 pageSize
         );
-        return buildApiSearchResult(apiService.search(request));
+        return buildApiSearchResult(objectService.search(request));
     }
 
     private ApiSearchResult buildApiSearchResult(SearchResult searchResult) {

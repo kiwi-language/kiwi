@@ -34,16 +34,17 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 @Service
-public class ApiService extends EntityContextFactoryAware {
+public class ObjectService extends EntityContextFactoryAware {
 
-    public static final Logger logger = LoggerFactory.getLogger(ApiService.class);
+    public static final Logger logger = LoggerFactory.getLogger(ObjectService.class);
     public static final String KEY_ID = "$id";
     public static final String KEY_TYPE = "$type";
+    public static final String ARG_PREFIX = "$arg";
 
     private final MetaContextCache metaContextCache;
     private final InstanceQueryService instanceQueryService;
 
-    public ApiService(EntityContextFactory entityContextFactory, MetaContextCache metaContextCache,  InstanceQueryService instanceQueryService) {
+    public ObjectService(EntityContextFactory entityContextFactory, MetaContextCache metaContextCache, InstanceQueryService instanceQueryService) {
         super(entityContextFactory);
         this.metaContextCache = metaContextCache;
         this.instanceQueryService = instanceQueryService;
@@ -53,7 +54,7 @@ public class ApiService extends EntityContextFactoryAware {
     public String handleNewInstance(String classCode, List<ArgumentDTO> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
-            var r = resolveMethod(klass, null, rawArguments, false, true, context);
+            var r = resolveConstructor(klass, rawArguments, context);
             var self = ClassInstanceBuilder.newBuilder(klass, context.allocateRootId(klass)).build();
             execute(r.method, self, r.arguments, request, response, context);
             var result = self.getReference();
@@ -71,7 +72,7 @@ public class ApiService extends EntityContextFactoryAware {
             var result = switch (receiver) {
                 case ClassInstance inst ->  executeInstanceMethod(inst, request.method(), request.arguments(), httpRequest, httpResponse, context);
                 case ClassType ct -> {
-                    var r = resolveMethod(ct, request.method(), request.arguments(), true, false, context);
+                    var r = resolveMethod(ct, request.method(), request.arguments(), true, context);
                     yield execute(r.method, null, r.arguments, httpRequest, httpResponse, context);
                 }
                 default -> throw invalidRequestBody(request.receiver());
@@ -124,7 +125,7 @@ public class ApiService extends EntityContextFactoryAware {
                                         HttpRequest request,
                                         HttpResponse response,
                                         IInstanceContext context) {
-        var r = resolveMethod(self.getInstanceType(), methodCode, rawArguments, false, false, context);
+        var r = resolveMethod(self.getInstanceType(), methodCode, rawArguments, false, context);
         var method = r.method;
         return execute(method, self, r.arguments, request, response, context);
     }
@@ -133,7 +134,7 @@ public class ApiService extends EntityContextFactoryAware {
     public Object handleStaticMethodCall(String classCode, String methodCode, List<ArgumentDTO> rawArguments, HttpRequest request, HttpResponse response) {
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
-            var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
+            var r = resolveMethod(klass, methodCode, rawArguments, true, context);
             var inst = execute(r.method, null, r.arguments, request, response, context);
             context.finish();
             return formatValue(inst, false, false);
@@ -285,6 +286,7 @@ public class ApiService extends EntityContextFactoryAware {
             case BooleanValue z -> new BoolValueDTO(z.getValue());
             case TimeValue t -> new LongValueDTO(t.getValue());
             case StringReference s -> new StringValueDTO(s.getValue());
+            case PasswordValue p -> new StringValueDTO(p.getValue());
             case Reference reference -> {
                 var resolved = reference.get();
                 switch (resolved) {
@@ -371,20 +373,22 @@ public class ApiService extends EntityContextFactoryAware {
         return new ArrayDTO(list);
     }
 
-    private ResolutionResult resolveMethod(@NotNull ClassType klass, String methodCode, List<ArgumentDTO> rawArguments, boolean _static, boolean constructor, IInstanceContext context) {
-        var methodRef = methodCode != null ?
-                TypeParser.parseSimpleMethodRef(methodCode, name -> getKlass(name, context).getKlass()) : null;
+    private ResolutionResult resolveMethod(@NotNull ClassType klass, String methodCode, List<ArgumentDTO> rawArguments, boolean _static, IInstanceContext context) {
+        var methodRef = TypeParser.parseSimpleMethodRef(methodCode, name -> getKlass(name, context).getKlass());
         var queue = new LinkedList<ClassType>();
         klass.foreachSuperClass(queue::offer);
+        ResolutionResult result = null;
         do {
             var k = Objects.requireNonNull(queue.poll());
             for (MethodRef method : k.getMethods()) {
-                if (method.isPublic() && !method.isAbstract() && (methodRef == null || methodRef.name().equals(method.getName()))
-                        && _static == method.isStatic() && constructor == method.isConstructor()) {
-                    method = methodRef != null ? method.getParameterized(methodRef.typeArguments()) : method;
+                if (method.isPublic() && !method.isAbstract() && methodRef.name().equals(method.getName())
+                        && _static == method.isStatic()) {
+                    method = method.getParameterized(methodRef.typeArguments());
                     var resolvedArgs = tryResolveArguments(method, rawArguments, context);
-                    if (resolvedArgs != null)
-                        return new ResolutionResult(method, resolvedArgs);
+                    if (resolvedArgs != null) {
+                        if (result == null || Utils.count(result.arguments, Value::isNotNull) < Utils.count(resolvedArgs, Value::isNotNull))
+                            result = new ResolutionResult(method, resolvedArgs);
+                    }
                 }
             }
             k.getInterfaces().forEach(queue::offer);
@@ -394,8 +398,10 @@ public class ApiService extends EntityContextFactoryAware {
                     methodCode, rawArguments, klass.getTypeDesc());
             klass.foreachMethod(m -> logger.trace("Method: {}", m.getQualifiedSignature()));
         }
-        throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, klass.getQualifiedName() + "." + methodCode,
-                rawArguments);
+        if (result == null)
+            throw new BusinessException(ErrorCode.METHOD_RESOLUTION_FAILED, klass.getQualifiedName() + "." + methodCode,
+                    rawArguments);
+        return result;
     }
 
     private int getArgumentCount(Object rawArgument) {
@@ -702,7 +708,7 @@ public class ApiService extends EntityContextFactoryAware {
     private ClassInstance createObject(ObjectDTO object, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
         var actualType = getActualType(object, type, context);
         var id = parent != null ? parent.nextChildId() : context.allocateRootId(actualType);
-        var r = resolveConstructor(actualType, object.fields(), context);
+        var r = resolveConstructor(actualType, Utils.map(object.fields(), f -> new ArgumentDTO(f.name(), f.value())), context);
         var self = ClassInstance.allocate(id, actualType, parent);
         var result = Flows.execute(r.method, self, Utils.map(r.arguments, Value::toStackValue), context);
         context.bind(self);
@@ -750,11 +756,11 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    private ResolutionResult resolveConstructor(ClassType klass, List<FieldDTO> fields, IInstanceContext context) {
+    private ResolutionResult resolveConstructor(ClassType klass, List<ArgumentDTO> arguments, IInstanceContext context) {
         ResolutionResult result = null;
         for (var method : klass.getMethods()) {
             if (method.isConstructor()) {
-                var args = tryResolveConstructor(method, fields, context);
+                var args = tryResolveConstructor(method, arguments, context);
                 if (args != null) {
                     if (result == null || Utils.count(result.arguments, Value::isNotNull) < Utils.count(args, Value::isNotNull))
                         result = new ResolutionResult(method, args);
@@ -762,22 +768,26 @@ public class ApiService extends EntityContextFactoryAware {
             }
         }
         if (result == null)
-            throw new BusinessException(ErrorCode.CONSTRUCTOR_NOT_FOUND, klass.getName(), fields);
+            throw new BusinessException(ErrorCode.CONSTRUCTOR_NOT_FOUND, klass.getName(), arguments);
         return result;
     }
 
-    private List<Value> tryResolveConstructor(MethodRef method, List<FieldDTO> fields, IInstanceContext context) {
-        var arguments = new ArrayList<Value>();
-        var fieldMap = Utils.toMap(fields, FieldDTO::name, FieldDTO::value);
+    private List<Value> tryResolveConstructor(MethodRef method, List<ArgumentDTO> arguments, IInstanceContext context) {
+        var args = new ArrayList<Value>();
+        var fieldMap = Utils.toMap(arguments, ArgumentDTO::name, ArgumentDTO::value);
+        var i = 0;
         for (var parameter : method.getParameters()) {
-            var v = fieldMap.getOrDefault(parameter.getName(),  NullDTO.instance);
+            var v = fieldMap.get(parameter.getName());
+            if (v == null)
+                v = fieldMap.getOrDefault(ARG_PREFIX + i, NullDTO.instance);
+            i++;
             var r = tryResolveValue(v, parameter.getType(), false, null, context);
             if (r.successful)
-                arguments.add(r.resolved);
+                args.add(r.resolved);
             else
                 return null;
         }
-        return arguments;
+        return args;
     }
 
     private record ValueResolutionResult(boolean successful, Value resolved) {

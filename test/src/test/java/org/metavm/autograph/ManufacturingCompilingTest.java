@@ -2,7 +2,7 @@ package org.metavm.autograph;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
-import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.ObjectService;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
@@ -284,7 +284,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 "inbound",
                 List.of(
                         Map.ofEntries(
-                                Map.entry(ApiService.KEY_TYPE, qcByBoundInboundRequestType),
+                                Map.entry(ObjectService.KEY_TYPE, qcByBoundInboundRequestType),
                                 Map.entry("bizType", PURCHASE),
                                 Map.entry("position", storageObjects.position.id()),
                                 Map.entry("material", material.id()),
@@ -305,7 +305,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 "inbound",
                 List.of(
                         Map.ofEntries(
-                                Map.entry(ApiService.KEY_TYPE, qcBySpecInboundRequestType),
+                                Map.entry(ObjectService.KEY_TYPE, qcBySpecInboundRequestType),
                                 Map.entry("bizType", PURCHASE),
                                 Map.entry("position", storageObjects.position.id()),
                                 Map.entry("material", material.id()),

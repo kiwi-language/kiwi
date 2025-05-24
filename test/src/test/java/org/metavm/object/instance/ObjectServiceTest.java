@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.object.instance.core.ApiObject;
-import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.rest.dto.ReferencedTO;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
@@ -12,17 +12,19 @@ import java.util.List;
 import java.util.Map;
 
 @Slf4j
-public class ApiServiceTest extends TestCase {
+public class ObjectServiceTest extends TestCase {
 
     private TypeManager typeManager;
     private SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
+    private ObjectService objectService;
 
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
-        apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache(),
-                new InstanceQueryService(bootResult.instanceSearchService())));
+        objectService = new ObjectService(bootResult.entityContextFactory(), bootResult.metaContextCache(),
+                new InstanceQueryService(bootResult.instanceSearchService()));
+        apiClient = new ApiClient(objectService);
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
         schedulerAndWorker = bootResult.schedulerAndWorker();
@@ -31,6 +33,7 @@ public class ApiServiceTest extends TestCase {
     @Override
     protected void tearDown() throws Exception {
         apiClient = null;
+        objectService = null;
         schedulerAndWorker = null;
         typeManager = null;
     }
@@ -111,10 +114,9 @@ public class ApiServiceTest extends TestCase {
         var orderId = saveInstance("summary.Order",
                 Map.of("product", productId, "quantity", 1)
         );
-        var order = getObject(orderId);
-        //noinspection unchecked
-        var productRef = ((Map<String, Object>) order.map().get("fields")).get("product");
-        assertEquals(Map.of("id", productId, "type", "summary.Product", "summary", "MacBook Pro"), productRef);
+        var order = objectService.getInstance(orderId);
+        var productRef = (ReferencedTO) Utils.findRequired(order.fields(), f -> f.name().equals("product")).value();
+        assertEquals("MacBook Pro", productRef.summary());
     }
 
     private String saveInstance(String className, Map<String, Object> map) {

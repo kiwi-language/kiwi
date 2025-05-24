@@ -6,7 +6,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.MetaContextCache;
 import org.metavm.entity.ModelDefRegistry;
-import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.ObjectService;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -34,7 +34,7 @@ public class TypeManagerTest extends TestCase {
         typeManager = managers.typeManager();
         entityContextFactory = bootResult.entityContextFactory();
         metaContextCache = bootResult.metaContextCache();
-        apiClient = new ApiClient(new ApiService(entityContextFactory, metaContextCache,
+        apiClient = new ApiClient(new ObjectService(entityContextFactory, metaContextCache,
                 new InstanceQueryService(bootResult.instanceSearchService())));
         ContextUtil.setAppId(TestConstants.APP_ID);
     }

@@ -41,8 +41,8 @@ public class ApiValueConverter {
 
     public static Map<String, Object> toMap(ObjectDTO object) {
         var map = new HashMap<String, Object>();
-        map.put(ApiService.KEY_ID, object.id());
-        map.put(ApiService.KEY_TYPE, object.type().qualifiedName());
+        map.put(ObjectService.KEY_ID, object.id());
+        map.put(ObjectService.KEY_TYPE, object.type().qualifiedName());
         for (FieldDTO field : object.fields()) {
             map.put(field.name(), toRaw(field.value()));
         }
@@ -82,7 +82,7 @@ public class ApiValueConverter {
     }
 
     public static ObjectDTO buildObject(Map map) {
-        var typeExpr = map.get(ApiService.KEY_TYPE) instanceof String s ? s : null;
+        var typeExpr = map.get(ObjectService.KEY_TYPE) instanceof String s ? s : null;
         return buildObject(map, typeExpr);
     }
 
@@ -93,7 +93,7 @@ public class ApiValueConverter {
         map.forEach((k, v) -> {
             if (!(k instanceof String name) || name.isEmpty())
                 throw invalidRequestBody(map);
-            if (k.equals(ApiService.KEY_ID) || k.equals(ApiService.KEY_TYPE))
+            if (k.equals(ObjectService.KEY_ID) || k.equals(ObjectService.KEY_TYPE))
                 return;
             if (Character.isUpperCase(name.charAt(0))) {
                 if (!(v instanceof List list))
@@ -108,7 +108,7 @@ public class ApiValueConverter {
                 fields.add(new FieldDTO(name, buildValue(v)));
         });
         return new ObjectDTO(
-                (String) map.get(ApiService.KEY_ID),
+                (String) map.get(ObjectService.KEY_ID),
                 type,
                 fields,
                 children

@@ -109,10 +109,10 @@ public class UserCompilingTest extends CompilerTestBase {
                 var token = login(platformApplication.id(), email, "123456");
 
                 // enter application
-                var loginResult = (ApiObject) doInTransaction(() -> apiClient.callMethod(
+                var loginResult = ApiObject.from(doInTransaction(() -> apiClient.callMethod(
                         userKlass,
                         "enterApp", List.of(platformUserId, application.id())
-                ));
+                )));
                 token = loginResult.getString("token");
                 Assert.assertNotNull(token);
 
@@ -171,11 +171,11 @@ public class UserCompilingTest extends CompilerTestBase {
                 var reloadedAnotherPlatformUser = getObject(anotherPlatformUserId);
                 var anotherJoinedApplications = reloadedAnotherPlatformUser.getArray("applications");
                 Assert.assertEquals(1, anotherJoinedApplications.size());
-                loginResult = (ApiObject) doInTransaction(() -> apiClient.callMethod(
+                loginResult = ApiObject.from(doInTransaction(() -> apiClient.callMethod(
                         userKlass,
                         "enterApp",
                         List.of(anotherPlatformUserId, application.id())
-                ));
+                )));
                 token = loginResult.getString("token");
                 Assert.assertNotNull(token);
 
@@ -303,9 +303,9 @@ public class UserCompilingTest extends CompilerTestBase {
     }
 
     private ApiObject verify(Map<String, Object> tokenValue) {
-        return (ApiObject) callMethod(
+        return ApiObject.from(callMethod(
                 "org.metavm.user.LabUser", "verify", List.of(tokenValue)
-        );
+        ));
     }
 
     private String login(String applicationId, String loginName, @SuppressWarnings("SameParameterValue") String password) {
@@ -313,10 +313,10 @@ public class UserCompilingTest extends CompilerTestBase {
     }
 
     private String login(String applicationId, String loginName, String password, String clientIP, boolean checkToken) {
-        var loginResult = (ApiObject) callMethod(
+        var loginResult = ApiObject.from(callMethod(
                 "org.metavm.user.LabUser", "login",
                 List.of(applicationId, loginName, password, clientIP)
-        );
+        ));
         var token = loginResult.getString("token");
         if (checkToken)
             Assert.assertNotNull(token);

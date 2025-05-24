@@ -48,8 +48,7 @@ public record ApiObject(Map<String, Object> map) {
     }
 
     public ApiObject getObject(String fieldName) {
-        //noinspection unchecked
-        return from((Map<String, Object>) get(fieldName));
+        return from(get(fieldName));
     }
 
     public List<?> getArray(String fieldName) {

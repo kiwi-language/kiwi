@@ -8,10 +8,9 @@ import org.metavm.entity.EntityQueryService;
 import org.metavm.entity.MetaContextCache;
 import org.metavm.event.MockEventQueue;
 import org.metavm.flow.FlowSavingContext;
-import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.ObjectService;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ApiObject;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.persistence.MockSchemaManager;
 import org.metavm.object.type.*;
 import org.metavm.user.LoginService;
@@ -85,7 +84,7 @@ public abstract class CompilerTestBase extends TestCase  {
                 loginService, entityQueryService, new MockEventQueue(), verificationCodeService);
         applicationManager = new ApplicationManager(entityContextFactory, roleManager, platformUserManager,
                 verificationCodeService, bootResult.idProvider(), entityQueryService, bootResult.schemaManager());
-        var apiService = new ApiService(entityContextFactory, bootResult.metaContextCache(), instanceQueryService);
+        var apiService = new ObjectService(entityContextFactory, bootResult.metaContextCache(), instanceQueryService);
         apiClient = new ApiClient(apiService);
         ContextUtil.resetProfiler();
     }

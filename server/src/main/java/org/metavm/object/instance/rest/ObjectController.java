@@ -14,7 +14,7 @@ import org.metavm.http.HttpCookieImpl;
 import org.metavm.http.HttpHeaderImpl;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
-import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.ObjectService;
 import org.metavm.object.instance.rest.dto.CreateRequest;
 import org.metavm.object.instance.rest.dto.InvokeRequest;
 import org.metavm.object.instance.rest.dto.ObjectDTO;
@@ -28,23 +28,22 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/object")
 @Slf4j
-public class ApiController {
+public class ObjectController {
 
 //    public static final int MAX_RETRIES = 5;
 
-    private final ApiService apiService;
+    private final ObjectService objectService;
 
     private final LoginService loginService;
 
     private final boolean verify;
 
-    public ApiController(ApiService apiService, LoginService loginService, @Value("${metavm.api.verify}") boolean verify) {
-        this.apiService = apiService;
+    public ObjectController(ObjectService objectService, LoginService loginService, @Value("${metavm.api.verify}") boolean verify) {
+        this.objectService = objectService;
         this.loginService = loginService;
         this.verify = verify;
     }
@@ -54,19 +53,19 @@ public class ApiController {
         verify(servletRequest);
         var httpRequest = createRequest(servletRequest);
         var httResponse = new HttpResponseImpl();
-        return Result.success(apiService.saveInstance(request.object(), httpRequest, httResponse));
+        return Result.success(objectService.saveInstance(request.object(), httpRequest, httResponse));
     }
 
     @GetMapping("/{id}")
     public Result<ObjectDTO> get(HttpServletRequest servletRequest, @PathVariable("id") String id) {
         verify(servletRequest);
-        return Result.success(apiService.getInstance(id));
+        return Result.success(objectService.getInstance(id));
     }
 
     @PostMapping("/search")
     public Result<SearchResult> search(HttpServletRequest servletRequest, @RequestBody SearchRequest request) {
         verify(servletRequest);
-        return Result.success(apiService.search(request));
+        return Result.success(objectService.search(request));
     }
 
     @PostMapping("/invoke")
@@ -74,7 +73,7 @@ public class ApiController {
         verify(servletRequest);
         var httpRequest = createRequest(servletRequest);
         var httpResponse = new HttpResponseImpl();
-        var r = apiService.handleMethodCall(request, httpRequest, httpResponse);
+        var r = objectService.handleMethodCall(request, httpRequest, httpResponse);
         saveResponse(httpResponse, servletResponse);
         return Result.success(r);
     }

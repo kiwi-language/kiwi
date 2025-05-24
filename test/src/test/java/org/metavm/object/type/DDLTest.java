@@ -8,7 +8,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.*;
-import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.ObjectService;
 import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.Reference;
@@ -41,7 +41,7 @@ public class DDLTest extends TestCase {
         var commonManagers = TestUtils.createCommonManagers(bootResult);
         typeManager = commonManagers.typeManager();
         entityContextFactory = bootResult.entityContextFactory();
-        apiClient = new ApiClient(new ApiService(bootResult.entityContextFactory(), bootResult.metaContextCache(),
+        apiClient = new ApiClient(new ObjectService(bootResult.entityContextFactory(), bootResult.metaContextCache(),
                 new InstanceQueryService(bootResult.instanceSearchService())));
         schedulerAndWorker  = bootResult.schedulerAndWorker();
         metaContextCache = bootResult.metaContextCache();
@@ -108,9 +108,9 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(0, shoes1.getObject("version").get("majorVersion"));
         Assert.assertEquals(0, hat.getObject("version").get("majorVersion"));
         // check that index entries have been generated
-        var foundId = (Id) TestUtils.doInTransaction(() -> apiClient.callMethod("Product", "findByName", List.of("Shoes")));
+        var foundId = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("Product", "findByName", List.of("Shoes")));
         Assert.assertEquals(shoesId, foundId);
-        var foundId2 = (Id) TestUtils.doInTransaction(() -> apiClient.callMethod("Product", "findByName", List.of("Hat")));
+        var foundId2 = (String) TestUtils.doInTransaction(() -> apiClient.callMethod("Product", "findByName", List.of("Hat")));
         Assert.assertEquals(hatId, foundId2);
         var box = apiClient.getObject(boxId);
         Assert.assertEquals(1, box.get("count"));
@@ -366,14 +366,14 @@ public class DDLTest extends TestCase {
         for (var productId : productIds) {
             var product = apiClient.getObject(productId);
             MatcherAssert.assertThat(product.getObject("price"), CoreMatchers.instanceOf(ApiObject.class));
-            var price = (ApiObject) product.get("price");
+            var price = product.getObject("price");
             Assert.assertNull(price.id());
         }
         var commitId = assemble("value_ddl_before.kiwi", false);
         TestUtils.runTasks(1, 16, schedulerAndWorker);
         var shoes1 = apiClient.getObject(shoesId);
         var price1 = shoes1.get("price");
-        MatcherAssert.assertThat(price1, CoreMatchers.instanceOf(ApiObject.class));
+        MatcherAssert.assertThat(price1, CoreMatchers.instanceOf(Map.class));
         TestUtils.waitForDDLPrepared(schedulerAndWorker);
         try(var context = newContext()) {
 //            var commit = context.getEntity(Commit.class, commitId);
@@ -383,7 +383,7 @@ public class DDLTest extends TestCase {
         }
         for (var productId : productIds) {
             var product = apiClient.getObject(productId);
-            MatcherAssert.assertThat(product.get("price"), CoreMatchers.instanceOf(Id.class));
+            MatcherAssert.assertThat(product.get("price"), CoreMatchers.instanceOf(String.class));
         }
 //        TestUtils.waitForDDLCompleted(schedulerAndWorker);
         try (var context = newContext()){
@@ -652,10 +652,8 @@ public class DDLTest extends TestCase {
         Assert.assertEquals("ProductKind", "DEFAULT", kind);
         assemble("value_to_enum_ddl_rollback.kiwi");
         var shoes1 = apiClient.getObject(shoesId);
-        var kind1 = shoes1.get("kind");
-        MatcherAssert.assertThat(kind1, CoreMatchers.instanceOf(ApiObject.class));
-        var kind1Obj = (ApiObject) kind1;
-        Assert.assertNull(kind1Obj.id());
+        var kind1 = shoes1.getObject("kind");
+        Assert.assertNull(kind1.id());
     }
 
     public void testAbortingValueToEnumConversion() {
@@ -673,10 +671,8 @@ public class DDLTest extends TestCase {
            commit.cancel();
         });
         TestUtils.waitForDDLAborted(schedulerAndWorker);
-        var kind = apiClient.getObject(shoesId).get("kind");
-        MatcherAssert.assertThat(kind, CoreMatchers.instanceOf(ApiObject.class));
-        var kindObj = (ApiObject) kind;
-        Assert.assertNull(kindObj.id());
+        var kind = apiClient.getObject(shoesId).getObject("kind");
+        Assert.assertNull(kind.id());
     }
 
     public void testAbortingEnumToValueConversion() {

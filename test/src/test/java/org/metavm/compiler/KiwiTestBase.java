@@ -4,11 +4,10 @@ import junit.framework.TestCase;
 import org.metavm.compiler.util.MockEnter;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.FlowSavingContext;
-import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.ObjectService;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
@@ -30,7 +29,7 @@ public abstract class KiwiTestBase extends TestCase  {
         typeManager = TestUtils.createCommonManagers(bootResult).typeManager();
         entityContextFactory = bootResult.entityContextFactory();
         schedulerAndWorker = bootResult.schedulerAndWorker();
-        apiClient = new ApiClient(new ApiService(entityContextFactory, bootResult.metaContextCache(),
+        apiClient = new ApiClient(new ObjectService(entityContextFactory, bootResult.metaContextCache(),
                 new InstanceQueryService(bootResult.instanceSearchService())));
     }
 

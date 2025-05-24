@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.MockEnter;
 import org.metavm.ddl.CommitState;
-import org.metavm.object.instance.ApiService;
+import org.metavm.object.instance.ObjectService;
 import org.metavm.object.instance.InstanceQueryService;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.type.TypeManager;
@@ -26,7 +26,7 @@ public class CompilerTest extends TestCase {
         var result = BootstrapUtils.bootstrap();
         typeManager = TestUtils.createCommonManagers(result).typeManager();
         schedulerAndWorker = result.schedulerAndWorker();
-        apiClient = new ApiClient(new ApiService(
+        apiClient = new ApiClient(new ObjectService(
                 result.entityContextFactory(),
                 result.metaContextCache(),
                 new InstanceQueryService(result.instanceSearchService())
