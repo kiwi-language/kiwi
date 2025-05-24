@@ -40,6 +40,8 @@ public class ObjectService extends EntityContextFactoryAware {
     public static final String KEY_ID = "$id";
     public static final String KEY_TYPE = "$type";
     public static final String ARG_PREFIX = "$arg";
+    public static final String PAGE = "page";
+    public static final String PAGE_SIZE = "$pageSize";
 
     private final MetaContextCache metaContextCache;
     private final InstanceQueryService instanceQueryService;

@@ -10,6 +10,14 @@ public record ObjectDTO(
         List<FieldDTO> fields,
         List<ObjectDTO> children
 ) implements ValueDTO {
+
+    public ObjectDTO {
+        if (fields == null)
+            fields = List.of();
+        if (children == null)
+            children = List.of();
+    }
+
     @Override
     public String getKind() {
         return "object";

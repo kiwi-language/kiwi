@@ -6,6 +6,7 @@ import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.rest.dto.*;
+import org.metavm.util.ApiSearchResult;
 import org.metavm.util.BusinessException;
 import org.metavm.util.NamingUtils;
 import org.metavm.util.Utils;
@@ -52,6 +53,25 @@ public class ApiValueConverter {
             list.add(toRaw(child));
         }
         return map;
+    }
+
+    public static SearchRequest buildSearchRequest(String className, Map<String, Object> query, int page, int pageSize) {
+        var terms = new ArrayList<SearchTerm>();
+        query.forEach((k, v) -> {
+            if (k.equals(ObjectService.PAGE) || k.equals(ObjectService.PAGE_SIZE))
+                return;
+            var term = switch (v) {
+                case List<?> list -> SearchTerm.ofRange(k, buildValue(list.getFirst()), buildValue(list.get(1)));
+                default -> SearchTerm.of(k, buildValue(v));
+            };
+            terms.add(term);
+        });
+        return new SearchRequest(
+                new ClassTypeDTO(className),
+                terms,
+                page,
+                pageSize
+        );
     }
 
     public static ValueDTO buildValue(Object o) {

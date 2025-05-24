@@ -1,28 +1,24 @@
 package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.api.dto.ClassTypeDTO;
 import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
 import org.metavm.http.HttpRequestImpl;
 import org.metavm.http.HttpResponseImpl;
-import org.metavm.object.instance.ObjectService;
 import org.metavm.object.instance.ApiValueConverter;
+import org.metavm.object.instance.ObjectService;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.rest.SearchResult;
 import org.metavm.object.instance.rest.dto.ArgumentDTO;
 import org.metavm.object.instance.rest.dto.InvokeRequest;
-import org.metavm.object.instance.rest.dto.SearchRequest;
-import org.metavm.object.instance.rest.dto.SearchTerm;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.metavm.object.instance.ApiValueConverter.buildObject;
-import static org.metavm.object.instance.ApiValueConverter.buildValue;
+import static org.metavm.object.instance.ApiValueConverter.*;
 
 @Slf4j
 public class ApiClient {
@@ -99,22 +95,8 @@ public class ApiClient {
         return rs;
     }
 
-    public ApiSearchResult search(String className, Map<String, Object> query, int page, int pageSize) {
-        var terms = new ArrayList<SearchTerm>();
-        query.forEach((k, v) -> {
-            var term = switch (v) {
-                case List<?> list -> SearchTerm.ofRange(k, buildValue(list.getFirst()), buildValue(list.get(1)));
-                default -> SearchTerm.of(k, buildValue(v));
-            };
-            terms.add(term);
-        });
-        var request = new SearchRequest(
-                new ClassTypeDTO(className),
-                terms,
-                page,
-                pageSize
-        );
-        return buildApiSearchResult(objectService.search(request));
+    public ApiSearchResult search(String className, Map<String, Object> criteria, int page, int pageSize) {
+        return buildApiSearchResult(objectService.search(buildSearchRequest(className, criteria, page, pageSize)));
     }
 
     private ApiSearchResult buildApiSearchResult(SearchResult searchResult) {

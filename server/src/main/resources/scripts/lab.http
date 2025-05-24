@@ -91,15 +91,71 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:8080/object/product
+POST http://localhost:8080/object
 Content-Type: application/json
-X-App-ID: 1000000010
+X-App-ID: 1000002040
 
 {
-  "name": "Shoes",
-  "price": 100,
-  "stock": 100,
-  "category": "CLOTHING"
+  "object": {
+    "type": {
+      "kind": "class",
+      "qualifiedName": "Product"
+    },
+    "kind": "object",
+    "fields": [
+      {
+        "name": "name",
+        "value": {
+          "kind": "string",
+          "value": "Shoes"
+        }
+      },
+      {
+        "name": "price",
+        "value": {
+          "kind": "object",
+          "type": {
+            "kind": "class",
+            "qualifiedName": "Money"
+          },
+          "fields": [
+            {
+              "name": "amount",
+              "value": {
+                "kind": "double",
+                "value": 100
+              }
+            },
+            {
+              "name": "currency",
+              "value": {
+                "kind": "enumConstant",
+                "type": "Currency",
+                "name": "YUAN"
+              }
+            }
+          ],
+          "children": []
+        }
+      },
+      {
+        "name": "stock",
+        "value": {
+          "kind": "int",
+          "value": 100
+        }
+      },
+      {
+        "name": "category",
+        "value": {
+          "kind": "enumConstant",
+          "type": "Category",
+          "name": "CLOTHING"
+        }
+      }
+    ],
+    "children": []
+  }
 }
 ###
 GET http://localhost:8080/object/01a0c4d7b90700

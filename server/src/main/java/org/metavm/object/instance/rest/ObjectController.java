@@ -48,8 +48,8 @@ public class ObjectController {
         this.verify = verify;
     }
 
-    @PutMapping
-    public Result<String> save(HttpServletRequest servletRequest, @RequestBody CreateRequest request) {
+    @PostMapping
+    public Result<String> save(@RequestBody CreateRequest request, HttpServletRequest servletRequest) {
         verify(servletRequest);
         var httpRequest = createRequest(servletRequest);
         var httResponse = new HttpResponseImpl();
@@ -57,19 +57,19 @@ public class ObjectController {
     }
 
     @GetMapping("/{id}")
-    public Result<ObjectDTO> get(HttpServletRequest servletRequest, @PathVariable("id") String id) {
+    public Result<ObjectDTO> get(@PathVariable("id") String id, HttpServletRequest servletRequest) {
         verify(servletRequest);
         return Result.success(objectService.getInstance(id));
     }
 
     @PostMapping("/search")
-    public Result<SearchResult> search(HttpServletRequest servletRequest, @RequestBody SearchRequest request) {
+    public Result<SearchResult> search(@RequestBody SearchRequest request, HttpServletRequest servletRequest) {
         verify(servletRequest);
         return Result.success(objectService.search(request));
     }
 
     @PostMapping("/invoke")
-    public Result<Object> invoke(HttpServletRequest servletRequest, HttpServletResponse servletResponse, @RequestBody InvokeRequest request) {
+    public Result<Object> invoke(@RequestBody InvokeRequest request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
         verify(servletRequest);
         var httpRequest = createRequest(servletRequest);
         var httpResponse = new HttpResponseImpl();
