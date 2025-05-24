@@ -126,7 +126,7 @@ public class TypeManager extends EntityContextFactoryAware {
         reader.read();
     }
 
-    public Id getEnumConstantId(String klassName, String enumConstantName) {
+    public String getEnumConstantId(String klassName, String enumConstantName) {
         try(var context = newContext()) {
             var klass = context.selectFirstByKey(Klass.UNIQUE_QUALIFIED_NAME, Instances.stringInstance(klassName));
             if(klass == null)
@@ -135,7 +135,7 @@ public class TypeManager extends EntityContextFactoryAware {
                 klass.resetHierarchy();
                 var sft = StaticFieldTable.getInstance(klass.getType(), context);
                 var ec = sft.getEnumConstantByName(enumConstantName);
-                return ec.getId();
+                return ec.getStringId();
             }
             else
                 throw new BusinessException(ErrorCode.NOT_AN_ENUM_CLASS, klass.getName());

@@ -1,14 +1,13 @@
 package org.metavm;
 
 
-import org.metavm.util.Utils;
+import org.metavm.object.instance.core.Id;
 
 public class Lab {
 
     public static void main(String[] args) {
-
-        Utils.clearDirectory("/Users/leen/workspace/kiwi/test/target/test-classes/target");
-
+        var id = Id.parse("01a2aad6b90700");
+        System.out.println(id.getClass());
     }
 
 }

@@ -10,8 +10,13 @@ public record ApiObject(Map<String, Object> map) {
         this.map = new HashMap<>(map);
     }
 
-    public static ApiObject from(Map<String, Object> value) {
-        return new ApiObject(value);
+    public static ApiObject from(Object value) {
+        //noinspection rawtypes
+        if (value instanceof Map map)
+            //noinspection unchecked
+            return new ApiObject(map);
+        else
+            throw new IllegalArgumentException("Value '" + value + "' is not an object");
     }
 
     public Object get(String fieldName) {

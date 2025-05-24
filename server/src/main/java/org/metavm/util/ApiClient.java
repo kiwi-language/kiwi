@@ -36,7 +36,7 @@ public class ApiClient {
     }
 
     public Object getStatic(String className, String fieldName) {
-        return apiService.getStatic(className, fieldName);
+        return ApiValueConverter.toRaw(apiService.getStatic(className, fieldName));
     }
 
     public ApiObject getObject(String id) {

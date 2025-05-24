@@ -26,7 +26,7 @@ public record ShoppingTypeIds(
         String orderPriceFieldId,
         String orderTimeFieldId,
         String orderCouponsFieldId,
-        Id couponNormalStateId,
-        Id couponUsedStateId
+        String couponNormalStateId,
+        String couponUsedStateId
 ) {
 }

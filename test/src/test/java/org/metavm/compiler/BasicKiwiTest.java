@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.ApiObject;
-import org.metavm.object.instance.core.Id;
 import org.metavm.util.BusinessException;
 import org.metavm.util.TestConstants;
 
@@ -20,7 +19,7 @@ public class BasicKiwiTest extends KiwiTestBase {
                 "kiwi/basics/anonymous_class/AnonymousClassFoo.kiwi",
                 "kiwi/basics/anonymous_class/EntryDTO.kiwi"
         ));
-        var id = (Id) callMethod("anonymous_class.AnonymousClassFoo",
+        var id = (String) callMethod("anonymous_class.AnonymousClassFoo",
                         "create<string, any>",
                         List.of(
                                 List.of(
@@ -383,9 +382,9 @@ public class BasicKiwiTest extends KiwiTestBase {
                 "kiwi/basics/innerclass/Warehouse.kiwi"
         ));
         var bean = "warehouseService";
-        var warehouseId = (Id) callMethod(bean, "createWarehouse", List.of("w1"));
-        var containerId = (Id) callMethod(bean, "createContainer", List.of(warehouseId, "c1"));
-        var itemId = (Id) callMethod(bean, "createItem", List.of(containerId, "i1"));
+        var warehouseId = (String) callMethod(bean, "createWarehouse", List.of("w1"));
+        var containerId = (String) callMethod(bean, "createContainer", List.of(warehouseId, "c1"));
+        var itemId = (String) callMethod(bean, "createItem", List.of(containerId, "i1"));
         var itemType = callMethod(itemId, "getType", List.of());
         var itemContainer = callMethod(itemId, "getContainer", List.of());
         var itemWarehouse = callMethod(itemId, "getWarehouse", List.of());
@@ -462,7 +461,7 @@ public class BasicKiwiTest extends KiwiTestBase {
                 "kiwi/basics/interceptors/UserDTO.kiwi",
                 "kiwi/basics/interceptors/UserService.kiwi"
         ));
-        var user = (ApiObject) callMethod("userService", "getUserByName", List.of("leen"));
+        var user = ApiObject.from(callMethod("userService", "getUserByName", List.of("leen")));
         var tel =  user.getString("telephone");
         Assert.assertEquals("123******12", tel);
     }

@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.core.ApiObject;
-import org.metavm.object.instance.core.Id;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.TestUtils;
@@ -285,7 +284,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 "inbound",
                 List.of(
                         Map.ofEntries(
-                                Map.entry(ApiService.KEY_CLASS, qcByBoundInboundRequestType),
+                                Map.entry(ApiService.KEY_TYPE, qcByBoundInboundRequestType),
                                 Map.entry("bizType", PURCHASE),
                                 Map.entry("position", storageObjects.position.id()),
                                 Map.entry("material", material.id()),
@@ -306,7 +305,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
                 "inbound",
                 List.of(
                         Map.ofEntries(
-                                Map.entry(ApiService.KEY_CLASS, qcBySpecInboundRequestType),
+                                Map.entry(ApiService.KEY_TYPE, qcBySpecInboundRequestType),
                                 Map.entry("bizType", PURCHASE),
                                 Map.entry("position", storageObjects.position.id()),
                                 Map.entry("material", material.id()),
@@ -402,7 +401,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
         var workCenterId = doInTransaction(() -> apiClient.newInstance(qcWorkCenter, List.of()));
         var qcProcess = "org.metavm.manufacturing.production.Process";
         var processId = doInTransaction(() -> apiClient.newInstance(qcProcess, List.of("process1")));
-        var routingId = (Id) doInTransaction(() -> apiClient.callMethod(
+        var routingId = (String) doInTransaction(() -> apiClient.callMethod(
                 ROUTING_SERVICE,
                 "save",
                 List.of(
@@ -431,9 +430,9 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
 //        var viewId = (DefaultViewId) Id.parse(reloadedRoutingView.id());
 //        Assert.assertEquals(viewId.getSourceId(), Id.parse(routingId));
         var routing = TestUtils.doInTransaction(() ->
-                (ApiObject) Objects.requireNonNull(apiClient.callMethod(ROUTING_SERVICE, "get", List.of(routingId)))
+                ApiObject.from(Objects.requireNonNull(apiClient.callMethod(ROUTING_SERVICE, "get", List.of(routingId))))
         );
-        var routingProcess = (ApiObject) routing.getArray("processes").getFirst();
+        var routingProcess = ApiObject.from(routing.getArray("processes").getFirst());
 //        var processListView = reloadedRoutingView.getInstance("processes");
 //        var itemView = processListView.getElementInstance(0);
 //        var successionListView = reloadedRoutingView.getInstance("successions");
@@ -465,7 +464,7 @@ public class ManufacturingCompilingTest extends CompilerTestBase {
     }
 
     private void processBOM(ApiObject material, ApiObject unit, ApiObject routing, ApiObject routingProcess) {
-        var bomId = (Id) callMethod(
+        var bomId = (String) callMethod(
                 BOM_SERVICE,
                 "create",
                 List.of(

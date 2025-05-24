@@ -38,7 +38,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     public static final Logger logger = LoggerFactory.getLogger(ApiService.class);
     public static final String KEY_ID = "$id";
-    public static final String KEY_CLASS = "$class";
+    public static final String KEY_TYPE = "$type";
 
     private final MetaContextCache metaContextCache;
     private final InstanceQueryService instanceQueryService;
@@ -67,25 +67,42 @@ public class ApiService extends EntityContextFactoryAware {
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public ValueDTO handleMethodCall(InvokeRequest request, HttpRequest httpRequest, HttpResponse httpResponse) {
         try (var context = newContext()) {
-            Value result;
-             if (request.receiver() instanceof StringValueDTO s) {
-                 ClassInstance bean;
-                 if (s.value().indexOf('.') == -1 && (bean = tryResolveBean(s.value(), context)) != null)
-                    result = executeInstanceMethod(bean, request.method(), request.arguments(), httpRequest, httpResponse, context);
-                 else {
-                     var klassName = s.value().contains(".") ? s.value() : NamingUtils.firstCharToUpperCase(s.value());
-                     var klass = getKlass(klassName, context);
-                     var r = resolveMethod(klass, request.method(), request.arguments(), true, false, context);
-                     result = execute(r.method, null, r.arguments, httpRequest, httpResponse, context);
-                 }
-            } else  {
-                 var r = tryResolveObject(request.receiver(), AnyType.instance, null, context);
-                 if (!r.successful)
-                     throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
-                 result = executeInstanceMethod(r.resolved.resolveObject(), request.method(), request.arguments(), httpRequest, httpResponse, context);
-             }
+            var receiver = resolveReceiver(request.receiver(), context);
+            var result = switch (receiver) {
+                case ClassInstance inst ->  executeInstanceMethod(inst, request.method(), request.arguments(), httpRequest, httpResponse, context);
+                case ClassType ct -> {
+                    var r = resolveMethod(ct, request.method(), request.arguments(), true, false, context);
+                    yield execute(r.method, null, r.arguments, httpRequest, httpResponse, context);
+                }
+                default -> throw invalidRequestBody(request.receiver());
+            };
             context.finish();
             return formatValue(result, false, false);
+        }
+    }
+
+    private Object resolveReceiver(ValueDTO value, IInstanceContext context) {
+        if (value instanceof StringValueDTO s) {
+            if (s.value().indexOf('.') == -1) {
+                var receiver = tryResolveBean(s.value(), context);
+                if (receiver == null) {
+                    try {
+                        receiver = (ClassInstance) context.get(Id.parse(s.value()));
+                    } catch (Exception ignored) {
+                    }
+                }
+                if (receiver != null) {
+                    return receiver;
+                }
+            }
+            var klassName =  s.value().contains(".") ? s.value() : NamingUtils.firstCharToUpperCase(s.value());
+            return getKlass(klassName, context);
+        }
+        else {
+            var r = tryResolveObject(value, AnyType.instance, null, context);
+            if (!r.successful)
+                throw invalidRequestBody(value);
+            return r.resolved.resolveObject();
         }
     }
 
@@ -177,7 +194,7 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
-    public Object getStatic(String className, String fieldName) {
+    public ValueDTO getStatic(String className, String fieldName) {
         try(var context = newContext()) {
             var klass = getKlass(className, context);
             var sft = StaticFieldTable.getInstance(klass, context);
@@ -538,6 +555,12 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private ValueResolutionResult tryResolveObject(ValueDTO value, Type type, @Nullable ClassInstance parent, IInstanceContext context) {
+        if (value instanceof StringValueDTO s) {
+            if (type instanceof ClassType ct && ct.isEnum())
+                return tryResolveEnumConstant(s.value(), ct, context);
+            else
+                return ValueResolutionResult.failed;
+        }
         if (value instanceof ReferencedTO r)
             return tryResolveReference(r.id(), type, context);
         if (value instanceof BeanDTO b) {
@@ -546,19 +569,26 @@ public class ApiService extends EntityContextFactoryAware {
                 return ValueResolutionResult.failed;
             return ValueResolutionResult.of(bean.getReference());
         }
-        if (value instanceof StringValueDTO s && type instanceof ClassType ct && ct.isEnum())
-            return tryResolveEnumConstant(s.value(), ct, context);
         if (value instanceof EnumConstantDTO ec) {
             var t = getKlass(ec.type(), context);
             return tryResolveEnumConstant(ec.name(), t, context);
         }
         if (value instanceof ObjectDTO o) {
-            var actualType = getKlass(o.type().qualifiedName(), context);
-            var instance = saveObject(o, actualType, parent, context);
+            var instance = saveObject(o, getActualType(o, type, context), parent, context);
             return instance != null ? ValueResolutionResult.of(instance.getReference()) : ValueResolutionResult.failed;
         }
         else
-            throw invalidRequestBody();
+            return ValueResolutionResult.failed;
+    }
+
+    private ClassType getActualType(ObjectDTO o, Type type, IInstanceContext context) {
+        if (o.type() != null)
+            return getKlass(o.type().qualifiedName(), context);
+        else if (type instanceof ClassType ct)
+            return ct;
+        else
+            throw invalidRequestBody(o);
+
     }
 
     private @Nullable ClassInstance saveObject(ObjectDTO object, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
@@ -639,11 +669,11 @@ public class ApiService extends EntityContextFactoryAware {
     }
 
     private Value resolveAny(ValueDTO rawValue, IInstanceContext context) {
-        if (rawValue == null)
+        if (rawValue == null || rawValue instanceof NullDTO)
             return Instances.nullInstance();
-        if (rawValue instanceof StringValueDTO str)
+        if (rawValue instanceof StringValueDTO str) {
             return Instances.stringInstance(str.value());
-        if(rawValue instanceof ByteValueDTO b)
+        } if(rawValue instanceof ByteValueDTO b)
             return Instances.wrappedByteInstance(b.value());
         if(rawValue instanceof ShortValueDTO s)
             return Instances.wrappedShortInstance(s.value());
@@ -666,11 +696,11 @@ public class ApiService extends EntityContextFactoryAware {
         }
         var r = tryResolveObject(rawValue, Types.getAnyType(), null, context);
         if (r.successful) return r.resolved;
-        throw invalidRequestBody();
+        throw invalidRequestBody(rawValue);
     }
 
     private ClassInstance createObject(ObjectDTO object, ClassType type, @Nullable ClassInstance parent, IInstanceContext context) {
-        var actualType = getKlass(object.type().qualifiedName(), context);
+        var actualType = getActualType(object, type, context);
         var id = parent != null ? parent.nextChildId() : context.allocateRootId(actualType);
         var r = resolveConstructor(actualType, object.fields(), context);
         var self = ClassInstance.allocate(id, actualType, parent);
@@ -682,7 +712,6 @@ public class ApiService extends EntityContextFactoryAware {
         return self;
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     private void updateObject(ClassInstance instance, ObjectDTO json, IInstanceContext context) {
         var type = instance.getInstanceType();
         json.fields().forEach(f -> {
@@ -705,8 +734,8 @@ public class ApiService extends EntityContextFactoryAware {
         saveChildren(json.children(), instance, context);
     }
 
-    private BusinessException invalidRequestBody() {
-        return new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+    private BusinessException invalidRequestBody(ValueDTO value) {
+        return new BusinessException(ErrorCode.INVALID_REQUEST_BODY, Utils.toJSONString(value));
     }
 
     private void saveChildren(List<ObjectDTO> children, ClassInstance instance, IInstanceContext context) {

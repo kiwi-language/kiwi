@@ -161,14 +161,14 @@ public class BasicCompilingTest extends CompilerTestBase {
         var channelPrices = price.getArray("channelPrices");
         Assert.assertEquals(2, channelPrices.size());
         // check mobile channel
-        var mobileChannelPrice = (ApiObject) channelPrices.getFirst();
+        var mobileChannelPrice = ApiObject.from(channelPrices.getFirst());
         Assert.assertNull(mobileChannelPrice.id());
         Assert.assertEquals("mobile", mobileChannelPrice.getString("channel"));
         var mobilePrice = mobileChannelPrice.getObject("price");
         Assert.assertEquals(80.0, mobilePrice.getDouble("quantity"), 0.0001);
         Assert.assertEquals("YUAN", mobilePrice.getString("kind"));
         // check web channel
-        var webChannelPrice = (ApiObject) channelPrices.get(1);
+        var webChannelPrice = ApiObject.from(channelPrices.get(1));
         Assert.assertNull(webChannelPrice.id());
         Assert.assertEquals("web", webChannelPrice.getString("channel"));
         var webPrice = webChannelPrice.getObject("price");

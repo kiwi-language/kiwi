@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.api.dto.ClassTypeDTO;
 import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.rest.dto.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.NamingUtils;
@@ -40,8 +41,8 @@ public class ApiValueConverter {
 
     public static Map<String, Object> toMap(ObjectDTO object) {
         var map = new HashMap<String, Object>();
-        map.put("$id", object.id());
-        map.put("$type", object.type().qualifiedName());
+        map.put(ApiService.KEY_ID, object.id());
+        map.put(ApiService.KEY_TYPE, object.type().qualifiedName());
         for (FieldDTO field : object.fields()) {
             map.put(field.name(), toRaw(field.value()));
         }
@@ -66,8 +67,8 @@ public class ApiValueConverter {
             case String str -> {
                 if (str.startsWith("0")) {
                     try {
-                        Id.parse(str);
-                        yield new ReferencedTO(str, null, null);
+                        if (Id.parse(str) instanceof PhysicalId)
+                            yield new ReferencedTO(str, null, null);
                     }
                     catch (Exception ignored) {}
                 }
@@ -76,12 +77,12 @@ public class ApiValueConverter {
             case Map map -> buildObject(map);
             case List list -> buildArray(list);
             case null -> new NullDTO();
-            default -> throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+            default -> throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, o);
         };
     }
 
     public static ObjectDTO buildObject(Map map) {
-        var typeExpr = map.get("$type") instanceof String s ? s : null;
+        var typeExpr = map.get(ApiService.KEY_TYPE) instanceof String s ? s : null;
         return buildObject(map, typeExpr);
     }
 
@@ -91,15 +92,15 @@ public class ApiValueConverter {
         var children = new ArrayList<ObjectDTO>();
         map.forEach((k, v) -> {
             if (!(k instanceof String name) || name.isEmpty())
-                throw invalidRequestBody();
-            if (k.equals("$id") || k.equals("$type"))
+                throw invalidRequestBody(map);
+            if (k.equals(ApiService.KEY_ID) || k.equals(ApiService.KEY_TYPE))
                 return;
             if (Character.isUpperCase(name.charAt(0))) {
                 if (!(v instanceof List list))
-                    throw invalidRequestBody();
+                    throw invalidRequestBody(map);
                 for (Object e : list) {
                     if (!(e instanceof Map childMap))
-                        throw invalidRequestBody();
+                        throw invalidRequestBody(map);
                     children.add(buildObject(childMap, typeExpr + "." + name));
                 }
             }
@@ -107,7 +108,7 @@ public class ApiValueConverter {
                 fields.add(new FieldDTO(name, buildValue(v)));
         });
         return new ObjectDTO(
-                (String) map.get("$id"),
+                (String) map.get(ApiService.KEY_ID),
                 type,
                 fields,
                 children
@@ -118,8 +119,8 @@ public class ApiValueConverter {
         return new ArrayDTO(Utils.map(list, ApiValueConverter::buildValue));
     }
 
-    private static BusinessException invalidRequestBody() {
-        return new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+    private static BusinessException invalidRequestBody(Object o) {
+        return new BusinessException(ErrorCode.INVALID_REQUEST_BODY, o);
     }
 
 }
