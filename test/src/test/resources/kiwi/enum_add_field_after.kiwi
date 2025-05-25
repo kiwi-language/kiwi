@@ -1,4 +1,4 @@
-enum Currency(priv val rate: double) {
+enum Currency(val rate: double) {
 
     YUAN(0.14),
     DOLLAR(1.0),

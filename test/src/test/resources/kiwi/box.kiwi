@@ -1,6 +1,6 @@
 
 class Box<T> {
 
-    priv var value: T
+    var value: T
 
 }

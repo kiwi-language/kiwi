@@ -135,6 +135,7 @@ public class ClassFileReader {
         else
             method = MethodBuilder.newBuilder(klass, name).returnTypeIndex(returnTypeIndex).build();
         method.setInternalName(internalName);
+        method.setAccess(Access.fromCode(input.read()));
         method.setFlags(input.readInt());
         readConstantPool(method.getConstantPool());
         method.setParameters(input.readList(() -> readParameter(method)));

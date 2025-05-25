@@ -56,7 +56,7 @@ public class ApiController {
             return Result.success(apiService.saveInstance((Map<String, Object>) object, request, response));
         }
         else
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "missing 'object' field");
     }
 
     @GetMapping("/{id}")
@@ -69,7 +69,7 @@ public class ApiController {
     public Result<SearchResult> search(HttpServletRequest servletRequest, @RequestBody Map<String, Object> requestBody) {
         verify(servletRequest);
         if (!(requestBody.get("type") instanceof String type))
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "missing 'type' field");
         //noinspection unchecked
         var criteria = (Map<String, Object>) requestBody.getOrDefault("criteria", Map.of());
         var page = (int) requestBody.getOrDefault("page", 1);
@@ -84,14 +84,16 @@ public class ApiController {
         var response = new HttpResponseImpl();
         var args = requestBody.getOrDefault("arguments", Map.of());
         var receiver = requestBody.get("receiver");
-        if (receiver == null || !(requestBody.get("method") instanceof String methodName))
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+        if (receiver == null)
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "missing 'receiver' field");
+        if (!(requestBody.get("method") instanceof String methodName))
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "missing or incorrect method");
         if (args instanceof List<?> || args instanceof Map<?,?>) {
             var r = apiService.handleMethodCall(receiver, methodName, args, request, response);
             saveResponse(response, servletResponse);
             return Result.success(r);
         } else
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "missing or incorrect arguments");
     }
 
     private void verify(HttpServletRequest request) {

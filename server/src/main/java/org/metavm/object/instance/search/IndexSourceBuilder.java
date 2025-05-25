@@ -18,7 +18,7 @@ public class IndexSourceBuilder {
         Map<String, Object> source = new HashMap<>();
         source.put(APPLICATION_ID, appId);
         source.put(TYPE, type.getType().toExpression());
-        source.put(ID, instance.getStringId());
+        source.put(ID, instance.getTreeId());
         var fields = instance.buildSource();
         fields.forEach((f, v) -> {
             if (!shouldSkip(v)) {

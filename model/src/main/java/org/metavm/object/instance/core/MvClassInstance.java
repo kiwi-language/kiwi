@@ -537,15 +537,16 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         return klass.isList();
     }
 
-    public boolean isEnum() {
-        return klass.isEnum();
-    }
-
     public ArrayInstance getInstanceArray(Field field) {
                 return field(field).getInstanceArray();
     }
 
-//    @Override
+    @Override
+    public boolean isEnum() {
+        return ClassInstance.super.isEnum();
+    }
+
+    //    @Override
     public Object toJson(IInstanceContext context) {
         if (isList()) {
             return Instances.toJavaList(this);

@@ -2,6 +2,7 @@ package org.metavm.object.instance.search;
 
 import junit.framework.TestCase;
 import org.metavm.entity.MockStandardTypesInitializer;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.util.MockUtils;
 import org.metavm.util.TestUtils;
 import org.slf4j.Logger;
@@ -22,7 +23,10 @@ public class IndexSourceBuilderTest extends TestCase {
 
     public void test() {
         var fooTypes = MockUtils.createFooTypes(true);
-        var instance = MockUtils.createFoo(fooTypes);
+        var ref = new Object() {
+            long nextTreeId = 1000000;
+        };
+        var instance = MockUtils.createFoo(fooTypes, () -> PhysicalId.of(ref.nextTreeId++, 0));
         Map<String, Object> source = IndexSourceBuilder.buildSource(APP_ID, instance);
         TestUtils.logJSON(logger, source);
     }

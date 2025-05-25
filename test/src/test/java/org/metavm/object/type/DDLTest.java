@@ -290,7 +290,7 @@ public class DDLTest extends TestCase {
                 "name", "Shoes",
                 "price", Map.of(
                         "amount", 100,
-                        "currency", new ApiNamedObject("Currency", "YUAN")
+                        "currency", ApiNamedObject.of("Currency", "YUAN")
                 )
         ));
         var priceId = apiClient.getObject(shoesId).getId("price");
@@ -406,7 +406,7 @@ public class DDLTest extends TestCase {
                 "name", "Shoes",
                 "price", Map.of(
                         "amount", 100,
-                        "currency", new ApiNamedObject("Currency", "YUAN")
+                        "currency", ApiNamedObject.of("Currency", "YUAN")
                 )
         ));
         var commitId = assemble("value_ddl_after.kiwi", false);
@@ -649,7 +649,7 @@ public class DDLTest extends TestCase {
         assemble("value_to_enum_ddl_after.kiwi");
         var shoes = apiClient.getObject(shoesId);
         var kind = shoes.get("kind");
-        Assert.assertEquals(ApiNamedObject.of("ProductKind", "DEFAULT"), kind);
+        Assert.assertEquals(new ApiNamedObject("ProductKind", "DEFAULT", "DEFAULT"), kind);
         assemble("value_to_enum_ddl_rollback.kiwi");
         var shoes1 = apiClient.getObject(shoesId);
         var kind1 = shoes1.get("kind");
@@ -683,7 +683,7 @@ public class DDLTest extends TestCase {
         assemble("enum_to_value_ddl.kiwi");
         var shoesId = saveInstance("Product", Map.of(
                 "name", "shoes",
-                "kind", new ApiNamedObject("ProductKind", "DEFAULT")
+                "kind", ApiNamedObject.of("ProductKind", "DEFAULT")
                 )
         );
         var commitId = assemble("value_to_enum_ddl_rollback.kiwi", false);
@@ -693,7 +693,7 @@ public class DDLTest extends TestCase {
         });
         TestUtils.waitForDDLAborted(schedulerAndWorker);
         var kind = apiClient.getObject(shoesId).get("kind");
-        Assert.assertEquals(ApiNamedObject.of("ProductKind", "DEFAULT"), kind);
+        Assert.assertEquals(new ApiNamedObject("ProductKind", "DEFAULT", "DEFAULT"), kind);
     }
 
 //    public void testChildFieldRemoval() {

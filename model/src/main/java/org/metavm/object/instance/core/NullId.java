@@ -30,4 +30,19 @@ public class NullId extends Id {
     public int getTypeTag(TypeDefProvider typeDefProvider) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public int compareTo0(Id id) {
+        return 0;
+    }
+
+    @Override
+    public int getTag() {
+        return 0;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof NullId;
+    }
 }

@@ -1,8 +1,8 @@
 package interceptors
 
 value class UserDTO(
-    priv val name: string,
-    priv val telephone: string
+    val name: string,
+    val telephone: string
 ) {
 
     fn name() -> string {

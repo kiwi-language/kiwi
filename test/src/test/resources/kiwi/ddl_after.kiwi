@@ -1,12 +1,12 @@
 import org.metavm.api.Index
 
 class Product(
-    priv var name: string,
-    priv var price: double,
-    priv var inventory: Inventory,
-    priv var available: bool,
-    priv var description: string?,
-    priv var manufacturer: any
+    var name: string,
+    var price: double,
+    var inventory: Inventory,
+    var available: bool,
+    var description: string?,
+    var manufacturer: any
 ): Versioned {
 
     static fn findByName(name: string) -> Product? {
@@ -77,7 +77,7 @@ class Product(
 
 }
 
-class Inventory(priv var quantity: int) {
+class Inventory(var quantity: int) {
 
     fn getQuantity() -> int {
         return this.quantity
@@ -91,7 +91,7 @@ class Inventory(priv var quantity: int) {
 
 class Versioned {
 
-    priv var version = Version(0, 0)
+    var version = Version(0, 0)
 
     fn getVersion() -> Version {
         return this.version
@@ -104,8 +104,8 @@ class Versioned {
 }
 
 value class Version(
-    priv val majorVersion: int,
-    priv val minorVersion: int
+    val majorVersion: int,
+    val minorVersion: int
 ) {
 
     fn getMajorVersion() -> int{
@@ -119,8 +119,8 @@ value class Version(
 }
 
 class Box<T>(
-    priv var item: T,
-    priv var count: int
+    var item: T,
+    var count: int
 ) {
 
     fn getItem() -> T {

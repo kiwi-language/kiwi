@@ -92,7 +92,9 @@ public class Attr extends StructuralNodeVisitor {
             attrExpr(argument, PrimitiveType.ANY).resolve();
         var clazz = enumConstDecl.getActualClass();
         var argTypes = enumConstDecl.getArguments().map(Expr::getType);
-        var init = Objects.requireNonNull(resolveInit(clazz, argTypes));
+        var init = resolveInit(clazz, argTypes);
+        if (init == null)
+            throw new AnalysisException("Cannot resolve constructor for enum constant: " + enumConstDecl.getText());
         if (enumConstDecl.getDecl() != null) {
             enumConstDecl.getDecl().accept(this);
         }

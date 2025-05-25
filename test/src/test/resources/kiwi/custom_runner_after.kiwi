@@ -23,7 +23,7 @@ class Lab {
 
 }
 
-class Field(priv var name: string) {
+class Field(var name: string) {
 
     priv deleted var value: any?
 
@@ -41,15 +41,15 @@ class Field(priv var name: string) {
 
 }
 
-value class IdxFieldValueField(priv val field: Field) {
+value class IdxFieldValueField(val field: Field) {
 
 }
 
-class FieldValue(priv var field: Field) {
+class FieldValue(var field: Field) {
 
     priv static val fieldIdx = Index<Field, FieldValue>(true, v -> v.field)
 
-    priv var value: any? = null
+    var value: any? = null
 
     fn getValue() -> any? {
         return this.value

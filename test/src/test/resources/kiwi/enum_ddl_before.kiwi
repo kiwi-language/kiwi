@@ -1,6 +1,6 @@
 class Product(
-    priv var name: string,
-    priv var kind: ProductKind
+    var name: string,
+    var kind: ProductKind
 ) {
 
     fn getName() -> string {
@@ -22,8 +22,8 @@ class Product(
 }
 
 class ProductKind(
-    priv val name: string,
-    priv val code: int
+    val name: string,
+    val code: int
 ) {
 
     fn getName() -> string {

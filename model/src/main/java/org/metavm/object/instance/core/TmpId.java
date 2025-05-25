@@ -42,6 +42,11 @@ public final class TmpId extends Id {
     }
 
     @Override
+    public int getTag() {
+        return 1;
+    }
+
+    @Override
     public Long tryGetTreeId() {
         return null;
     }
@@ -54,6 +59,11 @@ public final class TmpId extends Id {
     @Override
     public int getTypeTag(TypeDefProvider typeDefProvider) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int compareTo0(Id id) {
+        return Long.compare(tmpId, ((TmpId) id).tmpId);
     }
 
     @Override

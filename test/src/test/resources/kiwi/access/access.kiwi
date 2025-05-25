@@ -1,0 +1,9 @@
+package access
+
+class Product(priv var stock: int) {
+
+    priv fn __stock__() -> int {
+        return 0
+    }
+
+}

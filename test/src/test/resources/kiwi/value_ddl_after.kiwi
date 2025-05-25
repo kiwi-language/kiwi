@@ -1,6 +1,6 @@
 class Product(
-    priv var name: string,
-    priv var price: Price
+    var name: string,
+    var price: Price
 ) {
 
     fn getName() -> string {
@@ -22,8 +22,8 @@ class Product(
 }
 
 value class Price(
-    priv val amount: double,
-    priv val currency: Currency
+    val amount: double,
+    val currency: Currency
 ) {
 
     fn getAmount() -> double {
