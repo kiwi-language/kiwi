@@ -2,12 +2,12 @@ import java.util.List
 import java.util.ArrayList
 
 class LivingBeing(
-    priv var age: int,
-    priv var extra: any?
+    var age: int,
+    var extra: any?
 ) {
 
-    priv var offsprings: List<LivingBeing> = ArrayList<LivingBeing>()
-    priv var ancestors: List<LivingBeing> = ArrayList<LivingBeing>()
+    var offsprings: List<LivingBeing> = ArrayList<LivingBeing>()
+    var ancestors: List<LivingBeing> = ArrayList<LivingBeing>()
 
     fn getAge() -> int {
         return this.age
@@ -42,7 +42,7 @@ class LivingBeing(
 class Animal(
     age: int,
     extra: any|null,
-    priv var intelligence: int
+    var intelligence: int
 ): LivingBeing(age, extra) {
 
     fn getIntelligence() -> int {
@@ -59,10 +59,10 @@ class Human(
     age: int,
     extra: any|null,
     intelligence: int,
-    priv var occupation: string
+    var occupation: string
 ): Animal(age, extra, intelligence), Sentient {
 
-   priv var thinking = false
+   var thinking = false
 
    fn getOccupation() -> string {
         return this.occupation

@@ -1,13 +1,13 @@
 
 class Product(quantity: int) {
 
-    priv var inventory = Inventory(quantity)
+    var inventory = Inventory(quantity)
 
     fn getInventory() -> Inventory {
         return inventory
     }
 
-    class Inventory(priv var quantity: int) {
+    class Inventory(var quantity: int) {
 
         fn getQuantity() -> int {
             return quantity

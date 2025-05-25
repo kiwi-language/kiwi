@@ -3,7 +3,6 @@ package org.metavm.api.service;
 import org.metavm.api.dto.*;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.AttributeNames;
-import org.metavm.entity.AttributedElement;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.flow.Method;
@@ -12,7 +11,6 @@ import org.metavm.object.instance.IndexKeyRT;
 import org.metavm.object.type.*;
 import org.metavm.util.BusinessException;
 import org.metavm.util.Instances;
-import org.metavm.util.NamingUtils;
 import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 
@@ -59,15 +57,8 @@ public class SchemaService extends EntityContextFactoryAware {
                 Utils.map(klass.getKlasses(), this::buildClassDTO),
                 Utils.map(klass.getEnumConstants(), this::buildEnumConstantDTO),
                 klass.getAttribute(AttributeNames.BEAN_NAME),
-                getLabel(klass)
+                klass.getLabel()
         );
-    }
-
-    private String getLabel(AttributedElement element) {
-        var label = element.getAttribute(AttributeNames.LABEL);
-        if (label != null)
-            return label;
-        return NamingUtils.nameToLabel(element.getName());
     }
 
     private ConstructorDTO buildConstructorDTO(Method method) {
@@ -75,7 +66,7 @@ public class SchemaService extends EntityContextFactoryAware {
     }
 
     private EnumConstantDTO buildEnumConstantDTO(Field field) {
-        return new EnumConstantDTO(field.getName(), getLabel(field));
+        return new EnumConstantDTO(field.getName(), field.getLabel());
     }
 
     private MethodDTO buildMethodDTO(Method method) {
@@ -85,7 +76,7 @@ public class SchemaService extends EntityContextFactoryAware {
                 method.getName(),
                 Utils.map(method.getParameters(), this::buildParameterDTO),
                 buildTypeDTO(method.getReturnType()),
-                getLabel(method)
+                method.getLabel()
         );
     }
 
@@ -125,7 +116,7 @@ public class SchemaService extends EntityContextFactoryAware {
     }
 
     private ParameterDTO buildParameterDTO(Parameter param) {
-        return new ParameterDTO(param.getName(), buildTypeDTO(param.getType()), getLabel(param));
+        return new ParameterDTO(param.getName(), buildTypeDTO(param.getType()), param.getLabel());
     }
 
     private FieldDTO buildFieldDTO(Field field) {
@@ -134,7 +125,7 @@ public class SchemaService extends EntityContextFactoryAware {
                 field.getName(),
                 buildTypeDTO(field.getType()),
                 field == field.getDeclaringType().getTitleField(),
-                getLabel(field)
+                field.getLabel()
         );
     }
 

@@ -1,6 +1,8 @@
 package org.metavm.compiler;
 
 import lombok.extern.slf4j.Slf4j;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.ApiObject;
@@ -205,8 +207,10 @@ public class BasicKiwiTest extends KiwiTestBase {
         deploy("kiwi/basics/enums/EnumConstantImplFoo.kiwi");
         var className = "enums.EnumConstantImplFoo";
         Assert.assertEquals("Option 1", callMethod(className, "getOptionDesc",
-                List.of(new ApiNamedObject("enums.EnumConstantImplFoo.Option", "op1")))
+                List.of(ApiNamedObject.of("enums.EnumConstantImplFoo.Option", "op1")))
         );
+        var r = callMethod(className, "findByName", List.of("op1"));
+        MatcherAssert.assertThat(r, CoreMatchers.instanceOf(ApiNamedObject.class));
     }
 
     public void testEnumField() {
@@ -218,7 +222,7 @@ public class BasicKiwiTest extends KiwiTestBase {
     public void testEnums() {
         deploy("kiwi/basics/enums/ProductKind.kiwi");
         var kind = callMethod("enums.ProductKind", "fromCode", List.of(0));
-        Assert.assertEquals(new ApiNamedObject("enums.ProductKind", "DEFAULT"), kind);
+        Assert.assertEquals(new ApiNamedObject("enums.ProductKind", "DEFAULT", "Default"), kind);
     }
 
     public void testCatchUnionExceptionType() {

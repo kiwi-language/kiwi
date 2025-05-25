@@ -14,6 +14,7 @@ import org.elasticsearch.search.SearchHit;
 import org.metavm.common.Page;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.util.Hooks;
 import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
@@ -45,7 +46,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
             long total = response.getHits().getTotalHits().value;
             List<Id> ids = new ArrayList<>();
             for (SearchHit hit : response.getHits().getHits()) {
-                var id = Id.parse(hit.getId());
+                var id = PhysicalId.of(Long.parseLong(hit.getId()), 0L);
 //                var typeId = ((Number) hit.getSourceAsMap().get("typeId")).longValue();
                 ids.add(id);
             }
@@ -88,7 +89,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
 
     private IndexRequest buildIndexRequest(long appId, ClassInstance instance) {
         IndexRequest indexRequest = new IndexRequest(INDEX);
-        indexRequest.id(instance.getStringId());
+        indexRequest.id(instance.getTreeId() + "");
         indexRequest.routing(appId + "");
         indexRequest.source(IndexSourceBuilder.buildSource(appId, instance));
         return indexRequest;

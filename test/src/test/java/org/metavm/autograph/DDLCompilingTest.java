@@ -82,12 +82,12 @@ public class DDLCompilingTest extends CompilerTestBase {
                 }
             }
             Assert.assertEquals(ref.fooId, callMethod("index.IndexFoo", "findBySeq", List.of(1)));
-            Assert.assertEquals(ApiNamedObject.of("ProductStatus", "AVAILABLE"),
+            Assert.assertEquals(new ApiNamedObject("ProductStatus", "AVAILABLE", "AVAILABLE"),
                     getStatic("Product", "DEFAULT_STATUS"));
-            Assert.assertEquals(ApiNamedObject.of("Currency","EURO"), getStatic("Currency", "EURO"));
+            Assert.assertEquals(new ApiNamedObject("Currency","EURO", "EURO"), getStatic("Currency", "EURO"));
             var product = getObject(ref.productId);
             Assert.assertEquals("none", product.getString("tag"));
-            Assert.assertEquals(ApiNamedObject.of("Currency", "USD"),
+            Assert.assertEquals(new ApiNamedObject("Currency", "USD", "USD"),
                     product.getObject("price").getEnumConstant("currency"));
 //            try {
 //                getObject(ref.krwCurrencyId.toString());

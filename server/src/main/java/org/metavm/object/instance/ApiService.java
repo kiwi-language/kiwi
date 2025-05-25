@@ -67,8 +67,10 @@ public class ApiService extends EntityContextFactoryAware {
             Value result;
             if (receiver instanceof Map<?,?> map) {
                 var r = tryResolveObject(map, AnyType.instance, null, context);
-                if (!r.successful)
-                    throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+                if (!r.successful) {
+                    throw invalidRequestBody("cannot find method with name '" + methodCode
+                            + "' and arguments '" + Utils.toJSONString(rawArguments) + "'");
+                }
                 result = executeInstanceMethod(r.resolved.resolveObject(), methodCode, rawArguments, request, response, context);
             } else if (receiver instanceof String s){
                 var klassName = s.contains(".") ? s : NamingUtils.firstCharToUpperCase(s);
@@ -76,7 +78,7 @@ public class ApiService extends EntityContextFactoryAware {
                 var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
                 result = execute(r.method, null, r.arguments, request, response, context);
             } else
-                throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+                throw invalidRequestBody("Invalid receiver");
             context.finish();
             return formatValue(result, false, false);
         }
@@ -161,7 +163,7 @@ public class ApiService extends EntityContextFactoryAware {
     @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
     public Map<String, Object> getInstance(String id) {
         try (var context = newContext()) {
-            return formatObject((ClassInstance) context.get(Id.parse(id)), false, true, true);
+            return formatObject((ClassInstance) context.get(Id.parse(id)), true, true, true);
         }
     }
 
@@ -276,7 +278,7 @@ public class ApiService extends EntityContextFactoryAware {
                         if (clsInst.isList())
                             yield formatList(clsInst, includeChildren);
                         else if (asValue || reference instanceof ValueReference)
-                            yield formatObject(clsInst, false, true, includeChildren);
+                            yield formatObject(clsInst, true, true, includeChildren);
                         else
                             yield formatObject(clsInst, true, false, false);
                     }
@@ -308,6 +310,7 @@ public class ApiService extends EntityContextFactoryAware {
         if (instance.isEnum()) {
             var name = Instances.toJavaString(instance.getField(StdField.enumName.get()));
             map.put("name", name);
+            map.put("summary", instance.getEnumKlass().getEnumConstantByName(name).getLabel());
             return map;
         }
         var id = instance.getStringId();
@@ -318,7 +321,10 @@ public class ApiService extends EntityContextFactoryAware {
         if (includeFields) {
             var fields = new LinkedHashMap<String, Object>();
             map.put("fields", fields);
-            instance.forEachField((field, value) -> fields.put(field.getName(), formatValue(value, false, false)));
+            instance.forEachField((field, value) -> {
+                if (field.isPublic())
+                    fields.put(field.getName(), formatValue(value, false, false));
+            });
         }
         if (includeChildren) {
             var children = new LinkedHashMap<String, Object>();
@@ -550,7 +556,7 @@ public class ApiService extends EntityContextFactoryAware {
             return ValueResolutionResult.of(bean.getReference());
         }
         if (actualType == null)
-            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY);
+            throw invalidRequestBody("type not specified for object '" + Utils.toJSONString(map) + "'");
         var instance = saveObject(map, actualType, parent, context);
         return instance != null ? ValueResolutionResult.of(instance.getReference()) : ValueResolutionResult.failed;
     }
@@ -668,7 +674,8 @@ public class ApiService extends EntityContextFactoryAware {
                 getKlass(typeExpr, context) : type;
         var id = parent != null ? parent.nextChildId() : context.allocateRootId(actualType);
         //noinspection rawtypes
-        var fields = (Map) map.get("fields");
+        if (!(map.get("fields") instanceof Map fields))
+            throw invalidRequestBody("incorrect object '" + Utils.toJSONString(map) + "'");
         var r = resolveConstructor(actualType, fields, context);
         var self = ClassInstance.allocate(id, actualType, parent);
         var result = Flows.execute(r.method, self, Utils.map(r.arguments, Value::toStackValue), context);
@@ -756,6 +763,10 @@ public class ApiService extends EntityContextFactoryAware {
             return new ValueResolutionResult(true, resolved);
         }
 
+    }
+
+    private BusinessException invalidRequestBody(String reason) {
+        throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, reason);
     }
 
     private record ResolutionResult(MethodRef method, List<Value> arguments) {

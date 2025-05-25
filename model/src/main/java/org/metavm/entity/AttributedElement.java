@@ -3,20 +3,15 @@ package org.metavm.entity;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Generated;
 import org.metavm.api.JsonIgnore;
-import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
-import org.metavm.util.MvInput;
-import org.metavm.util.MvOutput;
-import org.metavm.util.Utils;
-import org.metavm.util.StreamVisitor;
+import org.metavm.util.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.Map;
 import java.util.function.Consumer;
 
 @NativeEntity(74)
@@ -63,6 +58,13 @@ public abstract class AttributedElement extends Entity implements Element {
     }
 
     public abstract String getName();
+
+    public String getLabel() {
+        var label = getAttribute(AttributeNames.LABEL);
+        if(label !=null)
+            return label;
+        return NamingUtils.nameToLabel(getName());
+    }
 
     public void setAttributes(List<Attribute> attributes) {
         this.attributes.clear();

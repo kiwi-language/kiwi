@@ -6,7 +6,7 @@ import java.util.List
 
 class InnerClassFoo<K, V> {
 
-    priv val entries: List<Entry<K, V>> = ArrayList<Entry<K, V>>()
+    val entries: List<Entry<K, V>> = ArrayList<Entry<K, V>>()
 
     fn addEntry(key: K, value: V) {
         entries.add(Entry<K, V>(key, value))
@@ -23,8 +23,8 @@ class InnerClassFoo<K, V> {
     }
 
     class Entry<K, V>(
-            priv var key: K,
-            priv var value: V
+            var key: K,
+            var value: V
     ) {
 
         fn getKey() -> K {

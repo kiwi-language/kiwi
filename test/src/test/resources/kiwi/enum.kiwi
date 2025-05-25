@@ -1,5 +1,5 @@
 
-enum Option(priv val code: int) {
+enum Option(val code: int) {
 
     op1(1),
     op2(2),

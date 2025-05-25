@@ -122,7 +122,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     }
 
     private void processValueTypes() {
-        var yuan = ApiNamedObject.of("valuetypes.CurrencyKind", "YUAN");
+        var yuan = new ApiNamedObject("valuetypes.CurrencyKind", "YUAN", "YUAN");
         var productId = TestUtils.doInTransaction(() -> apiClient.saveInstance(
                 "valuetypes.Product",
                 Map.of(

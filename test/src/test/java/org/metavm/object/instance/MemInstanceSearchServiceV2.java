@@ -3,10 +3,8 @@ package org.metavm.object.instance;
 import org.metavm.common.Page;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
-import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.search.InstanceSearchService;
 import org.metavm.object.instance.search.SearchQuery;
-import org.metavm.util.DebugEnv;
 import org.metavm.util.Hooks;
 import org.metavm.util.MultiApplicationMap;
 import org.slf4j.Logger;
@@ -21,7 +19,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
 
     public static final Logger logger = LoggerFactory.getLogger(MemInstanceSearchServiceV2.class);
 
-    private final MultiApplicationMap<Id, Source> sourceMap = new MultiApplicationMap<>();
+    private final MultiApplicationMap<Long, Source> sourceMap = new MultiApplicationMap<>();
 
     public MemInstanceSearchServiceV2() {
         Hooks.SEARCH_BULK = this::bulk;
@@ -57,10 +55,10 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
         }
     }
 
-    private static <T> List<T> getPage(List<T> result, int start, int end) {
-        if (start >= result.size())
+    private static <T extends Comparable<T>> List<T> getPage(List<T> result, int start, int end) {
+        if (start >= result.size() || end <= start)
             return List.of();
-        return result.subList(start, Math.min(end, result.size()));
+        return result.stream().sorted(Comparator.reverseOrder()).skip(start).limit(end - start + 1).toList();
     }
 
     private boolean match(Source source, SearchQuery query) {
@@ -70,7 +68,7 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
     }
 
 
-    public boolean contains(Id id) {
+    public boolean contains(long id) {
         return sourceMap.containsKey(getAppId(), id)
                 || sourceMap.containsKey(ROOT_APP_ID, id);
     }
@@ -89,13 +87,13 @@ public class MemInstanceSearchServiceV2 implements InstanceSearchService {
             Objects.requireNonNull(instance.tryGetTreeId());
             sourceMap.put(
                     appId,
-                    instance.tryGetId(),
+                    instance.getTreeId(),
                     buildSource(instance)
             );
         }
         for (var id : toDelete) {
-            sourceMap.remove(appId, id);
-            sourceMap.remove(appId, id);
+            sourceMap.remove(appId, id.getTreeId());
+            sourceMap.remove(appId, id.getTreeId());
         }
     }
 

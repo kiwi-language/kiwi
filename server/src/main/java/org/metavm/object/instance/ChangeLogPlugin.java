@@ -70,7 +70,7 @@ public class ChangeLogPlugin implements ContextPlugin {
                         tasks.add(task);
                     }
                 }
-                if(inst instanceof ClassInstance clsInst && clsInst.isSearchable()) {
+                if(inst instanceof ClassInstance clsInst && clsInst.isRoot() && clsInst.isSearchable()) {
                     if(log.isInsertOrUpdate())
                         idsToIndex.add(inst.getId());
                     else

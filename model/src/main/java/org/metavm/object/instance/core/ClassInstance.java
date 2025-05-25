@@ -131,7 +131,18 @@ public interface ClassInstance extends Instance {
     }
 
     default boolean isEnum() {
-        return getInstanceKlass().isEnum();
+        var klass = getInstanceKlass();
+        return klass.isEnum() || klass.getSuperKlass() != null && klass.getSuperKlass().isEnum();
+    }
+
+    default Klass getEnumKlass() {
+        var klass = getInstanceKlass();
+        if (klass.isEnum())
+            return klass;
+        var superKlass = klass.getSuperKlass();
+        if (superKlass != null && superKlass.isEnum())
+            return superKlass;
+        throw new IllegalStateException("Instance " + this + " is not an enum constant");
     }
 
     default ArrayInstance getInstanceArray(Field field) {

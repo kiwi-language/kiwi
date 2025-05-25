@@ -2,8 +2,11 @@ package enums
 
 enum ProductKind(priv val code: int) {
 
+    @Label("Default")
     DEFAULT(0),
+    @Label("Virtual")
     VIRTUAL(1),
+    @Label("Hotel")
     HOTEL(2),
     ;
 

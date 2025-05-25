@@ -1,5 +1,6 @@
 package org.metavm.task;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Generated;
 import org.metavm.entity.Entity;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+@Slf4j
 @NativeEntity(73)
 public class SynchronizeSearchTask extends Task {
 

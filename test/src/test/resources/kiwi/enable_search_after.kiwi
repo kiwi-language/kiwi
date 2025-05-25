@@ -1,6 +1,6 @@
 
 @Searchable
-class SearchEnableFoo(priv var name: string) {
+class SearchEnableFoo(var name: string) {
 
     fn getName() -> string {
         return this.name

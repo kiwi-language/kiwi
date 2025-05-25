@@ -82,6 +82,7 @@ public class ClassFileWriter {
         output.writeUTF(method.getInternalName(null));
         output.writeUTF(method.getName());
         output.writeInt(method.getReturnTypeIndex());
+        output.write(method.getAccess().code());
         output.writeInt(method.getFlags());
         writeConstantPool(method.getConstantPool());
         output.writeList(method.getParameters(), this::writeParameter);

@@ -1668,6 +1668,11 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
         return Utils.filter(staticFields, Field::isEnumConstant);
     }
 
+    public Field getEnumConstantByName(String name) {
+        return Utils.findRequired(staticFields, f -> f.isEnumConstant() && f.getName().equals(name),
+                () -> "Cannot find enum enum constant with name '" + name + "' in class '" + getQualifiedName() + "'");
+    }
+
     public void clearEnumConstantDefs() {
         staticFields.forEach(f -> {
             f.setEnumConstant(false);

@@ -869,7 +869,7 @@ public class Instances {
 
     public static String toString(Value value, CallContext callContext) {
         return switch (value) {
-            case PrimitiveValue primitiveValue -> primitiveValue.toString();
+            case PrimitiveValue primitiveValue -> Objects.toString(primitiveValue.getValue());
             case NullValue ignored -> "null";
             case StringReference s -> s.getValue();
             case Reference reference -> toString(reference.get(), callContext);

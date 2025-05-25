@@ -61,6 +61,7 @@ public class NameTable {
     public final Name longArray = get("LongArray");
     public final Name floatArray = get("FloatArray");
     public final Name doubleArray = get("DoubleArray");
+    public final Name toString = get("toString");
 
     private NameTable() {
     }
