@@ -5,6 +5,7 @@ import org.metavm.entity.Attribute;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.type.Access;
 import org.metavm.object.type.ArrayKind;
 import org.metavm.object.type.Klass;
 import org.metavm.util.*;
@@ -345,7 +346,7 @@ public class KiwiTest extends KiwiTestBase {
     public void testInnerEnum() {
         deploy("kiwi/enums/inner_enum.kiwi");
         var id = saveInstance("enums.Foo",
-                Map.of("option", new ApiNamedObject("enums.Foo.Option", "op1"))
+                Map.of("option", ApiNamedObject.of("enums.Foo.Option", "op1"))
         );
         var foo = getObject(id);
         Assert.assertEquals("op1", foo.getEnumConstant("option").name());
@@ -385,11 +386,13 @@ public class KiwiTest extends KiwiTestBase {
             var column = field.getColumn();
             Assert.assertSame(ColumnKind.STRING, column.kind());
         }
-        var id = saveInstance(className, Map.of("name", "kiwi", "Child", List.of(
-                Map.of(
-                        "name", "child"
-                )
-        )));
+        var id = saveInstance(className, Map.of("name", "kiwi"),
+                Map.of("Child", List.of(
+                        Map.of(
+                            "name", "child"
+                        )
+                ))
+        );
         TestUtils.waitForEsSync(schedulerAndWorker);
         var r = search(className, Map.of(
                 "name", "kiwi",
@@ -398,6 +401,18 @@ public class KiwiTest extends KiwiTestBase {
         Assert.assertEquals(1, r.total());
         Assert.assertEquals(id, r.data().getFirst().id());
         assertNull(r.data().getFirst().getMap().get("children"));
+
+        var id1 = saveInstance(className, Map.of("name", "kiwi"),
+                Map.of("Child", List.of(
+                        Map.of(
+                                "name", "child"
+                        )
+                ))
+        );
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r1 = search(className, Map.of());
+        assertEquals(2, r1.total());
+        assertEquals(id1, r1.data().getFirst().id());
     }
 
     public void testBean() {
@@ -448,5 +463,37 @@ public class KiwiTest extends KiwiTestBase {
             assertEquals(List.of(new Attribute("label", "Other")), enumConsts.get(2).getAttributes());
         }
     }
+
+    public void testAccess() {
+        deploy("kiwi/access/access.kiwi");
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var klass = context.getKlassByQualifiedName("access.Product");
+            var field = klass.getFieldByName("stock");
+            assertSame(Access.PRIVATE, field.getAccess());
+            var m = Utils.findRequired(klass.getMethods(), m1 -> m1.getName().equals("__stock__"));
+            assertSame(Access.PRIVATE, m.getAccess());
+        }
+        var id = saveInstance("access.Product", Map.of("stock", 100));
+        var product = getObject(id);
+        assertNull(product.get("stock"));
+    }
+
+    public void testString() {
+        deploy("kiwi/str/str.kiwi");
+        var r = callMethod("str.StringLab", "concat", List.of("Hello", " Kiwi!"));
+        assertEquals("Hello Kiwi!", r);
+
+        var r1 = callMethod("str.StringLab", "toStr", List.of(1));
+        assertEquals("1", r1);
+
+        var r2 = callMethod("str.StringLab", "toStr", List.of(1.0));
+        assertEquals("1.0", r2);
+
+        var r3 = callMethod("str.StringLab", "concat", List.of("No.", 1));
+        assertEquals("No. 1", r3);
+
+    }
+
 
 }

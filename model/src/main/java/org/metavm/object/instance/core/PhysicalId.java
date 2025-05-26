@@ -44,6 +44,15 @@ public class PhysicalId extends Id {
     }
 
     @Override
+    public int compareTo0(Id id) {
+        var that = (PhysicalId) id;
+        var r = Long.compare(treeId, that.treeId);
+        if (r != 0)
+            return r;
+        return Long.compare(nodeId, that.nodeId);
+    }
+
+    @Override
     public void write(MvOutput output) {
         output.write(IdTag.PHYSICAL.code());
         output.writeLong(getTreeId());
@@ -53,6 +62,11 @@ public class PhysicalId extends Id {
     @Override
     public boolean isRoot() {
         return nodeId == 0L;
+    }
+
+    @Override
+    public int getTag() {
+        return 2;
     }
 
     @Override

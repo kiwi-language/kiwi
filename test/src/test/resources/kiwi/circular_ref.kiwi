@@ -3,7 +3,7 @@ import java.io.ObjectInputStream
 
 class Foo {
 
-    priv var bar = Bar(this)
+    var bar = Bar(this)
 
     fn getBar() -> Bar {
         return this.bar
@@ -18,7 +18,7 @@ class Foo {
 
 }
 
-class Bar(priv var foo: Foo) {
+class Bar(var foo: Foo) {
 
     fn getFoo() -> Foo {
         return this.foo

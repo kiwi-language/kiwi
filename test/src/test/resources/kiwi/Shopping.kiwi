@@ -4,11 +4,11 @@ import java.lang.RuntimeException
 
 @Searchable
 class Product(
-    priv var name: string,
+    var name: string,
     skuList: List<SKU>
 ) {
 
-    priv val skuList: ArrayList<SKU>
+    val skuList: ArrayList<SKU>
 
     {
         this.skuList = ArrayList<SKU>(skuList)
@@ -34,9 +34,9 @@ class Product(
 }
 
 class SKU(
-    priv var name: string,
-    priv var price: double,
-    priv var quantity: int
+    var name: string,
+    var price: double,
+    var quantity: int
 ) {
 
     fn decQuantity(quantity: int) {
@@ -87,11 +87,11 @@ class SKU(
 }
 
 class Coupon(
-    priv val name: string,
-    priv val discount: double
+    val name: string,
+    val discount: double
 ) {
 
-    priv var state = CouponState.NORMAL
+    var state = CouponState.NORMAL
 
     fn getName() -> string {
         return this.name
@@ -125,15 +125,15 @@ enum CouponState {
 
 @Searchable
 class Order(
-        priv val code: string,
-        priv val quantity: int,
-        priv val price: double,
-        priv val sku: SKU,
+        val code: string,
+        val quantity: int,
+        val price: double,
+        val sku: SKU,
         c: List<Coupon>
     ) {
 
-    priv val coupons: List<Coupon> = ArrayList<Coupon>(c)
-    priv val orderTime = now()
+    val coupons: List<Coupon> = ArrayList<Coupon>(c)
+    val orderTime = now()
 
     fn getCode() -> string {
         return this.code

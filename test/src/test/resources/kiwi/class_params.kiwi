@@ -1,2 +1,2 @@
-class Foo(priv var name: string) {
+class Foo(var name: string) {
 }

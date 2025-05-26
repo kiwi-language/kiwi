@@ -1,7 +1,7 @@
 class Product(
-    priv var name: string,
-    priv var price: int,
-    priv var inventory: Inventory
+    var name: string,
+    var price: int,
+    var inventory: Inventory
 ) {
 
     fn getName() -> string {
@@ -34,7 +34,7 @@ class Product(
 
 }
 
-class Inventory(priv var quantity: int) {
+class Inventory(var quantity: int) {
 
     fn getQuantity() -> int {
         return this.quantity
@@ -46,7 +46,7 @@ class Inventory(priv var quantity: int) {
 
 }
 
-class Box<T>(priv var item: T) {
+class Box<T>(var item: T) {
 
     fn getItem() -> T {
         return this.item

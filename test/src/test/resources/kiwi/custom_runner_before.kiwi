@@ -1,6 +1,6 @@
-class Field(priv var name: string) {
+class Field(var name: string) {
 
-    priv var value: any? = null
+    var value: any? = null
 
     fn getName() -> string {
        return this.name

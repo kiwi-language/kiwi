@@ -6,6 +6,14 @@ class EnumConstantImplFoo {
         return option.getDesc()
     }
 
+    static fn findByName(name: string) -> Option {
+        for (v in Option.values()) {
+            if (v.name() == name)
+                return v
+        }
+        throw Exception("Cannot find option with name '" + name + "'")
+    }
+
     enum Option {
 
         op1() {

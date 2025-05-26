@@ -60,7 +60,7 @@ public class IndexRebuildJobTest extends TestCase {
         try (var context = newContext()) {
             var instances = context.selectByKey(Foo.IDX_ALL_FLAG, Instances.trueInstance());
             for (var instance : instances) {
-                Assert.assertTrue(instanceSearchService.contains(instance.getId()));
+                Assert.assertTrue(instanceSearchService.contains(instance.getTreeId()));
             }
         }
 

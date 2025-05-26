@@ -1,0 +1,17 @@
+package str
+
+class StringLab {
+
+    static fn concat(s1: string, s2: string) -> string {
+        return s1 + s2
+    }
+
+    static fn toStr(i: any) -> string {
+        return toString(i)
+    }
+
+    static fn concat(s: string, i: int) -> string {
+        return s + " " + i
+    }
+
+}

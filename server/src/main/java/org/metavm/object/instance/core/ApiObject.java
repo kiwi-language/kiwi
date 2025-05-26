@@ -38,7 +38,7 @@ public class ApiObject {
         if(value instanceof Map<?,?> m) {
             if (m.get("name") instanceof String name) {
                 if (m.get("type") instanceof String type)
-                   return ApiNamedObject.of(type, name);
+                   return new ApiNamedObject(type, name, (String) m.get("summary"));
                 else
                     return ApiNamedObject.of(name);
             }

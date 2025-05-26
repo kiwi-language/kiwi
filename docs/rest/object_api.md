@@ -76,12 +76,12 @@ Kiwi objects are represented as JSON objects with the following fields. The spec
 
 **Field Availability by Context:**
 * **Creation Request:** `type`, `fields`, `children`.
-* **Retrieval Response:** `id`, `type`, `fields`, `children`.
-* **Search Result Item:** `id`, `type`, `fields`.
+* **Retrieval Response:** `id`, `type`, `summary`, `fields`, `children`.
+* **Search Result Item:** `id`, `type`, `summary`, `fields`.
 * **Reference (Request Body):** `id`.
-* **Reference (Response Body):** `id`, `type` and `summary`.
-* **Value Object:** `type` and `fields`.
-* **Enum Constant:** `type` and `name`.
+* **Reference (Response Body):** `id`, `type`, `summary`.
+* **Value Object:** `type`, `summary` (response), `fields`.
+* **Enum Constant:** `type`, `summary` (response), `name`.
 * **Bean:** `name`.
 
 **Example `Order` Object (Retrieval):**

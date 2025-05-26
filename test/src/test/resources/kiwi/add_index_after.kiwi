@@ -1,6 +1,6 @@
 import org.metavm.api.Index
 
-class Product(priv var name: string) {
+class Product(var name: string) {
 
     priv static var nameIdx = Index<string, Product>(true, p -> p.name)
 

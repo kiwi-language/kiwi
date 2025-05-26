@@ -50,4 +50,14 @@ public class MockId extends Id {
     public int getTypeTag(TypeDefProvider typeDefProvider) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public int compareTo0(Id id) {
+        return Long.compare(this.id, ((MockId) id).id);
+    }
+
+    @Override
+    public int getTag() {
+        return 3;
+    }
 }

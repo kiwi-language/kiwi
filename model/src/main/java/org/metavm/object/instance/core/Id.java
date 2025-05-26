@@ -79,8 +79,13 @@ public abstract class Id implements Comparable<Id> {
 
     @Override
     public int compareTo(@NotNull Id o) {
-        return UnsignedBytes.lexicographicalComparator().compare(toBytes(), o.toBytes());
+        var r = Integer.compare(getTag(), o.getTag());
+        if (r != 0)
+            return r;
+        return compareTo0(o);
     }
+
+    public abstract int compareTo0(Id id);
 
     public boolean isRoot() {
         return false;
@@ -89,5 +94,7 @@ public abstract class Id implements Comparable<Id> {
     public Long tmpId() {
         return null;
     }
+
+    public abstract int getTag();
 
 }

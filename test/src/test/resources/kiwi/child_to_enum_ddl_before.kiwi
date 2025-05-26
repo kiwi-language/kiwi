@@ -1,6 +1,6 @@
 class Product(
-    priv var name: string,
-    priv var kind: Product.Kind
+    var name: string,
+    var kind: Product.Kind
 ) {
 
     fn getName() -> string {
@@ -20,7 +20,7 @@ class Product(
     }
 
     @Tag(1)
-    class Kind(priv val name: string) {
+    class Kind(val name: string) {
 
         fn getName() -> string {
             return this.name

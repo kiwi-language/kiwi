@@ -48,6 +48,7 @@ public class MockEnter {
         createInterceptor(project);
 
         createNowFunc(rootPkg);
+        createToStringFunc(rootPkg);
         createEqualsFunc(rootPkg);
         createRequireFunc(rootPkg);
         createForEachFunc(rootPkg);
@@ -547,6 +548,12 @@ public class MockEnter {
     private static void createNowFunc(Package rootPackage) {
         var nowFunc = new FreeFunc(NameTable.instance.get("now"), rootPackage);
         nowFunc.setRetType(PrimitiveType.TIME);
+    }
+
+    private static void createToStringFunc(Package rootPackage) {
+        var func = new FreeFunc(NameTable.instance.toString, rootPackage);
+        new Param(Name.from("o"), Types.instance.getNullableAny(), func);
+        func.setRetType(Types.instance.getStringType());
     }
 
     private static void createEqualsFunc(Package rootPkg) {

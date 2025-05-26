@@ -9,7 +9,6 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.light.LightRecordCanonicalConstructor;
 import com.intellij.psi.impl.source.JavaDummyHolder;
 import com.intellij.psi.tree.IElementType;
-import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.api.Enum;
 import org.metavm.api.Index;
@@ -18,8 +17,8 @@ import org.metavm.entity.natives.StdFunction;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.*;
 import org.metavm.util.InternalException;
-import org.metavm.util.Utils;
 import org.metavm.util.ReflectionUtils;
+import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1042,16 +1041,20 @@ public class TranspileUtils {
     }
 
     public static Access getAccess(PsiVariable psiField) {
-        if (psiField instanceof PsiRecordComponent)
-            return Access.PUBLIC;
-        var modifiers = Objects.requireNonNull(psiField.getModifierList());
-        if (modifiers.hasModifierProperty(PsiModifier.PUBLIC))
-            return Access.PUBLIC;
-        if (modifiers.hasModifierProperty(PsiModifier.PROTECTED))
-            return Access.PROTECTED;
-        if (modifiers.hasModifierProperty(PsiModifier.PRIVATE))
-            return Access.PRIVATE;
-        return Access.PACKAGE;
+        /* Always returns PUBLIC for object API accessibility.
+        This is a compromise yielding inaccurate access levels;
+        accurate reflection requires getter support. */
+        return Access.PUBLIC;
+//        if (psiField instanceof PsiRecordComponent)
+//            return Access.PUBLIC;
+//        var modifiers = Objects.requireNonNull(psiField.getModifierList());
+//        if (modifiers.hasModifierProperty(PsiModifier.PUBLIC))
+//            return Access.PUBLIC;
+//        if (modifiers.hasModifierProperty(PsiModifier.PROTECTED))
+//            return Access.PROTECTED;
+//        if (modifiers.hasModifierProperty(PsiModifier.PRIVATE))
+//            return Access.PRIVATE;
+//        return Access.PACKAGE;
     }
 
     public static String getBizClassName(PsiClass klass) {
