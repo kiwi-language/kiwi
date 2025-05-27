@@ -110,6 +110,12 @@ public class Attr extends StructuralNodeVisitor {
     }
 
     @Override
+    public Void visitDelStmt(DelStmt delStmt) {
+        attrExpr(delStmt.getExpr(), PrimitiveType.ANY).resolve();
+        return null;
+    }
+
+    @Override
     public Void visitExprStmt(ExprStmt exprStmt) {
         attrExpr(exprStmt.expr(), PrimitiveType.ANY).resolve();
         return null;

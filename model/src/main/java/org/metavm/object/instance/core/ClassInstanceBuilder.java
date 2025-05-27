@@ -19,7 +19,7 @@ public class ClassInstanceBuilder {
     private long syncVersion;
     private final ClassType type;
     private Map<Field, ? extends Value> data;
-    private @Nullable ClassInstance parent;
+    private @Nullable MvClassInstance parent;
     private boolean ephemeral;
     private boolean initFieldTable = true;
     private boolean isNew;
@@ -32,7 +32,7 @@ public class ClassInstanceBuilder {
     }
 
     public ClassInstanceBuilder parent(ClassInstance parent) {
-        this.parent = parent;
+        this.parent = (MvClassInstance) parent;
         return this;
     }
 

@@ -186,6 +186,13 @@ public class Gen extends StructuralNodeVisitor {
     }
 
     @Override
+    public Void visitDelStmt(DelStmt delStmt) {
+        genExpr(delStmt.getExpr(), PrimitiveType.ANY).load();
+        code.del();
+        return null;
+    }
+
+    @Override
     public Void visitTryStmt(TryStmt tryStmt) {
         var pc = code.pc();
         code.tryEnter();

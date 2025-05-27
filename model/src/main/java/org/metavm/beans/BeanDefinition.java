@@ -72,11 +72,6 @@ public abstract class BeanDefinition extends org.metavm.entity.Entity {
 
     protected abstract ClassInstance createBean(BeanDefinitionRegistry registry, IInstanceContext context);
 
-    @Override
-    public List<Instance> beforeRemove(IInstanceContext context) {
-        return bean != null ? List.of(bean.get()) : List.of();
-    }
-
     public abstract List<BeanDefinition> getDependencies(BeanDefinitionRegistry registry);
 
     @Nullable

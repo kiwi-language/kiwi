@@ -688,6 +688,10 @@ public class Code {
         state.pop(2);
     }
 
+    public void del() {
+        code(DELETE);
+    }
+
     public class State {
         private Type[] stack;
         private int top;

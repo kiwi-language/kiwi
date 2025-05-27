@@ -724,10 +724,6 @@ public abstract class ElementVisitor<R> {
         return visitInvokeNode(node);
     }
 
-    public R visitSetChildFieldNode(SetChildFieldNode node) {
-        return visitNode(node);
-    }
-
     public R visitLoadTypeArgumentNode(LoadTypeArgumentNode node) {
         return visitNode(node);
     }
@@ -883,5 +879,9 @@ public abstract class ElementVisitor<R> {
 
     public R visitDupNode2(Dup2Node node) {
         return visitNode(node);
+    }
+
+    public R visitDeleteNode(DeleteNode deleteNode) {
+        return visitNode(deleteNode);
     }
 }

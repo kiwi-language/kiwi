@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.*;
 import org.metavm.entity.natives.CallContext;
@@ -22,9 +23,8 @@ import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
+@Slf4j
 public abstract class BaseInstanceContext implements IInstanceContext, Closeable, Iterable<Instance>, CallContext, TypeDefProvider, RedirectStatusProvider {
-
-    public static final Logger logger = LoggerFactory.getLogger(BaseInstanceContext.class);
 
     protected final long appId;
     private final Map<ContextAttributeKey<?>, Object> attributes = new HashMap<>();
@@ -337,7 +337,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         }
         if (DebugEnv.dumpContextAfterFinish) {
             for (Instance instance : this) {
-                if (instance.isRoot()) logger.trace("{} {}", instance.tryGetTreeId(), instance.getText());
+                if (instance.isRoot()) log.trace("{} {}", instance.tryGetTreeId(), instance.getText());
             }
         }
         if (DebugEnv.dumpClassAfterContextFinish) {
@@ -346,7 +346,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 if (instance instanceof MvClassInstance o) klasses.add(o.getInstanceKlass());
             }
             for (Klass klass : klasses) {
-                logger.trace("{}", klass.getText());
+                log.trace("{}", klass.getText());
             }
         }
     }
@@ -391,18 +391,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         listeners.forEach(l -> l.onInstanceIdInit(instance));
     }
 
-    protected void onContextInitializeId() {
-        try (var ignored = getProfiler().enter("BaseInstanceContext.onContextInitializeId")) {
-            forEach(instance -> {
-                if (instance instanceof Entity entity && instance.isNew() && instance.setAfterContextInitIdsNotified())
-                    entity.afterContextInitIds();
-            });
-            for (ContextListener listener : listeners) {
-                listener.afterContextIntIds();
-            }
-        }
-    }
-
     protected boolean onChange(Instance instance) {
         boolean anyChange = false;
         if (instance instanceof ChangeAware changeAware && changeAware.isChangeAware()) {
@@ -427,20 +415,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                 anyChange = true;
         }
         return anyChange;
-    }
-
-    protected void onPatchBuild() {
-        for (Instance instance : this) {
-            if(instance instanceof MvClassInstance clsInst && clsInst.getNativeObject() != null) {
-                var nat = clsInst.getNativeObject();
-                nat.flush();
-            }
-        }
-        try (var ignored = getProfiler().enter("onPatchBuild")) {
-            for (ContextListener listener : listeners) {
-                listener.onPatchBuild();
-            }
-        }
     }
 
     @Override
@@ -482,7 +456,6 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         for (var listener : listeners) {
             listener.onInstanceRemoved(instance);
         }
-        createReferenceCleanupJob(instance.getReference());
     }
 
     private RemovalSet getRemovalBatch(Collection<Instance> instances) {
@@ -492,29 +465,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     }
 
     private void beforeRemove(Instance instance, RemovalSet removalSet) {
-        if(!removalSet.add(instance))
-            return;
-        var cascade = new ArrayList<Instance>();
-        if (instance instanceof RemovalAware removalAware)
-            cascade.addAll(removalAware.beforeRemove(this));
-
-        for (ContextListener listener : listeners) {
-            cascade.addAll(listener.beforeRemove(instance, removalSet::contains));
-        }
-        instance.forEachChild(cascade::add);
-        for (Instance i : cascade) {
-            beforeRemove(i, removalSet);
-        }
-    }
-
-    private void createReferenceCleanupJob(Value instance) {
-//        if (createJob != null && isPersisted(instance)) {
-//            createJob.accept(new ReferenceCleanupTask(
-//                    instance.getIdRequired(),
-//                    instance.getType().getName(),
-//                    instance.getTitle()
-//            ));
-//        }
+        if (removalSet.add(instance))
+            instance.forEachChild(c -> beforeRemove(c, removalSet));
     }
 
     @Override
@@ -542,7 +494,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             var added = doCraw(this);
             entry.addMessage("numNewInstances", added.size());
             for (var inst : added) {
-                if (/*inst.tryGetTreeId() == null && */!containsInstance(inst)) {
+                if (!containsInstance(inst)) {
                     add(inst);
                 }
             }
@@ -574,7 +526,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
 
     private void add(Instance instance) {
         if (tracing)
-            logger.trace("Adding instance {} to context", instance.tryGetId());
+            log.trace("Adding instance {} to context", instance.tryGetId());
         Utils.require(instance.getContext() == null);
         instance.setContext(this);
         if (instance.tryGetId() == null && instance.isValue())
@@ -592,7 +544,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
         if (id != null) {
 //            logger.info("Adding instance {} to context, treeId: {}", instance.getId(), instance.getId().tryGetTreeId());
             if (instanceMap.put(id, instance) != null)
-                logger.warn("Duplicate instance add to context type: {}, ID: {}",
+                log.warn("Duplicate instance add to context type: {}, ID: {}",
                         instance.getInstanceType().getTypeDesc(), id);
         }
     }
@@ -654,7 +606,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
             if (instance.isRoot() && !instance.isRemoved())
                 instance.visitGraph(i -> {
                     if (tracing)
-                        logger.trace("Crawler is visiting {} ({})", i, i.tryGetId());
+                        log.trace("Crawler is visiting {} ({})", i, i.tryGetId());
                     if (i instanceof StringInstance || i.isRemoved())
                         return false;
                     var ctx = i.getContext();
@@ -662,7 +614,7 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
                         return false;
                     if (ctx == null) {
                         if (tracing)
-                            logger.trace("Crawler found new instance {} ({}) @ {}", i, i.tryGetId(), System.identityHashCode(i));
+                            log.trace("Crawler found new instance {} ({}) @ {}", i, i.tryGetId(), System.identityHashCode(i));
                         added.add(i);
                     }
                     return true;

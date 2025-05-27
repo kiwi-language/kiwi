@@ -174,6 +174,10 @@ public interface ClassInstance extends Instance {
         return null;
     }
 
+    void incRefcount(int amount);
+
+    int getRefcount();
+
     default String getSummary() {
         var titleField = getInstanceKlass().getTitleField();
         if (titleField != null && getField(titleField) instanceof StringReference strRef)

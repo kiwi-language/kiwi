@@ -51,7 +51,6 @@ public class CodeInput extends MvInput  {
             case Bytecodes.GET_METHOD -> GetMethodNode.read(this, name);
             case Bytecodes.ADD_OBJECT -> AddObjectNode.read(this, name);
             case Bytecodes.SET_FIELD -> SetFieldNode.read(this, name);
-            case Bytecodes.SET_CHILD_FIELD -> SetChildFieldNode.read(this, name);
             case Bytecodes.RETURN -> ReturnNode.read(this, name);
             case Bytecodes.RAISE -> RaiseNode.read(this, name);
             case Bytecodes.INVOKE_VIRTUAL -> InvokeVirtualNode.read(this, name);

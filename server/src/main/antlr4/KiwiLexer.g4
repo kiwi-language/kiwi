@@ -29,6 +29,7 @@ CHAR:               'char';
 INTERFACE:          'interface';
 NATIVE:             'native';
 NEW:                'new';
+DELETE:             'delete';
 PRIV:               'priv';
 PROT:               'prot';
 PUB:                'pub';

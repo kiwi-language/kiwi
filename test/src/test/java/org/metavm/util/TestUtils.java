@@ -263,7 +263,7 @@ public class TestUtils {
     }
 
     public static void waitForEsSync(SchedulerAndWorker schedulerAndWorker) {
-        TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, schedulerAndWorker);
+        TestUtils.waitForTaskDone(t -> t instanceof SyncSearchTask, schedulerAndWorker);
     }
 
     public static void waitForTaskDone(Predicate<Task> predicate, long delay, int batchSize, SchedulerAndWorker schedulerAndWorker) {

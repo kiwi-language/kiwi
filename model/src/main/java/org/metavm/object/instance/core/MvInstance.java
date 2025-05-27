@@ -1,7 +1,6 @@
 package org.metavm.object.instance.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.TreeTags;
 import org.metavm.entity.natives.NativeBase;
 import org.metavm.object.type.ClassType;
@@ -22,10 +21,6 @@ public abstract class MvInstance extends BaseInstance {
     private transient boolean loadedFromCache;
     private transient boolean modified;
 
-    private @NotNull MvInstance root;
-    
-    private MvInstance parent;
-    private @NotNull MvInstance aggregateRoot;
 
     private transient NativeBase nativeObject;
 
@@ -36,7 +31,6 @@ public abstract class MvInstance extends BaseInstance {
     public MvInstance(@Nullable Id id, Type type, long version, long syncVersion, boolean ephemeral, boolean isNew) {
         super(id, version, syncVersion, ephemeral, isNew);
         this.type = type;
-        root = aggregateRoot = this;
     }
 
     public Type getInstanceType() {
@@ -57,38 +51,6 @@ public abstract class MvInstance extends BaseInstance {
 
     void setLoadedFromCache(boolean loadedFromCache) {
         this.loadedFromCache = loadedFromCache;
-    }
-
-    @Override
-    public void setParent(Instance parent) {
-        if (this.parent != null) {
-            if (this.parent.equals(parent))
-                return;
-            throw new InternalException("Can not change parent of " + Instances.getInstanceDesc(getReference())
-                    + ", current parent: " + this.parent
-                    + ", new parent: " + parent
-            );
-        }
-        setParentInternal((MvInstance) parent, state.id == null || !state.id.isRoot());
-    }
-
-    public void setParentInternal(@Nullable MvInstance parent, boolean setRoot) {
-        if (parent == this.parent)
-            return;
-        if (parent != null) {
-            this.parent = parent;
-            if (!(parent instanceof ClassInstance)) {
-                throw new IllegalArgumentException("Invalid parent: " + parent);
-            } else
-            if (setRoot)
-                root = parent.getRoot();
-            if (parent.isEphemeral() && !state.isEphemeral())
-                forEachDescendant(instance -> instance.state().setEphemeral());
-        } else {
-            this.parent = null;
-            if (setRoot)
-                aggregateRoot = root = this;
-        }
     }
 
     public boolean isRoot() {
@@ -124,7 +86,7 @@ public abstract class MvInstance extends BaseInstance {
             output.write(WireTypes.VALUE_INSTANCE);
         else {
             output.write(WireTypes.INSTANCE);
-            output.writeLong(state.id.getNodeId());
+            output.writeLong(requireNonNull(state.id).getNodeId());
         }
         getInstanceType().write(output);
     }
@@ -148,27 +110,16 @@ public abstract class MvInstance extends BaseInstance {
     }
 
     public @Nullable Instance getParent() {
-        return this.parent;
-    }
-
-    public @Nullable Instance getParent(int index) {
-        var v = this.parent;
-        for (int i = 0; i < index; i++) {
-            v = requireNonNull(v).parent;
-        }
-        return v;
+        return null;
     }
 
     @Override
     public MvInstance getRoot() {
-        if (root == this)
-            return this;
-        else
-            return root = root.getRoot();
+        return this;
     }
 
     public boolean isChildOf(Instance instance) {
-        return !isRoot() && this.parent == instance;
+        return !isRoot() && this.getParent() == instance;
     }
 
     public NativeBase getNativeObject() {
@@ -188,23 +139,12 @@ public abstract class MvInstance extends BaseInstance {
         return Utils.safeCall(state.id, Id::getTreeId);
     }
 
-    public void setType(Type type) {
-        this.type = type;
-    }
-
     public boolean isValue() {
-        return getInstanceType().isValueType();
+        return tryGetId() == null && getInstanceType().isValueType();
     }
 
     public boolean isSeparateChild() {
-        return isRoot() && this.parent != null;
-    }
-
-    public Instance getAggregateRoot() {
-        if (aggregateRoot == this)
-            return this;
-        else
-            return aggregateRoot = (MvInstance) aggregateRoot.getAggregateRoot();
+        return isRoot() && this.getParent() != null;
     }
 
     public abstract boolean isArray();
@@ -247,4 +187,5 @@ public abstract class MvInstance extends BaseInstance {
     public boolean isRemoving() {
         return state().isRemoving();
     }
+
 }

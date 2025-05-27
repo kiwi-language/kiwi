@@ -7,7 +7,7 @@ import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.WAL;
-import org.metavm.task.SynchronizeSearchTask;
+import org.metavm.task.SyncSearchTask;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.DebugEnv;
 import org.metavm.util.Instances;
@@ -61,7 +61,7 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                     cachingInstanceStore.getWal().copy(context.allocateRootId()) : null;
 //            WAL defWal = defContext instanceof ReversedDefContext reversedDefContext ?
 //                    DefContextUtils.getWal(reversedDefContext) : null;
-            context.bind(new SynchronizeSearchTask(
+            context.bind(new SyncSearchTask(
                     context.allocateRootId(), idsToIndex, idsToRemove, wal, /*defWal != null ? defWal.getId() : null*/ null));
 //                this.instanceStore.updateSyncVersion(NncUtils.map(logs, InstanceLog::toVersionPO));
             context.finish();

@@ -267,4 +267,9 @@ public abstract class AbstractNodeVisitor<R> implements NodeVisitor<R> {
     public R visitExtend(Extend extend) {
         return visitNode(extend);
     }
+
+    @Override
+    public R visitDelStmt(DelStmt delStmt) {
+        return visitStmt(delStmt);
+    }
 }

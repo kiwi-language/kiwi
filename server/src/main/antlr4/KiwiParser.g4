@@ -148,6 +148,7 @@ statement
     | TRY block catchClause+
     | SWITCH '{' branchCase* '}'
     | RETURN expression?
+    | DELETE expression
     | THROW expression
     | BREAK identifier?
     | CONTINUE identifier?

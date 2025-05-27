@@ -10,7 +10,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.function.Function;
 
 public class InstanceIOTest extends TestCase {
@@ -115,8 +118,8 @@ public class InstanceIOTest extends TestCase {
 
         Field nameField = FieldBuilder
                 .newBuilder("name", fooKlass, Types.getStringType()).build();
-        Field barField = FieldBuilder
-                .newBuilder("bar", fooKlass, barKlass.getType()).build();
+//        Field barField = FieldBuilder
+//                .newBuilder("bar", fooKlass, barKlass.getType()).build();
         Field quxField = FieldBuilder.newBuilder("qux", fooKlass, quxKlass.getType()).build();
 
         Field barCodeField = FieldBuilder
@@ -129,16 +132,6 @@ public class InstanceIOTest extends TestCase {
         fooKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
         barKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
         quxKlass.forEachDescendant(i -> entityMap.put(i.getId(), i));
-
-        var barInst = new MvClassInstance(
-                PhysicalId.of(30001L, 1L),
-                Map.of(
-                        barCodeField,
-                        Instances.stringInstance(barCode)
-                ),
-                barKlass,
-                false
-        );
 
         var quxInst = new MvClassInstance(
                 PhysicalId.of(30002L, 0L),
@@ -154,17 +147,28 @@ public class InstanceIOTest extends TestCase {
                 PhysicalId.of(30001L, 0L),
                 Map.of(
                         nameField, Instances.stringInstance(fooName),
-                        barField, barInst.getReference(),
                         quxField, quxInst.getReference()
                 ),
                 fooKlass,
                 false
         );
-        barInst.setParentInternal(fooInst, true);
+
+        var barInst = ClassInstanceBuilder.newBuilder(barKlass.getType(), PhysicalId.of(30001, 1))
+                .data(Map.of(
+                                barCodeField,
+                                Instances.stringInstance(barCode)
+                ))
+                .parent(fooInst)
+                .build();
+
         Function<Id, Instance> resolveInst = entityMap::get;
         var bytes = InstanceOutput.toBytes(fooInst);
         var input = new InstanceInput(new ByteArrayInputStream(bytes), resolveInst, i -> {}, id -> null);
-        var recoveredFooInst = (ClassInstance) input.readSingleMessageGrove();
+        var recoveredFooInst = (MvClassInstance) input.readSingleMessageGrove();
+        assertEquals(1, recoveredFooInst.getChildren().size());
+        var recoveredBarInst = recoveredFooInst.getChildren().getFirst();
+        MatcherAssert.assertThat(recoveredBarInst, InstanceMatcher.of(barInst));
+
         MatcherAssert.assertThat(recoveredFooInst, InstanceMatcher.of(fooInst));
         new StreamVisitor(new ByteArrayInputStream(bytes)) {
         }.visitGrove();

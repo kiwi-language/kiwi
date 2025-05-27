@@ -72,6 +72,10 @@ public class MetaContextCache extends EntityContextFactoryAware {
                 }
             } else
                 context = newContext(key.appId);
+            if (key.walId != null)
+                context.setDescription("MetaContext (WAL: " + key.walId + ")");
+            else
+                context.setDescription("MetaContext");
             context.loadKlasses();
             context.setParameterizedMap(ParameterizedStore.getMap());
             return context;

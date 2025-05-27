@@ -148,12 +148,12 @@ public class KlassTest extends TestCase {
 
         var visitor = new StreamVisitor(new ByteArrayInputStream(bout.toByteArray())) {
             @Override
-            public void visitEntityBody(int tag, Id id) {
+            public void visitEntityBody(int tag, Id id, int refcount) {
                 if (tag == EntityRegistry.TAG_Klass)
                     ref.klassCount++;
                 else if (tag == EntityRegistry.TAG_Method)
                     ref.methodCount++;
-                super.visitEntityBody(tag, id);
+                super.visitEntityBody(tag, id, refcount);
             }
 
             @Override

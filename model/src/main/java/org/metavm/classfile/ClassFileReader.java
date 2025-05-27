@@ -85,11 +85,17 @@ public class ClassFileReader {
         klass.setTitleField(input.readNullable(() -> (Field) input.readReference().resolveObject()));
         klass.setAttributes(input.readList(() -> Attribute.read(input)));
         klass.setIndices(Utils.mapAndFilter(klass.getStaticFields(), this::addIndex, Objects::nonNull));
+        updateSFT(klass);
         if (listener != null) {
             if (klass.isNew()) listener.onKlassCreate(klass);
             else listener.onKlassUpdate(klass);
         }
         return klass;
+    }
+
+    private void updateSFT(Klass klass) {
+        var sft = StaticFieldTable.getInstance(klass.getType(), repository);
+        sft.purgeRemovedFields();
     }
 
     private TypeVariable readTypeVariable(GenericDeclaration genericDeclaration) {

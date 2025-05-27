@@ -459,6 +459,8 @@ public class AstBuilder {
             return new ContinueStmt(Utils.safeCall(ctx.identifier(), AstBuilder::buildName));
         if (ctx.COLON() != null)
             return new LabeledStmt(buildName(ctx.identifier()), buildStmt(ctx.statement(0)));
+        if (ctx.DELETE() != null)
+            return new DelStmt(buildExpr(ctx.expression()));
         throw new ParsingException("Invalid statement: " + ctx.getText());
     }
 

@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 
 @Slf4j
 @NativeEntity(73)
-public class SynchronizeSearchTask extends Task {
+public class SyncSearchTask extends Task {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
@@ -36,8 +36,8 @@ public class SynchronizeSearchTask extends Task {
     @Nullable
     private Id defWalId;
 
-    public SynchronizeSearchTask(Id id, Collection<Id> changedIds, Collection<Id> removedIds, @Nullable WAL wal, @Nullable Id defWalId) {
-        super(id, "SynchronizeSearchTask");
+    public SyncSearchTask(Id id, Collection<Id> changedIds, Collection<Id> removedIds, @Nullable WAL wal, @Nullable Id defWalId) {
+        super(id, "SyncSearchTask");
         this.changedIds.addAll(changedIds);
         this.removedIds.addAll(removedIds);
         this.walReference = Utils.safeCall(wal, Instance::getReference);

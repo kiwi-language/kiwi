@@ -17,8 +17,6 @@ import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.type.ClassType;
-import org.metavm.object.type.Klass;
 import org.metavm.object.type.generic.SubstitutorV2;
 import org.metavm.util.*;
 import org.metavm.util.MvInput;
@@ -40,7 +38,7 @@ import static org.metavm.util.Utils.*;
 @NativeEntity(26)
 @org.metavm.api.Entity
 @Slf4j
-public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, StagedEntity, GlobalKey, LoadAware, LocalKey, Message, ConstantScope, KlassDeclaration {
+public class Klass extends TypeDef implements GenericDeclaration, StagedEntity, GlobalKey, LoadAware, LocalKey, Message, ConstantScope, KlassDeclaration {
 
     public static final Logger debugLogger = LoggerFactory.getLogger("Debug");
 
@@ -1518,21 +1516,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
             return Objects.requireNonNullElse(qualifiedName, name);
     }
 
-    @Override
-    public List<Instance> beforeRemove(IInstanceContext context) {
-        var superKlass = getSuperKlass();
-        if (superKlass != null)
-            superKlass.removeExtension(this);
-        for (var anInterface : getInterfaceKlasses()) {
-            anInterface.removeImplementation(this);
-        }
-        var cascade = new ArrayList<Instance>();
-        var sft = context.selectFirstByKey(StaticFieldTable.IDX_KLASS, getReference());
-        if (sft != null)
-            cascade.add(sft);
-        return cascade;
-    }
-
     public ResolutionStage setStage(ResolutionStage stage) {
         var origStage = this.stage;
         this.stage = stage;
@@ -1551,27 +1534,6 @@ public class Klass extends TypeDef implements GenericDeclaration, ChangeAware, S
 
     public void removeErrors(Element element) {
         errors.removeIf(e -> e.getElement() == element);
-    }
-
-    @Override
-    public void onChange(IInstanceContext context) {
-        if(!methodTableBuildDisabled)
-            rebuildMethodTable();
-        if (!isInterface()) {
-            for (var it : getInterfaceKlasses()) {
-                for(var method : it.getMethods()) {
-                    if (!method.isStatic() && findOverride(method, constantPool) == null) {
-                        throw new BusinessException(ErrorCode.INTERFACE_FLOW_NOT_IMPLEMENTED,
-                                getName(), method.getName(), it.getName());
-                    }
-                }
-            }
-        }
-    }
-
-    @Override
-    public boolean isChangeAware() {
-        return !anonymous;
     }
 
     @JsonIgnore

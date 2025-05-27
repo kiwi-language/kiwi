@@ -30,9 +30,12 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     public static final Klass uninitializedKlass = KlassBuilder.newBuilder(new NullId(), "Uninitialized", "Uninitialized").build();
 
     private final FieldTable fieldTable = new FieldTable(this);
-    private Klass klass;
+    private final Klass klass;
+    private final @NotNull MvClassInstance root;
+    private final MvClassInstance parent;
+    private int refcount;
     private transient Map<MethodRef, FlowValue> functions;
-    private @Nullable ClosureContext closureContext;
+    private final @Nullable ClosureContext closureContext;
     private final List<ClassInstance> children = new ArrayList<>();
     public InstanceField[] fields;
 
@@ -40,38 +43,32 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
                            @NotNull ClassType type,
                            long version,
                            long syncVersion,
-                           @Nullable ClassInstance parent,
+                           @Nullable MvClassInstance parent,
                            @Nullable Map<Field, ? extends Value> data,
                            boolean ephemeral,
                            boolean initFieldTable,
                            boolean isNew,
                            @Nullable ClosureContext closureContext) {
-        super(id, type, version, syncVersion, ephemeral, isNew);
+        super(id, type, version, syncVersion, ephemeral || parent != null && parent.isEphemeral(), isNew);
         this.klass = type.getKlass();
+        if (parent != null) {
+            this.parent = parent;
+            parent.addChild(this);
+            root = parent.getRoot();
+        }
+        else {
+            root = this;
+            this.parent = null;
+        }
         this.closureContext = closureContext;
         if (klass != uninitializedKlass && initFieldTable)
             fieldTable.initialize();
-        if (parent != null) {
-            setParent(parent);
-            parent.addChild(this);
-        }
         if (data != null)
             reset(data, 0L, 0L);
     }
 
-    public MvClassInstance(Id id, ClassType type, boolean ephemeral, boolean isNew) {
-        super(id, type, 0, 0, ephemeral, isNew);
-        this.klass = type.getKlass();
-        if (klass != uninitializedKlass)
-            fieldTable.initialize();
-    }
-
     public MvClassInstance(Id id, Map<Field, Value> data, Klass klass, boolean isNew) {
-        super(id, klass.getType(), 0, 0, klass.isEphemeralKlass(), isNew);
-        this.klass = klass;
-        if (klass != uninitializedKlass)
-            fieldTable.initialize();
-        reset(data, 0L, 0L);
+        this(id, klass.getType(), 0, 0, null, data, false, true, isNew, null);
     }
 
     @NoProxy
@@ -217,8 +214,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     protected void writeBody(MvOutput output) {
         var tracing = DebugEnv.traceInstanceIO;
         if (tracing) log.trace("Writing instance {}", getInstanceType().getTypeDesc());
-//        if(DebugEnv.flag)
-//            logger.debug("Writing instance " + this);
         output.writeInt(fieldTable.countSubTablesForWriting());
         fieldTable.forEachSubTable(subTable -> {
             int numFields;
@@ -289,16 +284,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
             }
         }
 
-    }
-
-    @Override
-    @NoProxy
-    public void setType(Type type) {
-        if (type instanceof KlassType classType) {
-            klass = classType.getKlass();
-            super.setType(type);
-        } else
-            throw new IllegalArgumentException(type + " is not a class type");
     }
 
     @Override
@@ -417,7 +402,7 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     private void readChildren(InstanceInput input) {
         int childrenCount = input.readInt();
         for (int i = 0; i < childrenCount; i++) {
-            children.add(input.readValue().resolveObject());
+            input.readValue();
         }
     }
 
@@ -592,9 +577,9 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     @Override
     public Instance copy(Function<ClassType, Id> idSupplier) {
         var type = getInstanceType();
-        var id = isValue() ? null :
+        var id = type.isValue() ? null :
                 (isRoot() ? idSupplier.apply(type) : getRoot().nextChildId());
-        var parent = isValue() ? null : (MvClassInstance) getParent();
+        var parent = type.isValue() ? null : (MvClassInstance) getParent();
         var copy = ClassInstanceBuilder.newBuilder(getInstanceType(), id).initFieldTable(false)
                 .parent(parent)
                 .build();
@@ -820,7 +805,6 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
     @Override
     public void addChild(ClassInstance child) {
         children.add(child);
-        child.setParent(this);
     }
 
     @Override
@@ -833,6 +817,50 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
                 source.put(prefix + field.getColumn().fuzzyName(), value);
         });
         return source;
+    }
+
+    @Override
+    protected void writeHead(MvOutput output) {
+        super.writeHead(output);
+        if (!isValue())
+            output.writeInt(refcount);
+    }
+
+    @Override
+    public void incRefcount(int amount) {
+        refcount += amount;
+    }
+
+    @Override
+    public int getRefcount() {
+        return refcount;
+    }
+
+    public void setRefcount(int refcount) {
+        this.refcount = refcount;
+    }
+
+    public @Nullable Instance getParent(int index) {
+        var v = this.parent;
+        for (int i = 0; i < index; i++) {
+            v = requireNonNull(v).parent;
+        }
+        return v;
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public MvInstance getParent() {
+        return parent;
+    }
+
+    @Override
+    public @NotNull MvClassInstance getRoot() {
+        return root;
+    }
+
+    public List<ClassInstance> getChildren() {
+        return Collections.unmodifiableList(children);
     }
 
     private interface IFieldSubTable extends Iterable<IInstanceField>, Comparable<IFieldSubTable> {

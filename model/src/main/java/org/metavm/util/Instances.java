@@ -476,7 +476,7 @@ public class Instances {
             if (!instance.isValue())
                 instance.incVersion();
             if (instance instanceof MvInstance mvInst/* && !mvInst.isEnum()*/) {
-                migrate(mvInst, newFields, convertingFields, toChildFields, changingSuperKlasses, toValueKlasses,
+                migrate(mvInst, newFields, convertingFields, changingSuperKlasses, toValueKlasses,
                         valueToEntityKlasses, toEnumKlasses, removingChildFields, runMethods, newIndexes, searchEnabledKlasses,
                         commit, context);
             }
@@ -486,7 +486,6 @@ public class Instances {
     public static void migrate(MvInstance instance,
                                Collection<Field> newFields,
                                Collection<Field> convertingFields,
-                               Collection<Field> toChildFields,
                                Collection<Klass> changingSuperKlasses,
                                Collection<Klass> toValueKlasses,
                                Collection<Klass> valueToEntityKlasses,
@@ -508,14 +507,6 @@ public class Instances {
                 var k = clsInst.getInstanceType().asSuper(field.getDeclaringType());
                 if (k != null) {
                     convertField(clsInst, field, context);
-                }
-            }
-            for (Field field : toChildFields) {
-                var k = clsInst.getInstanceType().asSuper(field.getDeclaringType());
-                if (k != null) {
-                    var value = clsInst.getField(field);
-                    if (value instanceof Reference r)
-                        r.get().setParent(clsInst);
                 }
             }
             for (Klass klass : changingSuperKlasses) {

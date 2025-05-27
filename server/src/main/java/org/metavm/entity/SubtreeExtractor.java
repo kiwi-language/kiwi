@@ -25,12 +25,13 @@ public class SubtreeExtractor extends StreamVisitor {
     }
 
     @Override
-    public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey, int refcount) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.write(WireTypes.INSTANCE);
         output.writeLong(nodeId);
         typeOrTypeKey.write(output);
+        output.writeInt(refcount);
         var oldParentId = parentId;
         var id = PhysicalId.of(treeId, nodeId);
         parentId = id;
@@ -44,11 +45,12 @@ public class SubtreeExtractor extends StreamVisitor {
             @Override
             public void visitInstance(long treeId, long nodeId) {
                 var typeKey = readTypeKey();
+                var rc = readInt();
                 write(WireTypes.REFERENCE);
                 writeId(PhysicalId.of(treeId, nodeId));
-                SubtreeExtractor.this.visitInstanceBody(treeId, nodeId, typeKey);
+                SubtreeExtractor.this.visitInstanceBody(treeId, nodeId, typeKey, rc);
             }
-        }.visitInstanceBody(treeId, nodeId, typeOrTypeKey);
+        }.visitInstanceBody(treeId, nodeId, typeOrTypeKey, refcount);
         parentId = oldParentId;
         add.accept(new Subtree(
                 id,
@@ -59,11 +61,12 @@ public class SubtreeExtractor extends StreamVisitor {
     }
 
     @Override
-    public void visitEntityBody(int tag, Id id) {
+    public void visitEntityBody(int tag, Id id, int refcount) {
         var bout = new ByteArrayOutputStream();
         var output = new InstanceOutput(bout);
         output.write(tag);
         output.writeId(id);
+        output.writeInt(refcount);
         var oldParentId = parentId;
         parentId = id;
         new StreamCopier(getInput(), output) {
@@ -72,12 +75,14 @@ public class SubtreeExtractor extends StreamVisitor {
             public void visitEntity() {
                 var tag = read();
                 var id = readId();
+                var refcount = readInt();
                 write(tag);
                 writeId(id);
-                SubtreeExtractor.this.visitEntityBody(tag, id);
+                writeInt(refcount);
+                SubtreeExtractor.this.visitEntityBody(tag, id, refcount);
             }
 
-        }.visitEntityBody(tag, id);
+        }.visitEntityBody(tag, id, refcount);
         parentId = oldParentId;
         add.accept(new Subtree(
                 id,
