@@ -127,18 +127,18 @@ public class LoadingBuffer {
         new StreamVisitor(new ByteArrayInputStream(tree.data())) {
 
             @Override
-            public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+            public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey, int refcount) {
                 var id = PhysicalId.of(treeId, nodeId);
                 invertedIndex.put(id, tree);
                 ids.add(id);
-                super.visitInstanceBody(treeId, nodeId, typeOrTypeKey);
+                super.visitInstanceBody(treeId, nodeId, typeOrTypeKey, refcount);
             }
 
             @Override
-            public void visitEntityBody(int tag, Id id) {
+            public void visitEntityBody(int tag, Id id, int refcount) {
                 invertedIndex.put(id, tree);
                 ids.add(id);
-                super.visitEntityBody(tag, id);
+                super.visitEntityBody(tag, id, refcount);
             }
 
             @Override

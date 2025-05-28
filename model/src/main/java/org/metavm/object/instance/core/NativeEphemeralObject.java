@@ -88,4 +88,12 @@ public interface NativeEphemeralObject extends NativeObject {
     default String getText() {
         return toString();
     }
+
+    @Override
+    default void incRefcount(int amount) {}
+
+    @Override
+    default int getRefcount() {
+        return 0;
+    }
 }

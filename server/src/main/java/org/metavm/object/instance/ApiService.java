@@ -129,6 +129,15 @@ public class ApiService extends EntityContextFactoryAware {
         );
     }
 
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public void delete(String id) {
+        try (var context = newContext()) {
+            context.remove(context.get(Id.parse(id)));
+            context.finish();
+        }
+    }
+
+
     private Value doIntercepted(Supplier<Value> action, HttpRequest request, HttpResponse response, Type returnType, IInstanceContext context) {
         var registry = BeanDefinitionRegistry.getInstance(context);
         var beforeMethod = StdMethod.interceptorBefore.get();

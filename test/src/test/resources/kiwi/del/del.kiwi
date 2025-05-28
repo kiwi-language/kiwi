@@ -1,0 +1,11 @@
+package del
+
+class Foo(var name: string) {
+
+    fn del() {
+        delete this
+    }
+
+}
+
+class Bar(var foo: Foo)

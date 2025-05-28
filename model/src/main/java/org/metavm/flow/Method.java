@@ -152,13 +152,6 @@ public class Method extends Flow implements Property {
         return declaringType;
     }
 
-    @Override
-    public List<Instance> beforeRemove(IInstanceContext context) {
-        declaringType.rebuildMethodTable();
-        declaringType.removeErrors(this);
-        return super.beforeRemove(context);
-    }
-
     @JsonIgnore
     public boolean isInstanceMethod() {
         return !isStatic();

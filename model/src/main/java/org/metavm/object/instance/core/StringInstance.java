@@ -382,6 +382,15 @@ public class StringInstance implements CharSequenceNative, ClassInstance {
         return false;
     }
 
+    @Override
+    public int getRefcount() {
+        return 0;
+    }
+
+    @Override
+    public void incRefcount(int amount) {
+    }
+
     // </editor-fold>
 
 }

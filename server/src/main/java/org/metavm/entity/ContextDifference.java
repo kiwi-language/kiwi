@@ -2,7 +2,9 @@ package org.metavm.entity;
 
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
+import org.metavm.object.instance.core.Refcount;
 import org.metavm.object.instance.persistence.InstancePO;
+import org.metavm.object.instance.persistence.PersistenceUtils;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.type.TypeOrTypeKey;
 import org.metavm.util.*;
@@ -10,12 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class ContextDifference {
 
@@ -24,6 +21,7 @@ public class ContextDifference {
     private final long appId;
     private final EntityChange<VersionRT> entityChange = new EntityChange<>(VersionRT.class);
     private final EntityChange<InstancePO> treeChanges = new EntityChange<>(InstancePO.class);
+    private final Map<Id, Refcount> refcounts = new HashMap<>();
     private int numSubTreeAdded;
     private int numSubTreeRemoved;
     private int numSubTreeUpdated;
@@ -44,26 +42,46 @@ public class ContextDifference {
         }
     }
 
+    public void diffReferences(Collection<Tree> head, Collection<Tree> buffered) {
+        Utils.forEachPair(head, buffered, this::diffRef);
+        refcounts.entrySet().removeIf(e -> e.getValue().getCount() == 0);
+    }
+
     private void diffTree(@Nullable Tree t1, @Nullable Tree t2) {
         if (t1 == null && t2 == null)
             throw new NullPointerException("Both trees are null");
         if (t1 == null) {
             if (DebugEnv.traceDifference)
                 logger.trace("Tree {} is created", t2.id());
-            treeChanges.addInsert(buildInstancePO(t2));
+            treeChanges.addInsert(PersistenceUtils.buildInstancePO(appId, t2));
         } else if (t2 == null) {
             if (DebugEnv.traceDifference)
                 logger.trace("Tree {} is deleted", t1.id());
-            treeChanges.addDelete(buildInstancePO(t1));
+            treeChanges.addDelete(PersistenceUtils.buildInstancePO(appId, t1));
         } else if (!Arrays.equals(t1.data(), t2.data())) {
             if (DebugEnv.traceDifference)
                 logger.trace("Tree {} is modified", t1.id());
-            treeChanges.addUpdate(buildInstancePO(t2));
+            treeChanges.addUpdate(PersistenceUtils.buildInstancePO(appId, t2));
         }
         else {
             if (DebugEnv.traceDifference)
                 logger.trace("Tree {} is unchanged", t1.id());
         }
+    }
+
+    private void diffRef(@Nullable Tree t1, @Nullable Tree t2) {
+        if (t1 != null)
+            removeRefcounts(getRefcounts(t1));
+        if (t2 != null)
+            addRefcounts(getRefcounts(t2));
+    }
+
+    private void addRefcounts(List<Refcount> rc) {
+        rc.forEach(c -> refcounts.computeIfAbsent(c.getTarget(), Refcount::new).inc(c.getCount()));
+    }
+
+    private void removeRefcounts(List<Refcount> rc) {
+        rc.forEach(c -> refcounts.computeIfAbsent(c.getTarget(), Refcount::new).dec(c.getCount()));
     }
 
     public void diffEntity(@Nullable Tree t1, @Nullable Tree t2) {
@@ -103,28 +121,6 @@ public class ContextDifference {
         }
     }
 
-    private InstancePO buildInstancePO(Tree tree) {
-        return new InstancePO(
-                appId,
-                tree.id(),
-                incVersion(tree.data()),
-                tree.version() + 1,
-                0L,
-                tree.nextNodeId()
-        );
-    }
-
-    private byte[] incVersion(byte[] tree) {
-        var bout = new ByteArrayOutputStream();
-        new StreamCopier(new ByteArrayInputStream(tree), bout) {
-            @Override
-            public void visitVersion(long version) {
-                output.writeLong(version + 1);
-            }
-        }.visitGrove();
-        return bout.toByteArray();
-    }
-
     private List<Subtree> getSubTrees(Tree tree) {
         var subTrees = new ArrayList<Subtree>();
         new SubtreeExtractor(tree.openInput(), subTrees::add).visitGrove();
@@ -136,19 +132,35 @@ public class ContextDifference {
         new StreamVisitor(tree.openInput()) {
 
             @Override
-            public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+            public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey, int refcount) {
                 var id =  PhysicalId.of(treeId, nodeId);
                 ids.add(new DiffId(id, -1));
-                super.visitInstanceBody(treeId, nodeId, typeOrTypeKey);
+                super.visitInstanceBody(treeId, nodeId, typeOrTypeKey, refcount);
             }
 
             @Override
-            public void visitEntityBody(int tag, Id id) {
+            public void visitEntityBody(int tag, Id id, int refcount) {
                 ids.add(new DiffId(id, tag));
-                super.visitEntityBody(tag, id);
+                super.visitEntityBody(tag, id, refcount);
             }
         }.visitGrove();
         return ids;
+    }
+
+    private List<Refcount> getRefcounts(Tree tree) {
+        var visited = new HashSet<Id>();
+        var refcounts = new ArrayList<Refcount>();
+        new StreamVisitor(tree.openInput()) {
+
+            @Override
+            public void visitReference() {
+                var id = readId();
+                if (visited.add(id))
+                    refcounts.add(new Refcount(id, 1));
+
+            }
+        }.visitGrove();
+        return refcounts;
     }
 
     public EntityChange<InstancePO> getTreeChanges() {
@@ -157,6 +169,10 @@ public class ContextDifference {
 
     public EntityChange<VersionRT> getEntityChange() {
         return entityChange;
+    }
+
+    public Collection<Refcount> getRefcountChange() {
+        return Collections.unmodifiableCollection(refcounts.values());
     }
 
     public int getNumSubTreeAdded() {

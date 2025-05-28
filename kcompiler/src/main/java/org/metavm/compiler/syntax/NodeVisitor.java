@@ -127,4 +127,6 @@ public interface NodeVisitor<R> {
     R visitInit(Init init);
 
     R visitExtend(Extend extend);
+
+    R visitDelStmt(DelStmt delStmt);
 }

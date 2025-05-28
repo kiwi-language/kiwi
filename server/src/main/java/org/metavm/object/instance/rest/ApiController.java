@@ -77,6 +77,13 @@ public class ApiController {
         return Result.success(apiService.search(type, criteria, page, pageSize));
     }
 
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(HttpServletRequest servletRequest, @PathVariable("id") String id) {
+        verify(servletRequest);
+        apiService.delete(id);
+        return Result.voidSuccess();
+    }
+
     @PostMapping("/invoke")
     public Result<Object> invoke(HttpServletRequest servletRequest, HttpServletResponse servletResponse, @RequestBody Map<String, Object> requestBody) {
         verify(servletRequest);

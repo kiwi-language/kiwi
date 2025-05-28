@@ -13,10 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 @NativeEntity(58)
@@ -31,14 +28,14 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
-    public static StaticFieldTable getInstance(ClassType type, IInstanceContext context) {
+    public static StaticFieldTable getInstance(ClassType type, EntityRepository repository) {
         var klass = type.getKlass();
-        var sft = context.selectFirstByKey(IDX_KLASS, klass.getReference());
+        var sft = repository.selectFirstByKey(IDX_KLASS, klass.getReference());
         if(sft == null) {
             if (DebugEnv.traceStaticFieldTableCreation)
                 log.trace("Creating static field table for klass {}", klass.getQualifiedName());
-            sft = new StaticFieldTable(context.allocateRootId(), klass);
-            context.bind(sft);
+            sft = new StaticFieldTable(repository.allocateRootId(), klass);
+            repository.bind(sft);
         }
         return sft;
     }
@@ -202,4 +199,19 @@ public class StaticFieldTable extends org.metavm.entity.Entity implements LoadAw
     @Override
     protected void buildSource(Map<String, Value> source) {
     }
+
+    public void purgeRemovedFields() {
+        var klass = getKlass();
+        var fieldSet = new HashSet<>(klass.getStaticFields());
+        var it = entries.iterator();
+        while (it.hasNext()) {
+            var e = it.next();
+            if (!fieldSet.contains(e.getField())) {
+                it.remove();
+                if (DebugEnv.traceDeployment)
+                    log.trace("Purge removed field {} from SFT", e.getField().getQualifiedName());
+            }
+        }
+    }
+
 }

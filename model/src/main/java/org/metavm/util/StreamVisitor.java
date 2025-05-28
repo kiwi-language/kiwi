@@ -1,19 +1,18 @@
 package org.metavm.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.entity.TreeTags;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Type;
 import org.metavm.object.type.TypeOrTypeKey;
 import org.metavm.object.type.rest.dto.TypeKey;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 
+@Slf4j
 public class StreamVisitor {
 
-    private static final Logger logger = LoggerFactory.getLogger(StreamVisitor.class);
     private final InstanceInput input;
 
     public StreamVisitor(InputStream in) {
@@ -307,7 +306,7 @@ public class StreamVisitor {
     }
 
     public void visitInstance(long treeId, long nodeId) {
-        visitInstanceBody(treeId, nodeId, TypeKey.read(input));
+        visitInstanceBody(treeId, nodeId, TypeKey.read(input), readInt());
     }
 
     public void visitValueInstance() {
@@ -366,7 +365,7 @@ public class StreamVisitor {
         return input.readBoolean();
     }
 
-    public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey, int refcount) {
         visitBody(typeOrTypeKey);
     }
 
@@ -489,10 +488,10 @@ public class StreamVisitor {
     }
 
     public void visitEntity() {
-        visitEntityBody(read(), readId());
+        visitEntityBody(read(), readId(), readInt());
     }
 
-    public void visitEntityBody(int tag, Id id) {
+    public void visitEntityBody(int tag, Id id, int refcount) {
         var h = EntityRegistry.getVisitBodyHandle(tag);
         try {
             h.invokeExact(this);

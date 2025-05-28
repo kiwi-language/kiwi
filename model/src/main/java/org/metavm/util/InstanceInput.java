@@ -149,9 +149,12 @@ public class InstanceInput extends MvInput {
     private Reference readInstance(long treeId, long nodeId) {
         var type = (ClassType) this.readType();
         var id = PhysicalId.of(treeId, nodeId);
-        var instance = ClassInstanceBuilder.newBuilder(type, id).initFieldTable(false).isNew(false).build();
-        if(parent != null)
-            instance.setParentInternal(parent, true);
+        var instance = ClassInstanceBuilder.newBuilder(type, id).
+                initFieldTable(false)
+                .isNew(false)
+                .parent((MvClassInstance) parent)
+                .build();
+        instance.setRefcount(readInt());
         var oldParent = parent;
         var ref = instance.getReference();
         parent = instance;

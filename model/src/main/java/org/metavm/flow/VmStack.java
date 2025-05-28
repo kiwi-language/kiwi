@@ -112,16 +112,6 @@ public class VmStack {
                                 instance.fields[field.getRawField().offset].value = field.getPropertyType().fromStackValue(value);
                                 pc += 3;
                             }
-                            case Bytecodes.SET_CHILD_FIELD -> {
-                                int fieldIndex = (bytes[pc + 1] & 0xff) << 8 | bytes[pc + 2] & 0xff;
-                                var field = (FieldRef) constants[fieldIndex];
-                                var value = stack[--top];
-                                var instance = stack[--top].resolveMvObject();
-                                instance.fields[field.getRawField().offset].value = value;
-                                if (value instanceof Reference ref)
-                                    ref.get().setParent(instance);
-                                pc += 3;
-                            }
                             case Bytecodes.RETURN -> {
                                 var v = stack[top - 1];
                                 Arrays.fill(stack, base, base + code.getFrameSize(), null);
@@ -1364,6 +1354,10 @@ public class VmStack {
                                 var t = (ClassType) stack[--top];
                                 stack[top++] = Objects.requireNonNull(t.asSuper(k));
                                 pc += 3;
+                            }
+                            case Bytecodes.DELETE -> {
+                                repository.remove(stack[--top].resolveObject());
+                                pc++;
                             }
                             default -> throw new IllegalStateException("Invalid bytecode: " + b);
                         }

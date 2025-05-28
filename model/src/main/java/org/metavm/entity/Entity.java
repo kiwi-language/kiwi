@@ -9,15 +9,15 @@ import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
-public abstract class Entity extends BaseInstance implements IdInitializing, RemovalAware, BindAware, NativeObject {
+public abstract class Entity extends BaseInstance implements IdInitializing, BindAware, NativeObject {
 
     private transient Entity root;
+    private int refcount;
 
     public Entity(@NotNull Id id) {
         super(id, 0,0 , false, true);
@@ -76,16 +76,7 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
     }
 
     @Override
-    public List<Instance> beforeRemove(IInstanceContext context) {
-        return List.of();
-    }
-
-    @Override
     public void onBind(IInstanceContext context) {
-    }
-
-    public boolean afterContextInitIds() {
-        return false;
     }
 
     @Override
@@ -103,6 +94,7 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
     @Override
     public final void write(MvOutput output) {
         output.writeId(getId());
+        output.writeInt(refcount);
         writeBody(output);
     }
 
@@ -112,6 +104,7 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
     }
 
     public final void readHeadAndBody(MvInput input, Entity parent) {
+        refcount = input.readInt();
         readBody(input, parent);
     }
 
@@ -195,5 +188,15 @@ public abstract class Entity extends BaseInstance implements IdInitializing, Rem
     @Override
     public EntityReference getReference() {
         return new EntityReference(this);
+    }
+
+    @Override
+    public void incRefcount(int amount) {
+        refcount += amount;
+    }
+
+    @Override
+    public int getRefcount() {
+        return refcount;
     }
 }

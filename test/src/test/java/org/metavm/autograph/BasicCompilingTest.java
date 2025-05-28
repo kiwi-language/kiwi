@@ -6,7 +6,7 @@ import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.MetadataState;
-import org.metavm.task.SynchronizeSearchTask;
+import org.metavm.task.SyncSearchTask;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -675,7 +675,7 @@ public class BasicCompilingTest extends CompilerTestBase {
     private void processSearch() {
         var className = "search.SearchFoo";
         var id = saveInstance(className, Map.of("name", "foo", "seq", 100));
-        TestUtils.waitForTaskDone(t -> t instanceof SynchronizeSearchTask, schedulerAndWorker);
+        TestUtils.waitForTaskDone(t -> t instanceof SyncSearchTask, schedulerAndWorker);
         var page = search(className, Map.of("name", "foo", "seq", List.of(50, 200)), 1, 20).data();
         Assert.assertEquals(1, page.size());
         Assert.assertEquals(id, page.getFirst().id());

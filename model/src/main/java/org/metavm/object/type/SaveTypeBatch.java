@@ -68,18 +68,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
         typeChangedFields.add(field);
     }
 
-    public void addToChildField(Field field) {
-        toChildFields.add(field);
-    }
-
-    public void addToNonChildField(Field field) {
-        toNonChildFields.add(field);
-    }
-
-    public void addRemovedChildField(Field field) {
-        removedChildFields.add(field);
-    }
-
     public void addChangingSuperKlass(Klass klass) {
         changingSuperKlasses.add(klass);
     }
@@ -236,7 +224,6 @@ public class SaveTypeBatch implements TypeDefProvider, ClassFileListener {
                     (MvClassInstance) enumConstant,
                     newFields,
                     typeChangedFields,
-                    toChildFields,
                     changingSuperKlasses,
                     entityToValueKlasses,
                     valueToEntityKlasses,

@@ -21,20 +21,12 @@ public interface ContextListener {
 
     default void onInstanceIdInit(Instance instance) {}
 
-    default void afterContextIntIds() {}
-
-    default void onPatchBuild() {}
-
     default boolean onChange(Instance instance) {
         return false;
     }
 
     default boolean onRemove(Instance instance) {
         return false;
-    }
-
-    default List<Instance> beforeRemove(Instance instance, Predicate<Instance> contains) {
-        return List.of();
     }
 
 }

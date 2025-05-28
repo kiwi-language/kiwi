@@ -6,13 +6,9 @@ import org.metavm.api.Generated;
 import org.metavm.ddl.FieldAddition;
 import org.metavm.ddl.SystemDDL;
 import org.metavm.entity.EntityRegistry;
-import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.entity.RemovalAware;
 import org.metavm.flow.Flows;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.*;
-import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.Reference;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
 import org.metavm.util.Instances;
@@ -21,16 +17,12 @@ import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 @NativeEntity(39)
 @Entity
-public class PreUpgradeTask extends ScanTask  implements RemovalAware {
+public class PreUpgradeTask extends ScanTask  {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
@@ -124,11 +116,6 @@ public class PreUpgradeTask extends ScanTask  implements RemovalAware {
     @Override
     public List<Id> getExtraStdKlassIds() {
         return Collections.unmodifiableList(newKlassIds);
-    }
-
-    @Override
-    public List<Instance> beforeRemove(IInstanceContext context) {
-        return List.of(walReference.get());
     }
 
     @Override

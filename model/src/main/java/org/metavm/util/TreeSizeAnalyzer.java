@@ -48,10 +48,10 @@ public class TreeSizeAnalyzer extends StreamCopier {
     }
 
     @Override
-    public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey) {
+    public void visitInstanceBody(long treeId, long nodeId, TypeOrTypeKey typeOrTypeKey, int refcount) {
         this.treeId = treeId;
         this.nodeId = nodeId;
-        super.visitInstanceBody(treeId, nodeId, typeOrTypeKey);
+        super.visitInstanceBody(treeId, nodeId, typeOrTypeKey, refcount);
     }
 
     @Override

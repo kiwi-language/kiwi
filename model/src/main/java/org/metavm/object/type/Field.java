@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 
 @NativeEntity(72)
 @Entity
-public class Field extends AttributedElement implements ChangeAware, Property, ITypeDef {
+public class Field extends AttributedElement implements Property, ITypeDef {
 
     @SuppressWarnings("unused")
     private static Klass __klass__;
@@ -150,18 +150,6 @@ public class Field extends AttributedElement implements ChangeAware, Property, I
     @Override
     public org.metavm.entity.Entity getParentEntity() {
         return declaringType;
-    }
-
-    @Override
-    public List<Instance> beforeRemove(IInstanceContext context) {
-        List<Instance> cascades = new ArrayList<>(super.beforeRemove(context));
-        if(isStatic()) {
-            var sft = context.selectFirstByKey(StaticFieldTable.IDX_KLASS, declaringType.getReference());
-            if(sft != null)
-                sft.remove(this);
-        }
-        declaringType.resetFieldTransients();
-        return cascades;
     }
 
     public LongValue getLong(@NotNull ClassInstance instance) {
@@ -286,22 +274,6 @@ public class Field extends AttributedElement implements ChangeAware, Property, I
 
     private String getDesc() {
         return getQualifiedName() + ":" + getType().getName();
-    }
-
-    @Override
-    public void onChange(IInstanceContext context) {
-//        if (_static) {
-//            var staticValueField = ModelDefRegistry.getField(Field.class, "staticValue");
-//            var value = instance.getField(staticValueField);
-//            if (!getType().isInstance(value)) {
-//                throw new BusinessException(ErrorCode.STATIC_FIELD_CAN_NOT_BE_NULL, getQualifiedName());
-//            }
-//        }
-    }
-
-    @Override
-    public boolean isChangeAware() {
-        return _static;
     }
 
     public boolean isReadonly() {

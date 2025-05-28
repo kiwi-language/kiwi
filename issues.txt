@@ -1,25 +1,4 @@
-1 refactor `Reference.equals` method, it's a huge mess
-2 refactor Method.getInternalName(Flow)
-3 StringType is a pitfall, refactor it
-
-4 ChildList are changed to ArrayList without establishing a parent-child relationship in mv sources:
-ParentChild.mv: Parent.children
-List.mv: MyList.nodes
-Product.mv: Product.skuList
-
-5 Parent-child relationship removed:
-ddl_after.mv: Product.inventory
-child_to_enum_ddl_before.mv: Product.kind
-child_to_enum_ddl_rollback.mv: Product.kind
-remove_child_field_ddl_before.mv: Product.inventory
-value_to_child_ddl_after.mv: Product.price
-
-6 MvClassInstance.copy needs to handle children
-
-7 Support for separate child is removed in InstanceInput.readMessage, need to make sure it's OK.
-
-8 InstanceManagerTest.testRelocation was commented
-
-9 The assertion of enum constant being removed at the end of DDLCompilingTest was commented out
-
-10 The assertion at the of end of ManufacturingCompilingTest.processInventory was commented out
+Todo
+- Remove tasks when it's terminated
+- Remove beans when the bean class is removed
+- Create a temporary search index for migration

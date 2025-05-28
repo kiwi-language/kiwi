@@ -112,39 +112,49 @@ Test the Installation
 
 1.  Create a new directory for your test project and navigate into it:
     
-        mkdir kiwi_demo
-        cd kiwi_demo
+    ```bash
+    mkdir kiwi_demo
+    cd kiwi_demo
+    ```
     
 2.  Create a subdirectory for source files:
     
-        mkdir src
+    ```bash
+    mkdir src
+    ```
     
 3.  Create a Kiwi source file named `src/test.kiwi` with the following example code:
-    
-        class Product(
-            var name: string,
-            var price: double,
-            var stock: int
-        ) {
-        
-            reduceStock(quantity: int) {
-                require(stock >= quantity, "Out of stock")
-                stock -= quantity
-            }
 
-        }
+       ```kotlin
+       class Product(
+           var name: string,
+           var price: double,
+           var stock: int
+       ) {
+        
+           fn reduceStock(quantity: int) {
+               require(stock >= quantity, "Out of stock")
+               stock -= quantity
+           }
+
+       }
+       ```
     
 4.  Build the project using the Kiwi compiler (assuming the `bin` directory is in your PATH):
     
-        kiwi build
+    ```bash
+    kiwi build
+    ```
     
 
 Deploy the Artifact to the Server
 ---------------------------------
 
 Use the Kiwi CLI to deploy your compiled application to the running Kiwi server (assuming the `bin` directory is in your PATH):
-
-    kiwi deploy
+    
+```bash
+kiwi deploy
+```
 
 The command will prompt you for deployment details. Here are the expected inputs:
 
@@ -159,9 +169,23 @@ After deployment, you can interact with your `Product` class via HTTP requests t
 
 ### Create a Product
 
-Send a PUT request to create a new product instance.
+Send a PUT request to create a new product.
 
-    curl -X PUT -H "Content-Type: application/json" -d '{"name": "Kiwi Fruit", "price": 10.0, "stock": 100}' http://localhost:8080/product
+```bash
+curl -X PUT --location "http://localhost:8080/object" \
+-H "Content-Type: application/json" \
+-H "X-App-ID: {app-id}" \
+-d '{
+      "object": {
+        "type": "Product",
+        "fields": {
+          "name": "Kiwi Fruit",
+          "price": 10.0,
+          "stock": 100
+        }
+      }
+    }'    
+```
 
 **Note:** The server should respond with the ID of the newly created product.
 
@@ -169,10 +193,25 @@ Send a PUT request to create a new product instance.
 
 Send a GET request using the product's ID:
 
-    curl http://localhost:8080/<id>
+```bash
+curl -X GET --location "http://localhost:8080/object/01dca8d6b90700" -H "X-App-ID: {app-id}"
+```
 
 ### Decrement the Stock
 
-Send a POST request to the product's `reduce-stock` endpoint (derived from the `reduceStock` method).
+Send a POST request to the `/object/invoke` endpoint to invoke the method.
 
-    curl -X POST -H "Content-Type: application/json" -d '{"quantity": 1}' http://localhost:8080/<id>/reduce-stock
+```bash
+curl -X POST --location "http://localhost:8080/object/invoke" \
+-H "Content-Type: application/json" \
+-H "X-App-ID: {app-id}" \
+-d '{
+      "receiver": {
+        "id": "{id}"
+      },
+      "method": "reduceStock",
+      "arguments": {
+        "quantity": 1
+      }
+    }'
+```

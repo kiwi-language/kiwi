@@ -1,18 +1,22 @@
 package org.metavm.object.instance.persistence;
 
 import org.metavm.entity.InstanceIndexQuery;
+import org.metavm.entity.Tree;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.InstanceIndexKey;
-import org.metavm.object.type.*;
-import org.metavm.util.Utils;
+import org.metavm.object.type.ClassType;
+import org.metavm.object.type.Index;
+import org.metavm.object.type.IndexRef;
+import org.metavm.util.StreamCopier;
 import org.metavm.util.StreamVisitor;
+import org.metavm.util.Utils;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
@@ -103,4 +107,25 @@ public class PersistenceUtils {
         );
     }
 
+    public static InstancePO buildInstancePO(long appId, Tree tree) {
+        return new InstancePO(
+                appId,
+                tree.id(),
+                incVersion(tree.data()),
+                tree.version() + 1,
+                0L,
+                tree.nextNodeId()
+        );
+    }
+
+    private static byte[] incVersion(byte[] tree) {
+        var bout = new ByteArrayOutputStream();
+        new StreamCopier(new ByteArrayInputStream(tree), bout) {
+            @Override
+            public void visitVersion(long version) {
+                output.writeLong(version + 1);
+            }
+        }.visitGrove();
+        return bout.toByteArray();
+    }
 }

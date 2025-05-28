@@ -36,6 +36,10 @@ public class ApiClient {
         return ApiObject.from(apiService.getInstance(id.toString()));
     }
 
+    public void delete(Id id) {
+        apiService.delete(id.toString());
+    }
+
     public Id saveInstance(String className, Map<String, Object> arguments) {
         return saveInstance(className, arguments, Map.of());
     }

@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.*;
 import org.metavm.object.instance.IndexSource;
@@ -11,6 +12,7 @@ import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.util.*;
 
+@Slf4j
 public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     protected final LoadingBuffer loadingBuffer;
@@ -48,6 +50,8 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     @Override
     protected void initializeInstance(Id id) {
+        if (DebugEnv.traceInstanceLoading)
+            log.trace("Initializing instance {}", id);
         var instances = initializeInstance0(id);
         var visited = new IdentitySet<Instance>();
         for (Instance instance : instances) {

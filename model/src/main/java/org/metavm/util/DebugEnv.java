@@ -37,6 +37,10 @@ public class DebugEnv {
 
     public static volatile boolean resolveVerbose = false;
 
+    public static final boolean traceContextFinish = false;
+
+    public static boolean traceInstanceLoading = false;
+
     public static volatile boolean flag = false;
 
     public static final List<Klass> list = new CopyOnWriteArrayList<>();

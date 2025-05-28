@@ -103,16 +103,20 @@ public class StreamCopier extends StreamVisitor {
     public void visitInstance(long treeId, long nodeId) {
         var typeKey = readTypeKey();
         typeKey.write(output);
-        visitInstanceBody(treeId, nodeId, typeKey);
+        var refcount = readInt();
+        output.writeInt(refcount);
+        visitInstanceBody(treeId, nodeId, typeKey, refcount);
     }
 
     @Override
     public void visitEntity() {
         var tag = read();
         var id = readId();
+        var refcount = readInt();
         output.write(tag);
         output.writeId(id);
-        visitEntityBody(tag, id);
+        output.writeInt(refcount);
+        visitEntityBody(tag, id, refcount);
     }
 
     @Override
@@ -362,6 +366,10 @@ public class StreamCopier extends StreamVisitor {
 
     public void write(int b) {
         output.write(b);
+    }
+
+    public void writeInt(int i) {
+        output.writeInt(i);
     }
 
     public void writeId(Id id) {

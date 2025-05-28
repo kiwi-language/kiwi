@@ -106,6 +106,10 @@ GET http://localhost:8080/object/01a0c4d7b90700
 X-App-ID: 1000006000
 
 ###
+DELETE http://localhost:8080/object/01b8b8d6b90700
+X-App-ID: 1000000011
+
+###
 POST http://localhost:8080/object/01a0c4d7b90700/reduce-stock
 X-App-ID: 1000006000
 Content-Type: application/json
@@ -1293,6 +1297,43 @@ Content-Type: application/json
 {
   "receiver": {
     "id": "01d0b4d7b90700"
+  },
+  "method": "reduceStock",
+  "arguments": {
+    "quantity": 1
+  }
+}
+
+###
+# curl -X PUT -H "Content-Type: application/json" -d '{"object": {"fields": {"name": "Kiwi Fruit", "price": 10.0, "stock": 100}}}' http://localhost:8080/object
+PUT http://localhost:8080/object
+Content-Type: application/json
+X-App-ID: 1000000011
+
+{
+  "object": {
+    "type": "Product",
+    "fields": {
+      "name": "Kiwi Fruit",
+      "price": 10.0,
+      "stock": 100
+    }
+  }
+}
+
+###
+GET http://localhost:8080/object/01dca8d6b90700
+X-App-ID: 1000000011
+
+
+###
+POST http://localhost:8080/object/invoke
+Content-Type: application/json
+X-App-ID: 1000000011
+
+{
+  "receiver": {
+    "id": "01dca8d6b90700"
   },
   "method": "reduceStock",
   "arguments": {

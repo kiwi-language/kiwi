@@ -147,4 +147,19 @@ public class TypeManagerTest extends TestCase {
         }
     }
 
+    public void testEntityRefcount() {
+        MockUtils.assemble("kiwi/del/del.kiwi", typeManager, schedulerAndWorker);
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
+                var barKlass = context.getKlassByQualifiedName("del.Bar");
+                context.remove(barKlass);
+                context.finish();
+                fail("Removal should have failed");
+            }
+            catch (BusinessException e) {
+                assertSame(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, e.getErrorCode());
+            }
+        });
+    }
+
 }

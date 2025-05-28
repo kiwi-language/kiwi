@@ -97,7 +97,7 @@ public class InstanceSearchServiceImpl implements InstanceSearchService {
 
     private DeleteRequest buildDeleteRequest(long appId, Id id) {
         DeleteRequest deleteRequest = new DeleteRequest(INDEX);
-        deleteRequest.id(id.toString());
+        deleteRequest.id(Long.toString(id.getTreeId()));
         deleteRequest.routing(appId + "");
         return deleteRequest;
     }

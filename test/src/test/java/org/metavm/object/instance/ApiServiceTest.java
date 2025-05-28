@@ -3,6 +3,7 @@ package org.metavm.object.instance;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
+import org.metavm.common.ErrorCode;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.TypeManager;
@@ -103,6 +104,27 @@ public class ApiServiceTest extends TestCase {
         Assert.assertEquals(99, sku.getInt("quantity"));
     }
 
+
+    public void testDelete() {
+        MockUtils.assemble("kiwi/del/del.kiwi", typeManager, schedulerAndWorker);
+        var id = saveInstance("del.Foo", Map.of("name", "foo"));
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r = apiClient.search("del.Foo", Map.of(), 1, 20);
+        assertEquals(1, r.total());
+        delete(id);
+        try {
+            getObject(id);
+            fail("Should have been removed");
+        }
+        catch (BusinessException e) {
+            assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r1 = apiClient.search("del.Foo", Map.of(), 1, 20);
+        assertEquals(0, r1.total());
+    }
+
+
     public void testSummary() {
         MockUtils.assemble("kiwi/summary/summary.kiwi", typeManager, schedulerAndWorker);
         var productId = saveInstance("summary.Product",
@@ -119,6 +141,10 @@ public class ApiServiceTest extends TestCase {
 
     private Id saveInstance(String className, Map<String, Object> map) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, map));
+    }
+
+    public void delete(Id id) {
+        TestUtils.doInTransactionWithoutResult(() -> apiClient.delete(id));
     }
 
     public ApiObject getObject(Id id) {

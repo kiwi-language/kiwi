@@ -172,10 +172,6 @@ public interface Instance extends Message, Identifiable {
         return false;
     }
 
-    default void setParent(Instance instance) {
-        throw new UnsupportedOperationException();
-    }
-
     default void writeTree(TreeWriter treeWriter) {
 
     }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-API for creating, retrieving, searching and invoking methods on objects.
+API for managing Kiwi objects: creation, retrieval, deletion, searching, and method invocation.
 
 ## Code Example
 
@@ -169,6 +169,23 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
       "code": 0,
       "data": "{id}"
     } 
+    ```
+
+### Object Delete
+* **`DELETE /object/{object-id}`**
+* **Response Data**: None
+
+* **Example**:
+    * Request
+    ```http
+    DELETE /object/{product-id}
+    X-App-ID: {app-id}
+    ```
+    * Response
+    ```json
+    {
+      "code": 0
+    }
     ```
 
 ### Object Retrieval

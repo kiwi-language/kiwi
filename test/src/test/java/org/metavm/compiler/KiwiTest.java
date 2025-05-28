@@ -1,9 +1,12 @@
 package org.metavm.compiler;
 
 import org.junit.Assert;
+import org.metavm.common.ErrorCode;
+import org.metavm.compiler.syntax.ClassInit;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ColumnKind;
+import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Access;
 import org.metavm.object.type.ArrayKind;
@@ -495,5 +498,31 @@ public class KiwiTest extends KiwiTestBase {
 
     }
 
+    public void testDelete() {
+        deploy("kiwi/del/del.kiwi");
+        var id = saveInstance("del.Foo", Map.of("name", "foo"));
+        callMethod(id, "del", List.of());
+        try {
+            getObject(id);
+            fail("Retrival should have failed");
+        }
+        catch (BusinessException e) {
+            assertEquals(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
+        var fooId1 = saveInstance("del.Foo", Map.of("name", "foo1"));
+        saveInstance("del.Bar", Map.of("foo", fooId1));
+        try (var context = newContext()) {
+            context.loadKlasses();
+            var foo1 = (ClassInstance) context.get(fooId1);
+            assertEquals(1, foo1.getRefcount());
+        }
+        try {
+            callMethod(fooId1, "del", List.of());
+            fail("Deletion should have failed");
+        }
+        catch (BusinessException e) {
+
+        }
+    }
 
 }
