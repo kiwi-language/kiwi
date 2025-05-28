@@ -12,6 +12,8 @@ import org.metavm.util.*;
 import java.util.List;
 import java.util.Map;
 
+import static org.metavm.util.ApiClient.KEY_DOLLAR_ID;
+
 @Slf4j
 public class ApiServiceTest extends TestCase {
 
@@ -49,7 +51,6 @@ public class ApiServiceTest extends TestCase {
         Assert.assertEquals(price, sku.getDouble("price"), 0.0001);
         Assert.assertEquals(quantity, sku.getInt("quantity"));
     }
-
     public void testHandleInstanceMethodCall() {
         MockUtils.createShoppingTypes(typeManager, schedulerAndWorker);
 //        var skuId = (String) TestUtils.doInTransaction(() -> apiService.handleNewInstance(
@@ -124,6 +125,31 @@ public class ApiServiceTest extends TestCase {
         assertEquals(0, r1.total());
     }
 
+    public void testUpdate() {
+        MockUtils.assemble("kiwi/foo.kiwi", typeManager, schedulerAndWorker);
+        var id = saveInstance("Foo", Map.of("name", "foo"));
+        var foo = getObject(id);
+        assertEquals("foo", foo.get("name"));
+        saveInstance("Foo", Map.of(KEY_DOLLAR_ID, id, "name", "foo1", "Bar", List.of(
+                Map.of("name", "bar")
+        )));
+        foo = getObject(id);
+        assertEquals("foo1", foo.get("name"));
+        var bars = foo.getChildren("Bar");
+        assertEquals(1, bars.size());
+        var bar = bars.getFirst();
+        assertEquals("bar", bar.get("name"));
+        var barId = bar.id();
+        saveInstance("Foo", Map.of(
+                KEY_DOLLAR_ID, id, "name", "foo1", "Bar", List.of(
+                        Map.of(KEY_DOLLAR_ID, barId, "name", "bar1")
+                )
+        ));
+        foo = getObject(id);
+        bars = foo.getChildren("Bar");
+        assertEquals(1, bars.size());
+        assertEquals("bar1", bars.getFirst().get("name"));
+    }
 
     public void testSummary() {
         MockUtils.assemble("kiwi/summary/summary.kiwi", typeManager, schedulerAndWorker);

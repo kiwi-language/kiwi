@@ -358,17 +358,16 @@ public class KiwiTest extends KiwiTestBase {
     public void testChildren() {
         deploy("kiwi/children.kiwi");
         var id = saveInstance("Product", Map.of(
-                "name", "Shoes"
-                ),
-               Map.of(
-               "SKU", List.of(
-                       Map.of(
-                           "variant", "40",
-                           "price", 100,
-                           "stock", 100
-                       )
-                    )
-               )
+                "name", "Shoes",
+                        "SKU", List.of(
+                                Map.of(
+                                        "variant", "40",
+                                        "price", 100,
+                                        "stock", 100
+                                )
+                        )
+
+                )
         );
         var product = getObject(id);
         var skus = product.getChildren("SKU");
@@ -389,13 +388,13 @@ public class KiwiTest extends KiwiTestBase {
             var column = field.getColumn();
             Assert.assertSame(ColumnKind.STRING, column.kind());
         }
-        var id = saveInstance(className, Map.of("name", "kiwi"),
-                Map.of("Child", List.of(
+        var id = saveInstance(className, Map.of("name", "kiwi",
+                "Child", List.of(
                         Map.of(
-                            "name", "child"
+                                "name", "child"
                         )
-                ))
-        );
+                )
+        ));
         TestUtils.waitForEsSync(schedulerAndWorker);
         var r = search(className, Map.of(
                 "name", "kiwi",
@@ -405,8 +404,7 @@ public class KiwiTest extends KiwiTestBase {
         Assert.assertEquals(id, r.data().getFirst().id());
         assertNull(r.data().getFirst().getMap().get("children"));
 
-        var id1 = saveInstance(className, Map.of("name", "kiwi"),
-                Map.of("Child", List.of(
+        var id1 = saveInstance(className, Map.of("name", "kiwi", "Child", List.of(
                         Map.of(
                                 "name", "child"
                         )

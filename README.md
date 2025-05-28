@@ -169,10 +169,10 @@ After deployment, you can interact with your `Product` class via HTTP requests t
 
 ### Create a Product
 
-Send a PUT request to create a new product.
+Send a POST request to create a new product.
 
 ```bash
-curl -X PUT --location "http://localhost:8080/object" \
+curl -X POST --location "http://localhost:8080/object" \
 -H "Content-Type: application/json" \
 -H "X-App-ID: {app-id}" \
 -d '{

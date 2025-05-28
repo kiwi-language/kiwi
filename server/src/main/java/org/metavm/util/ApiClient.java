@@ -20,6 +20,8 @@ import java.util.Map;
 @Slf4j
 public class ApiClient {
 
+    public static final String KEY_DOLLAR_CLASS = "$class";
+    public static final String KEY_DOLLAR_ID = "$id";
     private final ApiService apiService;
 
     private final List<HttpCookie> cookies = new ArrayList<>();
@@ -40,21 +42,12 @@ public class ApiClient {
         apiService.delete(id.toString());
     }
 
-    public Id saveInstance(String className, Map<String, Object> arguments) {
-        return saveInstance(className, arguments, Map.of());
-    }
-
-    public Id saveInstance(String className, Map<String, Object> arguments, Map<String, List<Map<String, Object>>> children) {
-        var map = new HashMap<String, Object>();
-        var fields = new HashMap<String, Object>();
-        map.put("type", className);
-        map.put("fields", fields);
-        arguments.forEach((name, arg) -> fields.put(name, transformArgs(arg)));
-        var children1 = new HashMap<String, List<Map<String, Object>>>();
-        map.put("children", children1);
-        children.forEach((name, c) -> children1.put(name, transformArgs(c)));
+    public Id saveInstance(String className, Map<String, Object> map) {
+        map = new HashMap<>(map);
+        map.put(KEY_DOLLAR_CLASS, className);
+        map = transformArgs(map);
         var uri = "/object/" + NamingUtils.nameToPath(className);
-        var req = makeRequest("PUT", uri);
+        var req = makeRequest("POST", uri);
         var resp = new HttpResponseImpl();
         var rs = apiService.saveInstance(map,req, resp);
         processResponse(resp);
@@ -130,7 +123,7 @@ public class ApiClient {
         return switch (object) {
             case List<?> list -> transformArgs(list);
             case Map map -> transformArgs(map);
-            case Id id -> Map.of("id", id.toString());
+            case Id id -> Map.of(ApiService.KEY_ID, id.toString());
             case ApiNamedObject ec -> ec.toMap();
             case null, default -> object;
         };
@@ -139,11 +132,21 @@ public class ApiClient {
     private Map<String, Object> transformArgs(Map<String, Object> map) {
         var map1 = new HashMap<String, Object>();
         var fields = new HashMap<String, Object>();
-        map1.put("fields", fields);
+        map1.put(ApiService.KEY_FIELDS, fields);
+        var children = new HashMap<String, List<Map<String, Object>>>();
+        map1.put(ApiService.KEY_CHILDREN, children);
         map.forEach((k, v) -> {
-            if (k.equals(ApiService.KEY_CLASS))
-                map1.put("type", v);
-            else
+            if (k.isEmpty())
+                return;
+            if (k.equals(KEY_DOLLAR_CLASS))
+                map1.put(ApiService.KEY_TYPE, v);
+            else if (k.equals(KEY_DOLLAR_ID))
+                map1.put(ApiService.KEY_ID, v.toString());
+            else if (Character.isUpperCase(k.charAt(0))) {
+                //noinspection unchecked
+                var list = (List<Map<String, Object>>) v;
+                children.put(k, Utils.map(list, this::transformArgs));
+            } else
                 fields.put(k, transformArgs(v));
         });
         return map1;
