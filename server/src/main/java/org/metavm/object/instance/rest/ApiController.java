@@ -46,7 +46,7 @@ public class ApiController {
         this.verify = verify;
     }
 
-    @PutMapping
+    @PostMapping
     public Result<String> save(HttpServletRequest servletRequest, @RequestBody Map<String, Object> requestBody) {
         verify(servletRequest);
         var request = createRequest(servletRequest);

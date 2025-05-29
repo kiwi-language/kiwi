@@ -46,10 +46,6 @@ public abstract class KiwiTestBase extends TestCase  {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, arguments));
     }
 
-    Id saveInstance(String className, Map<String, Object> arguments, Map<String, List<Map<String, Object>>> children) {
-        return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, arguments, children));
-    }
-
     Object callMethod(Object qualifier, String methodName, List<Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
     }

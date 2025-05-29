@@ -2,7 +2,7 @@
 
 ## Overview
 
-API for managing Kiwi objects: creation, retrieval, deletion, searching, and method invocation.
+API for managing Kiwi objects: save, retrieve, delete, search, and invoke methods.
 
 ## Code Example
 
@@ -41,8 +41,10 @@ class Product(
     var stock: int
 ) {
 
+    var active = true
+    
     fn reduceStock(quantity: int) {
-        require(stock >= quantity, "Out of stock")
+        require(active && stock >= quantity, "Inactive or out of stock")
         stock -= quantity
     }
     
@@ -76,6 +78,7 @@ Kiwi objects are represented as JSON objects with the following fields. The spec
 
 **Field Availability by Context:**
 * **Creation Request:** `type`, `fields`, `children`.
+* **Update Request:** `id`, `type`, `fields`, `children`.
 * **Retrieval Response:** `id`, `type`, `summary`, `fields`, `children`.
 * **Search Result Item:** `id`, `type`, `summary`, `fields`.
 * **Reference (Request Body):** `id`.
@@ -125,20 +128,19 @@ Kiwi objects are represented as JSON objects with the following fields. The spec
 ## Endpoints
 All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result Schema](#result).
 
-### Object Creation
+### Save Object
 
-* **`PUT /object`**
+* **`POST /object`**
 * **Request Body:**
 
    | Field      | Type        | Description                                     |
    |:-----------|:------------|:------------------------------------------------|
    | `object`   | JSON Object | [Object Representation](#object-representation) |
-
-* **Response Data:**: Created object's ID (`String`)
-* **Example**:
+* **Response Data:**: Saved object's ID (`String`)
+* **Create Example**:
     * Request
     ```http
-    PUT /object
+    POST /object
     X-App-ID: {app-id}
     Content-Type: application/json
   
@@ -170,26 +172,47 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
       "data": "{id}"
     } 
     ```
-
-### Object Delete
-* **`DELETE /object/{object-id}`**
-* **Response Data**: None
-
-* **Example**:
+* **Update Example**:
     * Request
     ```http
-    DELETE /object/{product-id}
+    POST /object
     X-App-ID: {app-id}
+    Content-Type: application/json
+  
+    {
+      "object": { 
+        "id": "..."
+        "type": "org.kiwi.demo.Product",
+        "fields": {
+          "name": "MacBook Pro",
+          "price": {
+            "type": "org.kiwi.demo.Money",
+            "fields": {
+              "amount": 14000,
+              "currency": {
+                "type": "org.kiwi.demo.Currency",
+                "name": "CNY"
+              }
+            }
+          },
+          "stock": 100,
+          "active": true
+        },
+        "children": {}
+      }
+    }
     ```
     * Response
     ```json
     {
-      "code": 0
-    }
+      "code": 0,
+      "data": "{id}"
+    } 
     ```
 
-### Object Retrieval
-* **`GET /object/{object-id}`**
+
+### Retrieve Object
+* **`GET /object/{id}`**
 * **Response Data**: [Object Representation](#object-representation)
 
 * **Example**:
@@ -215,14 +238,32 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
               "name": "CNY"
             }
           },
-          "stock": 100
+          "stock": 100,
+          "active": true
         },
         "children": {}
       }
     }
     ```
 
-### Search
+### Delete Object
+* **`DELETE /object/{id}`**
+* **Response Data**: None
+
+* **Example**:
+    * Request
+    ```http
+    DELETE /object/{product-id}
+    X-App-ID: {app-id}
+    ```
+    * Response
+    ```json
+    {
+      "code": 0
+    }
+    ```
+
+### Search Objects
 * **`POST /object/search`**
 * **Request Body:**
   
@@ -249,7 +290,8 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
       "type": "org.kiwi.demo.Order"
       "criteria": {
         "name": "MacBook",
-        "price": [10000, 150000]
+        "stock": [1, 200],
+        "active": true
       }
     }
     ```
@@ -272,7 +314,8 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
                   "name": "CNY"
                 }
               },
-              "stock": 100
+              "stock": 100,
+              "active": true
             }
           }   
         ],
@@ -281,7 +324,7 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
     }
     ```
 
-### Method Invocation
+### Invoke Method
 *   **`POST /object/invoke`**
 *   **Request Body:**
 
@@ -301,7 +344,7 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
     
       { 
         "receiver": {
-          "id": "{product-id}"
+          "id": "..."
         },
         "method": "reduceStock",
         "arguments": {
