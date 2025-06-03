@@ -53,22 +53,27 @@ public class Tokens {
         return Utils.safeCall(rawToken, t -> new Token(appId, t));
     }
 
-    public static void setPlatformToken(HttpServletResponse response, Token token) {
-        setToken(response, Constants.PLATFORM_APP_ID, token);
+    public static void setPlatformToken(HttpServletRequest request, HttpServletResponse response, Token token) {
+        setToken(request, response, Constants.PLATFORM_APP_ID, token);
     }
 
-    public static void setToken(HttpServletResponse servletResponse, long appId, Token token) {
-        setTokenCookie(servletResponse, getTokenCookieName(appId), token);
+    public static void setToken(HttpServletRequest request, HttpServletResponse servletResponse, long appId, Token token) {
+        setTokenCookie(request, servletResponse, getTokenCookieName(appId), token);
     }
 
     public static String getTokenCookieName(long appId) {
         return String.format("__token_%d__", appId);
     }
 
-    private static void setTokenCookie(HttpServletResponse servletResponse, String cookieName, Token token) {
+    private static void setTokenCookie(HttpServletRequest request, HttpServletResponse servletResponse, String cookieName, Token token) {
         var cookie = new Cookie(cookieName, token.token());
         cookie.setMaxAge((int) (TOKEN_TTL / 1000));
         cookie.setPath("/");
+        if (request.getHeader("Origin") !=null) {
+            // Support cross-origin
+            cookie.setSecure(true);
+            cookie.setAttribute("SameSite", "None");
+        }
         servletResponse.addCookie(cookie);
     }
 

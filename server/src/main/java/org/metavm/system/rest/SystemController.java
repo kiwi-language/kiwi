@@ -102,7 +102,7 @@ public class SystemController {
 //        NncUtils.writeFile(HOST_FILE, "http://localhost:8080");
         ContextUtil.setUserId(Id.parse(createAppResult.ownerId()));
         var appToken = platformUserManager.enterApp(createAppResult.appId());
-        Tokens.setToken(response, createAppResult.appId(), appToken.token());
+        Tokens.setToken(request, response, createAppResult.appId(), appToken.token());
         return Result.voidSuccess();
     }
 
