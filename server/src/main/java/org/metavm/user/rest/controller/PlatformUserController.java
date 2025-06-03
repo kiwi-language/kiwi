@@ -95,7 +95,7 @@ public class PlatformUserController {
         }
         ensurePlatformUser(request);
         var loginResult = platformUserManager.enterApp(id);
-        Tokens.setToken(response, id, loginResult.token());
+        Tokens.setToken(request, response, id, loginResult.token());
         return Result.success(new LoginInfo(Objects.requireNonNull(loginResult.token()).appId(), loginResult.userId()));
     }
 

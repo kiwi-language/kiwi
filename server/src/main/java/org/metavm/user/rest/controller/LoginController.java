@@ -27,7 +27,7 @@ public class LoginController {
         var loginResult = loginService.login(request, RequestUtils.getClientIP(servletRequest));
         if(loginResult.token() == null)
             throw new BusinessException(ErrorCode.AUTH_FAILED);
-        Tokens.setToken(servletResponse, Constants.PLATFORM_APP_ID, loginResult.token());
+        Tokens.setToken(servletRequest, servletResponse, Constants.PLATFORM_APP_ID, loginResult.token());
         return Result.success(new LoginInfo(loginResult.token().appId(), loginResult.userId()));
     }
 
