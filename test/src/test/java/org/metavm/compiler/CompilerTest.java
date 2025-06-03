@@ -14,6 +14,7 @@ import org.metavm.util.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 
 public class CompilerTest extends TestCase {
@@ -44,7 +45,7 @@ public class CompilerTest extends TestCase {
 
     public void test() {
         var source = TestUtils.getResourcePath("kiwi/Shopping.kiwi");
-        var task = new CompilationTask(List.of(source), TestConstants.TARGET);
+        var task = new CompilationTask(List.of(Path.of(source)), TestConstants.TARGET);
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();

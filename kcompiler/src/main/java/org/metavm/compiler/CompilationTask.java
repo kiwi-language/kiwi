@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collection;
 
 import static java.util.Objects.requireNonNull;
@@ -31,12 +32,12 @@ public class CompilationTask {
 
     private final char[] buf = new char[1024 * 1024];
 
-    private final List<String> paths;
+    private final List<Path> paths;
     private final String buildDir;
     private List<File> files = List.nil();
     private final Project project = new Project();
 
-    public CompilationTask(Collection<String> paths, String buildDir) {
+    public CompilationTask(Collection<Path> paths, String buildDir) {
         this.paths = List.from(paths);
         this.buildDir = buildDir;
     }
@@ -91,8 +92,8 @@ public class CompilationTask {
         Utils.writeFile(path, bout.toByteArray());
     }
 
-    private KiwiParser.CompilationUnitContext antlrParse(String path) {
-        try (var reader = new BufferedReader(new FileReader(path))) {
+    private KiwiParser.CompilationUnitContext antlrParse(Path path) {
+        try (var reader = new BufferedReader(new FileReader(path.toString()))) {
             int n = reader.read(buf);
             var source = new String(buf, 0, n);
             var input = CharStreams.fromString(source);

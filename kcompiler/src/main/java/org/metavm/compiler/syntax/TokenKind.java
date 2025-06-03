@@ -1,0 +1,22 @@
+package org.metavm.compiler.syntax;
+
+public enum TokenKind {
+    PLUS, MINUS, MUL, DIV,MOD,
+    AND,
+    OR,
+    EQ,
+    NE,
+    NOT,
+    BITAND,
+    BITOR,
+    BITXOR,
+    BITNOT,
+
+    PLUS_PLUS, MINUS_MINUS,
+    ASSIGN, PLUS_ASSIGN, MINUS_ASSIGN, MUL_ASSIGN, DIV_ASSIGN,
+    MOD_ASSIGN, BITAND_ASSIGN, BITOR_ASSIGN, BITXOR_ASSIGN,
+    SHL_ASSIGN, SHR_ASSIGN,USHR_ASSIGN, AND_ASSIGN, OR_ASSIGN,
+
+
+    IDENTIFIER, EOF
+}

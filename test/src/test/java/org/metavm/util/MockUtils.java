@@ -15,6 +15,7 @@ import org.metavm.object.type.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -262,7 +263,7 @@ public class MockUtils {
 //            assembler.assemble(List.of(source));
 //            assembler.generateClasses(TestConstants.TARGET);
 
-            var task = new CompilationTask(List.of(TestUtils.getResourcePath(source)), TestConstants.TARGET);
+            var task = new CompilationTask(List.of(Path.of(TestUtils.getResourcePath(source))), TestConstants.TARGET);
             task.parse();
             MockEnter.enterStandard(task.getProject());
             task.analyze();

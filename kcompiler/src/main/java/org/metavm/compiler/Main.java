@@ -381,7 +381,7 @@ public class Main {
         main.run();
     }
 
-    public static List<String> listFilePathsRecursively(String dirPath) throws IOException {
+    public static List<Path> listFilePathsRecursively(String dirPath) throws IOException {
         Path start = Paths.get(dirPath);
         if (!Files.exists(start) || !Files.isDirectory(start)) {
             throw new IllegalArgumentException("Provided path is not an existing directory: " + dirPath);
@@ -391,7 +391,6 @@ public class Main {
             return stream
                     .filter(Files::isRegularFile)
                     .map(Path::toAbsolutePath) // Convert Path to absolute Path
-                    .map(Path::toString)       // Convert absolute Path to String
                     .collect(Collectors.toList());
         }
     }

@@ -1,13 +1,14 @@
 package org.metavm;
 
 
-import org.metavm.util.Utils;
-
 public class Lab {
 
-    public static void main(String[] args) {
+    public static final String s = """
+            a\
+            b
+            """;
 
-        Utils.clearDirectory("/Users/leen/workspace/kiwi/test/target/test-classes/target");
+    public static void main(String[] args) {
 
     }
 
