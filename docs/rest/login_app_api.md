@@ -141,7 +141,29 @@ Creates a new application or updates an existing one.
       "data": 1000002004
     }
     ```
-### 6. Delete Application
+### 6. Retrieve Application    
+Retrieves an Application.
+
+* `GET /app/{id}`
+* **Path Parameter:** `id` (long) - The ID of the application to retrieve.
+* **Response Data:** `Application`
+* **Example:**
+    ```http
+    GET /app/{id}
+    X-App-ID: 2
+    ```
+    * Response
+    ```json
+    {
+      "code": 0,
+      "data": {
+        "id": 1000002004,
+        "name": "shopping"
+      } 
+    } 
+    ```
+
+### 7. Delete Application
 Deletes an application.
 
 *   `DELETE /app/{id}`
