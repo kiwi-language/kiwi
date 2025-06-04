@@ -58,6 +58,16 @@ Content-Type: application/json
   "password": "123456"
 }
 
+###
+POST https://metavm.tech/logout
+Accept: application/json
+X-App-ID: 2
+
+
+###
+GET https://metavm.tech/get-login-info
+X-App-ID: 2
+
 
 ###
 POST http://localhost:8080/login

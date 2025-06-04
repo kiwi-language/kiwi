@@ -17,9 +17,7 @@ public class Lexer {
     }
 
     private Token nextToken() {
-        if (isEof())
-            return Tokens.EOF;
-        var pos = pos();
+        var start = pos();
         return switch (get()) {
             case ' ', '\f', '\t' -> {
                 skipWhitespaces();
@@ -29,51 +27,47 @@ public class Lexer {
                  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
                  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
                  'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'y', 'z', '$', '_'
-                 // Add more cases for other characters as needed
-                 -> nextKeywordOrIdent();
+                 -> nextKeywordOrIdent(true);
+            case '\"' -> nextStringLit();
+            case '\'' -> nextCharLit();
+            case '0' -> {
+                if (accept('x'))
+            }
+            case '1', '2', '3', '4', '5', '6', '7', '8', '9' -> nextNumberLit(10);
             case '+' -> {
                 next();
-                if (!isEof()) {
-                    yield  switch (get()) {
-                        case '+' -> {
-                            next();
-                            yield new Token(TokenKind.PLUS_PLUS, pos, pos());
-                        }
-                        case '=' -> {
-                            next();
-                            yield new Token(TokenKind.PLUS_ASSIGN, pos, pos());
-                        }
-                        default -> new Token(TokenKind.PLUS, pos, pos());
-                    };
-                }
-                else
-                    yield new Token(TokenKind.PLUS, pos, pos());
+                yield  switch (get()) {
+                    case '+' -> {
+                        next();
+                        yield new Token(TokenKind.PLUS_PLUS, start, pos());
+                    }
+                    case '=' -> {
+                        next();
+                        yield new Token(TokenKind.PLUS_ASSIGN, start, pos());
+                    }
+                    default -> new Token(TokenKind.PLUS, start, pos());
+                };
             }
             case '-' -> {
                 next();
-                if (!isEof()) {
-                    yield switch (get()) {
-                        case '-' -> {
-                            next();
-                            yield new Token(TokenKind.MINUS_MINUS, pos, pos());
-                        }
-                        case '=' -> {
-                            next();
-                            yield new Token(TokenKind.MINUS_ASSIGN, pos, pos());
-                        }
-                        default -> new Token(TokenKind.MINUS, pos, pos());
-                    };
-                }
-                else
-                    yield new Token(TokenKind.MINUS, pos, pos());
+                yield switch (get()) {
+                    case '-' -> {
+                        next();
+                        yield new Token(TokenKind.MINUS_MINUS, start, pos());
+                    }
+                    case '=' -> {
+                        next();
+                        yield new Token(TokenKind.MINUS_ASSIGN, start, pos());
+                    }
+                    default -> new Token(TokenKind.MINUS, start, pos());
+                };
             }
             case '*' -> {
                 next();
-                if (!isEof() && get() == '=') {
-                    next();
-                    yield new Token(TokenKind.MUL_ASSIGN, pos, pos());
-                } else
-                    yield new Token(TokenKind.MUL, pos, pos());
+                if (accept('='))
+                    yield new Token(TokenKind.MUL_ASSIGN, start, pos());
+                else
+                    yield new Token(TokenKind.MUL, start, pos());
             }
             case '/' -> {
                 next();
@@ -89,25 +83,293 @@ public class Lexer {
                     log.error(pos(), Errors.UNCLOSED_COMMENT);
                     yield Tokens.EOF;
                 }
-                if (!isEof() && get() == '=') {
-                    next();
-                    yield new Token(TokenKind.DIV_ASSIGN, pos, pos());
-                } else
-                    yield new Token(TokenKind.DIV, pos, pos());
+                if (accept('='))
+                    yield new Token(TokenKind.DIV_ASSIGN, start, pos());
+                else
+                    yield new Token(TokenKind.DIV, start, pos());
             }
             case '%' -> {
                 next();
-                if (!isEof() && get() == '=') {
-                    next();
-                    yield new Token(TokenKind.MOD_ASSIGN, pos, pos());
-                } else
-                    yield new Token(TokenKind.MOD, pos, pos());
+                if (accept('='))
+                    yield new Token(TokenKind.MOD_ASSIGN, start, pos());
+                else
+                    yield new Token(TokenKind.MOD, start, pos());
             }
-            default -> {
-                log.error(pos, Errors.unexpectedChar(Character.toString(get())));
+            case '=' -> {
+                next();
+                if (accept('='))
+                    yield new Token(TokenKind.EQ, start, pos());
+                 else
+                    yield new Token(TokenKind.ASSIGN, start, pos());
+            }
+            case '!' -> {
+                next();
+                if (accept('='))
+                    yield new Token(TokenKind.NE, start, pos());
+                else
+                    yield new Token(TokenKind.NOT, start, pos());
+            }
+            case '<' -> {
+                next();
+                yield switch (get()) {
+                    case '=' -> {
+                        next();
+                        yield new Token(TokenKind.LE, start, pos());
+                    }
+                    case '<' -> {
+                        next();
+                        if (accept('='))
+                            yield new Token(TokenKind.SHL_ASSIGN, start, pos());
+                        else
+                            yield new Token(TokenKind.SHL, start, pos());
+                    }
+                    default -> new Token(TokenKind.LT, start, pos());
+                };
+            }
+            case '>' -> {
+                next();
+                yield switch (get()) {
+                    case '=' -> {
+                        next();
+                        yield new Token(TokenKind.GE, start, pos());
+                    }
+                    case '>' -> {
+                        next();
+                        if (accept('>'))
+                            yield new Token(TokenKind.USHR_ASSIGN, start, pos());
+                        else if (accept('='))
+                            yield new Token(TokenKind.SHR_ASSIGN, start, pos());
+                        else
+                            yield new Token(TokenKind.SHR, start, pos());
+                    }
+                    default -> new Token(TokenKind.GT, start, pos());
+                };
+            }
+            case '&' -> {
+                next();
+                yield switch (get()) {
+                    case '&' -> {
+                        next();
+                        if (accept('='))
+                            yield new Token(TokenKind.AND_ASSIGN, start, pos());
+                        else
+                            yield new Token(TokenKind.AND, start, pos());
+                    }
+                    case '=' -> {
+                        next();
+                        yield new Token(TokenKind.BITAND_ASSIGN, start, pos());
+                    }
+                    default -> new Token(TokenKind.BITAND, start, pos());
+                };
+            }
+            case '|' -> {
+                next();
+                yield switch (get()) {
+                    case '|' -> {
+                        next();
+                        if (accept('='))
+                            yield new Token(TokenKind.OR_ASSIGN, start, pos());
+                        else
+                            yield new Token(TokenKind.OR, start, pos());
+                    }
+                    case '=' -> {
+                        next();
+                        yield new Token(TokenKind.BITOR_ASSIGN, start, pos());
+                    }
+                    default -> new Token(TokenKind.BITOR, start, pos());
+                };
+            }
+            case '^' -> {
+                next();
+                if (accept('='))
+                    yield new Token(TokenKind.BITXOR_ASSIGN, start, pos());
+                else
+                    yield new Token(TokenKind.BITXOR, start, pos());
+            }
+            case '~' -> {
+                next();
+                yield new Token(TokenKind.BITNOT, start, pos());
+            }
+            case '(' -> {
+                next();
+                yield new Token(TokenKind.LPAREN, start, pos());
+            }
+            case ')' -> {
+                next();
+                yield new Token(TokenKind.RPAREN, start, pos());
+            }
+            case '[' -> {
+                next();
+                yield new Token(TokenKind.LBRACKET, start, pos());
+            }
+            case ']' -> {
+                next();
+                yield new Token(TokenKind.RBRACKET, start, pos());
+            }
+            case '{' -> {
+                next();
+                yield new Token(TokenKind.LBRACE, start, pos());
+            }
+            case '}' -> {
+                next();
+                yield new Token(TokenKind.RBRACE, start, pos());
+            }
+            case '\n' -> {
+                next();
+                processLineTerminator();
                 yield nextToken();
             }
+            case '\r' -> {
+                next();
+                accept('\n');
+                processLineTerminator();
+                yield nextToken();
+            }
+            case EOI -> {
+                next();
+                yield Tokens.EOF;
+            }
+            default -> {
+                if (!isASIii() && Character.isJavaIdentifierPart(get()))
+                    yield nextKeywordOrIdent(true);
+                else {
+                    log.error(start, Errors.unexpectedChar(Character.toString(get())));
+                    yield nextToken();
+                }
+            }
         };
+    }
+
+    private Token nextNumberLit(int radix) {
+        var start = pos();
+        putAndNext();
+        while (isDigit()) {
+            putAndNext();
+        }
+        TokenKind tk;
+        if (accept('.')) {
+            while (isDigit())
+                putAndNext();
+            if (accept('f') || accept('F'))
+                tk = TokenKind.FLOAT_LIT;
+            else {
+                if (!accept('d'))
+                    accept('D');
+                tk = TokenKind.DOUBLE_LIT;
+            }
+        }
+        else {
+            if (accept('l') || accept('L'))
+                tk = TokenKind.LONG_LIT;
+            else
+                tk = TokenKind.INTEGER_LIT;
+        }
+        return new NumberToken(tk, start, pos(), takeBuffered(), radix);
+    }
+
+    private Token nextCharLit() {
+        var start = pos();
+        next();
+        var c = scanChar();
+        if (accept('\'') && c != -1)
+            return new NumberToken(TokenKind.CHAR_LIT, start, pos(), Integer.toString(c), 10);
+        else
+            return new Token(TokenKind.ERROR, start, pos());
+    }
+
+    private Token nextStringLit() {
+        var start = pos();
+        next();
+        var error = false;
+        while (!accept('\"')) {
+            var c = scanChar();
+            if (c == -1)
+                error = true;
+            else if (!error)
+                put(c);
+        }
+        if (error) {
+            clearBuffer();
+            return new Token(TokenKind.ERROR, start, pos());
+        }
+        else
+            return new StringToken(TokenKind.STRING_LIT, start, pos(), takeBuffered());
+    }
+
+    private int scanChar() {
+        var c = getAndNext();
+        if (c == '\\') {
+            next();
+            return switch (get()) {
+                case 'u' -> {
+                    next();
+                    yield scanUnicodeEscape();
+                }
+                case 'n' -> {
+                    next();
+                    yield '\n';
+                }
+                case 'f' -> {
+                    next();
+                    yield '\f';
+                }
+                case 't' -> {
+                    next();
+                    yield '\t';
+                }
+                case 'r' -> {
+                    next();
+                    yield '\r';
+                }
+                case 'b' -> {
+                    next();
+                    yield '\b';
+                }
+                case '\"' -> {
+                    next();
+                    yield '\"';
+                }
+                case '0', '1', '2', '3', '4', '5', '6', '7' -> scanOctalEscapeSeq();
+                default -> {
+                    log.error(pos(), Errors.invalidEscape(Character.toString(get())));
+                    next();
+                    yield -1;
+                }
+            };
+        }
+        else
+            return (char) c;
+    }
+
+    private char scanOctalEscapeSeq() {
+        var code = getAndNext() - '0';
+        if (isDigit()) {
+            code = (code << 3) + (getAndNext() - '0');
+            if (isDigit())
+                code = (code << 3) + (getAndNext() - '0');
+        }
+        return (char) code;
+    }
+
+    private boolean isDigit() {
+        return switch (get()) {
+            case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> true;
+            default -> false;
+        };
+    }
+
+    private char scanUnicodeEscape() {
+
+    }
+
+    private int getAndNext() {
+        var c = get();
+        next();
+        return c;
+    }
+
+    private void processLineTerminator() {
+
     }
 
     private boolean accept(int ch) {
@@ -117,6 +379,19 @@ public class Lexer {
         }
         else
             return false;
+    }
+
+    private boolean accept(String s) {
+        var savedPos = pos();
+        var len = s.length();
+        for (int i = 0; i < len; i++) {
+            var c = s.charAt(i);
+            if (!accept(c)) {
+                reader.reset(savedPos);
+                return false;
+            }
+        }
+        return true;
     }
 
     private void skipToEoln() {
@@ -144,7 +419,7 @@ public class Lexer {
 
     }
 
-    private Token nextKeywordOrIdent() {
+    private Token nextKeywordOrIdent(boolean checkKeyword) {
         var start = pos();
         putAndNext();
         out: for (;;) {
@@ -174,11 +449,15 @@ public class Lexer {
             }
         }
         var name = Name.from(takeBuffered());
-        var tk = Tokens.lookupKind(name);
-        if (tk == TokenKind.IDENTIFIER)
-            return new NamedToken(TokenKind.IDENTIFIER, start, pos(), name);
+        if (checkKeyword) {
+            var tk = Tokens.lookupKind(name);
+            if (tk == TokenKind.IDENTIFIER)
+                return new NamedToken(TokenKind.IDENTIFIER, start, pos(), name);
+            else
+                return new Token(tk, start, pos());
+        }
         else
-            return new Token(tk, start, pos());
+            return new NamedToken(TokenKind.IDENTIFIER, start, pos(), name);
     }
 
 
@@ -186,6 +465,10 @@ public class Lexer {
         var s = buf.toString();
         buf.setLength(0);
         return s;
+    }
+
+    private void clearBuffer() {
+        buf.setLength(0);
     }
 
     private boolean isASIii() {
@@ -198,7 +481,11 @@ public class Lexer {
     }
 
     private void put() {
-        buf.appendCodePoint(get());
+        put(get());
+    }
+
+    private void put(int code) {
+        buf.appendCodePoint(code);
     }
 
     private int get() {

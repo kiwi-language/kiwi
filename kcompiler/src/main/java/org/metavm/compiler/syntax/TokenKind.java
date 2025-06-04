@@ -6,7 +6,14 @@ public enum TokenKind {
     OR,
     EQ,
     NE,
+    LT,
+    LE,
+    GT,
+    GE,
     NOT,
+    SHL,
+    SHR,
+    USHR,
     BITAND,
     BITOR,
     BITXOR,
@@ -17,6 +24,9 @@ public enum TokenKind {
     MOD_ASSIGN, BITAND_ASSIGN, BITOR_ASSIGN, BITXOR_ASSIGN,
     SHL_ASSIGN, SHR_ASSIGN,USHR_ASSIGN, AND_ASSIGN, OR_ASSIGN,
 
+    LPAREN, RPAREN, LBRACKET, RBRACKET, LBRACE, RBRACE,
 
-    IDENTIFIER, EOF
+    IDENTIFIER, STRING_LIT, CHAR_LIT, INTEGER_LIT, LONG_LIT, FLOAT_LIT, DOUBLE_LIT,
+    ERROR,
+    EOF,
 }

@@ -12,6 +12,9 @@ public class Errors {
         return create(DiagCode.UNEXPECTED_CHAR, s);
     }
 
+    public static Error invalidEscape(String s) {
+        return create(DiagCode.INVALID_ESCAPE, s);
+    }
 
     private static Error create(DiagCode code, Object...args) {
         return new Error(code, args);

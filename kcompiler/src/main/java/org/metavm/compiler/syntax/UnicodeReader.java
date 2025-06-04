@@ -9,8 +9,7 @@ public class UnicodeReader {
 
     public UnicodeReader(char[] buf) {
         this.buf = buf;
-        if (hasNext())
-            next();
+        next();
     }
 
     public void next() {
@@ -55,4 +54,8 @@ public class UnicodeReader {
         return buf[pos];
     }
 
+    public void reset(int pos) {
+        this.pos = pos;
+        next();
+    }
 }
