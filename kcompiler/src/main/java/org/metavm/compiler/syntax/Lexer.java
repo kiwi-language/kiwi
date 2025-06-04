@@ -31,7 +31,15 @@ public class Lexer {
             case '\"' -> nextStringLit();
             case '\'' -> nextCharLit();
             case '0' -> {
+                next();
                 if (accept('x'))
+                    yield nextNumberLit(16);
+                else if (accept('b'))
+                    yield nextNumberLit(2);
+                else {
+                    reset(start);
+                    yield nextNumberLit(10);
+                }
             }
             case '1', '2', '3', '4', '5', '6', '7', '8', '9' -> nextNumberLit(10);
             case '+' -> {
@@ -242,29 +250,65 @@ public class Lexer {
 
     private Token nextNumberLit(int radix) {
         var start = pos();
-        putAndNext();
-        while (isDigit()) {
-            putAndNext();
-        }
+        var error = false;
+        var isFloat = false;
+        scanDigits(radix);
         TokenKind tk;
-        if (accept('.')) {
-            while (isDigit())
-                putAndNext();
-            if (accept('f') || accept('F'))
-                tk = TokenKind.FLOAT_LIT;
-            else {
-                if (!accept('d'))
-                    accept('D');
-                tk = TokenKind.DOUBLE_LIT;
+        if (radix == 10) {
+            if (accept('.')) {
+                scanDigits(radix);
+                isFloat = true;
+            }
+            else if (accept('e')) {
+                if (isDigit(10))
+                    scanDigits(10);
+                else {
+                    log.error(start, Errors.MALFORMED_FLOAT_LITERAL);
+                    error = true;
+                }
             }
         }
-        else {
-            if (accept('l') || accept('L'))
-                tk = TokenKind.LONG_LIT;
-            else
-                tk = TokenKind.INTEGER_LIT;
+        else if (radix == 16) {
+            if (accept('e')) {
+                if (isDigit(16))
+                    scanDigits(16);
+                else {
+                    log.error(start, Errors.MALFORMED_FLOAT_LITERAL);
+                    error = true;
+                }
+            }
+            else if (accept('p')) {
+                if (isDigit(10))
+                    scanDigits(10);
+                else {
+                    log.error(start, Errors.MALFORMED_FLOAT_LITERAL);
+                    error = true;
+                }
+            }
         }
-        return new NumberToken(tk, start, pos(), takeBuffered(), radix);
+        if (acceptOneOf('d', 'D'))
+            tk = TokenKind.DOUBLE_LIT;
+        else if (acceptOneOf('f', 'F'))
+            tk = TokenKind.FLOAT_LIT;
+        else if (!isFloat && acceptOneOf('l', 'L'))
+            tk = TokenKind.LONG_LIT;
+        else
+            tk = isFloat ? TokenKind.DOUBLE_LIT : TokenKind.INTEGER_LIT;
+        if (error)
+            return new Token(TokenKind.ERROR, start, pos());
+        else
+            return new NumberToken(tk, start, pos(), takeBuffered(), radix);
+    }
+
+    private boolean scanDigits(int radix) {
+        if (isDigit(radix)) {
+            do {
+                putAndNext();
+            } while (isDigit(radix));
+            return true;
+        }
+        else
+            return false;
     }
 
     private Token nextCharLit() {
@@ -351,6 +395,27 @@ public class Lexer {
         return (char) code;
     }
 
+    private boolean isDigit(int radix) {
+        var c = get();
+        var code = switch (c) {
+            case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> c - '0';
+            case 'A', 'B', 'C', 'D', 'E', 'F' -> c - 'A' + 10;
+            case 'a', 'b', 'c', 'd', 'e', 'f' -> c - 'a' + 10;
+            default -> {
+                if (isASIii())
+                    yield Character.digit(c, radix);
+                else
+                    yield -1;
+            }
+        };
+        return code >= 0 && code < radix;
+    }
+
+    private boolean isInRange(int min, int maxInclusion) {
+        var c = get();
+        return c >= min && c <= maxInclusion;
+    }
+
     private boolean isDigit() {
         return switch (get()) {
             case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> true;
@@ -358,8 +423,27 @@ public class Lexer {
         };
     }
 
-    private char scanUnicodeEscape() {
-
+    private int scanUnicodeEscape() {
+        var start = pos();
+        if (isDigit()) {
+            var code = get();
+            putAndNext();
+            if (isDigit()) {
+                code = code << 4 | code;
+                putAndNext();
+                if (isDigit()) {
+                    code = code << 4 | code;
+                    putAndNext();
+                    if (isDigit()) {
+                        clearBuffer();
+                        code = code << 4 | code;
+                        return code;
+                    }
+                }
+            }
+        }
+        log.error(start, Errors.invalidUnicodeEscape(takeBuffered()));
+        return -1;
     }
 
     private int getAndNext() {
@@ -370,6 +454,10 @@ public class Lexer {
 
     private void processLineTerminator() {
 
+    }
+
+    private boolean acceptOneOf(int ch1, int ch2) {
+        return accept(ch1) || accept(ch2);
     }
 
     private boolean accept(int ch) {
@@ -498,6 +586,10 @@ public class Lexer {
 
     private void next() {
         reader.next();
+    }
+
+    private void reset(int pos) {
+        reader.reset(pos);
     }
 
     private boolean isEof() {

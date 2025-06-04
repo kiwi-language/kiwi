@@ -3,6 +3,7 @@ package org.metavm.compiler.diag;
 public class Errors {
 
     public static final Error UNCLOSED_COMMENT = create(DiagCode.UNCLOSED_COMMENT);
+    public static final Error MALFORMED_FLOAT_LITERAL = create(DiagCode.MALFORMED_FLOAT_LITERAL);
 
     public static Error symbolNotFound(String sym) {
         return create(DiagCode.SYMBOL_NOT_FOUND, sym);
@@ -20,4 +21,7 @@ public class Errors {
         return new Error(code, args);
     }
 
+    public static Error invalidUnicodeEscape(String s) {
+        return create(DiagCode.INVALID_UNICODE_ESCAPE, s);
+    }
 }
