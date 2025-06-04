@@ -19,12 +19,8 @@ Authenticates a user.
     | `appId`   | `long` | Must be `2` |
     | `loginName`| `string`| User name   |
     | `password` | `string`| Password    |
-*   **Response Data:**
+*   **Response Data:** `LoginInfo`
 
-    | Field   | Type   | Description |
-    |:--------|:-------|:------------|
-    | `appId` | `long` | Will be `2` |
-    | `userId`| `string`| User ID     |
 *   **Cookie:** Sets `token_2`
 *   **Example:**
     ```http
@@ -64,8 +60,28 @@ Logs the current user out.
       "code": 0
     }
     ```
+    
+### 3. Get Login Info
+Retrieves the current user's login details.
 
-### 3. List Applications
+*  `GET /get-login-info`
+*  **Response Data:** `LoginInfo` (Contains `appId` 2/`userId` if logged in, or `appId` -1 if not)
+*  **Example:**
+   ```http
+   GET /get-login-info
+   X-App-ID: 2
+   ```
+   ```json
+   {
+     "code": 0,
+     "data": {
+       "appId": 2,
+       "userId": "{user-id}"
+     }
+   } 
+   ```
+
+### 4. List Applications
 Retrieves a paginated list of applications.
 
 *   `GET /app`
@@ -99,7 +115,7 @@ Retrieves a paginated list of applications.
     }
     ```
 
-### 4. Save Application
+### 5. Save Application
 Creates a new application or updates an existing one.
 
 *   `POST /app`
@@ -125,7 +141,7 @@ Creates a new application or updates an existing one.
       "data": 1000002004
     }
     ```
-### 5. Delete Application
+### 6. Delete Application
 Deletes an application.
 
 *   `DELETE /app/{id}`
@@ -153,14 +169,22 @@ Standard API response wrapper.
 | `message`  | `string` | Error message when `code` is non-zero |
 | `data`     | `T`      | Response data                         |
 
+### `LoginInfo`
+User login details.
+
+| Field   | Type     | Description                   |
+|:--------|:---------|:------------------------------|
+| `appId` | `long`   | `2` if logged-in, `-1` if not |
+| `userId`| `string` | User ID                       |
+
 ### `Application` 
 Represents an application.
 
-| Field   | Type   | Description        |
-|:--------|:-------|:-------------------|
-| `id`    | `long` | Application ID     |
-| `name`  | `string`| Application Name   |
-| `ownerId`| `long` | Application owner ID |
+| Field     | Type     | Description          |
+|:----------|:---------|:---------------------|
+| `id`      | `long`   | Application ID       |
+| `name`    | `string` | Application Name     |
+| `ownerId` | `long`   | Application owner ID |
 
 ### `Page` 
 Represents a paginated list of items.
