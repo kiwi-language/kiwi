@@ -60,6 +60,15 @@ Content-Type: application/json
 
 
 ###
+GET https://metavm.tech/app?pageSize=20
+X-App-ID: 2
+
+
+###
+GET http://localhost:8080/app?pageSize=2&page=2
+X-App-ID: 2
+
+###
 POST http://localhost:8080/login
 Accept: application/json
 Content-Type: application/json
