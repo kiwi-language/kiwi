@@ -21,8 +21,13 @@ public class EntityQueryService {
     public <T extends Entity> Page<T> query(EntityQuery<T> query, IInstanceContext context) {
         var searchQuery = buildSearchQuery(query);
         var idPage = instanceSearchService.search(searchQuery);
+        var ids = idPage.items();
+        if (!query.excluded().isEmpty())
+            ids = Utils.exclude(ids, id -> query.excluded().contains(id.toString()));
+        ids = context.filterAlive(ids);
+        ids = ids.subList(0, Math.min(ids.size(), query.pageSize()));
         return new Page<>(
-                Utils.map(idPage.items(), id -> context.getEntity(query.entityType(), id)),
+                Utils.map(ids, id -> context.getEntity(query.entityType(), id)),
                 idPage.total()
         );
     }
