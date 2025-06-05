@@ -41,13 +41,11 @@ public class UnicodeReader {
     }
 
     public int get() {
-        if (codePoint == -1)
-            throw new IllegalStateException("EOF");
         return codePoint;
     }
 
     public int pos() {
-        return pos;
+        return codePoint == EOI ? buf.length : pos - 1;
     }
 
     private char char_() {

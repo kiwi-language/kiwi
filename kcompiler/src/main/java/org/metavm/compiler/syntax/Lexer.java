@@ -3,10 +3,15 @@ package org.metavm.compiler.syntax;
 import org.metavm.compiler.diag.Errors;
 import org.metavm.compiler.diag.Log;
 import org.metavm.compiler.element.Name;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.metavm.compiler.syntax.Unicodes.EOI;
 
 public class Lexer {
+
+    public static final Logger logger = LoggerFactory.getLogger(Lexer.class);
+
     private final Log log;
     private final UnicodeReader reader;
     private final StringBuilder buf = new StringBuilder(256);
@@ -16,7 +21,7 @@ public class Lexer {
         reader = new UnicodeReader(buf);
     }
 
-    private Token nextToken() {
+    public Token nextToken() {
         var start = pos();
         return switch (get()) {
             case ' ', '\f', '\t' -> {
@@ -33,15 +38,17 @@ public class Lexer {
             case '0' -> {
                 next();
                 if (accept('x'))
-                    yield nextNumberLit(16);
+                    yield nextNumberLit(start, 16);
                 else if (accept('b'))
-                    yield nextNumberLit(2);
+                    yield nextNumberLit(start, 2);
+                else if (accept('o'))
+                    yield nextNumberLit(start, 8);
                 else {
                     reset(start);
-                    yield nextNumberLit(10);
+                    yield nextNumberLit(start, 10);
                 }
             }
-            case '1', '2', '3', '4', '5', '6', '7', '8', '9' -> nextNumberLit(10);
+            case '1', '2', '3', '4', '5', '6', '7', '8', '9' -> nextNumberLit(start, 10);
             case '+' -> {
                 next();
                 yield  switch (get()) {
@@ -233,14 +240,12 @@ public class Lexer {
                 processLineTerminator();
                 yield nextToken();
             }
-            case EOI -> {
-                next();
-                yield Tokens.EOF;
-            }
+            case EOI -> Tokens.EOF;
             default -> {
                 if (!isASIii() && Character.isJavaIdentifierPart(get()))
                     yield nextKeywordOrIdent(true);
                 else {
+                    next();
                     log.error(start, Errors.unexpectedChar(Character.toString(get())));
                     yield nextToken();
                 }
@@ -248,18 +253,19 @@ public class Lexer {
         };
     }
 
-    private Token nextNumberLit(int radix) {
-        var start = pos();
+    private Token nextNumberLit(int start, int radix) {
         var error = false;
         var isFloat = false;
         scanDigits(radix);
         TokenKind tk;
         if (radix == 10) {
-            if (accept('.')) {
-                scanDigits(radix);
+            if (is('.')) {
                 isFloat = true;
-            }
-            else if (accept('e')) {
+                putAndNext();
+                scanDigits(radix);
+            } else if (is('e')) {
+                isFloat = true;
+                putAndNext();
                 if (isDigit(10))
                     scanDigits(10);
                 else {
@@ -267,17 +273,10 @@ public class Lexer {
                     error = true;
                 }
             }
-        }
-        else if (radix == 16) {
-            if (accept('e')) {
-                if (isDigit(16))
-                    scanDigits(16);
-                else {
-                    log.error(start, Errors.MALFORMED_FLOAT_LITERAL);
-                    error = true;
-                }
-            }
-            else if (accept('p')) {
+        } else if (radix == 16) {
+            if (is('p')) {
+                isFloat = true;
+                putAndNext();
                 if (isDigit(10))
                     scanDigits(10);
                 else {
@@ -343,7 +342,7 @@ public class Lexer {
     private int scanChar() {
         var c = getAndNext();
         if (c == '\\') {
-            next();
+            logger.debug("Scanning escaped char: {}", get());
             return switch (get()) {
                 case 'u' -> {
                     next();
@@ -396,6 +395,10 @@ public class Lexer {
     }
 
     private boolean isDigit(int radix) {
+        return digit(radix) != -1;
+    }
+
+    private int digit(int radix) {
         var c = get();
         var code = switch (c) {
             case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> c - '0';
@@ -408,7 +411,7 @@ public class Lexer {
                     yield -1;
             }
         };
-        return code >= 0 && code < radix;
+        return code <= radix ? code : -1;
     }
 
     private boolean isInRange(int min, int maxInclusion) {
@@ -425,25 +428,22 @@ public class Lexer {
 
     private int scanUnicodeEscape() {
         var start = pos();
-        if (isDigit()) {
-            var code = get();
-            putAndNext();
-            if (isDigit()) {
-                code = code << 4 | code;
-                putAndNext();
-                if (isDigit()) {
-                    code = code << 4 | code;
-                    putAndNext();
-                    if (isDigit()) {
-                        clearBuffer();
-                        code = code << 4 | code;
-                        return code;
-                    }
-                }
+        int code = 0;
+        int i = 0;
+        for (; i < 4; i++) {
+            int d;
+            if ((d = digit(16)) != -1)
+                code = code << 4 | d;
+            else {
+                code = -1;
+                break;
             }
+            putAndNext();
         }
-        log.error(start, Errors.invalidUnicodeEscape(takeBuffered()));
-        return -1;
+        if (code  == -1)
+            log.error(start, Errors.invalidUnicodeEscape(takeBuffered()));
+        clearBuffer();
+        return code;
     }
 
     private int getAndNext() {

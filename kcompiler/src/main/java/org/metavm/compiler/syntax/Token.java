@@ -1,5 +1,7 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
+
 public class Token {
 
     private final TokenKind kind;
@@ -22,5 +24,27 @@ public class Token {
 
     public int getEnd() {
         return end;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Token token = (Token) object;
+        return start == token.start && end == token.end && kind == token.kind;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(kind, start, end);
+    }
+
+    @Override
+    public String toString() {
+        return "Token{" +
+                "kind=" + kind +
+                ", start=" + start +
+                ", end=" + end +
+                '}';
     }
 }

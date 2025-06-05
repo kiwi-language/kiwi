@@ -20,7 +20,7 @@ public class LogTest extends TestCase {
         var err = new PrintWriter(errBout);
 
         var symNotFound = "Symbol ''{0}'' not found";
-        var log = new Log(new MockSourceFile(),
+        var log = new DefaultLog(new MockSourceFile(),
                 new DiagFactory(new MockFmt(
                         Map.of(
                                 DiagCode.SYMBOL_NOT_FOUND.getKey(),
