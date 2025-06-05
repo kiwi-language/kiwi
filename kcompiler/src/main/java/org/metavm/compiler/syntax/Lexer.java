@@ -245,8 +245,8 @@ public class Lexer {
                 if (!isASIii() && Character.isJavaIdentifierPart(get()))
                     yield nextKeywordOrIdent(true);
                 else {
+                    log.error(pos(), Errors.unexpectedChar);
                     next();
-                    log.error(start, Errors.unexpectedChar(Character.toString(get())));
                     yield nextToken();
                 }
             }
@@ -313,7 +313,7 @@ public class Lexer {
     private Token nextCharLit() {
         var start = pos();
         next();
-        var c = scanChar();
+        var c = scanChar(false);
         if (accept('\'') && c != -1)
             return new NumberToken(TokenKind.CHAR_LIT, start, pos(), Integer.toString(c), 10);
         else
@@ -324,22 +324,36 @@ public class Lexer {
         var start = pos();
         next();
         var error = false;
-        while (!accept('\"')) {
-            var c = scanChar();
-            if (c == -1)
-                error = true;
-            else if (!error)
-                put(c);
+        var isTextBlock = accept("\"\"");
+        if (isTextBlock) {
+            while (!accept("\"\"\"")) {
+                var c = scanChar(true);
+                if (c == -1)
+                    error = true;
+                else if (!error)
+                    put(c);
+            }
+        }
+        else {
+            while (!accept('\"')) {
+                var c = scanChar(false);
+                if (c == -1)
+                    error = true;
+                else if (!error)
+                    put(c);
+            }
         }
         if (error) {
             clearBuffer();
             return new Token(TokenKind.ERROR, start, pos());
         }
-        else
-            return new StringToken(TokenKind.STRING_LIT, start, pos(), takeBuffered());
+        else {
+            var text = isTextBlock ? takeBuffered().stripIndent() : takeBuffered();
+            return new StringToken(TokenKind.STRING_LIT, start, pos(), text);
+        }
     }
 
-    private int scanChar() {
+    private int scanChar(boolean isTextBlock) {
         var c = getAndNext();
         if (c == '\\') {
             logger.debug("Scanning escaped char: {}", get());
@@ -351,6 +365,10 @@ public class Lexer {
                 case 'n' -> {
                     next();
                     yield '\n';
+                }
+                case 's' -> {
+                    next();
+                    yield ' ';
                 }
                 case 'f' -> {
                     next();
@@ -372,9 +390,34 @@ public class Lexer {
                     next();
                     yield '\"';
                 }
+                case '\\' -> {
+                    next();
+                    yield '\\';
+                }
+                case '\'' -> {
+                    next();
+                    yield '\'';
+                }
+                case '\n' -> {
+                    if (isTextBlock)
+                        yield '\n';
+                    else {
+                        log.error(pos(), Errors.illegalEscChar);
+                        yield -1;
+                    }
+                }
+                case '\r' -> {
+                    accept('\n');
+                    if (isTextBlock)
+                        yield '\n';
+                    else {
+                        log.error(pos(), Errors.illegalEscChar);
+                        yield -1;
+                    }
+                }
                 case '0', '1', '2', '3', '4', '5', '6', '7' -> scanOctalEscapeSeq();
                 default -> {
-                    log.error(pos(), Errors.invalidEscape(Character.toString(get())));
+                    log.error(pos(), Errors.illegalEscChar);
                     next();
                     yield -1;
                 }
@@ -386,9 +429,9 @@ public class Lexer {
 
     private char scanOctalEscapeSeq() {
         var code = getAndNext() - '0';
-        if (isDigit()) {
+        if (isDigit(8)) {
             code = (code << 3) + (getAndNext() - '0');
-            if (isDigit())
+            if (isDigit(8))
                 code = (code << 3) + (getAndNext() - '0');
         }
         return (char) code;
@@ -438,11 +481,10 @@ public class Lexer {
                 code = -1;
                 break;
             }
-            putAndNext();
+            next();
         }
         if (code  == -1)
-            log.error(start, Errors.invalidUnicodeEscape(takeBuffered()));
-        clearBuffer();
+            log.error(start, Errors.invalidUnicodeEscape);
         return code;
     }
 
@@ -504,7 +546,8 @@ public class Lexer {
     }
 
     private void skipWhitespaces() {
-
+        while (isOneOf(' ', '\t', '\f'))
+            next();
     }
 
     private Token nextKeywordOrIdent(boolean checkKeyword) {

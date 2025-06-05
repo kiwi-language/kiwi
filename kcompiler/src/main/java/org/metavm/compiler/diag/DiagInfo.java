@@ -1,15 +1,15 @@
 package org.metavm.compiler.diag;
 
 public class DiagInfo {
-    private final DiagCode code;
+    private final String code;
     private final Object[] args;
 
-    public DiagInfo(DiagCode code, Object[] args) {
+    public DiagInfo(String code, Object[] args) {
         this.code = code;
         this.args = args;
     }
 
-    public DiagCode code() {
+    public String code() {
         return code;
     }
 

@@ -7,7 +7,6 @@ import org.metavm.compiler.diag.*;
 
 public class LexerTest extends TestCase {
 
-
     public void testString() {
         assertEquals(
                 new StringToken(
@@ -29,6 +28,30 @@ public class LexerTest extends TestCase {
                         "\u0001"
                 ),
                 token("\"\\u0001\"")
+        );
+    }
+
+    public void testOctalEscapeSeq() {
+        assertEquals(
+                new StringToken(
+                        TokenKind.STRING_LIT,
+                        0,
+                        6,
+                        "\001"
+                ),
+                token("\"\\001\"")
+        );
+    }
+
+    public void testTextBlock() {
+        assertEquals(
+                new StringToken(
+                        TokenKind.STRING_LIT,
+                        0,
+                        28,
+                        "\nHello,\nKiwi\n"
+                ),
+                token("\"\"\"\n   Hello,\n   Kiwi\n   \"\"\"")
         );
     }
 
@@ -100,6 +123,19 @@ public class LexerTest extends TestCase {
         );
     }
 
+    public void testWhitespace() {
+        assertEquals(
+                new NumberToken(
+                        TokenKind.INTEGER_LIT,
+                        7,
+                        8,
+                        "1",
+                        10
+                ),
+                token(" \t\f\n\r\n\r1")
+        );
+    }
+
     private Token token(String text) {
         return lexer(text).nextToken();
     }
@@ -115,12 +151,12 @@ class MockLog implements Log {
 
     @Override
     public void error(int pos, Error error) {
-        log.error(error.code().name());
+        log.error(error.code());
     }
 
     @Override
     public void error(DiagPos pos, Error error) {
-        log.error(error.code().name());
+        log.error(error.code());
     }
 
     @Override

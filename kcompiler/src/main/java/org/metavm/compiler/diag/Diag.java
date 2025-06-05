@@ -47,7 +47,7 @@ public final class Diag {
         return sourcePos;
     }
 
-    public DiagCode getCode() {
+    public String getCode() {
         return info.code();
     }
 

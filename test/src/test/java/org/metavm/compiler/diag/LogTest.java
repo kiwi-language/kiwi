@@ -23,12 +23,12 @@ public class LogTest extends TestCase {
         var log = new DefaultLog(new MockSourceFile(),
                 new DiagFactory(new MockFmt(
                         Map.of(
-                                DiagCode.SYMBOL_NOT_FOUND.getKey(),
+                                "symbol.not.found",
                                 symNotFound
                         )
                 )),
                 out, err);
-        log.error(new MockDiagPos(31), new Error(DiagCode.SYMBOL_NOT_FOUND, "name"));
+        log.error(new MockDiagPos(31), new Error("symbol.not.found", "name"));
         log.flush();
         assertEquals("Symbol 'name' not found", errBout.toString());
     }
@@ -45,7 +45,7 @@ class MockFmt implements DiagFmt {
 
     @Override
     public String format(Diag diag, Locale l) {
-        var ptn = patterns.get(diag.getCode().getKey());
+        var ptn = patterns.get(diag.getCode());
         return MessageFormat.format(ptn, diag.getArgs());
     }
 }

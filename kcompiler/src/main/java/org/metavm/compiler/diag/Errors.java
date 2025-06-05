@@ -2,26 +2,20 @@ package org.metavm.compiler.diag;
 
 public class Errors {
 
-    public static final Error UNCLOSED_COMMENT = create(DiagCode.UNCLOSED_COMMENT);
-    public static final Error MALFORMED_FLOAT_LITERAL = create(DiagCode.MALFORMED_FLOAT_LITERAL);
+    public static final Error UNCLOSED_COMMENT = create("unclosed.comment");
+    public static final Error MALFORMED_FLOAT_LITERAL = create("malformed.float.literal");
+    public static Error illegalEscChar = create("illegal.esc.char");
 
     public static Error symbolNotFound(String sym) {
-        return create(DiagCode.SYMBOL_NOT_FOUND, sym);
+        return create("symbol.not.found", sym);
     }
 
-    public static Error unexpectedChar(String s) {
-        return create(DiagCode.UNEXPECTED_CHAR, s);
-    }
+    public static Error unexpectedChar = create("unexpected.char");
 
-    public static Error invalidEscape(String s) {
-        return create(DiagCode.INVALID_ESCAPE, s);
-    }
+    public static Error invalidUnicodeEscape = create("invalid.unicode.escape");
 
-    private static Error create(DiagCode code, Object...args) {
+    private static Error create(String code, Object...args) {
         return new Error(code, args);
     }
 
-    public static Error invalidUnicodeEscape(String s) {
-        return create(DiagCode.INVALID_UNICODE_ESCAPE, s);
-    }
 }

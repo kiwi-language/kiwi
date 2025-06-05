@@ -13,7 +13,7 @@ public class BasicDiagFmt implements DiagFmt {
         var bundle = Bundles.getMessageBundle(l);
         String ptn;
         try {
-            ptn = bundle.getString(diag.getCode().getKey());
+            ptn = bundle.getString(diag.getCode());
         } catch (MissingResourceException e) {
             ptn = "Broken diagnostic format. arguments: {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}";
         }
