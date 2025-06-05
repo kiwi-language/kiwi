@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @Service
-public class ApiService extends EntityContextFactoryAware {
+public class ApiService extends ApplicationStatusAware {
 
     public static final Logger logger = LoggerFactory.getLogger(ApiService.class);
 
@@ -53,6 +53,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public String handleNewInstance(String classCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
+        ensureApplicationActive();
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, null, rawArguments, false, true, context);
@@ -69,6 +70,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public Object handleMethodCall(Object receiver, String methodCode, Object rawArguments, HttpRequest request, HttpResponse response) {
+        ensureApplicationActive();
         try (var context = newContext()) {
             Value result;
             if (receiver instanceof Map<?,?> map) {
@@ -111,6 +113,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public Object handleStaticMethodCall(String classCode, String methodCode, List<Object> rawArguments, HttpRequest request, HttpResponse response) {
+        ensureApplicationActive();
         try (var context = newContext()) {
             var klass = getKlass(classCode, context);
             var r = resolveMethod(klass, methodCode, rawArguments, true, false, context);
@@ -137,6 +140,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public void delete(String id) {
+        ensureApplicationActive();
         try (var context = newContext()) {
             context.remove(context.get(Id.parse(id)));
             context.finish();
@@ -177,6 +181,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
     public Map<String, Object> getInstance(String id) {
+        ensureApplicationActive();
         try (var context = newContext()) {
             return formatObject((ClassInstance) context.get(Id.parse(id)), true, true, true);
         }
@@ -184,6 +189,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     @Transactional(readOnly = true, isolation = Isolation.SERIALIZABLE)
     public Object getStatic(String className, String fieldName) {
+        ensureApplicationActive();
         try(var context = newContext()) {
             var klass = getKlass(className, context);
             var sft = StaticFieldTable.getInstance(klass, context);
@@ -193,6 +199,7 @@ public class ApiService extends EntityContextFactoryAware {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public String saveInstance(Map<String, Object> object, HttpRequest request, HttpResponse response) {
+        ensureApplicationActive();
         try (var context = newContext()) {
 //            logTxId();
             var inst = doIntercepted(() -> {
@@ -213,7 +220,8 @@ public class ApiService extends EntityContextFactoryAware {
         }
     }
 
-    public SearchResult search(String type, Map<String, Object> criteria, int page, int pageSize) {
+    public SearchResult search(String type, Map<String, Object> criteria, int page, int pageSize, @Nullable String newlyCreateId) {
+        ensureApplicationActive();
         try (var entityContext = newContext()) {
             var klass = entityContext.getKlassByQualifiedName(type);
             var classType = klass.getType();
@@ -238,7 +246,7 @@ public class ApiService extends EntityContextFactoryAware {
             });
             var internalQuery = InstanceQueryBuilder.newBuilder(classType.getKlass())
 //                    .searchText(searchText)
-//                    .newlyCreated(NncUtils.map(query.createdIds(), Id::parse))
+                    .newlyCreated(newlyCreateId != null ? List.of(Id.parse(newlyCreateId)) : List.of())
                     .fields(fields)
 //                    .expression(query.expression())
                     .page(page)

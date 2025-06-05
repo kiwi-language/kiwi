@@ -80,6 +80,24 @@ Content-Type: application/json
 }
 
 ###
+POST http://localhost:8080/app
+Content-Type: application/json
+X-App-ID: 2
+
+{
+  "name": "test2"
+}
+
+###
+DELETE http://localhost:8080/app/1000009023
+X-App-ID: 2
+
+###
+GET http://localhost:8080/app
+X-App-ID: 2
+
+
+###
 POST http://localhost:8080/logout
 X-App-ID: 2
 

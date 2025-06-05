@@ -83,9 +83,13 @@ public class ApiClient {
     }
 
     public ApiSearchResult search(String className, Map<String, Object> query, int page, int pageSize) {
+        return search(className, query, page, pageSize, null);
+    }
+
+    public ApiSearchResult search(String className, Map<String, Object> query, int page, int pageSize, @Nullable Id newlyCreateId) {
         var criteria = new HashMap<String, Object>();
         query.forEach((name, value) -> criteria.put(name, transformArgs(value)));
-        return buildApiSearchResult(apiService.search(className, criteria, page, pageSize));
+        return buildApiSearchResult(apiService.search(className, criteria, page, pageSize, Utils.safeCall(newlyCreateId, Id::toString)));
     }
 
     private ApiSearchResult buildApiSearchResult(SearchResult searchResult) {

@@ -42,7 +42,7 @@ public class EntityQueryBuilder<T extends Entity> {
         return this;
     }
 
-    public <E> EntityQueryBuilder<T> addField(SearchField<? super T> field, Value value) {
+    public EntityQueryBuilder<T> addField(SearchField<? super T> field, Value value) {
         this.fields.add(new EntityQueryField<>(field, value));
         return this;
     }
