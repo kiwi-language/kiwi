@@ -145,7 +145,7 @@ public abstract class BufferingInstanceContext extends BaseInstanceContext {
 
     @Override
     protected boolean checkAliveInStore(Id id) {
-        return loadingBuffer.tryGetTree(id) != null;
+        return !loadingBuffer.tryGetTree(id).isEmpty();
     }
 
     @Override
