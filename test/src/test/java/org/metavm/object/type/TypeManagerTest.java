@@ -2,12 +2,14 @@ package org.metavm.object.type;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.application.Application;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.entity.MetaContextCache;
 import org.metavm.entity.ModelDefRegistry;
 import org.metavm.object.instance.ApiService;
 import org.metavm.object.instance.InstanceQueryService;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -161,5 +163,23 @@ public class TypeManagerTest extends TestCase {
             }
         });
     }
+
+    public void testAppStatusCheck() {
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var platformCtx = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                var app = platformCtx.getEntity(Application.class, PhysicalId.of(TestConstants.APP_ID, 0));
+                app.deactivate();
+                platformCtx.finish();
+            }
+        });
+        try {
+            MockUtils.assemble("kiwi/foo.kiwi", typeManager, schedulerAndWorker);
+            fail("Should have failed because application is inactive");
+        }
+        catch (BusinessException e) {
+            assertSame(ErrorCode.APP_NOT_ACTIVE, e.getErrorCode());
+        }
+    }
+
 
 }

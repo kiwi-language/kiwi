@@ -1,23 +1,25 @@
 package org.metavm.application;
 
 import junit.framework.TestCase;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.application.rest.dto.ApplicationCreateRequest;
 import org.metavm.common.MockEmailService;
 import org.metavm.entity.EntityQueryService;
 import org.metavm.event.MockEventQueue;
+import org.metavm.object.instance.core.Id;
 import org.metavm.user.LoginService;
 import org.metavm.user.PlatformUserManager;
 import org.metavm.user.RoleManager;
 import org.metavm.user.VerificationCodeService;
-import org.metavm.util.BootstrapUtils;
-import org.metavm.util.SchedulerAndWorker;
-import org.metavm.util.TestUtils;
+import org.metavm.util.*;
 
+@Slf4j
 public class ApplicationManagerTest extends TestCase {
 
     private ApplicationManager applicationManager;
     private SchedulerAndWorker schedulerAndWorker;
+    private PlatformUserManager platformUserManager;
 
     @Override
     protected void setUp() throws Exception {
@@ -25,6 +27,7 @@ public class ApplicationManagerTest extends TestCase {
         schedulerAndWorker = bootResult.schedulerAndWorker();
         var entityQueryService = new EntityQueryService(bootResult.instanceSearchService());
         var verificationCodeService = new VerificationCodeService(bootResult.entityContextFactory(), new MockEmailService());
+        var loginService = new LoginService(bootResult.entityContextFactory());
         applicationManager = new ApplicationManager(
                 bootResult.entityContextFactory(),
                 new RoleManager(bootResult.entityContextFactory(), entityQueryService),
@@ -40,12 +43,20 @@ public class ApplicationManagerTest extends TestCase {
                 entityQueryService,
                 bootResult.schemaManager()
         );
+        platformUserManager = new PlatformUserManager(
+                bootResult.entityContextFactory(),
+                loginService,
+                entityQueryService,
+                new MockEventQueue(),
+                verificationCodeService
+        );
     }
 
     @Override
     protected void tearDown() throws Exception {
         applicationManager = null;
         schedulerAndWorker = null;
+        platformUserManager = null;
     }
 
     public void test() {
@@ -60,6 +71,28 @@ public class ApplicationManagerTest extends TestCase {
 
         var page1 = applicationManager.list(1, 20, null);
         Assert.assertEquals(2, page1.items().size());
+    }
+
+    public void testDelete() {
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
+        var userId = platformUserManager.list(1, 20, null).items().getFirst().id();
+        var id = TestUtils.doInTransaction(() ->
+                applicationManager.createBuiltin(new ApplicationCreateRequest(
+                        "metavm", "metavm","123456", userId
+                ))).appId();
+        assertTrue(applicationManager.isActive(id));
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
+        ContextUtil.setUserId(Id.parse(userId));
+        TestUtils.doInTransactionWithoutResult(() -> applicationManager.delete(id));
+        var r = applicationManager.list(1, 20, "metavm");
+        assertEquals(0, r.total());
+        assertFalse(applicationManager.isActive(id));
+        TestUtils.waitForAllTasksDone(schedulerAndWorker);
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r1 = applicationManager.list(1, 20, "metavm");
+        assertEquals(0, r1.total());
+        assertFalse(applicationManager.isActive(id));
     }
 
 }
