@@ -4,6 +4,9 @@ import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.diag.Error;
 import org.metavm.compiler.diag.*;
+import org.metavm.compiler.element.Name;
+
+import java.util.Map;
 
 public class LexerTest extends TestCase {
 
@@ -53,6 +56,53 @@ public class LexerTest extends TestCase {
                 ),
                 token("\"\"\"\n   Hello,\n   Kiwi\n   \"\"\"")
         );
+    }
+
+    public void testOperators() {
+        var map = Map.ofEntries(
+                Map.entry(TokenKind.ASSIGN, "="),
+                Map.entry(TokenKind.EQ, "=="),
+                Map.entry(TokenKind.BITOR, "|"),
+                Map.entry(TokenKind.OR, "||"),
+                Map.entry(TokenKind.BITOR_ASSIGN, "|="),
+                Map.entry(TokenKind.OR_ASSIGN, "||="),
+                Map.entry(TokenKind.NOT, "!"),
+                Map.entry(TokenKind.BITNOT, "~"),
+                Map.entry(TokenKind.BITAND, "&"),
+                Map.entry(TokenKind.AND, "&&"),
+                Map.entry(TokenKind.BITAND_ASSIGN, "&="),
+                Map.entry(TokenKind.AND_ASSIGN, "&&="),
+                Map.entry(TokenKind.BITXOR, "^"),
+                Map.entry(TokenKind.BITXOR_ASSIGN, "^="),
+                Map.entry(TokenKind.PLUS, "+"),
+                Map.entry(TokenKind.PLUS_ASSIGN, "+="),
+                Map.entry(TokenKind.INC, "++"),
+                Map.entry(TokenKind.MINUS, "-"),
+                Map.entry(TokenKind.MINUS_ASSIGN, "-="),
+                Map.entry(TokenKind.DEC, "--"),
+                Map.entry(TokenKind.MUL, "*"),
+                Map.entry(TokenKind.MUL_ASSIGN, "*="),
+                Map.entry(TokenKind.DIV, "/"),
+                Map.entry(TokenKind.DIV_ASSIGN, "/="),
+                Map.entry(TokenKind.MOD, "%"),
+                Map.entry(TokenKind.MOD_ASSIGN, "%="),
+                Map.entry(TokenKind.LT, "<"),
+                Map.entry(TokenKind.LE, "<="),
+                Map.entry(TokenKind.SHL, "<<"),
+                Map.entry(TokenKind.SHL_ASSIGN, "<<="),
+                Map.entry(TokenKind.GT, ">"),
+                Map.entry(TokenKind.GE, ">="),
+                Map.entry(TokenKind.SHR, ">>"),
+                Map.entry(TokenKind.USHR, ">>>"),
+                Map.entry(TokenKind.SHR_ASSIGN, ">>="),
+                Map.entry(TokenKind.USHR_ASSIGN, ">>>=")
+        );
+        map.forEach((tk, text) -> {
+            assertEquals(
+                    new Token(tk, 0, text.length()),
+                    token(text)
+            );
+        });
     }
 
     public void testNumericToken() {
@@ -133,6 +183,24 @@ public class LexerTest extends TestCase {
                         10
                 ),
                 token(" \t\f\n\r\n\r1")
+        );
+    }
+
+    public void testKeyword() {
+        for (TokenKind tk : TokenKind.values()) {
+            if (tk.isKeyword()) {
+                assertEquals(
+                        new Token(tk, 0, tk.name().length()),
+                        token(tk.name().toLowerCase())
+                );
+            }
+        }
+    }
+
+    public void testIdent() {
+        assertEquals(
+                new NamedToken(TokenKind.IDENT, 0, 4, Name.from("name")),
+                token("name")
         );
     }
 

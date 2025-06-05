@@ -54,7 +54,7 @@ public class Lexer {
                 yield  switch (get()) {
                     case '+' -> {
                         next();
-                        yield new Token(TokenKind.PLUS_PLUS, start, pos());
+                        yield new Token(TokenKind.INC, start, pos());
                     }
                     case '=' -> {
                         next();
@@ -68,7 +68,7 @@ public class Lexer {
                 yield switch (get()) {
                     case '-' -> {
                         next();
-                        yield new Token(TokenKind.MINUS_MINUS, start, pos());
+                        yield new Token(TokenKind.DEC, start, pos());
                     }
                     case '=' -> {
                         next();
@@ -150,9 +150,12 @@ public class Lexer {
                     }
                     case '>' -> {
                         next();
-                        if (accept('>'))
-                            yield new Token(TokenKind.USHR_ASSIGN, start, pos());
-                        else if (accept('='))
+                        if (accept('>')) {
+                            if (accept('='))
+                                yield new Token(TokenKind.USHR_ASSIGN, start, pos());
+                            else
+                                yield new Token(TokenKind.USHR, start, pos());
+                        } else if (accept('='))
                             yield new Token(TokenKind.SHR_ASSIGN, start, pos());
                         else
                             yield new Token(TokenKind.SHR, start, pos());
@@ -231,13 +234,11 @@ public class Lexer {
             }
             case '\n' -> {
                 next();
-                processLineTerminator();
                 yield nextToken();
             }
             case '\r' -> {
                 next();
                 accept('\n');
-                processLineTerminator();
                 yield nextToken();
             }
             case EOI -> Tokens.EOF;
@@ -356,7 +357,6 @@ public class Lexer {
     private int scanChar(boolean isTextBlock) {
         var c = getAndNext();
         if (c == '\\') {
-            logger.debug("Scanning escaped char: {}", get());
             return switch (get()) {
                 case 'u' -> {
                     next();
@@ -457,18 +457,6 @@ public class Lexer {
         return code <= radix ? code : -1;
     }
 
-    private boolean isInRange(int min, int maxInclusion) {
-        var c = get();
-        return c >= min && c <= maxInclusion;
-    }
-
-    private boolean isDigit() {
-        return switch (get()) {
-            case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> true;
-            default -> false;
-        };
-    }
-
     private int scanUnicodeEscape() {
         var start = pos();
         int code = 0;
@@ -492,10 +480,6 @@ public class Lexer {
         var c = get();
         next();
         return c;
-    }
-
-    private void processLineTerminator() {
-
     }
 
     private boolean acceptOneOf(int ch1, int ch2) {
@@ -560,7 +544,7 @@ public class Lexer {
                      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
                      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
                      'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
-                     'v', 'w' , '$' , '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+                     'v', 'w', 'y', 'z', '$' , '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
                         -> putAndNext();
                 case '\u0000', '\u0001', '\u0002', '\u0003',
                         '\u0004', '\u0005', '\u0006', '\u0007',
@@ -582,13 +566,13 @@ public class Lexer {
         var name = Name.from(takeBuffered());
         if (checkKeyword) {
             var tk = Tokens.lookupKind(name);
-            if (tk == TokenKind.IDENTIFIER)
-                return new NamedToken(TokenKind.IDENTIFIER, start, pos(), name);
+            if (tk == TokenKind.IDENT)
+                return new NamedToken(TokenKind.IDENT, start, pos(), name);
             else
                 return new Token(tk, start, pos());
         }
         else
-            return new NamedToken(TokenKind.IDENTIFIER, start, pos(), name);
+            return new NamedToken(TokenKind.IDENT, start, pos(), name);
     }
 
 
