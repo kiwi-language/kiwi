@@ -70,11 +70,17 @@ public class ApiController {
         verify(servletRequest);
         if (!(requestBody.get("type") instanceof String type))
             throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "missing 'type' field");
-        //noinspection unchecked
-        var criteria = (Map<String, Object>) requestBody.getOrDefault("criteria", Map.of());
-        var page = (int) requestBody.getOrDefault("page", 1);
-        var pageSize = (int) requestBody.getOrDefault("pageSize", 20);
-        return Result.success(apiService.search(type, criteria, page, pageSize));
+        try {
+            //noinspection unchecked
+            var criteria = (Map<String, Object>) requestBody.getOrDefault("criteria", Map.of());
+            var page = (int) requestBody.getOrDefault("page", 1);
+            var pageSize = (int) requestBody.getOrDefault("pageSize", 20);
+            var newlyCreatedId = (String) requestBody.get("newlyCreatedId");
+            return Result.success(apiService.search(type, criteria, page, pageSize, newlyCreatedId));
+        }
+        catch (ClassCastException e) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "bad search request");
+        }
     }
 
     @DeleteMapping("/{id}")

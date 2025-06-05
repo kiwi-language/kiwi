@@ -3,9 +3,12 @@ package org.metavm.object.instance;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
+import org.metavm.application.Application;
 import org.metavm.common.ErrorCode;
+import org.metavm.entity.EntityContextFactory;
 import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.type.TypeManager;
 import org.metavm.util.*;
 
@@ -20,6 +23,7 @@ public class ApiServiceTest extends TestCase {
     private TypeManager typeManager;
     private SchedulerAndWorker schedulerAndWorker;
     private ApiClient apiClient;
+    private EntityContextFactory entityContextFactory;
 
     @Override
     protected void setUp() throws Exception {
@@ -29,6 +33,7 @@ public class ApiServiceTest extends TestCase {
         var managers = TestUtils.createCommonManagers(bootResult);
         typeManager = managers.typeManager();
         schedulerAndWorker = bootResult.schedulerAndWorker();
+        entityContextFactory = bootResult.entityContextFactory();
     }
 
     @Override
@@ -36,6 +41,7 @@ public class ApiServiceTest extends TestCase {
         apiClient = null;
         schedulerAndWorker = null;
         typeManager = null;
+        entityContextFactory = null;
     }
 
     public void testNewInstance() {
@@ -165,6 +171,45 @@ public class ApiServiceTest extends TestCase {
         assertEquals(Map.of("id", productId.toString(), "type", "summary.Product", "summary", "MacBook Pro"), productRef);
     }
 
+    public void testSearchWithCreatedId() {
+        MockUtils.assemble("kiwi/search/search.kiwi", typeManager, schedulerAndWorker);
+        var id = saveInstance("search.SearchFoo", Map.of("name", "Foo"));
+        var r = apiClient.search("search.SearchFoo", Map.of(), 1, 20, id);
+        assertEquals(1, r.total());
+        assertEquals(1, r.data().size());
+        assertEquals(id, r.data().getFirst().id());
+
+        TestUtils.waitForEsSync(schedulerAndWorker);
+
+        // Ensure search condition is applied properly
+        var r1 = apiClient.search("search.SearchFoo", Map.of("name", "Bar"), 1, 20, id);
+        assertEquals(0, r1.total());
+        assertEquals(0, r1.data().size());
+
+        // Ensure providing newly created ID after document sync doesn't cause problems
+        var r2 = apiClient.search("search.SearchFoo", Map.of(), 1, 20, id);
+        assertEquals(1, r2.total());
+        assertEquals(1, r2.data().size());
+        assertEquals(id, r2.data().getFirst().id());
+    }
+
+    public void testAppStatusCheck() {
+        MockUtils.assemble("kiwi/foo.kiwi", typeManager, schedulerAndWorker);
+        TestUtils.doInTransactionWithoutResult(() -> {
+            try (var platformCtx = entityContextFactory.newContext(Constants.PLATFORM_APP_ID)) {
+                var app = platformCtx.getEntity(Application.class, PhysicalId.of(TestConstants.APP_ID, 0));
+                app.deactivate();
+                platformCtx.finish();
+            }
+        });
+        try {
+            saveInstance("Foo", Map.of("name", "foo"));
+            fail("Should have failed because application is inactive");
+        }
+        catch (BusinessException e) {
+            assertSame(ErrorCode.APP_NOT_ACTIVE, e.getErrorCode());
+        }
+    }
     private Id saveInstance(String className, Map<String, Object> map) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, map));
     }

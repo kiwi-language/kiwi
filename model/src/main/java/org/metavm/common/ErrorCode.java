@@ -155,6 +155,7 @@ public enum ErrorCode {
     ALREADY_AN_ADMIN(613, "User '{}' is already an administrator"),
     USER_NOT_ADMIN(614, "User '{}' is not an administrator"),
     INVALID_EMAIL_ADDRESS(615, "Invalid email address"),
+    APP_NOT_ACTIVE(616, "Application is removed or inactive"),
 
     // Compiler
     RAW_TYPES_NOT_SUPPORTED(1201, "Raw types are not supported"),

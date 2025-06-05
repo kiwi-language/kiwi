@@ -5,8 +5,8 @@ import org.metavm.classfile.ClassFileReader;
 import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
+import org.metavm.entity.ApplicationStatusAware;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.flow.Flows;
 import org.metavm.flow.KlassInput;
 import org.metavm.flow.Method;
@@ -32,7 +32,7 @@ import java.util.zip.ZipInputStream;
 import static org.metavm.util.Constants.DDL_SESSION_TIMEOUT;
 
 @Component
-public class TypeManager extends EntityContextFactoryAware {
+public class TypeManager extends ApplicationStatusAware {
 
     public static final Logger logger = LoggerFactory.getLogger(TypeManager.class);
 
@@ -54,6 +54,7 @@ public class TypeManager extends EntityContextFactoryAware {
 
     @Transactional
     public String deploy(InputStream in) {
+        ensureApplicationActive();
         schemaManager.createInstanceTable(ContextUtil.getAppId(), "instance_tmp");
         schemaManager.createIndexEntryTable(ContextUtil.getAppId(), "index_entry_tmp");
         SaveTypeBatch batch;

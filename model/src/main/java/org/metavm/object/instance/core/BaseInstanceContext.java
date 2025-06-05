@@ -473,6 +473,8 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public void batchBind(Collection<Instance> instances) {
         instances.forEach(this::checkForBind);
         for (var inst : instances) {
+            if (inst instanceof BindAware bindAware)
+                bindAware.onBind(this);
 //            if (inst.tryGetTreeId() == null) add(inst);
             add(inst);
             if (inst instanceof Entity entity) updateMemoryIndex(entity);

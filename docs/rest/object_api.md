@@ -267,12 +267,13 @@ All endpoints require an `X-App-ID: {app-id}` header. Responses use the [Result 
 * **`POST /object/search`**
 * **Request Body:**
   
-  | Field      | Type        | Description                                                                        |
-  |:-----------|:------------|:-----------------------------------------------------------------------------------|
-  | `type`     | `string`    | Qualified class name                                                               |
-  | `criteria` | JSON object | Zero or more `public` fields. Numeric fields support range queries (`[min, max]`)  |
-  | `page`     | `int`       | Page number (default `1`)                                                          |
-  | `pageSize` | `int`       | Number of items per page (default `20`)                                            |
+  | Field            | Type          | Description                                                                                                             |
+  |:-----------------|:--------------|:------------------------------------------------------------------------------------------------------------------------|
+  | `type`           | `string`      | Qualified class name                                                                                                    |
+  | `criteria`       | JSON object   | Zero or more `public` fields. Numeric fields support range queries (`[min, max]`)                                       |
+  | `page`           | `int`         | Page number (default `1`)                                                                                               |
+  | `pageSize`       | `int`         | Number of items per page (default `20`)                                                                                 |
+  | `newlyCreatedId` | `string`      | Newly created object ID. Use for searches immediately after creation to ensure inclusion despite potential system lag.  |
 * **Response Data:**
 
   | Field   | Type               | Description                                                                |

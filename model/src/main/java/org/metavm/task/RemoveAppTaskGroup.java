@@ -1,5 +1,6 @@
 package org.metavm.task;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+@Slf4j
 @NativeEntity(7)
 @Entity
 public class RemoveAppTaskGroup extends TaskGroup {
@@ -42,13 +44,14 @@ public class RemoveAppTaskGroup extends TaskGroup {
     public List<Task> createTasks(IInstanceContext context) {
         var app = context.getEntity(Application.class, appId);
         return List.of(
-                new ClearUsersTask(nextChildId(), String.format("Clear users for '%s'", app.getName()), appId),
-                new ClearInvitationTask(nextChildId(), String.format("Clear invitations for '%s'", app.getName()), appId)
+                new ClearUsersTask(nextChildId(), String.format("ClearUsersTask(%s)", app.getName()), appId),
+                new ClearInvitationTask(nextChildId(), String.format("ClearInvitationTask(%s)", app.getName()), appId)
         );
     }
 
     @Override
     protected void onCompletion(IInstanceContext context, IInstanceContext taskContext) {
+        context.remove(context.get(appId));
     }
 
     @Override

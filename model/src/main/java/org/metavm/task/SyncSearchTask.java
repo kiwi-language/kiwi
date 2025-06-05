@@ -3,6 +3,7 @@ package org.metavm.task;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Generated;
+import org.metavm.common.ErrorCode;
 import org.metavm.entity.Entity;
 import org.metavm.entity.EntityRegistry;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -55,7 +56,18 @@ public class SyncSearchTask extends Task {
 
     @Override
     protected boolean run0(IInstanceContext context, IInstanceContext taskContext) {
-        List<ClassInstance> changed = Utils.filterByType(context.batchGet(changedIds), ClassInstance.class);
+        changedIds.forEach(context::buffer);
+        var changed = new ArrayList<ClassInstance>();
+        for (Id id : changedIds) {
+            try {
+                changed.add((ClassInstance) context.get(id));
+            }
+            catch (BusinessException e) {
+                // It's possible that the instance is removed at this moment
+                if (e.getErrorCode() != ErrorCode.INSTANCE_NOT_FOUND)
+                    throw e;
+            }
+        }
         try (var ignored = context.getProfiler().enter("bulk")) {
             Hooks.SEARCH_BULK.accept(context.getAppId(), changed, removedIds);
         }

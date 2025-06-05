@@ -2,9 +2,9 @@ package org.metavm.api.service;
 
 import org.metavm.api.dto.*;
 import org.metavm.common.ErrorCode;
+import org.metavm.entity.ApplicationStatusAware;
 import org.metavm.entity.AttributeNames;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.entity.EntityContextFactoryAware;
 import org.metavm.flow.Method;
 import org.metavm.flow.Parameter;
 import org.metavm.object.instance.IndexKeyRT;
@@ -18,13 +18,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class SchemaService extends EntityContextFactoryAware {
+public class SchemaService extends ApplicationStatusAware {
 
     public SchemaService(EntityContextFactory entityContextFactory) {
         super(entityContextFactory);
     }
 
     public SchemaResponse getSchema() {
+        ensureApplicationActive();
         try (var context = entityContextFactory.newContext()) {
             context.loadKlasses();
             var refs = context.selectByKey(new IndexKeyRT(
