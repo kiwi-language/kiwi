@@ -8,6 +8,7 @@ import org.metavm.api.entity.HttpCookie;
 import org.metavm.api.entity.HttpHeader;
 import org.metavm.api.entity.HttpRequest;
 import org.metavm.api.entity.HttpResponse;
+import org.metavm.application.ApplicationManager;
 import org.metavm.common.ErrorCode;
 import org.metavm.common.Result;
 import org.metavm.http.HttpCookieImpl;
@@ -38,11 +39,14 @@ public class ApiController {
 
     private final LoginService loginService;
 
+    private final ApplicationManager applicationManager;
+
     private final boolean verify;
 
-    public ApiController(ApiService apiService, LoginService loginService, @Value("${metavm.api.verify}") boolean verify) {
+    public ApiController(ApiService apiService, LoginService loginService, ApplicationManager applicationManager, @Value("${metavm.api.verify}") boolean verify) {
         this.apiService = apiService;
         this.loginService = loginService;
+        this.applicationManager = applicationManager;
         this.verify = verify;
     }
 
@@ -70,11 +74,17 @@ public class ApiController {
         verify(servletRequest);
         if (!(requestBody.get("type") instanceof String type))
             throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "missing 'type' field");
-        //noinspection unchecked
-        var criteria = (Map<String, Object>) requestBody.getOrDefault("criteria", Map.of());
-        var page = (int) requestBody.getOrDefault("page", 1);
-        var pageSize = (int) requestBody.getOrDefault("pageSize", 20);
-        return Result.success(apiService.search(type, criteria, page, pageSize));
+        try {
+            //noinspection unchecked
+            var criteria = (Map<String, Object>) requestBody.getOrDefault("criteria", Map.of());
+            var page = (int) requestBody.getOrDefault("page", 1);
+            var pageSize = (int) requestBody.getOrDefault("pageSize", 20);
+            var newlyCreatedId = (String) requestBody.get("newlyCreatedId");
+            return Result.success(apiService.search(type, criteria, page, pageSize, newlyCreatedId));
+        }
+        catch (ClassCastException e) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST_BODY, "bad search request");
+        }
     }
 
     @DeleteMapping("/{id}")

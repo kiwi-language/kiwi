@@ -61,24 +61,43 @@ public class ApplicationManager extends EntityContextFactoryAware {
 
     public Page<ApplicationDTO> list(int page, int pageSize, String searchText) {
         try (var context = newPlatformContext()) {
+            // To mitigate search sync lag, removing applications are excluded manually
             var dataPage = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Application.class)
                             .addFieldIfNotNull(Application.esName, Utils.safeCall(searchText, Instances::stringInstance))
                             .page(page)
-                            .pageSize(pageSize)
+                            .pageSize(pageSize + 5)
                             .build(),
                     context
             );
-            return new Page<>(
-                    Utils.map(dataPage.items(), Application::toDTO),
-                    dataPage.total()
-            );
+            var total = dataPage.total();
+            var apps = new ArrayList<ApplicationDTO>();
+            for (Application item : dataPage.items()) {
+                if (item.getState() != ApplicationState.REMOVING)
+                    apps.add(item.toDTO());
+                else
+                    total--;
+            }
+            return new Page<>(apps, total);
         }
     }
 
     public ApplicationDTO get(long id) {
         try (var context = newPlatformContext()) {
             return context.getEntity(Application.class, Constants.getAppId(id)).toDTO();
+        }
+    }
+
+    public boolean isActive(long id) {
+        try (var context = newPlatformContext()) {
+            try {
+                return context.getEntity(Application.class, Constants.getAppId(id)).isActive();
+            }
+            catch (BusinessException e) {
+                if (e.getErrorCode() == ErrorCode.INSTANCE_NOT_FOUND)
+                    return false;
+                throw e;
+            }
         }
     }
 
