@@ -210,6 +210,16 @@ public class ApiServiceTest extends TestCase {
             assertSame(ErrorCode.APP_NOT_ACTIVE, e.getErrorCode());
         }
     }
+
+    public void testSearchAfterRemoval() {
+        MockUtils.assemble("kiwi/search/search.kiwi", typeManager, schedulerAndWorker);
+        var id = saveInstance("search.SearchFoo", Map.of("name", "Foo"));
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        delete(id);
+        var r = apiClient.search("search.SearchFoo", Map.of(), 1, 20, null);
+        assertEquals(0, r.total());
+    }
+
     private Id saveInstance(String className, Map<String, Object> map) {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, map));
     }
