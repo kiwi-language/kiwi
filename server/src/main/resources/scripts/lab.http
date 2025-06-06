@@ -58,14 +58,27 @@ Content-Type: application/json
   "password": "123456"
 }
 
+###
+POST https://metavm.tech/app
+X-App-ID: 2
+Content-Type: application/json
+
+{
+  "name": "leen-test-3"
+}
+
 
 ###
-GET https://metavm.tech/app?pageSize=20
+GET https://metavm.tech/app?page=1&pageSize=10
 X-App-ID: 2
 
 
 ###
-GET http://localhost:8080/app?pageSize=2&page=2
+GET http://localhost:8080/app?pageSize=5&page=1
+X-App-ID: 2
+
+###
+DELETE http://localhost:8080/app/1000013004
 X-App-ID: 2
 
 ###
@@ -77,6 +90,16 @@ Content-Type: application/json
   "appId": 2,
   "loginName": "demo",
   "password": "123456"
+}
+
+###
+POST http://localhost:8080/chat
+Content-Type: application/json
+X-App-ID: 2
+
+{
+  "appId": 1000017000,
+  "content": "A todo list app"
 }
 
 ###

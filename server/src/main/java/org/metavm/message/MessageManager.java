@@ -40,9 +40,9 @@ public class MessageManager extends EntityContextFactoryAware {
                     EntityQueryBuilder.newBuilder(Message.class)
                             .page(query.page())
                             .pageSize(query.pageSize())
-                            .addFieldIfNotNull(Message.esTitle, Utils.safeCall(query.searchText(), Instances::stringInstance))
-                            .addFieldIfNotNull(Message.esRead, Utils.safeCall(query.read(), Instances::booleanInstance))
-                            .addField(Message.esReceiver, user.getReference())
+                            .addEqFieldIfNotNull(Message.esTitle, Utils.safeCall(query.searchText(), Instances::stringInstance))
+                            .addEqFieldIfNotNull(Message.esRead, Utils.safeCall(query.read(), Instances::booleanInstance))
+                            .addEqField(Message.esReceiver, user.getReference())
                             .newlyCreated(query.newlyCreated())
                             .build(),
                     context
@@ -79,8 +79,8 @@ public class MessageManager extends EntityContextFactoryAware {
             var user = context.getEntity(User.class, ContextUtil.getUserId());
             return entityQueryService.count(
                     EntityQueryBuilder.newBuilder(Message.class)
-                            .addField(Message.esReceiver, user.getReference())
-                            .addField(Message.esRead, Instances.falseInstance())
+                            .addEqField(Message.esReceiver, user.getReference())
+                            .addEqField(Message.esRead, Instances.falseInstance())
                             .build(),
                     context
             );

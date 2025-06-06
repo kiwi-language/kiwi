@@ -4,6 +4,8 @@ import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.metavm.application.rest.dto.ApplicationCreateRequest;
+import org.metavm.application.rest.dto.ApplicationDTO;
+import org.metavm.common.ErrorCode;
 import org.metavm.common.MockEmailService;
 import org.metavm.entity.EntityQueryService;
 import org.metavm.event.MockEventQueue;
@@ -50,6 +52,7 @@ public class ApplicationManagerTest extends TestCase {
                 new MockEventQueue(),
                 verificationCodeService
         );
+        ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
     }
 
     @Override
@@ -75,7 +78,6 @@ public class ApplicationManagerTest extends TestCase {
 
     public void testDelete() {
         TestUtils.waitForEsSync(schedulerAndWorker);
-        ContextUtil.setAppId(Constants.PLATFORM_APP_ID);
         var userId = platformUserManager.list(1, 20, null).items().getFirst().id();
         var id = TestUtils.doInTransaction(() ->
                 applicationManager.createBuiltin(new ApplicationCreateRequest(
@@ -88,8 +90,63 @@ public class ApplicationManagerTest extends TestCase {
         assertEquals(0, r.total());
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         TestUtils.waitForEsSync(schedulerAndWorker);
+        try {
+            applicationManager.get(id);
+            fail("Should have been removed");
+        }
+        catch (BusinessException e) {
+            assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
         var r1 = applicationManager.list(1, 20, "metavm");
         assertEquals(0, r1.total());
+    }
+
+    public void testSearchWithMultipleNewlyCreated() {
+        ContextUtil.setUserId(Id.parse(getUserId()));
+        for (int i = 0; i < 3; i++) {
+            var i_ = i;
+            TestUtils.doInTransaction(() ->
+                    applicationManager.save(
+                            new ApplicationDTO(
+                                    null, "leen-" + i_, null
+                            )
+                    ));
+        }
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r = applicationManager.list(1, 2, null);
+        assertEquals(2, r.items().size());
+    }
+
+    public void testSearchSecondPage() {
+        ContextUtil.setUserId(Id.parse(getUserId()));
+        for (int i = 0; i < 8; i++) {
+            var i_ = i;
+            TestUtils.doInTransaction(() ->
+                    applicationManager.save(
+                            new ApplicationDTO(
+                                    null, "leen-" + i_, null
+                            )
+                    ));
+        }
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r = applicationManager.list(2, 5, null);
+        assertEquals(9, r.total());
+    }
+
+    public void testSearchText() {
+        TestUtils.doInTransaction(() ->
+                applicationManager.createBuiltin(new ApplicationCreateRequest(
+                        "metavm", "metavm","123456", getUserId()
+                )));
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        var r = applicationManager.list(1, 20, "metavm");
+        assertEquals(1, r.total());
+        assertEquals("metavm", r.items().getFirst().name());
+    }
+
+    private String getUserId() {
+        TestUtils.waitForEsSync(schedulerAndWorker);
+        return platformUserManager.list(1, 20, null).items().getFirst().id();
     }
 
 }

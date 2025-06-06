@@ -176,6 +176,9 @@ public enum ErrorCode {
     UNSUPPORTED_SCHEMA(1701, "Unsupported schema: {}"),
 
 
+    // query
+    ILLEGAL_QUERY(1801, "Illegal query"),
+
     ;
 
     private final int code;

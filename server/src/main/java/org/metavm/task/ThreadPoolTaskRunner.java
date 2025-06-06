@@ -10,7 +10,7 @@ import java.util.concurrent.Future;
 @Component
 public class ThreadPoolTaskRunner implements TaskRunner {
 
-    public static final int POOL_SIZE = 4;
+    public static final int POOL_SIZE = 1;
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(POOL_SIZE);
 
