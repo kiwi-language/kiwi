@@ -69,12 +69,21 @@ Content-Type: application/json
 
 
 ###
-GET https://metavm.tech/app?page=1&pageSize=10
+GET https://metavm.tech/app?page=1&pageSize=5&searchText=Leen
 X-App-ID: 2
 
 
 ###
-GET http://localhost:8080/app?pageSize=5&page=1
+POST http://localhost:8080/app
+Content-Type: application/json
+X-App-ID: 2
+
+{
+  "name": "leen test"
+}
+
+###
+GET http://localhost:8080/app?pageSize=5&page=1&searchText=leen
 X-App-ID: 2
 
 ###
@@ -100,15 +109,6 @@ X-App-ID: 2
 {
   "appId": 1000017000,
   "content": "A todo list app"
-}
-
-###
-POST http://localhost:8080/app
-Content-Type: application/json
-X-App-ID: 2
-
-{
-  "name": "test2"
 }
 
 ###
