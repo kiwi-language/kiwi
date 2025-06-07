@@ -11,13 +11,12 @@ public enum EntityQueryOp {
         public boolean evaluate(Value first, Value second) {
             if (Objects.equals(second, first)) return true;
             else if (first instanceof StringReference s1 && second instanceof StringReference s2) {
-                return s1.getValue().contains(s2.getValue());
+                return s1.getValue().toLowerCase().contains(s2.getValue().toLowerCase());
             } else if (first.getValueType().isArray()) {
                 var array = first.resolveArray();
                 return array.contains(second);
             }
             else return false;
-
         }
     },
     NE {

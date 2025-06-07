@@ -69,7 +69,7 @@ Content-Type: application/json
 
 
 ###
-GET https://metavm.tech/app?page=1&pageSize=5&searchText=Leen
+GET https://metavm.tech/app?page=1&pageSize=5&searchText=leen
 X-App-ID: 2
 
 
