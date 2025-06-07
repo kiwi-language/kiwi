@@ -77,17 +77,17 @@ public class ApplicationManagerTest extends TestCase {
     }
 
     public void testDelete() {
-        TestUtils.waitForEsSync(schedulerAndWorker);
-        var userId = platformUserManager.list(1, 20, null).items().getFirst().id();
-        var id = TestUtils.doInTransaction(() ->
-                applicationManager.createBuiltin(new ApplicationCreateRequest(
-                        "metavm", "metavm","123456", userId
-                ))).appId();
-        TestUtils.waitForAllTasksDone(schedulerAndWorker);
+        var userId = getUserId();
         ContextUtil.setUserId(Id.parse(userId));
-        TestUtils.doInTransactionWithoutResult(() -> applicationManager.delete(id));
+        var id = TestUtils.doInTransaction(() ->
+                applicationManager.save(new ApplicationDTO(null, "metavm", null)));
+//        TestUtils.waitForAllTasksDone(schedulerAndWorker);
+        TestUtils.waitForEsSync(schedulerAndWorker);
         var r = applicationManager.list(1, 20, "metavm");
-        assertEquals(0, r.total());
+        assertEquals(1, r.total());
+        TestUtils.doInTransactionWithoutResult(() -> applicationManager.delete(id));
+        var r1 = applicationManager.list(1, 20, "metavm");
+        assertEquals(0, r1.total());
         TestUtils.waitForAllTasksDone(schedulerAndWorker);
         TestUtils.waitForEsSync(schedulerAndWorker);
         try {
@@ -97,8 +97,8 @@ public class ApplicationManagerTest extends TestCase {
         catch (BusinessException e) {
             assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
         }
-        var r1 = applicationManager.list(1, 20, "metavm");
-        assertEquals(0, r1.total());
+        var r2 = applicationManager.list(1, 20, "metavm");
+        assertEquals(0, r2.total());
     }
 
     public void testSearchWithMultipleNewlyCreated() {

@@ -23,9 +23,10 @@ public record EntityQuery<T extends Entity>(
                         throw new BusinessException(ErrorCode.ILLEGAL_QUERY);
         }
 
-        public boolean matches(T entity) {
+        public boolean filter(T entity) {
                 return !excluded.contains(entity.getStringId()) &&
-                        Utils.allMatch(fields, f -> f.matches(entity));
+                        fields.stream().filter(EntityQueryField::filter)
+                                .allMatch(f -> f.matches(entity));
         }
 
 }
