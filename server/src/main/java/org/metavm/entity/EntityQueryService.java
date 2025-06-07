@@ -2,12 +2,15 @@ package org.metavm.entity;
 
 import org.metavm.common.Page;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Value;
 import org.metavm.object.instance.search.*;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 @Component
 public class EntityQueryService {
@@ -22,14 +25,22 @@ public class EntityQueryService {
         var searchQuery = buildSearchQuery(query);
         var idPage = instanceSearchService.search(searchQuery);
         var ids = idPage.items();
-        if (!query.excluded().isEmpty())
-            ids = Utils.exclude(ids, id -> query.excluded().contains(id.toString()));
-        ids = context.filterAlive(ids);
-        ids = ids.subList(0, Math.min(ids.size(), query.pageSize()));
-        return new Page<>(
-                Utils.map(ids, id -> context.getEntity(query.entityType(), id)),
-                idPage.total()
-        );
+        var aliveIds = new HashSet<>(context.filterAlive(ids));
+        var items = new ArrayList<T>();
+        var total = idPage.total();
+        for (Id id : ids) {
+            if (aliveIds.contains(id)) {
+                var item = context.getEntity(query.entityType(), id);
+                if (query.matches(item)) {
+                    if (items.size() < query.pageSize())
+                        items.add(item);
+                } else
+                    total--;
+            }
+            else
+                total--;
+        }
+        return new Page<>(items, total);
     }
 
     public <T extends Entity> long count(EntityQuery<T> query, IInstanceContext ignored) {
@@ -56,13 +67,21 @@ public class EntityQueryService {
         for (var queryField : query.fields()) {
             var esField = queryField.searchField().getEsField();
             var value  = queryField.value();
-            if (value.isArray())
-                conditions.add(new InSearchCondition(esField, value.resolveArray().getElements()));
-            else
-                conditions.add(new MatchSearchCondition(esField, value));
+            var cond = switch (queryField.op()) {
+                case EQ -> buildSearchCond(value, esField);
+                case NE -> new NotSearchCondition(buildSearchCond(value, esField));
+            };
+            conditions.add(cond);
         }
         if (conditions.isEmpty()) return null;
         return conditions.size() == 1 ? conditions.getFirst() : new OrSearchCondition(conditions);
+    }
+
+    private SearchCondition buildSearchCond(Value value, String esField) {
+        if (value.isArray())
+            return new InSearchCondition(esField, value.resolveArray().getElements());
+        else
+            return new MatchSearchCondition(esField, value);
     }
 
 }

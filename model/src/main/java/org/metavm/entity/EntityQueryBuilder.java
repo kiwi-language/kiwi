@@ -1,8 +1,8 @@
 package org.metavm.entity;
 
 import org.metavm.object.instance.core.Value;
-import org.metavm.util.Utils;
 import org.metavm.util.TypeReference;
+import org.metavm.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ public class EntityQueryBuilder<T extends Entity> {
     }
 
     public static <T extends Entity> EntityQueryBuilder<T> newBuilder(Class<T> entityClass) {
-        return new EntityQueryBuilder<T>(entityClass);
+        return new EntityQueryBuilder<>(entityClass);
     }
 
     private final Class<T> entityClass;
@@ -36,17 +36,21 @@ public class EntityQueryBuilder<T extends Entity> {
         return this;
     }
 
-    public EntityQueryBuilder<T> addFieldIfNotNull(SearchField<? super T> field, @Nullable Value value) {
+    public EntityQueryBuilder<T> addEqFieldIfNotNull(SearchField<? super T> field, @Nullable Value value) {
         if(value != null)
-            addField(field, value);
+            addEqField(field, value);
         return this;
     }
 
-    public EntityQueryBuilder<T> addField(SearchField<? super T> field, Value value) {
-        this.fields.add(new EntityQueryField<>(field, value));
+    public EntityQueryBuilder<T> addEqField(SearchField<? super T> field, Value value) {
+        this.fields.add(new EntityQueryField<>(field, EntityQueryOp.EQ, value));
         return this;
     }
 
+    public EntityQueryBuilder<T> addNeField(SearchField<? super T> field, Value value) {
+        this.fields.add(new EntityQueryField<>(field, EntityQueryOp.NE, value));
+        return this;
+    }
 
     public EntityQueryBuilder<T> searchFields(List<SearchField<? super T>> searchFields) {
         this.searchFields = searchFields;

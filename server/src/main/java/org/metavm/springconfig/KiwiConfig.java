@@ -87,7 +87,6 @@ public class KiwiConfig {
     public record ServerConfig(int port) {}
 
     public record EsConfig(String host, int port, String user, String password) {
-
     }
 
 

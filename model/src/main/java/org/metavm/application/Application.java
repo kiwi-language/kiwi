@@ -35,6 +35,10 @@ public class Application extends org.metavm.entity.Entity {
 
     public static final SearchField<Application> esName =
             SearchField.createTitle("s0", app -> Instances.stringInstance(app.name));
+
+    public static final SearchField<Application> esState =
+            SearchField.create("i0", app -> Instances.intInstance(app.state.code()));
+
     @SuppressWarnings("unused")
     private static Klass __klass__;
 
@@ -84,7 +88,9 @@ public class Application extends org.metavm.entity.Entity {
     }
 
     public ApplicationDTO toDTO() {
-        return new ApplicationDTO(getTreeId(), name, owner.getStringId());
+        return new ApplicationDTO(getTreeId(),
+                state == ApplicationState.REMOVING ? name + "(removing)" : name,
+                owner.getStringId());
     }
 
     public void addAdmin(PlatformUser user) {
@@ -201,5 +207,6 @@ public class Application extends org.metavm.entity.Entity {
     @Override
     protected void buildSource(Map<String, org.metavm.object.instance.core.Value> source) {
         source.put("l0." + esName.getColumn(), esName.getValue(this));
+        source.put("l0." + esState.getColumn(), esState.getValue(this));
     }
 }
