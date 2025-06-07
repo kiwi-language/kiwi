@@ -64,7 +64,12 @@ public class ApplicationManager extends EntityContextFactoryAware {
             var dataPage = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Application.class)
                             .addEqFieldIfNotNull(Application.esName, Utils.safeCall(searchText, Instances::stringInstance))
-                            .addNeField(Application.esState, Instances.intInstance(ApplicationState.REMOVING.code()))
+                            .addField(
+                                    new EntityQueryField<>(
+                                            Application.esState, EntityQueryOp.NE,
+                                            Instances.intInstance(ApplicationState.REMOVING.code()), true
+                                    )
+                            )
                             .page(page)
                             .pageSize(pageSize)
                             .build(),

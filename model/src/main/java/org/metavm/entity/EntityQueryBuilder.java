@@ -43,12 +43,12 @@ public class EntityQueryBuilder<T extends Entity> {
     }
 
     public EntityQueryBuilder<T> addEqField(SearchField<? super T> field, Value value) {
-        this.fields.add(new EntityQueryField<>(field, EntityQueryOp.EQ, value));
+        this.fields.add(new EntityQueryField<>(field, EntityQueryOp.EQ, value, false));
         return this;
     }
 
-    public EntityQueryBuilder<T> addNeField(SearchField<? super T> field, Value value) {
-        this.fields.add(new EntityQueryField<>(field, EntityQueryOp.NE, value));
+    public EntityQueryBuilder<T> addField(EntityQueryField<? super T> field) {
+        this.fields.add(field);
         return this;
     }
 

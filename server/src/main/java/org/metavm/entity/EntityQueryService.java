@@ -31,7 +31,7 @@ public class EntityQueryService {
         for (Id id : ids) {
             if (aliveIds.contains(id)) {
                 var item = context.getEntity(query.entityType(), id);
-                if (query.matches(item)) {
+                if (query.filter(item)) {
                     if (items.size() < query.pageSize())
                         items.add(item);
                 } else
