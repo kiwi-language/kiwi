@@ -136,12 +136,12 @@ public class ApplicationManagerTest extends TestCase {
     public void testSearchText() {
         TestUtils.doInTransaction(() ->
                 applicationManager.createBuiltin(new ApplicationCreateRequest(
-                        "metavm", "metavm","123456", getUserId()
+                        "metavm app", "metavm","123456", getUserId()
                 )));
         TestUtils.waitForEsSync(schedulerAndWorker);
         var r = applicationManager.list(1, 20, "metavm");
         assertEquals(1, r.total());
-        assertEquals("metavm", r.items().getFirst().name());
+        assertEquals("metavm app", r.items().getFirst().name());
     }
 
     private String getUserId() {

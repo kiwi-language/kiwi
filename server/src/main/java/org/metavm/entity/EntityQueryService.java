@@ -74,7 +74,7 @@ public class EntityQueryService {
             conditions.add(cond);
         }
         if (conditions.isEmpty()) return null;
-        return conditions.size() == 1 ? conditions.getFirst() : new OrSearchCondition(conditions);
+        return conditions.size() == 1 ? conditions.getFirst() : new AndSearchCondition(conditions);
     }
 
     private SearchCondition buildSearchCond(Value value, String esField) {
