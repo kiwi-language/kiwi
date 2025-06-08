@@ -2,6 +2,7 @@ package org.metavm.entity;
 
 import org.metavm.common.Page;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.instance.core.StringReference;
 import org.metavm.object.instance.search.*;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Utils;
@@ -58,6 +59,8 @@ public class EntityQueryService {
             var value  = queryField.value();
             if (value.isArray())
                 conditions.add(new InSearchCondition(esField, value.resolveArray().getElements()));
+            else if (value instanceof StringReference s && !s.getValue().contains(" "))
+                conditions.add(new StartsWithSearchCondition(esField, value));
             else
                 conditions.add(new MatchSearchCondition(esField, value));
         }

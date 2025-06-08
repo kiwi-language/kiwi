@@ -17,7 +17,7 @@ public record StartsWithSearchCondition(
 
     @Override
     public boolean evaluate(Map<String, Value> source) {
-        return Instances.toJavaString(source.get(field)).startsWith(Instances.toJavaString(value));
+        return SearchUtil.prefixMatch(Instances.toJavaString(source.get(field)), Instances.toJavaString(value));
     }
 
 }
