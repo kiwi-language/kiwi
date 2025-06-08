@@ -1,5 +1,6 @@
 package org.metavm.message;
 
+import org.metavm.object.instance.core.Id;
 import org.metavm.util.Instances;
 import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,8 @@ import org.metavm.message.rest.dto.MessageQuery;
 import org.metavm.user.User;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ContextUtil;
+
+import java.util.List;
 
 @Component
 public class MessageManager extends EntityContextFactoryAware {
@@ -40,10 +43,10 @@ public class MessageManager extends EntityContextFactoryAware {
                     EntityQueryBuilder.newBuilder(Message.class)
                             .page(query.page())
                             .pageSize(query.pageSize())
-                            .addEqFieldIfNotNull(Message.esTitle, Utils.safeCall(query.searchText(), Instances::stringInstance))
-                            .addEqFieldIfNotNull(Message.esRead, Utils.safeCall(query.read(), Instances::booleanInstance))
-                            .addEqField(Message.esReceiver, user.getReference())
-                            .newlyCreated(query.newlyCreated())
+                            .addFieldMatchIfNotNull(Message.esTitle, Utils.safeCall(query.searchText(), Instances::stringInstance))
+                            .addFieldMatchIfNotNull(Message.esRead, Utils.safeCall(query.read(), Instances::booleanInstance))
+                            .addFieldMatch(Message.esReceiver, user.getReference())
+                            .newlyCreated(query.newlyCreated() != null ? Utils.map(query.newlyCreated(), Id::parse) : List.of())
                             .build(),
                     context
             );
@@ -79,8 +82,8 @@ public class MessageManager extends EntityContextFactoryAware {
             var user = context.getEntity(User.class, ContextUtil.getUserId());
             return entityQueryService.count(
                     EntityQueryBuilder.newBuilder(Message.class)
-                            .addEqField(Message.esReceiver, user.getReference())
-                            .addEqField(Message.esRead, Instances.falseInstance())
+                            .addFieldMatch(Message.esReceiver, user.getReference())
+                            .addFieldMatch(Message.esRead, Instances.falseInstance())
                             .build(),
                     context
             );

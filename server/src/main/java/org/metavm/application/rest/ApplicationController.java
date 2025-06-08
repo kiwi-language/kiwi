@@ -21,8 +21,9 @@ public class ApplicationController {
     @GetMapping
     public Result<Page<ApplicationDTO>> list(@RequestParam(value = "page", defaultValue = "1") int page,
                                              @RequestParam(value = "pageSize", defaultValue = "20") int pageSize,
-                                             @RequestParam(value = "searchText", required = false) String searchText) {
-        return Result.success(applicationManager.list(page, pageSize, searchText));
+                                             @RequestParam(value = "searchText", required = false) String searchText,
+                                             @RequestParam(value = "newlyCreatedId", required = false) Long newlyCreatedId) {
+        return Result.success(applicationManager.list(page, pageSize, searchText, newlyCreatedId));
     }
 
     @PostMapping

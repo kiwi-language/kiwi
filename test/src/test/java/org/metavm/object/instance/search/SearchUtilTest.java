@@ -25,6 +25,9 @@ public class SearchUtilTest extends TestCase {
         assertFalse(
                 SearchUtil.match("kiwi_objects", "kiwi objects")
         );
+        assertTrue(
+                SearchUtil.match("Foo001", "Foo001")
+        );
     }
 
     public void testPrefixMatch() {
@@ -33,6 +36,9 @@ public class SearchUtilTest extends TestCase {
         );
         assertFalse(
                 SearchUtil.prefixMatch("This is Kiwi", "This is kiw")
+        );
+        assertTrue(
+                SearchUtil.prefixMatch("Foo001", "Foo001")
         );
     }
 

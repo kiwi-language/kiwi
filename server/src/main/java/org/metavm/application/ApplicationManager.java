@@ -21,6 +21,7 @@ import org.metavm.util.*;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -59,17 +60,13 @@ public class ApplicationManager extends EntityContextFactoryAware {
         this.schemaManager = schemaManager;
     }
 
-    public Page<ApplicationDTO> list(int page, int pageSize, String searchText) {
+    public Page<ApplicationDTO> list(int page, int pageSize, String searchText, @Nullable Long newlyCreatedId) {
         try (var context = newPlatformContext()) {
             var dataPage = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Application.class)
-                            .addEqFieldIfNotNull(Application.esName, Utils.safeCall(searchText, Instances::stringInstance))
-                            .addField(
-                                    new EntityQueryField<>(
-                                            Application.esState, EntityQueryOp.NE,
-                                            Instances.intInstance(ApplicationState.REMOVING.code()), true
-                                    )
-                            )
+                            .addFieldMatchIfNotNull(Application.esName, Utils.safeCall(searchText, Instances::stringInstance))
+                            .addFieldNotMatch(Application.esState, Instances.intInstance(ApplicationState.REMOVING.code()))
+                            .newlyCreated(newlyCreatedId != null ? List.of(PhysicalId.of(newlyCreatedId, 0)) : List.of())
                             .page(page)
                             .pageSize(pageSize)
                             .build(),

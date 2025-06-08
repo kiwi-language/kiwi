@@ -1,9 +1,9 @@
 {
   "from": 0,
-  "size": 30,
+  "size": 25,
   "query": {
     "query_string": {
-      "query": "(appId:2) AND (typeId:\"$$0180d40100\") AND l0.s0:\"d\\*\"",
+      "query": "(appId:2) AND (typeId:\"$$0180d40100\") AND l0.s0:\"d\"* AND NOT l0.i0:2",
       "fields": [],
       "type": "best_fields",
       "default_operator": "or",

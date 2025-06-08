@@ -2,10 +2,11 @@ package org.metavm.object.instance.search;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.EntityQueryOp;
+import org.metavm.object.instance.core.StringReference;
 import org.metavm.object.instance.core.Value;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 public record MatchSearchCondition(
@@ -20,8 +21,16 @@ public record MatchSearchCondition(
 
     @Override
     public boolean evaluate(Map<String, Value> source) {
-        var srcValue = source.get(field);
-        return EntityQueryOp.EQ.evaluate(srcValue, value);
+        var first = source.get(field);
+        if (Objects.equals(value, first)) return true;
+        else if (first instanceof StringReference s1 && value instanceof StringReference s2) {
+            return SearchUtil.match(s1.getValue(), s2.getValue());
+        } else if (first.getValueType().isArray()) {
+            var array = first.resolveArray();
+            return array.contains(value);
+        }
+        else return false;
+
     }
 
 }

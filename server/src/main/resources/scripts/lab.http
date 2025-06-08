@@ -83,11 +83,11 @@ Content-Type: application/json
 X-App-ID: 2
 
 {
-  "name": "liyang-test"
+  "name": "liyang@test"
 }
 
 ###
-GET http://localhost:8080/app?pageSize=5&page=1&searchText=shopping
+GET http://localhost:8080/app?pageSize=5&page=1&searchText=liyang-test
 X-App-ID: 2
 
 ###

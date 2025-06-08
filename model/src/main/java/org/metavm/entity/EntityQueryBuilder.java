@@ -1,5 +1,6 @@
 package org.metavm.entity;
 
+import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
 import org.metavm.util.TypeReference;
 import org.metavm.util.Utils;
@@ -24,7 +25,7 @@ public class EntityQueryBuilder<T extends Entity> {
     private boolean includeBuiltin;
     private int page = 1;
     private int pageSize = 20;
-    private List<String> newlyCreated = List.of();
+    private List<Id> newlyCreatedIds = List.of();
     private List<String> excluded = List.of();
 
     private EntityQueryBuilder(Class<T> entityClass) {
@@ -36,14 +37,19 @@ public class EntityQueryBuilder<T extends Entity> {
         return this;
     }
 
-    public EntityQueryBuilder<T> addEqFieldIfNotNull(SearchField<? super T> field, @Nullable Value value) {
+    public EntityQueryBuilder<T> addFieldMatchIfNotNull(SearchField<? super T> field, @Nullable Value value) {
         if(value != null)
-            addEqField(field, value);
+            addFieldMatch(field, value);
         return this;
     }
 
-    public EntityQueryBuilder<T> addEqField(SearchField<? super T> field, Value value) {
-        this.fields.add(new EntityQueryField<>(field, EntityQueryOp.EQ, value, false));
+    public EntityQueryBuilder<T> addFieldMatch(SearchField<? super T> field, Value value) {
+        this.fields.add(new EntityQueryField<>(field, EntityQueryOp.MATCH, value));
+        return this;
+    }
+
+    public EntityQueryBuilder<T> addFieldNotMatch(SearchField<? super T> field, Value value) {
+        this.fields.add(new EntityQueryField<>(field, EntityQueryOp.NOT_MATCH, value));
         return this;
     }
 
@@ -70,8 +76,8 @@ public class EntityQueryBuilder<T extends Entity> {
         return this;
     }
 
-    public EntityQueryBuilder<T> newlyCreated(List<String> newlyCreated) {
-        this.newlyCreated = Utils.orElse(newlyCreated, List.of());
+    public EntityQueryBuilder<T> newlyCreated(List<Id> newlyCreated) {
+        this.newlyCreatedIds = Utils.orElse(newlyCreated, List.of());
         return this;
     }
 
@@ -88,7 +94,7 @@ public class EntityQueryBuilder<T extends Entity> {
                 page,
                 pageSize,
                 fields,
-                newlyCreated,
+                newlyCreatedIds,
                 excluded
         );
     }
