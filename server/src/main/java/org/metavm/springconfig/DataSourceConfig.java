@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
@@ -67,7 +68,9 @@ public class DataSourceConfig {
     @Bean
     @Primary
     public TransactionTemplate primaryTransactionTemplate(@Qualifier("primaryTransactionManager") PlatformTransactionManager transactionManager) {
-        return new TransactionTemplate(transactionManager);
+        var tp = new TransactionTemplate(transactionManager);
+        tp.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
+        return tp;
     }
 
     @Bean

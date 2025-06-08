@@ -61,24 +61,21 @@ public class ApplicationManager extends EntityContextFactoryAware {
 
     public Page<ApplicationDTO> list(int page, int pageSize, String searchText) {
         try (var context = newPlatformContext()) {
-            // To mitigate search sync lag, removing applications are excluded manually
             var dataPage = entityQueryService.query(
                     EntityQueryBuilder.newBuilder(Application.class)
-                            .addFieldIfNotNull(Application.esName, Utils.safeCall(searchText, Instances::stringInstance))
+                            .addEqFieldIfNotNull(Application.esName, Utils.safeCall(searchText, Instances::stringInstance))
+                            .addField(
+                                    new EntityQueryField<>(
+                                            Application.esState, EntityQueryOp.NE,
+                                            Instances.intInstance(ApplicationState.REMOVING.code()), true
+                                    )
+                            )
                             .page(page)
-                            .pageSize(pageSize + 5)
+                            .pageSize(pageSize)
                             .build(),
                     context
             );
-            var total = dataPage.total();
-            var apps = new ArrayList<ApplicationDTO>();
-            for (Application item : dataPage.items()) {
-                if (item.getState() != ApplicationState.REMOVING)
-                    apps.add(item.toDTO());
-                else
-                    total--;
-            }
-            return new Page<>(apps, total);
+            return new Page<>(Utils.map(dataPage.items(), Application::toDTO), dataPage.total());
         }
     }
 

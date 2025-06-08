@@ -58,14 +58,40 @@ Content-Type: application/json
   "password": "123456"
 }
 
+###
+POST https://metavm.tech/app
+X-App-ID: 2
+Content-Type: application/json
+
+{
+  "name": "liyang-test"
+}
+
 
 ###
-GET https://metavm.tech/app?pageSize=20
+GET https://metavm.tech/app?page=1&pageSize=5&searchText=root
 X-App-ID: 2
 
 
 ###
-GET http://localhost:8080/app?pageSize=2&page=2
+DELETE https://metavm.tech/app/1000005051
+X-App-ID: 2
+
+###
+POST http://localhost:8080/app
+Content-Type: application/json
+X-App-ID: 2
+
+{
+  "name": "liyang-test"
+}
+
+###
+GET http://localhost:8080/app?pageSize=5&page=1&searchText=shopping
+X-App-ID: 2
+
+###
+DELETE http://localhost:8080/app/1000013004
 X-App-ID: 2
 
 ###
@@ -80,12 +106,13 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8080/app
+POST http://localhost:8080/chat
 Content-Type: application/json
 X-App-ID: 2
 
 {
-  "name": "test2"
+  "appId": 1000017000,
+  "content": "A todo list app"
 }
 
 ###

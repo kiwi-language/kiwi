@@ -23,7 +23,7 @@ public class RoleManager extends EntityContextFactoryAware {
 
     public Page<RoleDTO> list(int page, int pageSize, String searchText) {
         var query = EntityQueryBuilder.newBuilder(Role.class)
-                .addFieldIfNotNull(Role.esName, Utils.safeCall(searchText, Instances::stringInstance))
+                .addEqFieldIfNotNull(Role.esName, Utils.safeCall(searchText, Instances::stringInstance))
                 .page(page)
                 .pageSize(pageSize)
                 .build();

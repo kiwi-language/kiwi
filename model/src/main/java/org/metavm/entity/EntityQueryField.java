@@ -4,7 +4,12 @@ import org.metavm.object.instance.core.Value;
 
 public record EntityQueryField<T>(
         SearchField<T> searchField,
-        Value value
+        EntityQueryOp op,
+        Value value,
+        boolean filter
 ) {
 
+    public boolean matches(T entity) {
+        return op.evaluate(searchField.getValue(entity), value);
+    }
 }
