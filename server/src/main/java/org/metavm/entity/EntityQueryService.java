@@ -2,12 +2,9 @@ package org.metavm.entity;
 
 import org.metavm.common.Page;
 import org.metavm.object.instance.core.IInstanceContext;
-<<<<<<< HEAD
 import org.metavm.object.instance.core.StringReference;
-=======
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Value;
->>>>>>> main
 import org.metavm.object.instance.search.*;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Utils;
@@ -71,20 +68,11 @@ public class EntityQueryService {
         for (var queryField : query.fields()) {
             var esField = queryField.searchField().getEsField();
             var value  = queryField.value();
-<<<<<<< HEAD
-            if (value.isArray())
-                conditions.add(new InSearchCondition(esField, value.resolveArray().getElements()));
-            else if (value instanceof StringReference s && !s.getValue().contains(" "))
-                conditions.add(new StartsWithSearchCondition(esField, value));
-            else
-                conditions.add(new MatchSearchCondition(esField, value));
-=======
             var cond = switch (queryField.op()) {
                 case EQ -> buildSearchCond(value, esField);
                 case NE -> new NotSearchCondition(buildSearchCond(value, esField));
             };
             conditions.add(cond);
->>>>>>> main
         }
         if (conditions.isEmpty()) return null;
         return conditions.size() == 1 ? conditions.getFirst() : new AndSearchCondition(conditions);
@@ -93,6 +81,8 @@ public class EntityQueryService {
     private SearchCondition buildSearchCond(Value value, String esField) {
         if (value.isArray())
             return new InSearchCondition(esField, value.resolveArray().getElements());
+        else if (value instanceof StringReference s && !s.getValue().contains(" "))
+            return new StartsWithSearchCondition(esField, value);
         else
             return new MatchSearchCondition(esField, value);
     }
