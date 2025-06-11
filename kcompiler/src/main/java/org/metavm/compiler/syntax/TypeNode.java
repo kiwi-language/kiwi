@@ -22,4 +22,9 @@ public abstract class TypeNode extends Node {
     public void setType(Type type) {
         this.type = type;
     }
+
+    @Override
+    public TypeNode setPos(int pos) {
+        return (TypeNode) super.setPos(pos);
+    }
 }

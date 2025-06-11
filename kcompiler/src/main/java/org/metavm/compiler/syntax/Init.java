@@ -2,6 +2,7 @@ package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.element.Name;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class Init extends Node {
@@ -28,5 +29,18 @@ public class Init extends Node {
     @Override
     public void forEachChild(Consumer<Node> action) {
         action.accept(body);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Init init = (Init) object;
+        return Objects.equals(body, init.body);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(body);
     }
 }

@@ -1,6 +1,7 @@
 package org.metavm.compiler.util;
 
 import org.metavm.compiler.analyze.Enter;
+import org.metavm.compiler.diag.DummyLog;
 import org.metavm.compiler.element.Package;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.File;
@@ -663,7 +664,7 @@ public class MockEnter {
 
     public static Project enter(List<File> files) {
         var project = new Project();
-        var enter = new Enter(project);
+        var enter = new Enter(project, new DummyLog());
         enter.enter(files);
         return project;
     }

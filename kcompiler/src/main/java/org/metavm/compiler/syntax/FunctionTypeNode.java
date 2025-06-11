@@ -59,14 +59,6 @@ public final class FunctionTypeNode extends TypeNode {
         return Objects.hash(parameterTypes, returnType);
     }
 
-    @Override
-    public String toString() {
-        return "FunctionTypeNode[" +
-                "parameterTypes=" + parameterTypes + ", " +
-                "returnType=" + returnType + ']';
-    }
-
-    @Override
     protected Type actualResolve(Env env) {
         return env.types().getFuncType(
                 parameterTypes.map(env::resolveType),

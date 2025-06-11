@@ -39,4 +39,6 @@ public interface ElementVisitor<R> {
     R visitClassInst(ClassInst classInst);
 
     R visitPartialMethodInst(PartialMethodInst partialMethodInst);
+
+    R visitErrorElement(ErrorElement errorElement);
 }

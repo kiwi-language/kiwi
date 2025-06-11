@@ -63,12 +63,4 @@ public final class AssignExpr extends Expr {
         return Objects.hash(op, lhs, rhs);
     }
 
-    @Override
-    public String toString() {
-        return "AssignExp[" +
-                "op=" + op + ", " +
-                "assigned=" + lhs + ", " +
-                "assignment=" + rhs + ']';
-    }
-
 }

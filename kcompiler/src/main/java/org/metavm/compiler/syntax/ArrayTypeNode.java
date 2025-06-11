@@ -48,12 +48,6 @@ public final class ArrayTypeNode extends TypeNode {
     }
 
     @Override
-    public String toString() {
-        return "ArrayTypeNode[" +
-                "element=" + element + ']';
-    }
-
-    @Override
     protected Type actualResolve(Env env) {
         return env.types().getArrayType(env.resolveType(element));
     }

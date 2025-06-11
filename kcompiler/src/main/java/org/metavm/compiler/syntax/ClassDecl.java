@@ -8,6 +8,7 @@ import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.Traces;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -178,15 +179,20 @@ public final class ClassDecl extends Decl<Clazz> {
     }
 
     @Override
-    public String toString() {
-        return "ClassDecl[" +
-                "tag=" + tag + ", " +
-                "mods=" + mods + ", " +
-                "name=" + name + ", " +
-                "extends_=" + extends_ + ", " +
-                "implementList=" + implements_ + ", " +
-                "enumConstants=" + enumConstants + ", " +
-                "members=" + members + ']';
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        ClassDecl classDecl = (ClassDecl) object;
+        return tag == classDecl.tag && Objects.equals(mods, classDecl.mods) && Objects.equals(annotations, classDecl.annotations) && Objects.equals(name, classDecl.name) && Objects.equals(extends_, classDecl.extends_) && Objects.equals(implements_, classDecl.implements_) && Objects.equals(typeParameters, classDecl.typeParameters) && Objects.equals(params, classDecl.params) && Objects.equals(enumConstants, classDecl.enumConstants) && Objects.equals(members, classDecl.members);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(tag, mods, annotations, name, extends_, implements_, typeParameters, params, enumConstants, members);
+    }
+
+    @Override
+    public ClassDecl setPos(int pos) {
+        return (ClassDecl) super.setPos(pos);
+    }
 }

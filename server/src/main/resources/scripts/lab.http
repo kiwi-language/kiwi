@@ -129,6 +129,10 @@ POST http://localhost:8080/logout
 X-App-ID: 2
 
 ###
+GET https://metavm.tech/app/1000000010
+X-App-ID: 2
+
+###
 GET http://localhost:8080/schema
 X-App-ID: 1000000010
 

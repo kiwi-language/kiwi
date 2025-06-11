@@ -33,11 +33,8 @@ public final class LocalVarDecl extends VariableDecl<LocalVar> {
     }
 
     @Override
-    public String toString() {
-        return "VarDecl[" +
-                "type=" + getType() + ", " +
-                "name=" + getName() + ", " +
-                "initial=" + getInitial() + ']';
+    public LocalVarDecl setPos(int pos) {
+        return (LocalVarDecl) super.setPos(pos);
     }
 
 }

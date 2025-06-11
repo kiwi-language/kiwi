@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class AnonClassExpr extends Expr {
@@ -31,5 +32,18 @@ public class AnonClassExpr extends Expr {
     @Override
     public void forEachChild(Consumer<Node> action) {
         action.accept(decl);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        AnonClassExpr that = (AnonClassExpr) object;
+        return Objects.equals(decl, that.decl);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(decl);
     }
 }

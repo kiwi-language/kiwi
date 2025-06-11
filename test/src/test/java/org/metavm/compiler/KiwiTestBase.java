@@ -14,6 +14,7 @@ import org.metavm.util.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -89,11 +90,12 @@ public abstract class KiwiTestBase extends TestCase  {
     private void compile(List<String> sources) {
 //        assembler.assemble(sources);
 //        assembler.generateClasses(TestConstants.TARGET);
-        var task = new CompilationTask(sources, TestConstants.TARGET);
+        var task = new CompilationTask(Utils.map(sources, Path::of), TestConstants.TARGET);
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();
-        task.generate();
+        if (task.getErrorCount() == 0)
+            task.generate();
     }
 
     protected IInstanceContext newContext() {

@@ -4,9 +4,14 @@ import org.metavm.compiler.element.Element;
 import org.metavm.compiler.element.Name;
 import org.metavm.compiler.util.List;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class Ident extends Expr {
+
+    public static Ident from(String name) {
+        return new Ident(Name.from(name));
+    }
 
     private Name name;
 
@@ -44,5 +49,18 @@ public class Ident extends Expr {
 
     @Override
     public void forEachChild(Consumer<Node> action) {
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Ident ident = (Ident) object;
+        return Objects.equals(name, ident.name) && Objects.equals(candidates, ident.candidates);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, candidates);
     }
 }

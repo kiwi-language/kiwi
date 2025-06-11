@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class BinaryExpr extends Expr {
@@ -46,11 +47,15 @@ public final class BinaryExpr extends Expr {
     }
 
     @Override
-    public String toString() {
-        return "BinaryExpr[" +
-                "op=" + op + ", " +
-                "lhs=" + lhs + ", " +
-                "rhs=" + rhs + ']';
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        BinaryExpr that = (BinaryExpr) object;
+        return op == that.op && Objects.equals(lhs, that.lhs) && Objects.equals(rhs, that.rhs);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(op, lhs, rhs);
+    }
 }

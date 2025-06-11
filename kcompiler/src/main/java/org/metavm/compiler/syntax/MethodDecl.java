@@ -130,4 +130,22 @@ public final class MethodDecl extends Decl<Method> {
             return false;
     }
 
+    @Override
+    public MethodDecl setPos(int pos) {
+        return (MethodDecl) super.setPos(pos);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        MethodDecl that = (MethodDecl) object;
+        return Objects.equals(mods, that.mods) && Objects.equals(annotations, that.annotations) && Objects.equals(typeParameters, that.typeParameters) && Objects.equals(name, that.name) && Objects.equals(params, that.params) && Objects.equals(returnType, that.returnType) && Objects.equals(body, that.body);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mods, annotations, typeParameters, name, params, returnType, body);
+    }
+
 }
