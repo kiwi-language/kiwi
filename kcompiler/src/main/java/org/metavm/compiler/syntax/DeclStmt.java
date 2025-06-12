@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class DeclStmt extends Stmt {
@@ -31,5 +32,18 @@ public class DeclStmt extends Stmt {
     @Override
     public void forEachChild(Consumer<Node> action) {
         action.accept(decl);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        DeclStmt declStmt = (DeclStmt) object;
+        return Objects.equals(decl, declStmt.decl);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(decl);
     }
 }

@@ -49,4 +49,9 @@ public abstract class AbstractTypeVisitor<R> implements TypeVisitor<R> {
     public R visitDeferredType(DeferredType deferredType) {
         return visitType(deferredType);
     }
+
+    @Override
+    public R visitErrorType(ErrorType errorType) {
+        return visitType(errorType);
+    }
 }

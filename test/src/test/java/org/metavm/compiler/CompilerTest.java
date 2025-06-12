@@ -2,6 +2,7 @@ package org.metavm.compiler;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.MockEnter;
 import org.metavm.ddl.CommitState;
@@ -14,6 +15,7 @@ import org.metavm.util.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 
 public class CompilerTest extends TestCase {
@@ -44,10 +46,12 @@ public class CompilerTest extends TestCase {
 
     public void test() {
         var source = TestUtils.getResourcePath("kiwi/Shopping.kiwi");
-        var task = new CompilationTask(List.of(source), TestConstants.TARGET);
+        var task = new CompilationTask(List.of(Path.of(source)), TestConstants.TARGET);
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();
+        if (task.getErrorCount() > 0)
+            throw new CompilationException("Compilation failed");
         task.generate();
         deploy();
 

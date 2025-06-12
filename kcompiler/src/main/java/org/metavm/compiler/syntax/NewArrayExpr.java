@@ -2,6 +2,7 @@ package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.util.List;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class NewArrayExpr extends Expr {
@@ -60,4 +61,16 @@ public final class NewArrayExpr extends Expr {
                 "readonly=" + readonly + ']';
     }
 
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        NewArrayExpr that = (NewArrayExpr) object;
+        return readonly == that.readonly && Objects.equals(elementType, that.elementType) && Objects.equals(elements, that.elements);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(elementType, readonly, elements);
+    }
 }

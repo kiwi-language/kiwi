@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.element.Element;
 import org.metavm.compiler.util.List;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -57,4 +58,18 @@ public class TypeApply extends Expr {
         super.setElement(element);
         expr.setElement(element);
     }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        TypeApply typeApply = (TypeApply) object;
+        return Objects.equals(expr, typeApply.expr) && Objects.equals(args, typeApply.args);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expr, args);
+    }
+
 }

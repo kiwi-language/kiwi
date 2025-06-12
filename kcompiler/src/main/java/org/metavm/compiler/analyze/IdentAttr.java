@@ -1,20 +1,28 @@
 package org.metavm.compiler.analyze;
 
-import lombok.extern.slf4j.Slf4j;
-import org.metavm.compiler.element.*;
+import org.metavm.compiler.diag.DummyLog;
+import org.metavm.compiler.diag.Errors;
+import org.metavm.compiler.diag.Log;
+import org.metavm.compiler.element.LocalVar;
 import org.metavm.compiler.element.Package;
+import org.metavm.compiler.element.Param;
+import org.metavm.compiler.element.Project;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class IdentAttr extends StructuralNodeVisitor {
 
-    private final Env env;
+    public static final Logger logger = LoggerFactory.getLogger(IdentAttr.class);
 
+    private final Env env;
+    private final Log log;
     private MatchBindings matchBindings = MatchBindings.empty;
 
-    public IdentAttr(Project project) {
+    public IdentAttr(Project project, Log log) {
         env = new Env(project);
+        this.log = log;
     }
 
     @Override
@@ -51,7 +59,7 @@ public class IdentAttr extends StructuralNodeVisitor {
     public Void visitIsExpr(IsExpr isExpr) {
         super.visitIsExpr(isExpr);
         if(isExpr.getVar() != null)
-            matchBindings = new MatchBindings(List.of(isExpr.getVar().getElement()), List.of());
+            matchBindings = new MatchBindings(List.of(isExpr.getVar().getElement()), List.of(), log);
         return null;
     }
 
@@ -226,68 +234,72 @@ public class IdentAttr extends StructuralNodeVisitor {
 
     private static class MatchBindings {
 
-            private final List<LocalVar> trueBindings;
-            private final List<LocalVar> falseBindings;
+        private final List<LocalVar> trueBindings;
+        private final List<LocalVar> falseBindings;
+        private final Log log;
 
-            private MatchBindings(List<LocalVar> trueBindings, List<LocalVar> falseBindings) {
-                this.trueBindings = trueBindings;
-                this.falseBindings = falseBindings;
-            }
-
-            MatchBindings not() {
-                return new MatchBindings(falseBindings, trueBindings);
-            }
-
-            void enterTrue(Scope scope) {
-                trueBindings.forEach(scope::add);
-            }
-
-
-            void enterFalse(Scope scope) {
-                falseBindings.forEach(scope::add);
-            }
-
-            MatchBindings or(MatchBindings that) {
-                return new MatchBindings(intersect(trueBindings, that.trueBindings), union(falseBindings, that.falseBindings));
-            }
-
-            MatchBindings and(MatchBindings that) {
-                return new MatchBindings(union(trueBindings, that.trueBindings), intersect(falseBindings, that.falseBindings));
-            }
-
-            /** @noinspection unused*/
-            private static List<LocalVar> intersect(List<LocalVar> lhs, List<LocalVar> rhs) {
-                return List.of();
-            }
-
-            private static List<LocalVar> union(List<LocalVar> lhs, List<LocalVar> rhs) {
-                var list = List.builder(lhs);
-                for (LocalVar vr : rhs) {
-                    for (LocalVar vl : lhs) {
-                        if (vl.getName() == vr.getName())
-                            throw new AnalysisException("Duplicate binding name: " + vr.getName());
-                    }
-                    list.append(vr);
-                }
-                return list.build();
-            }
-
-            public static final MatchBindings empty = new MatchBindings(List.nil(), List.nil()) {
-                @Override
-                MatchBindings not() {
-                    return this;
-                }
-
-                @Override
-                void enterTrue(Scope scope) {
-
-                }
-
-                @Override
-                void enterFalse(Scope scope) {
-
-                }
-            };
+        private MatchBindings(List<LocalVar> trueBindings, List<LocalVar> falseBindings, Log log) {
+            this.trueBindings = trueBindings;
+            this.falseBindings = falseBindings;
+            this.log = log;
         }
+
+        MatchBindings not() {
+            return new MatchBindings(falseBindings, trueBindings, log);
+        }
+
+        void enterTrue(Scope scope) {
+            trueBindings.forEach(scope::add);
+        }
+
+
+        void enterFalse(Scope scope) {
+            falseBindings.forEach(scope::add);
+        }
+
+        MatchBindings or(MatchBindings that) {
+            return new MatchBindings(intersect(trueBindings, that.trueBindings), union(falseBindings, that.falseBindings), log);
+        }
+
+        MatchBindings and(MatchBindings that) {
+            return new MatchBindings(union(trueBindings, that.trueBindings), intersect(falseBindings, that.falseBindings), log);
+        }
+
+        /** @noinspection unused*/
+        private List<LocalVar> intersect(List<LocalVar> lhs, List<LocalVar> rhs) {
+            return List.of();
+        }
+
+        private List<LocalVar> union(List<LocalVar> lhs, List<LocalVar> rhs) {
+            var list = List.builder(lhs);
+            out: for (LocalVar vr : rhs) {
+                for (LocalVar vl : lhs) {
+                    if (vl.getName() == vr.getName()) {
+                        log.error(vr.getNode(), Errors.duplicateBindingName);
+                        continue out;
+                    }
+                }
+                list.append(vr);
+            }
+            return list.build();
+        }
+
+        public static final MatchBindings empty = new MatchBindings(List.nil(), List.nil(), new DummyLog()) {
+            @Override
+            MatchBindings not() {
+                return this;
+            }
+
+            @Override
+            void enterTrue(Scope scope) {
+
+            }
+
+            @Override
+            void enterFalse(Scope scope) {
+
+            }
+        };
+    }
 
 }

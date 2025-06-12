@@ -42,10 +42,4 @@ public final class ExprStmt extends Stmt {
         return Objects.hash(expr);
     }
 
-    @Override
-    public String toString() {
-        return "ExprStmt[" +
-                "expr=" + expr + ']';
-    }
-
 }

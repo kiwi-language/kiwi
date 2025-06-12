@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class ForeachStmt extends Stmt {
@@ -58,5 +59,18 @@ public class ForeachStmt extends Stmt {
         action.accept(var);
         action.accept(expr);
         action.accept(body);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        ForeachStmt that = (ForeachStmt) object;
+        return Objects.equals(var, that.var) && Objects.equals(expr, that.expr) && Objects.equals(body, that.body);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(var, expr, body);
     }
 }

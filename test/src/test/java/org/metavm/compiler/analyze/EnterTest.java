@@ -3,12 +3,17 @@ package org.metavm.compiler.analyze;
 import junit.framework.TestCase;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
-import org.metavm.compiler.CompilerTestUtils;
-import org.metavm.compiler.element.Project;
+import org.metavm.compiler.diag.DummyLog;
 import org.metavm.compiler.element.NameTable;
-import org.metavm.compiler.syntax.AstBuilder;
+import org.metavm.compiler.element.Project;
+import org.metavm.compiler.syntax.File;
+import org.metavm.compiler.syntax.Parser;
 import org.metavm.compiler.util.List;
 import org.metavm.util.TestUtils;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 
 @Slf4j
@@ -16,10 +21,10 @@ public class EnterTest extends TestCase {
 
     public void test() {
         var source = TestUtils.getResourcePath( "kiwi/Shopping.kiwi");
-        var file = AstBuilder.build(CompilerTestUtils.antlrParse(source));
+        var file = parse(source);
 
         var project = new Project();
-        var enter = new Enter(project);
+        var enter = new Enter(project, new DummyLog());
         enter.enter(List.of(file));
 
         var pkg = project.getRootPackage();
@@ -36,4 +41,12 @@ public class EnterTest extends TestCase {
         Assert.assertEquals(2, couponStateClass.getEnumConstants().size());
     }
 
+
+    private File parse(String path) {
+        try {
+            return new Parser(new DummyLog(), Files.readString(Path.of(path))).file();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

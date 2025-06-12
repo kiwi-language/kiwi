@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class PrefixExpr extends Expr {
@@ -35,4 +36,16 @@ public final class PrefixExpr extends Expr {
         return x;
     }
 
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        PrefixExpr that = (PrefixExpr) object;
+        return op == that.op && Objects.equals(x, that.x);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(op, x);
+    }
 }

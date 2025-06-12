@@ -1,0 +1,18 @@
+package value
+
+class Product(
+    var name: string,
+    var price: Money
+)
+
+value class Money(
+    val amount: double,
+    val currency: Currency
+)
+
+enum Currency {
+    CNY,
+    USD,
+    EURO
+;
+}

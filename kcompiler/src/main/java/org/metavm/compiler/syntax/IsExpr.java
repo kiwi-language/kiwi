@@ -68,11 +68,4 @@ public final class IsExpr extends Expr {
         return Objects.hash(expr, checkType);
     }
 
-    @Override
-    public String toString() {
-        return "InstanceOfExpr[" +
-                "expr=" + expr + ", " +
-                "type=" + checkType + ']';
-    }
-
 }

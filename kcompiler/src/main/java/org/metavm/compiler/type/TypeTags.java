@@ -23,5 +23,6 @@ public class TypeTags {
     public static final int TAG_INTERSECTION = 20;
     public static final int TAG_UNCERTAIN = 21;
     public static final int TAG_ANY = 22;
+    public static final int TAG_ERROR = 23;
 
 }

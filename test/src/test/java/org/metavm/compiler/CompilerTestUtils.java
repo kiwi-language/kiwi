@@ -1,41 +1,30 @@
 package org.metavm.compiler;
 
-import org.antlr.v4.runtime.BailErrorStrategy;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.metavm.compiler.analyze.*;
-import org.metavm.compiler.antlr.KiwiLexer;
-import org.metavm.compiler.antlr.KiwiParser;
+import org.metavm.compiler.analyze.Attr;
+import org.metavm.compiler.analyze.IdentAttr;
+import org.metavm.compiler.analyze.ImportResolver;
+import org.metavm.compiler.analyze.TypeResolver;
+import org.metavm.compiler.diag.DummyLog;
 import org.metavm.compiler.element.Package;
 import org.metavm.compiler.element.*;
-import org.metavm.compiler.syntax.AstBuilder;
-import org.metavm.compiler.syntax.AstBuilderTest;
 import org.metavm.compiler.syntax.File;
+import org.metavm.compiler.syntax.Parser;
 import org.metavm.compiler.type.Types;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.MockEnter;
-import org.metavm.util.InternalException;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class CompilerTestUtils {
-    public static KiwiParser.CompilationUnitContext antlrParse(String path) {
-        try (var reader = new BufferedReader(new FileReader(path))) {
-            int n = reader.read(AstBuilderTest.buf);
-            var source = new String(AstBuilderTest.buf, 0, n);
-            var input = CharStreams.fromString(source);
-            var parser = new KiwiParser(new CommonTokenStream(new KiwiLexer(input)));
-            parser.setErrorHandler(new BailErrorStrategy());
-            return parser.compilationUnit();
-        } catch (IOException e) {
-            throw new InternalException("Can not read source '" + path + "'", e);
-        }
-    }
 
     public static File parse(String path) {
-        return AstBuilder.build(antlrParse(path));
+        try {
+            return new Parser(new DummyLog(), Files.readString(Path.of(path))).file();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void createConcat(Package rootPkg) {
@@ -51,8 +40,8 @@ public class CompilerTestUtils {
         ImportResolver.resolve(file, project);
         var typeResolver = new TypeResolver(project);
         file.accept(typeResolver);
-        file.accept(new IdentAttr(project));
-        file.accept(new Attr(project));
+        file.accept(new IdentAttr(project, new DummyLog()));
+        file.accept(new Attr(project, new DummyLog()));
         return project;
     }
 }

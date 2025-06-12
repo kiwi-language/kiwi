@@ -44,7 +44,7 @@ public class Main {
         task = new CompilationTask(sources, targetDir);
     }
 
-    public void run() {
+    public boolean run() {
         try (var files = Files.walk(Paths.get(sourceRoot))) {
             List<String> sources = new ArrayList<>();
             files.filter(path -> path.toString().endsWith(".java"))
@@ -52,7 +52,12 @@ public class Main {
             task.parse();
             MockEnter.enterStandard(task.getProject());
             task.analyze();
-            task.generate();
+            if (task.getErrorCount() == 0) {
+                task.generate();
+                return true;
+            }
+            else
+                return false;
         } catch (IOException e) {
             throw new RuntimeException("Compilation failed", e);
         }
@@ -357,8 +362,8 @@ public class Main {
                 case "build" -> build();
                 case "deploy" -> {
                     ensureLoggedIn();
-                    build();
-                    deploy(new HttpTypeClient(), "target");
+                    if (build())
+                        deploy(new HttpTypeClient(), "target");
                 }
                 default -> usage();
             }
@@ -370,18 +375,18 @@ public class Main {
         }
     }
 
-    private static void build() throws IOException {
+    private static boolean build() throws IOException {
         var sourceRoot = "src";
         var f = new File(sourceRoot);
         if (!f.exists() || !f.isDirectory()) {
             System.err.println("Source directory '" + sourceRoot + "' does not exist.");
-            return;
+            return false;
         }
         var main = new Main(sourceRoot, "target");
-        main.run();
+        return main.run();
     }
 
-    public static List<String> listFilePathsRecursively(String dirPath) throws IOException {
+    public static List<Path> listFilePathsRecursively(String dirPath) throws IOException {
         Path start = Paths.get(dirPath);
         if (!Files.exists(start) || !Files.isDirectory(start)) {
             throw new IllegalArgumentException("Provided path is not an existing directory: " + dirPath);
@@ -391,7 +396,6 @@ public class Main {
             return stream
                     .filter(Files::isRegularFile)
                     .map(Path::toAbsolutePath) // Convert Path to absolute Path
-                    .map(Path::toString)       // Convert absolute Path to String
                     .collect(Collectors.toList());
         }
     }

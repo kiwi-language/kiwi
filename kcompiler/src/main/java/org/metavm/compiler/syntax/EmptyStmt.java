@@ -31,9 +31,4 @@ public final class EmptyStmt extends Stmt {
         return 1;
     }
 
-    @Override
-    public String toString() {
-        return "EmptyStmt[]";
-    }
-
 }

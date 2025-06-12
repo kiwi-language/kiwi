@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class PackageDecl extends Node {
@@ -33,5 +34,18 @@ public class PackageDecl extends Node {
     @Override
     public void forEachChild(Consumer<Node> action) {
         action.accept(name);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        PackageDecl that = (PackageDecl) object;
+        return Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 }

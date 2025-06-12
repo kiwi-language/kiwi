@@ -5,6 +5,7 @@ import org.metavm.compiler.element.Variable;
 import org.metavm.compiler.util.List;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public abstract class VariableDecl<T extends Variable> extends Decl<T> {
@@ -62,5 +63,17 @@ public abstract class VariableDecl<T extends Variable> extends Decl<T> {
     }
 
 
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        VariableDecl<?> that = (VariableDecl<?>) object;
+        return Objects.equals(annotations, that.annotations) && Objects.equals(type, that.type) && Objects.equals(name, that.name) && Objects.equals(initial, that.initial);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(annotations, type, name, initial);
+    }
 
 }

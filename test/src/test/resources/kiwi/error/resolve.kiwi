@@ -1,0 +1,9 @@
+package error
+
+class Foo {
+
+    fn test() -> any {
+        return a
+    }
+
+}

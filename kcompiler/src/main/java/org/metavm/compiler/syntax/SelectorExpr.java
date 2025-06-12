@@ -2,6 +2,7 @@ package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.element.Name;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class SelectorExpr extends Expr {
@@ -38,4 +39,16 @@ public final class SelectorExpr extends Expr {
         return sel;
     }
 
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        SelectorExpr that = (SelectorExpr) object;
+        return Objects.equals(x, that.x) && Objects.equals(sel, that.sel);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, sel);
+    }
 }

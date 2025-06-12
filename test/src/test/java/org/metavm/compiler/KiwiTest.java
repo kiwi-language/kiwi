@@ -1,11 +1,13 @@
 package org.metavm.compiler;
 
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
-import org.metavm.compiler.syntax.ClassInit;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ColumnKind;
+import org.metavm.object.instance.core.ApiObject;
 import org.metavm.object.instance.core.ClassInstance;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.type.Access;
@@ -519,8 +521,23 @@ public class KiwiTest extends KiwiTestBase {
             fail("Deletion should have failed");
         }
         catch (BusinessException e) {
-
+            assertSame(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, e.getErrorCode());
         }
+    }
+
+    public void testValueClass() {
+        deploy("kiwi/value/value.kiwi");
+        var id = saveInstance("value.Product", Map.of(
+           "name", "Shoes",
+           "price", Map.of(
+                   "amount", 100,
+                        "currency",
+                        ApiNamedObject.of("value.Currency", "CNY")
+                )
+        ));
+        var product = getObject(id);
+        var price = product.get("price");
+        MatcherAssert.assertThat(price, CoreMatchers.instanceOf(ApiObject.class));
     }
 
 }
