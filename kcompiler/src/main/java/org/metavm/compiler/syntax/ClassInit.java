@@ -45,10 +45,4 @@ public final class ClassInit extends Decl<Method> {
         return Objects.hash(block);
     }
 
-    @Override
-    public String toString() {
-        return "ClassInit[" +
-                "block=" + block + ']';
-    }
-
 }

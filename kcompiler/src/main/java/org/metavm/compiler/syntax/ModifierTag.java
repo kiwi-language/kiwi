@@ -5,8 +5,6 @@ public enum ModifierTag {
     PRIV,
     PROT,
     STATIC,
-    READONLY,
-    TRANSIENT,
     INTERFACE,
     CLASS,
     ENUM,

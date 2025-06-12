@@ -6,6 +6,7 @@ import org.metavm.compiler.type.FuncType;
 import org.metavm.compiler.util.List;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -65,14 +66,6 @@ public final class LambdaExpr extends Expr {
         return body;
     }
 
-    @Override
-    public String toString() {
-        return "LambdaExpr[" +
-                "params=" + params + ", " +
-                "returnType=" + returnType + ", " +
-                "body=" + body + ']';
-    }
-
     public Lambda getElement() {
         return element;
     }
@@ -100,5 +93,18 @@ public final class LambdaExpr extends Expr {
                 paramDecl.getElement().setType(paramType);
             }
         }
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        LambdaExpr that = (LambdaExpr) object;
+        return Objects.equals(params, that.params) && Objects.equals(returnType, that.returnType) && Objects.equals(body, that.body) && Objects.equals(element, that.element);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(params, returnType, body, element);
     }
 }

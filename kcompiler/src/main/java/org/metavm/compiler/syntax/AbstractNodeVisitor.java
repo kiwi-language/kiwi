@@ -272,4 +272,19 @@ public abstract class AbstractNodeVisitor<R> implements NodeVisitor<R> {
     public R visitDelStmt(DelStmt delStmt) {
         return visitStmt(delStmt);
     }
+
+    @Override
+    public R visitErrorExpr(ErrorExpr errorExpr) {
+        return visitExpr(errorExpr);
+    }
+
+    @Override
+    public R visitAttribute(Annotation.Attribute attribute) {
+        return visitNode(attribute);
+    }
+
+    @Override
+    public R visitErrorType(ErrorTypeNode errorTypeNode) {
+        return visitTypeNode(errorTypeNode);
+    }
 }

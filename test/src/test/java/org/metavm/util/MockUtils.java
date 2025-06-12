@@ -2,6 +2,7 @@ package org.metavm.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.CompilationTask;
+import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.MockEnter;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.StdKlass;
@@ -15,6 +16,7 @@ import org.metavm.object.type.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -262,10 +264,12 @@ public class MockUtils {
 //            assembler.assemble(List.of(source));
 //            assembler.generateClasses(TestConstants.TARGET);
 
-            var task = new CompilationTask(List.of(TestUtils.getResourcePath(source)), TestConstants.TARGET);
+            var task = new CompilationTask(List.of(Path.of(TestUtils.getResourcePath(source))), TestConstants.TARGET);
             task.parse();
             MockEnter.enterStandard(task.getProject());
             task.analyze();
+            if (task.getErrorCount() > 0)
+                throw new CompilationException("Compilation failed");
             task.generate();
 
             FlowSavingContext.initConfig();

@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class CondExpr extends Expr {
@@ -57,5 +58,18 @@ public class CondExpr extends Expr {
         action.accept(cond);
         action.accept(truePart);
         action.accept(falsePart);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        CondExpr condExpr = (CondExpr) object;
+        return Objects.equals(cond, condExpr.cond) && Objects.equals(truePart, condExpr.truePart) && Objects.equals(falsePart, condExpr.falsePart);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(cond, truePart, falsePart);
     }
 }

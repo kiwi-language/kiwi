@@ -2,6 +2,7 @@ package org.metavm.compiler.syntax;
 
 import org.metavm.compiler.element.Name;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class LabeledStmt extends Stmt {
@@ -45,5 +46,18 @@ public class LabeledStmt extends Stmt {
     @Override
     public void forEachChild(Consumer<Node> action) {
         action.accept(stmt);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        LabeledStmt that = (LabeledStmt) object;
+        return Objects.equals(label, that.label) && Objects.equals(stmt, that.stmt);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(label, stmt);
     }
 }

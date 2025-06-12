@@ -5,6 +5,7 @@ import org.metavm.compiler.element.*;
 import org.metavm.compiler.type.FuncType;
 import org.metavm.compiler.util.List;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -73,5 +74,17 @@ public class Call extends Expr {
             return false;
     }
 
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Call call = (Call) object;
+        return Objects.equals(func, call.func) && Objects.equals(arguments, call.arguments);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(func, arguments);
+    }
 
 }

@@ -1,23 +1,30 @@
 package org.metavm.compiler.analyze;
 
-import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.diag.Error;
+import org.metavm.compiler.diag.Errors;
+import org.metavm.compiler.diag.Log;
 import org.metavm.compiler.element.Package;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.*;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.Traces;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.function.Function;
 
-@Slf4j
 public class Attr extends StructuralNodeVisitor {
 
-    private final Project project;
+    public static final Logger logger = LoggerFactory.getLogger(Attr.class);
 
-    public Attr(Project project) {
+    private final Project project;
+    private final Log log;
+
+    public Attr(Project project, Log log) {
         this.project = project;
+        this.log = log;
     }
 
     @Override
@@ -43,7 +50,7 @@ public class Attr extends StructuralNodeVisitor {
         else if (expr.getType() instanceof ArrayType arrayType)
             v.setType(arrayType.getElementType());
         else
-            throw new AnalysisException("Cannot iterate over type: " + expr.getType().getTypeText());
+            log.error(expr, Errors.forEachNotApplicableToType(expr.getType()));
         foreachStmt.getBody().accept(this);
         return null;
     }
@@ -65,9 +72,11 @@ public class Attr extends StructuralNodeVisitor {
         if (initial != null)
             attrExpr(initial, v.getType()).resolve();
         if (localVarDecl.getType() == null) {
-            if (initial == null)
-                throw new AnalysisException("Auto variable must have initial value");
-            v.setType(initial.getType());
+            if (initial == null) {
+                log.error(localVarDecl, Errors.variableMustTypedOrInitialized);
+                v.setType(ErrorType.instance);
+            } else
+                v.setType(initial.getType());
         }
         return null;
     }
@@ -79,9 +88,12 @@ public class Attr extends StructuralNodeVisitor {
         if (initial != null)
             attrExpr(initial, field.getType()).resolve();
         if (fieldDecl.getType() == null) {
-            if (initial == null)
-                throw new AnalysisException("Auto variable must have initial value");
-            field.setType(initial.getType());
+            if (initial == null) {
+                log.error(fieldDecl, Errors.variableMustTypedOrInitialized);
+                field.setType(ErrorType.instance);
+            }
+            else
+                field.setType(initial.getType());
         }
         return null;
     }
@@ -93,12 +105,13 @@ public class Attr extends StructuralNodeVisitor {
         var clazz = enumConstDecl.getActualClass();
         var argTypes = enumConstDecl.getArguments().map(Expr::getType);
         var init = resolveInit(clazz, argTypes);
-        if (init == null)
-            throw new AnalysisException("Cannot resolve constructor for enum constant: " + enumConstDecl.getText());
+        if (init != null)
+            enumConstDecl.setInit(init);
+        else
+            log.error(enumConstDecl, Errors.cantFindConstructor(clazz, argTypes));
         if (enumConstDecl.getDecl() != null) {
             enumConstDecl.getDecl().accept(this);
         }
-        enumConstDecl.setInit(init);
         return null;
     }
 
@@ -162,11 +175,14 @@ public class Attr extends StructuralNodeVisitor {
 
     private Resolver attrExpr(Expr expr, Type type) {
         if (Traces.traceAttr)
-            log.trace("Attributing expression {}", expr.getText());
+            logger.trace("Attributing expression {}", expr.getText());
         if (expr.getStatus() == ExprStatus.RESOLVED)
             return new ImmediateResolver(expr.getElement());
-        if (expr.getStatus() == ExprStatus.RESOLVING)
-            throw new AnalysisException("Circular reference");
+        if (expr.getStatus() == ExprStatus.RESOLVING) {
+            log.error(expr, Errors.typeCheckingCircularRef);
+            expr.setElement(ErrorElement.instance);
+            return new ImmediateResolver(ErrorElement.instance);
+        }
         if (expr instanceof LambdaExpr lambdaExpr) {
             if (type instanceof FuncType funcType)
                 lambdaExpr.setTargetType(funcType);
@@ -190,6 +206,11 @@ public class Attr extends StructuralNodeVisitor {
         @Override
         public Resolver visitNode(Node node) {
             throw new RuntimeException("Unhandled expression class: " + node.getClass().getName());
+        }
+
+        @Override
+        public Resolver visitErrorExpr(ErrorExpr errorExpr) {
+            return new NullResolver();
         }
 
         @Override
@@ -361,7 +382,7 @@ public class Attr extends StructuralNodeVisitor {
                 }
 
                 @Override
-                Element resolve(Function<Element, Element> mapper) {
+                Element resolve(Function<Element, Element> mapper, Function<Expr, Error> errorFunc) {
                     return r.resolve(e -> {
                         if (e instanceof GenericDecl genDecl
                                 && genDecl.getTypeParams().size() == typeApply.getArgs().size()) {
@@ -389,12 +410,14 @@ public class Attr extends StructuralNodeVisitor {
                         else if (e instanceof ClassType ct)
                             return resolveInit(ct, argTypes);
                         return null;
-                    }
+                    },
+                    expr -> Errors.cantResolveFunction(argTypes)
             );
-            var funcType = (FuncType) call.getFunc().getType();
-            completeArgumentResolution(call.getArguments(), funcType.getParamTypes());
-            if (func != null)
-                call.setElement(func);
+            if (call.getFunc().getType() instanceof FuncType funcType) {
+                completeArgumentResolution(call.getArguments(), funcType.getParamTypes());
+                if (func != null)
+                    call.setElement(func);
+            }
             return new NullResolver();
         }
 
@@ -418,7 +441,11 @@ public class Attr extends StructuralNodeVisitor {
 
         abstract Element resolve();
 
-        abstract Element resolve(Function<Element, Element> mapper);
+        Element resolve(Function<Element, Element> mapper) {
+            return resolve(mapper, Errors::cantResolve);
+        }
+
+        abstract Element resolve(Function<Element, Element> mapper, Function<Expr, Error> errorFunc);
 
     }
 
@@ -436,7 +463,7 @@ public class Attr extends StructuralNodeVisitor {
         }
 
         @Override
-        Element resolve(Function<Element, Element> mapper) {
+        Element resolve(Function<Element, Element> mapper, Function<Expr, Error> errorFunc) {
             return resolved;
         }
 
@@ -451,7 +478,7 @@ public class Attr extends StructuralNodeVisitor {
             this.candidates = candidates;
         }
 
-        public Element resolve(Function<Element, Element> mapper) {
+        public Element resolve(Function<Element, Element> mapper, Function<Expr, Error> errorFunc) {
             for (Element candidate : candidates) {
                 ensureElementTyped(candidate);
                 Element resolved;
@@ -460,13 +487,18 @@ public class Attr extends StructuralNodeVisitor {
                     return resolved;
                 }
             }
-            throw new AnalysisException("Cannot resolve expression '" + expr.getText() + "'");
+            log.error(expr, errorFunc.apply(expr));
+            onResolved(ErrorElement.instance);
+            return ErrorElement.instance;
         }
 
         Element resolve() {
             var it = candidates.iterator();
-            if (!it.hasNext())
-                throw new AnalysisException("Cannot resolve expression '" + expr.getText() + "'");
+            if (!it.hasNext()) {
+                onResolved(ErrorElement.instance);
+                log.error(expr, Errors.cantResolve(expr));
+                return ErrorElement.instance;
+            }
             var resolved = Objects.requireNonNull(it.next());
             ensureElementTyped(resolved);
             onResolved(resolved);
@@ -487,7 +519,7 @@ public class Attr extends StructuralNodeVisitor {
         }
 
         @Override
-        Element resolve(Function<Element, Element> mapper) {
+        Element resolve(Function<Element, Element> mapper, Function<Expr, Error> errorFunc) {
             return null;
         }
 
@@ -495,7 +527,7 @@ public class Attr extends StructuralNodeVisitor {
 
     private Element resolveFunc(ValueElement element, List<Type> argumentTypes) {
         if (Traces.traceAttr) {
-            log.trace("Checking applicable of element {}, type: {}, with argument types: {}",
+            logger.trace("Checking applicable of element {}, type: {}, with argument types: {}",
                     element.getName(),element.getType().getTypeText(), argumentTypes.map(Type::getTypeText).join(", "));
         }
         if (element.getType() instanceof FuncType funcType &&
@@ -511,7 +543,7 @@ public class Attr extends StructuralNodeVisitor {
                 i -> i instanceof MethodRef m && m.getDeclType().getClazz() == type.getClazz()
         );
         if (Traces.traceAttr) {
-            log.trace("Resolving constructor. class: {}, arg types: [{}]",
+            logger.trace("Resolving constructor. class: {}, arg types: [{}]",
                     type.getTypeText(),
                     argumentTypes.map(Type::getTypeText).join(", ")
             );
@@ -519,7 +551,7 @@ public class Attr extends StructuralNodeVisitor {
         for (var init : inits) {
             var m = (MethodRef) init;
             if (Traces.traceAttr) {
-                log.trace("Trying init: {}", init.getText());
+                logger.trace("Trying init: {}", init.getText());
             }
             if (m.getParamTypes().matches(argumentTypes, this::isApplicable)) {
                 return m;

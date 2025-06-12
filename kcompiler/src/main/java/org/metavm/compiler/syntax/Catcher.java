@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class Catcher extends Node {
@@ -45,5 +46,18 @@ public class Catcher extends Node {
     public void forEachChild(Consumer<Node> action) {
         action.accept(param);
         action.accept(block);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Catcher catcher = (Catcher) object;
+        return Objects.equals(param, catcher.param) && Objects.equals(block, catcher.block);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(param, block);
     }
 }

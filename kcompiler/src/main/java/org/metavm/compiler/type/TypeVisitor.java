@@ -25,4 +25,6 @@ public interface TypeVisitor<R> {
     R visitTypeVariable(TypeVar typeVar);
 
     R visitDeferredType(DeferredType deferredType);
+
+    R visitErrorType(ErrorType errorType);
 }

@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class RangeExpr extends Expr {
@@ -44,5 +45,18 @@ public class RangeExpr extends Expr {
     public void forEachChild(Consumer<Node> action) {
         action.accept(min);
         action.accept(max);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        RangeExpr rangeExpr = (RangeExpr) object;
+        return Objects.equals(min, rangeExpr.min) && Objects.equals(max, rangeExpr.max);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(min, max);
     }
 }

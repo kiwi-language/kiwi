@@ -74,12 +74,4 @@ public final class IfStmt extends Stmt {
         return Objects.hash(cond, body, else_);
     }
 
-    @Override
-    public String toString() {
-        return "IfStmt[" +
-                "cond=" + cond + ", " +
-                "body=" + body + ", " +
-                "else_=" + else_ + ']';
-    }
-
 }

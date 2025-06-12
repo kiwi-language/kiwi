@@ -6,15 +6,27 @@ import org.metavm.compiler.util.MockEnter;
 import org.metavm.util.TestConstants;
 import org.metavm.util.TestUtils;
 
+import java.nio.file.Path;
+
 public class CompilationTaskTest extends TestCase {
 
     public void test() {
         var source = TestUtils.getResourcePath( "kiwi/Shopping.kiwi");
-        var task = new CompilationTask(List.of(source), TestConstants.TARGET);
+        var task = new CompilationTask(List.of(Path.of(source)), TestConstants.TARGET);
         task.parse();
         MockEnter.enterStandard(task.getProject());
         task.analyze();
-        task.generate();
+        if (task.getErrorCount() == 0)
+            task.generate();
+    }
+
+    public void testAnalysisError() {
+        var source = TestUtils.getResourcePath( "kiwi/error/resolve.kiwi");
+        var task = new CompilationTask(List.of(Path.of(source)), TestConstants.TARGET);
+        task.parse();
+        MockEnter.enterStandard(task.getProject());
+        task.analyze();
+        assertEquals(1, task.getErrorCount());
     }
 
 }

@@ -59,10 +59,4 @@ public final class Block extends Node {
         return Objects.hash(stmts);
     }
 
-    @Override
-    public String toString() {
-        return "Block[" +
-                "list=" + stmts + ']';
-    }
-
 }

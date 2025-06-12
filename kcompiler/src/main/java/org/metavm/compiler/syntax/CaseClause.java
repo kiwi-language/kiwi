@@ -60,11 +60,4 @@ public final class CaseClause extends Node {
         return Objects.hash(cases, body);
     }
 
-    @Override
-    public String toString() {
-        return "CaseClause[" +
-                "cases=" + cases + ", " +
-                "body=" + body + ']';
-    }
-
 }

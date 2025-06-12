@@ -1,6 +1,6 @@
 package org.metavm.compiler.analyze;
 
-import lombok.extern.slf4j.Slf4j;
+import org.metavm.compiler.diag.Log;
 import org.metavm.compiler.element.ClassTag;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
@@ -8,19 +8,24 @@ import org.metavm.compiler.type.PrimitiveType;
 import org.metavm.compiler.type.Types;
 import org.metavm.compiler.util.List;
 import org.metavm.util.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
 import static org.metavm.compiler.util.Traces.traceEntering;
 
-@Slf4j
 public class Enter {
 
+    public static final Logger logger = LoggerFactory.getLogger(Enter.class);
+
     private final Project project;
+    private final Log log;
     private int nextLambdaId = 0;
 
-    public Enter(Project project) {
+    public Enter(Project project, Log log) {
         this.project = project;
+        this.log = log;
     }
 
     public void enter(List<File> files) {
@@ -52,7 +57,7 @@ public class Enter {
         @Override
         public Void visitClassDecl(ClassDecl classDecl) {
             if (traceEntering)
-                log.trace("Entering class {}", classDecl.name());
+                logger.trace("Entering class {}", classDecl.name());
             var scope = (ClassScope) currentElement();
             var name = classDecl.isAnonymous() ?
                     Name.from("$" + scope.getClasses().size()) : classDecl.name();
@@ -114,7 +119,7 @@ public class Enter {
                     (Clazz) currentElement()
             );
             if (traceEntering)
-                log.trace("Entering field {}", field.getQualifiedName());
+                logger.trace("Entering field {}", field.getQualifiedName());
             fieldDecl.setElement(field);
             return super.visitFieldDecl(fieldDecl);
         }
@@ -132,7 +137,7 @@ public class Enter {
                     clazz
             );
             if (traceEntering)
-                log.trace("Entering method {}", method.getQualName());
+                logger.trace("Entering method {}", method.getQualName());
             methodDecl.setElement(method);
             enterElement(method);
             super.visitMethodDecl(methodDecl);
@@ -158,7 +163,7 @@ public class Enter {
                     type
             );
             if (traceEntering)
-                log.trace("Entering enum constant {}", ec.getQualifiedName());
+                logger.trace("Entering enum constant {}", ec.getQualifiedName());
             enumConstDecl.setElement(ec);
             return null;
         }
@@ -172,7 +177,7 @@ public class Enter {
                     exe
             );
             if (traceEntering) {
-                log.trace("Entering parameter {}", param.getQualName());
+                logger.trace("Entering parameter {}", param.getQualName());
             }
             paramDecl.setElement(param);
             return super.visitParamDecl(paramDecl);
@@ -189,7 +194,7 @@ public class Enter {
                     init
             );
             if (traceEntering)
-                log.trace("Entering class parameter {}", classParamDecl.getName());
+                logger.trace("Entering class parameter {}", classParamDecl.getName());
             classParamDecl.setElement(param);
             if (classParamDecl.isWithField()) {
                 classParamDecl.setField(
@@ -212,7 +217,7 @@ public class Enter {
             var variable = new LocalVar(localVarDecl.getName(), DeferredType.instance, exe);
             localVarDecl.setElement(variable);
             if (traceEntering) {
-                log.trace("Entering local variable {}", variable.getName());
+                logger.trace("Entering local variable {}", variable.getName());
             }
             return super.visitLocalVarDecl(localVarDecl);
         }
@@ -226,7 +231,7 @@ public class Enter {
             );
             typeVariableDecl.setElement(typeVar);
             if (traceEntering) {
-                log.trace("Entering type variable {}", typeVar.getName());
+                logger.trace("Entering type variable {}", typeVar.getName());
             }
             return super.visitTypeVariableDecl(typeVariableDecl);
         }
@@ -284,7 +289,6 @@ public class Enter {
                 case PRIV ->  access = Access.PRIVATE;
                 case PROT -> access = Access.PROTECTED;
                 case STATIC -> static_ = true;
-                case READONLY -> readonly = true;
                 case ABSTRACT -> abstract_ = true;
                 case DELETED ->  deleted = true;
                 case TEMP ->  temp = true;

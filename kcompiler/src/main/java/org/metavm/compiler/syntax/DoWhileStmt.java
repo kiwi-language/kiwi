@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class DoWhileStmt extends Stmt {
@@ -40,10 +41,15 @@ public final class DoWhileStmt extends Stmt {
     }
 
     @Override
-    public String toString() {
-        return "DoWhileStmt[" +
-                "cond=" + cond + ", " +
-                "body=" + body + ']';
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        DoWhileStmt that = (DoWhileStmt) object;
+        return Objects.equals(cond, that.cond) && Objects.equals(body, that.body);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(cond, body);
+    }
 }

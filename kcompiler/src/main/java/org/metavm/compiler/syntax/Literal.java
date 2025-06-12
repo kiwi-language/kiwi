@@ -49,11 +49,4 @@ public final class Literal extends Expr {
         return Objects.hash(value);
     }
 
-    @Override
-    public String toString() {
-        return "Literal[" +
-                "value=" + value + ']';
-    }
-
-
 }

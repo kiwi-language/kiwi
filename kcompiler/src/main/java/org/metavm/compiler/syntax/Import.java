@@ -6,6 +6,7 @@ import org.metavm.compiler.element.Project;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -51,5 +52,18 @@ public class Import extends Node {
     @Override
     public void forEachChild(Consumer<Node> action) {
         action.accept(name);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Import anImport = (Import) object;
+        return Objects.equals(name, anImport.name) && Objects.equals(elements, anImport.elements);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, elements);
     }
 }

@@ -4,6 +4,7 @@ import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.type.Type;
 import org.metavm.compiler.type.Types;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class ClassTypeNode extends TypeNode {
@@ -42,4 +43,16 @@ public final class ClassTypeNode extends TypeNode {
         return Types.resolveType(expr, env);
     }
 
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        ClassTypeNode that = (ClassTypeNode) object;
+        return Objects.equals(expr, that.expr);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expr);
+    }
 }

@@ -5,6 +5,7 @@ import org.metavm.compiler.element.Name;
 import org.metavm.compiler.util.List;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class FieldDecl extends VariableDecl<Field> {
@@ -56,11 +57,20 @@ public final class FieldDecl extends VariableDecl<Field> {
     }
 
     @Override
-    public String toString() {
-        return "FieldDecl[" +
-                "mods=" + mods + ", " +
-                "type=" + getType() + ", " +
-                "name=" + getName() + ']';
+    public FieldDecl setPos(int pos) {
+        return (FieldDecl) super.setPos(pos);
     }
 
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        FieldDecl fieldDecl = (FieldDecl) object;
+        return Objects.equals(mods, fieldDecl.mods);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mods);
+    }
 }

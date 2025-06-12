@@ -1,0 +1,6 @@
+class Foo(
+    var name: string
+    var stock: int
+)
+
+

@@ -50,4 +50,17 @@ public class ContinueStmt extends Stmt {
     public void setTarget(@NotNull Node target) {
         this.target = target;
     }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        ContinueStmt that = (ContinueStmt) object;
+        return Objects.equals(label, that.label) && Objects.equals(target, that.target);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(label, target);
+    }
 }

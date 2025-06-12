@@ -4,6 +4,7 @@ import org.metavm.compiler.element.Name;
 import org.metavm.compiler.element.TypeVar;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class TypeVariableDecl extends Decl<TypeVar>  {
@@ -51,5 +52,23 @@ public class TypeVariableDecl extends Decl<TypeVar>  {
     public void forEachChild(Consumer<Node> action) {
         if (bound != null)
             action.accept(bound);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        TypeVariableDecl decl = (TypeVariableDecl) object;
+        return Objects.equals(name, decl.name) && Objects.equals(bound, decl.bound);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, bound);
+    }
+
+    @Override
+    public TypeVariableDecl setPos(int pos) {
+        return (TypeVariableDecl) super.setPos(pos);
     }
 }

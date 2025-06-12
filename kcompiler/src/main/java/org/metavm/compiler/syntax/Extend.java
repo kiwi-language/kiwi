@@ -6,6 +6,7 @@ import org.metavm.compiler.element.Name;
 import org.metavm.compiler.type.ClassType;
 import org.metavm.compiler.util.List;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -67,4 +68,16 @@ public class Extend extends Node {
         args.forEach(action);
     }
 
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Extend extend = (Extend) object;
+        return Objects.equals(type, extend.type) && Objects.equals(args, extend.args);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, args);
+    }
 }

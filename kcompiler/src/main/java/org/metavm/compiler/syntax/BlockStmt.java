@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class BlockStmt extends Stmt {
@@ -31,5 +32,18 @@ public class BlockStmt extends Stmt {
     @Override
     public void forEachChild(Consumer<Node> action) {
         action.accept(block);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        BlockStmt blockStmt = (BlockStmt) object;
+        return Objects.equals(block, blockStmt.block);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(block);
     }
 }

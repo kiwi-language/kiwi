@@ -53,11 +53,4 @@ public final class CastExpr extends Expr {
         return Objects.hash(type, expr);
     }
 
-    @Override
-    public String toString() {
-        return "CastExpr[" +
-                "type=" + type + ", " +
-                "expr=" + expr + ']';
-    }
-
 }

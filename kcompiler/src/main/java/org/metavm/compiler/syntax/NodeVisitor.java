@@ -129,4 +129,10 @@ public interface NodeVisitor<R> {
     R visitExtend(Extend extend);
 
     R visitDelStmt(DelStmt delStmt);
+
+    R visitErrorExpr(ErrorExpr errorExpr);
+
+    R visitAttribute(Annotation.Attribute attribute);
+
+    R visitErrorType(ErrorTypeNode errorTypeNode);
 }

@@ -88,4 +88,9 @@ public abstract class AbstractElementVisitor<R> implements ElementVisitor<R> {
     public R visitPartialMethodInst(PartialMethodInst partialMethodInst) {
         return visitElement(partialMethodInst);
     }
+
+    @Override
+    public R visitErrorElement(ErrorElement errorElement) {
+        return visitElement(errorElement);
+    }
 }

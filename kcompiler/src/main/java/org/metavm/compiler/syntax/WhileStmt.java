@@ -1,5 +1,6 @@
 package org.metavm.compiler.syntax;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class WhileStmt extends Stmt {
@@ -39,10 +40,15 @@ public final class WhileStmt extends Stmt {
     }
 
     @Override
-    public String toString() {
-        return "WhileStmt[" +
-                "cond=" + cond + ", " +
-                "body=" + body + ']';
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        WhileStmt whileStmt = (WhileStmt) object;
+        return Objects.equals(cond, whileStmt.cond) && Objects.equals(body, whileStmt.body);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(cond, body);
+    }
 }

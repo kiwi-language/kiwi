@@ -6,6 +6,8 @@ import org.metavm.compiler.element.Name;
 import org.metavm.compiler.element.Param;
 import org.metavm.compiler.util.List;
 
+import java.util.Objects;
+
 public class ClassParamDecl extends VariableDecl<Param> {
 
     private List<Modifier> mods;
@@ -82,5 +84,23 @@ public class ClassParamDecl extends VariableDecl<Param> {
 
     public void setField(Field field) {
         this.field = field;
+    }
+
+    @Override
+    public ClassParamDecl setPos(int pos) {
+        return (ClassParamDecl) super.setPos(pos);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        ClassParamDecl that = (ClassParamDecl) object;
+        return readonly == that.readonly && withField == that.withField && Objects.equals(mods, that.mods) && Objects.equals(annotations, that.annotations) && Objects.equals(field, that.field);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mods, annotations, readonly, withField, field);
     }
 }

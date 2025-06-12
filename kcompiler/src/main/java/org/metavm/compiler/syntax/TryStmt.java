@@ -1,6 +1,7 @@
 package org.metavm.compiler.syntax;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class TryStmt extends Stmt {
@@ -47,5 +48,18 @@ public class TryStmt extends Stmt {
     public void forEachChild(Consumer<Node> action) {
         action.accept(body);
         catchers.forEach(action);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        TryStmt tryStmt = (TryStmt) object;
+        return Objects.equals(body, tryStmt.body) && Objects.equals(catchers, tryStmt.catchers);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(body, catchers);
     }
 }

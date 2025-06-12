@@ -41,4 +41,8 @@ public abstract class Expr extends Node {
         this.status = status;
     }
 
+    @Override
+    public Expr setPos(int pos) {
+        return (Expr) super.setPos(pos);
+    }
 }

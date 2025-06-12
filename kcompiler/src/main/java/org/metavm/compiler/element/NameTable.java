@@ -11,6 +11,7 @@ public class NameTable {
 
     private final Map<String, NameImpl> nameMap = new HashMap<>();
 
+    public Name error = get("<error>");
     public final Name empty = get("");
     public final Name E = get("e");
     public final Name this_ = get("this");
@@ -62,6 +63,8 @@ public class NameTable {
     public final Name floatArray = get("FloatArray");
     public final Name doubleArray = get("DoubleArray");
     public final Name toString = get("toString");
+    public final Name out = get("out");
+    public final Name in = get("in");
 
     private NameTable() {
     }

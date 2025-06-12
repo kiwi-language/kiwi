@@ -7,6 +7,7 @@ import org.metavm.compiler.element.Name;
 import org.metavm.compiler.util.List;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class EnumConstDecl extends Decl<EnumConst> {
@@ -67,6 +68,11 @@ public final class EnumConstDecl extends Decl<EnumConst> {
     }
 
     @Override
+    public EnumConstDecl setPos(int pos) {
+        return (EnumConstDecl) super.setPos(pos);
+    }
+
+    @Override
     public void forEachChild(Consumer<Node> action) {
         arguments.forEach(action);
         if (decl != null)
@@ -94,9 +100,15 @@ public final class EnumConstDecl extends Decl<EnumConst> {
     }
 
     @Override
-    public String toString() {
-        return "EnumConstantDecl[" +
-                "name=" + name + ']';
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        EnumConstDecl that = (EnumConstDecl) object;
+        return Objects.equals(annotations, that.annotations) && Objects.equals(name, that.name) && Objects.equals(arguments, that.arguments) && Objects.equals(decl, that.decl) && Objects.equals(init, that.init);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(annotations, name, arguments, decl, init);
+    }
 }

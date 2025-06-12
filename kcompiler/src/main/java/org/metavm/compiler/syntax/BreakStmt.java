@@ -50,4 +50,17 @@ public class BreakStmt extends Stmt {
     public void setTarget(@NotNull Node target) {
         this.target = target;
     }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        BreakStmt breakStmt = (BreakStmt) object;
+        return Objects.equals(label, breakStmt.label) && Objects.equals(target, breakStmt.target);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(label, target);
+    }
 }

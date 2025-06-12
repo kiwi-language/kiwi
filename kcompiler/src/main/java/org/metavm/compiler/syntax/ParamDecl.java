@@ -21,15 +21,13 @@ public final class ParamDecl extends VariableDecl<Param> {
     }
 
     @Override
-    public <R> R accept(NodeVisitor<R> visitor) {
-        return visitor.visitParamDecl(this);
+    public ParamDecl setPos(int pos) {
+        return (ParamDecl) super.setPos(pos);
     }
 
     @Override
-    public String toString() {
-        return "Param[" +
-                "type=" + getType() + ", " +
-                "name=" + getName() + ']';
+    public <R> R accept(NodeVisitor<R> visitor) {
+        return visitor.visitParamDecl(this);
     }
 
 }
