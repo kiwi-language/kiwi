@@ -223,18 +223,23 @@ val quantity: int
 
 Important Notes:
 
-1 Unlike kotlin, Kiwi uses array (->) to denote function return type.
-2 Time type is not yet supported, so avoid using it.
-3 Array creation syntax is new ElementType[], e.g., new string[]
-4 To add an element into an array, invoke the the append method on the array object
-5 The semi colon separating enum constants and other class members is necessary even if the class only contains enum constants.
-6 There's no toString method. When concatenating objects with strings, the objects are automatically converted into string.
-7 Available primitive types: int, long, float, double, string, bool
-8 Child objects are automatically added to an implicit list of its parent, there's no need to explicitly
-9 Common methods/fields that are currently missing: array.find, array.filter, string.length. So avoid using them.
-10 parameter default values are not supported
-11 child objects are maintained by an implicit list under the parent object, however this list is currently inaccessible. Therefore, don't try to access child objects. 
-12 @Summary field must be string
+1. Unlike kotlin, Kiwi uses array (->) to denote function return type.
+2. Time type is not yet supported, so avoid using it.
+3. Array creation syntax is new ElementType[], e.g., new string[]
+4. To add an element into an array, invoke the the append method on the array object
+5. The semi colon separating enum constants and other class members is necessary even if the class only contains enum constants.
+6. There's no toString method. When concatenating objects with strings, the objects are automatically converted into string.
+7. Available primitive types: int, long, float, double, string, bool
+8. Child objects are automatically added to an implicit list of its parent, there's no need to explicitly
+9. Common methods/fields that are currently missing: array.find, array.filter, string.length. So avoid using them.
+10. parameter default values are not supported
+11. child objects are maintained by an implicit list under the parent object, however this list is currently inaccessible. Therefore, don't try to access child objects. 
+12. @Summary field must be string
+13. `time` is a reserved keyword, do not use it as an identifier
+14. Bean class name takes the following form: {EntityClassName}Service. For example, ProductService, CouponService and OrderService.
+15. Value objects: value objects are immutable and identity-less objects. There are two common use cases for value objects:
+    * Representing values in domain models, e.g., Money 
+    * As service method parameters for encapsulating complex information, such as OrderPlacementRequest
 
 Output Format:
 

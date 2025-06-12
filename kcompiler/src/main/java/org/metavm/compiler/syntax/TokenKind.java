@@ -76,7 +76,12 @@ public enum TokenKind implements Formattable, Predicate<TokenKind> {
     ARROW("->"),
     QUES("?"),
     ELLIPSIS("..."),
-    IDENT,
+    IDENT {
+        @Override
+        public String toString(Locale locale, Messages messages) {
+            return "identifier";
+        }
+    },
     STRING_LIT,
     CHAR_LIT,
     INTEGER_LIT,

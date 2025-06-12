@@ -69,6 +69,10 @@ public abstract class KiwiTestBase extends TestCase  {
 
     void deploy(List<String> sources) {
         sources = TestUtils.getResourcePaths(sources);
+        deployWithAbsolutePath(sources);
+    }
+
+    void deployWithAbsolutePath(List<String> sources) {
         FlowSavingContext.initConfig();
         try(var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             context.loadKlasses();

@@ -2,6 +2,9 @@ package org.metavm.chat;
 
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentConfig;
+import com.google.genai.types.Part;
+import com.google.genai.types.ThinkingConfig;
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.common.ErrorCode;
 import org.metavm.util.BusinessException;
 
@@ -24,9 +27,53 @@ public class GeminiAgent implements Agent {
     }
 
     @Override
-    public String send(String request) {
+    public Chat createChat() {
         if (client == null)
             throw new BusinessException(ErrorCode.GEMINI_NOT_CONFIGURED);
-        return client.models.generateContent(model, request, GenerateContentConfig.builder().build()).text();
+        return new GeminiChat(client.chats.create(model, GenerateContentConfig
+                .builder()
+                .thinkingConfig(
+                        ThinkingConfig.builder()
+                                .includeThoughts(true)
+                                .build()
+                )
+                .build()));
     }
+
+    @Slf4j
+    private static class GeminiChat implements Chat {
+
+        private final com.google.genai.Chat chat;
+
+        public GeminiChat(com.google.genai.Chat chat) {
+            this.chat = chat;
+        }
+
+        @Override
+        public String send(String text) {
+            var firstThought = true;
+            try (var stream = chat.sendMessageStream(text)) {
+                var buf = new StringBuilder();
+                for (var resp : stream) {
+                    var content = resp.candidates().orElseThrow().getFirst().content().orElseThrow();
+                    var parts = content.parts().orElseThrow();
+                    for (Part part : parts) {
+                        if (part.text().isPresent()) {
+                            if (part.thought().orElse(false)) {
+                                if (firstThought) {
+                                    firstThought = false;
+                                    log.info("Thinking:");
+                                }
+                                log.info("{}", part.text().get());
+                            } else
+                                buf.append(part.text().get());
+                        }
+                    }
+                }
+                return buf.toString();
+            }
+        }
+    }
+
+
 }

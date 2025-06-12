@@ -1,22 +1,25 @@
 package org.metavm.compiler.generate;
 
-import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.diag.Log;
+import org.metavm.compiler.diag.Notes;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.*;
 import org.metavm.compiler.util.List;
 import org.metavm.compiler.util.Traces;
 import org.metavm.flow.Bytecodes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.Closeable;
 
 import static java.util.Objects.requireNonNull;
 
-@Slf4j
 public class Gen extends StructuralNodeVisitor {
+
+    private static final Logger logger = LoggerFactory.getLogger(Gen.class);
 
     private final Project project;
     private Clazz clazz;
@@ -25,9 +28,9 @@ public class Gen extends StructuralNodeVisitor {
     private final Item[] stackItems = new Item[TypeTags.TAG_ANY + 1];
     private @Nullable Scope currentScope;
 
-    public Gen(Project project, Log log) {
+    public Gen(Project project, Log logger) {
         this.project = project;
-        env = new Env(project, log);
+        env = new Env(project, logger);
         for(var tag = TypeTags.TAG_NEVER; tag <= TypeTags.TAG_ANY; tag++) {
             stackItems[tag] = tag == TypeTags.TAG_VOID ? new VoidItem() : new StackItem(tag);
         }
@@ -68,7 +71,7 @@ public class Gen extends StructuralNodeVisitor {
         var method = requireNonNull(clazz.getPrimaryInit());
         try(var ignored = env.enterScope(classDecl, method)) {
             if (Traces.traceGeneration)
-                log.trace("Generating code for primary constructor: {}", method.getQualName());
+                logger.trace("Generating code for primary constructor: {}", method.getQualName());
             var prevCode = code;
             var cp = method.getConstPool();
             code = requireNonNull(method.getCode());
@@ -140,7 +143,7 @@ public class Gen extends StructuralNodeVisitor {
         var method = methodDecl.getElement();
         try(var ignored = env.enterScope(methodDecl)) {
             if (Traces.traceGeneration)
-                log.trace("Generating code for method: {}", method.getQualName());
+                logger.trace("Generating code for method: {}", method.getQualName());
             var prevCode = code;
             var cp = method.getConstPool();
             code = method.getCode();
@@ -426,7 +429,7 @@ public class Gen extends StructuralNodeVisitor {
 
     private Item genExpr(Expr expr, @Nullable Type targetType) {
         if (Traces.traceGeneration)
-            log.trace("Generating expression: {}", expr.getText());
+            logger.trace("Generating expression: {}", expr.getText());
         var item = expr.accept(new ExprVisitor());
         return targetType != null ? item.cast(targetType) : item;
     }
@@ -448,7 +451,7 @@ public class Gen extends StructuralNodeVisitor {
         @Override
         public Item visitLambdaExpr(LambdaExpr lambdaExpr) {
             if (Traces.traceGeneration)
-                log.trace("Generating code for lambda: {}", lambdaExpr.getText());
+                logger.trace("Generating code for lambda: {}", lambdaExpr.getText());
             var prevCode = code;
             var lambda = lambdaExpr.getElement();
             var func = env.currentFunc();
@@ -550,7 +553,7 @@ public class Gen extends StructuralNodeVisitor {
                         rCond.falseJumps
                 );
             }
-            else if (binaryExpr.op() == BinOp.ADD && binaryExpr.getType() == Types.instance.getStringType()) {
+            else if (binaryExpr.op() == BinOp.ADD && binaryExpr.getType().getUnderlyingType() == Types.instance.getStringType()) {
                 binaryExpr.lhs().accept(this).load();
                 binaryExpr.rhs().accept(this).load();
                 var concat = project.getRootPackage().getFunction(NameTable.instance.concat);

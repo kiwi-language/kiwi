@@ -1,7 +1,7 @@
 package org.metavm.chat;
 
 import lombok.extern.slf4j.Slf4j;
-import org.metavm.object.type.TypeManager;
+import org.metavm.object.type.DeployService;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Utils;
@@ -14,22 +14,25 @@ import java.nio.file.Path;
 
 @Component
 @Slf4j
-public class DeployService {
+public class AgentCompiler {
 
     public static final Path baseDir = Path.of("/tmp/kiwiworks");
 
-    private final TypeManager typeManager;
+    private final DeployService deployService;
 
-    public DeployService(TypeManager typeManager) {
-        this.typeManager = typeManager;
+    public AgentCompiler(DeployService deployService) {
+        this.deployService = deployService;
     }
 
-    public void deploy(long appId, String source) {
+    public DeployResult deploy(long appId, String source) {
         var wd = WorkDir.from(baseDir, appId);
         wd.reset();
         writeSource(wd, source);
-        build(wd);
-        deploy(appId, wd);
+        var r = build(wd);
+        if (r.successful()) {
+            deploy(appId, wd);
+        }
+        return r;
     }
 
     private void writeSource(WorkDir workDir, String source) {
@@ -41,16 +44,19 @@ public class DeployService {
         }
     }
 
-    private void build(WorkDir workDir) {
+    private DeployResult build(WorkDir workDir) {
         Utils.CommandResult r;
         r = Utils.executeCommand(workDir.path, "kiwi", "build");
-        log.info("Build kiwi. exit code: {}, output: {}", r.exitCode(), r.output());
+        if (r.output().isEmpty())
+            return new DeployResult(true, null);
+        log.info("Build failed: {}", r.output());
+        return new DeployResult(false, r.output());
     }
 
     private void deploy(long appId, WorkDir workDir) {
         ContextUtil.setAppId(appId);
         try (var pkgInput = workDir.openTargetInput()) {
-            typeManager.deploy(pkgInput);
+            deployService.deploy(pkgInput);
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {

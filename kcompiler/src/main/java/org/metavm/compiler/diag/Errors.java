@@ -61,6 +61,8 @@ public class Errors {
 
     public static Error variableMustTypedOrInitialized = create("variable.must.typed.or.initialized");
 
+    public static Error summaryFieldMustBeString = create("summary.field.must.be.string");
+
     public static Error expected(Object a) {
         return create("expected", a);
     }

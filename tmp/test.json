@@ -1,29 +1,20 @@
 {
-  "from": 0,
-  "size": 25,
-  "query": {
-    "query_string": {
-      "query": "(appId:2) AND (typeId:\"$$0180d40100\") AND l0.s0:\"d\"* AND NOT l0.i0:2",
-      "fields": [],
-      "type": "best_fields",
-      "default_operator": "or",
-      "max_determinized_states": 10000,
-      "enable_position_increments": true,
-      "fuzziness": "AUTO",
-      "fuzzy_prefix_length": 0,
-      "fuzzy_max_expansions": 50,
-      "phrase_slop": 0,
-      "escape": false,
-      "auto_generate_synonyms_phrase_query": true,
-      "fuzzy_transpositions": true,
-      "boost": 1.0
-    }
-  },
-  "sort": [
-    {
-      "id": {
-        "order": "desc"
-      }
-    }
-  ]
+  "time_local": "12/Jun/2025:17:41:54 +0800",
+  "remote_addr": "122.96.121.240",
+  "request_id": "22a28c56622b63756388fc2b7f01ed09",
+  "request_method": "POST",
+  "request_uri": "/object/invoke",
+  "server_protocol": "HTTP/1.1",
+  "status": 400,
+  "body_bytes_sent": 99,
+  "bytes_sent": 274,
+  "request_length": 821,
+  "request_time": 0.007,
+  "upstream_response_time": "0.004",
+  "upstream_addr": "[::1]:8080",
+  "http_origin": "http://localhost:5173",
+  "http_referer": "http://localhost:5173/",
+  "http_user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+  "http_x_forwarded_for": "",
+  "request_body": "{\"receiver\":{\"id\":\"01e4b4d7b90700\"},\"method\":\"reduceStock\",\"arguments\":{}}"
 }

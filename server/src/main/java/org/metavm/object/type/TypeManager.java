@@ -32,7 +32,7 @@ import java.util.zip.ZipInputStream;
 import static org.metavm.util.Constants.DDL_SESSION_TIMEOUT;
 
 @Component
-public class TypeManager extends ApplicationStatusAware {
+public class TypeManager extends ApplicationStatusAware implements DeployService {
 
     public static final Logger logger = LoggerFactory.getLogger(TypeManager.class);
 
@@ -52,6 +52,7 @@ public class TypeManager extends ApplicationStatusAware {
             Flows.execute(classInit.getRef(), null, List.of(), context);
     }
 
+    @Override
     @Transactional
     public String deploy(InputStream in) {
         ensureApplicationActive();

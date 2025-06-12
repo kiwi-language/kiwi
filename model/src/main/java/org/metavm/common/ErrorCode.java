@@ -178,6 +178,9 @@ public enum ErrorCode {
     // Chat
     GEMINI_NOT_CONFIGURED(1801, "Gemini not configured"),
 
+    CODE_GENERATION_FAILED(1802, "Code generation failed"),
+
+
     // query
     ILLEGAL_QUERY(1801, "Illegal query"),
 

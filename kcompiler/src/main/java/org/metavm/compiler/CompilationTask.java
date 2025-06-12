@@ -87,6 +87,10 @@ public class CompilationTask {
                 log.setSourceFile(file.getSourceFile());
                 file.accept(new Attr(project, log));
             }
+            for (File file : files) {
+                log.setSourceFile(file.getSourceFile());
+                file.accept(new Check(log));
+            }
             return project;
         }
         finally {

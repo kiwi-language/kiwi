@@ -447,6 +447,7 @@ public class Parser {
                     expr = new IndexExpr(expr, index);
                 }
                 case DOT -> {
+                    var pos1 = pos();
                     nextToken();
                     var name = switch (tokenKind()) {
                         case THIS -> {
@@ -459,7 +460,7 @@ public class Parser {
                         }
                         default -> ident();
                     };
-                    expr = new SelectorExpr(expr, name);
+                    expr = new SelectorExpr(expr, name).setPos(pos1);
                 }
                 case NONNULL -> {
                     nextToken();
@@ -568,6 +569,7 @@ public class Parser {
             }
             default -> {
                 log.error(token().getStart(), Errors.illegalStartOfExpr);
+                nextToken();
                 yield new ErrorExpr();
             }
         };
@@ -1414,13 +1416,13 @@ public class Parser {
     }
 
     private FieldDecl field(List<Annotation> annotations, List<Modifier> mods) {
-        var pos = pos();
         var readonly = switch (tokenKind()) {
             case VAR -> false;
             case VAL ->  true;
             default -> throw new IllegalStateException("Not a field");
         };
         nextToken();
+        var pos = pos();
         var name = ident();
         TypeNode type = null;
         if (is(TokenKind.COLON)) {

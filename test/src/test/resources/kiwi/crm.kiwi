@@ -1,0 +1,462 @@
+@Label("商品")
+class Product(
+@Summary
+@Label("名称")
+var name: string,
+@Label("价格")
+var price: Money,
+@Label("库存")
+var stock: int,
+var category: Category
+) {
+
+    @Label("扣减库存")
+    fn reduceStock(@Label("数量") quantity: int) {
+        require(stock >= quantity, "Out of stock")
+        stock -= quantity
+    }
+
+    @Label("购买")
+    fn buy(@Label("数量") quantity: int, @Label("优惠券") coupon: Coupon?) -> Order {
+        reduceStock(quantity)
+        var price = this.price.times(quantity)
+        if (coupon != null)
+            price = price.sub(coupon!!.redeem())
+        val order = Order(price)
+        order.Item(this, quantity)
+        return order
+    }
+
+}
+
+@Label("优惠券")
+class Coupon(
+@Summary
+@Label("标题")
+val title: string,
+@Label("折扣") val discount: Money
+) {
+
+    @Label("已核销")
+    var redeemed = false
+
+    @Label("核销")
+    fn redeem() -> Money {
+        if (redeemed)
+            throw Exception("Coupon already redeemed")
+        redeemed = true
+        return discount
+    }
+
+}
+
+
+@Label("类目")
+enum Category {
+@Label("电子产品")
+ELECTRONICS,
+@Label("服装")
+CLOTHING,
+@Label("其他")
+OTHER
+;
+
+}
+
+@Label("金额")
+value class Money(
+@Label("数额")
+val amount: double,
+@Label("币种")
+val currency: Currency
+) {
+
+    @Summary
+    priv val summary = amount + " " + currency.label()
+
+    fn add(@Label("待加金额") that: Money) -> Money {
+        return Money(amount + that.getAmount(currency), currency)
+    }
+
+    fn sub(that: Money) -> Money {
+        return Money(amount - that.getAmount(currency), currency)
+    }
+
+    fn getAmount(@Label("目标币种") currency: Currency) -> double {
+        return currency.rate / this.currency.rate * amount
+    }
+
+    fn times(n: int) -> Money {
+        return Money(amount * n, currency)
+    }
+
+}
+
+@Label("币种")
+enum Currency(
+@Label("汇率")
+val rate: double
+) {
+@Label("人民币")
+YUAN(7.2) {
+
+        fn label() -> string {
+            return "元"
+        }
+
+    },
+    @Label("美元")
+    DOLLAR(1) {
+
+        fn label() -> string {
+            return "美元"
+        }
+
+    },
+    @Label("英镑")
+    POUND(0.75) {
+
+        fn label() -> string {
+            return "英镑"
+        }
+
+    },
+;
+
+    abstract fn label() -> string
+
+    fn getRate() -> double {
+        return rate
+    }
+
+}
+
+@Label("订单")
+class Order(
+@Label("总价")
+val price: Money
+) {
+@Label("订单项")
+class Item(
+@Label("商品")
+val product: Product,
+@Label("数量")
+val quantity: int
+)
+
+}
+
+@Label("地址")
+value class Address(
+    @Label("街道") val street: string,
+    @Label("城市") val city: string,
+    @Label("邮编") val zipCode: string,
+    @Label("国家") val country: string
+) {
+    @Summary
+    priv val summary = street + ", " + city + ", " + zipCode + ", " + country
+}
+
+@Label("电话号码")
+value class PhoneNumber(
+    @Label("国家代码") val countryCode: string,
+    @Label("区号") val areaCode: string,
+    @Label("号码") val number: string
+) {
+    @Summary
+    priv val summary = "+" + countryCode + " (" + areaCode + ") " + number
+}
+
+@Label("邮箱地址")
+value class EmailAddress(
+    @Label("地址") val address: string
+) {
+    @Summary
+    priv val summary = address
+}
+
+@Label("客户类型")
+enum CustomerType {
+    @Label("个人") INDIVIDUAL,
+    @Label("公司") COMPANY
+;
+}
+
+@Label("潜在客户状态")
+enum LeadStatus {
+    @Label("新") NEW,
+    @Label("合格") QUALIFIED,
+    @Label("不合格") DISQUALIFIED
+;
+}
+
+@Label("销售机会阶段")
+enum OpportunityStage {
+    @Label("勘探") PROSPECTING,
+    @Label("资格审查") QUALIFICATION,
+    @Label("提案") PROPOSAL,
+    @Label("谈判") NEGOTIATION,
+    @Label("赢单") CLOSED_WON,
+    @Label("输单") CLOSED_LOST
+;
+}
+
+@Label("互动类型")
+enum InteractionType {
+    @Label("电话") CALL,
+    @Label("邮件") EMAIL,
+    @Label("会议") MEETING,
+    @Label("聊天") CHAT
+;
+}
+
+@Label("客户")
+class Customer(
+    @Summary
+    @Label("名称") var name: string,
+    @Label("邮箱") var email: EmailAddress?,
+    @Label("电话") var phone: PhoneNumber?,
+    @Label("地址") var address: Address?,
+    @Label("类型") var type: CustomerType
+) {
+    @Label("备注") var notes: string = ""
+
+    @Label("更新联系方式")
+    fn updateContactInfo(newEmail: EmailAddress?, newPhone: PhoneNumber?, newAddress: Address?) {
+        email = newEmail
+        phone = newPhone
+        address = newAddress
+    }
+
+    @Label("添加备注")
+    fn addNote(@Label("备注内容") note: string) {
+        notes = notes + "\n" + note
+    }
+}
+
+@Label("潜在客户")
+class Lead(
+    @Summary
+    @Label("名称") var name: string,
+    @Label("邮箱") var email: EmailAddress?,
+    @Label("电话") var phone: PhoneNumber?,
+    @Label("公司") var company: string?,
+    @Label("状态") var status: LeadStatus
+) {
+    @Label("备注") var notes: string = ""
+
+    @Label("标记为合格")
+    fn qualify() {
+        require(status == LeadStatus.NEW, "Lead is not new")
+        status = LeadStatus.QUALIFIED
+    }
+
+    @Label("标记为不合格")
+    fn disqualify(@Label("原因") reason: string) {
+        require(status == LeadStatus.NEW || status == LeadStatus.QUALIFIED, "Lead already processed")
+        status = LeadStatus.DISQUALIFIED
+        notes = notes + "\nDisqualified: " + reason
+    }
+}
+
+@Label("销售机会")
+class Opportunity(
+    @Summary
+    @Label("名称") var name: string,
+    @Label("客户") val customer: Customer,
+    @Label("预期金额") var expectedAmount: Money,
+    @Label("阶段") var stage: OpportunityStage
+) {
+    @Label("备注") var notes: string = ""
+
+    @Label("更新预期金额")
+    fn updateExpectedAmount(@Label("新金额") newAmount: Money) {
+        expectedAmount = newAmount
+    }
+
+    @Label("推进阶段")
+    fn advanceStage(@Label("新阶段") newStage: OpportunityStage) {
+        require(newStage != OpportunityStage.PROSPECTING || stage == OpportunityStage.PROSPECTING, "Cannot revert to prospecting stage")
+        require(stage != OpportunityStage.CLOSED_WON && stage != OpportunityStage.CLOSED_LOST, "Opportunity is already closed")
+        stage = newStage
+    }
+
+    @Label("关闭机会")
+    fn close(@Label("是否赢单") won: bool, @Label("备注") closingNotes: string) {
+        if (won) {
+            stage = OpportunityStage.CLOSED_WON
+        } else {
+            stage = OpportunityStage.CLOSED_LOST
+        }
+        notes = notes + "\nClosed: " + closingNotes
+    }
+}
+
+@Label("客户互动")
+class Interaction(
+    @Label("客户") val customer: Customer,
+    @Label("类型") val type: InteractionType,
+    @Summary
+    @Label("主题") val subject: string,
+    @Label("备注") val notes: string
+) {
+
+}
+
+@Bean
+@Label("客户服务")
+class CustomerService {
+
+    @Label("创建客户")
+    fn createCustomer(
+        @Label("名称") name: string,
+        @Label("邮箱") email: EmailAddress?,
+        @Label("电话") phone: PhoneNumber?,
+        @Label("地址") address: Address?,
+        @Label("类型") type: CustomerType
+    ) -> Customer {
+        require(name != null && name != "", "Customer name cannot be empty")
+        val customer = Customer(name, email, phone, address, type)
+        return customer
+    }
+
+    @Label("更新客户信息")
+    fn updateCustomer(
+        @Label("客户") customer: Customer,
+        @Label("新名称") newName: string?,
+        @Label("新邮箱") newEmail: EmailAddress?,
+        @Label("新电话") newPhone: PhoneNumber?,
+        @Label("新地址") newAddress: Address?,
+        @Label("新类型") newType: CustomerType?
+    ) {
+        require(customer != null, "Customer cannot be null")
+        if (newName != null && newName != "")
+            customer.name = newName
+        if (newEmail != null)
+            customer.email = newEmail
+        if (newPhone != null)
+            customer.phone = newPhone
+        if (newAddress != null)
+            customer.address = newAddress
+        if (newType != null)
+            customer.type = newType
+    }
+
+    @Label("记录客户互动")
+    fn logCustomerInteraction(
+        @Label("客户") customer: Customer,
+        @Label("类型") type: InteractionType,
+        @Label("主题") subject: string,
+        @Label("备注") notes: string
+    ) -> Interaction {
+        require(customer != null, "Customer cannot be null")
+        require(subject != null && subject != "", "Interaction subject cannot be empty")
+        val interaction = Interaction(customer, type, subject, notes)
+        return interaction
+    }
+
+}
+
+@Bean
+@Label("潜在客户服务")
+class LeadService {
+
+    @Label("创建潜在客户")
+    fn createLead(
+        @Label("名称") name: string,
+        @Label("邮箱") email: EmailAddress?,
+        @Label("电话") phone: PhoneNumber?,
+        @Label("公司") company: string?
+    ) -> Lead {
+        require(name != null && name != "", "Lead name cannot be empty")
+        val lead = Lead(name, email, phone, company, LeadStatus.NEW)
+        return lead
+    }
+
+    @Label("合格潜在客户")
+    fn qualifyLead(@Label("潜在客户") lead: Lead) {
+        require(lead != null, "Lead cannot be null")
+        lead.qualify()
+    }
+
+    @Label("不合格潜在客户")
+    fn disqualifyLead(@Label("潜在客户") lead: Lead, @Label("原因") reason: string) {
+        require(lead != null, "Lead cannot be null")
+        require(reason != null && reason != "", "Disqualification reason cannot be empty")
+        lead.disqualify(reason)
+    }
+
+    @Label("转换潜在客户")
+    fn convertLead(
+        @Label("潜在客户") lead: Lead,
+        @Label("客户地址") customerAddress: Address?,
+        @Label("客户类型") customerType: CustomerType
+    ) -> Customer {
+        require(lead != null, "Lead cannot be null")
+        require(lead.status == LeadStatus.QUALIFIED, "Only qualified leads can be converted")
+        require(customerType != null, "Customer type must be specified")
+
+        val newCustomer = Customer(lead.name, lead.email, lead.phone, customerAddress, customerType)
+        val companySuffix: string
+        if (lead.company != null) {
+            companySuffix = " (Company: " + lead.company + ")"
+        } else {
+            companySuffix = ""
+        }
+        val baseNote = "Converted from Lead: " + lead.name
+        val finalNote = baseNote + companySuffix
+        newCustomer.addNote(finalNote)
+
+        return newCustomer
+    }
+
+}
+
+@Bean
+@Label("销售机会服务")
+class OpportunityService {
+
+    @Label("创建销售机会")
+    fn createOpportunity(
+        @Label("名称") name: string,
+        @Label("客户") customer: Customer,
+        @Label("预期金额") expectedAmount: Money
+    ) -> Opportunity {
+        require(name != null && name != "", "Opportunity name cannot be empty")
+        require(customer != null, "Customer cannot be null")
+        require(expectedAmount != null, "Expected amount cannot be null")
+        val opportunity = Opportunity(name, customer, expectedAmount, OpportunityStage.PROSPECTING)
+        return opportunity
+    }
+
+    @Label("更新机会金额")
+    fn updateOpportunityAmount(
+        @Label("销售机会") opportunity: Opportunity,
+        @Label("新金额") newAmount: Money
+    ) {
+        require(opportunity != null, "Opportunity cannot be null")
+        require(newAmount != null, "New amount cannot be null")
+        opportunity.updateExpectedAmount(newAmount)
+    }
+
+    @Label("推进机会阶段")
+    fn advanceOpportunityStage(
+        @Label("销售机会") opportunity: Opportunity,
+        @Label("新阶段") newStage: OpportunityStage
+    ) {
+        require(opportunity != null, "Opportunity cannot be null")
+        require(newStage != null, "New stage cannot be null")
+        opportunity.advanceStage(newStage)
+    }
+
+    @Label("关闭销售机会")
+    fn closeOpportunity(
+        @Label("销售机会") opportunity: Opportunity,
+        @Label("是否赢单") won: bool,
+        @Label("备注") closingNotes: string
+    ) {
+        require(opportunity != null, "Opportunity cannot be null")
+        opportunity.close(won, closingNotes)
+    }
+
+}

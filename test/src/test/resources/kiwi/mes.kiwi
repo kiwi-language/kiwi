@@ -1,0 +1,382 @@
+@Label("金额")
+value class Money(
+@Label("数额")
+val amount: double,
+@Label("币种")
+val currency: Currency
+) {
+
+    @Summary
+    priv val summary = amount + " " + currency.label()
+
+    fn add(@Label("待加金额") that: Money) -> Money {
+        return Money(amount + that.getAmount(currency), currency)
+    }
+
+    fn sub(that: Money) -> Money {
+        return Money(amount - that.getAmount(currency), currency)
+    }
+
+    fn getAmount(@Label("目标币种") currency: Currency) -> double {
+        return currency.rate / this.currency.rate * amount
+    }
+
+    fn times(n: int) -> Money {
+        return Money(amount * n, currency)
+    }
+
+}
+
+@Label("币种")
+enum Currency(
+@Label("汇率")
+val rate: double
+) {
+@Label("人民币")
+YUAN(7.2) {
+
+        fn label() -> string {
+            return "元"
+        }
+
+    },
+    @Label("美元")
+    DOLLAR(1) {
+
+        fn label() -> string {
+            return "美元"
+        }
+
+    },
+    @Label("英镑")
+    POUND(0.75) {
+
+        fn label() -> string {
+            return "英镑"
+        }
+
+    },
+;
+
+    abstract fn label() -> string
+
+    fn getRate() -> double {
+        return rate
+    }
+
+}
+
+@Label("资源类型")
+enum ResourceType {
+@Label("机器")
+MACHINE,
+@Label("人力")
+LABOR,
+@Label("物料")
+MATERIAL
+;
+
+}
+
+@Label("步骤状态")
+enum StepStatus {
+@Label("待定")
+PENDING,
+@Label("进行中")
+IN_PROGRESS,
+@Label("已完成")
+COMPLETED,
+@Label("已阻塞")
+BLOCKED,
+@Label("已跳过")
+SKIPPED
+;
+
+}
+
+@Label("工单状态")
+enum WorkOrderStatus {
+@Label("新建")
+NEW,
+@Label("已计划")
+SCHEDULED,
+@Label("进行中")
+IN_PROGRESS,
+@Label("已完成")
+COMPLETED,
+@Label("已取消")
+CANCELED
+;
+
+}
+
+@Label("制造步骤定义")
+class ManufacturingStepDefinition(
+@Label("步骤ID") @Summary
+var id: string,
+@Label("名称")
+var name: string,
+@Label("描述")
+var description: string,
+@Label("所需时长(分钟)")
+var requiredDurationMinutes: int,
+@Label("所需资源类型")
+var requiredResourceType: ResourceType
+) {
+    fn updateDetails(@Label("新名称") newName: string, @Label("新描述") newDescription: string, @Label("新时长") newDuration: int, @Label("新资源类型") newResourceType: ResourceType) {
+        name = newName
+        description = newDescription
+        requiredDurationMinutes = newDuration
+        requiredResourceType = newResourceType
+    }
+}
+
+@Label("产品定义")
+class ProductDefinition(
+@Label("产品代码") @Summary
+var productCode: string,
+@Label("名称")
+var name: string,
+@Label("描述")
+var description: string,
+@Label("价格")
+var price: Money,
+@Label("制造步骤IDs")
+var manufacturingStepDefinitionIds: string[]
+) {
+    fn updateDetails(@Label("新名称") newName: string, @Label("新描述") newDescription: string, @Label("新价格") newPrice: Money) {
+        name = newName
+        description = newDescription
+        price = newPrice
+    }
+
+    fn addManufacturingStep(@Label("步骤定义ID") stepDefId: string) {
+        manufacturingStepDefinitionIds.append(stepDefId)
+    }
+}
+
+@Label("工单")
+class WorkOrder(
+@Label("工单ID") @Summary
+var workOrderId: string,
+@Label("产品定义")
+var productDefinition: ProductDefinition,
+@Label("计划生产数量")
+var quantityToProduce: int,
+@Label("创建日期")
+var creationDate: string,
+@Label("截止日期")
+var dueDate: string
+) {
+    @Label("已生产数量")
+    var quantityProduced: int = 0
+
+    @Label("状态")
+    var status: WorkOrderStatus = WorkOrderStatus.NEW
+
+    @Label("当前步骤索引")
+    var currentStepIndex: int = 0
+
+    @Label("日志")
+    var log: string = ""
+
+    fn updateStatus(@Label("新状态") newStatus: WorkOrderStatus) {
+        status = newStatus
+        log = log + "\n" + "Status updated to " + newStatus
+    }
+
+    fn updateProducedQuantity(@Label("增加数量") delta: int) {
+        quantityProduced += delta
+        log = log + "\n" + "Produced quantity increased by " + delta + ". Total: " + quantityProduced
+    }
+
+    fn advanceStep() {
+        currentStepIndex += 1
+        log = log + "\n" + "Advanced to step index " + currentStepIndex
+    }
+
+    fn appendLog(@Label("消息") message: string) {
+        log = log + "\n" + message
+    }
+}
+
+@Label("工单实际步骤")
+class WorkOrderStepActual(
+@Label("实际步骤ID") @Summary
+var actualStepId: string,
+@Label("所属工单")
+var workOrder: WorkOrder,
+@Label("参考步骤定义")
+var stepDefinition: ManufacturingStepDefinition,
+@Label("步骤序号")
+var stepSequenceNumber: int
+) {
+    @Label("实际时长(分钟)")
+    var actualDurationMinutes: int = 0
+
+    @Label("开始时间")
+    var startTime: string = ""
+
+    @Label("结束时间")
+    var endTime: string = ""
+
+    @Label("状态")
+    var status: StepStatus = StepStatus.PENDING
+
+    @Label("使用资源")
+    var resourceUsed: string = ""
+
+    fn start(@Label("时间") time: string, @Label("资源") resource: string) {
+        startTime = time
+        resourceUsed = resource
+        status = StepStatus.IN_PROGRESS
+        workOrder.appendLog("Step '" + stepDefinition.name + "' started at " + startTime + " using " + resourceUsed)
+    }
+
+    fn complete(@Label("时间") time: string) {
+        endTime = time
+        status = StepStatus.COMPLETED
+        // actualDurationMinutes must be set via setActualDuration as string.length is not available for calculation
+        workOrder.appendLog("Step '" + stepDefinition.name + "' completed at " + endTime)
+    }
+
+    fn setActualDuration(@Label("时长") duration: int) {
+        actualDurationMinutes = duration
+    }
+}
+
+@Bean
+@Label("制造执行系统服务")
+class MESService {
+    var nextProductId: int = 1
+    var nextStepDefId: int = 1
+    var nextWorkOrderId: int = 1
+    var nextActualStepId: int = 1
+
+    var productDefinitions: ProductDefinition[] = new ProductDefinition[]
+    var stepDefinitions: ManufacturingStepDefinition[] = new ManufacturingStepDefinition[]
+    var workOrders: WorkOrder[] = new WorkOrder[]
+    var workOrderStepActuals: WorkOrderStepActual[] = new WorkOrderStepActual[]
+
+    priv fn findProductDefinitionByCode(@Label("产品代码") code: string) -> ProductDefinition {
+        var found: ProductDefinition? = null
+        var i = 0
+        while (i < productDefinitions.length) {
+            val def = productDefinitions[i]
+            if (def.productCode == code) {
+                found = def
+                break
+            }
+            i++
+        }
+        require(found != null, "Product Definition with code " + code + " not found")
+        return found!!
+    }
+
+    priv fn findManufacturingStepDefinitionById(@Label("步骤ID") id: string) -> ManufacturingStepDefinition {
+        var found: ManufacturingStepDefinition? = null
+        var i = 0
+        while (i < stepDefinitions.length) {
+            val def = stepDefinitions[i]
+            if (def.id == id) {
+                found = def
+                break
+            }
+            i++
+        }
+        require(found != null, "Manufacturing Step Definition with ID " + id + " not found")
+        return found!!
+    }
+
+    @Label("注册产品定义")
+    fn registerProductDefinition(@Label("名称") name: string, @Label("描述") desc: string, @Label("价格") price: Money, @Label("步骤定义IDs") stepDefIds: string[]) -> ProductDefinition {
+        val code = "PROD-" + nextProductId
+        nextProductId += 1
+        val newProduct = ProductDefinition(code, name, desc, price, new string[])
+        stepDefIds.forEach(id -> {
+            newProduct.addManufacturingStep(id)
+        })
+        productDefinitions.append(newProduct)
+        return newProduct
+    }
+
+    @Label("注册制造步骤定义")
+    fn registerManufacturingStepDefinition(@Label("名称") name: string, @Label("描述") desc: string, @Label("所需时长(分钟)") duration: int, @Label("所需资源类型") resource: ResourceType) -> ManufacturingStepDefinition {
+        val id = "STEP-" + nextStepDefId
+        nextStepDefId += 1
+        val newStep = ManufacturingStepDefinition(id, name, desc, duration, resource)
+        stepDefinitions.append(newStep)
+        return newStep
+    }
+
+    @Label("创建工单")
+    fn createWorkOrder(@Label("产品代码") productCode: string, @Label("计划生产数量") quantity: int, @Label("截止日期") dueDate: string, @Label("创建日期") creationDate: string) -> WorkOrder {
+        val productDef = findProductDefinitionByCode(productCode)
+        val orderId = "WO-" + nextWorkOrderId
+        nextWorkOrderId += 1
+        val newWorkOrder = WorkOrder(orderId, productDef, quantity, creationDate, dueDate)
+        workOrders.append(newWorkOrder)
+        newWorkOrder.appendLog("Work Order created for " + productDef.name + " (x" + quantity + ")")
+        return newWorkOrder
+    }
+
+    @Label("推进工单步骤")
+    fn advanceWorkOrderStep(@Label("工单") workOrder: WorkOrder, @Label("开始时间") startTime: string, @Label("使用资源") resource: string) -> WorkOrderStepActual {
+        require(workOrder.status != WorkOrderStatus.COMPLETED && workOrder.status != WorkOrderStatus.CANCELED, "Work Order already completed or canceled")
+
+        val productDef = workOrder.productDefinition
+        val stepDefIds = productDef.manufacturingStepDefinitionIds
+
+        require(workOrder.currentStepIndex < stepDefIds.length, "No more steps for this Work Order")
+
+        val stepDefId = stepDefIds[workOrder.currentStepIndex]
+        val stepDef = findManufacturingStepDefinitionById(stepDefId)
+
+        val actualStepId = "WO-ACT-" + nextActualStepId
+        nextActualStepId += 1
+
+        val actualStep = WorkOrderStepActual(actualStepId, workOrder, stepDef, workOrder.currentStepIndex)
+        actualStep.start(startTime, resource)
+        workOrderStepActuals.append(actualStep)
+
+        if (workOrder.status == WorkOrderStatus.NEW || workOrder.status == WorkOrderStatus.SCHEDULED) {
+            workOrder.updateStatus(WorkOrderStatus.IN_PROGRESS)
+        }
+
+        return actualStep
+    }
+
+    @Label("完成工单步骤")
+    fn completeWorkOrderStep(@Label("实际步骤") stepActual: WorkOrderStepActual, @Label("结束时间") endTime: string, @Label("实际时长(分钟)") actualDuration: int) {
+        require(stepActual.status == StepStatus.IN_PROGRESS, "Step is not in progress")
+        stepActual.complete(endTime)
+        stepActual.setActualDuration(actualDuration)
+        stepActual.workOrder.advanceStep()
+        stepActual.workOrder.appendLog("Step '" + stepActual.stepDefinition.name + "' finished. Actual duration: " + actualDuration + " minutes.")
+
+        val productDef = stepActual.workOrder.productDefinition
+        if (stepActual.workOrder.currentStepIndex >= productDef.manufacturingStepDefinitionIds.length) {
+            stepActual.workOrder.appendLog("All manufacturing steps completed. Ready for final production update.")
+        }
+    }
+
+    @Label("更新工单已生产数量")
+    fn updateWorkOrderProducedQuantity(@Label("工单") workOrder: WorkOrder, @Label("已生产数量") quantity: int) {
+        workOrder.updateProducedQuantity(quantity)
+    }
+
+    @Label("完成工单生产")
+    fn completeWorkOrderProduction(@Label("工单") workOrder: WorkOrder, @Label("实际生产数量") actualProduced: int) {
+        require(workOrder.status == WorkOrderStatus.IN_PROGRESS, "Work Order is not in progress.")
+        workOrder.updateProducedQuantity(actualProduced - workOrder.quantityProduced)
+        workOrder.updateStatus(WorkOrderStatus.COMPLETED)
+        workOrder.appendLog("Work Order production completed. Total produced: " + workOrder.quantityProduced)
+    }
+
+    @Label("取消工单")
+    fn cancelWorkOrder(@Label("工单") workOrder: WorkOrder) {
+        require(workOrder.status != WorkOrderStatus.COMPLETED, "Cannot cancel a completed Work Order")
+        workOrder.updateStatus(WorkOrderStatus.CANCELED)
+        workOrder.appendLog("Work Order canceled.")
+    }
+}

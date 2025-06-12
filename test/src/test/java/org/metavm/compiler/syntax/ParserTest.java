@@ -1098,6 +1098,38 @@ public class ParserTest extends TestCase {
         l.flush();
     }
 
+
+    public void testMes() throws IOException, URISyntaxException {
+        var path = Paths.get(requireNonNull(ParserTest.class.getResource("/kiwi/mes.kiwi")).toURI());
+        var sourceFile = new PathSourceFile(
+                path,
+                new FileManager()
+        );
+        var l = new DefaultLog(sourceFile, DiagFactory.instance, new PrintWriter(System.out), new PrintWriter(System.err));
+        var buf = Files.readString(path).toCharArray();
+        var parser = new Parser(
+                l, new Lexer(l, buf, buf.length)
+        );
+        parser.file();
+        l.flush();
+    }
+
+    public void testCRM() throws IOException, URISyntaxException {
+        var path = Paths.get(requireNonNull(ParserTest.class.getResource("/kiwi/crm.kiwi")).toURI());
+        var sourceFile = new PathSourceFile(
+                path,
+                new FileManager()
+        );
+        var l = new DefaultLog(sourceFile, DiagFactory.instance, new PrintWriter(System.out), new PrintWriter(System.err));
+        var buf = Files.readString(path).toCharArray();
+        var parser = new Parser(
+                l, new Lexer(l, buf, buf.length)
+        );
+        parser.file();
+        l.flush();
+    }
+
+
     public void testError1() {
         log.setDelayed(true);
         parse("""
