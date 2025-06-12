@@ -16,9 +16,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 
-public class ErrorTest extends TestCase {
+public class DiagTest extends TestCase {
 
-    public static final Logger logger = LoggerFactory.getLogger(ErrorTest.class);
+    public static final Logger logger = LoggerFactory.getLogger(DiagTest.class);
 
     private DefaultLog log;
 
@@ -123,6 +123,21 @@ public class ErrorTest extends TestCase {
                 }
                 """);
         assertFalse(diags.isEmpty());
+    }
+
+    public void testChineseCharacter() {
+        var diags = compile("""
+                @Label("商品")1
+                class Product {
+                }
+                """);
+        assertEquals(1, diags.size());
+        assertEquals("""
+                dummy.kiwi:1: Unexpected token: 1
+                    @Label("商品")1
+                            　　  ^""",
+                diags.head().toString()
+        );
     }
 
     private List<Diag> compile(String text) {
