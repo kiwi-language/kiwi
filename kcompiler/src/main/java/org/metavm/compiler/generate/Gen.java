@@ -2,6 +2,7 @@ package org.metavm.compiler.generate;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.analyze.Env;
+import org.metavm.compiler.diag.Log;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.*;
@@ -24,9 +25,9 @@ public class Gen extends StructuralNodeVisitor {
     private final Item[] stackItems = new Item[TypeTags.TAG_ANY + 1];
     private @Nullable Scope currentScope;
 
-    public Gen(Project project) {
+    public Gen(Project project, Log log) {
         this.project = project;
-        env = new Env(project);
+        env = new Env(project, log);
         for(var tag = TypeTags.TAG_NEVER; tag <= TypeTags.TAG_ANY; tag++) {
             stackItems[tag] = tag == TypeTags.TAG_VOID ? new VoidItem() : new StackItem(tag);
         }

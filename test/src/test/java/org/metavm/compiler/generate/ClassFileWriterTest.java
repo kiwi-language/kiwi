@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.metavm.classfile.ClassFileReader;
 import org.metavm.compiler.CompilerTestUtils;
 import org.metavm.compiler.analyze.Lower;
+import org.metavm.compiler.diag.DummyLog;
 import org.metavm.compiler.syntax.ClassDecl;
 import org.metavm.entity.MockStandardTypesInitializer;
 import org.metavm.entity.StdKlass;
@@ -198,8 +199,8 @@ public class ClassFileWriterTest extends TestCase {
     private void process(String source) {
         var file = CompilerTestUtils.parse(TestUtils.getResourcePath(source));
         var project = CompilerTestUtils.attr(file);
-        file.accept(new Lower(project));
-        var gen = new Gen(project);
+        file.accept(new Lower(project, new DummyLog()));
+        var gen = new Gen(project, new DummyLog());
         file.accept(gen);
 
         var bout = new ByteArrayOutputStream();

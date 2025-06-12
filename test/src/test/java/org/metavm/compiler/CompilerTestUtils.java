@@ -38,7 +38,7 @@ public class CompilerTestUtils {
         var project = MockEnter.enter(List.of(file));
         MockEnter.enterStandard(project);
         ImportResolver.resolve(file, project);
-        var typeResolver = new TypeResolver(project);
+        var typeResolver = new TypeResolver(project, new DummyLog());
         file.accept(typeResolver);
         file.accept(new IdentAttr(project, new DummyLog()));
         file.accept(new Attr(project, new DummyLog()));

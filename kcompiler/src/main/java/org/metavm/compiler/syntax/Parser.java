@@ -1672,14 +1672,19 @@ public class Parser {
     }
 
     private ClassTypeNode classType() {
-        Expr expr = new Ident(ident());
+        var pos = pos();
+        Expr expr = new Ident(ident()).setPos(pos);
         for (; ; ) {
             switch (tokenKind()) {
-                case LT -> expr = new TypeApply(expr, typeArgs());
+                case LT -> {
+                    var pos1 = pos();
+                    expr = new TypeApply(expr, typeArgs()).setPos(pos1);
+                }
                 case DOT -> {
                     nextToken();
+                    var pos1 = pos();
                     var sel = ident();
-                    expr = new SelectorExpr(expr, sel);
+                    expr = new SelectorExpr(expr, sel).setPos(pos1);
                 }
                 default -> {
                     return new ClassTypeNode(expr);
