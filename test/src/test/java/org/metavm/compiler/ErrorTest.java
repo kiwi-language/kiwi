@@ -66,6 +66,36 @@ public class ErrorTest extends TestCase {
         );
     }
 
+    public void testCantResolveType() {
+        var diags = compile("""
+                class Foo: Base {
+                }
+                """);
+        assertEquals(1, diags.size());
+        assertEquals("""
+                dummy.kiwi:1: Symbol not found
+                    class Foo: Base {
+                               ^""",
+                diags.head().toString()
+        );
+    }
+
+    public void testTypeExpected() {
+        var diags = compile("""
+                package org.kiwi
+                
+                class Foo: org.kiwi {}
+                """);
+        assertEquals(1, diags.size());
+        assertEquals(
+                """
+                        dummy.kiwi:3: type expected
+                            class Foo: org.kiwi {}
+                                           ^""",
+                diags.head().toString()
+        );
+    }
+
     public void testDuplicateBindingName() {
         var diags = compile("""
                 class Foo {
@@ -107,7 +137,7 @@ public class ErrorTest extends TestCase {
         MockEnter.enterStandard(project);
         new Enter(project, log).enter(List.of(file));
         file.accept(new Meta());
-        file.accept(new TypeResolver(project));
+        file.accept(new TypeResolver(project, log));
         file.accept(new IdentAttr(project, log));
         file.accept(new Attr(project, log));
         return log.getDiags();

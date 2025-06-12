@@ -173,7 +173,7 @@ public enum TokenKind implements Formattable, Predicate<TokenKind> {
 
     @Override
     public String toString(Locale locale, Messages messages) {
-        return op != null ? op : name().toLowerCase();
+        return op != null ? "'" + op + "'" : "'" + name().toLowerCase() + "'";
     }
 
     public TokenKind[] split() {
