@@ -2,7 +2,6 @@ package org.metavm.compiler.generate;
 
 import org.metavm.compiler.analyze.Env;
 import org.metavm.compiler.diag.Log;
-import org.metavm.compiler.diag.Notes;
 import org.metavm.compiler.element.*;
 import org.metavm.compiler.syntax.*;
 import org.metavm.compiler.type.*;
@@ -466,7 +465,7 @@ public class Gen extends StructuralNodeVisitor {
                     code.newLocal(param);
                 }
                 if (lambdaExpr.body() instanceof Expr expr) {
-                    var item = genExpr(expr, lambda.getRetType());
+                    var item = genExpr(expr, lambda.getRetType().isVoid() ? null : lambda.getRetType());
                     if (lambda.getRetType().isVoid()) {
                         item.drop();
                         code.voidRet();
@@ -887,15 +886,35 @@ public class Gen extends StructuralNodeVisitor {
         }
 
         Item cast(Type type) {
+            if (typeTag >= TypeTags.TAG_INT && typeTag <= TypeTags.TAG_DOUBLE) {
+                var item = cast0(type);
+                if (item == null)
+                    throw new IllegalStateException("Cannot cast item of type tag " + typeTag + " to type " + type.getTypeText());
+                return item;
+            }
+            else
+                return this;
+        }
+
+        private Item cast0(Type type) {
+            assert typeTag >= TypeTags.TAG_INT && typeTag <= TypeTags.TAG_DOUBLE;
             var sourceTag = type.toStackType().getTag();
-            if (sourceTag != typeTag && sourceTag >= TypeTags.TAG_INT && sourceTag <= TypeTags.TAG_DOUBLE
-                    && typeTag >= TypeTags.TAG_INT && typeTag <= TypeTags.TAG_DOUBLE) {
+            if (sourceTag == typeTag || sourceTag == TypeTags.TAG_ANY)
+                return this;
+            if (type instanceof UnionType ut) {
+                for (Type alt : ut.alternatives()) {
+                    var item = cast0(alt);
+                    if (item != null)
+                        return item;
+                }
+                return null;
+            } else if (sourceTag > typeTag && sourceTag <= TypeTags.TAG_DOUBLE) {
                 load();
                 code.castPrim(typeTag, type);
                 return stackItems[type.getTag()];
             }
             else
-                return this;
+                return null;
         }
 
     }

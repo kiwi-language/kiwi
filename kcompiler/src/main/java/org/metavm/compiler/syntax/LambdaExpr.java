@@ -3,7 +3,9 @@ package org.metavm.compiler.syntax;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.compiler.element.Lambda;
 import org.metavm.compiler.type.FuncType;
+import org.metavm.compiler.type.Type;
 import org.metavm.compiler.util.List;
+import org.metavm.object.type.FunctionType;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -77,6 +79,11 @@ public final class LambdaExpr extends Expr {
     @Nullable
     public TypeNode getReturnType() {
         return returnType;
+    }
+
+    @Override
+    public FuncType getType() {
+        return (FuncType) super.getType();
     }
 
     public void setTargetType(FuncType targetType) {

@@ -56,7 +56,9 @@ public class GeminiAgent implements Agent {
                 var buf = new StringBuilder();
                 for (var resp : stream) {
                     var content = resp.candidates().orElseThrow().getFirst().content().orElseThrow();
-                    var parts = content.parts().orElseThrow();
+                    if (content.parts().isEmpty())
+                        continue;
+                    var parts = content.parts().get();
                     for (Part part : parts) {
                         if (part.text().isPresent()) {
                             if (part.thought().orElse(false)) {

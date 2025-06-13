@@ -4,6 +4,7 @@ import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.metavm.common.ErrorCode;
+import org.metavm.compiler.util.CompilationException;
 import org.metavm.entity.Attribute;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ColumnKind;
@@ -538,6 +539,24 @@ public class KiwiTest extends KiwiTestBase {
         var product = getObject(id);
         var price = product.get("price");
         MatcherAssert.assertThat(price, CoreMatchers.instanceOf(ApiObject.class));
+    }
+
+    public void testInvalidSummaryType() {
+        try {
+            deploy("kiwi/error/invalid_summary_type.kiwi");
+            fail("Should have failed");
+        }
+        catch (CompilationException ignored) {}
+    }
+
+    public void testWideningToNullable() {
+        deploy("kiwi/widening/nullable.kiwi");
+        var id = (Id) callMethod(
+                ApiNamedObject.of("fooService"),
+                "create",
+                List.of(1)
+        );
+        assertEquals(1.0, getObject(id).getFloat("rate"), 0.01);
     }
 
 }

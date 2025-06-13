@@ -2,15 +2,18 @@ package org.metavm.chat;
 
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.object.type.DeployService;
+import org.metavm.util.BusinessException;
 import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.Utils;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
 @Component
 @Slf4j
@@ -30,9 +33,28 @@ public class AgentCompiler {
         writeSource(wd, source);
         var r = build(wd);
         if (r.successful()) {
-            deploy(appId, wd);
+            try {
+                deploy(appId, wd);
+            }
+            catch (BusinessException e) {
+                return new DeployResult(false, e.getMessage());
+            }
         }
         return r;
+    }
+
+    public @Nullable String getCode(long appId) {
+        var workdir = WorkDir.from(baseDir, appId);
+        var path = workdir.getSourceFilePath("main.kiwi");
+        if (path.toFile().isFile()) {
+            try {
+                return Files.readString(path);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        else
+            return null;
     }
 
     private void writeSource(WorkDir workDir, String source) {

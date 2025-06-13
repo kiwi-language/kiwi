@@ -1,0 +1,5 @@
+
+class Product(
+    @Summary
+    var price: double
+)

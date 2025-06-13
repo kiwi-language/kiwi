@@ -72,6 +72,10 @@ public class ApiObject {
         return (double) get(fieldName);
     }
 
+    public float getFloat(String fieldName) {
+        return (float) get(fieldName);
+    }
+
     public String getString(String fieldName) {
         return (String) get(fieldName);
     }

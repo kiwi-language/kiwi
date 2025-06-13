@@ -69,6 +69,34 @@ Content-Type: application/json
 
 
 ###
+POST https://metavm.tech/object/invoke
+Accept: application/json
+Content-Type: application/json
+X-App-ID: 1000000010
+
+{
+  "receiver": {
+    "name": "productService"
+  },
+  "method": "batchCreate",
+  "arguments": {
+    "namePrefix": "测试",
+    "count": 20
+  }
+}
+
+###
+POST https://metavm.tech/object/search
+Content-Type: application/json
+X-App-ID: 1000000010
+
+{
+  "type": "Product",
+  "page": 2,
+  "pageSize": 10
+}
+
+###
 GET https://metavm.tech/app?page=1&pageSize=5&searchText=root
 X-App-ID: 2
 

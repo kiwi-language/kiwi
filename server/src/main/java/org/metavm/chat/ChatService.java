@@ -16,15 +16,17 @@ import java.util.Objects;
 public class ChatService {
 
     private final Agent agent;
-    private final String prompt;
+    private final String createPrompt;
     private final String fixPrompt;
+    private final String updatePrompt;
     private final AgentCompiler agentCompiler;
 
     public ChatService(Agent agent, AgentCompiler agentCompiler) {
         this.agent = agent;
         this.agentCompiler = agentCompiler;
-        this.prompt = loadPrompt("/prompt/prompt.md");
-        this.fixPrompt = loadPrompt("/prompt/fix_prompt.md");
+        createPrompt = loadPrompt("/prompt/create.md");
+        fixPrompt = loadPrompt("/prompt/fix.md");
+        updatePrompt = loadPrompt("/prompt/update.md");
     }
 
     private String loadPrompt(String file) {
@@ -37,7 +39,14 @@ public class ChatService {
 
     public ChatResponse chat(ChatRequest request) {
         var chat = agent.createChat();
-        var code = chat.send(buildPrompt(request));
+        var existingCode = agentCompiler.getCode(request.appId());
+        String text;
+        if (existingCode != null)
+            text = buildUpdateText(request.content(), existingCode);
+        else
+            text = buildCreateText(request);
+        log.info("Initial prompt: {}", text);
+        var code = chat.send(text);
         log.info("Generated code:");
         log.info("{}", code);
         var r = agentCompiler.deploy(request.appId(), code);
@@ -47,7 +56,7 @@ public class ChatService {
             var fixPrompt = buildFixPrompt(r.output());
             log.info("Trying to fix error with prompt: {}", fixPrompt);
             code = chat.send(fixPrompt);
-            log.info("Generated code (Retry #{}): {}", code, i + 1);
+            log.info("Generated code (Retry #{}):\n{}", i + 1, code);
             r = agentCompiler.deploy(request.appId(), code);
             if (r.successful())
                 return new ChatResponse(code);
@@ -55,8 +64,12 @@ public class ChatService {
         throw new BusinessException(ErrorCode.CODE_GENERATION_FAILED);
     }
 
-    private String buildPrompt(ChatRequest request) {
-        return prompt + request.content();
+    private String buildCreateText(ChatRequest request) {
+        return createPrompt + request.content();
+    }
+
+    private String buildUpdateText(String content, String code) {
+        return updatePrompt + content + "\nHere is the existing code:\n" + code;
     }
 
     private String buildFixPrompt(String buildOutput) {
@@ -70,7 +83,7 @@ public class ChatService {
         );
         chatService.chat(new ChatRequest(
                 3,
-                "A complex CRM system"
+                "I want to you add more fields to the Product"
         ));
     }
 

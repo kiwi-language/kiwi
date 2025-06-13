@@ -1,4 +1,4 @@
-Your task is to generate a Kiwi program for based on a description. 
+Your task is to modify a Kiwi program based on a description.
 
 Here is an introduction of the Kiwi language:
 
@@ -60,12 +60,13 @@ var name: string,
 var price: Money,
 @Label("库存")
 var stock: int,
+@Label("类目")
 var category: Category
 ) {
 
     @Label("扣减库存")
     fn reduceStock(@Label("数量") quantity: int) {
-        require(stock >= quantity, "Out of stock")
+        require(stock >= quantity, "库存不足")
         stock -= quantity
     }
 
@@ -227,25 +228,120 @@ Important Notes:
 2. Time type is not yet supported, so avoid using it.
 3. Array creation syntax is new ElementType[], e.g., new string[]
 4. To add an element into an array, invoke the the append method on the array object
-5. The semi colon separating enum constants and other class members is necessary even if the class only contains enum constants.
-6. There's no toString method. When concatenating objects with strings, the objects are automatically converted into string.
-7. Available primitive types: int, long, float, double, string, bool
-8. Child objects are automatically added to an implicit list of its parent, there's no need to explicitly
-9. Common methods/fields that are currently missing: array.find, array.filter, string.length. So avoid using them.
-10. parameter default values are not supported
-11. child objects are maintained by an implicit list under the parent object, however this list is currently inaccessible. Therefore, don't try to access child objects. 
-12. @Summary field must be string
-13. `time` is a reserved keyword, do not use it as an identifier
-14. Bean class name takes the following form: {EntityClassName}Service. For example, ProductService, CouponService and OrderService.
-15. Value objects: value objects are immutable and identity-less objects. There are two common use cases for value objects:
-    * Representing values in domain models, e.g., Money 
+5. There's no toString method. When concatenating objects with strings, the objects are automatically converted into string.
+6. Available primitive types: int, long, float, double, string, bool
+7. Child objects are automatically added to an implicit list of its parent, there's no need to explicitly
+8. Common methods/fields that are currently missing: array.find, array.filter, string.length. So avoid using them.
+9. parameter default values are not supported
+10. child objects are maintained by an implicit list under the parent object, however this list is currently inaccessible. Therefore, don't try to access child objects.
+11. @Summary field must be string
+12. `time` is a reserved keyword, do not use it as an identifier
+13. Bean class name takes the following form: {EntityClassName}Service. For example, ProductService, CouponService and OrderService.
+14. Value objects: value objects are immutable and identity-less objects. There are two common use cases for value objects:
+    * Representing values in domain models, e.g., Money
     * As service method parameters for encapsulating complex information, such as OrderPlacementRequest
 
 Output Format:
 
 The generated program shall be contained in a single source file and you shall output that source file in plain text.
 The source code shall contain ABSOLUTELY NO COMMENT.
-Your output shall only contain the source file. Nothing else. 
+Your output shall only contain the source file. Nothing else.
 
-Here is the description for the program to be generated:
+Data Migration:
+When you add new fields or change types of existing fields, you need to define transformation functions so that Kiwi runtime
+knows how to migrate data from the old model to the new model. Here is an example, involving field addition, changing of 
+field type:
 
+Before:
+```kiwi
+class Product(
+    var name: string,
+    var price: double,
+    var stock: int
+)
+```
+
+After
+```kiwi
+class Product(
+    var name: string,
+    var price: Price,
+    var stock: int,
+    var status: ProductStatus
+) {
+
+    priv fn __price__(price: double) -> Price {
+        return Price(price, Currency.CNY)
+    }
+    
+    priv fn __status__() -> ProductStatus {
+        return ProductStatus.ACTIVE
+    }
+
+}
+
+value class Price(
+    val amount: double,
+    val currency: Currency
+)
+
+enum Currency {
+    CNY,
+    USD,
+    EURO
+}
+
+enum ProductStatus {
+    ACTIVE,
+    OUT_OF_STOCK
+}
+```
+
+Here is another example involving introducing child objects and moving some fields to the child objects. Suppose we introduce
+SKU to the previous example:
+
+
+```kiwi
+class Product(
+    var name: string,
+    priv deleted var price: Price?,
+    priv deleted var stock: int?, 
+    var status: ProductStatus
+) {
+
+    priv fn __run__() {
+        SKU("Default", price!!, stock!!)
+    }
+
+    class SKU(
+        var variant: string,
+        var price: Price,
+        var stock: int
+    )
+
+}
+
+value class Price(
+    val amount: double,
+    val currency: Currency
+)
+
+enum Currency {
+    CNY,
+    USD,
+    EURO
+}
+
+enum ProductStatus {
+    ACTIVE,
+    OUT_OF_STOCK
+}
+```
+
+There are several important details in this example:
+1. When you need to access removed fields in the data migration task, you can mark them as `deleted` instead of deleting them directly.
+When a field is marked with `deleted`, you need to change its type to nullable and make it private. 
+2. When you modify a Kiwi program that contains `__run__` methods, you need to remove them in your updated code, otherwise these functions
+would get rerun when your code is deployed.
+
+Here is the description of how the user want to modify the program:

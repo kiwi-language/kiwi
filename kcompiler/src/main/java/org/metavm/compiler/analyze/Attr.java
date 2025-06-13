@@ -185,11 +185,39 @@ public class Attr extends StructuralNodeVisitor {
         }
         if (expr instanceof LambdaExpr lambdaExpr) {
             if (type instanceof FuncType funcType)
-                lambdaExpr.setTargetType(funcType);
+                setLambdaType(lambdaExpr, funcType);
         }
         var resolver = expr.accept(new ExprAttr());
         expr.setStatus(ExprStatus.RESOLVED);
         return resolver;
+    }
+
+    private void setLambdaType(LambdaExpr lambdaExpr, FuncType type) {
+        lambdaExpr.setTargetType(type);
+        var retType = type.getRetType();
+        if (retType.isVoid())
+            return;
+        lambdaExpr.accept(new StructuralNodeVisitor() {
+            @Override
+            public Void visitDecl(Decl<?> decl) {
+                return null;
+            }
+
+            @Override
+            public Void visitLambdaExpr(LambdaExpr l) {
+                if (l == lambdaExpr)
+                    return super.visitLambdaExpr(l);
+                else
+                    return null;
+            }
+
+            @Override
+            public Void visitReturnStmt(RetStmt retStmt) {
+                retStmt.setType(retType);
+                return null;
+            }
+        });
+
     }
 
     private void ensureElementTyped(Element element) {
@@ -563,8 +591,16 @@ public class Attr extends StructuralNodeVisitor {
     private boolean isApplicable(Type parameterType, Type argumentType) {
         if (parameterType.isAssignableFrom(argumentType))
             return true;
-        if (parameterType instanceof PrimitiveType pt1 && argumentType instanceof PrimitiveType pt2)
-            return pt2.widensTo(pt1);
+        return widensTo(argumentType, parameterType);
+    }
+
+    private boolean widensTo(Type t1, Type t2) {
+        if (t1 instanceof PrimitiveType pt1) {
+            if (t2 instanceof PrimitiveType pt2)
+                return pt1.widensTo(pt2);
+            else if (t2 instanceof UnionType ut)
+                return ut.alternatives().anyMatch(alt -> widensTo(t1, alt));
+        }
         return false;
     }
 

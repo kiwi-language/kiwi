@@ -1,6 +1,7 @@
 package org.metavm.compiler;
 
 import junit.framework.TestCase;
+import org.metavm.compiler.util.CompilationException;
 import org.metavm.compiler.util.MockEnter;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.FlowSavingContext;
@@ -100,6 +101,8 @@ public abstract class KiwiTestBase extends TestCase  {
         task.analyze();
         if (task.getErrorCount() == 0)
             task.generate();
+        else
+            throw new CompilationException("Compilation failed");
     }
 
     protected IInstanceContext newContext() {
