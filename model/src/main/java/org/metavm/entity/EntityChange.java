@@ -5,6 +5,7 @@ import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.util.ChangeList;
 import org.metavm.util.DebugEnv;
+import org.metavm.util.Utils;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -106,5 +107,14 @@ public class EntityChange<T> implements Comparable<EntityChange<?>> {
 
     public Map<DifferenceAttributeKey<?>, Object> getAttributes() {
         return Collections.unmodifiableMap(attributes);
+    }
+
+    @Override
+    public String toString() {
+        return "EntityChange {" +
+                "inserts: " + Utils.join(inserts, Objects::toString) + "," +
+                "updates: " + Utils.join(updates, Objects::toString) + "," +
+                "deletes: " + Utils.join(deletes, Objects::toString) + "," +
+                "}";
     }
 }

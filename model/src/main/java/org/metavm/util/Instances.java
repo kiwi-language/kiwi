@@ -1151,4 +1151,19 @@ public class Instances {
         return ((MvObjectInputStream) value.resolveObject()).getInput();
     }
 
+    /**
+     * Clear marks and return unmarked instances
+     * @return unmarked
+     */
+    public static <T extends Instance> List<T> clearMarks(List<T> instances) {
+        var marked = new ArrayList<T>();
+        for (T inst : instances) {
+            if (inst.isMarked()) {
+                inst.clearMarked();
+                marked.add(inst);
+            }
+        }
+        return marked;
+    }
+
 }

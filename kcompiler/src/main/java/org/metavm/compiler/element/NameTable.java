@@ -32,6 +32,7 @@ public class NameTable {
     public final Name Label = get("Label");
     public final Name Summary = get("Summary");
     public final Name Bean = get("Bean");
+    public final Name Configuration = get("Configuration");
     public final Name length = get("length");
     public final Name values = get("values");
     public final Name valueOf = get("valueOf");
@@ -65,6 +66,8 @@ public class NameTable {
     public final Name toString = get("toString");
     public final Name out = get("out");
     public final Name in = get("in");
+    public final Name time = get("time");
+    public final Name password = get("password");
 
     private NameTable() {
     }

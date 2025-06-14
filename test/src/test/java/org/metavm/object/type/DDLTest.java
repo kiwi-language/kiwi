@@ -886,6 +886,17 @@ public class DDLTest extends TestCase {
         Assert.assertEquals(id, page.getFirst().id());
     }
 
+    public void testDeleteClass() {
+        assemble("ddl/delete_nested_class_before.kiwi");
+        try (var context = newContext()) {
+            var klasses = context.loadKlasses();
+            var childKlass = Utils.findRequired(klasses, k -> k.getName().equals("Child"));
+            DebugEnv.id = childKlass.getId();
+            klasses.forEach(k -> logger.debug("Klass {} ID: {}", k.getName(), k.getId()));
+        }
+        assemble("ddl/delete_nested_class_after.kiwi");
+    }
+
     private void assemble(String fileName) {
         assemble(fileName, true);
     }

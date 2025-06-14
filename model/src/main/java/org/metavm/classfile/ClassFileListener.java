@@ -21,6 +21,8 @@ public interface ClassFileListener {
  
     void onKlassUpdate(Klass klass);
 
+    void onKlassRemove(Klass klass);
+
     void onMethodRead(Method method);
 
     void onIndexRead(Index index);

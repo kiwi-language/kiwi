@@ -43,6 +43,7 @@ public class ClassFileReader {
         var qualName = input.readNullable(input::readUTF);
         if (tracing) log.trace("Reading class {}", qualName != null ? qualName : name);
         Klass existing;
+        var existingKlasses = List.<Klass>of();
         if (sourceTag != null)
             existing = repository.selectFirstByKey(Klass.UNIQUE_SOURCE_TAG, Instances.intInstance(sourceTag));
         else if (parent == null)
@@ -59,6 +60,7 @@ public class ClassFileReader {
                     .sourceTag(sourceTag)
                     .scope(parent)
                     .build();
+            existingKlasses = klass.getKlasses();
             repository.bind(klass);
             if (listener != null) listener.beforeKlassCreate();
         }
@@ -250,7 +252,7 @@ public class ClassFileReader {
 
             if (existing == null) {
                 return new Index(
-                        klass.nextChildId(),
+                        klass.getRoot().nextChildId(),
                         klass,
                         name,
                         null,

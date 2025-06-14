@@ -48,6 +48,10 @@ public abstract class KiwiTestBase extends TestCase  {
         return TestUtils.doInTransaction(() -> apiClient.saveInstance(className, arguments));
     }
 
+    void deleteObject(Id id) {
+        TestUtils.doInTransactionWithoutResult(() -> apiClient.delete(id));
+    }
+
     Object callMethod(Object qualifier, String methodName, List<Object> arguments) {
         return TestUtils.doInTransaction(() -> apiClient.callMethod(qualifier, methodName, arguments));
     }

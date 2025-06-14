@@ -559,4 +559,50 @@ public class KiwiTest extends KiwiTestBase {
         assertEquals(1.0, getObject(id).getFloat("rate"), 0.01);
     }
 
+    public void testFrozen() {
+        deploy("kiwi/ident/semi_keyword.kiwi");
+    }
+
+    public void testIndexEntryRemoval() {
+        deploy("kiwi/index/remove.kiwi");
+        var id = saveInstance("index.Foo", Map.of("name", "foo"));
+        var fooService = ApiNamedObject.of("fooService");
+        var found = callMethod(fooService, "findFooByName", List.of("foo"));
+        assertEquals(id, found);
+        deleteObject(id);
+        try {
+            getObject(id);
+            fail("Should have failed");
+        } catch (BusinessException e) {
+            assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
+        var found1 = callMethod(fooService, "findFooByName", List.of("foo"));
+        assertNull(found1);
+    }
+
+    public void testChildIndexEntryRemoval() {
+        deploy("kiwi/index/remove_child.kiwi");
+        var id = saveInstance("index.Foo", Map.of(
+                "Child", List.of(
+                        Map.of(
+                        "name", "child"
+                        )
+                ))
+        );
+        var childId = getObject(id).getChildren("Child").getFirst().id();
+        logger.debug("Child ID: {}", childId);
+        var childService = ApiNamedObject.of("childService");
+        var found = callMethod(childService, "findChildByName", List.of("child"));
+        assertEquals(childId, found);
+        deleteObject(childId);
+        try {
+            getObject(childId);
+            fail("Should have failed");
+        } catch (BusinessException e) {
+            assertSame(ErrorCode.INSTANCE_NOT_FOUND, e.getErrorCode());
+        }
+        var found1 = callMethod(childService, "findChildByName", List.of("child"));
+        assertNull(found1);
+    }
+
 }

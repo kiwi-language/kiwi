@@ -67,8 +67,8 @@ public class MetaContextCache extends EntityContextFactoryAware {
             IInstanceContext context;
             if (key.walId != null) {
                 try (var outerContext = newContext(key.appId)) {
-                    var wal = outerContext.getEntity(WAL.class, key.walId);
-                    context = newContext(key.appId, builder -> builder.readWAL(wal));
+//                    var wal = outerContext.getEntity(WAL.class, key.walId);
+                    context = newContext(key.appId, builder -> builder.migrating(true) /*builder.readWAL(wal)*/);
                 }
             } else
                 context = newContext(key.appId);

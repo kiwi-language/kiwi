@@ -1,5 +1,6 @@
 package org.metavm.object.instance;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.entity.StoreLoadRequest;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -7,7 +8,10 @@ import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TreeVersion;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.log.InstanceLog;
-import org.metavm.object.instance.persistence.*;
+import org.metavm.object.instance.persistence.IndexEntryPO;
+import org.metavm.object.instance.persistence.IndexKeyPO;
+import org.metavm.object.instance.persistence.InstancePO;
+import org.metavm.object.instance.persistence.VersionPO;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.instance.persistence.mappers.InstanceMapper;
 import org.metavm.util.ChangeList;
@@ -16,6 +20,7 @@ import org.metavm.util.Utils;
 import java.util.Collection;
 import java.util.List;
 
+@Slf4j
 public class BufferedInstanceStore implements IInstanceStore {
 
     private final IInstanceStore wrapped;
@@ -99,7 +104,11 @@ public class BufferedInstanceStore implements IInstanceStore {
     @Override
     public List<IndexEntryPO> getIndexEntriesByInstanceIds(Collection<Id> instanceIds, IInstanceContext context) {
         var mapper = getIndexEntryMapper(context.getAppId(), "index_entry_tmp");
-        return mapper.selectByInstanceIds(context.getAppId(), Utils.map(instanceIds, Id::toBytes));
+        var r =  mapper.selectByInstanceIds(context.getAppId(), Utils.map(instanceIds, Id::toBytes));
+        if (!r.isEmpty())
+            log.debug("Got entries from tmp table", new Exception());
+        return r;
+//        return wrapped.getIndexEntriesByInstanceIds(instanceIds, context);
     }
 
     @Override

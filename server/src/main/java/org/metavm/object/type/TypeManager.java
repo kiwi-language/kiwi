@@ -6,18 +6,17 @@ import org.metavm.common.ErrorCode;
 import org.metavm.ddl.Commit;
 import org.metavm.ddl.CommitState;
 import org.metavm.entity.ApplicationStatusAware;
+import org.metavm.entity.AttributeNames;
 import org.metavm.entity.EntityContextFactory;
 import org.metavm.flow.Flows;
 import org.metavm.flow.KlassInput;
 import org.metavm.flow.Method;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
+import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.persistence.SchemaManager;
-import org.metavm.util.BusinessException;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.DebugEnv;
-import org.metavm.util.Instances;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -61,12 +60,12 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
         SaveTypeBatch batch;
         try (var context = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT))) {
             ContextUtil.setDDL(true);
-            var wal = context.bind(new WAL(context.allocateRootId(), context.getAppId()));
-            try (var bufferingContext = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT).writeWAL(wal))) {
+//            var wal = context.bind(new WAL(context.allocateRootId(), context.getAppId()));
+            try (var bufferingContext = newContext(builder -> builder.timeout(DDL_SESSION_TIMEOUT).migrating(true))) {
                 batch = deploy(in, bufferingContext);
                 bufferingContext.finish();
             }
-            var commit = context.bind(batch.buildCommit(wal));
+            var commit = context.bind(batch.buildCommit());
             if(CommitState.MIGRATING.shouldSkip(commit))
                 context.bind(CommitState.SUBMITTING.createTask(commit, context));
             else
@@ -83,6 +82,8 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
             var runningCommit = context.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
             if (runningCommit != null)
                 throw new BusinessException(ErrorCode.COMMIT_RUNNING);
+            var existingKlasses = context.loadKlasses();
+            existingKlasses.forEach(Instance::setMarked);
             var batch = SaveTypeBatch.create(context);
             ZipEntry zipEntry;
             while ((zipEntry = zipIn.getNextEntry()) != null) {
@@ -91,13 +92,18 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
                 zipIn.closeEntry();
             }
             var klasses = Types.sortKlassesByTopology(batch.getKlasses());
+            if (DebugEnv.traceDeployment) {
+                logger.trace("Deployed classes: {}", Utils.join(klasses, Klass::getQualifiedName));
+            }
             for (Klass klass : klasses) {
+                klass.clearMarked();
                 klass.resetHierarchy();
                 if (DebugEnv.traceDeployment && klass.isRoot()) {
                     rebuildNodes(klass);
                     logger.trace("{}", klass.getText());
                 }
             }
+            Instances.clearMarks(existingKlasses).forEach(k -> handleRemovedKlass(k, context));
             beanManager.createBeans(klasses, BeanDefinitionRegistry.getInstance(context), context);
             for (Klass newClass : batch.getNewKlasses()) {
                 if (!newClass.isInterface())
@@ -109,6 +115,27 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void handleRemovedKlass(Klass klass, IInstanceContext context) {
+        var tracing = DebugEnv.traceDeployment;
+        context.remove(klass);
+        if (tracing)
+            logger.trace("Removing klass {} ({})", klass.getQualifiedName(), klass.getId());
+        if (klass.isBeanClass()) {
+            if (tracing)
+                logger.trace("Removing bean {}", klass.getAttribute(AttributeNames.BEAN_NAME));
+            beanManager.removeBeans(List.of(klass), BeanDefinitionRegistry.getInstance(context), context);
+        }
+        var sft = StaticFieldTable.getInstance(klass.getType(), context);
+        if (klass.isEnum()) {
+            for (Field f : klass.getEnumConstants()) {
+                if (tracing)
+                    logger.trace("Removing enum constant: {}", f.getQualifiedName());
+                context.remove(sft.get(f).resolveObject());
+            }
+        }
+        context.remove(sft);
     }
 
     private void rebuildNodes(Klass clazz) {

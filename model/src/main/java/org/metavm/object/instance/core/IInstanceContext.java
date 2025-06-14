@@ -226,8 +226,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
         return getEntity(Field.class, id);
     }
 
-    default void loadKlasses() {
-        Klasses.loadKlasses(this);
+    default List<Klass> loadKlasses() {
+        return Klasses.loadKlasses(this);
     }
 
     void setParameterizedMap(ParameterizedMap map);

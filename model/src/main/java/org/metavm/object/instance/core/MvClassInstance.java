@@ -655,7 +655,12 @@ public class MvClassInstance extends MvInstance implements ClassInstance {
         }
 
         void onFieldAdded(InstanceField field) {
-            owner.fields[field.getField().getOffset()] = field;
+            try {
+                owner.fields[field.getField().getOffset()] = field;
+            } catch (Exception e) {
+                log.debug("Field: {}", field.getField().getQualifiedName());
+                throw e;
+            }
         }
 
         void tryClearUnknownField(long classTag, int tag) {

@@ -41,6 +41,8 @@ public class DebugEnv {
 
     public static boolean traceInstanceLoading = false;
 
+    public static boolean traceIndexBuild = true;
+
     public static volatile boolean flag = false;
 
     public static final List<Klass> list = new CopyOnWriteArrayList<>();
@@ -107,7 +109,7 @@ public class DebugEnv {
 
     public static volatile boolean traceInstanceIO = false;
 
-    public static volatile boolean traceDeployment = false;
+    public static volatile boolean traceDeployment = true;
 
     public static volatile boolean traceContextBinding = true;
 

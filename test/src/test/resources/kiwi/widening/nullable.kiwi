@@ -8,7 +8,7 @@ class Foo(
 class FooService {
 
     fn create(rate: int) -> Foo {
-        return Foo(rate)
+        return Foo(1)
     }
 
 }

@@ -52,14 +52,13 @@ public class BytesUtils {
     }
 
     private static Object convertInstanceToValue(Value instance) {
-        if(instance instanceof PrimitiveValue primitiveValue)
-            return primitiveValue.getValue();
-        else if (instance instanceof StringReference)
-            return Instances.toJavaString(instance);
-        else if(instance instanceof EntityReference r)
-            return r.getId();
-        else
-            throw new InternalException("Can not convert instance: " + instance);
+        return switch (instance) {
+            case PrimitiveValue primitiveValue -> primitiveValue.getValue();
+            case StringReference ignored -> Instances.toJavaString(instance);
+            case EntityReference r -> r.getId();
+            case NullValue ignored -> null;
+            case null, default -> throw new InternalException("Can not convert instance: " + instance);
+        };
     }
 
     private static class MockInstance extends MvInstance {

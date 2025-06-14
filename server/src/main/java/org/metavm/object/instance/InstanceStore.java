@@ -29,10 +29,12 @@ public class InstanceStore extends BaseInstanceStore {
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceStore.class);
 
-    protected final MapperRegistry instanceMapperRegistry;
+    protected final MapperRegistry mapperRegistry;
+    private final String instanceTable;
+    private final String indexEntryTable;
 
-    public InstanceStore(MapperRegistry instanceMapperRegistry) {
-        this.instanceMapperRegistry = instanceMapperRegistry;
+    public InstanceStore(MapperRegistry mapperRegistry, String tableSuffix) {
+        this.mapperRegistry = mapperRegistry;
         WAL.setCommitHook(wal -> {
             var migratingStore = new MigrationInstanceStore(this);
             migratingStore.save(wal.getAppId(), wal.getInstanceChanges());
@@ -43,7 +45,7 @@ public class InstanceStore extends BaseInstanceStore {
     @Override
     public void save(long appId, ChangeList<InstancePO> diff) {
         try (var entry = ContextUtil.getProfiler().enter("InstanceStore.save")) {
-            var mapper = instanceMapperRegistry.getInstanceMapper(appId, "instance");
+            var mapper = mapperRegistry.getInstanceMapper(appId, "instance");
             entry.addMessage("numChanges", diff.inserts().size() + diff.updates().size() + diff.deletes().size());
             diff.apply(
                     mapper::batchInsert,
@@ -173,12 +175,12 @@ public class InstanceStore extends BaseInstanceStore {
 
     @Override
     public InstanceMapper getInstanceMapper(long appId, String table) {
-        return instanceMapperRegistry.getInstanceMapper(appId, table);
+        return mapperRegistry.getInstanceMapper(appId, table);
     }
 
     @Override
     public IndexEntryMapper getIndexEntryMapper(long appId, String table) {
-        return instanceMapperRegistry.getIndexEntryMapper(appId, table);
+        return mapperRegistry.getIndexEntryMapper(appId, table);
     }
 
 }

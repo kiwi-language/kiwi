@@ -487,7 +487,7 @@ public class Parser {
     private Expr atomExpr() {
         var pos = pos();
         var atomExpr = switch (tokenKind()) {
-            case IDENT, VALUE -> {
+            case IDENT, VALUE, TIME, PASSWORD -> {
                 if (peekToken().is(ARROW))
                     yield lambdaExpr();
                 else
@@ -1062,10 +1062,12 @@ public class Parser {
         nextToken();
         var params = List.<ClassParamDecl>builder();
         if (!isOneOf(EOF, RPAREN)) {
-            params.append(classParam());
-            while (!isOneOf(EOF, RPAREN)) {
-                accept(COMMA);
+            for (;;) {
                 params.append(classParam());
+                if (is(COMMA))
+                    nextToken();
+                else
+                    break;
             }
         }
         accept(RPAREN);
@@ -1370,10 +1372,12 @@ public class Parser {
         accept(LPAREN);
         var params = List.<ParamDecl>builder();
         if (!is(RPAREN)) {
-            params.append(param());
-            while (!is(RPAREN)) {
-                accept(COMMA);
+            for (;;) {
                 params.append(param());
+                if (is(COMMA))
+                    nextToken();
+                else
+                    break;
             }
         }
         accept(RPAREN);
@@ -1746,6 +1750,14 @@ public class Parser {
             case VALUE -> {
                 nextToken();
                 return NameTable.instance.value;
+            }
+            case PASSWORD -> {
+                nextToken();
+                return NameTable.instance.password;
+            }
+            case TIME -> {
+                nextToken();
+                return NameTable.instance.time;
             }
             default -> {
                 accept(TokenKind.IDENT);

@@ -142,7 +142,8 @@ public class WALTest extends TestCase {
                 }
                 var commit = new Commit(
                         PhysicalId.of(context.allocateTreeId(), 0L),
-                        wal,
+                        APP_ID,
+//                        wal,
                         List.of(fieldId), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
                 context.bind(new DDLTask(context.allocateRootId(), commit, CommitState.MIGRATING));
                 context.finish();

@@ -3,6 +3,8 @@ package org.metavm.entity;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.object.instance.core.*;
+import org.metavm.object.type.Klass;
+import org.metavm.util.BusinessException;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.Utils;

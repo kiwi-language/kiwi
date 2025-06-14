@@ -1,20 +1,1487 @@
 {
-  "time_local": "12/Jun/2025:17:41:54 +0800",
-  "remote_addr": "122.96.121.240",
-  "request_id": "22a28c56622b63756388fc2b7f01ed09",
-  "request_method": "POST",
-  "request_uri": "/object/invoke",
-  "server_protocol": "HTTP/1.1",
-  "status": 400,
-  "body_bytes_sent": 99,
-  "bytes_sent": 274,
-  "request_length": 821,
-  "request_time": 0.007,
-  "upstream_response_time": "0.004",
-  "upstream_addr": "[::1]:8080",
-  "http_origin": "http://localhost:5173",
-  "http_referer": "http://localhost:5173/",
-  "http_user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-  "http_x_forwarded_for": "",
-  "request_body": "{\"receiver\":{\"id\":\"01e4b4d7b90700\"},\"method\":\"reduceStock\",\"arguments\":{}}"
+  "code": 0,
+  "data": {
+    "classes": [
+      {
+        "access": "public",
+        "tag": "value",
+        "name": "Money",
+        "qualifiedName": "Money",
+        "superTypes": [],
+        "constructor": {
+          "parameters": [
+            {
+              "name": "amount",
+              "type": {
+                "name": "double",
+                "kind": "primitive"
+              },
+              "label": "数额"
+            },
+            {
+              "name": "currency",
+              "type": {
+                "qualifiedName": "Currency",
+                "kind": "class"
+              },
+              "label": "币种"
+            }
+          ]
+        },
+        "fields": [
+          {
+            "access": "public",
+            "name": "amount",
+            "type": {
+              "name": "double",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "数额"
+          },
+          {
+            "access": "public",
+            "name": "currency",
+            "type": {
+              "qualifiedName": "Currency",
+              "kind": "class"
+            },
+            "summary": false,
+            "label": "币种"
+          },
+          {
+            "access": "private",
+            "name": "summary",
+            "type": {
+              "name": "string",
+              "kind": "primitive"
+            },
+            "summary": true,
+            "label": "Summary"
+          }
+        ],
+        "methods": [
+          {
+            "access": "public",
+            "name": "add",
+            "parameters": [
+              {
+                "name": "that",
+                "type": {
+                  "qualifiedName": "Money",
+                  "kind": "class"
+                },
+                "label": "待加金额"
+              }
+            ],
+            "returnType": {
+              "qualifiedName": "Money",
+              "kind": "class"
+            },
+            "label": "Add",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "name": "sub",
+            "parameters": [
+              {
+                "name": "that",
+                "type": {
+                  "qualifiedName": "Money",
+                  "kind": "class"
+                },
+                "label": "That"
+              }
+            ],
+            "returnType": {
+              "qualifiedName": "Money",
+              "kind": "class"
+            },
+            "label": "Sub",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "name": "getAmount",
+            "parameters": [
+              {
+                "name": "currency",
+                "type": {
+                  "qualifiedName": "Currency",
+                  "kind": "class"
+                },
+                "label": "目标币种"
+              }
+            ],
+            "returnType": {
+              "name": "double",
+              "kind": "primitive"
+            },
+            "label": "Get Amount",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "name": "times",
+            "parameters": [
+              {
+                "name": "n",
+                "type": {
+                  "name": "int",
+                  "kind": "primitive"
+                },
+                "label": "N"
+              }
+            ],
+            "returnType": {
+              "qualifiedName": "Money",
+              "kind": "class"
+            },
+            "label": "Times",
+            "abstract": false
+          }
+        ],
+        "classes": [],
+        "enumConstants": [],
+        "label": "金额",
+        "abstract": false
+      },
+      {
+        "access": "public",
+        "tag": "enum",
+        "name": "Currency",
+        "qualifiedName": "Currency",
+        "superTypes": [
+          {
+            "qualifiedName": "java.lang.Enum",
+            "kind": "class"
+          }
+        ],
+        "constructor": {
+          "parameters": [
+            {
+              "name": "enum$name",
+              "type": {
+                "name": "string",
+                "kind": "primitive"
+              },
+              "label": "Enum$name"
+            },
+            {
+              "name": "enum$ordinal",
+              "type": {
+                "name": "int",
+                "kind": "primitive"
+              },
+              "label": "Enum$ordinal"
+            },
+            {
+              "name": "rate",
+              "type": {
+                "name": "double",
+                "kind": "primitive"
+              },
+              "label": "汇率"
+            }
+          ]
+        },
+        "fields": [
+          {
+            "access": "public",
+            "name": "rate",
+            "type": {
+              "name": "double",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "汇率"
+          }
+        ],
+        "methods": [
+          {
+            "access": "public",
+            "name": "values",
+            "parameters": [],
+            "returnType": {
+              "elementType": {
+                "qualifiedName": "Currency",
+                "kind": "class"
+              },
+              "kind": "array"
+            },
+            "label": "Values",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "name": "valueOf",
+            "parameters": [
+              {
+                "name": "name",
+                "type": {
+                  "alternatives": [
+                    {
+                      "name": "string",
+                      "kind": "primitive"
+                    },
+                    {
+                      "name": "null",
+                      "kind": "primitive"
+                    }
+                  ],
+                  "kind": "union"
+                },
+                "label": "Name"
+              }
+            ],
+            "returnType": {
+              "alternatives": [
+                {
+                  "qualifiedName": "Currency",
+                  "kind": "class"
+                },
+                {
+                  "name": "null",
+                  "kind": "primitive"
+                }
+              ],
+              "kind": "union"
+            },
+            "label": "Value Of",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "name": "label",
+            "parameters": [],
+            "returnType": {
+              "name": "string",
+              "kind": "primitive"
+            },
+            "label": "Label",
+            "abstract": true
+          },
+          {
+            "access": "public",
+            "name": "getRate",
+            "parameters": [],
+            "returnType": {
+              "name": "double",
+              "kind": "primitive"
+            },
+            "label": "Get Rate",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_YUAN__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "Currency",
+              "kind": "class"
+            },
+            "label": "__init_ YUAN__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_DOLLAR__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "Currency",
+              "kind": "class"
+            },
+            "label": "__init_ DOLLAR__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_POUND__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "Currency",
+              "kind": "class"
+            },
+            "label": "__init_ POUND__",
+            "abstract": false
+          }
+        ],
+        "classes": [
+          {
+            "access": "public",
+            "tag": "class",
+            "name": "$0",
+            "qualifiedName": "Currency.$0",
+            "superTypes": [
+              {
+                "qualifiedName": "Currency",
+                "kind": "class"
+              }
+            ],
+            "constructor": {
+              "parameters": []
+            },
+            "fields": [],
+            "methods": [
+              {
+                "access": "public",
+                "name": "label",
+                "parameters": [],
+                "returnType": {
+                  "name": "string",
+                  "kind": "primitive"
+                },
+                "label": "Label",
+                "abstract": false
+              }
+            ],
+            "classes": [],
+            "enumConstants": [],
+            "label": "$0",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "tag": "class",
+            "name": "$1",
+            "qualifiedName": "Currency.$1",
+            "superTypes": [
+              {
+                "qualifiedName": "Currency",
+                "kind": "class"
+              }
+            ],
+            "constructor": {
+              "parameters": []
+            },
+            "fields": [],
+            "methods": [
+              {
+                "access": "public",
+                "name": "label",
+                "parameters": [],
+                "returnType": {
+                  "name": "string",
+                  "kind": "primitive"
+                },
+                "label": "Label",
+                "abstract": false
+              }
+            ],
+            "classes": [],
+            "enumConstants": [],
+            "label": "$1",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "tag": "class",
+            "name": "$2",
+            "qualifiedName": "Currency.$2",
+            "superTypes": [
+              {
+                "qualifiedName": "Currency",
+                "kind": "class"
+              }
+            ],
+            "constructor": {
+              "parameters": []
+            },
+            "fields": [],
+            "methods": [
+              {
+                "access": "public",
+                "name": "label",
+                "parameters": [],
+                "returnType": {
+                  "name": "string",
+                  "kind": "primitive"
+                },
+                "label": "Label",
+                "abstract": false
+              }
+            ],
+            "classes": [],
+            "enumConstants": [],
+            "label": "$2",
+            "abstract": false
+          }
+        ],
+        "enumConstants": [
+          {
+            "name": "YUAN",
+            "label": "人民币"
+          },
+          {
+            "name": "DOLLAR",
+            "label": "美元"
+          },
+          {
+            "name": "POUND",
+            "label": "英镑"
+          }
+        ],
+        "label": "币种",
+        "abstract": false
+      },
+      {
+        "access": "public",
+        "tag": "enum",
+        "name": "CarStatus",
+        "qualifiedName": "CarStatus",
+        "superTypes": [
+          {
+            "qualifiedName": "java.lang.Enum",
+            "kind": "class"
+          }
+        ],
+        "constructor": {
+          "parameters": [
+            {
+              "name": "enum$name",
+              "type": {
+                "name": "string",
+                "kind": "primitive"
+              },
+              "label": "Enum$name"
+            },
+            {
+              "name": "enum$ordinal",
+              "type": {
+                "name": "int",
+                "kind": "primitive"
+              },
+              "label": "Enum$ordinal"
+            }
+          ]
+        },
+        "fields": [],
+        "methods": [
+          {
+            "access": "public",
+            "name": "values",
+            "parameters": [],
+            "returnType": {
+              "elementType": {
+                "qualifiedName": "CarStatus",
+                "kind": "class"
+              },
+              "kind": "array"
+            },
+            "label": "Values",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "name": "valueOf",
+            "parameters": [
+              {
+                "name": "name",
+                "type": {
+                  "alternatives": [
+                    {
+                      "name": "string",
+                      "kind": "primitive"
+                    },
+                    {
+                      "name": "null",
+                      "kind": "primitive"
+                    }
+                  ],
+                  "kind": "union"
+                },
+                "label": "Name"
+              }
+            ],
+            "returnType": {
+              "alternatives": [
+                {
+                  "name": "null",
+                  "kind": "primitive"
+                },
+                {
+                  "qualifiedName": "CarStatus",
+                  "kind": "class"
+                }
+              ],
+              "kind": "union"
+            },
+            "label": "Value Of",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_AVAILABLE__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarStatus",
+              "kind": "class"
+            },
+            "label": "__init_ AVAILABLE__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_SOLD__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarStatus",
+              "kind": "class"
+            },
+            "label": "__init_ SOLD__",
+            "abstract": false
+          }
+        ],
+        "classes": [],
+        "enumConstants": [
+          {
+            "name": "AVAILABLE",
+            "label": "在售"
+          },
+          {
+            "name": "SOLD",
+            "label": "已售"
+          }
+        ],
+        "label": "汽车状态",
+        "abstract": false
+      },
+      {
+        "access": "public",
+        "tag": "class",
+        "name": "Sale",
+        "qualifiedName": "Sale",
+        "superTypes": [],
+        "constructor": {
+          "parameters": [
+            {
+              "name": "car",
+              "type": {
+                "qualifiedName": "Car",
+                "kind": "class"
+              },
+              "label": "售出汽车"
+            },
+            {
+              "name": "finalPrice",
+              "type": {
+                "qualifiedName": "Money",
+                "kind": "class"
+              },
+              "label": "最终售价"
+            },
+            {
+              "name": "buyerContact",
+              "type": {
+                "name": "string",
+                "kind": "primitive"
+              },
+              "label": "买家联系方式"
+            }
+          ]
+        },
+        "fields": [
+          {
+            "access": "public",
+            "name": "car",
+            "type": {
+              "qualifiedName": "Car",
+              "kind": "class"
+            },
+            "summary": false,
+            "label": "售出汽车"
+          },
+          {
+            "access": "public",
+            "name": "finalPrice",
+            "type": {
+              "qualifiedName": "Money",
+              "kind": "class"
+            },
+            "summary": false,
+            "label": "最终售价"
+          },
+          {
+            "access": "public",
+            "name": "buyerContact",
+            "type": {
+              "name": "string",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "买家联系方式"
+          }
+        ],
+        "methods": [],
+        "classes": [],
+        "enumConstants": [],
+        "label": "销售记录",
+        "abstract": false
+      },
+      {
+        "access": "public",
+        "tag": "class",
+        "name": "Car",
+        "qualifiedName": "Car",
+        "superTypes": [],
+        "constructor": {
+          "parameters": [
+            {
+              "name": "model",
+              "type": {
+                "name": "string",
+                "kind": "primitive"
+              },
+              "label": "型号"
+            },
+            {
+              "name": "make",
+              "type": {
+                "qualifiedName": "CarMake",
+                "kind": "class"
+              },
+              "label": "品牌"
+            },
+            {
+              "name": "year",
+              "type": {
+                "name": "int",
+                "kind": "primitive"
+              },
+              "label": "年份"
+            },
+            {
+              "name": "price",
+              "type": {
+                "qualifiedName": "Money",
+                "kind": "class"
+              },
+              "label": "价格"
+            },
+            {
+              "name": "mileage",
+              "type": {
+                "name": "int",
+                "kind": "primitive"
+              },
+              "label": "里程"
+            },
+            {
+              "name": "condition",
+              "type": {
+                "qualifiedName": "CarCondition",
+                "kind": "class"
+              },
+              "label": "状况"
+            },
+            {
+              "name": "color",
+              "type": {
+                "name": "string",
+                "kind": "primitive"
+              },
+              "label": "颜色"
+            },
+            {
+              "name": "description",
+              "type": {
+                "name": "string",
+                "kind": "primitive"
+              },
+              "label": "描述"
+            }
+          ]
+        },
+        "fields": [
+          {
+            "access": "public",
+            "name": "model",
+            "type": {
+              "name": "string",
+              "kind": "primitive"
+            },
+            "summary": true,
+            "label": "型号"
+          },
+          {
+            "access": "public",
+            "name": "make",
+            "type": {
+              "qualifiedName": "CarMake",
+              "kind": "class"
+            },
+            "summary": false,
+            "label": "品牌"
+          },
+          {
+            "access": "public",
+            "name": "year",
+            "type": {
+              "name": "int",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "年份"
+          },
+          {
+            "access": "public",
+            "name": "price",
+            "type": {
+              "qualifiedName": "Money",
+              "kind": "class"
+            },
+            "summary": false,
+            "label": "价格"
+          },
+          {
+            "access": "public",
+            "name": "mileage",
+            "type": {
+              "name": "int",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "里程"
+          },
+          {
+            "access": "public",
+            "name": "condition",
+            "type": {
+              "qualifiedName": "CarCondition",
+              "kind": "class"
+            },
+            "summary": false,
+            "label": "状况"
+          },
+          {
+            "access": "public",
+            "name": "color",
+            "type": {
+              "name": "string",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "颜色"
+          },
+          {
+            "access": "public",
+            "name": "description",
+            "type": {
+              "name": "string",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "描述"
+          },
+          {
+            "access": "public",
+            "name": "status",
+            "type": {
+              "qualifiedName": "CarStatus",
+              "kind": "class"
+            },
+            "summary": false,
+            "label": "状态"
+          }
+        ],
+        "methods": [
+          {
+            "access": "public",
+            "name": "markAsSold",
+            "parameters": [],
+            "returnType": {
+              "name": "void",
+              "kind": "primitive"
+            },
+            "label": "标记为已售",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "name": "updatePrice",
+            "parameters": [
+              {
+                "name": "newPrice",
+                "type": {
+                  "qualifiedName": "Money",
+                  "kind": "class"
+                },
+                "label": "新价格"
+              }
+            ],
+            "returnType": {
+              "name": "void",
+              "kind": "primitive"
+            },
+            "label": "更新价格",
+            "abstract": false
+          }
+        ],
+        "classes": [],
+        "enumConstants": [],
+        "label": "汽车",
+        "abstract": false
+      },
+      {
+        "access": "public",
+        "tag": "class",
+        "name": "SaleService",
+        "qualifiedName": "SaleService",
+        "superTypes": [],
+        "constructor": {
+          "parameters": []
+        },
+        "fields": [],
+        "methods": [
+          {
+            "access": "public",
+            "name": "sellCar",
+            "parameters": [
+              {
+                "name": "car",
+                "type": {
+                  "qualifiedName": "Car",
+                  "kind": "class"
+                },
+                "label": "汽车"
+              },
+              {
+                "name": "finalPrice",
+                "type": {
+                  "qualifiedName": "Money",
+                  "kind": "class"
+                },
+                "label": "最终价格"
+              },
+              {
+                "name": "buyerContact",
+                "type": {
+                  "name": "string",
+                  "kind": "primitive"
+                },
+                "label": "买家联系方式"
+              }
+            ],
+            "returnType": {
+              "qualifiedName": "Sale",
+              "kind": "class"
+            },
+            "label": "出售汽车",
+            "abstract": false
+          }
+        ],
+        "classes": [],
+        "enumConstants": [],
+        "beanName": "saleService",
+        "label": "销售服务",
+        "abstract": false
+      },
+      {
+        "access": "public",
+        "tag": "enum",
+        "name": "CarMake",
+        "qualifiedName": "CarMake",
+        "superTypes": [
+          {
+            "qualifiedName": "java.lang.Enum",
+            "kind": "class"
+          }
+        ],
+        "constructor": {
+          "parameters": [
+            {
+              "name": "enum$name",
+              "type": {
+                "name": "string",
+                "kind": "primitive"
+              },
+              "label": "Enum$name"
+            },
+            {
+              "name": "enum$ordinal",
+              "type": {
+                "name": "int",
+                "kind": "primitive"
+              },
+              "label": "Enum$ordinal"
+            }
+          ]
+        },
+        "fields": [],
+        "methods": [
+          {
+            "access": "public",
+            "name": "values",
+            "parameters": [],
+            "returnType": {
+              "elementType": {
+                "qualifiedName": "CarMake",
+                "kind": "class"
+              },
+              "kind": "array"
+            },
+            "label": "Values",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "name": "valueOf",
+            "parameters": [
+              {
+                "name": "name",
+                "type": {
+                  "alternatives": [
+                    {
+                      "name": "string",
+                      "kind": "primitive"
+                    },
+                    {
+                      "name": "null",
+                      "kind": "primitive"
+                    }
+                  ],
+                  "kind": "union"
+                },
+                "label": "Name"
+              }
+            ],
+            "returnType": {
+              "alternatives": [
+                {
+                  "qualifiedName": "CarMake",
+                  "kind": "class"
+                },
+                {
+                  "name": "null",
+                  "kind": "primitive"
+                }
+              ],
+              "kind": "union"
+            },
+            "label": "Value Of",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_TOYOTA__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarMake",
+              "kind": "class"
+            },
+            "label": "__init_ TOYOTA__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_HONDA__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarMake",
+              "kind": "class"
+            },
+            "label": "__init_ HONDA__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_BMW__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarMake",
+              "kind": "class"
+            },
+            "label": "__init_ BMW__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_MERCEDES__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarMake",
+              "kind": "class"
+            },
+            "label": "__init_ MERCEDES__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_FORD__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarMake",
+              "kind": "class"
+            },
+            "label": "__init_ FORD__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_TESLA__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarMake",
+              "kind": "class"
+            },
+            "label": "__init_ TESLA__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_OTHER__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarMake",
+              "kind": "class"
+            },
+            "label": "__init_ OTHER__",
+            "abstract": false
+          }
+        ],
+        "classes": [],
+        "enumConstants": [
+          {
+            "name": "TOYOTA",
+            "label": "丰田"
+          },
+          {
+            "name": "HONDA",
+            "label": "本田"
+          },
+          {
+            "name": "BMW",
+            "label": "宝马"
+          },
+          {
+            "name": "MERCEDES",
+            "label": "奔驰"
+          },
+          {
+            "name": "FORD",
+            "label": "福特"
+          },
+          {
+            "name": "TESLA",
+            "label": "特斯拉"
+          },
+          {
+            "name": "OTHER",
+            "label": "其他"
+          }
+        ],
+        "label": "汽车品牌",
+        "abstract": false
+      },
+      {
+        "access": "public",
+        "tag": "enum",
+        "name": "CarCondition",
+        "qualifiedName": "CarCondition",
+        "superTypes": [
+          {
+            "qualifiedName": "java.lang.Enum",
+            "kind": "class"
+          }
+        ],
+        "constructor": {
+          "parameters": [
+            {
+              "name": "enum$name",
+              "type": {
+                "name": "string",
+                "kind": "primitive"
+              },
+              "label": "Enum$name"
+            },
+            {
+              "name": "enum$ordinal",
+              "type": {
+                "name": "int",
+                "kind": "primitive"
+              },
+              "label": "Enum$ordinal"
+            }
+          ]
+        },
+        "fields": [],
+        "methods": [
+          {
+            "access": "public",
+            "name": "values",
+            "parameters": [],
+            "returnType": {
+              "elementType": {
+                "qualifiedName": "CarCondition",
+                "kind": "class"
+              },
+              "kind": "array"
+            },
+            "label": "Values",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "name": "valueOf",
+            "parameters": [
+              {
+                "name": "name",
+                "type": {
+                  "alternatives": [
+                    {
+                      "name": "string",
+                      "kind": "primitive"
+                    },
+                    {
+                      "name": "null",
+                      "kind": "primitive"
+                    }
+                  ],
+                  "kind": "union"
+                },
+                "label": "Name"
+              }
+            ],
+            "returnType": {
+              "alternatives": [
+                {
+                  "qualifiedName": "CarCondition",
+                  "kind": "class"
+                },
+                {
+                  "name": "null",
+                  "kind": "primitive"
+                }
+              ],
+              "kind": "union"
+            },
+            "label": "Value Of",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_EXCELLENT__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarCondition",
+              "kind": "class"
+            },
+            "label": "__init_ EXCELLENT__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_GOOD__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarCondition",
+              "kind": "class"
+            },
+            "label": "__init_ GOOD__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_FAIR__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarCondition",
+              "kind": "class"
+            },
+            "label": "__init_ FAIR__",
+            "abstract": false
+          },
+          {
+            "access": "private",
+            "name": "__init_POOR__",
+            "parameters": [],
+            "returnType": {
+              "qualifiedName": "CarCondition",
+              "kind": "class"
+            },
+            "label": "__init_ POOR__",
+            "abstract": false
+          }
+        ],
+        "classes": [],
+        "enumConstants": [
+          {
+            "name": "EXCELLENT",
+            "label": "极佳"
+          },
+          {
+            "name": "GOOD",
+            "label": "良好"
+          },
+          {
+            "name": "FAIR",
+            "label": "一般"
+          },
+          {
+            "name": "POOR",
+            "label": "差"
+          }
+        ],
+        "label": "汽车状况",
+        "abstract": false
+      },
+      {
+        "access": "public",
+        "tag": "value",
+        "name": "AddCarRequest",
+        "qualifiedName": "AddCarRequest",
+        "superTypes": [],
+        "constructor": {
+          "parameters": [
+            {
+              "name": "make",
+              "type": {
+                "qualifiedName": "CarMake",
+                "kind": "class"
+              },
+              "label": "品牌"
+            },
+            {
+              "name": "model",
+              "type": {
+                "name": "string",
+                "kind": "primitive"
+              },
+              "label": "型号"
+            },
+            {
+              "name": "year",
+              "type": {
+                "name": "int",
+                "kind": "primitive"
+              },
+              "label": "年份"
+            },
+            {
+              "name": "price",
+              "type": {
+                "qualifiedName": "Money",
+                "kind": "class"
+              },
+              "label": "价格"
+            },
+            {
+              "name": "mileage",
+              "type": {
+                "name": "int",
+                "kind": "primitive"
+              },
+              "label": "里程"
+            },
+            {
+              "name": "condition",
+              "type": {
+                "qualifiedName": "CarCondition",
+                "kind": "class"
+              },
+              "label": "状况"
+            },
+            {
+              "name": "color",
+              "type": {
+                "name": "string",
+                "kind": "primitive"
+              },
+              "label": "颜色"
+            },
+            {
+              "name": "description",
+              "type": {
+                "name": "string",
+                "kind": "primitive"
+              },
+              "label": "描述"
+            }
+          ]
+        },
+        "fields": [
+          {
+            "access": "public",
+            "name": "make",
+            "type": {
+              "qualifiedName": "CarMake",
+              "kind": "class"
+            },
+            "summary": false,
+            "label": "品牌"
+          },
+          {
+            "access": "public",
+            "name": "model",
+            "type": {
+              "name": "string",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "型号"
+          },
+          {
+            "access": "public",
+            "name": "year",
+            "type": {
+              "name": "int",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "年份"
+          },
+          {
+            "access": "public",
+            "name": "price",
+            "type": {
+              "qualifiedName": "Money",
+              "kind": "class"
+            },
+            "summary": false,
+            "label": "价格"
+          },
+          {
+            "access": "public",
+            "name": "mileage",
+            "type": {
+              "name": "int",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "里程"
+          },
+          {
+            "access": "public",
+            "name": "condition",
+            "type": {
+              "qualifiedName": "CarCondition",
+              "kind": "class"
+            },
+            "summary": false,
+            "label": "状况"
+          },
+          {
+            "access": "public",
+            "name": "color",
+            "type": {
+              "name": "string",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "颜色"
+          },
+          {
+            "access": "public",
+            "name": "description",
+            "type": {
+              "name": "string",
+              "kind": "primitive"
+            },
+            "summary": false,
+            "label": "描述"
+          }
+        ],
+        "methods": [],
+        "classes": [],
+        "enumConstants": [],
+        "label": "添加汽车请求",
+        "abstract": false
+      },
+      {
+        "access": "public",
+        "tag": "class",
+        "name": "CarService",
+        "qualifiedName": "CarService",
+        "superTypes": [],
+        "constructor": {
+          "parameters": []
+        },
+        "fields": [],
+        "methods": [
+          {
+            "access": "public",
+            "name": "createCar",
+            "parameters": [
+              {
+                "name": "request",
+                "type": {
+                  "qualifiedName": "AddCarRequest",
+                  "kind": "class"
+                },
+                "label": "请求"
+              }
+            ],
+            "returnType": {
+              "qualifiedName": "Car",
+              "kind": "class"
+            },
+            "label": "创建汽车",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "name": "updateCarPrice",
+            "parameters": [
+              {
+                "name": "car",
+                "type": {
+                  "qualifiedName": "Car",
+                  "kind": "class"
+                },
+                "label": "汽车"
+              },
+              {
+                "name": "newPrice",
+                "type": {
+                  "qualifiedName": "Money",
+                  "kind": "class"
+                },
+                "label": "新价格"
+              }
+            ],
+            "returnType": {
+              "name": "void",
+              "kind": "primitive"
+            },
+            "label": "更新汽车价格",
+            "abstract": false
+          },
+          {
+            "access": "public",
+            "name": "updateCarDescription",
+            "parameters": [
+              {
+                "name": "car",
+                "type": {
+                  "qualifiedName": "Car",
+                  "kind": "class"
+                },
+                "label": "汽车"
+              },
+              {
+                "name": "newDescription",
+                "type": {
+                  "name": "string",
+                  "kind": "primitive"
+                },
+                "label": "新描述"
+              }
+            ],
+            "returnType": {
+              "name": "void",
+              "kind": "primitive"
+            },
+            "label": "更新汽车描述",
+            "abstract": false
+          }
+        ],
+        "classes": [],
+        "enumConstants": [],
+        "beanName": "carService",
+        "label": "汽车服务",
+        "abstract": false
+      }
+    ]
+  }
 }
