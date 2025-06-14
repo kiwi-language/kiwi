@@ -30,10 +30,7 @@ public class InstanceStore extends BaseInstanceStore {
     public static final Logger logger = LoggerFactory.getLogger(InstanceStore.class);
 
     protected final MapperRegistry mapperRegistry;
-    private final String instanceTable;
-    private final String indexEntryTable;
-
-    public InstanceStore(MapperRegistry mapperRegistry, String tableSuffix) {
+    public InstanceStore(MapperRegistry mapperRegistry) {
         this.mapperRegistry = mapperRegistry;
         WAL.setCommitHook(wal -> {
             var migratingStore = new MigrationInstanceStore(this);
