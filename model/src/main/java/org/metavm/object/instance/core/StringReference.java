@@ -62,4 +62,5 @@ public class StringReference extends ValueReference implements  Comparable<Strin
     public Object toSearchConditionValue() {
         return value;
     }
+
 }

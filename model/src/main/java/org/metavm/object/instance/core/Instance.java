@@ -41,6 +41,8 @@ public interface Instance extends Message, Identifiable {
 
     @Nullable
     default Long tryGetTreeId() {
+        if (state() == null)
+            throw new NullPointerException("Instance " + getText() + " doesn't has state");
         var id = state().id;
         return id != null ? id.tryGetTreeId() : null;
     }

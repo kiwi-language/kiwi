@@ -4,9 +4,14 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import org.jetbrains.annotations.NotNull;
+import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.ddl.Commit;
 import org.metavm.object.instance.InstanceStore;
 import org.metavm.object.instance.core.IInstanceContext;
+import org.metavm.object.type.Field;
+import org.metavm.object.type.Klass;
+import org.metavm.object.type.StaticFieldTable;
+import org.metavm.util.Constants;
 import org.metavm.util.ContextUtil;
 import org.metavm.util.InternalException;
 import org.metavm.util.ParameterizedStore;
@@ -73,7 +78,14 @@ public class MetaContextCache extends EntityContextFactoryAware {
                 context.setDescription("MigratingMetaContext");
             else
                 context.setDescription("MetaContext");
-            context.loadKlasses();
+            if (context.getAppId() > Constants.PLATFORM_APP_ID)
+                BeanDefinitionRegistry.getInstance(context);
+            var klasses = context.loadKlasses();
+            for (Klass klass : klasses) {
+                var sft = StaticFieldTable.getInstance(klass.getType(), context);
+                if (klass.isEnum())
+                    sft.getEnumConstants();
+            }
             context.setParameterizedMap(ParameterizedStore.getMap());
             return context;
         }

@@ -44,7 +44,8 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
     private List<BeanDefinition> beanDefinitions = new ArrayList<>();
 
     public static BeanDefinitionRegistry getInstance(IInstanceContext context) {
-        return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()), "BeanDefinitionRegistry not found");
+        return Objects.requireNonNull(context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()),
+                "BeanDefinitionRegistry not found in context " + context.getAppId());
     }
 
     public static void initialize(IInstanceContext context) {

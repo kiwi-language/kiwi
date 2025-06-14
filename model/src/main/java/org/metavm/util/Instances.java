@@ -471,11 +471,6 @@ public class Instances {
         var newIndexes = Utils.map(commit.getNewIndexIds(), id -> context.getEntity(Index.class, id));
         var searchEnabledKlasses = Utils.map(commit.getSearchEnabledKlassIds(), context::getKlass);
         for (Instance instance : instances) {
-            if (skipMigration(instance)) {
-                if (tracing)
-                    log.trace("Skip migrating instance {}, tree ID: {}", instance, instance.tryGetTreeId());
-                continue;
-            }
             if (tracing)
                 log.trace("Migrating instance {}, tree ID: {}", instance, instance.tryGetTreeId());
             if (!instance.isValue())
@@ -486,10 +481,6 @@ public class Instances {
                         commit, context);
             }
         }
-    }
-
-    private static boolean skipMigration(Instance instance) {
-        return instance instanceof BeanDefinitionRegistry;
     }
 
     public static void migrate(MvInstance instance,

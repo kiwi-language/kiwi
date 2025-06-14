@@ -3,9 +3,7 @@ package org.metavm.classfile;
 import lombok.extern.slf4j.Slf4j;
 import org.metavm.entity.*;
 import org.metavm.flow.*;
-import org.metavm.object.instance.core.IntValue;
-import org.metavm.object.instance.core.PhysicalId;
-import org.metavm.object.instance.core.StringReference;
+import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.core.Value;
 import org.metavm.object.type.*;
 import org.metavm.util.DebugEnv;
@@ -60,7 +58,6 @@ public class ClassFileReader {
                     .sourceTag(sourceTag)
                     .scope(parent)
                     .build();
-            existingKlasses = klass.getKlasses();
             repository.bind(klass);
             if (listener != null) listener.beforeKlassCreate();
         }
@@ -69,6 +66,10 @@ public class ClassFileReader {
             klass.setQualifiedName(qualName);
             klass.setName(name);
             klass.incVersion();
+            var sft = StaticFieldTable.getInstance(klass.getType(), repository);
+            sft.incVersion();
+            if (klass.isEnum())
+                sft.getEnumConstants().forEach(Instance::incVersion);
             if (listener != null) listener.beforeKlassUpdate(klass);
         }
         klass.disableMethodTableBuild();
