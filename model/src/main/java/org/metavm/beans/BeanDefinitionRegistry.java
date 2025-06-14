@@ -23,10 +23,7 @@ import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 @NativeEntity(53)
@@ -80,6 +77,7 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
     }
 
     private void addBeanDefinition(BeanDefinition beanDefinition) {
+        log.debug("Adding bean def: {}", beanDefinition.getName());
         beanDefinitions.add(beanDefinition);
         if(isInterceptor(beanDefinition.getBeanType()))
             interceptorDefinitions.add(beanDefinition);
@@ -271,6 +269,10 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
     public void writeBody(MvOutput output) {
         output.writeBoolean(allFlags);
         output.writeList(beanDefinitions, output::writeEntity);
+    }
+
+    public List<BeanDefinition> getBeanDefinitions() {
+        return Collections.unmodifiableList(beanDefinitions);
     }
 
     @Override

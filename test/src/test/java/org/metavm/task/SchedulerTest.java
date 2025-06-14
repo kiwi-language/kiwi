@@ -3,10 +3,10 @@ package org.metavm.task;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.metavm.entity.EntityContextFactory;
-import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.entity.MemInstanceStore;
 import org.metavm.entity.MetaContextCache;
 import org.metavm.mocks.TestTask;
+import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.util.*;
 import org.springframework.transaction.support.TransactionOperations;
 
@@ -23,7 +23,7 @@ public class SchedulerTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         var bootResult = BootstrapUtils.bootstrap();
-        instanceStore = bootResult.instanceStore();
+        instanceStore = new MemInstanceStore(bootResult.mapperRegistry());
         entityContextFactory = bootResult.entityContextFactory();
         metaContextCache = bootResult.metaContextCache();
         TransactionOperations transactionOperations = new MockTransactionOperations();

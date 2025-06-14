@@ -1,6 +1,7 @@
 package org.metavm.object.instance;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.entity.StoreLoadRequest;
 import org.metavm.object.instance.core.IInstanceContext;
@@ -23,7 +24,7 @@ public class MigrationInstanceStore implements IInstanceStore {
 
     private final IInstanceStore wrapped;
 
-    public MigrationInstanceStore(IInstanceStore wrapped) {
+    public MigrationInstanceStore(@NotNull IInstanceStore wrapped) {
         this.wrapped = wrapped;
     }
 

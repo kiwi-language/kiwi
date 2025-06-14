@@ -3,9 +3,11 @@ package org.metavm.compiler;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
+import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.common.ErrorCode;
 import org.metavm.compiler.util.CompilationException;
 import org.metavm.entity.Attribute;
+import org.metavm.entity.AttributeNames;
 import org.metavm.flow.Flows;
 import org.metavm.object.instance.ColumnKind;
 import org.metavm.object.instance.core.ApiObject;
@@ -245,6 +247,11 @@ public class KiwiTest extends KiwiTestBase {
 
     public void testNew() {
         deploy("kiwi/new.kiwi");
+        try (var context = newContext()) {
+            var klasses = context.loadKlasses();
+            assertEquals(1, klasses.size());
+            assertEquals("Foo", klasses.getFirst().getName());
+        }
         var id = (Id) callMethod("Foo", "test", List.of());
         var r = callMethod(id, "getValue", List.of());
         assertEquals(1, r);

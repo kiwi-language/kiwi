@@ -14,7 +14,6 @@ import org.metavm.flow.Method;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
-import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.persistence.SchemaManager;
 import org.metavm.util.*;
 import org.slf4j.Logger;
@@ -104,7 +103,9 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
                 }
             }
             Instances.clearMarks(existingKlasses).forEach(k -> handleRemovedKlass(k, context));
-            beanManager.createBeans(klasses, BeanDefinitionRegistry.getInstance(context), context);
+            var beanDefReg = BeanDefinitionRegistry.getInstance(context);
+            beanDefReg.incVersion();
+            beanManager.createBeans(klasses, beanDefReg, context);
             for (Klass newClass : batch.getNewKlasses()) {
                 if (!newClass.isInterface())
                     initClass(newClass, context);

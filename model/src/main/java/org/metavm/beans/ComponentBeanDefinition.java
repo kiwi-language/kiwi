@@ -1,5 +1,6 @@
 package org.metavm.beans;
 
+import lombok.extern.slf4j.Slf4j;
 import org.metavm.annotation.NativeEntity;
 import org.metavm.api.Entity;
 import org.metavm.api.Generated;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@Slf4j
 @NativeEntity(11)
 @Entity
 public class ComponentBeanDefinition extends BeanDefinition {
@@ -29,6 +31,7 @@ public class ComponentBeanDefinition extends BeanDefinition {
 
     public ComponentBeanDefinition(String name, BeanDefinitionRegistry registry, Klass klass) {
         this(name, registry, klass.getReference());
+        log.debug("Creating bean definition {}", name);
     }
 
     public ComponentBeanDefinition(String name, BeanDefinitionRegistry registry, Reference klassReference) {

@@ -1,5 +1,6 @@
 package org.metavm.object.instance.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.entity.InstanceIndexQuery;
 import org.metavm.object.instance.IInstanceStore;
 import org.metavm.object.instance.IndexKeyRT;
@@ -11,7 +12,7 @@ public class StoreIndexSource implements IndexSource {
 
     private final IInstanceStore instanceStore;
 
-    public StoreIndexSource(IInstanceStore instanceStore) {
+    public StoreIndexSource(@NotNull IInstanceStore instanceStore) {
         this.instanceStore = instanceStore;
     }
 

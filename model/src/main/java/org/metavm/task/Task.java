@@ -151,18 +151,6 @@ public abstract class Task extends org.metavm.entity.Entity {
         return group != null ? group.getSessionTimeout() : Constants.SESSION_TIMEOUT;
     }
 
-    public @Nullable WAL getWAL() {
-        return null;
-    }
-
-    public @Nullable WAL getMetaWAL() {
-        return null;
-    }
-
-    public @Nullable Id getDefWalId() {
-        return null;
-    }
-
     public List<Id> getExtraStdKlassIds() {
         return List.of();
     }
@@ -199,12 +187,6 @@ public abstract class Task extends org.metavm.entity.Entity {
         map.put("lastRunTimestamp", this.getLastRunTimestamp());
         map.put("startAt", this.getStartAt());
         map.put("timeout", this.getTimeout());
-        var wAL = this.getWAL();
-        if (wAL != null) map.put("wAL", wAL.getStringId());
-        var metaWAL = this.getMetaWAL();
-        if (metaWAL != null) map.put("metaWAL", metaWAL.getStringId());
-        var defWalId = this.getDefWalId();
-        if (defWalId != null) map.put("defWalId", defWalId);
         map.put("extraStdKlassIds", this.getExtraStdKlassIds());
         map.put("relocationEnabled", this.isRelocationEnabled());
     }

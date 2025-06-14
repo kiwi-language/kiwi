@@ -22,6 +22,7 @@ import org.metavm.object.instance.cache.LocalCache;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.PhysicalId;
 import org.metavm.object.instance.log.InstanceLogService;
+import org.metavm.object.instance.persistence.MapperRegistry;
 import org.metavm.object.instance.persistence.MockSchemaManager;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
 import org.metavm.object.type.*;
@@ -183,19 +184,19 @@ public class TestUtils {
     }
 
     public static EntityContextFactory getEntityContextFactory(EntityIdProvider idProvider,
-                                                               MemInstanceStore instanceStore,
+                                                               MapperRegistry mapperRegistry,
                                                                InstanceLogService instanceLogService,
                                                                IndexEntryMapper indexEntryMapper) {
         var factory = new EntityContextFactory(
-                getInstanceContextFactory(idProvider, instanceStore)
+                getInstanceContextFactory(idProvider, mapperRegistry)
         );
         factory.setInstanceLogService(instanceLogService);
         return factory;
     }
 
     public static InstanceContextFactory getInstanceContextFactory(EntityIdProvider idProvider,
-                                                                   MemInstanceStore instanceStore) {
-        InstanceContextFactory instanceContextFactory = new InstanceContextFactory(instanceStore, new MockEventQueue())
+                                                                   MapperRegistry mapperRegistry) {
+        InstanceContextFactory instanceContextFactory = new InstanceContextFactory(mapperRegistry, new MockEventQueue())
                 .setIdService(idProvider);
         instanceContextFactory.setCache(new LocalCache());
         return instanceContextFactory;

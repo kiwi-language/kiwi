@@ -8,10 +8,9 @@ import org.metavm.entity.IndexDef;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.Instance;
 import org.metavm.object.instance.core.Reference;
-import org.metavm.object.instance.core.WAL;
 import org.metavm.object.type.ClassType;
 import org.metavm.object.type.Klass;
-import org.metavm.util.*;
+import org.metavm.util.Instances;
 import org.metavm.util.MvInput;
 import org.metavm.util.MvOutput;
 import org.metavm.util.StreamVisitor;
@@ -48,16 +47,13 @@ public class ShadowTask extends org.metavm.entity.Entity {
     private long runAt;
     private long appId;
     private Id appTaskId;
-    private @Nullable Reference defWal;
-
     public static BiConsumer<Long, List<Task>> saveShadowTasksHook;
 
-    public ShadowTask(Id id, long appId, Id appTaskId, long startAt, @Nullable WAL defWal) {
+    public ShadowTask(Id id, long appId, Id appTaskId, long startAt) {
         super(id);
         this.appId = appId;
         this.appTaskId = appTaskId;
         this.startAt = startAt;
-        this.defWal = Utils.safeCall(defWal, Instance::getReference);
     }
 
     @Generated
@@ -68,7 +64,6 @@ public class ShadowTask extends org.metavm.entity.Entity {
         visitor.visitLong();
         visitor.visitLong();
         visitor.visitId();
-        visitor.visitNullable(visitor::visitValue);
     }
 
     public long getAppId() {
@@ -105,11 +100,6 @@ public class ShadowTask extends org.metavm.entity.Entity {
     }
 
     @Nullable
-    public WAL getDefWal() {
-        return Utils.safeCall(defWal, r -> (WAL) r.get());
-    }
-
-    @Nullable
     @Override
     public org.metavm.entity.Entity getParentEntity() {
         return null;
@@ -117,7 +107,6 @@ public class ShadowTask extends org.metavm.entity.Entity {
 
     @Override
     public void forEachReference(Consumer<Reference> action) {
-        if (defWal != null) action.accept(defWal);
     }
 
     @Override
@@ -128,8 +117,6 @@ public class ShadowTask extends org.metavm.entity.Entity {
         map.put("runAt", this.getRunAt());
         var executorIP = this.getExecutorIP();
         if (executorIP != null) map.put("executorIP", executorIP);
-        var defWal = this.getDefWal();
-        if (defWal != null) map.put("defWal", defWal.getStringId());
     }
 
     @Override
@@ -160,7 +147,6 @@ public class ShadowTask extends org.metavm.entity.Entity {
         this.runAt = input.readLong();
         this.appId = input.readLong();
         this.appTaskId = input.readId();
-        this.defWal = input.readNullable(() -> (Reference) input.readValue());
     }
 
     @Generated
@@ -172,7 +158,6 @@ public class ShadowTask extends org.metavm.entity.Entity {
         output.writeLong(runAt);
         output.writeLong(appId);
         output.writeId(appTaskId);
-        output.writeNullable(defWal, output::writeValue);
     }
 
     @Override

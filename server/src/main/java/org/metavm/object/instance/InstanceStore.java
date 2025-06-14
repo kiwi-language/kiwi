@@ -5,7 +5,6 @@ import org.metavm.entity.StoreLoadRequest;
 import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.instance.core.Id;
 import org.metavm.object.instance.core.TreeVersion;
-import org.metavm.object.instance.core.WAL;
 import org.metavm.object.instance.log.InstanceLog;
 import org.metavm.object.instance.persistence.*;
 import org.metavm.object.instance.persistence.mappers.IndexEntryMapper;
@@ -17,26 +16,29 @@ import org.metavm.util.ContextUtil;
 import org.metavm.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-@Component
+//@Component
 public class InstanceStore extends BaseInstanceStore {
 
     public static final Logger logger = LoggerFactory.getLogger(InstanceStore.class);
 
     protected final MapperRegistry mapperRegistry;
+    private final String instanceTable;
+    private final String indexEntryTable;
+
     public InstanceStore(MapperRegistry mapperRegistry) {
+        this(mapperRegistry, "instance", "index_entry");
+    }
+
+    public InstanceStore(MapperRegistry mapperRegistry, String instanceTable, String indexEntryTable) {
         this.mapperRegistry = mapperRegistry;
-        WAL.setCommitHook(wal -> {
-            var migratingStore = new MigrationInstanceStore(this);
-            migratingStore.save(wal.getAppId(), wal.getInstanceChanges());
-            migratingStore.saveIndexEntries(wal.getAppId(), wal.getIndexEntryChanges());
-        });
+        this.instanceTable = instanceTable;
+        this.indexEntryTable = indexEntryTable;
     }
 
     @Override
@@ -163,11 +165,11 @@ public class InstanceStore extends BaseInstanceStore {
     }
 
     public InstanceMapper getInstanceMapper(long appId) {
-        return getInstanceMapper(appId, "instance");
+        return getInstanceMapper(appId, instanceTable);
     }
 
     public IndexEntryMapper getIndexEntryMapper(long appId) {
-        return getIndexEntryMapper(appId, "index_entry");
+        return getIndexEntryMapper(appId, indexEntryTable);
     }
 
     @Override

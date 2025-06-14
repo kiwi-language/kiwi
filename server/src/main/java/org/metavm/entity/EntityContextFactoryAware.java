@@ -35,14 +35,6 @@ public class EntityContextFactoryAware {
         return entityContextFactory.newContext(appId);
     }
 
-    public IInstanceContext newContextWithStore(long appId, IInstanceStore instanceStore) {
-        return entityContextFactory.newContextWithStore(appId, instanceStore);
-    }
-
-    public IInstanceContext newContextWithStore(IInstanceStore instanceStore) {
-        return entityContextFactory.newContextWithStore(ContextUtil.getAppId(), instanceStore);
-    }
-
     public IInstanceContext newPlatformContext() {
         return newContext(Constants.PLATFORM_APP_ID);
     }

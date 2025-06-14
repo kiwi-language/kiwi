@@ -1,5 +1,6 @@
 package org.metavm.object.instance;
 
+import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityChange;
 import org.metavm.object.instance.core.*;
@@ -34,19 +35,15 @@ public class IndexConstraintPlugin implements ContextPlugin {
     private final IInstanceStore instanceStore;
 
 
-    public IndexConstraintPlugin(IInstanceStore instanceStore) {
+    public IndexConstraintPlugin(@NotNull IInstanceStore instanceStore) {
         this.instanceStore = instanceStore;
     }
 
     @Override
     public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
         if (DebugEnv.traceIndexBuild) {
-            logger.debug("Building index. entity change: {}", change);
+            logger.trace("Building index. entity change: {}", change);
         }
-        if (!change.deletes().isEmpty() && context.internalGet(change.deletes().getFirst().id()) instanceof Klass klass) {
-            logger.debug("Removing klass {}", klass.getName());
-        }
-
         var instanceMap = new HashMap<Id, Instance>();
         var currentEntries = new ArrayList<IndexEntryPO>();
         var currentUniqueKeys = new HashSet<IndexKeyPO>();
@@ -102,7 +99,6 @@ public class IndexConstraintPlugin implements ContextPlugin {
         Collection<IndexEntryPO> oldItems = change.getAttribute(OLD_INDEX_ITEMS);
         Collection<IndexEntryPO> currentItems = change.getAttribute(NEW_INDEX_ITEMS);
         ChangeList<IndexEntryPO> changeList = ChangeList.build(oldItems, currentItems, Function.identity());
-        logger.debug("Removing index entries: {}", Utils.join(changeList.deletes(), IndexEntryPO::toString));
         instanceStore.saveIndexEntries(context.getAppId(), changeList);
 //        if (NncUtils.isNotEmpty(changeList.inserts())) {
 //            NncUtils.doInBatch(changeList.inserts(), instanceStore::batchInsert);
