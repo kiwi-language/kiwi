@@ -1,6 +1,7 @@
 package org.metavm.entity;
 
 import org.jetbrains.annotations.NotNull;
+import org.metavm.object.instance.persistence.InstancePO;
 import org.metavm.object.instance.rest.TreeDTO;
 
 import java.io.ByteArrayInputStream;
@@ -27,6 +28,17 @@ public record Tree(long id, long version, long nextNodeId, byte[] data) implemen
 
     public TreeDTO toDTO() {
         return new TreeDTO(id, version, nextNodeId, data);
+    }
+
+    public InstancePO toInstancePO(long appId) {
+        return new InstancePO(
+                appId,
+                id,
+                data,
+                version,
+                0,
+                nextNodeId
+        );
     }
 
 }

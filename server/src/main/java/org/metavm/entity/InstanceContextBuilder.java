@@ -42,6 +42,7 @@ public class InstanceContextBuilder {
     private boolean relocationEnabled;
     private long timeout;
     private boolean changeLogDisabled;
+    private boolean migrating;
 
     public InstanceContextBuilder(long appId,
                                   MapperRegistry mapperRegistry,
@@ -144,6 +145,7 @@ public class InstanceContextBuilder {
     public InstanceContextBuilder migrating(boolean migrating) {
         if (migrating)
             instanceStore = new MigrationInstanceStore(getInstanceStore());
+        this.migrating = migrating;
         return this;
     }
 
@@ -157,7 +159,7 @@ public class InstanceContextBuilder {
                 appId, getInstanceStore(), idInitializer, executor,
                 plugins, parent,
                 childLazyLoading, cache,
-                eventQueue, readonly, skipPostprocessing, relocationEnabled, timeout);
+                eventQueue, readonly, skipPostprocessing, relocationEnabled, migrating, timeout);
     }
 
 }

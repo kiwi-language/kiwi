@@ -9,7 +9,6 @@ import org.metavm.object.instance.persistence.IndexKeyPO;
 import org.metavm.object.instance.persistence.PersistenceUtils;
 import org.metavm.object.instance.persistence.VersionRT;
 import org.metavm.object.type.Index;
-import org.metavm.object.type.Klass;
 import org.metavm.util.BusinessException;
 import org.metavm.util.ChangeList;
 import org.metavm.util.DebugEnv;
@@ -18,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.function.Function;
@@ -96,9 +94,11 @@ public class IndexConstraintPlugin implements ContextPlugin {
 
     @Override
     public void afterSaving(EntityChange<VersionRT> change, IInstanceContext context) {
-        Collection<IndexEntryPO> oldItems = change.getAttribute(OLD_INDEX_ITEMS);
-        Collection<IndexEntryPO> currentItems = change.getAttribute(NEW_INDEX_ITEMS);
-        ChangeList<IndexEntryPO> changeList = ChangeList.build(oldItems, currentItems, Function.identity());
+        var oldItems = change.getAttribute(OLD_INDEX_ITEMS);
+        var currentItems = change.getAttribute(NEW_INDEX_ITEMS);
+        var changeList = context.isMigrating() ?
+                ChangeList.inserts(currentItems):
+                ChangeList.build(oldItems, currentItems, Function.identity());
         instanceStore.saveIndexEntries(context.getAppId(), changeList);
 //        if (NncUtils.isNotEmpty(changeList.inserts())) {
 //            NncUtils.doInBatch(changeList.inserts(), instanceStore::batchInsert);

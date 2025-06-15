@@ -149,4 +149,8 @@ public abstract class DefContext implements IInstanceContext, TypeRegistry {
         return null;
     }
 
+    @Override
+    public boolean isMigrating() {
+        return false;
+    }
 }

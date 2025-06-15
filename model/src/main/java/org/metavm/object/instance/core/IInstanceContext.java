@@ -100,6 +100,8 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
 
     IInstanceContext createSame(long appId, TypeDefProvider typeDefProvider);
 
+    boolean isMigrating();
+
     List<Reference> selectByKey(IndexKeyRT indexKey);
 
     List<Reference> query(InstanceIndexQuery query);

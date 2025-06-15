@@ -8,7 +8,7 @@ import java.util.function.Predicate;
 
 public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
 
-    public static <T> ChangeList<T> create(Collection<T> inserts, Collection<T> updates, Collection<T> deletes) {
+    public static <T> ChangeList<T> of(Collection<T> inserts, Collection<T> updates, Collection<T> deletes) {
         return new ChangeList<>(new ArrayList<>(inserts), new ArrayList<>(updates), new ArrayList<>(deletes));
     }
 
@@ -16,8 +16,8 @@ public record ChangeList<T>(List<T> inserts, List<T> updates, List<T> deletes) {
         return new ChangeList<>(List.of(), List.of(), List.of());
     }
 
-    public static <T> ChangeList<T> inserts(List<T> inserts) {
-        return new ChangeList<>(inserts, List.of(), List.of());
+    public static <T> ChangeList<T> inserts(Collection<T> inserts) {
+        return new ChangeList<>(new ArrayList<>(inserts), List.of(), List.of());
     }
 
     public static <T> ChangeList<T> deletes(List<T> deletes) {

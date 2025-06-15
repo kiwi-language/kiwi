@@ -41,6 +41,7 @@ public class InstanceContext extends BufferingInstanceContext {
     private final Cache cache;
     private final boolean skipPostprocessing;
     private final boolean relocationEnabled;
+    private final boolean migrating;
 
     public InstanceContext(long appId,
                            IInstanceStore instanceStore,
@@ -54,6 +55,7 @@ public class InstanceContext extends BufferingInstanceContext {
                            boolean readonly,
                            boolean skipPostprocessing,
                            boolean relocationEnabled,
+                           boolean migrating,
                            long timeout
     ) {
         super(appId,
@@ -66,11 +68,7 @@ public class InstanceContext extends BufferingInstanceContext {
         this.childrenLazyLoading = childrenLazyLoading;
         this.eventQueue = eventQueue;
         this.instanceStore = instanceStore;
-//        entityContext = new EntityContext(
-//                this,
-//                NncUtils.get(parent, IInstanceContext::getEntityContext),
-//                defContext
-//        );
+        this.migrating = migrating;
         this.cache = cache;
         this.skipPostprocessing = skipPostprocessing;
         this.relocationEnabled = relocationEnabled;
@@ -108,7 +106,7 @@ public class InstanceContext extends BufferingInstanceContext {
             logTreeChanges(patch.treeChanges);
         }
         beforeSaving(patch);
-        saveInstances(patch.treeChanges);
+        saveInstances(patch);
         afterSaving(patch);
         headContext.unfreeze();
         headContext.clear();
@@ -335,9 +333,12 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
-    private void saveInstances(EntityChange<InstancePO> change) {
+    private void saveInstances(Patch patch) {
         try (var ignored = getProfiler().enter("processEntityChangeHelper")) {
-            instanceStore.save(appId, change.toChangeList());
+            var changes = migrating ?
+                    ChangeList.inserts(Utils.map(patch.trees, t -> t.toInstancePO(appId))) :
+                    patch.treeChanges.toChangeList();
+            instanceStore.save(appId, changes);
         }
     }
 
@@ -385,6 +386,7 @@ public class InstanceContext extends BufferingInstanceContext {
                 isReadonly(),
                 skipPostprocessing,
                 relocationEnabled,
+                migrating,
                 getTimeout()
         );
     }
@@ -428,6 +430,11 @@ public class InstanceContext extends BufferingInstanceContext {
         for (InstancePO delete : treeChanges.deletes()) {
             log.info("Tree ID: {}", delete.getId());
         }
+    }
+
+    @Override
+    public boolean isMigrating() {
+        return migrating;
     }
 
     private void unfrozen(Runnable action) {
