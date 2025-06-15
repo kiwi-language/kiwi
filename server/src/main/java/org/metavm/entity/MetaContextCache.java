@@ -11,10 +11,7 @@ import org.metavm.object.instance.core.IInstanceContext;
 import org.metavm.object.type.Field;
 import org.metavm.object.type.Klass;
 import org.metavm.object.type.StaticFieldTable;
-import org.metavm.util.Constants;
-import org.metavm.util.ContextUtil;
-import org.metavm.util.InternalException;
-import org.metavm.util.ParameterizedStore;
+import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -87,6 +84,10 @@ public class MetaContextCache extends EntityContextFactoryAware {
                     sft.getEnumConstants();
             }
             context.setParameterizedMap(ParameterizedStore.getMap());
+            if (DebugEnv.dumpMetaContext) {
+                logger.trace("MetaContext Dump");
+                context.dumpContext();
+            }
             return context;
         }
     }

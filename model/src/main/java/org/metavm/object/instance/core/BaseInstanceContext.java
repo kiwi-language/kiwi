@@ -810,4 +810,12 @@ public abstract class BaseInstanceContext implements IInstanceContext, Closeable
     public void setParameterizedMap(ParameterizedMap parameterizedMap) {
         this.parameterizedMap = parameterizedMap;
     }
+
+    @Override
+    public void dumpContext() {
+        for (Instance instance : this) {
+            log.trace("Instance {}-{}", instance.getInstanceType().getTypeDesc(), instance.getId());
+        }
+    }
+
 }

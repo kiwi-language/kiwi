@@ -126,10 +126,10 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
             throw new IllegalStateException("Commit is already submitted");
         this.submitted = true;
         tableSwitchHook.accept(appId, getId());
-        if(META_CONTEXT_INVALIDATE_HOOK != null) {
-            META_CONTEXT_INVALIDATE_HOOK.accept(appId, false);
-            META_CONTEXT_INVALIDATE_HOOK.accept(appId, true);
-        }
+//        if(META_CONTEXT_INVALIDATE_HOOK != null) {
+//            META_CONTEXT_INVALIDATE_HOOK.accept(appId, false);
+//            META_CONTEXT_INVALIDATE_HOOK.accept(appId, true);
+//        }
     }
 
     public boolean hasCleanUpWorks() {
@@ -148,8 +148,12 @@ public class Commit extends org.metavm.entity.Entity implements RedirectStatus, 
         this.state = state;
     }
 
-    public void setRunning(boolean running) {
-        this.running = running;
+    public void terminate() {
+        this.running = false;
+        if(META_CONTEXT_INVALIDATE_HOOK != null) {
+            META_CONTEXT_INVALIDATE_HOOK.accept(appId, false);
+            META_CONTEXT_INVALIDATE_HOOK.accept(appId, true);
+        }
     }
 
     public Date getTime() {

@@ -610,4 +610,28 @@ public class KiwiTest extends KiwiTestBase {
         assertNull(found1);
     }
 
+    public void testUniqueIndex() {
+        deploy("kiwi/index/unique.kiwi");
+        var className = "unique.Foo";
+        var id1 = saveInstance(className, Map.of("name", "foo1"));
+        try {
+            saveInstance(className, Map.of("name", "foo1"));
+            fail("Creation of duplicate index entries is not prevented");
+        }
+        catch (BusinessException e) {
+            assertSame(ErrorCode.CONSTRAINT_CHECK_FAILED, e.getErrorCode());
+        }
+
+        var id2 = saveInstance(className, Map.of("name", "foo2"));
+        callMethod(ApiNamedObject.of("fooService"), "swapNames", List.of(id1, id2));
+        var foo1 = getObject(id1);
+        var foo2 = getObject(id2);
+        assertEquals("foo2", foo1.getString("name"));
+        assertEquals("foo1", foo2.getString("name"));
+
+        var id3 = (Id) callMethod(ApiNamedObject.of("fooService"), "deleteAndNew", List.of(id1));
+        var foo3 = getObject(id3);
+        assertEquals("foo2", foo3.getString("name"));
+    }
+
 }

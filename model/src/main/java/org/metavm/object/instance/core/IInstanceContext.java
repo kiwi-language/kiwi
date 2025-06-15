@@ -267,4 +267,5 @@ public interface IInstanceContext extends InstanceSink, Closeable, InstanceRepos
         return InstanceRepository.super.allocateRootId();
     }
 
+    void dumpContext();
 }
