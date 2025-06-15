@@ -33,7 +33,7 @@ public class KlassTagAssigner extends org.metavm.entity.Entity {
     public static KlassTagAssigner getInstance(EntityRepository context) {
         return Objects.requireNonNull(
                 context.selectFirstByKey(IDX_ALL_FLAGS, Instances.trueInstance()),
-                "ClassTagAssigner instance not found"
+                "ClassTagAssigner instance not found for"
         );
     }
 

@@ -78,6 +78,8 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
 
     public SaveTypeBatch deploy(InputStream input, IInstanceContext context) {
         try (var zipIn = new ZipInputStream(input)) {
+            // Important: Ensure that components are loaded so that they will be migrated to the new table
+            loadComponents(context);
             var runningCommit = context.selectFirstByKey(Commit.IDX_RUNNING, Instances.trueInstance());
             if (runningCommit != null)
                 throw new BusinessException(ErrorCode.COMMIT_RUNNING);
@@ -115,6 +117,11 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void loadComponents(IInstanceContext context) {
+        KlassTagAssigner.getInstance(context);
+        KlassSourceCodeTagAssigner.getInstance(context);
     }
 
     private void handleRemovedKlass(Klass klass, IInstanceContext context) {

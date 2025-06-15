@@ -82,7 +82,6 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                         var commitState = commit.getState();
                         try (var loadedContext = newContext(appId, metaContextCache.get(appId, true),
                                 builder -> builder
-//                                        .readWAL(wal)
                                         .relocationEnabled(commitState.isRelocationEnabled())
                                         .migrating(true)
                                         .skipPostProcessing(true)

@@ -8,9 +8,7 @@ import org.metavm.beans.BeanDefinitionRegistry;
 import org.metavm.ddl.Commit;
 import org.metavm.object.instance.InstanceStore;
 import org.metavm.object.instance.core.IInstanceContext;
-import org.metavm.object.type.Field;
-import org.metavm.object.type.Klass;
-import org.metavm.object.type.StaticFieldTable;
+import org.metavm.object.type.*;
 import org.metavm.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,8 +73,16 @@ public class MetaContextCache extends EntityContextFactoryAware {
                 context.setDescription("MigratingMetaContext");
             else
                 context.setDescription("MetaContext");
-            if (context.getAppId() > Constants.PLATFORM_APP_ID)
+            if (context.getAppId() > Constants.PLATFORM_APP_ID) {
                 BeanDefinitionRegistry.getInstance(context);
+                try {
+                    KlassTagAssigner.getInstance(context);
+                }
+                catch (Exception e) {
+                    throw e;
+                }
+                KlassSourceCodeTagAssigner.getInstance(context);
+            }
             var klasses = context.loadKlasses();
             for (Klass klass : klasses) {
                 var sft = StaticFieldTable.getInstance(klass.getType(), context);
