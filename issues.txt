@@ -2,3 +2,9 @@ Todo
 - Remove tasks when it's terminated
 - Remove beans when the bean class is removed
 - Create a temporary search index for migration
+
+
+Issues
+1. Incorrect reference counting during migration
+    * RC update written to the shadow table could be overwritten
+    * RC in shadow table won't prevent removal of the reference target

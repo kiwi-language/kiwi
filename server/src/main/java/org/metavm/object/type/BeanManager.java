@@ -76,8 +76,12 @@ public class BeanManager {
     }
 
     private void destructBean(BeanDefinition beanDefinition, IInstanceContext context) {
-        if (beanDefinition.getBean() != null)
-            context.remove(beanDefinition.getBean().resolveObject());
+        if (beanDefinition.getBean() != null) {
+            var bean = beanDefinition.getBean().resolveObject();
+            log.debug("Destroying bean {}-{}", beanDefinition.getName(), bean.getId());
+            context.remove(bean);
+            assert context.internalGet(bean.getId()).isRemoved();
+        }
     }
 
     private List<BeanDefinition> sortByTopology(List<BeanDefinition> definitions, BeanDefinitionRegistry registry) {

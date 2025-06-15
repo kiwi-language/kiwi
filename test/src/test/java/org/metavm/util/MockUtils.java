@@ -260,9 +260,6 @@ public class MockUtils {
         var entityContextFactory = schedulerAndWorker.entityContextFactory();
         try (var context = entityContextFactory.newContext(TestConstants.APP_ID)) {
             context.loadKlasses();
-//            var assembler = AssemblerFactory.createWithStandardTypes();
-//            assembler.assemble(List.of(source));
-//            assembler.generateClasses(TestConstants.TARGET);
 
             var task = new CompilationTask(List.of(Path.of(TestUtils.getResourcePath(source))), TestConstants.TARGET);
             task.parse();
@@ -282,7 +279,7 @@ public class MockUtils {
                 }
             });
             if (waitForDDLDone)
-                TestUtils.waitForDDLState(CommitState.COMPLETED, schedulerAndWorker);
+                TestUtils.waitForDDLCompleted(schedulerAndWorker);
             return commitId;
         }
     }

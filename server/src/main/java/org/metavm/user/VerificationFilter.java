@@ -35,7 +35,8 @@ public class VerificationFilter extends OncePerRequestFilter {
             "/register",
             "/platform-user/change-password",
             "/object",
-            "/schema"
+            "/schema",
+            "/api"
     );
 
     public VerificationFilter(LoginService loginService) {

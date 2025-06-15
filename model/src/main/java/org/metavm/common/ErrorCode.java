@@ -165,6 +165,8 @@ public enum ErrorCode {
     INVALID_REQUEST_PATH(1502, "Invalid request path"),
     INVALID_REQUEST_BODY(1503, "Invalid request body: {}"),
     BEAN_NOT_FOUND(1504, "Bean not found: {}"),
+    MISSING_X_APP_ID(1505, "Missing HTTP header X-APP-ID"),
+    INVALID_APP_ID(1506, "Invalid APP ID"),
 
     // DDL
     COMMIT_RUNNING(1601, "Commit is in progress"),

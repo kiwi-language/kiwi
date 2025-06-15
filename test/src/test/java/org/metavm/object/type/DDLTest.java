@@ -201,7 +201,8 @@ public class DDLTest extends TestCase {
         for (int i = 0; i < 500; i++) {
             saveInstance("abort.AbortFoo", Map.of());
         }
-        assemble("kiwi/abort/abort1.kiwi");
+        assemble("kiwi/abort/abort1.kiwi", false);
+        TestUtils.waitForDDLAborted(schedulerAndWorker);
         assemble("kiwi/abort/abort0.kiwi");
     }
 
@@ -893,6 +894,11 @@ public class DDLTest extends TestCase {
             klasses.forEach(k -> logger.debug("Klass {} ID: {}", k.getName(), k.getId()));
         }
         assemble("kiwi/ddl/delete_nested_class_after.kiwi");
+    }
+
+    public void testDeleteBeanClass() {
+        assemble("kiwi/ddl/delete_bean_class_before.kiwi");
+        assemble("kiwi/ddl/delete_bean_class_after.kiwi");
     }
 
     private void assemble(String fileName) {
