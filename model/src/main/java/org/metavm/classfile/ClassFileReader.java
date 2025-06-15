@@ -65,11 +65,8 @@ public class ClassFileReader {
             klass = existing;
             klass.setQualifiedName(qualName);
             klass.setName(name);
-            klass.incVersion();
-            var sft = StaticFieldTable.getInstance(klass.getType(), repository);
-            sft.incVersion();
-            if (klass.isEnum())
-                sft.getEnumConstants().forEach(Instance::incVersion);
+//            var sft = StaticFieldTable.getInstance(klass.getType(), repository);
+//            sft.incVersion();
             if (listener != null) listener.beforeKlassUpdate(klass);
         }
         klass.disableMethodTableBuild();

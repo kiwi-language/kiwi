@@ -47,6 +47,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         var currentEntries = new ArrayList<IndexEntryPO>();
         var currentUniqueKeys = new HashSet<IndexKeyPO>();
         var objectsToIndex = new HashSet<Instance>(Utils.exclude(context.getReindexSet(), Instance::isRemoved));
+        var involvedIds = new HashSet<Id>();
         if (context.isMigrating()) {
             for (Tree tree : patch.trees()) {
                 var instance = context.internalGet(PhysicalId.of(tree.id(), 0));
@@ -55,6 +56,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
                     @Override
                     public Void visitClassInstance(ClassInstance instance) {
                         objectsToIndex.add(instance);
+                        involvedIds.add(instance.getId());
                         instance.forEachChild(c -> c.accept(this));
                         return null;
                     }
@@ -82,14 +84,13 @@ public class IndexConstraintPlugin implements ContextPlugin {
                             );
                     });
         });
-        var oldIdSet = new HashSet<Id>();
         var oldIds = new ArrayList<Id>();
         patch.entityChange().forEachUpdateOrDelete(v -> {
-            oldIdSet.add(v.id());
+            involvedIds.add(v.id());
             oldIds.add(v.id());
         });
         for (ClassInstance inst : context.getReindexSet()) {
-            oldIdSet.add(inst.getId());
+            involvedIds.add(inst.getId());
             oldIds.add(inst.getId());
         }
         var oldEntries = new ArrayList<IndexEntryPO>();
@@ -98,7 +99,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         Utils.doInBatch(new ArrayList<>(currentUniqueKeys),
                 keys -> instanceStore.getIndexEntriesByKeys(keys, context).forEach(entry -> {
                     var id = entry.getId();
-                    if (!oldIdSet.contains(id)) {
+                    if (!involvedIds.contains(id)) {
                         var currentEntry = Utils.findRequired(currentEntries, e -> e.getKey().equals(entry.getKey()));
                         var index = context.getEntity(Index.class, Id.fromBytes(entry.getIndexId()));
                         throw BusinessException.constraintCheckFailed(instanceMap.get(currentEntry.getId()), index);
