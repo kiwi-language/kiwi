@@ -97,20 +97,20 @@ public class InstanceContext extends BufferingInstanceContext {
         if(commit != null)
             tryCancelCommit(commit);
         var patch = buildPatch();
-        if (!patch.refcountChange.isEmpty()) {
+        if (!patch.refcountChange().isEmpty()) {
             applyRcChange(patch);
             patch = buildPatch();
         }
         validateRemoval(patch);
         if (DebugEnv.traceContextFinish) {
-            logTreeChanges(patch.treeChanges);
+            logTreeChanges(patch.treeChanges());
         }
         beforeSaving(patch);
         saveInstances(patch);
         afterSaving(patch);
         headContext.unfreeze();
         headContext.clear();
-        patch.trees.forEach(headContext::add);
+        patch.trees().forEach(headContext::add);
         try (var ignored = getProfiler().enter("postProcess")) {
             postProcess();
         }
@@ -118,11 +118,11 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void applyRcChange(Patch patch) {
-        for (Refcount refcount : patch.refcountChange) {
+        for (Refcount refcount : patch.refcountChange()) {
             buffer(refcount.getTarget());
         }
         unfrozen(() -> {
-            for (Refcount refcount : patch.refcountChange) {
+            for (Refcount refcount : patch.refcountChange()) {
                 if (DebugEnv.traceContextFinish)
                     log.trace("Adding {} refcount to instance {}", refcount.getCount(), refcount.getTarget());
                 var target = (ClassInstance) internalGet(refcount.getTarget());
@@ -183,17 +183,10 @@ public class InstanceContext extends BufferingInstanceContext {
         }
     }
 
-    private record Patch(List<Tree> trees,
-                         EntityChange<VersionRT> entityChange,
-                         EntityChange<InstancePO> treeChanges,
-                         Collection<Refcount> refcountChange
-                         ) {
-    }
-
     private Patch beforeSaving(Patch patch) {
         for (ContextPlugin plugin : plugins) {
             try (var ignored = getProfiler().enter(plugin.getClass().getSimpleName() + ".beforeSaving")) {
-                plugin.beforeSaving(patch.entityChange, this);
+                plugin.beforeSaving(patch, this);
             }
         }
         return patch;
@@ -201,7 +194,7 @@ public class InstanceContext extends BufferingInstanceContext {
 
     private void afterSaving(Patch patch) {
         try (var ignored = getProfiler().enter("InstanceContext.afterSaving")) {
-            plugins.forEach(plugin -> plugin.afterSaving(patch.entityChange, this));
+            plugins.forEach(plugin -> plugin.afterSaving(patch.entityChange(), this));
         }
     }
 
@@ -251,7 +244,7 @@ public class InstanceContext extends BufferingInstanceContext {
     }
 
     private void validateRemoval(Patch patch) {
-        for (VersionRT delete : patch.entityChange.deletes()) {
+        for (VersionRT delete : patch.entityChange().deletes()) {
             var inst = (ClassInstance) internalGet(delete.id());
             if (inst.getRefcount() > 0 && !inst.isValue())
                 throw new BusinessException(ErrorCode.STRONG_REFS_PREVENT_REMOVAL, Instances.getInstanceDesc(inst.getReference()));
@@ -336,8 +329,8 @@ public class InstanceContext extends BufferingInstanceContext {
     private void saveInstances(Patch patch) {
         try (var ignored = getProfiler().enter("processEntityChangeHelper")) {
             var changes = migrating ?
-                    ChangeList.inserts(Utils.map(patch.trees, t -> t.toInstancePO(appId))) :
-                    patch.treeChanges.toChangeList();
+                    ChangeList.inserts(Utils.map(patch.trees(), t -> t.toInstancePO(appId))) :
+                    patch.treeChanges().toChangeList();
             instanceStore.save(appId, changes);
         }
     }

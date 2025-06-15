@@ -104,7 +104,6 @@ public class TypeManager extends ApplicationStatusAware implements DeployService
             }
             Instances.clearMarks(existingKlasses).forEach(k -> handleRemovedKlass(k, context));
             var beanDefReg = BeanDefinitionRegistry.getInstance(context);
-            beanDefReg.incVersion();
             beanManager.createBeans(klasses, beanDefReg, context);
             for (Klass newClass : batch.getNewKlasses()) {
                 if (!newClass.isInterface())

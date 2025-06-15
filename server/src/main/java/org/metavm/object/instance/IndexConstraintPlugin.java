@@ -3,6 +3,7 @@ package org.metavm.object.instance;
 import org.jetbrains.annotations.NotNull;
 import org.metavm.common.ErrorCode;
 import org.metavm.entity.EntityChange;
+import org.metavm.entity.Tree;
 import org.metavm.object.instance.core.*;
 import org.metavm.object.instance.persistence.IndexEntryPO;
 import org.metavm.object.instance.persistence.IndexKeyPO;
@@ -38,20 +39,36 @@ public class IndexConstraintPlugin implements ContextPlugin {
     }
 
     @Override
-    public boolean beforeSaving(EntityChange<VersionRT> change, IInstanceContext context) {
+    public boolean beforeSaving(Patch patch, IInstanceContext context) {
         if (DebugEnv.traceIndexBuild) {
-            logger.trace("Building index. entity change: {}", change);
+            logger.trace("Building index. entity change: {}", patch);
         }
         var instanceMap = new HashMap<Id, Instance>();
         var currentEntries = new ArrayList<IndexEntryPO>();
         var currentUniqueKeys = new HashSet<IndexKeyPO>();
         var objectsToIndex = new HashSet<Instance>(Utils.exclude(context.getReindexSet(), Instance::isRemoved));
-        change.forEachInsertOrUpdate(ver -> {
-            var instance = context.get(ver.id());
-            if (instance instanceof ClassInstance) {
-                objectsToIndex.add(instance);
+        if (context.isMigrating()) {
+            for (Tree tree : patch.trees()) {
+                var instance = context.internalGet(PhysicalId.of(tree.id(), 0));
+                instance.accept(new InstanceVisitor<Void>() {
+
+                    @Override
+                    public Void visitClassInstance(ClassInstance instance) {
+                        objectsToIndex.add(instance);
+                        instance.forEachChild(c -> c.accept(this));
+                        return null;
+                    }
+                });
             }
-        });
+        }
+        else {
+            patch.entityChange().forEachInsertOrUpdate(ver -> {
+                var instance = context.get(ver.id());
+                if (instance instanceof ClassInstance) {
+                    objectsToIndex.add(instance);
+                }
+            });
+        }
         objectsToIndex.forEach(instance -> {
             instanceMap.put(instance.getId(), instance);
             PersistenceUtils.forEachIndexEntries(instance, context.getAppId(),
@@ -67,7 +84,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         });
         var oldIdSet = new HashSet<Id>();
         var oldIds = new ArrayList<Id>();
-        change.forEachUpdateOrDelete(v -> {
+        patch.entityChange().forEachUpdateOrDelete(v -> {
             oldIdSet.add(v.id());
             oldIds.add(v.id());
         });
@@ -79,7 +96,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         Utils.doInBatch(oldIds,
                 ids -> oldEntries.addAll(instanceStore.getIndexEntriesByInstanceIds(ids, context)));
         Utils.doInBatch(new ArrayList<>(currentUniqueKeys),
-                keys -> instanceStore.getIndexEntriesByKeys( keys, context).forEach(entry -> {
+                keys -> instanceStore.getIndexEntriesByKeys(keys, context).forEach(entry -> {
                     var id = entry.getId();
                     if (!oldIdSet.contains(id)) {
                         var currentEntry = Utils.findRequired(currentEntries, e -> e.getKey().equals(entry.getKey()));
@@ -87,8 +104,8 @@ public class IndexConstraintPlugin implements ContextPlugin {
                         throw BusinessException.constraintCheckFailed(instanceMap.get(currentEntry.getId()), index);
                     }
                 }));
-        change.setAttribute(OLD_INDEX_ITEMS, oldEntries);
-        change.setAttribute(NEW_INDEX_ITEMS, currentEntries);
+        patch.entityChange().setAttribute(NEW_INDEX_ITEMS, currentEntries);
+        patch.entityChange().setAttribute(OLD_INDEX_ITEMS, oldEntries);
         return false;
     }
 
@@ -97,7 +114,7 @@ public class IndexConstraintPlugin implements ContextPlugin {
         var oldItems = change.getAttribute(OLD_INDEX_ITEMS);
         var currentItems = change.getAttribute(NEW_INDEX_ITEMS);
         var changeList = context.isMigrating() ?
-                ChangeList.inserts(currentItems):
+                ChangeList.inserts(currentItems) :
                 ChangeList.build(oldItems, currentItems, Function.identity());
         instanceStore.saveIndexEntries(context.getAppId(), changeList);
 //        if (NncUtils.isNotEmpty(changeList.inserts())) {
