@@ -272,7 +272,7 @@ public class BasicKiwiTest extends KiwiTestBase {
         var fooId = saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"
         ));
-        var bean = ApiNamedObject.of("hashMapLab");
+        var bean = saveInstance("hashcode.HashMapLab", Map.of());
         callMethod(bean, "put", List.of(fooId, "Foo"));
         var foo2Id = saveInstance("hashcode.HashCodeFoo", Map.of(
                 "name", "Foo"

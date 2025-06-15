@@ -31,7 +31,6 @@ public class ComponentBeanDefinition extends BeanDefinition {
 
     public ComponentBeanDefinition(String name, BeanDefinitionRegistry registry, Klass klass) {
         this(name, registry, klass.getReference());
-        log.debug("Creating bean definition {}", name);
     }
 
     public ComponentBeanDefinition(String name, BeanDefinitionRegistry registry, Reference klassReference) {

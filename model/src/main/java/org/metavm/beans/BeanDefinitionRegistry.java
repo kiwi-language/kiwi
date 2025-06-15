@@ -78,7 +78,6 @@ public class BeanDefinitionRegistry extends org.metavm.entity.Entity implements 
     }
 
     private void addBeanDefinition(BeanDefinition beanDefinition) {
-        log.debug("Adding bean def: {}", beanDefinition.getName());
         beanDefinitions.add(beanDefinition);
         if(isInterceptor(beanDefinition.getBeanType()))
             interceptorDefinitions.add(beanDefinition);

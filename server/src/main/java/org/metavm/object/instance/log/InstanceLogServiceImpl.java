@@ -89,7 +89,8 @@ public class InstanceLogServiceImpl extends EntityContextFactoryAware implements
                         )
                         ) {
                             loadedContext.setDescription("DDLHandler");
-                            Iterable<Instance> instances = () -> instanceIds.stream().map(loadedContext::get)
+                            Iterable<Instance> instances = () -> instanceIds.stream().map(loadedContext::internalGet)
+                                    .filter(i -> !i.isRemoved())
                                     .iterator();
                             Instances.migrate(instances, commit, loadedContext);
                             loadedContext.finish();

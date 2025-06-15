@@ -121,8 +121,7 @@ public class MigrationInstanceStore implements IInstanceStore {
 
     @Override
     public List<IndexEntryPO> getIndexEntriesByInstanceIds(Collection<Id> instanceIds, IInstanceContext context) {
-        var mapper = getIndexEntryMapper(context.getAppId(), "index_entry_tmp");
-        return mapper.selectByInstanceIds(context.getAppId(), Utils.map(instanceIds, Id::toBytes));
+        return wrapped.getIndexEntriesByInstanceIds(instanceIds, context);
     }
 
     @Override

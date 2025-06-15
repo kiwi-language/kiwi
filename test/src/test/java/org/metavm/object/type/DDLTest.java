@@ -291,6 +291,7 @@ public class DDLTest extends TestCase {
                 )
         ));
         var priceId = apiClient.getObject(shoesId).getId("price");
+        logger.debug("Price ID: {}", priceId);
         var productIds = new ArrayList<>(List.of(shoesId));
         for (int i = 0; i < 16; i++) {
             productIds.add(saveInstance("Product", Map.of(
